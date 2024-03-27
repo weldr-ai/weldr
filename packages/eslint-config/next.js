@@ -20,6 +20,7 @@ module.exports = {
     "@vercel/style-guide/eslint/next",
     "eslint-config-turbo",
     "prettier",
+    "plugin:tailwindcss/recommended",
   ].map(require.resolve),
   parserOptions: {
     project,
@@ -43,4 +44,10 @@ module.exports = {
   rules: {
     "import/no-default-export": "off",
   },
+  overrides: [
+    {
+      files: ["*.ts", "*.tsx", "*.js"],
+      parser: "@typescript-eslint/parser",
+    },
+  ],
 };
