@@ -17,6 +17,7 @@ module.exports = {
     "@vercel/style-guide/eslint/typescript",
     "@vercel/style-guide/eslint/react",
     "prettier",
+    "plugin:tailwindcss/recommended",
   ].map(require.resolve),
   parserOptions: {
     project,
@@ -41,10 +42,11 @@ module.exports = {
   },
   overrides: [
     {
-      files: ["*.config.js"],
+      files: ["*.config.js", "*.ts", "*.tsx", "*.js"],
       env: {
         node: true,
       },
+      parser: "@typescript-eslint/parser",
     },
   ],
 };

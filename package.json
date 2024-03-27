@@ -12,9 +12,10 @@
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "eslint": "^8.57.0",
+    "turbo": "latest",
+    "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
     "prettier": "^3.2.5",
-    "prettier-plugin-tailwindcss": "^0.5.12",
-    "turbo": "latest"
+    "prettier-plugin-tailwindcss": "^0.5.12"
   },
   "packageManager": "pnpm@8.9.0",
   "engines": {

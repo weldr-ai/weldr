@@ -1,36 +1,27 @@
 import Image from "next/image";
-import { Button } from "@repo/ui/components/ui/button"
+import { Button } from "@repo/ui/components/ui/button";
 
-function Gradient({
-  className
-}: {
-  className?: string;
-}): JSX.Element {
+function Gradient({ className }: { className?: string }): JSX.Element {
   return (
     <span
-      className={`absolute bg-glow-conic mix-blend-normal will-change-[filter] rounded-[100%] blur-[32px] ${className}`}
+      className={`bg-glow-conic absolute rounded-[100%] mix-blend-normal blur-[32px] will-change-[filter] ${className}`}
     />
   );
 }
 
 export default function Page(): JSX.Element {
   return (
-    <main className="flex flex-col items-center justify-center h-screen">
+    <main className="flex h-screen flex-col items-center justify-center">
       <div className="relative flex place-items-center">
-        <div className="w-auto flex justify-center gap-8 items-center flex-col relative z-0">
-          <div className="z-50 flex items-center justify-center w-full">
-            <div className="absolute md:min-w-[512px] md:min-h-[512px]">
-              <Image
-                alt="Integra"
-                height={512}
-                src="circles.svg"
-                width={512}
-              />
+        <div className="relative z-0 flex w-auto flex-col items-center justify-center gap-8">
+          <div className="z-50 flex w-full items-center justify-center">
+            <div className="absolute md:min-h-[512px] md:min-w-[512px]">
+              <Image alt="Integra" height={512} src="circles.svg" width={512} />
             </div>
-            <div className="absolute z-50 flex items-center justify-center w-64 h-64">
-              <Gradient className="opacity-90 w-[128px] h-[128px]" />
+            <div className="absolute z-50 flex h-64 w-64 items-center justify-center">
+              <Gradient className="h-[128px] w-[128px] opacity-90" />
             </div>
-            <div className="w-[128px] h-[128px] z-50">
+            <div className="z-50 h-[128px] w-[128px]">
               <Image
                 alt=""
                 height={128}
@@ -40,9 +31,9 @@ export default function Page(): JSX.Element {
               />
             </div>
           </div>
-          <div className="z-50 flex flex-col items-center justify-center text-center gap-4">
-            <h1 className="text-xl md:text-4xl font-semibold">IntegraMind</h1>
-            <div className="flex uppercase items-center gap-2 md:gap-4">
+          <div className="z-50 flex flex-col items-center justify-center gap-4 text-center">
+            <h1 className="text-xl font-semibold md:text-4xl">IntegraMind</h1>
+            <div className="flex items-center gap-2 uppercase md:gap-4">
               <span>Automate</span>
               <span>•</span>
               <span>Optimize</span>
