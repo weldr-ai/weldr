@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Button } from "@repo/ui/components/ui/button"
 
 function Gradient({
   className
@@ -7,14 +8,14 @@ function Gradient({
 }): JSX.Element {
   return (
     <span
-      className={`absolute mix-blend-normal will-change-[filter] rounded-[100%] blur-[32px] ${className}`}
+      className={`absolute bg-glow-conic mix-blend-normal will-change-[filter] rounded-[100%] blur-[32px] ${className}`}
     />
   );
 }
 
 export default function Page(): JSX.Element {
   return (
-    <main className="bg-zinc-950 flex flex-col items-center justify-center h-screen">
+    <main className="flex flex-col items-center justify-center h-screen">
       <div className="relative flex place-items-center">
         <div className="w-auto flex justify-center gap-8 items-center flex-col relative z-0">
           <div className="z-50 flex items-center justify-center w-full">
@@ -39,7 +40,7 @@ export default function Page(): JSX.Element {
               />
             </div>
           </div>
-          <div className="text-white z-50 flex flex-col items-center justify-center text-center gap-4">
+          <div className="z-50 flex flex-col items-center justify-center text-center gap-4">
             <h1 className="text-xl md:text-4xl font-semibold">IntegraMind</h1>
             <div className="flex uppercase items-center gap-2 md:gap-4">
               <span>Automate</span>
