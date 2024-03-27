@@ -7,7 +7,7 @@ function Gradient({
 }): JSX.Element {
   return (
     <span
-      className={`absolute mix-blend-normal will-change-[filter] rounded-[100%] blur-[32px] bg-glow-conic ${className}`}
+      className={`absolute mix-blend-normal will-change-[filter] rounded-[100%] blur-[32px] ${className}`}
     />
   );
 }
