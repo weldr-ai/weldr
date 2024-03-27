@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }): JSX.Element {
   return (
-    <html lang="en">
+    <html className="dark" lang="en">
       <body className={poppins.className}>
         <ThemeProvider
           attribute="class"
