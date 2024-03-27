@@ -1,68 +1,54 @@
 import Image from "next/image";
 
 function Gradient({
-  conic,
-  className,
-  small,
+  className
 }: {
-  small?: boolean;
-  conic?: boolean;
   className?: string;
 }): JSX.Element {
   return (
     <span
-      className={`absolute mix-blend-normal will-change-[filter] rounded-[100%] ${small ? "blur-[32px]" : "blur-[75px]"
-        } ${conic ? "bg-glow-conic" : ""} ${className}`}
+      className={`absolute mix-blend-normal will-change-[filter] rounded-[100%] blur-[32px] bg-glow-conic ${className}`}
     />
   );
 }
 
 export default function Page(): JSX.Element {
   return (
-    <main className="flex flex-col items-center justify-between min-h-screen p-24">
-      <div className="relative flex place-items-center ">
-        <div className="font-sans w-auto pb-16 pt-[48px] md:pb-24 lg:pb-32 md:pt-16 lg:pt-20 flex justify-between gap-8 items-center flex-col relative z-0">
+    <main className="bg-zinc-950 flex flex-col items-center justify-center h-screen">
+      <div className="relative flex place-items-center">
+        <div className="w-auto flex justify-center gap-8 items-center flex-col relative z-0">
           <div className="z-50 flex items-center justify-center w-full">
-            <div className="absolute min-w-[614px] min-h-[614px]">
+            <div className="absolute md:min-w-[512px] md:min-h-[512px]">
               <Image
                 alt="Integra"
-                height={614}
+                height={512}
                 src="circles.svg"
-                width={614}
+                width={512}
               />
             </div>
             <div className="absolute z-50 flex items-center justify-center w-64 h-64">
-              <Gradient
-                className="opacity-90 w-[120px] h-[120px]"
-                conic
-                small
-              />
+              <Gradient className="opacity-90 w-[128px] h-[128px]" />
             </div>
-
-            <div className="w-[120px] h-[120px] z-50">
+            <div className="w-[128px] h-[128px] z-50">
               <Image
                 alt=""
-                height={120}
+                height={128}
                 priority
                 src="integramind.svg"
-                width={120}
+                width={128}
               />
             </div>
           </div>
-          <Gradient
-            className="top-[-500px] opacity-[0.15] w-[1000px] h-[1000px]"
-            conic
-          />
-          <div className="z-50 flex flex-col items-center justify-center space-y-2 gap-5 px-6 text-center lg:gap-6">
-            <h1 className="text-6xl font-semibold">IntegraMind</h1>
-            <div className="flex text-2xl font-semibold items-center space-x-6">
+          <div className="text-white z-50 flex flex-col items-center justify-center text-center gap-4">
+            <h1 className="text-xl md:text-4xl font-semibold">IntegraMind</h1>
+            <div className="flex uppercase items-center gap-2 md:gap-4">
               <span>Automate</span>
               <span>•</span>
               <span>Optimize</span>
               <span>•</span>
               <span>Accelerate</span>
             </div>
-            <div className="text-lg">We are building!</div>
+            <p>We are building 🏗️</p>
           </div>
         </div>
       </div>
