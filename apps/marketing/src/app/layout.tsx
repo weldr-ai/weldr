@@ -1,9 +1,10 @@
-import "./globals.css";
-import "@repo/ui/styles.css";
+import "@repo/ui/globals.css";
+import "./styles.css"
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { ThemeProvider } from "@repo/ui/components/theme-provider"
 
 const poppins = Poppins({ weight: "400", subsets: ["latin"] });
 
@@ -20,9 +21,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={poppins.className}>
-        {children}
-        <Analytics />
-        <SpeedInsights />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Analytics />
+          <SpeedInsights />
+        </ThemeProvider>
       </body>
     </html>
   );

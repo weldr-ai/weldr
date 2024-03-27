@@ -18,7 +18,11 @@
     "preserveWatchOutput": true,
     "skipLibCheck": true,
     "strict": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../../packages/ui/src/*"]
+    }
   },
   "exclude": ["node_modules"]
 }
