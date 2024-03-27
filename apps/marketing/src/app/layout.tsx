@@ -1,16 +1,18 @@
 import "@repo/ui/globals.css";
-import "./styles.css"
+import "./styles.css";
+
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-import { Analytics } from "@vercel/analytics/react"
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import { ThemeProvider } from "@repo/ui/components/theme-provider"
+import { ThemeProvider } from "@repo/ui/components/theme-provider";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const poppins = Poppins({ weight: "400", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "IntegraMind",
-  description: "Build LLM-powered AI agents in minutes for seamless workflow automation!",
+  description:
+    "Build LLM-powered AI agents in minutes for seamless workflow automation!",
 };
 
 export default function RootLayout({
