@@ -4,18 +4,32 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
+    "lint:staged": "lint-staged",
     "type-check": "turbo type-check",
+    "format": "prettier --write \"**/*.{js,cjs,mjs,jsx,ts,tsx,md,mdx,json}\"",
     "clean": "turbo clean",
-    "ui:add": "pnpm --filter @repo/ui ui:add",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "commit": "git-cz",
+    "ui:add": "pnpm --filter @repo/ui ui:add"
+  },
+  "config": {
+    "commitizen": {
+      "path": "@commitlint/cz-commitlint"
+    }
   },
   "devDependencies": {
+    "@commitlint/cli": "18",
+    "@commitlint/config-conventional": "18",
+    "@commitlint/cz-commitlint": "18",
+    "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
+    "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "eslint": "^8.57.0",
-    "turbo": "latest",
-    "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
+    "husky": "^9.0.11",
+    "inquirer": "8",
+    "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
-    "prettier-plugin-tailwindcss": "^0.5.12"
+    "prettier-plugin-tailwindcss": "^0.5.12",
+    "turbo": "latest"
   },
   "packageManager": "pnpm@8.9.0",
   "engines": {
