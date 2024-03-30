@@ -18,6 +18,7 @@ module.exports = {
     "@vercel/style-guide/eslint/react",
     "eslint-config-prettier",
   ].map(require.resolve),
+  plugins: ["prettier"],
   parserOptions: {
     project,
   },
@@ -37,9 +38,21 @@ module.exports = {
   ignorePatterns: ["node_modules/", "dist/", ".eslintrc.js", "**/*.css"],
   // add rules configurations here
   rules: {
-    "import/no-default-export": "off",
+    "prettier/prettier": "error",
+    "@typescript-eslint/no-unused-vars": [
+      "warn", // or "error"
+      {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+      },
+    ],
   },
   overrides: [
+    {
+      files: ["*.ts", "*.tsx"],
+      parser: "@typescript-eslint/parser",
+    },
     {
       files: ["*.config.js"],
       env: {

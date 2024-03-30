@@ -18,6 +18,7 @@ module.exports = {
     "eslint-config-turbo",
     "eslint-config-prettier",
   ].map(require.resolve),
+  plugins: ["prettier"],
   parserOptions: {
     project,
   },
@@ -34,6 +35,23 @@ module.exports = {
         extensions: [".mjs", ".js", ".jsx", ".ts", ".tsx"],
       },
     },
+  },
+  overrides: [
+    {
+      files: ["*.ts", "*.tsx"],
+      parser: "@typescript-eslint/parser",
+    },
+  ],
+  rules: {
+    "prettier/prettier": "error",
+    "@typescript-eslint/no-unused-vars": [
+      "warn", // or "error"
+      {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+      },
+    ],
   },
   ignorePatterns: ["node_modules/", "dist/"],
 };
