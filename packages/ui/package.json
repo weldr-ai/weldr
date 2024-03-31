@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tailwindcss -i ./src/globals.css -o ./dist/index.css",
     "dev": "tailwindcss -i ./src/globals.css -o ./dist/index.css --watch",
-    "lint": "eslint src/",
+    "lint": "eslint . --max-warnings 0",
     "type-check": "tsc --noEmit",
     "ui:add": "pnpm dlx shadcn-ui@latest add"
   },
@@ -18,8 +18,11 @@
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
+    "@types/eslint": "^8.56.6",
     "@types/react": "^18.2.61",
+    "@types/react-dom": "^18.2.19",
     "autoprefixer": "^10.4.18",
+    "eslint": "^8.57.0",
     "postcss": "^8.4.35",
     "react": "^18.2.0",
     "tailwindcss": "^3.4.1",
@@ -64,6 +67,7 @@
     "lucide-react": "^0.363.0",
     "next-themes": "^0.3.0",
     "react-day-picker": "^8.10.0",
+    "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.2",
     "react-resizable-panels": "^2.0.16",
     "sonner": "^1.4.41",

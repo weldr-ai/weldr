@@ -1,5 +1,6 @@
 module.exports = {
-  extends: ["@repo/eslint-config/react.js"],
+  root: true,
+  extends: ["@repo/eslint-config/react-internal.js"],
   rules: {
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-shadow": "off",
@@ -11,5 +12,6 @@ module.exports = {
     "@typescript-eslint/no-unnecessary-condition": "off",
     "jsx-a11y/anchor-has-content": "off",
     "func-names": "off",
+    "no-undef": "off",
   },
 };

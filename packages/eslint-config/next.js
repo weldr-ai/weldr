@@ -13,15 +13,16 @@ const project = resolve(process.cwd(), "tsconfig.json");
 
 module.exports = {
   extends: [
-    "@vercel/style-guide/eslint/node",
-    "@vercel/style-guide/eslint/typescript",
-    "@vercel/style-guide/eslint/browser",
-    "@vercel/style-guide/eslint/react",
-    "@vercel/style-guide/eslint/next",
-    "eslint-config-turbo",
-    "eslint-config-prettier",
-  ].map(require.resolve),
-  plugins: ["prettier"],
+    require.resolve("@vercel/style-guide/eslint/node"),
+    require.resolve("@vercel/style-guide/eslint/browser"),
+    require.resolve("@vercel/style-guide/eslint/typescript"),
+    require.resolve("@vercel/style-guide/eslint/jest"),
+    require.resolve("@vercel/style-guide/eslint/playwright-test"),
+    require.resolve("@vercel/style-guide/eslint/react"),
+    require.resolve("@vercel/style-guide/eslint/next"),
+    "turbo",
+    "plugin:tailwindcss/recommended",
+  ],
   parserOptions: {
     project,
   },
@@ -42,19 +43,12 @@ module.exports = {
   ignorePatterns: ["node_modules/", "dist/"],
   // add rules configurations here
   rules: {
-    "prettier/prettier": "error",
-    "@typescript-eslint/no-unused-vars": [
-      "warn", // or "error"
-      {
-        argsIgnorePattern: "^_",
-        varsIgnorePattern: "^_",
-        caughtErrorsIgnorePattern: "^_",
-      },
-    ],
+    "import/no-default-export": "off",
+    "tailwindcss/no-custom-classname": "off",
   },
   overrides: [
     {
-      files: ["*.ts", "*.tsx"],
+      files: ["*.js", "*.jsx", "*.ts", "*.tsx"],
       parser: "@typescript-eslint/parser",
     },
   ],
