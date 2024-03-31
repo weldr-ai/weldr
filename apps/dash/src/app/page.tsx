@@ -17,10 +17,10 @@ export default function Page(): JSX.Element {
             <div className="absolute md:min-h-[512px] md:min-w-[512px]">
               <Image alt="Integra" height={512} src="circles.svg" width={512} />
             </div>
-            <div className="absolute z-50 flex h-64 w-64 items-center justify-center">
-              <Gradient className="h-[128px] w-[128px] opacity-90" />
+            <div className="absolute z-50 flex size-64 items-center justify-center">
+              <Gradient className="size-[128px] opacity-90" />
             </div>
-            <div className="z-50 h-[128px] w-[128px]">
+            <div className="z-50 size-[128px]">
               <Image
                 alt=""
                 height={128}

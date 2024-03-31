@@ -13,12 +13,12 @@ const project = resolve(process.cwd(), "tsconfig.json");
 
 module.exports = {
   extends: [
-    "@vercel/style-guide/eslint/browser",
-    "@vercel/style-guide/eslint/typescript",
-    "@vercel/style-guide/eslint/react",
-    "eslint-config-prettier",
-  ].map(require.resolve),
-  plugins: ["prettier"],
+    require.resolve("@vercel/style-guide/eslint/browser"),
+    require.resolve("@vercel/style-guide/eslint/react"),
+    require.resolve("@vercel/style-guide/eslint/typescript"),
+    "turbo",
+    "plugin:tailwindcss/recommended",
+  ],
   parserOptions: {
     project,
   },
@@ -38,26 +38,13 @@ module.exports = {
   ignorePatterns: ["node_modules/", "dist/", ".eslintrc.js", "**/*.css"],
   // add rules configurations here
   rules: {
-    "prettier/prettier": "error",
-    "@typescript-eslint/no-unused-vars": [
-      "warn", // or "error"
-      {
-        argsIgnorePattern: "^_",
-        varsIgnorePattern: "^_",
-        caughtErrorsIgnorePattern: "^_",
-      },
-    ],
+    "import/no-default-export": "off",
+    "tailwindcss/no-custom-classname": "off",
   },
   overrides: [
     {
-      files: ["*.ts", "*.tsx"],
+      files: ["*.js", "*.jsx", "*.ts", "*.tsx"],
       parser: "@typescript-eslint/parser",
-    },
-    {
-      files: ["*.config.js"],
-      env: {
-        node: true,
-      },
     },
   ],
 };
