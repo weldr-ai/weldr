@@ -3,9 +3,12 @@ import "./styles.css";
 
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import { cn } from "@repo/ui/lib/utils";
 import { ThemeProvider } from "@repo/ui/theme-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+
+import { Navbar } from "../components/navbar";
 
 const poppins = Poppins({ weight: "400", subsets: ["latin"] });
 
@@ -22,13 +25,18 @@ export default function RootLayout({
 }): JSX.Element {
   return (
     <html className="dark" lang="en">
-      <body className={poppins.className}>
+      <body
+        className={cn("flex min-h-screen w-full flex-col", poppins.className)}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           disableTransitionOnChange
           enableSystem
         >
+          <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+            <Navbar />
+          </header>
           {children}
           <Analytics />
           <SpeedInsights />
