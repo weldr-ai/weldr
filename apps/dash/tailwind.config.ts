@@ -5,7 +5,7 @@ import tailwindConfig from "@repo/ui/tailwind-config";
 import type { Config } from "tailwindcss";
 
 const config: Pick<Config, "content" | "presets" | "theme"> = {
-  content: ["./src/app/**/*.tsx"],
+  content: ["./src/**/*.tsx"],
   presets: [tailwindConfig],
   theme: {
     extend: {

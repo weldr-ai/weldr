@@ -2,7 +2,6 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Next.js",
   "extends": "./base.json",
-  "jsx": "react",
   "compilerOptions": {
     "plugins": [{ "name": "next" }],
     "allowJs": true,
@@ -16,7 +15,7 @@
     "strict": true,
     "target": "es5",
     "paths": {
-      "@/*": ["../../packages/ui/src/*"]
+      "@ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": ["src", "next-env.d.ts"],
