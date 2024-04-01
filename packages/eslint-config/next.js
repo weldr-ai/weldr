@@ -23,6 +23,7 @@ module.exports = {
     "turbo",
     "plugin:tailwindcss/recommended",
   ],
+  plugins: ["tailwindcss"],
   parserOptions: {
     project,
   },
@@ -39,16 +40,24 @@ module.exports = {
         extensions: [".mjs", ".js", ".jsx", ".ts", ".tsx"],
       },
     },
+    tailwindcss: {
+      callees: ["cn"],
+      config: "tailwind.config.ts",
+    },
+    next: {
+      rootDir: true,
+    },
   },
   ignorePatterns: ["node_modules/", "dist/"],
   // add rules configurations here
   rules: {
     "import/no-default-export": "off",
     "tailwindcss/no-custom-classname": "off",
+    "tailwindcss/classnames-order": "error",
   },
   overrides: [
     {
-      files: ["*.js", "*.jsx", "*.ts", "*.tsx"],
+      files: ["*.ts", "*.tsx"],
       parser: "@typescript-eslint/parser",
     },
   ],
