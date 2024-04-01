@@ -3,7 +3,7 @@ import "./styles.css";
 
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-import { ThemeProvider } from "@repo/ui/components/theme-provider";
+import { ThemeProvider } from "@repo/ui/theme-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
