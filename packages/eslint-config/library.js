@@ -37,6 +37,7 @@ module.exports = {
   },
   ignorePatterns: ["node_modules/", "dist/"],
   rules: {
+    "import/order": "off",
     "import/no-default-export": "off",
   },
   overrides: [

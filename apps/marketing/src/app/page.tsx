@@ -3,7 +3,7 @@ import Image from "next/image";
 function Gradient({ className }: { className?: string }): JSX.Element {
   return (
     <span
-      className={`bg-glow-conic absolute rounded-[100%] mix-blend-normal blur-[32px] will-change-[filter] ${className}`}
+      className={`absolute rounded-[100%] bg-glow-conic mix-blend-normal blur-[32px] will-change-[filter] ${className}`}
     />
   );
 }
@@ -33,9 +33,9 @@ export default function Page(): JSX.Element {
           <div className="z-50 flex flex-col items-center justify-center gap-4 text-center">
             <h1 className="text-xl font-semibold md:text-4xl">IntegraMind</h1>
             <div className="flex items-center gap-2 uppercase md:gap-4">
-              <span>Automate</span>
+              <span>Build</span>
               <span>•</span>
-              <span>Optimize</span>
+              <span>Automate</span>
               <span>•</span>
               <span>Accelerate</span>
             </div>
