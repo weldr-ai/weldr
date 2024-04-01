@@ -2,6 +2,7 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Next.js",
   "extends": "./base.json",
+  "jsx": "react",
   "compilerOptions": {
     "plugins": [{ "name": "next" }],
     "allowJs": true,

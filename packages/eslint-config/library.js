@@ -38,12 +38,17 @@ module.exports = {
   ignorePatterns: ["node_modules/", "dist/"],
   rules: {
     "import/no-default-export": "off",
-    "tailwindcss/no-custom-classname": "off",
   },
   overrides: [
     {
       files: ["*.js", "*.ts"],
       parser: "@typescript-eslint/parser",
+    },
+    {
+      files: ["*.config.js"],
+      env: {
+        node: true,
+      },
     },
   ],
 };
