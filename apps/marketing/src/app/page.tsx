@@ -15,14 +15,19 @@ export default function Page(): JSX.Element {
         <div className="relative z-0 flex w-auto flex-col items-center justify-center gap-8">
           <div className="z-50 flex w-full items-center justify-center">
             <div className="absolute md:min-h-[512px] md:min-w-[512px]">
-              <Image alt="Integra" height={512} src="circles.svg" width={512} />
+              <Image
+                alt="IntegraMind"
+                height={512}
+                src="circles.svg"
+                width={512}
+              />
             </div>
             <div className="absolute z-50 flex size-64 items-center justify-center">
               <Gradient className="size-[128px] opacity-90" />
             </div>
             <div className="z-50 size-[128px]">
               <Image
-                alt=""
+                alt="IntegraMind"
                 height={128}
                 priority
                 src="integramind.svg"

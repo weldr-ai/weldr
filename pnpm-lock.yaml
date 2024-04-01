@@ -59,6 +59,9 @@ importers:
       '@vercel/speed-insights':
         specifier: ^1.0.10
         version: 1.0.10(next@14.1.1)(react@18.2.0)
+      lucide-react:
+        specifier: ^0.363.0
+        version: 0.363.0(react@18.2.0)
       next:
         specifier: ^14.1.1
         version: 14.1.1(@babel/core@7.24.3)(react-dom@18.2.0)(react@18.2.0)
