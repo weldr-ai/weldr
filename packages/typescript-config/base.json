@@ -19,10 +19,7 @@
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["../../packages/ui/src/*"]
-    }
+    "baseUrl": "."
   },
   "exclude": ["node_modules"]
 }

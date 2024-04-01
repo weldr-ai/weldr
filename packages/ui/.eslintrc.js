@@ -1,6 +1,7 @@
 module.exports = {
   root: true,
   extends: ["@repo/eslint-config/react-internal.js"],
+  ignorePatterns: ["tailwind.config.ts", "postcss.config.js"],
   rules: {
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-shadow": "off",

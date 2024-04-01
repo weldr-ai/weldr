@@ -2,16 +2,12 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "React Library",
   "extends": "./base.json",
-  "jsx": "react",
   "compilerOptions": {
     "lib": ["ES2015", "DOM"],
     "module": "ESNext",
     "target": "ES6",
     "jsx": "react-jsx",
     "noEmit": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["../../packages/ui/src/*"]
-    }
+    "baseUrl": "."
   }
 }
