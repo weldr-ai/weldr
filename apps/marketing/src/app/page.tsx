@@ -30,7 +30,7 @@ export default function Page(): JSX.Element {
                 alt="IntegraMind"
                 height={128}
                 priority
-                src="integramind.svg"
+                src="logo.svg"
                 width={128}
               />
             </div>
