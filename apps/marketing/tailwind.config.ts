@@ -11,7 +11,7 @@ const config: Pick<Config, "content" | "presets" | "theme"> = {
     extend: {
       backgroundImage: {
         "glow-conic":
-          "conic-gradient(from 180deg at 50% 50%, #2a8af6 0deg, #a853ba 180deg, #e92a67 360deg)",
+          "conic-gradient(from 180deg at 50% 50%, #3E63DD 0deg, #3E63DD 180deg, #3E63DD 360deg)",
       },
     },
   },
