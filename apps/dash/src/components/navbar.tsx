@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@repo/ui/components/button";
@@ -6,12 +8,19 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
 import { Input } from "@repo/ui/components/input";
 import { Sheet, SheetContent, SheetTrigger } from "@repo/ui/components/sheet";
 import { CircleUser, Menu, Search } from "lucide-react";
+import { useTheme } from "next-themes";
 
 interface Link {
   id: string;
@@ -19,17 +28,13 @@ interface Link {
   path: string;
 }
 
-const links: Link[] = [
-  {
-    id: "dashboard",
-    title: "Dashboard",
-    path: "/",
-  },
-];
+const links: Link[] = [];
 
 export function Navbar(): JSX.Element {
+  const { theme, setTheme } = useTheme();
+
   return (
-    <>
+    <header className="sticky top-0 flex h-16 items-center justify-between gap-4 border-b px-4 md:px-6">
       <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
         <Link
           className="flex items-center gap-2 text-lg font-semibold md:text-base"
@@ -37,10 +42,10 @@ export function Navbar(): JSX.Element {
         >
           <Image
             alt="IntegraMind"
-            height={60}
+            height={40}
             priority
-            src="integramind-transparent.svg"
-            width={60}
+            src="logo.svg"
+            width={40}
           />
           <span className="sr-only">IntegraMind</span>
         </Link>
@@ -69,10 +74,10 @@ export function Navbar(): JSX.Element {
             >
               <Image
                 alt="IntegraMind"
-                height={60}
+                height={40}
                 priority
-                src="integramind-transparent.svg"
-                width={60}
+                src="logo.svg"
+                width={40}
               />
               <span className="sr-only">IntegraMind</span>
             </Link>
@@ -101,7 +106,7 @@ export function Navbar(): JSX.Element {
         </form>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="rounded-full hover:bg-muted" size="icon">
+            <Button className="rounded-full" size="icon" variant="ghost">
               <CircleUser className="size-5" />
               <span className="sr-only">Toggle user menu</span>
             </Button>
@@ -109,6 +114,27 @@ export function Navbar(): JSX.Element {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>Appearance</DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    onValueChange={setTheme}
+                    value={theme}
+                  >
+                    <DropdownMenuRadioItem value="light">
+                      Light
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="dark">
+                      Dark
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="system">
+                      System
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuItem>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -116,6 +142,6 @@ export function Navbar(): JSX.Element {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </>
+    </header>
   );
 }
