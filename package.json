@@ -29,7 +29,7 @@
     "inquirer": "^8.2.6",
     "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
-    "turbo": "latest"
+    "turbo": "^1.13.2"
   },
   "packageManager": "pnpm@8.9.0",
   "engines": {
