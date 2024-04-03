@@ -23,7 +23,7 @@ module.exports = {
     "turbo",
     "plugin:tailwindcss/recommended",
   ],
-  plugins: ["tailwindcss"],
+  plugins: ["only-warn", "tailwindcss"],
   parserOptions: {
     project,
   },

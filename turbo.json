@@ -23,6 +23,9 @@
         ".env"
       ]
     },
+    "test": {
+      "dotEnv": [".env.test.local", ".env.test", ".env"]
+    },
     "lint": {},
     "type-check": {},
     "clean": {
