@@ -19,8 +19,8 @@
     --primary: 226.04 70.04% 55.49%;
     --primary-foreground: 240 0% 100%;
 
-    --secondary: 166.8 70.42% 72.16%;
-    --secondary-foreground: 170.67 50.56% 17.45%;
+    --secondary: 81.15 80.35% 66.08%;
+    --secondary-foreground: 75 39.13% 18.04%;
 
     --accent: 240 11.11% 94.71%;
     --accent-foreground: 210 12.5% 12.55%;
@@ -52,7 +52,7 @@
     --primary-foreground: 223.9 0% 100%;
 
     --secondary: 81.15 80.35% 66.08%;
-    --secondary-foreground: 93.33 28.13% 12.55%;
+    --secondary-foreground: 77.14 22.58% 6.08%;
 
     --accent: 225 5.71% 13.73%;
     --accent-foreground: 220 9.09% 93.53%;
@@ -65,7 +65,6 @@
     --ring: 226.04 70.04% 55.49%;
   }
 }
-
 
 @layer base {
   * {
