@@ -29,6 +29,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^7.4.0
         version: 7.4.0(eslint@8.57.0)(typescript@5.4.3)
+      commitizen:
+        specifier: ^4.3.0
+        version: 4.3.0(@types/node@20.12.2)(typescript@5.4.3)
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
@@ -163,6 +166,19 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
+
+  packages/auth-functions:
+    dependencies:
+      '@repo/ui':
+        specifier: workspace:*
+        version: link:../ui
+    devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
 
   packages/eslint-config:
     devDependencies:
