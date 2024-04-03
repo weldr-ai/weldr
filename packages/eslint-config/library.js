@@ -18,6 +18,7 @@ module.exports = {
     require.resolve("@vercel/style-guide/eslint/jest"),
     "turbo",
   ],
+  plugins: ["only-warn"],
   parserOptions: {
     project,
   },
