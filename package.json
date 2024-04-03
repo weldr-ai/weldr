@@ -23,7 +23,7 @@
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@typescript-eslint/parser": "^7.4.0",
+    "@typescript-eslint/parser": "^7.5.0",
     "commitizen": "^4.3.0",
     "eslint": "^8.57.0",
     "husky": "^9.0.11",
