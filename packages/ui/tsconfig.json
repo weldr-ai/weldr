@@ -1,12 +1,10 @@
 {
-  "extends": "@repo/typescript-config/react-library.json",
+  "extends": "@integramind/tsconfig/internal-package.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@ui/*": ["./src/*"]
-    },
-    "outDir": "dist"
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "jsx": "preserve",
+    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"
   },
-  "include": ["src"],
-  "exclude": ["dist", "build", "node_modules"]
+  "include": ["*.ts", "src"],
+  "exclude": ["node_modules"]
 }
