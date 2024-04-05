@@ -1,26 +1,16 @@
-name: PR Conventional Commit Validation
+name: Validate PR title
 
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
-    branches: ["*"]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
-# Leverage Vercel Remote Caching with Turbo to speed up your builds
-# @link https://turborepo.org/docs/core-concepts/remote-caching#remote-caching-on-vercel-builds
-env:
-  FORCE_COLOR: 3
-  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+permissions:
+  pull-requests: read
 
 jobs:
-  validate-pr-title:
+  main:
     runs-on: ubuntu-latest
     steps:
-      - name: PR Conventional Commit Validation
-        uses: ytanikin/PRConventionalCommits@1.1.0
-        with:
-          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
