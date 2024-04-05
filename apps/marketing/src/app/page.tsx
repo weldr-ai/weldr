@@ -3,7 +3,7 @@ import Image from "next/image";
 function Gradient({ className }: { className?: string }): JSX.Element {
   return (
     <span
-      className={`absolute rounded-[100%] bg-glow-conic mix-blend-normal blur-[32px] will-change-[filter] ${className}`}
+      className={`bg-glow-conic absolute rounded-[100%] mix-blend-normal blur-[32px] will-change-[filter] ${className}`}
     />
   );
 }
