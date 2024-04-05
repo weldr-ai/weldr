@@ -20,7 +20,7 @@
     "lint:ws": "pnpm dlx sherif@latest",
     "lint:staged": "lint-staged",
     "postinstall": "pnpm lint:ws",
-    "type-check": "turbo type-check"
+    "typecheck": "turbo typecheck"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.6.1",
