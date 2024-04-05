@@ -1,12 +1,10 @@
-// tailwind config is required for editor support
-
-import tailwindConfig from "@repo/ui/tailwind-config";
-
 import type { Config } from "tailwindcss";
 
+import baseConfig from "@integramind/tailwind-config";
+
 const config: Pick<Config, "content" | "presets" | "theme"> = {
-  content: ["./src/**/*.tsx"],
-  presets: [tailwindConfig],
+  content: ["./src/**/*.tsx", "../../packages/ui/**/*.{ts,tsx}"],
+  presets: [baseConfig],
   theme: {
     extend: {
       backgroundImage: {
