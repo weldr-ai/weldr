@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "add": "pnpm dlx shadcn-ui add",
+    "add-component": "pnpm dlx shadcn-ui add",
     "clean": "rm -rf .turbo node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint ./src/*.tsx ./src/*.ts",

@@ -4,10 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./src/index.ts"
-    }
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
   },
   "scripts": {
     "build": "tsc",
@@ -15,13 +13,21 @@
     "clean": "rm -rf .turbo node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint .",
+    "check": "pnpm with-env drizzle-kit check:pg --config src/config.ts",
+    "generate": "pnpm with-env drizzle-kit generate:pg --config src/config.ts",
+    "migrate": "pnpm with-env tsx src/migrate.ts",
+    "migrate:drop": "pnpm with-env drizzle-kit drop --config src/config.ts",
+    "pull": "pnpm with-env drizzle-kit introspect:pg --config src/config.ts",
     "push": "pnpm with-env drizzle-kit push:pg --config src/config.ts",
     "studio": "pnpm with-env drizzle-kit studio --config src/config.ts",
+    "up": "pnpm with-env drizzle-kit up:pg --config src/config.ts",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "drizzle-orm": "^0.30.7",
+    "@paralleldrive/cuid2": "^2.2.2",
+    "drizzle-orm": "^0.30.10",
+    "next-auth": "5.0.0-beta.17",
     "postgres": "^3.4.4"
   },
   "devDependencies": {

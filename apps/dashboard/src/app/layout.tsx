@@ -1,16 +1,18 @@
 import "@integramind/ui/globals.css";
 
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Poppins as FontSans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { ThemeProvider } from "@integramind/ui/theme-provider";
 import { cn } from "@integramind/ui/utils";
 
-import { Navbar } from "../components/navbar";
-
-const poppins = Poppins({ weight: "400", subsets: ["latin"] });
+const fontSans = FontSans({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "IntegraMind",
@@ -26,7 +28,10 @@ export default function RootLayout({
   return (
     <html className="dark" lang="en">
       <body
-        className={cn("flex min-h-screen w-full flex-col", poppins.className)}
+        className={cn(
+          "flex min-h-screen w-full flex-col bg-background font-sans antialiased",
+          fontSans.variable,
+        )}
       >
         <ThemeProvider
           attribute="class"
@@ -34,7 +39,6 @@ export default function RootLayout({
           disableTransitionOnChange
           enableSystem
         >
-          <Navbar />
           {children}
           <Analytics />
           <SpeedInsights />
