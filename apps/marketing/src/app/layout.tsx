@@ -1,11 +1,17 @@
 import "@integramind/ui/globals.css";
 
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Poppins as FontSans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-const poppins = Poppins({ weight: "400", subsets: ["latin"] });
+import { cn } from "@integramind/ui/utils";
+
+const fontSans = FontSans({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "IntegraMind",
@@ -20,7 +26,12 @@ export default function RootLayout({
 }): JSX.Element {
   return (
     <html className="dark" lang="en">
-      <body className={poppins.className}>
+      <body
+        className={cn(
+          "min-h-screen bg-background font-sans antialiased",
+          fontSans.variable,
+        )}
+      >
         {children}
         <Analytics />
         <SpeedInsights />
