@@ -1,33 +1,31 @@
 {
-  "name": "@integramind/tailwind-config",
+  "name": "@integramind/auth",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./index.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "clean": "rm -rf .turbo node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint ./src/*.ts",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@radix-ui/colors": "^3.0.0",
-    "@tailwindcss/aspect-ratio": "^0.4.2",
-    "@tailwindcss/forms": "^0.5.7",
-    "@tailwindcss/typography": "^0.5.12",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.1",
-    "tailwindcss-animate": "^1.0.7"
+    "@auth/drizzle-adapter": "^1.0.1",
+    "@integramind/db": "workspace:*",
+    "@t3-oss/env-core": "^0.10.1",
+    "next-auth": "5.0.0-beta.17",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@integramind/eslint-config": "workspace:*",
     "@integramind/prettier-config": "workspace:*",
-    "@integramind/tsconfig": "workspace:*",
-    "eslint": "^8.57.0",
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.3"
+    "@integramind/tsconfig": "workspace:*"
+  },
+  "peerDependencies": {
+    "next": "^14.2.3"
   },
   "eslintConfig": {
     "root": true,
