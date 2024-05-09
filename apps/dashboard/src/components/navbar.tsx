@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Menu } from "lucide-react";
+import { useTheme } from "next-themes";
 
 import { Button } from "@integramind/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@integramind/ui/sheet";
@@ -14,6 +17,8 @@ interface Link {
 const links: Link[] = [];
 
 export function Navbar(): JSX.Element {
+  const { resolvedTheme } = useTheme();
+
   return (
     <header className="sticky top-0 flex h-14 items-center gap-4 border-b pr-4 md:pr-6">
       <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
@@ -21,13 +26,23 @@ export function Navbar(): JSX.Element {
           className="flex size-14 items-center justify-center gap-2 border-r text-lg font-semibold md:text-base"
           href="#"
         >
-          <Image
-            alt="IntegraMind"
-            height={40}
-            priority
-            src="logo.svg"
-            width={40}
-          />
+          {resolvedTheme === "light" ? (
+            <Image
+              alt="IntegraMind Logo"
+              height={40}
+              priority
+              src="logo.svg"
+              width={40}
+            />
+          ) : (
+            <Image
+              alt="IntegraMind Logo"
+              height={40}
+              priority
+              src="logo-dark.svg"
+              width={40}
+            />
+          )}
           <span className="sr-only">IntegraMind</span>
         </Link>
         {links.map((link) => (

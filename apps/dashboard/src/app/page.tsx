@@ -2,6 +2,7 @@
 
 // import { auth } from "@integramind/auth";
 
+import { FlowBuilder } from "~/components/flow-builder";
 import { Navbar } from "~/components/navbar";
 import { Sidebar } from "~/components/sidebar";
 
@@ -14,7 +15,9 @@ export default async function Dashboard(): Promise<JSX.Element> {
       <Navbar />
       <div className="flex w-full flex-row">
         <Sidebar />
-        <main className="flex size-full flex-col gap-4 p-4 md:gap-8 md:p-8"></main>
+        <main className="flex w-full">
+          <FlowBuilder />
+        </main>
       </div>
     </div>
   );

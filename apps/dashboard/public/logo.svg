@@ -1,21 +1,13 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-<circle cx="510.692" cy="233.131" r="41.1311" stroke="white" stroke-width="24.68"/>
-<circle cx="510.692" cy="790.869" r="41.1311" stroke="white" stroke-width="24.68"/>
-<rect x="499.174" y="274.263" width="24.6787" height="475.476" fill="white"/>
-<circle cx="668.752" cy="303.877" r="41.1311" stroke="white" stroke-width="24.68"/>
-<circle cx="668.752" cy="720.124" r="41.1311" stroke="white" stroke-width="24.68"/>
-<rect x="657.236" y="345.008" width="24.6787" height="65.8098" fill="white"/>
-<rect x="606.233" y="573.049" width="24.6787" height="82.2622" transform="rotate(-45 606.233 573.049)" fill="white"/>
-<rect x="657.236" y="613.183" width="24.6787" height="65.8098" fill="white"/>
-<rect x="606.233" y="450.304" width="24.6787" height="123.393" fill="white"/>
-<rect x="664.286" y="392.72" width="24.6787" height="82.2622" transform="rotate(45 664.286 392.72)" fill="white"/>
-<circle cx="41.1311" cy="41.1311" r="41.1311" transform="matrix(-1 0 0 1 395.521 262.747)" stroke="white" stroke-width="24.68"/>
-<circle cx="41.1311" cy="41.1311" r="41.1311" transform="matrix(-1 0 0 1 395.521 678.993)" stroke="white" stroke-width="24.68"/>
-<rect width="24.6787" height="65.8098" transform="matrix(-1 0 0 1 365.906 345.009)" fill="white"/>
-<rect width="24.6787" height="82.2622" transform="matrix(-0.707107 -0.707107 -0.707107 0.707107 416.91 573.05)" fill="white"/>
-<rect width="24.6787" height="65.8098" transform="matrix(-1 0 0 1 365.906 613.184)" fill="white"/>
-<rect width="24.6787" height="123.393" transform="matrix(-1 0 0 1 416.91 450.304)" fill="white"/>
-<rect width="24.6787" height="82.2622" transform="matrix(-0.707107 0.707107 0.707107 0.707107 358.859 392.72)" fill="white"/>
-<circle cx="750.898" cy="512.823" r="41.1311" stroke="white" stroke-width="24.68"/>
-<circle cx="272.131" cy="512.823" r="41.1311" stroke="white" stroke-width="24.68"/>
+<circle cx="512.582" cy="235.636" r="43.6364" stroke="#111113" stroke-width="25"/>
+<circle cx="512.582" cy="788.364" r="43.6364" stroke="#111113" stroke-width="25"/>
+<line x1="514.627" y1="744.728" x2="514.627" y2="279.273" stroke="#111113" stroke-width="25"/>
+<circle cx="672.582" cy="322.909" r="43.6364" stroke="#111113" stroke-width="25"/>
+<circle cx="672.582" cy="701.09" r="43.6364" stroke="#111113" stroke-width="25"/>
+<path d="M672.581 657.454V599.272L614.399 552.727V471.272L672.581 424.727L672.581 366.545" stroke="#111113" stroke-width="25"/>
+<circle cx="43.6364" cy="43.6364" r="43.6364" transform="matrix(-1 0 0 1 396.218 279.273)" stroke="#111113" stroke-width="25"/>
+<circle cx="43.6364" cy="43.6364" r="43.6364" transform="matrix(-1 0 0 1 396.218 657.455)" stroke="#111113" stroke-width="25"/>
+<path d="M352.582 657.455V599.273L410.764 552.727L410.764 471.273L352.582 424.727V366.546" stroke="#111113" stroke-width="25"/>
+<circle cx="43.6364" cy="43.6364" r="43.6364" transform="matrix(-1 0 0 1 279.272 467.782)" stroke="#111113" stroke-width="25"/>
+<circle cx="43.6364" cy="43.6364" r="43.6364" transform="matrix(-1 0 0 1 832 467.782)" stroke="#111113" stroke-width="25"/>
 </svg>
