@@ -1,3 +1,7 @@
 .react-flow__minimap {
-  @apply !bg-muted;
+  @apply bg-background;
+}
+
+.react-flow__attribution {
+  @apply hidden;
 }

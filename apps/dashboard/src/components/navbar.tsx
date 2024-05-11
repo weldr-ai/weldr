@@ -2,11 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { PlayCircle, Share } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@integramind/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@integramind/ui/sheet";
 
 interface Link {
   id: string;
@@ -14,14 +13,12 @@ interface Link {
   path: string;
 }
 
-const links: Link[] = [];
-
 export function Navbar(): JSX.Element {
   const { resolvedTheme } = useTheme();
 
   return (
     <header className="sticky top-0 flex h-14 items-center gap-4 border-b pr-4 md:pr-6">
-      <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
+      <nav className="flex w-full items-center justify-between text-sm">
         <Link
           className="flex size-14 items-center justify-center gap-2 border-r text-lg font-semibold md:text-base"
           href="#"
@@ -45,50 +42,24 @@ export function Navbar(): JSX.Element {
           )}
           <span className="sr-only">IntegraMind</span>
         </Link>
-        {links.map((link) => (
-          <Link
-            className="text-foreground transition-colors hover:text-foreground"
-            href={link.path}
-            key={link.id}
+        <div className="flex flex-row items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex min-w-20 max-w-min flex-row items-center justify-center gap-1 border border-success text-success hover:bg-success/10 hover:text-success"
           >
-            {link.title}
-          </Link>
-        ))}
-      </nav>
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button className="shrink-0 md:hidden" size="icon" variant="outline">
-            <Menu className="size-5" />
-            <span className="sr-only">Toggle navigation menu</span>
+            <PlayCircle className="size-3.5" />
+            Run
           </Button>
-        </SheetTrigger>
-        <SheetContent side="left">
-          <nav className="grid gap-6 text-lg font-medium">
-            <Link
-              className="flex items-center gap-2 text-lg font-semibold"
-              href="#"
-            >
-              <Image
-                alt="IntegraMind"
-                height={40}
-                priority
-                src="logo.svg"
-                width={40}
-              />
-              <span className="sr-only">IntegraMind</span>
-            </Link>
-            {links.map((link) => (
-              <Link
-                className="hover:text-foreground"
-                href={link.path}
-                key={link.id}
-              >
-                {link.title}
-              </Link>
-            ))}
-          </nav>
-        </SheetContent>
-      </Sheet>
+          <Button
+            size="sm"
+            className="flex min-w-20 max-w-min flex-row items-center justify-center gap-1"
+          >
+            <Share className="size-3.5" />
+            Deploy
+          </Button>
+        </div>
+      </nav>
     </header>
   );
 }

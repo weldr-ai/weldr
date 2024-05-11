@@ -3,8 +3,8 @@
 import "reactflow/dist/style.css";
 import "~/styles/flow-builder.css";
 
-import type { Connection, Edge } from "reactflow";
-import { useCallback } from "react";
+import type { Connection, Edge, Node, ReactFlowInstance } from "reactflow";
+import React, { useCallback, useState } from "react";
 import ReactFlow, {
   addEdge,
   Background,
@@ -14,45 +14,56 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 
-const initNodes = [
-  {
-    id: "1",
-    data: { name: "Jane Doe", job: "CEO", emoji: "😎" },
-    position: { x: 0, y: 50 },
-  },
-  {
-    id: "2",
-    data: { name: "Tyler Weary", job: "Designer", emoji: "🤓" },
+const initNodes: Node[] = [];
 
-    position: { x: -200, y: 200 },
-  },
-  {
-    id: "3",
-    data: { name: "Kristi Price", job: "Developer", emoji: "🤩" },
-    position: { x: 200, y: 200 },
-  },
-];
+const initEdges: Edge[] = [];
 
-const initEdges = [
-  {
-    id: "e1-2",
-    source: "1",
-    target: "2",
-  },
-  {
-    id: "e1-3",
-    source: "1",
-    target: "3",
-  },
-];
+let id = 0;
+const getId = () => `oracle_${id++}`;
 
 export function FlowBuilder() {
-  const [nodes, _, onNodesChange] = useNodesState(initNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
+  const [reactFlowInstance, setReactFlowInstance] =
+    useState<ReactFlowInstance | null>(null);
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges],
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+
+      const type = event.dataTransfer.getData("application/reactflow");
+
+      // check if the dropped element is valid
+      if (typeof type === "undefined" || !type) return;
+
+      if (reactFlowInstance === null) return;
+
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      const newNodeId = getId();
+      const newNode: Node = {
+        id: newNodeId,
+        type,
+        position,
+        data: { label: `${newNodeId}` },
+      };
+
+      setNodes((nodes) => nodes.concat(newNode));
+    },
+    [reactFlowInstance, setNodes],
   );
 
   return (
@@ -62,6 +73,9 @@ export function FlowBuilder() {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
+      onInit={setReactFlowInstance}
+      onDrop={onDrop}
+      onDragOver={onDragOver}
       fitView
     >
       <Background
