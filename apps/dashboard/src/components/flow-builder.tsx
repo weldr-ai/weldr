@@ -10,16 +10,23 @@ import ReactFlow, {
   Background,
   Controls,
   MiniMap,
+  ReactFlowProvider,
   useEdgesState,
   useNodesState,
 } from "reactflow";
+
+import { QueryResourceNode } from "~/components/query-resource-node";
 
 const initNodes: Node[] = [];
 
 const initEdges: Edge[] = [];
 
-let id = 0;
-const getId = () => `oracle_${id++}`;
+const nodeTypes = {
+  queryResourceNode: QueryResourceNode,
+};
+
+let id = 1;
+const getId = () => `query${id++}`;
 
 export function FlowBuilder() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
@@ -43,6 +50,8 @@ export function FlowBuilder() {
 
       const type = event.dataTransfer.getData("application/reactflow");
 
+      console.log(type);
+
       // check if the dropped element is valid
       if (typeof type === "undefined" || !type) return;
 
@@ -58,7 +67,7 @@ export function FlowBuilder() {
         id: newNodeId,
         type,
         position,
-        data: { label: `${newNodeId}` },
+        data: { id: `${newNodeId}` },
       };
 
       setNodes((nodes) => nodes.concat(newNode));
@@ -67,25 +76,29 @@ export function FlowBuilder() {
   );
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      onInit={setReactFlowInstance}
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-      fitView
-    >
-      <Background
-        className="bg-muted"
-        color="hsl(var(--muted-foreground))"
-        size={1}
-        gap={15}
-      />
-      <Controls />
-      <MiniMap />
-    </ReactFlow>
+    <ReactFlowProvider>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onInit={setReactFlowInstance}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        nodeTypes={nodeTypes}
+        maxZoom={1}
+        fitView
+      >
+        <Background
+          className="bg-background"
+          color="hsl(var(--muted-foreground))"
+          size={1}
+          gap={25}
+        />
+        <Controls />
+        <MiniMap />
+      </ReactFlow>
+    </ReactFlowProvider>
   );
 }

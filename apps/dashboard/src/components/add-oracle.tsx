@@ -17,7 +17,7 @@ export function AddOracle() {
       <div className="grid grid-cols-2 gap-2 p-4">
         <div
           className="flex h-28 flex-col items-center justify-center gap-3"
-          onDragStart={(event) => onDragStart(event, "query-resource-node")}
+          onDragStart={(event) => onDragStart(event, "queryResourceNode")}
           draggable
         >
           <div className="flex size-16 items-center justify-center rounded-lg bg-accent hover:scale-105 hover:cursor-grab">
@@ -30,7 +30,7 @@ export function AddOracle() {
         <div
           className="flex h-28 flex-col items-center justify-center gap-3"
           onDragStart={(event) =>
-            onDragStart(event, "logical-data-processing-node")
+            onDragStart(event, "logicalDataProcessingNode")
           }
           draggable
         >
@@ -43,7 +43,7 @@ export function AddOracle() {
         </div>
         <div
           className="flex h-28 flex-col items-center justify-center gap-3"
-          onDragStart={(event) => onDragStart(event, "ai-data-processing-node")}
+          onDragStart={(event) => onDragStart(event, "aiDataProcessingNode")}
           draggable
         >
           <div className="flex size-16 items-center justify-center rounded-lg bg-accent hover:scale-105 hover:cursor-grab">
@@ -58,7 +58,7 @@ export function AddOracle() {
       <div className="grid grid-cols-2 gap-2 p-4">
         <div
           className="flex h-28 flex-col items-center justify-center gap-3"
-          onDragStart={(event) => onDragStart(event, "logical-branch-node")}
+          onDragStart={(event) => onDragStart(event, "logicalBranchNode")}
           draggable
         >
           <div className="flex size-16 items-center justify-center rounded-lg bg-accent hover:scale-105 hover:cursor-grab">
@@ -70,7 +70,7 @@ export function AddOracle() {
         </div>
         <div
           className="flex h-28 flex-col items-center justify-center gap-3"
-          onDragStart={(event) => onDragStart(event, "semantic-branch-node")}
+          onDragStart={(event) => onDragStart(event, "semanticBranchNode")}
           draggable
         >
           <div className="flex size-16 items-center justify-center rounded-lg bg-accent hover:scale-105 hover:cursor-grab">
@@ -85,7 +85,7 @@ export function AddOracle() {
       <div className="grid grid-cols-2 gap-2 p-4">
         <div
           className="flex h-28 flex-col items-center justify-center gap-3"
-          onDragStart={(event) => onDragStart(event, "response-node")}
+          onDragStart={(event) => onDragStart(event, "responseNode")}
           draggable
         >
           <div className="flex size-16 items-center justify-center rounded-lg bg-accent hover:scale-105 hover:cursor-grab">
