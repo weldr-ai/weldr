@@ -87,6 +87,7 @@ export function FlowBuilder() {
         onDrop={onDrop}
         onDragOver={onDragOver}
         nodeTypes={nodeTypes}
+        panOnScroll
         maxZoom={1}
         fitView
       >

@@ -116,7 +116,7 @@ export function TextHighlighter({
   return (
     <Slate editor={editor} initialValue={value} onValueChange={onValueChange}>
       <Editable
-        className="min-h-[60px] w-full flex-1 rounded-md border border-input bg-transparent px-3 py-2 text-sm caret-foreground shadow-sm placeholder:text-muted-foreground focus:cursor-text focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        className="min-h-16 w-64 flex-1 rounded-md border border-input bg-transparent px-3 py-2 text-sm caret-foreground shadow-sm placeholder:text-muted-foreground focus:cursor-text focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         decorate={decorate}
         renderLeaf={renderLeaf}
         placeholder="Write a brief description of what this block should query a resource."
