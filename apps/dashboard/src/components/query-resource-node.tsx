@@ -15,7 +15,7 @@ import {
   Trash,
   X,
 } from "lucide-react";
-import { Handle, NodeResizer, Position } from "reactflow";
+import { Handle, NodeResizeControl, NodeResizer, Position } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
@@ -38,7 +38,8 @@ import {
   TableRow,
 } from "@integramind/ui/table";
 
-import { TextHighlighter } from "./TextHighlighter";
+import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
+import { TextHighlighter } from "~/components/text-highlighter";
 
 interface QueryResourceNodeProps extends NodeProps {
   data: {
@@ -98,6 +99,8 @@ export const QueryResourceNode = memo(
     const [showCardOutput, setShowCardOutput] = useState<boolean>(false);
     const [showOutput, setShowOutput] = useState<boolean>(true);
     const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+    const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
+      useState<boolean>(false);
 
     const handleContextMenu = (
       event: React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -108,8 +111,8 @@ export const QueryResourceNode = memo(
 
     return (
       <>
+        <NodeResizeControl />
         <NodeResizer
-          lineClassName="border-primary"
           handleClassName="border-none bg-transparent"
           minWidth={384}
           minHeight={140}
@@ -179,12 +182,19 @@ export const QueryResourceNode = memo(
                     <ExternalLink className="size-3 text-muted-foreground" />
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-xs text-destructive hover:text-destructive/90 focus:text-destructive/90">
+                  <DropdownMenuItem
+                    className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                    onClick={() => setIsDeleteAlertDialogOpen(true)}
+                  >
                     <Trash className="mr-3 size-4" />
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <DeleteAlertDialog
+                open={isDeleteAlertDialogOpen}
+                onOpenChange={setIsDeleteAlertDialogOpen}
+              />
             </div>
           </div>
 
