@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CircleUser, Database, PlusCircle } from "lucide-react";
+import { CircleUser, Database, PlusCircle, Workflow } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@integramind/ui/button";
@@ -26,13 +26,17 @@ import { AddOracle } from "./add-oracle";
 interface TabOpen {
   add: boolean;
   oracles: boolean;
-  database: boolean;
+  endpoints: boolean;
+  workflows: boolean;
+  dataResources: boolean;
 }
 
 const initialState: TabOpen = {
   add: true,
   oracles: false,
-  database: false,
+  endpoints: false,
+  workflows: false,
+  dataResources: false,
 };
 
 export function Sidebar() {
@@ -51,7 +55,9 @@ export function Sidebar() {
               setTabOpen({
                 add: !tabOpen.add,
                 oracles: false,
-                database: false,
+                endpoints: false,
+                workflows: false,
+                dataResources: false,
               })
             }
             size="icon"
@@ -67,7 +73,9 @@ export function Sidebar() {
               setTabOpen({
                 add: false,
                 oracles: !tabOpen.oracles,
-                database: false,
+                endpoints: false,
+                workflows: false,
+                dataResources: false,
               })
             }
             size="icon"
@@ -103,13 +111,51 @@ export function Sidebar() {
           </Button>
           <Button
             className={cn({
-              "bg-accent": tabOpen.database,
+              "bg-accent": tabOpen.endpoints,
             })}
             onClick={() =>
               setTabOpen({
                 add: false,
                 oracles: false,
-                database: !tabOpen.database,
+                endpoints: !tabOpen.endpoints,
+                workflows: false,
+                dataResources: false,
+              })
+            }
+            size="icon"
+            variant="ghost"
+          >
+            <span className="text-[10px] font-semibold">HTTP</span>
+          </Button>
+          <Button
+            className={cn({
+              "bg-accent": tabOpen.workflows,
+            })}
+            onClick={() =>
+              setTabOpen({
+                add: false,
+                oracles: false,
+                endpoints: false,
+                workflows: !tabOpen.workflows,
+                dataResources: false,
+              })
+            }
+            size="icon"
+            variant="ghost"
+          >
+            <Workflow className="size-5" />
+          </Button>
+          <Button
+            className={cn({
+              "bg-accent": tabOpen.dataResources,
+            })}
+            onClick={() =>
+              setTabOpen({
+                add: false,
+                oracles: false,
+                endpoints: false,
+                workflows: false,
+                dataResources: !tabOpen.dataResources,
               })
             }
             size="icon"
@@ -177,12 +223,34 @@ export function Sidebar() {
         className={cn(
           "flex w-64 flex-col items-center justify-center border-r bg-background",
           {
-            hidden: !tabOpen.database,
+            hidden: !tabOpen.endpoints,
           },
         )}
       >
         <div>Todo</div>
-        <div>Database</div>
+        <div>Endpoints</div>
+      </div>
+      <div
+        className={cn(
+          "flex w-64 flex-col items-center justify-center border-r bg-background",
+          {
+            hidden: !tabOpen.workflows,
+          },
+        )}
+      >
+        <div>Todo</div>
+        <div>Workflows</div>
+      </div>
+      <div
+        className={cn(
+          "flex w-64 flex-col items-center justify-center border-r bg-background",
+          {
+            hidden: !tabOpen.dataResources,
+          },
+        )}
+      >
+        <div>Todo</div>
+        <div>Data Resources</div>
       </div>
     </div>
   );
