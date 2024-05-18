@@ -34,6 +34,6 @@
   @apply hidden;
 }
 
-/* .react-flow__resize-control.bottom.right {
-  @apply hidden;
-} */
+.react-flow__edge-path {
+  @apply stroke-border
+}

@@ -68,12 +68,18 @@ importers:
       '@integramind/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@paralleldrive/cuid2':
+        specifier: ^2.2.2
+        version: 2.2.2
       '@vercel/analytics':
         specifier: ^1.2.2
         version: 1.2.2(next@14.2.3(@babel/core@7.24.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@vercel/speed-insights':
         specifier: ^1.0.10
         version: 1.0.10(next@14.2.3(@babel/core@7.24.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      d3-hierarchy:
+        specifier: ^3.1.2
+        version: 3.1.2
       lucide-react:
         specifier: ^0.363.0
         version: 0.363.0(react@18.3.1)
@@ -2647,6 +2653,10 @@ packages:
 
   d3-ease@3.0.1:
     resolution: {integrity: sha512-wR/XK3D3XcLIZwpbvQwQ5fK+8Ykds1ip7A2Txe0yxncXSdq1L9skcG7blcedkOX+ZcgxGAmLX1FrRGbADwzi0w==}
+    engines: {node: '>=12'}
+
+  d3-hierarchy@3.1.2:
+    resolution: {integrity: sha512-FX/9frcub54beBdugHjDCdikxThEqjnR93Qt7PvQTOHxyiNCAlvMrHhclk3cD5VeAaq9fxmfRp+CnWw9rEMBuA==}
     engines: {node: '>=12'}
 
   d3-interpolate@3.0.1:
@@ -7377,6 +7387,8 @@ snapshots:
       d3-selection: 3.0.0
 
   d3-ease@3.0.1: {}
+
+  d3-hierarchy@3.1.2: {}
 
   d3-interpolate@3.0.1:
     dependencies:

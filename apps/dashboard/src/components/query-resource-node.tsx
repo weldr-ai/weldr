@@ -118,9 +118,9 @@ export const QueryResourceNode = memo(
           minHeight={140}
         />
         <Handle
-          type="target"
-          className="top-7 border-border bg-background p-1"
-          position={Position.Left}
+          type="source"
+          className="border-border bg-background p-1"
+          position={Position.Top}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
@@ -262,9 +262,9 @@ export const QueryResourceNode = memo(
           </Card>
         )}
         <Handle
-          type="source"
-          className="top-7 border-border bg-background p-1"
-          position={Position.Right}
+          type="target"
+          className="border-border bg-background p-1"
+          position={Position.Bottom}
           isConnectable={isConnectable}
         />
       </>
