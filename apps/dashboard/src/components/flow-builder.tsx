@@ -3,11 +3,9 @@
 import "reactflow/dist/style.css";
 import "~/styles/flow-builder.css";
 
-// import type { HierarchyPointNode } from "d3-hierarchy";
-import type { Connection, Edge, Node, ReactFlowInstance } from "reactflow";
+import type { Connection, Edge, ReactFlowInstance } from "reactflow";
 import React, { useCallback, useState } from "react";
 import { createId } from "@paralleldrive/cuid2";
-// import { stratify, tree } from "d3-hierarchy";
 import ReactFlow, {
   addEdge,
   Background,
@@ -17,83 +15,55 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 
+import type { BaseBlock, BlockType } from "~/types";
+import { ActionBlock } from "~/components/action-block";
+import { AIProcessingBlock } from "~/components/ai-processing-block";
 import { BlocksMenu } from "~/components/blocks-menu";
-import { EntryNode } from "~/components/entry-node";
-import FlowEdge from "~/components/flow-edge";
-import { QueryResourceNode } from "~/components/query-resource-node";
+import { LogicalBranchBlock } from "~/components/logical-branch-block";
+import { LogicalProcessingBlock } from "~/components/logical-processing-block";
+import { QueryBlock } from "~/components/query-block";
+import { ResponseBlock } from "~/components/response-block";
+import { RouteEntryBlock } from "~/components/route-entry-block";
+import { SemanticBranchBlock } from "~/components/semantic-branch-block";
+import { WorkflowEntryBlock } from "~/components/workflow-entry-block";
 
-// const NODE_WIDTH = 4 * 20;
-// const NODE_HEIGHT = 4 * 10;
-
-const nodeTypes = {
-  "entry-node": EntryNode,
-  "query-resource-node": QueryResourceNode,
+const blockTypes = {
+  "route-entry-block": RouteEntryBlock,
+  "workflow-entry-block": WorkflowEntryBlock,
+  "query-block": QueryBlock,
+  "action-block": ActionBlock,
+  "logical-processing-block": LogicalProcessingBlock,
+  "ai-processing-block": AIProcessingBlock,
+  "logical-branch-block": LogicalBranchBlock,
+  "semantic-branch-block": SemanticBranchBlock,
+  "response-block": ResponseBlock,
 };
 
-const edgeTypes = {
-  "flow-edge": FlowEdge,
-};
+const initialBlockId = createId();
 
-const initialNodeId = createId();
-
-const initNodes: Node[] = [
+const initialBlocks: BaseBlock[] = [
   {
-    id: initialNodeId,
-    type: "entry-node",
+    id: initialBlockId,
+    type: "route-entry-block",
     position: {
       x: 0,
       y: 0,
     },
-    data: { id: initialNodeId, name: "My new route" },
+    data: { id: initialBlockId, name: "New API Route" },
   },
 ];
 
 const initEdges: Edge[] = [];
 
-// const g = tree();
-
-// const getLayoutedElements = (
-//   nodes: Node[],
-//   edges: Edge[],
-// ): { nodes: Node[]; edges: Edge[] } => {
-//   if (nodes.length === 0) return { nodes, edges };
-
-//   const hierarchy = stratify()
-//     .id((node) => (node as Node).id)
-//     .parentId(
-//       (node) => edges.find((edge) => edge.target === (node as Node).id)?.source,
-//     );
-
-//   const root = hierarchy(nodes);
-//   const layout = g.nodeSize([NODE_WIDTH * 2, NODE_HEIGHT * 2])(root);
-
-//   return {
-//     nodes: layout.descendants().map(
-//       (node) =>
-//         ({
-//           ...(node as HierarchyPointNode<Node>).data,
-//           position: { x: node.x, y: node.y },
-//         }) as Node,
-//     ),
-//     edges,
-//   };
-// };
-
 export function _FlowBuilder() {
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null);
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
+  const [blocks, setBlocks, onBlocksChange] = useNodesState(initialBlocks);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
-
-  // const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-  //   nodes,
-  //   edges,
-  // );
 
   const onConnect = useCallback(
     (params: Edge | Connection) =>
-      setEdges((eds) => addEdge({ ...params, type: "flow-edge" }, eds)),
+      setEdges((eds) => addEdge({ ...params }, eds)),
     [setEdges],
   );
 
@@ -106,10 +76,12 @@ export function _FlowBuilder() {
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      const type = event.dataTransfer.getData("application/reactflow");
+      const blockType = event.dataTransfer.getData(
+        "application/reactflow",
+      ) as BlockType;
 
       // check if the dropped element is valid
-      if (typeof type === "undefined" || !type) return;
+      if (typeof blockType === "undefined" || !blockType) return;
 
       if (reactFlowInstance === null) return;
 
@@ -118,32 +90,56 @@ export function _FlowBuilder() {
         y: event.clientY,
       });
 
-      const newNodeId = createId();
+      const newBlockId = createId();
 
-      const newNode: Node = {
-        id: newNodeId,
-        type,
-        position,
-        data: { id: `${newNodeId}` },
+      const getNewBockName = (blockType: BlockType) => {
+        switch (blockType) {
+          case "route-entry-block":
+            return "New API Route";
+          case "workflow-entry-block":
+            return "New Workflow";
+          case "query-block":
+            return "New Query";
+          case "action-block":
+            return "New Action";
+          case "logical-processing-block":
+            return "New Logical Processing";
+          case "ai-processing-block":
+            return "New AI Processing";
+          case "logical-branch-block":
+            return "New Logical Branch";
+          case "semantic-branch-block":
+            return "New Semantic Branch";
+          case "response-block":
+            return "New Response";
+          default:
+            break;
+        }
       };
 
-      setNodes((nodes) => nodes.concat(newNode));
+      const newBlock: BaseBlock = {
+        id: newBlockId,
+        type: blockType,
+        position,
+        data: { id: `${newBlockId}`, name: getNewBockName(blockType) },
+      };
+
+      setBlocks((blocks) => blocks.concat(newBlock));
     },
-    [reactFlowInstance, setNodes],
+    [reactFlowInstance, setBlocks],
   );
 
   return (
     <ReactFlow
-      nodes={nodes}
+      nodes={blocks}
       edges={edges}
-      onNodesChange={onNodesChange}
+      onNodesChange={onBlocksChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onInit={setReactFlowInstance}
       onDrop={onDrop}
       onDragOver={onDragOver}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
+      nodeTypes={blockTypes}
       panOnScroll
       maxZoom={1}
       fitView

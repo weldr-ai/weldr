@@ -8,17 +8,20 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Split,
+  Zap,
 } from "lucide-react";
 
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 
+import type { BlockType } from "~/types";
+
 export function BlocksMenu() {
   const onDragStart = (
     event: React.DragEvent<HTMLDivElement>,
-    nodeType: string,
+    blockType: BlockType,
   ) => {
-    event.dataTransfer.setData("application/reactflow", nodeType);
+    event.dataTransfer.setData("application/reactflow", blockType);
     event.dataTransfer.effectAllowed = "move";
   };
   const [isVisible, setIsVisible] = useState<boolean>(true);
@@ -43,18 +46,24 @@ export function BlocksMenu() {
               <div className="grid w-full grid-cols-2 gap-2">
                 <div
                   className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
-                  onDragStart={(event) =>
-                    onDragStart(event, "query-resource-node")
-                  }
+                  onDragStart={(event) => onDragStart(event, "query-block")}
                   draggable
                 >
                   <Database className="size-4 text-primary" />
-                  <span className="w-full text-[10px]">Query Resource</span>
+                  <span className="w-full text-[10px]">Query</span>
+                </div>
+                <div
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
+                  onDragStart={(event) => onDragStart(event, "action-block")}
+                  draggable
+                >
+                  <Zap className="size-4 text-primary" />
+                  <span className="w-full text-[10px]">Action</span>
                 </div>
                 <div
                   className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
                   onDragStart={(event) =>
-                    onDragStart(event, "logical-processing-node")
+                    onDragStart(event, "logical-processing-block")
                   }
                   draggable
                 >
@@ -64,7 +73,7 @@ export function BlocksMenu() {
                 <div
                   className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
                   onDragStart={(event) =>
-                    onDragStart(event, "ai-processing-node")
+                    onDragStart(event, "ai-processing-block")
                   }
                   draggable
                 >
@@ -79,7 +88,7 @@ export function BlocksMenu() {
                 <div
                   className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
                   onDragStart={(event) =>
-                    onDragStart(event, "logical-branch-node")
+                    onDragStart(event, "logical-branch-block")
                   }
                   draggable
                 >
@@ -89,7 +98,7 @@ export function BlocksMenu() {
                 <div
                   className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
                   onDragStart={(event) =>
-                    onDragStart(event, "semantic-branch-node")
+                    onDragStart(event, "semantic-branch-block")
                   }
                   draggable
                 >
@@ -103,7 +112,7 @@ export function BlocksMenu() {
               <div className="grid w-full grid-cols-2 gap-2">
                 <div
                   className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
-                  onDragStart={(event) => onDragStart(event, "response-node")}
+                  onDragStart={(event) => onDragStart(event, "response-block")}
                   draggable
                 >
                   <CornerDownLeft className="size-4 text-primary" />

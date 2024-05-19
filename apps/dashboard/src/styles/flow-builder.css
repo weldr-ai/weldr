@@ -6,34 +6,10 @@
   @apply hidden;
 }
 
-.react-flow__resize-control.right {
-  @apply border-none hover:border hover:bg-primary/50;
-}
-
-.react-flow__resize-control.bottom {
-  @apply border-none hover:border hover:bg-primary/50;
-}
-
-.react-flow__resize-control.left {
-  @apply border-none hover:border hover:bg-primary/50;
-}
-
-.react-flow__resize-control.top {
-  @apply border-none hover:border hover:bg-primary/50;
-}
-
-.react-flow__resize-control.top.left {
-  @apply hidden;
-}
-
-.react-flow__resize-control.top.right {
-  @apply hidden;
-}
-
-.react-flow__resize-control.bottom.left {
-  @apply hidden;
-}
-
 .react-flow__edge-path {
+  @apply stroke-border
+}
+
+.react-flow__connection-path {
   @apply stroke-border
 }
