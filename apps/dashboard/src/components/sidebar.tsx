@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CircleUser, Database, Workflow } from "lucide-react";
+import { Blocks, CircleUser, Database, Workflow } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@integramind/ui/button";
@@ -21,17 +21,15 @@ import {
 } from "@integramind/ui/dropdown-menu";
 import { cn } from "@integramind/ui/utils";
 
-import { OracleIcon } from "./oracle-icon";
-
 interface TabOpen {
-  oracles: boolean;
+  blocks: boolean;
   routes: boolean;
   workflows: boolean;
   dataResources: boolean;
 }
 
 const initialState: TabOpen = {
-  oracles: true,
+  blocks: true,
   routes: false,
   workflows: false,
   dataResources: false,
@@ -47,11 +45,11 @@ export function Sidebar() {
         <div className="flex flex-col gap-2">
           <Button
             className={cn({
-              "bg-accent": tabOpen.oracles,
+              "bg-accent": tabOpen.blocks,
             })}
             onClick={() =>
               setTabOpen({
-                oracles: !tabOpen.oracles,
+                blocks: !tabOpen.blocks,
                 routes: false,
                 workflows: false,
                 dataResources: false,
@@ -60,7 +58,7 @@ export function Sidebar() {
             size="icon"
             variant="ghost"
           >
-            <OracleIcon className="size-4 fill-foreground stroke-foreground" />
+            <Blocks className="size-5 stroke-1" />
           </Button>
           <Button
             className={cn({
@@ -68,7 +66,7 @@ export function Sidebar() {
             })}
             onClick={() =>
               setTabOpen({
-                oracles: false,
+                blocks: false,
                 routes: !tabOpen.routes,
                 workflows: false,
                 dataResources: false,
@@ -85,7 +83,7 @@ export function Sidebar() {
             })}
             onClick={() =>
               setTabOpen({
-                oracles: false,
+                blocks: false,
                 routes: false,
                 workflows: !tabOpen.workflows,
                 dataResources: false,
@@ -102,7 +100,7 @@ export function Sidebar() {
             })}
             onClick={() =>
               setTabOpen({
-                oracles: false,
+                blocks: false,
                 routes: false,
                 workflows: false,
                 dataResources: !tabOpen.dataResources,
@@ -155,12 +153,12 @@ export function Sidebar() {
         className={cn(
           "flex w-64 flex-col items-center justify-center border-r bg-muted",
           {
-            hidden: !tabOpen.oracles,
+            hidden: !tabOpen.blocks,
           },
         )}
       >
         <div>Todo</div>
-        <div>Oracles</div>
+        <div>Blocks</div>
       </div>
       <div
         className={cn(

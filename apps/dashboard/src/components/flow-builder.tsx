@@ -17,9 +17,9 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 
+import { BlocksMenu } from "~/components/blocks-menu";
 import { EntryNode } from "~/components/entry-node";
 import FlowEdge from "~/components/flow-edge";
-import { OraclesMenu } from "~/components/oracles-menu";
 import { QueryResourceNode } from "~/components/query-resource-node";
 
 // const NODE_WIDTH = 4 * 20;
@@ -150,7 +150,7 @@ export function _FlowBuilder() {
     >
       <Background className="bg-background" color="hsl(var(--background))" />
       <Panel position="top-right">
-        <OraclesMenu />
+        <BlocksMenu />
       </Panel>
     </ReactFlow>
   );

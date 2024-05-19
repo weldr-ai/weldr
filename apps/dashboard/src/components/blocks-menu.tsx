@@ -13,7 +13,7 @@ import {
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 
-export function OraclesMenu() {
+export function BlocksMenu() {
   const onDragStart = (
     event: React.DragEvent<HTMLDivElement>,
     nodeType: string,
@@ -48,7 +48,7 @@ export function OraclesMenu() {
                   }
                   draggable
                 >
-                  <Database className="size-4" />
+                  <Database className="size-4 text-primary" />
                   <span className="w-full text-[10px]">Query Resource</span>
                 </div>
                 <div
@@ -58,7 +58,7 @@ export function OraclesMenu() {
                   }
                   draggable
                 >
-                  <Cpu className="size-4" />
+                  <Cpu className="size-4 text-primary" />
                   <span className="w-full text-[10px]">Logical Processing</span>
                 </div>
                 <div
@@ -68,7 +68,7 @@ export function OraclesMenu() {
                   }
                   draggable
                 >
-                  <Bot className="size-4" />
+                  <Bot className="size-4 text-primary" />
                   <span className="w-full text-[10px]">AI Processing</span>
                 </div>
               </div>
@@ -83,7 +83,7 @@ export function OraclesMenu() {
                   }
                   draggable
                 >
-                  <Split className="size-4" />
+                  <Split className="size-4 text-primary" />
                   <span className="w-full text-[10px]">Logical Branch</span>
                 </div>
                 <div
@@ -93,7 +93,7 @@ export function OraclesMenu() {
                   }
                   draggable
                 >
-                  <Brain className="size-4" />
+                  <Brain className="size-4 text-primary" />
                   <span className="w-full text-[10px]">Semantic Branch</span>
                 </div>
               </div>
@@ -106,7 +106,7 @@ export function OraclesMenu() {
                   onDragStart={(event) => onDragStart(event, "response-node")}
                   draggable
                 >
-                  <CornerDownLeft className="size-4" />
+                  <CornerDownLeft className="size-4 text-primary" />
                   <span className="w-full text-[10px]">Response</span>
                 </div>
               </div>
@@ -121,7 +121,7 @@ export function OraclesMenu() {
           onClick={() => setIsVisible(true)}
         >
           <PanelRightOpen className="mr-2 size-3.5 text-muted-foreground" />
-          Show oracles menu
+          Show blocks menu
         </Button>
       )}
     </>
