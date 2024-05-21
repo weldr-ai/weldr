@@ -1,15 +1,17 @@
 import type { NodeProps } from "reactflow";
-import React, { memo, useState } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
 import {
   CornerDownLeft,
   ExternalLink,
   FileText,
+  PanelLeft,
   PlayCircle,
   Trash,
 } from "lucide-react";
 import { Handle, Position } from "reactflow";
 
+import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 import {
   ContextMenu,
@@ -20,21 +22,17 @@ import {
   ContextMenuTrigger,
 } from "@integramind/ui/context-menu";
 
+import type { ResponseBlockData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-
-interface ResponseBlockProps extends NodeProps {
-  data: {
-    id: string;
-    name: string;
-    description?: string;
-  };
-  isConnectable: boolean;
-}
+import { useDevelopmentBarStore } from "~/lib/store";
 
 export const ResponseBlock = memo(
-  ({ data, isConnectable }: ResponseBlockProps) => {
+  ({ data, isConnectable }: NodeProps<ResponseBlockData>) => {
     const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
       useState<boolean>(false);
+    const updateActiveBlock = useDevelopmentBarStore(
+      (state) => state.updateActiveBlock,
+    );
 
     return (
       <>
@@ -47,10 +45,25 @@ export const ResponseBlock = memo(
         />
         <ContextMenu>
           <ContextMenuTrigger>
-            <Card className="flex h-[84px] w-[256px] flex-col gap-2 px-5 py-4">
-              <div className="flex w-full items-center gap-2 text-xs">
-                <CornerDownLeft className="size-4 stroke-1 text-primary" />
-                <span className="text-muted-foreground">Response</span>
+            <Card className="flex h-[86px] w-[256px] flex-col gap-2 px-5 py-4">
+              <div className="flex w-full items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <CornerDownLeft className="size-4 stroke-1 text-primary" />
+                  <span className="text-muted-foreground">Response</span>
+                </div>
+                <Button
+                  className="size-6"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    updateActiveBlock({
+                      type: "response-block",
+                      data,
+                    })
+                  }
+                >
+                  <PanelLeft className="size-3 text-muted-foreground" />
+                </Button>
               </div>
               <span className="text-sm">{data.name}</span>
             </Card>

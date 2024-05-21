@@ -1,9 +1,17 @@
 import type { NodeProps } from "reactflow";
-import React, { memo, useState } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
-import { Bot, ExternalLink, FileText, PlayCircle, Trash } from "lucide-react";
+import {
+  Bot,
+  ExternalLink,
+  FileText,
+  PanelLeft,
+  PlayCircle,
+  Trash,
+} from "lucide-react";
 import { Handle, Position } from "reactflow";
 
+import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 import {
   ContextMenu,
@@ -14,21 +22,17 @@ import {
   ContextMenuTrigger,
 } from "@integramind/ui/context-menu";
 
+import type { AIProcessingBlockData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-
-interface AIProcessingBlockProps extends NodeProps {
-  data: {
-    id: string;
-    name: string;
-    description?: string;
-  };
-  isConnectable: boolean;
-}
+import { useDevelopmentBarStore } from "~/lib/store";
 
 export const AIProcessingBlock = memo(
-  ({ data, isConnectable }: AIProcessingBlockProps) => {
+  ({ data, isConnectable }: NodeProps<AIProcessingBlockData>) => {
     const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
       useState<boolean>(false);
+    const updateActiveBlock = useDevelopmentBarStore(
+      (state) => state.updateActiveBlock,
+    );
 
     return (
       <>
@@ -41,10 +45,23 @@ export const AIProcessingBlock = memo(
         />
         <ContextMenu>
           <ContextMenuTrigger>
-            <Card className="flex h-[84px] w-[256px] flex-col gap-2 px-5 py-4">
-              <div className="flex w-full items-center gap-2 text-xs">
-                <Bot className="size-4 stroke-1 text-primary" />
-                <span className="text-muted-foreground">AI Processing</span>
+            <Card className="flex h-[86px] w-[256px] flex-col gap-2 px-5 py-4">
+              <div className="flex w-full items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <Bot className="size-4 stroke-1 text-primary" />
+                  <span className="text-muted-foreground">AI Processing</span>
+                </div>
+                <Button className="size-6" variant="ghost" size="icon">
+                  <PanelLeft
+                    className="size-3 text-muted-foreground"
+                    onClick={() =>
+                      updateActiveBlock({
+                        type: "ai-processing-block",
+                        data,
+                      })
+                    }
+                  />
+                </Button>
               </div>
               <span className="text-sm">{data.name}</span>
             </Card>

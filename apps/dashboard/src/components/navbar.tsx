@@ -7,12 +7,6 @@ import { useTheme } from "next-themes";
 
 import { Button } from "@integramind/ui/button";
 
-interface Link {
-  id: string;
-  title: string;
-  path: string;
-}
-
 export function Navbar(): JSX.Element {
   const { resolvedTheme } = useTheme();
 
@@ -42,9 +36,6 @@ export function Navbar(): JSX.Element {
           )}
           <span className="sr-only">IntegraMind</span>
         </Link>
-        <div className="flex h-14 w-64 items-center justify-center border-r">
-          CRM Dashboard
-        </div>
       </nav>
       <div className="flex flex-row items-center gap-2">
         <Button

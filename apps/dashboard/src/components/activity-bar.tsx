@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Blocks, CircleUser, Database, Workflow } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -21,40 +20,37 @@ import {
 } from "@integramind/ui/dropdown-menu";
 import { cn } from "@integramind/ui/utils";
 
-interface TabOpen {
-  blocks: boolean;
-  routes: boolean;
-  workflows: boolean;
-  dataResources: boolean;
-}
+import { usePrimarySidebarStore } from "~/lib/store";
 
-const initialState: TabOpen = {
-  blocks: true,
-  routes: false,
-  workflows: false,
-  dataResources: false,
-};
-
-export function Sidebar() {
+export function ActivityBar() {
   const { theme, setTheme } = useTheme();
-  const [tabOpen, setTabOpen] = useState<TabOpen>(initialState);
+  const activeSection = usePrimarySidebarStore((state) => state.activeSection);
+  const updateActiveSection = usePrimarySidebarStore(
+    (state) => state.updateActiveSection,
+  );
+  const hidePrimaryBar = usePrimarySidebarStore(
+    (state) => state.hidePrimaryBar,
+  );
+
+  const handleOnClick = (
+    section: "blocks" | "routes" | "workflows" | "data-resources",
+  ) => {
+    if (activeSection !== section) {
+      updateActiveSection(section);
+    } else {
+      hidePrimaryBar();
+    }
+  };
 
   return (
-    <div className="sticky top-14 z-40 flex h-[calc(100dvh-57px)] bg-muted">
+    <>
       <div className="flex w-14 flex-col items-center justify-between border-r p-4">
         <div className="flex flex-col gap-2">
           <Button
             className={cn({
-              "bg-accent": tabOpen.blocks,
+              "bg-accent": activeSection === "blocks",
             })}
-            onClick={() =>
-              setTabOpen({
-                blocks: !tabOpen.blocks,
-                routes: false,
-                workflows: false,
-                dataResources: false,
-              })
-            }
+            onClick={() => handleOnClick("blocks")}
             size="icon"
             variant="ghost"
           >
@@ -62,16 +58,9 @@ export function Sidebar() {
           </Button>
           <Button
             className={cn({
-              "bg-accent": tabOpen.routes,
+              "bg-accent": activeSection === "routes",
             })}
-            onClick={() =>
-              setTabOpen({
-                blocks: false,
-                routes: !tabOpen.routes,
-                workflows: false,
-                dataResources: false,
-              })
-            }
+            onClick={() => handleOnClick("routes")}
             size="icon"
             variant="ghost"
           >
@@ -79,16 +68,9 @@ export function Sidebar() {
           </Button>
           <Button
             className={cn({
-              "bg-accent": tabOpen.workflows,
+              "bg-accent": activeSection === "workflows",
             })}
-            onClick={() =>
-              setTabOpen({
-                blocks: false,
-                routes: false,
-                workflows: !tabOpen.workflows,
-                dataResources: false,
-              })
-            }
+            onClick={() => handleOnClick("workflows")}
             size="icon"
             variant="ghost"
           >
@@ -96,16 +78,9 @@ export function Sidebar() {
           </Button>
           <Button
             className={cn({
-              "bg-accent": tabOpen.dataResources,
+              "bg-accent": activeSection === "data-resources",
             })}
-            onClick={() =>
-              setTabOpen({
-                blocks: false,
-                routes: false,
-                workflows: false,
-                dataResources: !tabOpen.dataResources,
-              })
-            }
+            onClick={() => handleOnClick("data-resources")}
             size="icon"
             variant="ghost"
           >
@@ -149,50 +124,6 @@ export function Sidebar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div
-        className={cn(
-          "flex w-64 flex-col items-center justify-center border-r bg-muted",
-          {
-            hidden: !tabOpen.blocks,
-          },
-        )}
-      >
-        <div>Todo</div>
-        <div>Blocks</div>
-      </div>
-      <div
-        className={cn(
-          "flex w-64 flex-col items-center justify-center border-r bg-muted",
-          {
-            hidden: !tabOpen.routes,
-          },
-        )}
-      >
-        <div>Todo</div>
-        <div>Routes</div>
-      </div>
-      <div
-        className={cn(
-          "flex w-64 flex-col items-center justify-center border-r bg-muted",
-          {
-            hidden: !tabOpen.workflows,
-          },
-        )}
-      >
-        <div>Todo</div>
-        <div>Workflows</div>
-      </div>
-      <div
-        className={cn(
-          "flex w-64 flex-col items-center justify-center border-r bg-muted",
-          {
-            hidden: !tabOpen.dataResources,
-          },
-        )}
-      >
-        <div>Todo</div>
-        <div>Data Resources</div>
-      </div>
-    </div>
+    </>
   );
 }

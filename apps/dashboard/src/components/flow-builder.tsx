@@ -15,7 +15,7 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 
-import type { BaseBlock, BlockType } from "~/types";
+import type { Block, BlockType, TRouteEntryBlock } from "~/types";
 import { ActionBlock } from "~/components/action-block";
 import { AIProcessingBlock } from "~/components/ai-processing-block";
 import { BlocksMenu } from "~/components/blocks-menu";
@@ -41,7 +41,7 @@ const blockTypes = {
 
 const initialBlockId = createId();
 
-const initialBlocks: BaseBlock[] = [
+const initialBlocks: Block[] = [
   {
     id: initialBlockId,
     type: "route-entry-block",
@@ -49,8 +49,13 @@ const initialBlocks: BaseBlock[] = [
       x: 0,
       y: 0,
     },
-    data: { id: initialBlockId, name: "New API Route" },
-  },
+    data: {
+      id: initialBlockId,
+      name: "New API Route",
+      method: "GET",
+      urlPath: "/",
+    },
+  } as TRouteEntryBlock,
 ];
 
 const initEdges: Edge[] = [];
@@ -112,12 +117,10 @@ export function _FlowBuilder() {
             return "New Semantic Branch";
           case "response-block":
             return "New Response";
-          default:
-            break;
         }
       };
 
-      const newBlock: BaseBlock = {
+      const newBlock: Block = {
         id: newBlockId,
         type: blockType,
         position,

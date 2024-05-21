@@ -1,15 +1,17 @@
 import type { NodeProps } from "reactflow";
-import React, { memo, useState } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
 import {
   Database,
   ExternalLink,
   FileText,
+  PanelLeft,
   PlayCircle,
   Trash,
 } from "lucide-react";
 import { Handle, Position } from "reactflow";
 
+import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 import {
   ContextMenu,
@@ -20,81 +22,94 @@ import {
   ContextMenuTrigger,
 } from "@integramind/ui/context-menu";
 
+import type { QueryBlockData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
+import { useDevelopmentBarStore } from "~/lib/store";
 
-interface QueryBlockProps extends NodeProps {
-  data: {
-    id: string;
-    name: string;
-    description?: string;
-  };
-  isConnectable: boolean;
-}
+export const QueryBlock = memo(
+  ({ data, isConnectable }: NodeProps<QueryBlockData>) => {
+    const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
+      useState<boolean>(false);
+    const updateActiveBlock = useDevelopmentBarStore(
+      (state) => state.updateActiveBlock,
+    );
 
-export const QueryBlock = memo(({ data, isConnectable }: QueryBlockProps) => {
-  const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
-    useState<boolean>(false);
-
-  return (
-    <>
-      <Handle
-        className="border-border bg-background p-1"
-        type="source"
-        position={Position.Left}
-        onConnect={(params) => console.log("handle onConnect", params)}
-        isConnectable={isConnectable}
-      />
-      <ContextMenu>
-        <ContextMenuTrigger>
-          <Card className="flex h-[84px] w-[256px] flex-col gap-2 px-5 py-4">
-            <div className="flex w-full items-center gap-2 text-xs">
-              <Database className="size-4 stroke-1 text-primary" />
-              <span className="text-muted-foreground">Query</span>
-            </div>
-            <span className="text-sm">{data.name}</span>
-          </Card>
-        </ContextMenuTrigger>
-        <ContextMenuContent>
-          <ContextMenuLabel className="text-xs">Query</ContextMenuLabel>
-          <ContextMenuSeparator />
-          <ContextMenuItem className="text-xs">
-            <PlayCircle className="mr-3 size-4 text-muted-foreground" />
-            Run with previous blocks
-          </ContextMenuItem>
-          <ContextMenuItem className="flex items-center justify-between text-xs">
-            <Link
-              className="flex items-center"
-              href="https://docs.integramind.ai/blocks/query"
-              target="blank"
+    return (
+      <>
+        <Handle
+          className="border-border bg-background p-1"
+          type="source"
+          position={Position.Left}
+          onConnect={(params) => console.log("handle onConnect", params)}
+          isConnectable={isConnectable}
+        />
+        <ContextMenu>
+          <ContextMenuTrigger>
+            <Card className="flex h-[86px] w-[256px] flex-col gap-2 px-5 py-4">
+              <div className="flex w-full items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <Database className="size-4 stroke-1 text-primary" />
+                  <span className="text-muted-foreground">Query</span>
+                </div>
+                <Button
+                  className="size-6"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    updateActiveBlock({
+                      type: "query-block",
+                      data,
+                    })
+                  }
+                >
+                  <PanelLeft className="size-3 text-muted-foreground" />
+                </Button>
+              </div>
+              <span className="text-sm">{data.name}</span>
+            </Card>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuLabel className="text-xs">Query</ContextMenuLabel>
+            <ContextMenuSeparator />
+            <ContextMenuItem className="text-xs">
+              <PlayCircle className="mr-3 size-4 text-muted-foreground" />
+              Run with previous blocks
+            </ContextMenuItem>
+            <ContextMenuItem className="flex items-center justify-between text-xs">
+              <Link
+                className="flex items-center"
+                href="https://docs.integramind.ai/blocks/query"
+                target="blank"
+              >
+                <FileText className="mr-3 size-4 text-muted-foreground" />
+                Docs
+              </Link>
+              <ExternalLink className="size-3 text-muted-foreground" />
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+              onClick={() => setIsDeleteAlertDialogOpen(true)}
             >
-              <FileText className="mr-3 size-4 text-muted-foreground" />
-              Docs
-            </Link>
-            <ExternalLink className="size-3 text-muted-foreground" />
-          </ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-            onClick={() => setIsDeleteAlertDialogOpen(true)}
-          >
-            <Trash className="mr-3 size-4" />
-            Delete
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
-      <DeleteAlertDialog
-        open={isDeleteAlertDialogOpen}
-        onOpenChange={setIsDeleteAlertDialogOpen}
-      />
-      <Handle
-        className="border-border bg-background p-1"
-        type="target"
-        position={Position.Right}
-        onConnect={(params) => console.log("handle onConnect", params)}
-        isConnectable={isConnectable}
-      />
-    </>
-  );
-});
+              <Trash className="mr-3 size-4" />
+              Delete
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+        <DeleteAlertDialog
+          open={isDeleteAlertDialogOpen}
+          onOpenChange={setIsDeleteAlertDialogOpen}
+        />
+        <Handle
+          className="border-border bg-background p-1"
+          type="target"
+          position={Position.Right}
+          onConnect={(params) => console.log("handle onConnect", params)}
+          isConnectable={isConnectable}
+        />
+      </>
+    );
+  },
+);
 
 QueryBlock.displayName = "QueryBlock";

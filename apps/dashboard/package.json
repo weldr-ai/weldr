@@ -24,9 +24,12 @@
     "next-themes": "^0.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.51.2",
     "reactflow": "^11.11.3",
     "slate": "^0.103.0",
-    "slate-react": "^0.102.0"
+    "slate-react": "^0.102.0",
+    "zod": "link:@hookform/resolvers/zod",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@integramind/eslint-config": "workspace:*",
