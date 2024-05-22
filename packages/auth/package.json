@@ -16,16 +16,13 @@
     "@auth/drizzle-adapter": "^1.0.1",
     "@integramind/db": "workspace:*",
     "@t3-oss/env-core": "^0.10.1",
-    "next-auth": "5.0.0-beta.17",
+    "next-auth": "5.0.0-beta.18",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@integramind/eslint-config": "workspace:*",
     "@integramind/prettier-config": "workspace:*",
     "@integramind/tsconfig": "workspace:*"
-  },
-  "peerDependencies": {
-    "next": "^14.2.3"
   },
   "eslintConfig": {
     "root": true,

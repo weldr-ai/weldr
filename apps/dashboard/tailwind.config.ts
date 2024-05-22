@@ -2,7 +2,8 @@ import type { Config } from "tailwindcss";
 
 import baseConfig from "@integramind/tailwind-config";
 
-const config: Pick<Config, "content" | "presets" | "theme"> = {
+const config: Pick<Config, "content" | "presets" | "theme" | "important"> = {
+  important: true,
   content: ["./src/**/*.tsx", "../../packages/ui/**/*.{ts,tsx}"],
   presets: [baseConfig],
   theme: {
