@@ -1,16 +1,27 @@
-import { redirect } from "next/navigation";
+// import { redirect } from "next/navigation";
 
-import { auth } from "@integramind/auth";
+// import { auth } from "@integramind/auth";
+
+import { ActivityBar } from "~/components/activity-bar";
+import { FlowBuilder } from "~/components/flow-builder";
+import { Navbar } from "~/components/navbar";
+import { PrimarySidebar } from "~/components/primary-sidebar";
 
 export default async function Dashboard(): Promise<JSX.Element> {
-  const session = await auth();
-  if (!session) redirect("/auth/login");
-
+  // const session = await auth();
+  // if (!session) redirect("/auth/login");
   return (
-    <main className="flex size-full flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <div className="flex items-center justify-center">
-        <div>Dashboard</div>
+    <div className="flex size-full min-h-screen flex-col">
+      <Navbar />
+      <div className="flex w-full flex-row">
+        <div className="sticky z-40 flex h-[calc(100dvh-56px)] bg-muted">
+          <ActivityBar />
+          <PrimarySidebar />
+        </div>
+        <main className="flex w-full flex-col">
+          <FlowBuilder />
+        </main>
       </div>
-    </main>
+    </div>
   );
 }

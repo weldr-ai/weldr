@@ -27,7 +27,7 @@
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
     "drizzle-orm": "^0.30.10",
-    "next-auth": "5.0.0-beta.17",
+    "next-auth": "5.0.0-beta.18",
     "postgres": "^3.4.4"
   },
   "devDependencies": {
@@ -35,6 +35,9 @@
     "@integramind/prettier-config": "workspace:*",
     "@integramind/tsconfig": "workspace:*",
     "drizzle-kit": "^0.20.14"
+  },
+  "peerDependencies": {
+    "next-auth": "5.0.0-beta.18"
   },
   "eslintConfig": {
     "root": true,

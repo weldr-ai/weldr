@@ -1,0 +1,15 @@
+.react-flow__minimap {
+  @apply bg-background;
+}
+
+.react-flow__attribution {
+  @apply hidden;
+}
+
+.react-flow__edge-path {
+  @apply stroke-border;
+}
+
+.react-flow__connection-path {
+  @apply stroke-border;
+}

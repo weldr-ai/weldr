@@ -15,14 +15,20 @@
   "dependencies": {
     "@integramind/auth": "workspace:*",
     "@integramind/ui": "workspace:*",
+    "@paralleldrive/cuid2": "^2.2.2",
     "@vercel/analytics": "^1.2.2",
     "@vercel/speed-insights": "^1.0.10",
     "lucide-react": "^0.363.0",
     "next": "^14.2.3",
-    "next-auth": "5.0.0-beta.17",
     "next-themes": "^0.3.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.51.2",
+    "reactflow": "^11.11.3",
+    "slate": "^0.103.0",
+    "slate-react": "^0.102.0",
+    "zod": "link:@hookform/resolvers/zod",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@integramind/eslint-config": "workspace:*",
