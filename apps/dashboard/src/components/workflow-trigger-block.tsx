@@ -17,6 +17,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@integramind/ui/sheet";
+import { cn } from "@integramind/ui/utils";
 
 import { useDevelopmentSheetStore } from "~/lib/store";
 
@@ -29,7 +30,7 @@ interface WorkflowTriggerBlockProps extends NodeProps {
 }
 
 export const WorkflowTriggerBlock = memo(
-  ({ data, isConnectable }: WorkflowTriggerBlockProps) => {
+  ({ data, isConnectable, selected }: WorkflowTriggerBlockProps) => {
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
     const updateCurrentId = useDevelopmentSheetStore(
       (state) => state.updateCurrentId,
@@ -45,7 +46,14 @@ export const WorkflowTriggerBlock = memo(
             onClick={() => updateCurrentId(data.id)}
             className="cursor-grab"
           >
-            <Card className="flex h-[84px] w-[256px] flex-col gap-2 px-5 py-4">
+            <Card
+              className={cn(
+                "flex h-[84px] w-[256px] flex-col gap-2 px-5 py-4",
+                {
+                  "border-primary": selected,
+                },
+              )}
+            >
               <div className="flex w-full items-center gap-2 text-xs">
                 <Badge>Event</Badge>
                 <span className="text-muted-foreground">Workflow</span>

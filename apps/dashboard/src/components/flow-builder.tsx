@@ -3,13 +3,16 @@
 import "reactflow/dist/style.css";
 import "~/styles/flow-builder.css";
 
-import type { Connection, Edge } from "reactflow";
+import type { Connection, Edge, Node } from "reactflow";
 import React, { useCallback } from "react";
 import { createId } from "@paralleldrive/cuid2";
 import { Minus, Plus, Scan } from "lucide-react";
 import ReactFlow, {
   addEdge,
   Background,
+  getConnectedEdges,
+  getIncomers,
+  getOutgoers,
   MiniMap,
   Panel,
   ReactFlowProvider,
@@ -139,11 +142,39 @@ export function _FlowBuilder() {
     [reactFlow, setBlocks],
   );
 
+  const onBlocksDelete = useCallback(
+    (deleted: Node[]) => {
+      setEdges(
+        deleted.reduce((acc: Edge[], block: Node) => {
+          const incomers = getIncomers(block, blocks, edges);
+          const outgoers = getOutgoers(block, blocks, edges);
+          const connectedEdges = getConnectedEdges([block], edges);
+
+          const remainingEdges = acc.filter(
+            (edge) => !connectedEdges.includes(edge),
+          );
+
+          const createdEdges = incomers.flatMap(({ id: source }) =>
+            outgoers.map(({ id: target }) => ({
+              id: `${source}->${target}`,
+              source,
+              target,
+            })),
+          );
+
+          return [...remainingEdges, ...createdEdges];
+        }, edges),
+      );
+    },
+    [blocks, edges, setEdges],
+  );
+
   return (
     <ReactFlow
       nodes={blocks}
       edges={edges}
       onNodesChange={onBlocksChange}
+      onNodesDelete={onBlocksDelete}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onDrop={onDrop}

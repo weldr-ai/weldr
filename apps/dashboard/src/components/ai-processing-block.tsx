@@ -1,3 +1,6 @@
+import type { NodeProps } from "reactflow";
+import { memo, useState } from "react";
+import Link from "next/link";
 import {
   Bot,
   ExternalLink,
@@ -6,9 +9,6 @@ import {
   Trash,
   X,
 } from "lucide-react";
-import Link from "next/link";
-import { memo, useState } from "react";
-import type { NodeProps } from "reactflow";
 import { Handle, Position } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
@@ -30,13 +30,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@integramind/ui/sheet";
+import { cn } from "@integramind/ui/utils";
 
+import type { AIProcessingBlockData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useDevelopmentSheetStore } from "~/lib/store";
-import type { AIProcessingBlockData } from "~/types";
 
 export const AIProcessingBlock = memo(
-  ({ data, isConnectable }: NodeProps<AIProcessingBlockData>) => {
+  ({ data, isConnectable, selected }: NodeProps<AIProcessingBlockData>) => {
     const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
       useState<boolean>(false);
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
@@ -63,7 +64,14 @@ export const AIProcessingBlock = memo(
           >
             <ContextMenu>
               <ContextMenuTrigger>
-                <Card className="flex h-[78px] w-[256px] flex-col items-start gap-2 px-5 py-4">
+                <Card
+                  className={cn(
+                    "flex h-[78px] w-[256px] flex-col items-start gap-2 px-5 py-4",
+                    {
+                      "border-primary": selected,
+                    },
+                  )}
+                >
                   <div className="flex items-center gap-2 text-xs">
                     <Bot className="size-4 stroke-1 text-primary" />
                     <span className="text-muted-foreground">AI Processing</span>

@@ -39,6 +39,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@integramind/ui/sheet";
+import { cn } from "@integramind/ui/utils";
 
 import type { QueryBlockData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
@@ -46,7 +47,7 @@ import { TextHighlighter } from "~/components/text-highlighter";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
 export const QueryBlock = memo(
-  ({ data, isConnectable }: NodeProps<QueryBlockData>) => {
+  ({ data, isConnectable, selected }: NodeProps<QueryBlockData>) => {
     const form = useForm();
     const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -74,7 +75,14 @@ export const QueryBlock = memo(
           >
             <ContextMenu>
               <ContextMenuTrigger>
-                <Card className="flex h-[78px] w-[256px] flex-col items-start gap-2 px-5 py-4">
+                <Card
+                  className={cn(
+                    "flex h-[78px] w-[256px] flex-col items-start gap-2 px-5 py-4",
+                    {
+                      "border-primary": selected,
+                    },
+                  )}
+                >
                   <div className="flex items-center gap-2 text-xs">
                     <Database className="size-4 stroke-1 text-primary" />
                     <span className="text-muted-foreground">Query</span>

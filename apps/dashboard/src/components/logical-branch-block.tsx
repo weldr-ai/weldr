@@ -30,13 +30,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@integramind/ui/sheet";
+import { cn } from "@integramind/ui/utils";
 
 import type { LogicalBranchBlockData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
 export const LogicalBranchBlock = memo(
-  ({ data, isConnectable }: NodeProps<LogicalBranchBlockData>) => {
+  ({ data, isConnectable, selected }: NodeProps<LogicalBranchBlockData>) => {
     const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
       useState<boolean>(false);
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
@@ -63,7 +64,14 @@ export const LogicalBranchBlock = memo(
           >
             <ContextMenu>
               <ContextMenuTrigger>
-                <Card className="flex h-[78px] w-[256px] flex-col items-start gap-2 px-5 py-4">
+                <Card
+                  className={cn(
+                    "flex h-[78px] w-[256px] flex-col items-start gap-2 px-5 py-4",
+                    {
+                      "border-primary": selected,
+                    },
+                  )}
+                >
                   <div className="flex items-center gap-2 text-xs">
                     <Split className="size-4 stroke-1 text-primary" />
                     <span className="text-muted-foreground">

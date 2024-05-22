@@ -33,12 +33,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@integramind/ui/sheet";
+import { cn } from "@integramind/ui/utils";
 
 import type { AccessPointBlockData } from "~/types";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
 export const AccessPointBlock = memo(
-  ({ data, isConnectable }: NodeProps<AccessPointBlockData>) => {
+  ({ data, isConnectable, selected }: NodeProps<AccessPointBlockData>) => {
     const form = useForm();
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
     const updateCurrentId = useDevelopmentSheetStore(
@@ -55,7 +56,14 @@ export const AccessPointBlock = memo(
             onClick={() => updateCurrentId(data.id)}
             className="cursor-grab"
           >
-            <Card className="flex h-[84px] w-[256px] flex-col justify-start gap-2 px-5 py-4">
+            <Card
+              className={cn(
+                "flex h-[84px] w-[256px] flex-col gap-2 px-5 py-4",
+                {
+                  "border-primary": selected,
+                },
+              )}
+            >
               <div className="flex w-full items-center gap-2 text-xs">
                 <Badge>{data.method}</Badge>
                 <span className="text-muted-foreground">Access Point</span>

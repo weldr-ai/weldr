@@ -30,21 +30,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@integramind/ui/sheet";
+import { cn } from "@integramind/ui/utils";
 
+import type { SemanticBranchBlockData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-interface SemanticBranchBlockProps extends NodeProps {
-  data: {
-    id: string;
-    name: string;
-    description?: string;
-  };
-  isConnectable: boolean;
-}
-
 export const SemanticBranchBlock = memo(
-  ({ data, isConnectable }: SemanticBranchBlockProps) => {
+  ({ data, isConnectable, selected }: NodeProps<SemanticBranchBlockData>) => {
     const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
       useState<boolean>(false);
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
@@ -71,7 +64,14 @@ export const SemanticBranchBlock = memo(
           >
             <ContextMenu>
               <ContextMenuTrigger>
-                <Card className="flex h-[78px] w-[256px] flex-col items-start gap-2 px-5 py-4">
+                <Card
+                  className={cn(
+                    "flex h-[78px] w-[256px] flex-col items-start gap-2 px-5 py-4",
+                    {
+                      "border-primary": selected,
+                    },
+                  )}
+                >
                   <div className="flex items-center gap-2 text-xs">
                     <Brain className="size-4 stroke-1 text-primary" />
                     <span className="text-muted-foreground">
