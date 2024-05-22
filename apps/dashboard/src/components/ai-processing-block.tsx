@@ -57,13 +57,13 @@ export const AIProcessingBlock = memo(
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
-        <Sheet modal={false} open={currentId === data.id}>
-          <SheetTrigger
-            onClick={() => updateCurrentId(data.id)}
-            className="cursor-grab"
-          >
-            <ContextMenu>
-              <ContextMenuTrigger>
+        <ContextMenu>
+          <ContextMenuTrigger>
+            <Sheet modal={false} open={currentId === data.id}>
+              <SheetTrigger
+                onClick={() => updateCurrentId(data.id)}
+                className="cursor-grab"
+              >
                 <Card
                   className={cn(
                     "flex h-[78px] w-[256px] flex-col items-start gap-2 px-5 py-4",
@@ -78,56 +78,58 @@ export const AIProcessingBlock = memo(
                   </div>
                   <span className="text-sm">{data.name}</span>
                 </Card>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <ContextMenuLabel className="text-xs">
-                  AI Processing
-                </ContextMenuLabel>
-                <ContextMenuSeparator />
-                <ContextMenuItem className="text-xs">
-                  <PlayCircle className="mr-3 size-4 text-muted-foreground" />
-                  Run with previous blocks
-                </ContextMenuItem>
-                <ContextMenuItem className="flex items-center justify-between text-xs">
-                  <Link
-                    className="flex items-center"
-                    href="https://docs.integramind.ai/blocks/ai-processing"
-                    target="blank"
-                  >
-                    <FileText className="mr-3 size-4 text-muted-foreground" />
-                    Docs
-                  </Link>
-                  <ExternalLink className="size-3 text-muted-foreground" />
-                </ContextMenuItem>
-                <ContextMenuSeparator />
-                <ContextMenuItem
-                  className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-                  onClick={() => setIsDeleteAlertDialogOpen(true)}
-                >
-                  <Trash className="mr-3 size-4" />
-                  Delete
-                </ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
-          </SheetTrigger>
-          <SheetContent className="right-2 top-16 flex h-[calc(100dvh-72px)] w-full flex-col gap-4 rounded-xl border bg-muted">
-            <SheetHeader>
-              <SheetTitle className="flex w-full items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Bot className="size-4 stroke-1 text-primary" />
-                  <span>AI Processing</span>
-                </div>
-                <SheetClose onClick={() => removeCurrentId()}>
-                  <Button variant="ghost" size="icon">
-                    <X className="size-4" />
-                    <span className="sr-only">Close</span>
-                  </Button>
-                </SheetClose>
-              </SheetTitle>
-              <SheetDescription>Develop your AI process here</SheetDescription>
-            </SheetHeader>
-          </SheetContent>
-        </Sheet>
+              </SheetTrigger>
+              <SheetContent className="right-2 top-16 flex h-[calc(100dvh-72px)] w-full flex-col gap-4 rounded-xl border bg-muted">
+                <SheetHeader>
+                  <SheetTitle className="flex w-full items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bot className="size-4 stroke-1 text-primary" />
+                      <span>AI Processing</span>
+                    </div>
+                    <SheetClose onClick={() => removeCurrentId()}>
+                      <Button variant="ghost" size="icon">
+                        <X className="size-4" />
+                        <span className="sr-only">Close</span>
+                      </Button>
+                    </SheetClose>
+                  </SheetTitle>
+                  <SheetDescription>
+                    Develop your AI process here
+                  </SheetDescription>
+                </SheetHeader>
+              </SheetContent>
+            </Sheet>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuLabel className="text-xs">
+              AI Processing
+            </ContextMenuLabel>
+            <ContextMenuSeparator />
+            <ContextMenuItem className="text-xs">
+              <PlayCircle className="mr-3 size-4 text-muted-foreground" />
+              Run with previous blocks
+            </ContextMenuItem>
+            <ContextMenuItem className="flex items-center justify-between text-xs">
+              <Link
+                className="flex items-center"
+                href="https://docs.integramind.ai/blocks/ai-processing"
+                target="blank"
+              >
+                <FileText className="mr-3 size-4 text-muted-foreground" />
+                Docs
+              </Link>
+              <ExternalLink className="size-3 text-muted-foreground" />
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+              onClick={() => setIsDeleteAlertDialogOpen(true)}
+            >
+              <Trash className="mr-3 size-4" />
+              Delete
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
         <DeleteAlertDialog
           open={isDeleteAlertDialogOpen}
           onOpenChange={setIsDeleteAlertDialogOpen}
