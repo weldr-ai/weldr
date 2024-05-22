@@ -2,7 +2,7 @@
 
 import type { Descendant, NodeEntry, Range } from "slate";
 import type { RenderLeafProps } from "slate-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createEditor, Text } from "slate";
 import { Editable, Slate, withReact } from "slate-react";
 
@@ -99,11 +99,21 @@ const Leaf = ({
 
 export function TextHighlighter({
   value,
-  onValueChange,
+  placeholder,
 }: {
-  value: Descendant[];
-  onValueChange: (value: Descendant[]) => void;
+  value: string;
+  placeholder: string;
 }) {
+  const [text, setText] = useState<Descendant[]>([
+    {
+      children: [
+        {
+          text: value ?? "",
+        },
+      ],
+    },
+  ]);
+
   const editor = useMemo(() => withReact(createEditor()), []);
 
   const renderLeaf = useCallback(
@@ -114,12 +124,12 @@ export function TextHighlighter({
   );
 
   return (
-    <Slate editor={editor} initialValue={value} onValueChange={onValueChange}>
+    <Slate editor={editor} initialValue={text} onValueChange={setText}>
       <Editable
-        className="min-h-16 w-64 flex-1 rounded-md border border-input bg-transparent px-3 py-2 text-sm caret-foreground shadow-sm placeholder:text-muted-foreground focus:cursor-text focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm caret-foreground shadow-sm placeholder:text-muted-foreground focus:cursor-text focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         decorate={decorate}
         renderLeaf={renderLeaf}
-        placeholder="Write a brief description of what this block should query a resource."
+        placeholder={placeholder}
       />
     </Slate>
   );

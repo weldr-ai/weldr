@@ -1,27 +1,5 @@
 import { create } from "zustand";
 
-import type { BlockData, BlockType } from "~/types";
-
-interface DevelopmentBarState {
-  block: {
-    type: BlockType;
-    data: BlockData;
-  } | null;
-}
-
-interface DevelopmentBarAction {
-  updateActiveBlock: (block: { type: BlockType; data: BlockData }) => void;
-  removeActiveBlock: () => void;
-}
-
-export const useDevelopmentBarStore = create<
-  DevelopmentBarState & DevelopmentBarAction
->((set) => ({
-  block: null,
-  updateActiveBlock: (block) => set(() => ({ block })),
-  removeActiveBlock: () => set(() => ({ block: null })),
-}));
-
 interface PrimarySidebarState {
   activeSection: "blocks" | "routes" | "workflows" | "data-resources" | null;
 }
@@ -42,4 +20,24 @@ export const usePrimarySidebarStore = create<
       activeSection,
     })),
   hidePrimaryBar: () => set(() => ({ activeSection: null })),
+}));
+
+interface DevelopmentSheetState {
+  currentId: string | null;
+}
+
+interface DevelopmentSheetAction {
+  updateCurrentId: (id: string) => void;
+  removeCurrentId: () => void;
+}
+
+export const useDevelopmentSheetStore = create<
+  DevelopmentSheetState & DevelopmentSheetAction
+>((set) => ({
+  currentId: null,
+  updateCurrentId: (id: string) =>
+    set(() => ({
+      currentId: id,
+    })),
+  removeCurrentId: () => set(() => ({ currentId: null })),
 }));

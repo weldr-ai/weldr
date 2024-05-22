@@ -1,8 +1,8 @@
 import type { Node } from "reactflow";
 
 export type BlockType =
-  | "route-entry-block"
-  | "workflow-entry-block"
+  | "access-point-block"
+  | "workflow-trigger-block"
   | "query-block"
   | "action-block"
   | "logical-processing-block"
@@ -13,7 +13,7 @@ export type BlockType =
 
 export type BaseBlock<T> = Node<T, BlockType>;
 
-export interface RouteEntryBlockData {
+export interface AccessPointBlockData {
   id: string;
   name: string;
   description?: string | null;
@@ -21,14 +21,14 @@ export interface RouteEntryBlockData {
   urlPath: string;
 }
 
-export type TRouteEntryBlock = BaseBlock<RouteEntryBlockData>;
+export type TAccessPointBlock = BaseBlock<AccessPointBlockData>;
 
-export interface WorkflowEntryBlockData {
+export interface WorkflowTriggerBlockData {
   id: string;
   name: string;
 }
 
-export type TWorkflowEntryBlock = BaseBlock<WorkflowEntryBlockData>;
+export type TWorkflowTriggerBlock = BaseBlock<WorkflowTriggerBlockData>;
 
 export interface QueryBlockData {
   id: string;
@@ -80,8 +80,8 @@ export interface ResponseBlockData {
 export type TResponseBlock = BaseBlock<ResponseBlockData>;
 
 export type BlockData =
-  | RouteEntryBlockData
-  | WorkflowEntryBlockData
+  | AccessPointBlockData
+  | WorkflowTriggerBlockData
   | QueryBlockData
   | ActionBlockData
   | LogicalProcessingBlockData
@@ -91,8 +91,8 @@ export type BlockData =
   | ResponseBlockData;
 
 export type Block =
-  | TRouteEntryBlock
-  | TWorkflowEntryBlock
+  | TAccessPointBlock
+  | TWorkflowTriggerBlock
   | TQueryBlock
   | TActionBlock
   | TLogicalProcessingBlock

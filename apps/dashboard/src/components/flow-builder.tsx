@@ -3,19 +3,26 @@
 import "reactflow/dist/style.css";
 import "~/styles/flow-builder.css";
 
-import type { Connection, Edge, ReactFlowInstance } from "reactflow";
-import React, { useCallback, useState } from "react";
+import type { Connection, Edge } from "reactflow";
+import React, { useCallback } from "react";
 import { createId } from "@paralleldrive/cuid2";
+import { Minus, Plus, Scan } from "lucide-react";
 import ReactFlow, {
   addEdge,
   Background,
+  MiniMap,
   Panel,
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
+  useReactFlow,
+  useViewport,
 } from "reactflow";
 
-import type { Block, BlockType, TRouteEntryBlock } from "~/types";
+import { Button } from "@integramind/ui/button";
+
+import type { Block, BlockType } from "~/types";
+import { AccessPointBlock } from "~/components/access-point-block";
 import { ActionBlock } from "~/components/action-block";
 import { AIProcessingBlock } from "~/components/ai-processing-block";
 import { BlocksMenu } from "~/components/blocks-menu";
@@ -23,13 +30,12 @@ import { LogicalBranchBlock } from "~/components/logical-branch-block";
 import { LogicalProcessingBlock } from "~/components/logical-processing-block";
 import { QueryBlock } from "~/components/query-block";
 import { ResponseBlock } from "~/components/response-block";
-import { RouteEntryBlock } from "~/components/route-entry-block";
 import { SemanticBranchBlock } from "~/components/semantic-branch-block";
-import { WorkflowEntryBlock } from "~/components/workflow-entry-block";
+import { WorkflowTriggerBlock } from "~/components/workflow-trigger-block";
 
 const blockTypes = {
-  "route-entry-block": RouteEntryBlock,
-  "workflow-entry-block": WorkflowEntryBlock,
+  "access-point-block": AccessPointBlock,
+  "workflow-trigger-block": WorkflowTriggerBlock,
   "query-block": QueryBlock,
   "action-block": ActionBlock,
   "logical-processing-block": LogicalProcessingBlock,
@@ -44,25 +50,23 @@ const initialBlockId = createId();
 const initialBlocks: Block[] = [
   {
     id: initialBlockId,
-    type: "route-entry-block",
+    type: "workflow-trigger-block",
     position: {
       x: 0,
       y: 0,
     },
     data: {
       id: initialBlockId,
-      name: "New API Route",
-      method: "GET",
-      urlPath: "/",
+      name: "New Workflow",
     },
-  } as TRouteEntryBlock,
+  },
 ];
 
 const initEdges: Edge[] = [];
 
 export function _FlowBuilder() {
-  const [reactFlowInstance, setReactFlowInstance] =
-    useState<ReactFlowInstance | null>(null);
+  const reactFlow = useReactFlow();
+  const viewPort = useViewport();
   const [blocks, setBlocks, onBlocksChange] = useNodesState(initialBlocks);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
 
@@ -88,9 +92,7 @@ export function _FlowBuilder() {
       // check if the dropped element is valid
       if (typeof blockType === "undefined" || !blockType) return;
 
-      if (reactFlowInstance === null) return;
-
-      const position = reactFlowInstance.screenToFlowPosition({
+      const position = reactFlow.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
@@ -99,9 +101,9 @@ export function _FlowBuilder() {
 
       const getNewBockName = (blockType: BlockType) => {
         switch (blockType) {
-          case "route-entry-block":
-            return "New API Route";
-          case "workflow-entry-block":
+          case "access-point-block":
+            return "New Access Point";
+          case "workflow-trigger-block":
             return "New Workflow";
           case "query-block":
             return "New Query";
@@ -129,7 +131,7 @@ export function _FlowBuilder() {
 
       setBlocks((blocks) => blocks.concat(newBlock));
     },
-    [reactFlowInstance, setBlocks],
+    [reactFlow, setBlocks],
   );
 
   return (
@@ -139,7 +141,6 @@ export function _FlowBuilder() {
       onNodesChange={onBlocksChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
-      onInit={setReactFlowInstance}
       onDrop={onDrop}
       onDragOver={onDragOver}
       nodeTypes={blockTypes}
@@ -148,6 +149,64 @@ export function _FlowBuilder() {
       fitView
     >
       <Background className="bg-background" color="hsl(var(--background))" />
+      <MiniMap
+        className="bottom-11 bg-background"
+        position="bottom-left"
+        style={{
+          height: 100,
+          width: 172,
+        }}
+        nodeColor="hsl(var(--muted-foreground))"
+        maskColor="hsl(var(--muted-foreground))"
+      />
+      <Panel
+        position="bottom-left"
+        className="flex flex-row rounded-xl border bg-muted"
+      >
+        <Button
+          className="rounded-xl rounded-r-none"
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            reactFlow.zoomOut();
+          }}
+        >
+          <Minus className="size-4" />
+        </Button>
+        <Button
+          className="w-16 rounded-none"
+          variant="ghost"
+          onClick={() => {
+            reactFlow.setViewport({
+              x: viewPort.x,
+              y: viewPort.y,
+              zoom: 1,
+            });
+          }}
+        >
+          {`%${Math.floor(viewPort.zoom * 100)}`}
+        </Button>
+        <Button
+          className="rounded-none"
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            reactFlow.zoomIn();
+          }}
+        >
+          <Plus className="size-4" />
+        </Button>
+        <Button
+          className="rounded-xl rounded-l-none"
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            reactFlow.fitView();
+          }}
+        >
+          <Scan className="size-4" />
+        </Button>
+      </Panel>
       <Panel position="top-right">
         <BlocksMenu />
       </Panel>

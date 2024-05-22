@@ -7,9 +7,9 @@
 }
 
 .react-flow__edge-path {
-  @apply stroke-border
+  @apply stroke-border;
 }
 
 .react-flow__connection-path {
-  @apply stroke-border
+  @apply stroke-border;
 }

@@ -4,10 +4,10 @@ import Link from "next/link";
 import {
   ExternalLink,
   FileText,
-  PanelLeft,
   PlayCircle,
   Split,
   Trash,
+  X,
 } from "lucide-react";
 import { Handle, Position } from "reactflow";
 
@@ -21,17 +21,30 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@integramind/ui/context-menu";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@integramind/ui/sheet";
 
-import type { BlockType, LogicalBranchBlockData } from "~/types";
+import type { LogicalBranchBlockData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import { useDevelopmentBarStore } from "~/lib/store";
+import { useDevelopmentSheetStore } from "~/lib/store";
 
 export const LogicalBranchBlock = memo(
-  ({ data, type, isConnectable }: NodeProps<LogicalBranchBlockData>) => {
+  ({ data, isConnectable }: NodeProps<LogicalBranchBlockData>) => {
     const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
       useState<boolean>(false);
-    const updateActiveBlock = useDevelopmentBarStore(
-      (state) => state.updateActiveBlock,
+    const currentId = useDevelopmentSheetStore((state) => state.currentId);
+    const updateCurrentId = useDevelopmentSheetStore(
+      (state) => state.updateCurrentId,
+    );
+    const removeCurrentId = useDevelopmentSheetStore(
+      (state) => state.removeCurrentId,
     );
 
     return (
@@ -43,61 +56,74 @@ export const LogicalBranchBlock = memo(
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
-        <ContextMenu>
-          <ContextMenuTrigger>
-            <Card className="flex h-[86px] w-[256px] flex-col gap-2 px-5 py-4">
-              <div className="flex w-full items-center justify-between text-xs">
+        <Sheet modal={false} open={currentId === data.id}>
+          <SheetTrigger
+            onClick={() => updateCurrentId(data.id)}
+            className="cursor-grab"
+          >
+            <ContextMenu>
+              <ContextMenuTrigger>
+                <Card className="flex h-[78px] w-[256px] flex-col items-start gap-2 px-5 py-4">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Split className="size-4 stroke-1 text-primary" />
+                    <span className="text-muted-foreground">
+                      Logical Branch
+                    </span>
+                  </div>
+                  <span className="text-sm">{data.name}</span>
+                </Card>
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                <ContextMenuLabel className="text-xs">
+                  Logical Branch
+                </ContextMenuLabel>
+                <ContextMenuSeparator />
+                <ContextMenuItem className="text-xs">
+                  <PlayCircle className="mr-3 size-4 text-muted-foreground" />
+                  Run with previous blocks
+                </ContextMenuItem>
+                <ContextMenuItem className="flex items-center justify-between text-xs">
+                  <Link
+                    className="flex items-center"
+                    href="https://docs.integramind.ai/blocks/query"
+                    target="blank"
+                  >
+                    <FileText className="mr-3 size-4 text-muted-foreground" />
+                    Docs
+                  </Link>
+                  <ExternalLink className="size-3 text-muted-foreground" />
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem
+                  className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                  onClick={() => setIsDeleteAlertDialogOpen(true)}
+                >
+                  <Trash className="mr-3 size-4" />
+                  Delete
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
+          </SheetTrigger>
+          <SheetContent className="right-2 top-16 flex h-[calc(100dvh-72px)] w-full flex-col gap-4 rounded-xl border bg-muted">
+            <SheetHeader>
+              <SheetTitle className="flex w-full items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Split className="size-4 stroke-1 text-primary" />
-                  <span className="text-muted-foreground">Logical Branch</span>
+                  <span>Logical Branch</span>
                 </div>
-                <Button
-                  className="size-6"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() =>
-                    updateActiveBlock({
-                      type: type as BlockType,
-                      data,
-                    })
-                  }
-                >
-                  <PanelLeft className="size-3 text-muted-foreground" />
-                </Button>
-              </div>
-              <span className="text-sm">{data.name}</span>
-            </Card>
-          </ContextMenuTrigger>
-          <ContextMenuContent>
-            <ContextMenuLabel className="text-xs">
-              Logical Branch
-            </ContextMenuLabel>
-            <ContextMenuSeparator />
-            <ContextMenuItem className="text-xs">
-              <PlayCircle className="mr-3 size-4 text-muted-foreground" />
-              Run with previous blocks
-            </ContextMenuItem>
-            <ContextMenuItem className="flex items-center justify-between text-xs">
-              <Link
-                className="flex items-center"
-                href="https://docs.integramind.ai/blocks/query"
-                target="blank"
-              >
-                <FileText className="mr-3 size-4 text-muted-foreground" />
-                Docs
-              </Link>
-              <ExternalLink className="size-3 text-muted-foreground" />
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-              onClick={() => setIsDeleteAlertDialogOpen(true)}
-            >
-              <Trash className="mr-3 size-4" />
-              Delete
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
+                <SheetClose onClick={() => removeCurrentId()}>
+                  <Button variant="ghost" size="icon">
+                    <X className="size-4" />
+                    <span className="sr-only">Close</span>
+                  </Button>
+                </SheetClose>
+              </SheetTitle>
+              <SheetDescription>
+                Develop your logical branch here
+              </SheetDescription>
+            </SheetHeader>
+          </SheetContent>
+        </Sheet>
         <DeleteAlertDialog
           open={isDeleteAlertDialogOpen}
           onOpenChange={setIsDeleteAlertDialogOpen}
