@@ -9,7 +9,7 @@ import {
   Trash,
   X,
 } from "lucide-react";
-import { Handle, Position } from "reactflow";
+import { Handle, Position, useReactFlow } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
@@ -38,6 +38,7 @@ import { useDevelopmentSheetStore } from "~/lib/store";
 
 export const ResponseBlock = memo(
   ({ data, isConnectable, selected }: NodeProps<ResponseBlockData>) => {
+    const reactFlow = useReactFlow();
     const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
       useState<boolean>(false);
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
@@ -131,6 +132,15 @@ export const ResponseBlock = memo(
         <DeleteAlertDialog
           open={isDeleteAlertDialogOpen}
           onOpenChange={setIsDeleteAlertDialogOpen}
+          onDelete={() =>
+            reactFlow.deleteElements({
+              nodes: [
+                {
+                  id: data.id,
+                },
+              ],
+            })
+          }
         />
         <Handle
           className="border-border bg-background p-1"

@@ -13,9 +13,11 @@ import { buttonVariants } from "@integramind/ui/button";
 export function DeleteAlertDialog({
   open,
   onOpenChange,
+  onDelete,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDelete: () => void;
 }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -29,6 +31,7 @@ export function DeleteAlertDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
+            onClick={onDelete}
             className={buttonVariants({ variant: "destructive" })}
           >
             Delete

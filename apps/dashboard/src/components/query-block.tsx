@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { Handle, Position } from "reactflow";
+import { Handle, Position, useReactFlow } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
@@ -49,6 +49,7 @@ import { useDevelopmentSheetStore } from "~/lib/store";
 export const QueryBlock = memo(
   ({ data, isConnectable, selected }: NodeProps<QueryBlockData>) => {
     const form = useForm();
+    const reactFlow = useReactFlow();
     const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
       useState<boolean>(false);
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
@@ -171,6 +172,15 @@ export const QueryBlock = memo(
         <DeleteAlertDialog
           open={isDeleteAlertDialogOpen}
           onOpenChange={setIsDeleteAlertDialogOpen}
+          onDelete={() =>
+            reactFlow.deleteElements({
+              nodes: [
+                {
+                  id: data.id,
+                },
+              ],
+            })
+          }
         />
         <Handle
           className="border-border bg-background p-1"
