@@ -42,8 +42,8 @@ import {
 
 import type { QueryBlockData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
+import { TextHighlighter } from "~/components/text-highlighter";
 import { useDevelopmentSheetStore } from "~/lib/store";
-import { TextHighlighter } from "./text-highlighter";
 
 export const QueryBlock = memo(
   ({ data, isConnectable }: NodeProps<QueryBlockData>) => {

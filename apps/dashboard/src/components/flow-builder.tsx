@@ -26,6 +26,7 @@ import { AccessPointBlock } from "~/components/access-point-block";
 import { ActionBlock } from "~/components/action-block";
 import { AIProcessingBlock } from "~/components/ai-processing-block";
 import { BlocksMenu } from "~/components/blocks-menu";
+import DeletableEdge from "~/components/deletable-edge";
 import { LogicalBranchBlock } from "~/components/logical-branch-block";
 import { LogicalProcessingBlock } from "~/components/logical-processing-block";
 import { QueryBlock } from "~/components/query-block";
@@ -43,6 +44,10 @@ const blockTypes = {
   "logical-branch-block": LogicalBranchBlock,
   "semantic-branch-block": SemanticBranchBlock,
   "response-block": ResponseBlock,
+};
+
+const edgeTypes = {
+  "deletable-edge": DeletableEdge,
 };
 
 const initialBlockId = createId();
@@ -72,7 +77,7 @@ export function _FlowBuilder() {
 
   const onConnect = useCallback(
     (params: Edge | Connection) =>
-      setEdges((eds) => addEdge({ ...params }, eds)),
+      setEdges((eds) => addEdge({ ...params, type: "deletable-edge" }, eds)),
     [setEdges],
   );
 
@@ -144,6 +149,7 @@ export function _FlowBuilder() {
       onDrop={onDrop}
       onDragOver={onDragOver}
       nodeTypes={blockTypes}
+      edgeTypes={edgeTypes}
       panOnScroll
       maxZoom={1}
       fitView
