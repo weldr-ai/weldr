@@ -12,15 +12,15 @@ import { buttonVariants } from "@integramind/ui/button";
 
 export function DeleteAlertDialog({
   open,
-  onOpenChange,
+  setOpen,
   onDelete,
 }: {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  setOpen: (open: boolean) => void;
   onDelete: () => void;
 }) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
