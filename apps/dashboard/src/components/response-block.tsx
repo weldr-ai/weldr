@@ -74,7 +74,7 @@ export const ResponseBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <CornerDownLeft className="size-4 stroke-1 text-primary" />
+                    <CornerDownLeft className="size-4 text-primary" />
                     <span className="text-muted-foreground">Response</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
@@ -84,7 +84,7 @@ export const ResponseBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <CornerDownLeft className="size-4 stroke-1 text-primary" />
+                      <CornerDownLeft className="size-4 text-primary" />
                       <span>Response</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>

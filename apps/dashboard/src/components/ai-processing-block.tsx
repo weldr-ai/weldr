@@ -74,7 +74,7 @@ export const AIProcessingBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <Bot className="size-4 stroke-1 text-primary" />
+                    <Bot className="size-4 text-primary" />
                     <span className="text-muted-foreground">AI Processing</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
@@ -84,7 +84,7 @@ export const AIProcessingBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Bot className="size-4 stroke-1 text-primary" />
+                      <Bot className="size-4" />
                       <span>AI Processing</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>

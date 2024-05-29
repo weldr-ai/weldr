@@ -74,7 +74,7 @@ export const SemanticBranchBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <Brain className="size-4 stroke-1 text-primary" />
+                    <Brain className="size-4 text-primary" />
                     <span className="text-muted-foreground">
                       Semantic Branch
                     </span>
@@ -86,7 +86,7 @@ export const SemanticBranchBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Brain className="size-4 stroke-1 text-primary" />
+                      <Brain className="size-4 text-primary" />
                       <span>Semantic Branch</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>

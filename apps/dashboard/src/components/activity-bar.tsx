@@ -53,7 +53,7 @@ export function ActivityBar() {
           size="icon"
           variant="ghost"
         >
-          <Blocks className="size-5 stroke-1" />
+          <Blocks className="size-5" />
         </Button>
         <Button
           className={cn({
@@ -73,7 +73,7 @@ export function ActivityBar() {
           size="icon"
           variant="ghost"
         >
-          <Workflow className="size-5 stroke-1" />
+          <Workflow className="size-5" />
         </Button>
         <Button
           className={cn({
@@ -83,13 +83,13 @@ export function ActivityBar() {
           size="icon"
           variant="ghost"
         >
-          <Database className="size-5 stroke-1" />
+          <Database className="size-5" />
         </Button>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button size="icon" variant="ghost">
-            <CircleUser className="size-5 stroke-1" />
+            <CircleUser className="size-5" />
             <span className="sr-only">Toggle user menu</span>
           </Button>
         </DropdownMenuTrigger>
