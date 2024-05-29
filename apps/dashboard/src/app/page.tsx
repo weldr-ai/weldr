@@ -1,11 +1,15 @@
-import Link from "next/link";
 import { Boxes, Plus } from "lucide-react";
 
-import { Button, buttonVariants } from "@integramind/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@integramind/ui/card";
-import { cn } from "@integramind/ui/utils";
+import { Button } from "@integramind/ui/button";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@integramind/ui/command";
 
-import { CreateProjectForm } from "~/components/create-project-form";
 import { Preview } from "~/components/preview";
 import { getProjects } from "~/lib/actions/projects";
 
@@ -14,48 +18,38 @@ export default async function Project(): Promise<JSX.Element> {
 
   return (
     <div className="flex w-full">
-      <div
-        id="dialogBackdrop"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {projects.length > 0 ? (
-                <>{"Choose a Project"}</>
-              ) : (
-                <>{"Create a project"}</>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex w-[500px]">
-            {projects.length > 0 ? (
-              <div className="grid h-96 w-full grid-cols-3 gap-2 overflow-y-auto">
-                <Button variant="outline" className="h-24 rounded-xl">
-                  <Plus className="mb-2 size-6" />
-                </Button>
-                {projects.map((project) => (
-                  <Link
-                    href={`/${project.id}`}
-                    key={project.id}
-                    className={cn(
-                      buttonVariants({ variant: "ghost" }),
-                      "flex h-24 w-full flex-col items-center justify-center rounded-xl text-center",
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <Boxes className="mb-2 size-6" />
-                    </div>
-                    {project.name}
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <CreateProjectForm />
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <CommandDialog open={true}>
+        <CommandInput
+          className="border-none ring-0"
+          placeholder="Search for a project..."
+        />
+        <CommandList className="h-96">
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup className="py-2">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Projects</span>
+              <Button
+                className="size-6 rounded-sm bg-muted"
+                variant="outline"
+                size="icon"
+              >
+                <Plus className="size-3 text-muted-foreground" />
+              </Button>
+            </div>
+            <div className="grid w-full grid-cols-3 gap-2">
+              {projects.map((project) => (
+                <CommandItem
+                  key={project.id}
+                  className="flex h-24 flex-col items-center justify-center rounded-xl text-center"
+                >
+                  <Boxes className="mb-2 size-24" />
+                  {project.name}
+                </CommandItem>
+              ))}
+            </div>
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
       <Preview />
     </div>
   );
