@@ -1,3 +1,4 @@
+import type { z } from "zod";
 import { relations } from "drizzle-orm";
 import {
   boolean,
@@ -7,8 +8,11 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import type { Input, Output } from "../types";
+
+// Tables
 
 export const projects = pgTable("projects", {
   id: text("id")
@@ -117,6 +121,10 @@ export const workflowsRelations = relations(workflows, ({ one }) => ({
   }),
 }));
 
+export const workflowSchema = createSelectSchema(workflows);
+export const insertWorkflowSchema = createInsertSchema(workflows);
+export type Workflow = z.infer<typeof workflowSchema>;
+
 export const actionTypes = pgEnum("action_types", [
   "retrieve",
   "submit",
@@ -185,4 +193,46 @@ export const actionBlocks = pgTable("action_blocks", {
   projectId: text("project_id")
     .references(() => projects.id, { onDelete: "cascade" })
     .notNull(),
+});
+
+// Zod Schemas
+
+export const projectSchema = createSelectSchema(projects);
+export const insertProjectSchema = createInsertSchema(projects, {
+  name: (schema) =>
+    schema.name.trim().min(1, {
+      message: "Name is required.",
+    }),
+});
+
+export const flowSchema = createSelectSchema(flows);
+export const insertFlowSchema = createInsertSchema(flows, {
+  name: (schema) =>
+    schema.name.trim().min(1, {
+      message: "Name is required.",
+    }),
+});
+
+export const resourceSchema = createSelectSchema(resources);
+export const insertResourceSchema = createInsertSchema(resources, {
+  name: (schema) =>
+    schema.name.trim().min(1, {
+      message: "Name is required.",
+    }),
+});
+
+export const accessPointSchema = createSelectSchema(accessPoints);
+export const insertAccessPointSchema = createInsertSchema(accessPoints, {
+  name: (schema) =>
+    schema.name.trim().min(1, {
+      message: "Name is required.",
+    }),
+});
+
+export const actionBlockSchema = createSelectSchema(actionBlocks);
+export const insertActionBlockSchema = createInsertSchema(actionBlocks, {
+  name: (schema) =>
+    schema.name.trim().min(1, {
+      message: "Name is required.",
+    }),
 });

@@ -43,7 +43,7 @@ export const LogicalProcessingBlock = memo(
     selected,
   }: NodeProps<LogicalProcessingBlockData>) => {
     const reactFlow = useReactFlow();
-    const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
+    const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
     const updateCurrentId = useDevelopmentSheetStore(
@@ -130,7 +130,7 @@ export const LogicalProcessingBlock = memo(
             <ContextMenuSeparator />
             <ContextMenuItem
               className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-              onClick={() => setIsDeleteAlertDialogOpen(true)}
+              onClick={() => setDeleteAlertDialogOpen(true)}
             >
               <Trash className="mr-3 size-4" />
               Delete
@@ -138,8 +138,8 @@ export const LogicalProcessingBlock = memo(
           </ContextMenuContent>
         </ContextMenu>
         <DeleteAlertDialog
-          open={isDeleteAlertDialogOpen}
-          onOpenChange={setIsDeleteAlertDialogOpen}
+          open={deleteAlertDialogOpen}
+          setOpen={setDeleteAlertDialogOpen}
           onDelete={() =>
             reactFlow.deleteElements({
               nodes: [

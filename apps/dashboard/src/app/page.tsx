@@ -1,27 +1,57 @@
-// import { redirect } from "next/navigation";
+import Link from "next/link";
+import { Boxes } from "lucide-react";
 
-// import { auth } from "@integramind/auth";
+import { buttonVariants } from "@integramind/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@integramind/ui/card";
+import { cn } from "@integramind/ui/utils";
 
-import { ActivityBar } from "~/components/activity-bar";
-import { FlowBuilder } from "~/components/flow-builder";
-import { Navbar } from "~/components/navbar";
-import { PrimarySidebar } from "~/components/primary-sidebar";
+import { CreateProjectForm } from "~/components/create-project-form";
+import { Preview } from "~/components/preview";
+import { getProjects } from "~/lib/actions/projects";
 
-export default async function Dashboard(): Promise<JSX.Element> {
-  // const session = await auth();
-  // if (!session) redirect("/auth/login");
+export default async function Project(): Promise<JSX.Element> {
+  const projects = await getProjects();
+
   return (
-    <div className="flex size-full min-h-screen flex-col">
-      <Navbar />
-      <div className="flex w-full flex-row">
-        <div className="sticky z-40 flex h-[calc(100dvh-56px)] bg-muted">
-          <ActivityBar />
-          <PrimarySidebar />
-        </div>
-        <main className="flex w-full flex-col">
-          <FlowBuilder />
-        </main>
+    <div className="flex w-full">
+      <div
+        id="dialogBackdrop"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {projects.length > 0 ? (
+                <>{"Choose a Project"}</>
+              ) : (
+                <>{"Create a project"}</>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex w-[500px]">
+            {projects.length > 0 ? (
+              <div className="grid h-96 w-full grid-cols-3 gap-2 overflow-y-auto">
+                {projects.map((project) => (
+                  <Link
+                    href={`/${project.id}`}
+                    key={project.id}
+                    className={cn(
+                      buttonVariants({ variant: "ghost" }),
+                      "flex h-24 w-full flex-col items-center justify-center rounded-xl text-center",
+                    )}
+                  >
+                    <Boxes className="mb-2 size-6 stroke-1" />
+                    {project.name}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <CreateProjectForm />
+            )}
+          </CardContent>
+        </Card>
       </div>
+      <Preview />
     </div>
   );
 }

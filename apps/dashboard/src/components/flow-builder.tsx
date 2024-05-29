@@ -50,23 +50,7 @@ const edgeTypes = {
   "deletable-edge": DeletableEdge,
 };
 
-const initialBlockId = createId();
-
-const initialBlocks: Block[] = [
-  {
-    id: initialBlockId,
-    type: "workflow-trigger-block",
-    deletable: false,
-    position: {
-      x: 0,
-      y: 0,
-    },
-    data: {
-      id: initialBlockId,
-      name: "New Workflow",
-    },
-  },
-];
+const initialBlocks: Block[] = [];
 
 const initEdges: Edge[] = [];
 
@@ -192,7 +176,7 @@ export function _FlowBuilder() {
             });
           }}
         >
-          {`%${Math.floor(viewPort.zoom * 100)}`}
+          {`${Math.floor(viewPort.zoom * 100)}%`}
         </Button>
         <Button
           className="rounded-none"

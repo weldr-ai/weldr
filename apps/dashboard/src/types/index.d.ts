@@ -1,4 +1,13 @@
 import type { Node } from "reactflow";
+import type { z } from "zod";
+
+import type {
+  accessPointSchema,
+  actionBlockSchema,
+  flowSchema,
+  projectSchema,
+  resourceSchema,
+} from "@integramind/db/schema";
 
 export type BlockType =
   | "access-point-block"
@@ -100,3 +109,9 @@ export type Block =
   | TLogicalBranchBlock
   | TSemanticBranchBlock
   | TResponseBlock;
+
+export type Project = z.infer<typeof projectSchema>;
+export type Flow = z.infer<typeof flowSchema>;
+export type Resource = z.infer<typeof resourceSchema>;
+export type AccessPoint = z.infer<typeof accessPointSchema>;
+export type ActionBlock = z.infer<typeof actionBlockSchema>;
