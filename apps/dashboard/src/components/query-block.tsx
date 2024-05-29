@@ -85,7 +85,7 @@ export const QueryBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <Database className="size-4 stroke-1 text-primary" />
+                    <Database className="size-4 text-primary" />
                     <span className="text-muted-foreground">Query</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
@@ -95,7 +95,7 @@ export const QueryBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Database className="size-4 stroke-1 text-primary" />
+                      <Database className="size-4 text-primary" />
                       <span>Query</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>

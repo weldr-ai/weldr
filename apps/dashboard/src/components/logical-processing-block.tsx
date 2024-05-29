@@ -78,7 +78,7 @@ export const LogicalProcessingBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <Cpu className="size-4 stroke-1 text-primary" />
+                    <Cpu className="size-4 text-primary" />
                     <span className="text-muted-foreground">
                       Logical Processing
                     </span>
@@ -90,7 +90,7 @@ export const LogicalProcessingBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Cpu className="size-4 stroke-1 text-primary" />
+                      <Cpu className="size-4 text-primary" />
                       <span>Logical Processing</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>

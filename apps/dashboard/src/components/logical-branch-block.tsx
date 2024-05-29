@@ -74,7 +74,7 @@ export const LogicalBranchBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <Split className="size-4 stroke-1 text-primary" />
+                    <Split className="size-4 text-primary" />
                     <span className="text-muted-foreground">
                       Logical Branch
                     </span>
@@ -86,7 +86,7 @@ export const LogicalBranchBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Split className="size-4 stroke-1 text-primary" />
+                      <Split className="size-4 text-primary" />
                       <span>Logical Branch</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>

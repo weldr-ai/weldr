@@ -109,20 +109,20 @@ export function Preview() {
           <div className="flex w-14 flex-col items-center justify-between border-r p-4">
             <div className="flex flex-col gap-2">
               <Button size="icon" variant="ghost">
-                <Blocks className="size-5 stroke-1" />
+                <Blocks className="size-5" />
               </Button>
               <Button size="icon" variant="ghost">
                 <span className="text-[10px]">HTTP</span>
               </Button>
               <Button size="icon" variant="ghost">
-                <Workflow className="size-5 stroke-1" />
+                <Workflow className="size-5" />
               </Button>
               <Button size="icon" variant="ghost">
-                <Database className="size-5 stroke-1" />
+                <Database className="size-5" />
               </Button>
             </div>
             <Button size="icon" variant="ghost">
-              <CircleUser className="size-5 stroke-1" />
+              <CircleUser className="size-5" />
               <span className="sr-only">Toggle user menu</span>
             </Button>
           </div>

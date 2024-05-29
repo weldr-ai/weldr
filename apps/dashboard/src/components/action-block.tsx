@@ -74,7 +74,7 @@ export const ActionBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <Zap className="size-4 stroke-1 text-primary" />
+                    <Zap className="size-4 text-primary" />
                     <span className="text-muted-foreground">Action</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
@@ -84,7 +84,7 @@ export const ActionBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Zap className="size-4 stroke-1 text-primary" />
+                      <Zap className="size-4 text-primary" />
                       <span>Action</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>
