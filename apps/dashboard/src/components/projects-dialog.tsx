@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Boxes, Plus } from "lucide-react";
 
 import { Button } from "@integramind/ui/button";
 import {
-  CommandDialog,
+  Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
@@ -18,35 +18,20 @@ import type { Project } from "~/types";
 import { useCommandCenterStore } from "~/lib/store";
 import { CreateProjectDialog } from "./create-project-dialog";
 
-export function CommandCenter({ projects }: { projects: Project[] }) {
+export function ProjectsDialog({ projects }: { projects: Project[] }) {
   const router = useRouter();
-  const commandCenterOpen = useCommandCenterStore((state) => state.open);
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
   const [createProjectDialogOpen, setCreateProjectDialogOpen] =
     useState<boolean>(false);
 
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setCommandCenterOpen(true);
-      }
-    };
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, [setCommandCenterOpen]);
-
   return (
     <>
-      <CommandDialog
-        open={commandCenterOpen}
-        onOpenChange={setCommandCenterOpen}
-      >
+      <Command className="fixed left-1/2 top-1/2 z-50 h-[350px] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border duration-200 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5">
         <CommandInput
           className="border-none ring-0"
           placeholder="Search projects..."
         />
-        <CommandList className="h-96 w-[500px]">
+        <CommandList>
           <CommandEmpty>No projects found.</CommandEmpty>
           <CommandGroup className="py-2">
             <div className="mb-2 flex items-center justify-between">
@@ -81,7 +66,7 @@ export function CommandCenter({ projects }: { projects: Project[] }) {
             </div>
           </CommandGroup>
         </CommandList>
-      </CommandDialog>
+      </Command>
       <CreateProjectDialog
         open={createProjectDialogOpen}
         setOpen={setCreateProjectDialogOpen}
