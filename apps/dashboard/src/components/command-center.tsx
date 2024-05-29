@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Boxes, Plus } from "lucide-react";
 
 import { Button } from "@integramind/ui/button";
@@ -18,6 +19,7 @@ import { useCommandCenterStore } from "~/lib/store";
 import { CreateProjectDialog } from "./create-project-dialog";
 
 export function CommandCenter({ projects }: { projects: Project[] }) {
+  const router = useRouter();
   const commandCenterOpen = useCommandCenterStore((state) => state.open);
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
   const [createProjectDialogOpen, setCreateProjectDialogOpen] =
@@ -65,7 +67,12 @@ export function CommandCenter({ projects }: { projects: Project[] }) {
               {projects.map((project) => (
                 <CommandItem
                   key={project.id}
-                  className="flex h-24 flex-col items-center justify-center rounded-xl text-center"
+                  value={project.name}
+                  className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-xl text-center"
+                  onSelect={() => {
+                    setCommandCenterOpen(false);
+                    router.replace(`${project.id}`);
+                  }}
                 >
                   <Boxes className="mb-2 size-24" />
                   {project.name}
