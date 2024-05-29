@@ -6,7 +6,11 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { ThemeProvider } from "@integramind/ui/theme-provider";
+import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
+
+import { CommandCenter } from "~/components/command-center";
+import { getProjects } from "~/lib/actions/projects";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -20,11 +24,13 @@ export const metadata: Metadata = {
     "Build LLM-powered AI agents in minutes for seamless workflow automation!",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
-}): JSX.Element {
+}): Promise<JSX.Element> {
+  const projects = await getProjects();
+
   return (
     <html className="dark" lang="en">
       <body
@@ -40,6 +46,8 @@ export default function RootLayout({
           enableSystem
         >
           {children}
+          <CommandCenter projects={projects} />
+          <Toaster />
           <Analytics />
           <SpeedInsights />
         </ThemeProvider>

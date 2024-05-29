@@ -13,7 +13,9 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.3.4",
     "@integramind/auth": "workspace:*",
+    "@integramind/db": "workspace:*",
     "@integramind/ui": "workspace:*",
     "@paralleldrive/cuid2": "^2.2.2",
     "@vercel/analytics": "^1.2.2",
@@ -24,6 +26,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.2",
+    "react-hotkeys-hook": "^4.5.0",
     "reactflow": "^11.11.3",
     "slate": "^0.103.0",
     "slate-react": "^0.102.0",

@@ -17,7 +17,7 @@
     "@integramind/db": "workspace:*",
     "@t3-oss/env-core": "^0.10.1",
     "next-auth": "5.0.0-beta.18",
-    "zod": "^3.22.4"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@integramind/eslint-config": "workspace:*",
