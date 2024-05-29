@@ -35,9 +35,24 @@ export const useDevelopmentSheetStore = create<
   DevelopmentSheetState & DevelopmentSheetAction
 >((set) => ({
   currentId: null,
-  updateCurrentId: (id: string) =>
+  updateCurrentId: (id) =>
     set(() => ({
       currentId: id,
     })),
   removeCurrentId: () => set(() => ({ currentId: null })),
+}));
+
+interface CommandCenterState {
+  open: boolean;
+}
+
+interface CommandCenterAction {
+  setOpen: (open: boolean) => void;
+}
+
+export const useCommandCenterStore = create<
+  CommandCenterState & CommandCenterAction
+>((set) => ({
+  open: false,
+  setOpen: (open) => set(() => ({ open })),
 }));

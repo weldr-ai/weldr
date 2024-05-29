@@ -39,7 +39,7 @@ import { useDevelopmentSheetStore } from "~/lib/store";
 export const ActionBlock = memo(
   ({ data, isConnectable, selected }: NodeProps<ActionBlockData>) => {
     const reactFlow = useReactFlow();
-    const [isDeleteAlertDialogOpen, setIsDeleteAlertDialogOpen] =
+    const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
     const updateCurrentId = useDevelopmentSheetStore(
@@ -120,7 +120,7 @@ export const ActionBlock = memo(
             <ContextMenuSeparator />
             <ContextMenuItem
               className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-              onClick={() => setIsDeleteAlertDialogOpen(true)}
+              onClick={() => setDeleteAlertDialogOpen(true)}
             >
               <Trash className="mr-3 size-4" />
               Delete
@@ -128,8 +128,8 @@ export const ActionBlock = memo(
           </ContextMenuContent>
         </ContextMenu>
         <DeleteAlertDialog
-          open={isDeleteAlertDialogOpen}
-          onOpenChange={setIsDeleteAlertDialogOpen}
+          open={deleteAlertDialogOpen}
+          setOpen={setDeleteAlertDialogOpen}
           onDelete={() =>
             reactFlow.deleteElements({
               nodes: [
