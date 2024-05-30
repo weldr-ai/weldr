@@ -95,3 +95,14 @@ export async function getWorkspaces(): Promise<Workspace[]> {
 export async function deleteWorkspace({ id }: { id: string }) {
   await db.delete(workspaces).where(eq(workspaces.id, id));
 }
+
+export async function getWorkspaceById({
+  id,
+}: {
+  id: string;
+}): Promise<Workspace | undefined> {
+  const result = (
+    await db.select().from(workspaces).where(eq(workspaces.id, id))
+  )[0];
+  return result;
+}

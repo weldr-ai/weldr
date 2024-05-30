@@ -56,7 +56,7 @@ export function WorkspacesDialog({ workspaces }: { workspaces: Workspace[] }) {
                   className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-xl text-center"
                   onSelect={() => {
                     setCommandCenterOpen(false);
-                    router.replace(`${workspace.id}`);
+                    router.replace(`/workspaces/${workspace.id}`);
                   }}
                 >
                   <Boxes className="mb-2 size-24" />

@@ -98,3 +98,14 @@ export async function getWorkflows({
     .where(eq(workflows.workspaceId, workspaceId));
   return result;
 }
+
+export async function getWorkflowById({
+  id,
+}: {
+  id: string;
+}): Promise<Workflow | undefined> {
+  const result = (
+    await db.select().from(workflows).where(eq(workflows.id, id))
+  )[0];
+  return result;
+}
