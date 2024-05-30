@@ -4,9 +4,10 @@ import type { z } from "zod";
 import type {
   accessPointSchema,
   actionBlockSchema,
-  flowSchema,
+  compoundBlockSchema,
   projectSchema,
   resourceSchema,
+  workflowSchema,
 } from "@integramind/db/schema";
 
 export type BlockType =
@@ -111,7 +112,8 @@ export type Block =
   | TResponseBlock;
 
 export type Project = z.infer<typeof projectSchema>;
-export type Flow = z.infer<typeof flowSchema>;
-export type Resource = z.infer<typeof resourceSchema>;
+export type CompoundBlock = z.infer<typeof compoundBlockSchema>;
+export type Workflow = z.infer<typeof workflowSchema>;
 export type AccessPoint = z.infer<typeof accessPointSchema>;
 export type ActionBlock = z.infer<typeof actionBlockSchema>;
+export type Resource = z.infer<typeof resourceSchema>;
