@@ -14,10 +14,11 @@ import {
   DropdownMenuTrigger,
 } from "@integramind/ui/dropdown-menu";
 
+import { CreateProjectDialog } from "~/components/create-project-dialog";
+import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useCommandCenterStore } from "~/lib/store";
-import { CreateProjectDialog } from "./create-project-dialog";
-import { DeleteAlertDialog } from "./delete-alert-dialog";
 
+// TODO: add project name to the navbar
 export function Navbar(): JSX.Element {
   const { resolvedTheme } = useTheme();
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);

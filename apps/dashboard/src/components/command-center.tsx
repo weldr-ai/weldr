@@ -15,9 +15,10 @@ import {
 } from "@integramind/ui/command";
 
 import type { Project } from "~/types";
+import { CreateProjectDialog } from "~/components/create-project-dialog";
 import { useCommandCenterStore } from "~/lib/store";
-import { CreateProjectDialog } from "./create-project-dialog";
 
+// TODO: the command center should be a complete center to navigate the project quickly
 export function CommandCenter({ projects }: { projects: Project[] }) {
   const router = useRouter();
   const commandCenterOpen = useCommandCenterStore((state) => state.open);

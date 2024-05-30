@@ -20,14 +20,8 @@ export const projects = pgTable("projects", {
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description"),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
 });
 
 export const projectsRelations = relations(projects, ({ many }) => ({
@@ -43,22 +37,22 @@ export const compoundBlocks = pgTable("compound_blocks", {
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description"),
-  flow: jsonb("flow").$type<Flow>().notNull(),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
+  flow: jsonb("flow")
+    .$type<Flow>()
+    .default({
+      nodes: [],
+      edges: [],
+    })
+    .notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   projectId: text("project_id")
     .references(() => projects.id, { onDelete: "cascade" })
     .notNull(),
 });
 
 export const flowsRelations = relations(compoundBlocks, ({ one }) => ({
-  author: one(projects, {
+  project: one(projects, {
     fields: [compoundBlocks.projectId],
     references: [projects.id],
   }),
@@ -72,23 +66,23 @@ export const workflows = pgTable("workflows", {
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description"),
-  triggerType: triggerTypes("trigger_type"),
-  flow: jsonb("flow").$type<Flow>().notNull(),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
+  triggerType: triggerTypes("trigger_type").notNull(),
+  flow: jsonb("flow")
+    .$type<Flow>()
+    .default({
+      nodes: [],
+      edges: [],
+    })
+    .notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   projectId: text("project_id")
     .references(() => projects.id, { onDelete: "cascade" })
     .notNull(),
 });
 
 export const workflowsRelations = relations(workflows, ({ one }) => ({
-  author: one(projects, {
+  project: one(projects, {
     fields: [workflows.projectId],
     references: [projects.id],
   }),
@@ -109,22 +103,22 @@ export const accessPoints = pgTable("access_point", {
   description: text("description"),
   actionType: actionTypes("action_type"),
   urlPath: text("url_path"),
-  flow: jsonb("flow").$type<Flow>().notNull(),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
+  flow: jsonb("flow")
+    .$type<Flow>()
+    .default({
+      nodes: [],
+      edges: [],
+    })
+    .notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   projectId: text("project_id")
     .references(() => projects.id, { onDelete: "cascade" })
     .notNull(),
 });
 
 export const accessPointsRelations = relations(accessPoints, ({ one }) => ({
-  author: one(projects, {
+  project: one(projects, {
     fields: [accessPoints.projectId],
     references: [projects.id],
   }),
@@ -137,21 +131,15 @@ export const resources = pgTable("resources", {
   name: text("name").notNull(),
   description: text("description"),
   provider: text("provider"),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   projectId: text("project_id")
     .references(() => projects.id, { onDelete: "cascade" })
     .notNull(),
 });
 
 export const resourcesRelations = relations(resources, ({ one }) => ({
-  author: one(projects, {
+  project: one(projects, {
     fields: [resources.projectId],
     references: [projects.id],
   }),
@@ -178,14 +166,8 @@ export const actionBlocks = pgTable("action_blocks", {
     generatedCode: string;
   }>(),
   codeNotUpdated: boolean("code_not_updated"),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   projectId: text("project_id")
     .references(() => projects.id, { onDelete: "cascade" })
     .notNull(),
@@ -261,7 +243,10 @@ export const insertWorkflowSchema = createInsertSchema(workflows, {
     schema.name.trim().min(1, {
       message: "Name is required.",
     }),
-});
+  triggerType: z.enum(triggerTypes.enumValues, {
+    message: "Type is required.",
+  }),
+}).pick({ name: true, description: true, triggerType: true, projectId: true });
 
 // Access points schemas
 export const accessPointSchema = createSelectSchema(accessPoints, {

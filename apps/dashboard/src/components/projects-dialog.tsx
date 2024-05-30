@@ -15,8 +15,8 @@ import {
 } from "@integramind/ui/command";
 
 import type { Project } from "~/types";
+import { CreateProjectDialog } from "~/components/create-project-dialog";
 import { useCommandCenterStore } from "~/lib/store";
-import { CreateProjectDialog } from "./create-project-dialog";
 
 export function ProjectsDialog({ projects }: { projects: Project[] }) {
   const router = useRouter();

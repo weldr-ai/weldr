@@ -9,9 +9,6 @@ import { ThemeProvider } from "@integramind/ui/theme-provider";
 import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
 
-import { CommandCenter } from "~/components/command-center";
-import { getProjects } from "~/lib/actions/projects";
-
 const fontSans = FontSans({
   subsets: ["latin"],
   weight: "400",
@@ -29,8 +26,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }): Promise<JSX.Element> {
-  const projects = await getProjects();
-
   return (
     <html className="dark" lang="en">
       <body
@@ -46,7 +41,6 @@ export default async function RootLayout({
           enableSystem
         >
           {children}
-          <CommandCenter projects={projects} />
           <Toaster />
           <Analytics />
           <SpeedInsights />

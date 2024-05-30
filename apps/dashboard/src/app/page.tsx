@@ -16,14 +16,11 @@ export default async function Project(): Promise<JSX.Element> {
 
   return (
     <div className="flex w-full">
-      <div
-        id="dialogBackdrop"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-      >
+      <div id="dialogBackdrop" className="fixed inset-0 z-50 flex bg-black/80">
         {projects.length > 0 ? (
           <ProjectsDialog projects={projects} />
         ) : (
-          <Card className="fixed left-1/2 top-1/2 z-50 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border p-8 duration-200">
+          <Card className="fixed left-1/2 top-1/2 z-50 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border duration-200">
             <CardHeader>
               <CardTitle>Create new project</CardTitle>
               <CardDescription>

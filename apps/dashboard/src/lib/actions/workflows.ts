@@ -1,12 +1,11 @@
 "use server";
 
 import type { z } from "zod";
-import { revalidatePath } from "next/cache";
 
 import { db, eq } from "@integramind/db";
-import { insertProjectSchema, projects } from "@integramind/db/schema";
+import { insertWorkflowSchema, workflows } from "@integramind/db/schema";
 
-import type { Project } from "~/types";
+import type { Workflow } from "~/types";
 
 interface FormFields {
   name?: string;
@@ -31,12 +30,13 @@ type FormState =
     }
   | undefined;
 
-export async function createProject(
+export async function createWorkflow(
   prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  // TODO: check if the project exist
   const data = Object.fromEntries(formData);
-  const validation = insertProjectSchema.safeParse(data);
+  const validation = insertWorkflowSchema.safeParse(data);
 
   const fields: FormFields = Object.keys(data).reduce(
     (acc: FormFields, key: string) => {
@@ -54,15 +54,14 @@ export async function createProject(
     if (validation.success) {
       const result = (
         await db
-          .insert(projects)
+          .insert(workflows)
           .values({
             ...validation.data,
           })
-          .returning({ id: projects.id })
+          .returning({ id: workflows.id })
       )[0];
 
       if (result) {
-        revalidatePath("/[id]", "page");
         return { status: "success", payload: { id: result.id } };
       } else {
         return { status: "error", fields };
@@ -83,15 +82,19 @@ export async function createProject(
       };
     }
   } catch (error) {
+    console.log(error);
     return { status: "error", fields };
   }
 }
 
-export async function getProjects(): Promise<Project[]> {
-  const result = await db.select().from(projects);
+export async function getWorkflows({
+  projectId,
+}: {
+  projectId: string;
+}): Promise<Workflow[]> {
+  const result = await db
+    .select()
+    .from(workflows)
+    .where(eq(workflows.projectId, projectId));
   return result;
-}
-
-export async function deleteProjects({ id }: { id: string }) {
-  await db.delete(projects).where(eq(projects.id, id));
 }
