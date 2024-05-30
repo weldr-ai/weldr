@@ -1,9 +1,9 @@
 import { FlowBuilder } from "~/components/flow-builder";
 
 export default async function Workflow({
-  params,
+  _params,
 }: {
-  params: { id: string };
+  _params: { workflow_id: string };
 }): Promise<JSX.Element> {
   // TODO: check if the workflow exists
   return <FlowBuilder />;

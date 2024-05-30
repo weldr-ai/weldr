@@ -14,17 +14,17 @@ import {
   DropdownMenuTrigger,
 } from "@integramind/ui/dropdown-menu";
 
-import { CreateProjectDialog } from "~/components/create-project-dialog";
+import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useCommandCenterStore } from "~/lib/store";
 
-// TODO: add project name to the navbar
+// TODO: add workspace name to the navbar
 export function Navbar(): JSX.Element {
   const { resolvedTheme } = useTheme();
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
   const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
     useState<boolean>(false);
-  const [createProjectDialogOpen, setCreateProjectDialogOpen] =
+  const [createWorkspaceDialogOpen, setCreateWorkspaceDialogOpen] =
     useState<boolean>(false);
 
   return (
@@ -58,10 +58,10 @@ export function Navbar(): JSX.Element {
           <DropdownMenuContent className="w-56" align="start" side="right">
             <DropdownMenuItem
               className="text-xs"
-              onClick={() => setCreateProjectDialogOpen(true)}
+              onClick={() => setCreateWorkspaceDialogOpen(true)}
             >
               <Plus className="mr-3 size-4 text-muted-foreground" />
-              Create Project
+              Create Workspace
             </DropdownMenuItem>
             <DropdownMenuItem
               className="flex items-center justify-between text-xs"
@@ -69,7 +69,7 @@ export function Navbar(): JSX.Element {
             >
               <div className="flex gap-3">
                 <Boxes className="size-4 text-muted-foreground" />
-                <span>View All Projects</span>
+                <span>View All Workspaces</span>
               </div>
               <span className="text-muted-foreground">cmd+k</span>
             </DropdownMenuItem>
@@ -83,9 +83,9 @@ export function Navbar(): JSX.Element {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <CreateProjectDialog
-          open={createProjectDialogOpen}
-          setOpen={setCreateProjectDialogOpen}
+        <CreateWorkspaceDialog
+          open={createWorkspaceDialogOpen}
+          setOpen={setCreateWorkspaceDialogOpen}
         />
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}

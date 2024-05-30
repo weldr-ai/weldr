@@ -2,14 +2,14 @@ import { ActivityBar } from "~/components/activity-bar";
 import { CommandCenter } from "~/components/command-center";
 import { Navbar } from "~/components/navbar";
 import { PrimarySidebar } from "~/components/primary-sidebar";
-import { getProjects } from "~/lib/actions/projects";
+import { getWorkspaces } from "~/lib/actions/workspaces";
 
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }): Promise<JSX.Element> {
-  const projects = await getProjects();
+  const workspaces = await getWorkspaces();
 
   return (
     <>
@@ -22,7 +22,7 @@ export default async function RootLayout({
           </div>
           <main className="flex w-full flex-col">
             {children}
-            <CommandCenter projects={projects} />
+            <CommandCenter workspaces={workspaces} />
           </main>
         </div>
       </div>

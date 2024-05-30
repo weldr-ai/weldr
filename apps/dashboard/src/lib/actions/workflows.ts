@@ -34,7 +34,7 @@ export async function createWorkflow(
   prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  // TODO: check if the project exist
+  // TODO: check if the workspace exist
   const data = Object.fromEntries(formData);
   const validation = insertWorkflowSchema.safeParse(data);
 
@@ -88,13 +88,13 @@ export async function createWorkflow(
 }
 
 export async function getWorkflows({
-  projectId,
+  workspaceId,
 }: {
-  projectId: string;
+  workspaceId: string;
 }): Promise<Workflow[]> {
   const result = await db
     .select()
     .from(workflows)
-    .where(eq(workflows.projectId, projectId));
+    .where(eq(workflows.workspaceId, workspaceId));
   return result;
 }

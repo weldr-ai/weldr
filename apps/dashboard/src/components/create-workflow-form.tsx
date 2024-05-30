@@ -41,7 +41,7 @@ export function CreateWorkflowForm() {
     defaultValues: {
       name: "",
       description: "",
-      projectId: params.id,
+      workspaceId: params.id,
       triggerType: undefined,
       ...(state &&
         (state.status === "error" || state.status === "validationError") &&
@@ -149,7 +149,7 @@ export function CreateWorkflowForm() {
         />
         <FormField
           control={form.control}
-          name="projectId"
+          name="workspaceId"
           render={({ field }) => <Input {...field} className="hidden" />}
         />
         <div className="flex w-full justify-end">
