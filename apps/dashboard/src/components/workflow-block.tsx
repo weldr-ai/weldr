@@ -19,18 +19,12 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
+import type { WorkflowTriggerBlockData } from "~/types";
+import { CreateWorkflowForm } from "~/components/create-workflow-form";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-interface WorkflowTriggerBlockProps extends NodeProps {
-  data: {
-    id: string;
-    name: string;
-  };
-  isConnectable: boolean;
-}
-
-export const WorkflowTriggerBlock = memo(
-  ({ data, isConnectable, selected }: WorkflowTriggerBlockProps) => {
+export const WorkflowBlock = memo(
+  ({ data, isConnectable, selected }: NodeProps<WorkflowTriggerBlockData>) => {
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
     const updateCurrentId = useDevelopmentSheetStore(
       (state) => state.updateCurrentId,
@@ -55,7 +49,7 @@ export const WorkflowTriggerBlock = memo(
               )}
             >
               <div className="flex w-full items-center gap-2 text-xs">
-                <Badge>Event</Badge>
+                <Badge>{data.triggerType}</Badge>
                 <span className="text-muted-foreground">Workflow</span>
               </div>
               <span className="flex w-full justify-start text-sm">
@@ -68,7 +62,7 @@ export const WorkflowTriggerBlock = memo(
               <SheetTitle className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
                   <Badge variant="default" className="text-xs">
-                    Event
+                    {data.triggerType}
                   </Badge>
                   <span>Workflow</span>
                 </div>
@@ -83,6 +77,8 @@ export const WorkflowTriggerBlock = memo(
                 Edit your workflow settings here
               </SheetDescription>
             </SheetHeader>
+            {/* FIXME: Pass initial values */}
+            <CreateWorkflowForm />
           </SheetContent>
         </Sheet>
         <Handle
@@ -97,4 +93,4 @@ export const WorkflowTriggerBlock = memo(
   },
 );
 
-WorkflowTriggerBlock.displayName = "WorkflowTriggerBlock";
+WorkflowBlock.displayName = "WorkflowBlock";

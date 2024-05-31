@@ -14,9 +14,6 @@ export interface Flow {
   nodes: {
     id: string;
     type: BlockType;
-    metadata: {
-      name: string;
-    };
   }[];
   edges: {
     id: string;
@@ -27,7 +24,7 @@ export interface Flow {
 
 export type BlockType =
   | "access-point-block"
-  | "workflow-trigger-block"
+  | "workflow-block"
   | "query-block"
   | "action-block"
   | "logical-processing-block"
