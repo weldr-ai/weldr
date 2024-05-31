@@ -14,15 +14,16 @@ import {
   CommandList,
 } from "@integramind/ui/command";
 
-import type { Project } from "~/types";
+import type { Workspace } from "~/types";
+import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { useCommandCenterStore } from "~/lib/store";
-import { CreateProjectDialog } from "./create-project-dialog";
 
-export function CommandCenter({ projects }: { projects: Project[] }) {
+// TODO: the command center should be a complete center to navigate the workspace quickly
+export function CommandCenter({ workspaces }: { workspaces: Workspace[] }) {
   const router = useRouter();
   const commandCenterOpen = useCommandCenterStore((state) => state.open);
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
-  const [createProjectDialogOpen, setCreateProjectDialogOpen] =
+  const [createWorkspaceDialogOpen, setCreateWorkspaceDialogOpen] =
     useState<boolean>(false);
 
   useEffect(() => {
@@ -44,18 +45,18 @@ export function CommandCenter({ projects }: { projects: Project[] }) {
       >
         <CommandInput
           className="border-none ring-0"
-          placeholder="Search projects..."
+          placeholder="Search workspaces..."
         />
         <CommandList className="h-96 w-[500px]">
-          <CommandEmpty>No projects found.</CommandEmpty>
+          <CommandEmpty>No workspaces found.</CommandEmpty>
           <CommandGroup className="py-2">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Projects</span>
+              <span className="text-xs text-muted-foreground">Workspaces</span>
               <Button
                 className="size-6 rounded-sm bg-muted"
                 onClick={() => {
                   setCommandCenterOpen(false);
-                  setCreateProjectDialogOpen(true);
+                  setCreateWorkspaceDialogOpen(true);
                 }}
                 variant="outline"
                 size="icon"
@@ -64,27 +65,27 @@ export function CommandCenter({ projects }: { projects: Project[] }) {
               </Button>
             </div>
             <div className="grid w-full grid-cols-3 gap-2">
-              {projects.map((project) => (
+              {workspaces.map((workspace) => (
                 <CommandItem
-                  key={project.id}
-                  value={project.name}
+                  key={workspace.id}
+                  value={workspace.name}
                   className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-xl text-center"
                   onSelect={() => {
                     setCommandCenterOpen(false);
-                    router.replace(`${project.id}`);
+                    router.replace(`/workspaces/${workspace.id}`);
                   }}
                 >
                   <Boxes className="mb-2 size-24" />
-                  {project.name}
+                  {workspace.name}
                 </CommandItem>
               ))}
             </div>
           </CommandGroup>
         </CommandList>
       </CommandDialog>
-      <CreateProjectDialog
-        open={createProjectDialogOpen}
-        setOpen={setCreateProjectDialogOpen}
+      <CreateWorkspaceDialog
+        open={createWorkspaceDialogOpen}
+        setOpen={setCreateWorkspaceDialogOpen}
       />
     </>
   );

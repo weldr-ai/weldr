@@ -1,11 +1,12 @@
 "use server";
 
 import type { z } from "zod";
+import { revalidatePath } from "next/cache";
 
 import { db, eq } from "@integramind/db";
-import { insertProjectSchema, projects } from "@integramind/db/schema";
+import { insertWorkspaceSchema, workspaces } from "@integramind/db/schema";
 
-import type { Project } from "~/types";
+import type { Workspace } from "~/types";
 
 interface FormFields {
   name?: string;
@@ -30,12 +31,12 @@ type FormState =
     }
   | undefined;
 
-export async function createProject(
+export async function createWorkspace(
   prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
   const data = Object.fromEntries(formData);
-  const validation = insertProjectSchema.safeParse(data);
+  const validation = insertWorkspaceSchema.safeParse(data);
 
   const fields: FormFields = Object.keys(data).reduce(
     (acc: FormFields, key: string) => {
@@ -53,14 +54,15 @@ export async function createProject(
     if (validation.success) {
       const result = (
         await db
-          .insert(projects)
+          .insert(workspaces)
           .values({
             ...validation.data,
           })
-          .returning({ id: projects.id })
+          .returning({ id: workspaces.id })
       )[0];
 
       if (result) {
+        revalidatePath("/workspaces/[id]", "layout");
         return { status: "success", payload: { id: result.id } };
       } else {
         return { status: "error", fields };
@@ -85,11 +87,22 @@ export async function createProject(
   }
 }
 
-export async function getProjects(): Promise<Project[]> {
-  const result = await db.select().from(projects);
+export async function getWorkspaces(): Promise<Workspace[]> {
+  const result = await db.select().from(workspaces);
   return result;
 }
 
-export async function deleteProjects({ id }: { id: string }) {
-  await db.delete(projects).where(eq(projects.id, id));
+export async function deleteWorkspace({ id }: { id: string }) {
+  await db.delete(workspaces).where(eq(workspaces.id, id));
+}
+
+export async function getWorkspaceById({
+  id,
+}: {
+  id: string;
+}): Promise<Workspace | undefined> {
+  const result = (
+    await db.select().from(workspaces).where(eq(workspaces.id, id))
+  )[0];
+  return result;
 }

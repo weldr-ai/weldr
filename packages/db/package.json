@@ -25,7 +25,6 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@paralleldrive/cuid2": "^2.2.2",
     "drizzle-orm": "^0.30.10",
     "drizzle-zod": "^0.5.1",
     "next-auth": "5.0.0-beta.18",

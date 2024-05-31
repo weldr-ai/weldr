@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
 
-import { insertProjectSchema } from "@integramind/db/schema";
+import { insertWorkspaceSchema } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import {
   Form,
@@ -23,13 +23,16 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import { createProject } from "~/lib/actions/projects";
+import { createWorkspace } from "~/lib/actions/workspaces";
 
-export function CreateProjectForm() {
-  const [state, createProjectAction] = useFormState(createProject, undefined);
-  const form = useForm<z.infer<typeof insertProjectSchema>>({
+export function CreateWorkspaceForm() {
+  const [state, createWorkspaceAction] = useFormState(
+    createWorkspace,
+    undefined,
+  );
+  const form = useForm<z.infer<typeof insertWorkspaceSchema>>({
     mode: "onChange",
-    resolver: zodResolver(insertProjectSchema),
+    resolver: zodResolver(insertWorkspaceSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -45,7 +48,7 @@ export function CreateProjectForm() {
         form.reset();
         toast({
           title: "Success",
-          description: "Project created successfully.",
+          description: "Workspace created successfully.",
           duration: 2000,
         });
         redirect(`/${state.payload.id}`);
@@ -76,7 +79,7 @@ export function CreateProjectForm() {
   return (
     <Form {...form}>
       <form
-        action={createProjectAction}
+        action={createWorkspaceAction}
         className="flex w-full flex-col space-y-4"
       >
         <FormField
@@ -86,7 +89,7 @@ export function CreateProjectForm() {
             <FormItem>
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter project name" {...field} />
+                <Input placeholder="Enter workspace name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -104,7 +107,7 @@ export function CreateProjectForm() {
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="Enter project description"
+                  placeholder="Enter workspace description"
                   value={field.value ?? ""}
                 />
               </FormControl>
@@ -123,7 +126,7 @@ export function CreateProjectForm() {
 function SubmitButton({
   formState,
 }: {
-  formState: FormState<z.infer<typeof insertProjectSchema>>;
+  formState: FormState<z.infer<typeof insertWorkspaceSchema>>;
 }) {
   const { pending } = useFormStatus();
   return (

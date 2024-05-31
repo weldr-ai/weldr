@@ -1,12 +1,21 @@
 import { create } from "zustand";
 
 interface PrimarySidebarState {
-  activeSection: "blocks" | "routes" | "workflows" | "data-resources" | null;
+  activeSection:
+    | "compound-blocks"
+    | "access-points"
+    | "workflows"
+    | "data-resources"
+    | null;
 }
 
 interface PrimarySidebarAction {
   updateActiveSection: (
-    activeSection: "blocks" | "routes" | "workflows" | "data-resources",
+    activeSection:
+      | "compound-blocks"
+      | "access-points"
+      | "workflows"
+      | "data-resources",
   ) => void;
   hidePrimaryBar: () => void;
 }
@@ -14,7 +23,7 @@ interface PrimarySidebarAction {
 export const usePrimarySidebarStore = create<
   PrimarySidebarState & PrimarySidebarAction
 >((set) => ({
-  activeSection: null,
+  activeSection: "compound-blocks",
   updateActiveSection: (activeSection) =>
     set(() => ({
       activeSection,
