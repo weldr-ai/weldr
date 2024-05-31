@@ -9,6 +9,7 @@ import { cn } from "@integramind/ui/utils";
 import { AccessPointsPrimarySidebar } from "~/components/access-points-primary-sidebar";
 import { WorkflowsPrimarySidebar } from "~/components/workflows-primary-sidebar";
 import { usePrimarySidebarStore } from "~/lib/store";
+import { CompoundBlocksPrimarySidebar } from "./compound-blocks-primary-sidebar";
 
 export function PrimarySidebar() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -43,15 +44,11 @@ export function PrimarySidebar() {
           </div>
           {activeSection === "compound-blocks" ? (
             <div
-              className={cn(
-                "flex size-full flex-col items-center justify-center",
-                {
-                  hidden: activeSection !== "compound-blocks",
-                },
-              )}
+              className={cn("flex w-full p-2", {
+                hidden: activeSection !== "compound-blocks",
+              })}
             >
-              <div>Todo</div>
-              <div>Blocks</div>
+              <CompoundBlocksPrimarySidebar workspaceId={workspaceId} />
             </div>
           ) : activeSection === "access-points" ? (
             <div
