@@ -39,7 +39,7 @@ export const compoundBlocks = pgTable("compound_blocks", {
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description"),
-  flow: jsonb("flow").$type<Flow>().notNull(),
+  flow: jsonb("flow").$type<Flow>().default({ nodes: [], edges: [] }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .$onUpdate(() => new Date())
@@ -215,6 +215,10 @@ export const insertCompoundBlockSchema = createInsertSchema(compoundBlocks, {
     schema.name.trim().min(1, {
       message: "Name is required.",
     }),
+}).pick({
+  name: true,
+  description: true,
+  workspaceId: true,
 });
 
 export const workflowSchema = createSelectSchema(workflows, {
