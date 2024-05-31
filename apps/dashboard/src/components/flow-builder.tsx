@@ -31,11 +31,11 @@ import { LogicalProcessingBlock } from "~/components/logical-processing-block";
 import { QueryBlock } from "~/components/query-block";
 import { ResponseBlock } from "~/components/response-block";
 import { SemanticBranchBlock } from "~/components/semantic-branch-block";
-import { WorkflowTriggerBlock } from "~/components/workflow-trigger-block";
+import { WorkflowBlock } from "~/components/workflow-block";
 
 const blockTypes = {
   "access-point-block": AccessPointBlock,
-  "workflow-trigger-block": WorkflowTriggerBlock,
+  "workflow-block": WorkflowBlock,
   "query-block": QueryBlock,
   "action-block": ActionBlock,
   "logical-processing-block": LogicalProcessingBlock,
@@ -94,7 +94,7 @@ export function _FlowBuilder({
         switch (blockType) {
           case "access-point-block":
             return "New Access Point";
-          case "workflow-trigger-block":
+          case "workflow-block":
             return "New Workflow";
           case "query-block":
             return "New Query";

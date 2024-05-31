@@ -3,27 +3,11 @@
 import type { NodeProps } from "reactflow";
 import { memo } from "react";
 import { X } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { Handle, Position } from "reactflow";
 
 import { Badge } from "@integramind/ui/badge";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@integramind/ui/select";
 import {
   Sheet,
   SheetClose,
@@ -36,11 +20,11 @@ import {
 import { cn } from "@integramind/ui/utils";
 
 import type { AccessPointBlockData } from "~/types";
+import { CreateAccessPointForm } from "~/components/create-access-point-form";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
 export const AccessPointBlock = memo(
   ({ data, isConnectable, selected }: NodeProps<AccessPointBlockData>) => {
-    const form = useForm();
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
     const updateCurrentId = useDevelopmentSheetStore(
       (state) => state.updateCurrentId,
@@ -65,7 +49,7 @@ export const AccessPointBlock = memo(
               )}
             >
               <div className="flex w-full items-center gap-2 text-xs">
-                <Badge>{data.method}</Badge>
+                <Badge>{data.actionType}</Badge>
                 <span className="text-muted-foreground">Access Point</span>
               </div>
               <span className="flex w-full justify-start text-sm">
@@ -78,7 +62,7 @@ export const AccessPointBlock = memo(
               <SheetTitle className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
                   <Badge variant="default" className="text-xs">
-                    {data.method}
+                    {data.actionType}
                   </Badge>
                   <span>Access Point</span>
                 </div>
@@ -93,68 +77,8 @@ export const AccessPointBlock = memo(
                 Edit your access point settings here
               </SheetDescription>
             </SheetHeader>
-            <Form {...form}>
-              <form className="flex w-full flex-col space-y-4">
-                <FormField
-                  control={form.control}
-                  name="..."
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter route name" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="..."
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description (optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter route name" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="..."
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Action Type</FormLabel>
-                      <FormControl>
-                        <Select {...field}>
-                          <SelectTrigger className="bg-background">
-                            <SelectValue placeholder="Action Type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="GET">Retrieve</SelectItem>
-                            <SelectItem value="POST">Submit</SelectItem>
-                            <SelectItem value="PATCH">Modify</SelectItem>
-                            <SelectItem value="DELETE">Delete</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="..."
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>URL Path</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter URL path" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </form>
-            </Form>
+            {/* FIXME: Pass initial values */}
+            <CreateAccessPointForm />
           </SheetContent>
         </Sheet>
         <Handle

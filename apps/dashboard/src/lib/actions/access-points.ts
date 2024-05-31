@@ -3,9 +3,9 @@
 import type { z } from "zod";
 
 import { db, eq } from "@integramind/db";
-import { insertWorkflowSchema, workflows } from "@integramind/db/schema";
+import { accessPoints, insertAccessPointSchema } from "@integramind/db/schema";
 
-import type { Workflow } from "~/types";
+import type { AccessPoint } from "~/types";
 import { getWorkspaceById } from "./workspaces";
 
 interface FormFields {
@@ -31,12 +31,12 @@ type FormState =
     }
   | undefined;
 
-export async function createWorkflow(
+export async function createAccessPoint(
   prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
   const data = Object.fromEntries(formData);
-  const validation = insertWorkflowSchema.safeParse(data);
+  const validation = insertAccessPointSchema.safeParse(data);
 
   const fields: FormFields = Object.keys(data).reduce(
     (acc: FormFields, key: string) => {
@@ -64,7 +64,7 @@ export async function createWorkflow(
 
       const result = (
         await db
-          .insert(workflows)
+          .insert(accessPoints)
           .values({
             ...validation.data,
             id,
@@ -72,13 +72,13 @@ export async function createWorkflow(
               nodes: [
                 {
                   id,
-                  type: "workflow-block",
+                  type: "access-point-block",
                 },
               ],
               edges: [],
             },
           })
-          .returning({ id: workflows.id })
+          .returning({ id: accessPoints.id })
       )[0];
 
       if (result) {
@@ -107,25 +107,25 @@ export async function createWorkflow(
   }
 }
 
-export async function getWorkflows({
+export async function getAccessPoints({
   workspaceId,
 }: {
   workspaceId: string;
-}): Promise<Workflow[]> {
+}): Promise<AccessPoint[]> {
   const result = await db
     .select()
-    .from(workflows)
-    .where(eq(workflows.workspaceId, workspaceId));
+    .from(accessPoints)
+    .where(eq(accessPoints.workspaceId, workspaceId));
   return result;
 }
 
-export async function getWorkflowById({
+export async function getAccessPointById({
   id,
 }: {
   id: string;
-}): Promise<Workflow | undefined> {
+}): Promise<AccessPoint | undefined> {
   const result = (
-    await db.select().from(workflows).where(eq(workflows.id, id))
+    await db.select().from(accessPoints).where(eq(accessPoints.id, id))
   )[0];
   return result;
 }

@@ -10,7 +10,7 @@ export default async function Workspace({
   const workspace = await getWorkspaceById({ id: params.workspaceId });
 
   if (!workspace) {
-    return notFound();
+    notFound();
   }
 
   return (

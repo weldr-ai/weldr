@@ -14,7 +14,7 @@ export type FlowEdge = Edge;
 
 export type BlockType =
   | "access-point-block"
-  | "workflow-trigger-block"
+  | "workflow-block"
   | "query-block"
   | "action-block"
   | "logical-processing-block"
@@ -29,7 +29,7 @@ export interface AccessPointBlockData {
   id: string;
   name: string;
   description?: string | null;
-  method: "GET" | "POST" | "PATCH" | "DELETE";
+  actionType: "retrieve" | "submit" | "modify" | "delete";
   urlPath: string;
 }
 
@@ -38,6 +38,7 @@ export type TAccessPointBlock = BaseBlock<AccessPointBlockData>;
 export interface WorkflowTriggerBlockData {
   id: string;
   name: string;
+  triggerType: "webhook" | "schedule";
 }
 
 export type TWorkflowTriggerBlock = BaseBlock<WorkflowTriggerBlockData>;

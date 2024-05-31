@@ -11,15 +11,22 @@ export default async function Workflow({
 }): Promise<JSX.Element> {
   const workflow = await getWorkflowById({ id: params.workflowId });
 
+  console.log(workflow);
+
   if (!workflow) {
-    return notFound();
+    notFound();
   }
 
   const initialBlocks: Block[] = workflow.flow.nodes.map((node) => ({
     id: node.id,
     type: node.type,
     position: { x: 0, y: 0 },
-    data: { id: node.id, name: node.metadata.name },
+    data: {
+      id: node.id,
+      name: workflow.name,
+      description: workflow.description,
+      triggerType: workflow.triggerType,
+    },
   }));
 
   const initialEdges: FlowEdge[] = workflow.flow.edges.map((edge) => ({

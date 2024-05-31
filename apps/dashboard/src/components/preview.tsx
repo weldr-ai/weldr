@@ -30,27 +30,6 @@ import ReactFlow, { Background, MiniMap, Panel } from "reactflow";
 import { Card } from "@integramind/ui/card";
 
 import type { Block } from "~/types";
-import { AccessPointBlock } from "~/components/access-point-block";
-import { ActionBlock } from "~/components/action-block";
-import { AIProcessingBlock } from "~/components/ai-processing-block";
-import { LogicalBranchBlock } from "~/components/logical-branch-block";
-import { LogicalProcessingBlock } from "~/components/logical-processing-block";
-import { QueryBlock } from "~/components/query-block";
-import { ResponseBlock } from "~/components/response-block";
-import { SemanticBranchBlock } from "~/components/semantic-branch-block";
-import { WorkflowTriggerBlock } from "~/components/workflow-trigger-block";
-
-const blockTypes = {
-  "access-point-block": AccessPointBlock,
-  "workflow-trigger-block": WorkflowTriggerBlock,
-  "query-block": QueryBlock,
-  "action-block": ActionBlock,
-  "logical-processing-block": LogicalProcessingBlock,
-  "ai-processing-block": AIProcessingBlock,
-  "logical-branch-block": LogicalBranchBlock,
-  "semantic-branch-block": SemanticBranchBlock,
-  "response-block": ResponseBlock,
-};
 
 const initialBlocks: Block[] = [];
 
@@ -128,11 +107,7 @@ export function Preview() {
           </div>
         </div>
         <main className="flex w-full flex-col">
-          <ReactFlow
-            nodes={initialBlocks}
-            edges={initEdges}
-            nodeTypes={blockTypes}
-          >
+          <ReactFlow nodes={initialBlocks} edges={initEdges}>
             <Background
               className="bg-background"
               color="hsl(var(--background))"
