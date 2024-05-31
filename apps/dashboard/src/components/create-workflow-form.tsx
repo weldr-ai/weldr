@@ -3,8 +3,9 @@
 import type { FormState } from "react-hook-form";
 import type { z } from "zod";
 import { useEffect } from "react";
-import { redirect, useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
@@ -32,8 +33,14 @@ import { toast } from "@integramind/ui/use-toast";
 
 import { createWorkflow } from "~/lib/actions/workflows";
 
-export function CreateWorkflowForm() {
-  const params = useParams<{ id: string }>();
+export function CreateWorkflowForm({
+  setCreateWorkflowDialogOpen,
+}: {
+  setCreateWorkflowDialogOpen: (open: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const { workspaceId } = useParams<{ workspaceId: string }>();
   const [state, createWorkflowAction] = useFormState(createWorkflow, undefined);
   const form = useForm<z.infer<typeof insertWorkflowSchema>>({
     mode: "onChange",
@@ -41,7 +48,7 @@ export function CreateWorkflowForm() {
     defaultValues: {
       name: "",
       description: "",
-      workspaceId: params.id,
+      workspaceId,
       triggerType: undefined,
       ...(state &&
         (state.status === "error" || state.status === "validationError") &&
@@ -50,38 +57,52 @@ export function CreateWorkflowForm() {
   });
 
   useEffect(() => {
-    if (state) {
-      if (state.status === "success") {
-        form.reset();
-        toast({
-          title: "Success",
-          description: "Workflow created successfully.",
-          duration: 2000,
-        });
-        redirect(`/workflows/${state.payload.id}`);
-      } else if (state.status === "validationError") {
-        Object.keys(state.errors).forEach((key) => {
-          const fieldName = key as "name" | "description";
-          form.setError(fieldName, {
-            message: state.errors[fieldName],
+    async function handleStateUpdate() {
+      if (state) {
+        if (state.status === "success") {
+          form.reset();
+          toast({
+            title: "Success",
+            description: "Workflow created successfully.",
+            duration: 2000,
           });
-        });
-        toast({
-          title: "Validation Error",
-          description: "Please enter fields correctly.",
-          variant: "destructive",
-          duration: 2000,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Something went wrong.",
-          variant: "destructive",
-          duration: 2000,
-        });
+          await queryClient.invalidateQueries({ queryKey: ["workflows"] });
+          setCreateWorkflowDialogOpen(false);
+          router.replace(
+            `/workspaces/${workspaceId}/workflows/${state.payload.id}`,
+          );
+        } else if (state.status === "validationError") {
+          Object.keys(state.errors).forEach((key) => {
+            const fieldName = key as "name" | "description";
+            form.setError(fieldName, {
+              message: state.errors[fieldName],
+            });
+          });
+          toast({
+            title: "Validation Error",
+            description: "Please enter fields correctly.",
+            variant: "destructive",
+            duration: 2000,
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Something went wrong.",
+            variant: "destructive",
+            duration: 2000,
+          });
+        }
       }
     }
-  }, [form, state]);
+    void handleStateUpdate();
+  }, [
+    form,
+    queryClient,
+    router,
+    setCreateWorkflowDialogOpen,
+    state,
+    workspaceId,
+  ]);
 
   return (
     <Form {...form}>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { Button } from "@integramind/ui/button";
@@ -15,8 +16,14 @@ import {
 import { CreateWorkflowForm } from "~/components/create-workflow-form";
 
 export function CreateWorkflowDialog() {
+  const [createWorkflowDialogOpen, setCreateWorkflowDialogOpen] =
+    useState(false);
+
   return (
-    <Dialog>
+    <Dialog
+      open={createWorkflowDialogOpen}
+      onOpenChange={setCreateWorkflowDialogOpen}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Plus className="mr-1.5 size-3.5" />
@@ -30,7 +37,9 @@ export function CreateWorkflowDialog() {
             Enter the workflow details then press create.
           </DialogDescription>
         </DialogHeader>
-        <CreateWorkflowForm />
+        <CreateWorkflowForm
+          setCreateWorkflowDialogOpen={setCreateWorkflowDialogOpen}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -9,6 +9,8 @@ import { ThemeProvider } from "@integramind/ui/theme-provider";
 import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
 
+import { QueryProvider } from "~/components/query-client-provider";
+
 const fontSans = FontSans({
   subsets: ["latin"],
   weight: "400",
@@ -40,10 +42,12 @@ export default async function RootLayout({
           disableTransitionOnChange
           enableSystem
         >
-          {children}
-          <Toaster />
-          <Analytics />
-          <SpeedInsights />
+          <QueryProvider>
+            {children}
+            <Toaster />
+            <Analytics />
+            <SpeedInsights />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

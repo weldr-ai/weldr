@@ -39,13 +39,7 @@ export const compoundBlocks = pgTable("compound_blocks", {
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description"),
-  flow: jsonb("flow")
-    .$type<Flow>()
-    .default({
-      nodes: [],
-      edges: [],
-    })
-    .notNull(),
+  flow: jsonb("flow").$type<Flow>().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .$onUpdate(() => new Date())
@@ -71,13 +65,7 @@ export const workflows = pgTable("workflows", {
   name: text("name").notNull(),
   description: text("description"),
   triggerType: triggerTypes("trigger_type").notNull(),
-  flow: jsonb("flow")
-    .$type<Flow>()
-    .default({
-      nodes: [],
-      edges: [],
-    })
-    .notNull(),
+  flow: jsonb("flow").$type<Flow>().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .$onUpdate(() => new Date())
@@ -109,13 +97,7 @@ export const accessPoints = pgTable("access_point", {
   description: text("description"),
   actionType: actionTypes("action_type"),
   urlPath: text("url_path"),
-  flow: jsonb("flow")
-    .$type<Flow>()
-    .default({
-      nodes: [],
-      edges: [],
-    })
-    .notNull(),
+  flow: jsonb("flow").$type<Flow>().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .$onUpdate(() => new Date())
@@ -217,10 +199,14 @@ export const compoundBlockSchema = createSelectSchema(compoundBlocks, {
       .object({
         id: z.string(),
         type: blockTypes,
+        metadata: z.object({
+          name: z.string(),
+        }),
       })
       .array(),
     edges: z
       .object({
+        id: z.string(),
         source: z.string(),
         target: z.string(),
       })
@@ -240,10 +226,14 @@ export const workflowSchema = createSelectSchema(workflows, {
       .object({
         id: z.string(),
         type: blockTypes,
+        metadata: z.object({
+          name: z.string(),
+        }),
       })
       .array(),
     edges: z
       .object({
+        id: z.string(),
         source: z.string(),
         target: z.string(),
       })
@@ -272,10 +262,14 @@ export const accessPointSchema = createSelectSchema(accessPoints, {
       .object({
         id: z.string(),
         type: blockTypes,
+        metadata: z.object({
+          name: z.string(),
+        }),
       })
       .array(),
     edges: z
       .object({
+        id: z.string(),
         source: z.string(),
         target: z.string(),
       })

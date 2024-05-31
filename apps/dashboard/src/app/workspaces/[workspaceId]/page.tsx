@@ -5,9 +5,9 @@ import { getWorkspaceById } from "~/lib/actions/workspaces";
 export default async function Workspace({
   params,
 }: {
-  params: { workspace_id: string };
+  params: { workspaceId: string };
 }): Promise<JSX.Element> {
-  const workspace = await getWorkspaceById({ id: params.workspace_id });
+  const workspace = await getWorkspaceById({ id: params.workspaceId });
 
   if (!workspace) {
     return notFound();

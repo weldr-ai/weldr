@@ -1,4 +1,4 @@
-import type { Node } from "reactflow";
+import type { Edge, Node } from "reactflow";
 import type { z } from "zod";
 
 import type {
@@ -9,6 +9,8 @@ import type {
   workflowSchema,
   workspaceSchema,
 } from "@integramind/db/schema";
+
+export type FlowEdge = Edge;
 
 export type BlockType =
   | "access-point-block"

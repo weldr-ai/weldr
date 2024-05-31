@@ -6,6 +6,7 @@ import { db, eq } from "@integramind/db";
 import { insertWorkflowSchema, workflows } from "@integramind/db/schema";
 
 import type { Workflow } from "~/types";
+import { getWorkspaceById } from "./workspaces";
 
 interface FormFields {
   name?: string;
@@ -34,7 +35,6 @@ export async function createWorkflow(
   prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  // TODO: check if the workspace exist
   const data = Object.fromEntries(formData);
   const validation = insertWorkflowSchema.safeParse(data);
 
@@ -50,13 +50,36 @@ export async function createWorkflow(
     {},
   );
 
+  const id = crypto.randomUUID();
+
   try {
     if (validation.success) {
+      const workspace = await getWorkspaceById({
+        id: validation.data.workspaceId,
+      });
+
+      if (!workspace) {
+        return { status: "error", fields };
+      }
+
       const result = (
         await db
           .insert(workflows)
           .values({
             ...validation.data,
+            id,
+            flow: {
+              nodes: [
+                {
+                  id,
+                  type: "workflow-trigger-block",
+                  metadata: {
+                    name: validation.data.name,
+                  },
+                },
+              ],
+              edges: [],
+            },
           })
           .returning({ id: workflows.id })
       )[0];

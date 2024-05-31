@@ -11,8 +11,15 @@ export interface Output {
 }
 
 export interface Flow {
-  nodes: { id: string; type: BlockType }[];
+  nodes: {
+    id: string;
+    type: BlockType;
+    metadata: {
+      name: string;
+    };
+  }[];
   edges: {
+    id: string;
     source: string;
     target: string;
   }[];
