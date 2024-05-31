@@ -14,23 +14,19 @@ import type { Flow, Input, Output } from "../types";
 
 // Tables
 
-export const projects = pgTable("projects", {
+export const workspaces = pgTable("workspaces", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description"),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
-export const projectsRelations = relations(projects, ({ many }) => ({
+export const workspacesRelations = relations(workspaces, ({ many }) => ({
   compoundBlocks: many(compoundBlocks),
   workflows: many(workflows),
   accessPoints: many(accessPoints),
@@ -44,23 +40,19 @@ export const compoundBlocks = pgTable("compound_blocks", {
   name: text("name").notNull(),
   description: text("description"),
   flow: jsonb("flow").$type<Flow>().notNull(),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
-  projectId: text("project_id")
-    .references(() => projects.id, { onDelete: "cascade" })
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .$onUpdate(() => new Date())
+    .notNull(),
+  workspaceId: text("workspace_id")
+    .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
 });
 
 export const flowsRelations = relations(compoundBlocks, ({ one }) => ({
-  author: one(projects, {
-    fields: [compoundBlocks.projectId],
-    references: [projects.id],
+  workspace: one(workspaces, {
+    fields: [compoundBlocks.workspaceId],
+    references: [workspaces.id],
   }),
 }));
 
@@ -72,25 +64,21 @@ export const workflows = pgTable("workflows", {
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description"),
-  triggerType: triggerTypes("trigger_type"),
+  triggerType: triggerTypes("trigger_type").notNull(),
   flow: jsonb("flow").$type<Flow>().notNull(),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
-  projectId: text("project_id")
-    .references(() => projects.id, { onDelete: "cascade" })
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .$onUpdate(() => new Date())
+    .notNull(),
+  workspaceId: text("workspace_id")
+    .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
 });
 
 export const workflowsRelations = relations(workflows, ({ one }) => ({
-  author: one(projects, {
-    fields: [workflows.projectId],
-    references: [projects.id],
+  workspace: one(workspaces, {
+    fields: [workflows.workspaceId],
+    references: [workspaces.id],
   }),
 }));
 
@@ -110,23 +98,19 @@ export const accessPoints = pgTable("access_point", {
   actionType: actionTypes("action_type"),
   urlPath: text("url_path"),
   flow: jsonb("flow").$type<Flow>().notNull(),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
-  projectId: text("project_id")
-    .references(() => projects.id, { onDelete: "cascade" })
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .$onUpdate(() => new Date())
+    .notNull(),
+  workspaceId: text("workspace_id")
+    .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
 });
 
 export const accessPointsRelations = relations(accessPoints, ({ one }) => ({
-  author: one(projects, {
-    fields: [accessPoints.projectId],
-    references: [projects.id],
+  workspace: one(workspaces, {
+    fields: [accessPoints.workspaceId],
+    references: [workspaces.id],
   }),
 }));
 
@@ -137,23 +121,19 @@ export const resources = pgTable("resources", {
   name: text("name").notNull(),
   description: text("description"),
   provider: text("provider"),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
-  projectId: text("project_id")
-    .references(() => projects.id, { onDelete: "cascade" })
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .$onUpdate(() => new Date())
+    .notNull(),
+  workspaceId: text("workspace_id")
+    .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
 });
 
 export const resourcesRelations = relations(resources, ({ one }) => ({
-  author: one(projects, {
-    fields: [resources.projectId],
-    references: [projects.id],
+  workspace: one(workspaces, {
+    fields: [resources.workspaceId],
+    references: [workspaces.id],
   }),
 }));
 
@@ -178,16 +158,12 @@ export const actionBlocks = pgTable("action_blocks", {
     generatedCode: string;
   }>(),
   codeNotUpdated: boolean("code_not_updated"),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    precision: 3,
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", {
-    mode: "date",
-    precision: 3,
-  }).$onUpdate(() => new Date()),
-  projectId: text("project_id")
-    .references(() => projects.id, { onDelete: "cascade" })
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .$onUpdate(() => new Date())
+    .notNull(),
+  workspaceId: text("workspace_id")
+    .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
 });
 
@@ -207,9 +183,9 @@ export const blockTypes = z.enum([
   "response-block",
 ]);
 
-// Projects schemas
-export const projectSchema = createSelectSchema(projects);
-export const insertProjectSchema = createInsertSchema(projects, {
+// workspaces schemas
+export const workspaceSchema = createSelectSchema(workspaces);
+export const insertWorkspaceSchema = createInsertSchema(workspaces, {
   name: (schema) =>
     schema.name.trim().min(1, {
       message: "Name is required.",
@@ -223,10 +199,14 @@ export const compoundBlockSchema = createSelectSchema(compoundBlocks, {
       .object({
         id: z.string(),
         type: blockTypes,
+        metadata: z.object({
+          name: z.string(),
+        }),
       })
       .array(),
     edges: z
       .object({
+        id: z.string(),
         source: z.string(),
         target: z.string(),
       })
@@ -246,10 +226,14 @@ export const workflowSchema = createSelectSchema(workflows, {
       .object({
         id: z.string(),
         type: blockTypes,
+        metadata: z.object({
+          name: z.string(),
+        }),
       })
       .array(),
     edges: z
       .object({
+        id: z.string(),
         source: z.string(),
         target: z.string(),
       })
@@ -261,6 +245,14 @@ export const insertWorkflowSchema = createInsertSchema(workflows, {
     schema.name.trim().min(1, {
       message: "Name is required.",
     }),
+  triggerType: z.enum(triggerTypes.enumValues, {
+    message: "Type is required.",
+  }),
+}).pick({
+  name: true,
+  description: true,
+  triggerType: true,
+  workspaceId: true,
 });
 
 // Access points schemas
@@ -270,10 +262,14 @@ export const accessPointSchema = createSelectSchema(accessPoints, {
       .object({
         id: z.string(),
         type: blockTypes,
+        metadata: z.object({
+          name: z.string(),
+        }),
       })
       .array(),
     edges: z
       .object({
+        id: z.string(),
         source: z.string(),
         target: z.string(),
       })

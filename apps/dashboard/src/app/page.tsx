@@ -6,34 +6,31 @@ import {
   CardTitle,
 } from "@integramind/ui/card";
 
-import { CreateProjectForm } from "~/components/create-project-form";
+import { CreateWorkspaceForm } from "~/components/create-workspace-form";
 import { Preview } from "~/components/preview";
-import { ProjectsDialog } from "~/components/projects-dialog";
-import { getProjects } from "~/lib/actions/projects";
+import { WorkspacesDialog } from "~/components/workspaces-dialog";
+import { getWorkspaces } from "~/lib/actions/workspaces";
 
-export default async function Project(): Promise<JSX.Element> {
-  const projects = await getProjects();
+export default async function Home(): Promise<JSX.Element> {
+  const workspaces = await getWorkspaces();
 
   return (
     <div className="flex w-full">
-      <div
-        id="dialogBackdrop"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-      >
-        {projects.length > 0 ? (
-          <ProjectsDialog projects={projects} />
+      <div id="dialogBackdrop" className="fixed inset-0 z-50 flex bg-black/80">
+        {workspaces.length > 0 ? (
+          <WorkspacesDialog workspaces={workspaces} />
         ) : (
-          <Card className="fixed left-1/2 top-1/2 z-50 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border p-8 duration-200">
+          <Card className="fixed left-1/2 top-1/2 z-50 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border duration-200">
             <CardHeader>
-              <CardTitle>Create new project</CardTitle>
+              <CardTitle>Create new wor</CardTitle>
               <CardDescription>
                 {
-                  "You don't have any projects yet. Please create a new project."
+                  "You don't have any workspaces yet. Please create a new workspace."
                 }
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <CreateProjectForm />
+              <CreateWorkspaceForm />
             </CardContent>
           </Card>
         )}

@@ -8,9 +8,9 @@ import {
   DialogTitle,
 } from "@integramind/ui/dialog";
 
-import { CreateProjectForm } from "./create-project-form";
+import { CreateWorkspaceForm } from "~/components/create-workspace-form";
 
-export function CreateProjectDialog({
+export function CreateWorkspaceDialog({
   open,
   setOpen,
 }: {
@@ -21,12 +21,12 @@ export function CreateProjectDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Project</DialogTitle>
+          <DialogTitle>Create Workspace</DialogTitle>
           <DialogDescription>
-            Enter the project details then press create.
+            Enter the workspace details then press create.
           </DialogDescription>
         </DialogHeader>
-        <CreateProjectForm />
+        <CreateWorkspaceForm />
       </DialogContent>
     </Dialog>
   );

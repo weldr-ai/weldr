@@ -5,7 +5,6 @@ import "~/styles/flow-builder.css";
 
 import type { Connection, Edge } from "reactflow";
 import React, { useCallback } from "react";
-import { createId } from "@paralleldrive/cuid2";
 import { Minus, Plus, Scan } from "lucide-react";
 import ReactFlow, {
   addEdge,
@@ -21,7 +20,7 @@ import ReactFlow, {
 
 import { Button } from "@integramind/ui/button";
 
-import type { Block, BlockType } from "~/types";
+import type { Block, BlockType, FlowEdge } from "~/types";
 import { AccessPointBlock } from "~/components/access-point-block";
 import { ActionBlock } from "~/components/action-block";
 import { AIProcessingBlock } from "~/components/ai-processing-block";
@@ -50,15 +49,17 @@ const edgeTypes = {
   "deletable-edge": DeletableEdge,
 };
 
-const initialBlocks: Block[] = [];
-
-const initEdges: Edge[] = [];
-
-export function _FlowBuilder() {
+export function _FlowBuilder({
+  initialBlocks,
+  initialEdges,
+}: {
+  initialBlocks: Block[];
+  initialEdges: FlowEdge[];
+}) {
   const reactFlow = useReactFlow();
   const viewPort = useViewport();
   const [blocks, setBlocks, onBlocksChange] = useNodesState(initialBlocks);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback(
     (params: Edge | Connection) =>
@@ -87,7 +88,7 @@ export function _FlowBuilder() {
         y: event.clientY,
       });
 
-      const newBlockId = createId();
+      const newBlockId = crypto.randomUUID();
 
       const getNewBockName = (blockType: BlockType) => {
         switch (blockType) {
@@ -206,10 +207,16 @@ export function _FlowBuilder() {
   );
 }
 
-export function FlowBuilder() {
+export function FlowBuilder({
+  initialBlocks,
+  initialEdges,
+}: {
+  initialBlocks: Block[];
+  initialEdges: FlowEdge[];
+}) {
   return (
     <ReactFlowProvider>
-      <_FlowBuilder />
+      <_FlowBuilder initialBlocks={initialBlocks} initialEdges={initialEdges} />
     </ReactFlowProvider>
   );
 }

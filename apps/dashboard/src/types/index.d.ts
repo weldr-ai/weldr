@@ -1,14 +1,16 @@
-import type { Node } from "reactflow";
+import type { Edge, Node } from "reactflow";
 import type { z } from "zod";
 
 import type {
   accessPointSchema,
   actionBlockSchema,
   compoundBlockSchema,
-  projectSchema,
   resourceSchema,
   workflowSchema,
+  workspaceSchema,
 } from "@integramind/db/schema";
+
+export type FlowEdge = Edge;
 
 export type BlockType =
   | "access-point-block"
@@ -111,7 +113,7 @@ export type Block =
   | TSemanticBranchBlock
   | TResponseBlock;
 
-export type Project = z.infer<typeof projectSchema>;
+export type Workspace = z.infer<typeof workspaceSchema>;
 export type CompoundBlock = z.infer<typeof compoundBlockSchema>;
 export type Workflow = z.infer<typeof workflowSchema>;
 export type AccessPoint = z.infer<typeof accessPointSchema>;
