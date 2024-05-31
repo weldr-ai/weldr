@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
 
-import { insertWorkflowSchema } from "@integramind/db/schema";
+import { insertAccessPointSchema } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import {
   Form,
@@ -31,25 +31,29 @@ import {
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import { createWorkflow } from "~/lib/actions/workflows";
+import { createAccessPoint } from "~/lib/actions/access-points";
 
-export function CreateWorkflowForm({
-  setCreateWorkflowDialogOpen,
+export function CreateAccessPointForm({
+  setCreateAccessPointDialogOpen,
 }: {
-  setCreateWorkflowDialogOpen?: (open: boolean) => void;
+  setCreateAccessPointDialogOpen?: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const [state, createWorkflowAction] = useFormState(createWorkflow, undefined);
-  const form = useForm<z.infer<typeof insertWorkflowSchema>>({
+  const [state, createAccessPointAction] = useFormState(
+    createAccessPoint,
+    undefined,
+  );
+  const form = useForm<z.infer<typeof insertAccessPointSchema>>({
     mode: "onChange",
-    resolver: zodResolver(insertWorkflowSchema),
+    resolver: zodResolver(insertAccessPointSchema),
     defaultValues: {
       name: "",
       description: "",
+      urlPath: "",
+      actionType: undefined,
       workspaceId,
-      triggerType: undefined,
       ...(state &&
         (state.status === "error" || state.status === "validationError") &&
         state.fields),
@@ -63,15 +67,15 @@ export function CreateWorkflowForm({
           form.reset();
           toast({
             title: "Success",
-            description: "Workflow created successfully.",
+            description: "Access point created successfully.",
             duration: 2000,
           });
-          await queryClient.invalidateQueries({ queryKey: ["workflows"] });
-          if (setCreateWorkflowDialogOpen) {
-            setCreateWorkflowDialogOpen(false);
+          await queryClient.invalidateQueries({ queryKey: ["access-points"] });
+          if (setCreateAccessPointDialogOpen) {
+            setCreateAccessPointDialogOpen(false);
           }
           router.replace(
-            `/workspaces/${workspaceId}/workflows/${state.payload.id}`,
+            `/workspaces/${workspaceId}/access-points/${state.payload.id}`,
           );
         } else if (state.status === "validationError") {
           Object.keys(state.errors).forEach((key) => {
@@ -101,7 +105,7 @@ export function CreateWorkflowForm({
     form,
     queryClient,
     router,
-    setCreateWorkflowDialogOpen,
+    setCreateAccessPointDialogOpen,
     state,
     workspaceId,
   ]);
@@ -109,7 +113,7 @@ export function CreateWorkflowForm({
   return (
     <Form {...form}>
       <form
-        action={createWorkflowAction}
+        action={createAccessPointAction}
         className="flex w-full flex-col space-y-4"
       >
         <FormField
@@ -119,7 +123,7 @@ export function CreateWorkflowForm({
             <FormItem>
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter workflow name" {...field} />
+                <Input placeholder="Enter access point name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -127,10 +131,23 @@ export function CreateWorkflowForm({
         />
         <FormField
           control={form.control}
-          name="triggerType"
+          name="urlPath"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Type</FormLabel>
+              <FormLabel className="text-xs">URL Path</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter access point URL path" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="actionType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Action Type</FormLabel>
               <FormControl>
                 <Select
                   name={field.name}
@@ -138,11 +155,13 @@ export function CreateWorkflowForm({
                   onValueChange={field.onChange}
                 >
                   <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Trigger Type" />
+                    <SelectValue placeholder="Action Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="webhook">Webhook</SelectItem>
-                    <SelectItem value="schedule">Schedule</SelectItem>
+                    <SelectItem value="retrieve">Retrieve</SelectItem>
+                    <SelectItem value="submit">Submit</SelectItem>
+                    <SelectItem value="modify">Modify</SelectItem>
+                    <SelectItem value="delete">Delete</SelectItem>
                   </SelectContent>
                 </Select>
               </FormControl>
@@ -162,7 +181,7 @@ export function CreateWorkflowForm({
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="Enter workflow description"
+                  placeholder="Enter access point description"
                   value={field.value ?? ""}
                 />
               </FormControl>
@@ -186,7 +205,7 @@ export function CreateWorkflowForm({
 function SubmitButton({
   formState,
 }: {
-  formState: FormState<z.infer<typeof insertWorkflowSchema>>;
+  formState: FormState<z.infer<typeof insertAccessPointSchema>>;
 }) {
   const { pending } = useFormStatus();
   return (

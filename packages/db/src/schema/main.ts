@@ -56,7 +56,7 @@ export const flowsRelations = relations(compoundBlocks, ({ one }) => ({
   }),
 }));
 
-export const triggerTypes = pgEnum("trigger_types", ["event", "time"]);
+export const triggerTypes = pgEnum("trigger_types", ["webhook", "schedule"]);
 
 export const workflows = pgTable("workflows", {
   id: text("id")
@@ -89,14 +89,14 @@ export const actionTypes = pgEnum("action_types", [
   "delete",
 ]);
 
-export const accessPoints = pgTable("access_point", {
+export const accessPoints = pgTable("access_points", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description"),
-  actionType: actionTypes("action_type"),
-  urlPath: text("url_path"),
+  actionType: actionTypes("action_type").notNull(),
+  urlPath: text("url_path").notNull(),
   flow: jsonb("flow").$type<Flow>().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -173,7 +173,7 @@ export const actionBlocks = pgTable("action_blocks", {
 
 export const blockTypes = z.enum([
   "access-point-block",
-  "workflow-trigger-block",
+  "workflow-block",
   "query-block",
   "action-block",
   "logical-processing-block",
@@ -199,9 +199,6 @@ export const compoundBlockSchema = createSelectSchema(compoundBlocks, {
       .object({
         id: z.string(),
         type: blockTypes,
-        metadata: z.object({
-          name: z.string(),
-        }),
       })
       .array(),
     edges: z
@@ -226,9 +223,6 @@ export const workflowSchema = createSelectSchema(workflows, {
       .object({
         id: z.string(),
         type: blockTypes,
-        metadata: z.object({
-          name: z.string(),
-        }),
       })
       .array(),
     edges: z
@@ -262,9 +256,6 @@ export const accessPointSchema = createSelectSchema(accessPoints, {
       .object({
         id: z.string(),
         type: blockTypes,
-        metadata: z.object({
-          name: z.string(),
-        }),
       })
       .array(),
     edges: z
@@ -281,6 +272,19 @@ export const insertAccessPointSchema = createInsertSchema(accessPoints, {
     schema.name.trim().min(1, {
       message: "Name is required.",
     }),
+  actionType: z.enum(actionTypes.enumValues, {
+    message: "Action type is required.",
+  }),
+  urlPath: (schema) =>
+    schema.urlPath.trim().min(1, {
+      message: "URL path is required.",
+    }),
+}).pick({
+  name: true,
+  description: true,
+  actionType: true,
+  urlPath: true,
+  workspaceId: true,
 });
 
 // Resources schemas

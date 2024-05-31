@@ -6,6 +6,7 @@ import { PanelLeftClose } from "lucide-react";
 import { Button } from "@integramind/ui/button";
 import { cn } from "@integramind/ui/utils";
 
+import { AccessPointsPrimarySidebar } from "~/components/access-points-primary-sidebar";
 import { WorkflowsPrimarySidebar } from "~/components/workflows-primary-sidebar";
 import { usePrimarySidebarStore } from "~/lib/store";
 
@@ -54,15 +55,11 @@ export function PrimarySidebar() {
             </div>
           ) : activeSection === "access-points" ? (
             <div
-              className={cn(
-                "flex size-full flex-col items-center justify-center",
-                {
-                  hidden: activeSection !== "access-points",
-                },
-              )}
+              className={cn("flex w-full p-2", {
+                hidden: activeSection !== "access-points",
+              })}
             >
-              <div>Todo</div>
-              <div>Access Points</div>
+              <AccessPointsPrimarySidebar workspaceId={workspaceId} />
             </div>
           ) : activeSection === "workflows" ? (
             <div
