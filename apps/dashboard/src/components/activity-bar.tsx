@@ -67,7 +67,7 @@ export function ActivityBar() {
           size="icon"
           variant="ghost"
         >
-          <span className="text-[10px]">HTTP</span>
+          <span className="text-[10px] font-bold">HTTP</span>
         </Button>
         <Button
           className={cn({

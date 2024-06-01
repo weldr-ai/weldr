@@ -174,10 +174,7 @@ export const actionBlocks = pgTable("action_blocks", {
 export const blockTypes = z.enum([
   "access-point-block",
   "workflow-block",
-  "query-block",
-  "action-block",
-  "logical-processing-block",
-  "ai-processing-block",
+  "function-block",
   "logical-branch-block",
   "semantic-branch-block",
   "response-block",

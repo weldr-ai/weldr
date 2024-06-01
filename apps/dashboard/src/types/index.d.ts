@@ -15,10 +15,7 @@ export type FlowEdge = Edge;
 export type BlockType =
   | "access-point-block"
   | "workflow-block"
-  | "query-block"
-  | "action-block"
-  | "logical-processing-block"
-  | "ai-processing-block"
+  | "function-block"
   | "logical-branch-block"
   | "semantic-branch-block"
   | "response-block";
@@ -43,33 +40,13 @@ export interface WorkflowTriggerBlockData {
 
 export type TWorkflowTriggerBlock = BaseBlock<WorkflowTriggerBlockData>;
 
-export interface QueryBlockData {
+export interface FunctionBlockData {
   id: string;
   name: string;
+  description?: string | null;
 }
 
-export type TQueryBlock = BaseBlock<QueryBlockData>;
-
-export interface ActionBlockData {
-  id: string;
-  name: string;
-}
-
-export type TActionBlock = BaseBlock<QueryBlockData>;
-
-export interface LogicalProcessingBlockData {
-  id: string;
-  name: string;
-}
-
-export type TLogicalProcessingBlock = BaseBlock<LogicalProcessingBlockData>;
-
-export interface AIProcessingBlockData {
-  id: string;
-  name: string;
-}
-
-export type TAIProcessingBlock = BaseBlock<AIProcessingBlockData>;
+export type TFunctionBlock = BaseBlock<FunctionBlockData>;
 
 export interface LogicalBranchBlockData {
   id: string;
@@ -95,10 +72,7 @@ export type TResponseBlock = BaseBlock<ResponseBlockData>;
 export type BlockData =
   | AccessPointBlockData
   | WorkflowTriggerBlockData
-  | QueryBlockData
-  | ActionBlockData
-  | LogicalProcessingBlockData
-  | AIProcessingBlockData
+  | FunctionBlockData
   | LogicalBranchBlockData
   | SemanticBranchBlockData
   | ResponseBlockData;
@@ -106,10 +80,7 @@ export type BlockData =
 export type Block =
   | TAccessPointBlock
   | TWorkflowTriggerBlock
-  | TQueryBlock
-  | TActionBlock
-  | TLogicalProcessingBlock
-  | TAIProcessingBlock
+  | TFunctionBlock
   | TLogicalBranchBlock
   | TSemanticBranchBlock
   | TResponseBlock;

@@ -22,13 +22,10 @@ import { Button } from "@integramind/ui/button";
 
 import type { Block, BlockType, FlowEdge } from "~/types";
 import { AccessPointBlock } from "~/components/access-point-block";
-import { ActionBlock } from "~/components/action-block";
-import { AIProcessingBlock } from "~/components/ai-processing-block";
 import { BlocksMenu } from "~/components/blocks-menu";
 import DeletableEdge from "~/components/deletable-edge";
+import { FunctionBlock } from "~/components/function-block";
 import { LogicalBranchBlock } from "~/components/logical-branch-block";
-import { LogicalProcessingBlock } from "~/components/logical-processing-block";
-import { QueryBlock } from "~/components/query-block";
 import { ResponseBlock } from "~/components/response-block";
 import { SemanticBranchBlock } from "~/components/semantic-branch-block";
 import { WorkflowBlock } from "~/components/workflow-block";
@@ -36,10 +33,7 @@ import { WorkflowBlock } from "~/components/workflow-block";
 const blockTypes = {
   "access-point-block": AccessPointBlock,
   "workflow-block": WorkflowBlock,
-  "query-block": QueryBlock,
-  "action-block": ActionBlock,
-  "logical-processing-block": LogicalProcessingBlock,
-  "ai-processing-block": AIProcessingBlock,
+  "function-block": FunctionBlock,
   "logical-branch-block": LogicalBranchBlock,
   "semantic-branch-block": SemanticBranchBlock,
   "response-block": ResponseBlock,
@@ -96,14 +90,8 @@ export function _FlowBuilder({
             return "New Access Point";
           case "workflow-block":
             return "New Workflow";
-          case "query-block":
-            return "New Query";
-          case "action-block":
-            return "New Action";
-          case "logical-processing-block":
-            return "New Logical Processing";
-          case "ai-processing-block":
-            return "New AI Processing";
+          case "function-block":
+            return "New Function";
           case "logical-branch-block":
             return "New Logical Branch";
           case "semantic-branch-block":
