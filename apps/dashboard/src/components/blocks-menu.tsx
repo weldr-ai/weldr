@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import {
-  Brain,
   CornerDownLeft,
   PanelRightClose,
   PanelRightOpen,
+  Repeat,
   Split,
 } from "lucide-react";
 
@@ -52,22 +52,20 @@ export function BlocksMenu() {
             <div
               className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
               onDragStart={(event) =>
-                onDragStart(event, "logical-branch-block")
+                onDragStart(event, "conditional-branch-block")
               }
               draggable
             >
               <Split className="size-4 text-primary" />
-              <span className="w-full text-[10px]">Logical Branch</span>
+              <span className="w-full text-[10px]">Conditional Branch</span>
             </div>
             <div
               className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
-              onDragStart={(event) =>
-                onDragStart(event, "semantic-branch-block")
-              }
+              onDragStart={(event) => onDragStart(event, "loop-block")}
               draggable
             >
-              <Brain className="size-4 text-primary" />
-              <span className="w-full text-[10px]">Semantic Branch</span>
+              <Repeat className="size-4 text-primary" />
+              <span className="w-full text-[10px]">Loop</span>
             </div>
             <div
               className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"

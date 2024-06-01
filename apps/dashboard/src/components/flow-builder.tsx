@@ -25,17 +25,17 @@ import { AccessPointBlock } from "~/components/access-point-block";
 import { BlocksMenu } from "~/components/blocks-menu";
 import DeletableEdge from "~/components/deletable-edge";
 import { FunctionBlock } from "~/components/function-block";
-import { LogicalBranchBlock } from "~/components/logical-branch-block";
+import { ConditionalBranchBlock } from "~/components/logical-branch-block";
+import { LoopBlock } from "~/components/loop-block";
 import { ResponseBlock } from "~/components/response-block";
-import { SemanticBranchBlock } from "~/components/semantic-branch-block";
 import { WorkflowBlock } from "~/components/workflow-block";
 
 const blockTypes = {
   "access-point-block": AccessPointBlock,
   "workflow-block": WorkflowBlock,
   "function-block": FunctionBlock,
-  "logical-branch-block": LogicalBranchBlock,
-  "semantic-branch-block": SemanticBranchBlock,
+  "conditional-branch-block": ConditionalBranchBlock,
+  "loop-block": LoopBlock,
   "response-block": ResponseBlock,
 };
 
@@ -92,10 +92,10 @@ export function _FlowBuilder({
             return "New Workflow";
           case "function-block":
             return "New Function";
-          case "logical-branch-block":
-            return "New Logical Branch";
-          case "semantic-branch-block":
-            return "New Semantic Branch";
+          case "conditional-branch-block":
+            return "New Conditional Branch";
+          case "loop-block":
+            return "New Loop";
           case "response-block":
             return "New Response";
         }

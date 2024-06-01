@@ -32,12 +32,16 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { LogicalBranchBlockData } from "~/types";
+import type { ConditionalBranchBlockData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-export const LogicalBranchBlock = memo(
-  ({ data, isConnectable, selected }: NodeProps<LogicalBranchBlockData>) => {
+export const ConditionalBranchBlock = memo(
+  ({
+    data,
+    isConnectable,
+    selected,
+  }: NodeProps<ConditionalBranchBlockData>) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -76,7 +80,7 @@ export const LogicalBranchBlock = memo(
                   <div className="flex items-center gap-2 text-xs">
                     <Split className="size-4 text-primary" />
                     <span className="text-muted-foreground">
-                      Logical Branch
+                      Conditional Branch
                     </span>
                   </div>
                   <span className="text-sm">{data.name}</span>
@@ -87,7 +91,7 @@ export const LogicalBranchBlock = memo(
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Split className="size-4 text-primary" />
-                      <span>Logical Branch</span>
+                      <span>Conditional Branch</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>
                       <Button variant="ghost" size="icon">
@@ -97,7 +101,7 @@ export const LogicalBranchBlock = memo(
                     </SheetClose>
                   </SheetTitle>
                   <SheetDescription>
-                    Develop your logical branch here
+                    Develop your conditional branch here
                   </SheetDescription>
                 </SheetHeader>
               </SheetContent>
@@ -105,7 +109,7 @@ export const LogicalBranchBlock = memo(
           </ContextMenuTrigger>
           <ContextMenuContent>
             <ContextMenuLabel className="text-xs">
-              Logical Branch
+              Conditional Branch
             </ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem className="text-xs">
@@ -158,4 +162,4 @@ export const LogicalBranchBlock = memo(
   },
 );
 
-LogicalBranchBlock.displayName = "LogicalBranchBlock";
+ConditionalBranchBlock.displayName = "ConditionalBranchBlock";

@@ -3,7 +3,6 @@ import type { z } from "zod";
 
 import type {
   accessPointSchema,
-  actionBlockSchema,
   compoundBlockSchema,
   resourceSchema,
   workflowSchema,
@@ -16,8 +15,8 @@ export type BlockType =
   | "access-point-block"
   | "workflow-block"
   | "function-block"
-  | "logical-branch-block"
-  | "semantic-branch-block"
+  | "conditional-branch-block"
+  | "loop-block"
   | "response-block";
 
 export type BaseBlock<T> = Node<T, BlockType>;
@@ -48,19 +47,19 @@ export interface FunctionBlockData {
 
 export type TFunctionBlock = BaseBlock<FunctionBlockData>;
 
-export interface LogicalBranchBlockData {
+export interface ConditionalBranchBlockData {
   id: string;
   name: string;
 }
 
-export type TLogicalBranchBlock = BaseBlock<LogicalBranchBlockData>;
+export type TConditionalBranchBlock = BaseBlock<ConditionalBranchBlockData>;
 
-export interface SemanticBranchBlockData {
+export interface LoopBlockData {
   id: string;
   name: string;
 }
 
-export type TSemanticBranchBlock = BaseBlock<SemanticBranchBlockData>;
+export type TLoopBlock = BaseBlock<LoopBlockData>;
 
 export interface ResponseBlockData {
   id: string;
@@ -73,21 +72,20 @@ export type BlockData =
   | AccessPointBlockData
   | WorkflowTriggerBlockData
   | FunctionBlockData
-  | LogicalBranchBlockData
-  | SemanticBranchBlockData
+  | ConditionalBranchBlockData
+  | LoopBlockData
   | ResponseBlockData;
 
 export type Block =
   | TAccessPointBlock
   | TWorkflowTriggerBlock
   | TFunctionBlock
-  | TLogicalBranchBlock
-  | TSemanticBranchBlock
+  | TConditionalBranchBlock
+  | TLoopBlock
   | TResponseBlock;
 
 export type Workspace = z.infer<typeof workspaceSchema>;
 export type CompoundBlock = z.infer<typeof compoundBlockSchema>;
 export type Workflow = z.infer<typeof workflowSchema>;
 export type AccessPoint = z.infer<typeof accessPointSchema>;
-export type ActionBlock = z.infer<typeof actionBlockSchema>;
 export type Resource = z.infer<typeof resourceSchema>;
