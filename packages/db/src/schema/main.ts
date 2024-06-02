@@ -137,27 +137,16 @@ export const resourcesRelations = relations(resources, ({ one }) => ({
   }),
 }));
 
-export const actionBlockTypes = pgEnum("action_block_types", [
-  "query",
-  "action",
-  "logical_data_processing",
-  "ai_data_processing",
-]);
-
-export const actionBlocks = pgTable("action_blocks", {
+export const functionBlocks = pgTable("function_blocks", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description").notNull(),
-  actionBlockType: actionBlockTypes("action_block_type"),
-  metadata: jsonb("metadata").$type<{
-    resourceId: string;
-    inputs: Input[];
-    outputs: Output[];
-    generatedCode: string;
-  }>(),
-  codeNotUpdated: boolean("code_not_updated"),
+  inputs: jsonb("inputs").$type<Input[]>(),
+  outputs: jsonb("outputs").$type<Output[]>(),
+  generatedCode: text("generated_code"),
+  isCodeUpdated: boolean("code_not_updated").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .$onUpdate(() => new Date())
@@ -175,8 +164,8 @@ export const blockTypes = z.enum([
   "access-point-block",
   "workflow-block",
   "function-block",
-  "logical-branch-block",
-  "semantic-branch-block",
+  "conditional-branch-block",
+  "loop-block",
   "response-block",
 ]);
 
@@ -291,15 +280,6 @@ export const insertAccessPointSchema = createInsertSchema(accessPoints, {
 // Resources schemas
 export const resourceSchema = createSelectSchema(resources);
 export const insertResourceSchema = createInsertSchema(resources, {
-  name: (schema) =>
-    schema.name.trim().min(1, {
-      message: "Name is required.",
-    }),
-});
-
-// Action blocks schemas
-export const actionBlockSchema = createSelectSchema(actionBlocks);
-export const insertActionBlockSchema = createInsertSchema(actionBlocks, {
   name: (schema) =>
     schema.name.trim().min(1, {
       message: "Name is required.",

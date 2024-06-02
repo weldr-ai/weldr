@@ -26,6 +26,6 @@ export type BlockType =
   | "access-point-block"
   | "workflow-block"
   | "function-block"
-  | "logical-branch-block"
-  | "semantic-branch-block"
+  | "conditional-branch-block"
+  | "loop-block"
   | "response-block";
