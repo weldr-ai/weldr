@@ -6,9 +6,9 @@ import { PanelLeftClose } from "lucide-react";
 import { Button } from "@integramind/ui/button";
 import { cn } from "@integramind/ui/utils";
 
-import { AccessPointsPrimarySidebar } from "~/components/access-points-primary-sidebar";
-import { ComponentsPrimarySidebar } from "~/components/components-primary-sidebar";
-import { WorkflowsPrimarySidebar } from "~/components/workflows-primary-sidebar";
+import { AccessPointsPrimarySidebar } from "~/components/primary-sidebar/access-points-primary-sidebar";
+import { ComponentsPrimarySidebar } from "~/components/primary-sidebar/components-primary-sidebar";
+import { WorkflowsPrimarySidebar } from "~/components/primary-sidebar/workflows-primary-sidebar";
 import { usePrimarySidebarStore } from "~/lib/store";
 
 export function PrimarySidebar() {
