@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   jsonb,
@@ -22,6 +22,7 @@ export const workspaces = pgTable("workspaces", {
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
+    .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
 });
@@ -41,10 +42,11 @@ export const components = pgTable("components", {
   description: text("description"),
   flow: jsonb("flow")
     .$type<Flow>()
-    .default({ primitives: [], edges: [] })
+    .default(sql`{ primitives: [], edges: [] }::jsonb`)
     .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
+    .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
   workspaceId: text("workspace_id")
@@ -71,6 +73,7 @@ export const workflows = pgTable("workflows", {
   flow: jsonb("flow").$type<Flow>().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
+    .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
   workspaceId: text("workspace_id")
@@ -103,6 +106,7 @@ export const accessPoints = pgTable("access_points", {
   flow: jsonb("flow").$type<Flow>().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
+    .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
   workspaceId: text("workspace_id")
@@ -126,6 +130,7 @@ export const resources = pgTable("resources", {
   provider: text("provider"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
+    .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
   workspaceId: text("workspace_id")
@@ -145,17 +150,15 @@ export const functions = pgTable("functions", {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
-  description: text("description").notNull(),
+  description: text("description"),
   inputs: jsonb("inputs").$type<Input[]>(),
   outputs: jsonb("outputs").$type<Output[]>(),
   generatedCode: text("generated_code"),
   isCodeUpdated: boolean("code_not_updated").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
+    .defaultNow()
     .$onUpdate(() => new Date())
-    .notNull(),
-  workspaceId: text("workspace_id")
-    .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
 });
 

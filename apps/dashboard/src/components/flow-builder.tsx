@@ -5,6 +5,7 @@ import "~/styles/flow-builder.css";
 
 import type { Connection, Edge } from "reactflow";
 import React, { useCallback } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Minus, Plus, Scan } from "lucide-react";
 import ReactFlow, {
   addEdge,
@@ -23,6 +24,10 @@ import { Button } from "@integramind/ui/button";
 import type { FlowEdge, Primitive, PrimitiveType } from "~/types";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
+import { updateAccessPointFlowPrimitives } from "~/lib/actions/access-points";
+import { updateComponentFlowPrimitives } from "~/lib/actions/components";
+import { createFunction } from "~/lib/actions/functions";
+import { updateWorkflowFlowPrimitives } from "~/lib/actions/workflows";
 import { AccessPoint } from "./primitives/access-point";
 import { ConditionalBranch } from "./primitives/conditional-branch";
 import { Function } from "./primitives/function";
@@ -44,12 +49,28 @@ const edgeTypes = {
 };
 
 export function _FlowBuilder({
+  flowId,
+  flowType,
   initialPrimitives,
   initialEdges,
 }: {
+  flowId: string;
+  flowType: "component" | "workflow" | "access-point";
   initialPrimitives: Primitive[];
   initialEdges: FlowEdge[];
 }) {
+  const updateFlowPrimitivesMutation = useMutation({
+    mutationFn:
+      flowType === "component"
+        ? updateComponentFlowPrimitives
+        : flowType === "access-point"
+          ? updateAccessPointFlowPrimitives
+          : updateWorkflowFlowPrimitives,
+  });
+  const createFunctionMutation = useMutation({
+    mutationFn: createFunction,
+  });
+
   const reactFlow = useReactFlow();
   const viewPort = useViewport();
   const [primitives, setPrimitives, onPrimitivesChange] =
@@ -68,22 +89,8 @@ export function _FlowBuilder({
   }, []);
 
   const onDrop = useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
+    async (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
-
-      const primitiveType = event.dataTransfer.getData(
-        "application/reactflow",
-      ) as PrimitiveType;
-
-      // check if the dropped element is valid
-      if (typeof primitiveType === "undefined" || !primitiveType) return;
-
-      const position = reactFlow.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      const newPrimitiveId = crypto.randomUUID();
 
       const getNewPrimitiveName = (primitiveType: PrimitiveType) => {
         switch (primitiveType) {
@@ -102,16 +109,48 @@ export function _FlowBuilder({
         }
       };
 
+      const primitiveType = event.dataTransfer.getData(
+        "application/reactflow",
+      ) as PrimitiveType;
+
+      // check if the dropped element is valid
+      if (typeof primitiveType === "undefined" || !primitiveType) return;
+
+      const position = reactFlow.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      const newPrimitiveId = crypto.randomUUID();
+      const newPrimitiveName = getNewPrimitiveName(primitiveType);
+
       const newPrimitive: Primitive = {
         id: newPrimitiveId,
         type: primitiveType,
         position,
-        data: { id: newPrimitiveId, name: getNewPrimitiveName(primitiveType) },
+        data: { id: newPrimitiveId, name: newPrimitiveName },
       };
 
       setPrimitives((primitives) => primitives.concat(newPrimitive));
+
+      if (primitiveType === "function") {
+        await createFunctionMutation.mutateAsync({
+          id: newPrimitiveId,
+          name: getNewPrimitiveName(primitiveType),
+        });
+        await updateFlowPrimitivesMutation.mutateAsync({
+          id: flowId,
+          primitive: { id: newPrimitiveId, type: primitiveType },
+        });
+      }
     },
-    [reactFlow, setPrimitives],
+    [
+      reactFlow,
+      setPrimitives,
+      createFunctionMutation,
+      updateFlowPrimitivesMutation,
+      flowId,
+    ],
   );
 
   return (
@@ -197,15 +236,21 @@ export function _FlowBuilder({
 }
 
 export function FlowBuilder({
+  flowId,
+  flowType,
   initialPrimitives,
   initialEdges,
 }: {
+  flowId: string;
+  flowType: "component" | "workflow" | "access-point";
   initialPrimitives: Primitive[];
   initialEdges: FlowEdge[];
 }) {
   return (
     <ReactFlowProvider>
       <_FlowBuilder
+        flowId={flowId}
+        flowType={flowType}
         initialPrimitives={initialPrimitives}
         initialEdges={initialEdges}
       />

@@ -36,6 +36,8 @@ export default async function AccessPointPage({
 
   return (
     <FlowBuilder
+      flowId={accessPoint.id}
+      flowType="access-point"
       initialPrimitives={initialPrimitives}
       initialEdges={initialEdges}
     />

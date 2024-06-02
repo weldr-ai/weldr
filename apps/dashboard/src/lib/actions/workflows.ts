@@ -2,10 +2,10 @@
 
 import type { z } from "zod";
 
-import { db, eq } from "@integramind/db";
+import { db, eq, sql } from "@integramind/db";
 import { insertWorkflowSchema, workflows } from "@integramind/db/schema";
 
-import type { Workflow } from "~/types";
+import type { PrimitiveType, Workflow } from "~/types";
 import { getWorkspaceById } from "./workspaces";
 
 interface FormFields {
@@ -62,24 +62,29 @@ export async function createWorkflow(
         return { status: "error", fields };
       }
 
-      const result = (
-        await db
-          .insert(workflows)
-          .values({
-            ...validation.data,
-            id,
-            flow: {
-              primitives: [
-                {
-                  id,
-                  type: "workflow",
-                },
-              ],
-              edges: [],
+      const statement = sql`
+      INSERT INTO ${workflows} (id, workspace_id, name, description, trigger_type, flow)
+      VALUES (
+        ${id},
+        ${validation.data.workspaceId},
+        ${validation.data.name},
+        ${validation.data.description},
+        ${validation.data.triggerType},
+        ${{
+          primitives: [
+            {
+              id,
+              type: "workflow",
             },
-          })
-          .returning({ id: workflows.id })
-      )[0];
+          ],
+          edges: [],
+        }}::jsonb
+      )
+      RETURNING id;`;
+
+      const result = (await db.execute(statement))[0] as
+        | { id: string }
+        | undefined;
 
       if (result) {
         return { status: "success", payload: { id: result.id } };
@@ -105,6 +110,26 @@ export async function createWorkflow(
     console.log(error);
     return { status: "error", fields };
   }
+}
+
+export async function updateWorkflowFlowPrimitives({
+  id,
+  primitive,
+}: {
+  id: string;
+  primitive: { id: string; type: PrimitiveType };
+}): Promise<{ id: string } | undefined> {
+  const statement = sql`
+    UPDATE ${workflows}
+    SET flow = jsonb_set(
+      ${workflows.flow},
+      '{primitives}',
+      (${workflows.flow} -> 'primitives') || ${{ id: primitive.id, type: primitive.type }}::jsonb
+    )
+    WHERE id = ${id}
+    RETURNING id;`;
+  const result = (await db.execute(statement))[0] as { id: string } | undefined;
+  return result;
 }
 
 export async function getWorkflows({

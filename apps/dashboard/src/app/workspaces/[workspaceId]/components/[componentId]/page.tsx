@@ -36,6 +36,8 @@ export default async function ComponentPage({
 
   return (
     <FlowBuilder
+      flowId={components.id}
+      flowType="component"
       initialPrimitives={initialPrimitives}
       initialEdges={initialEdges}
     />

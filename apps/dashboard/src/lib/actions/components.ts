@@ -2,10 +2,10 @@
 
 import type { z } from "zod";
 
-import { db, eq } from "@integramind/db";
+import { db, eq, sql } from "@integramind/db";
 import { components, insertComponentSchema } from "@integramind/db/schema";
 
-import type { Component } from "~/types";
+import type { Component, PrimitiveType } from "~/types";
 import { getWorkspaceById } from "./workspaces";
 
 interface FormFields {
@@ -115,5 +115,25 @@ export async function getComponentById({
   const result = (
     await db.select().from(components).where(eq(components.id, id))
   )[0];
+  return result;
+}
+
+export async function updateComponentFlowPrimitives({
+  id,
+  primitive,
+}: {
+  id: string;
+  primitive: { id: string; type: PrimitiveType };
+}): Promise<{ id: string } | undefined> {
+  const statement = sql`
+    UPDATE ${components}
+    SET flow = jsonb_set(
+      ${components.flow},
+      '{primitives}',
+      (${components.flow} -> 'primitives') || ${{ id: primitive.id, type: primitive.type }}::jsonb
+    )
+    WHERE id = ${id}
+    RETURNING id;`;
+  const result = (await db.execute(statement))[0] as { id: string } | undefined;
   return result;
 }

@@ -2,10 +2,10 @@
 
 import type { z } from "zod";
 
-import { db, eq } from "@integramind/db";
+import { db, eq, sql } from "@integramind/db";
 import { accessPoints, insertAccessPointSchema } from "@integramind/db/schema";
 
-import type { AccessPoint } from "~/types";
+import type { AccessPoint, PrimitiveType } from "~/types";
 import { getWorkspaceById } from "./workspaces";
 
 interface FormFields {
@@ -62,24 +62,30 @@ export async function createAccessPoint(
         return { status: "error", fields };
       }
 
-      const result = (
-        await db
-          .insert(accessPoints)
-          .values({
-            ...validation.data,
-            id,
-            flow: {
-              primitives: [
-                {
-                  id,
-                  type: "access-point",
-                },
-              ],
-              edges: [],
-            },
-          })
-          .returning({ id: accessPoints.id })
-      )[0];
+      const statement = sql`
+        INSERT INTO ${accessPoints} (id, workspace_id, name, description, action_type, url_path, flow)
+        VALUES (
+          ${id},
+          ${validation.data.workspaceId},
+          ${validation.data.name},
+          ${validation.data.description},
+          ${validation.data.actionType},
+          ${validation.data.urlPath},
+          ${{
+            primitives: [
+              {
+                id,
+                type: "access-point",
+              },
+            ],
+            edges: [],
+          }}::jsonb
+        )
+        RETURNING id;`;
+
+      const result = (await db.execute(statement))[0] as
+        | { id: string }
+        | undefined;
 
       if (result) {
         return { status: "success", payload: { id: result.id } };
@@ -105,6 +111,26 @@ export async function createAccessPoint(
     console.log(error);
     return { status: "error", fields };
   }
+}
+
+export async function updateAccessPointFlowPrimitives({
+  id,
+  primitive,
+}: {
+  id: string;
+  primitive: { id: string; type: PrimitiveType };
+}): Promise<{ id: string } | undefined> {
+  const statement = sql`
+    UPDATE ${accessPoints}
+    SET flow = jsonb_set(
+      ${accessPoints.flow},
+      '{primitives}',
+      (${accessPoints.flow} -> 'primitives') || ${{ id: primitive.id, type: primitive.type }}::jsonb
+    )
+    WHERE id = ${id}
+    RETURNING id;`;
+  const result = (await db.execute(statement))[0] as { id: string } | undefined;
+  return result;
 }
 
 export async function getAccessPoints({

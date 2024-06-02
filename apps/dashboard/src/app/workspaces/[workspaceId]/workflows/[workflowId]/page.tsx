@@ -37,6 +37,8 @@ export default async function WorkflowPage({
 
   return (
     <FlowBuilder
+      flowId={workflow.id}
+      flowType="workflow"
       initialPrimitives={initialPrimitives}
       initialEdges={initialEdges}
     />
