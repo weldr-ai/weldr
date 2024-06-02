@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { getWorkspaceById } from "~/lib/actions/workspaces";
 
-export default async function Workspace({
+export default async function WorkspacePage({
   params,
 }: {
   params: { workspaceId: string };
