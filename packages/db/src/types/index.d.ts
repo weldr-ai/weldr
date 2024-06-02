@@ -10,10 +10,18 @@ export interface Output {
   type: Type;
 }
 
+export type PrimitiveType =
+  | "access-point"
+  | "workflow"
+  | "function"
+  | "conditional-branch"
+  | "loop"
+  | "response";
+
 export interface Flow {
-  nodes: {
+  primitives: {
     id: string;
-    type: BlockType;
+    type: PrimitiveType;
   }[];
   edges: {
     id: string;
@@ -21,11 +29,3 @@ export interface Flow {
     target: string;
   }[];
 }
-
-export type BlockType =
-  | "access-point-block"
-  | "workflow-block"
-  | "function-block"
-  | "conditional-branch-block"
-  | "loop-block"
-  | "response-block";

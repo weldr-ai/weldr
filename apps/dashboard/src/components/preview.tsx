@@ -29,9 +29,9 @@ import ReactFlow, { Background, MiniMap, Panel } from "reactflow";
 
 import { Card } from "@integramind/ui/card";
 
-import type { Block } from "~/types";
+import type { Primitive } from "~/types";
 
-const initialBlocks: Block[] = [];
+const initialPrimitives: Primitive[] = [];
 
 const initEdges: Edge[] = [];
 
@@ -107,7 +107,7 @@ export function Preview() {
           </div>
         </div>
         <main className="flex w-full flex-col">
-          <ReactFlow nodes={initialBlocks} edges={initEdges}>
+          <ReactFlow nodes={initialPrimitives} edges={initEdges}>
             <Background
               className="bg-background"
               color="hsl(var(--background))"

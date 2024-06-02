@@ -1,11 +1,10 @@
-import type { NodeProps } from "reactflow";
 import { memo, useState } from "react";
 import Link from "next/link";
 import {
-  CornerDownLeft,
   ExternalLink,
   FileText,
   PlayCircle,
+  Split,
   Trash,
   X,
 } from "lucide-react";
@@ -32,12 +31,12 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { ResponseBlockData } from "~/types";
+import type { ConditionalBranchPrimitiveProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-export const ResponseBlock = memo(
-  ({ data, isConnectable, selected }: NodeProps<ResponseBlockData>) => {
+export const ConditionalBranch = memo(
+  ({ data, isConnectable, selected }: ConditionalBranchPrimitiveProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -74,8 +73,10 @@ export const ResponseBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <CornerDownLeft className="size-4 text-primary" />
-                    <span className="text-muted-foreground">Response</span>
+                    <Split className="size-4 text-primary" />
+                    <span className="text-muted-foreground">
+                      Conditional Branch
+                    </span>
                   </div>
                   <span className="text-sm">{data.name}</span>
                 </Card>
@@ -84,8 +85,8 @@ export const ResponseBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <CornerDownLeft className="size-4 text-primary" />
-                      <span>Response</span>
+                      <Split className="size-4 text-primary" />
+                      <span>Conditional Branch</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>
                       <Button variant="ghost" size="icon">
@@ -95,23 +96,25 @@ export const ResponseBlock = memo(
                     </SheetClose>
                   </SheetTitle>
                   <SheetDescription>
-                    Develop your response here
+                    Develop your conditional branch here
                   </SheetDescription>
                 </SheetHeader>
               </SheetContent>
             </Sheet>
           </ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuLabel className="text-xs">Response</ContextMenuLabel>
+            <ContextMenuLabel className="text-xs">
+              Conditional Branch
+            </ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem className="text-xs">
               <PlayCircle className="mr-3 size-4 text-muted-foreground" />
-              Run with previous blocks
+              Run with previous primitives
             </ContextMenuItem>
             <ContextMenuItem className="flex items-center justify-between text-xs">
               <Link
                 className="flex items-center"
-                href="https://docs.integramind.ai/blocks/response"
+                href="https://docs.integramind.ai/primitives/query"
                 target="blank"
               >
                 <FileText className="mr-3 size-4 text-muted-foreground" />
@@ -154,4 +157,4 @@ export const ResponseBlock = memo(
   },
 );
 
-ResponseBlock.displayName = "ResponseBlock";
+ConditionalBranch.displayName = "ConditionalBranch";

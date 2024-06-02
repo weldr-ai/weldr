@@ -1,11 +1,10 @@
-import type { NodeProps } from "reactflow";
 import { memo, useState } from "react";
 import Link from "next/link";
 import {
+  CornerDownLeft,
   ExternalLink,
   FileText,
   PlayCircle,
-  Repeat,
   Trash,
   X,
 } from "lucide-react";
@@ -32,12 +31,12 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { LoopBlockData } from "~/types";
+import type { ResponsePrimitiveProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-export const LoopBlock = memo(
-  ({ data, isConnectable, selected }: NodeProps<LoopBlockData>) => {
+export const Response = memo(
+  ({ data, isConnectable, selected }: ResponsePrimitiveProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -74,8 +73,8 @@ export const LoopBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <Repeat className="size-4 text-primary" />
-                    <span className="text-muted-foreground">Loop</span>
+                    <CornerDownLeft className="size-4 text-primary" />
+                    <span className="text-muted-foreground">Response</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
                 </Card>
@@ -84,8 +83,8 @@ export const LoopBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Repeat className="size-4 text-primary" />
-                      <span>Loop</span>
+                      <CornerDownLeft className="size-4 text-primary" />
+                      <span>Response</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>
                       <Button variant="ghost" size="icon">
@@ -94,22 +93,24 @@ export const LoopBlock = memo(
                       </Button>
                     </SheetClose>
                   </SheetTitle>
-                  <SheetDescription>Develop your loop here</SheetDescription>
+                  <SheetDescription>
+                    Develop your response here
+                  </SheetDescription>
                 </SheetHeader>
               </SheetContent>
             </Sheet>
           </ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuLabel className="text-xs">Loop</ContextMenuLabel>
+            <ContextMenuLabel className="text-xs">Response</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem className="text-xs">
               <PlayCircle className="mr-3 size-4 text-muted-foreground" />
-              Run with previous blocks
+              Run with previous primitives
             </ContextMenuItem>
             <ContextMenuItem className="flex items-center justify-between text-xs">
               <Link
                 className="flex items-center"
-                href="https://docs.integramind.ai/blocks/query"
+                href="https://docs.integramind.ai/primitives/response"
                 target="blank"
               >
                 <FileText className="mr-3 size-4 text-muted-foreground" />
@@ -152,4 +153,4 @@ export const LoopBlock = memo(
   },
 );
 
-LoopBlock.displayName = "LoopBlock";
+Response.displayName = "Response";

@@ -7,9 +7,9 @@ import { Button } from "@integramind/ui/button";
 import { cn } from "@integramind/ui/utils";
 
 import { AccessPointsPrimarySidebar } from "~/components/access-points-primary-sidebar";
+import { ComponentsPrimarySidebar } from "~/components/components-primary-sidebar";
 import { WorkflowsPrimarySidebar } from "~/components/workflows-primary-sidebar";
 import { usePrimarySidebarStore } from "~/lib/store";
-import { CompoundBlocksPrimarySidebar } from "./compound-blocks-primary-sidebar";
 
 export function PrimarySidebar() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -25,8 +25,8 @@ export function PrimarySidebar() {
         <div className="flex w-64 flex-col items-center border-r bg-muted">
           <div className="flex w-full items-center justify-between border-b px-4 py-[7.5px]">
             <span className="text-xs">
-              {activeSection === "compound-blocks"
-                ? "Compound Blocks"
+              {activeSection === "components"
+                ? "Components"
                 : activeSection === "access-points"
                   ? "Access Points"
                   : activeSection === "workflows"
@@ -42,13 +42,13 @@ export function PrimarySidebar() {
               <PanelLeftClose className="size-3 text-muted-foreground" />
             </Button>
           </div>
-          {activeSection === "compound-blocks" ? (
+          {activeSection === "components" ? (
             <div
               className={cn("flex w-full p-2", {
-                hidden: activeSection !== "compound-blocks",
+                hidden: activeSection !== "components",
               })}
             >
-              <CompoundBlocksPrimarySidebar workspaceId={workspaceId} />
+              <ComponentsPrimarySidebar workspaceId={workspaceId} />
             </div>
           ) : activeSection === "access-points" ? (
             <div

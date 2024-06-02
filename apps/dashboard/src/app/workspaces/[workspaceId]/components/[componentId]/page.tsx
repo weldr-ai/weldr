@@ -2,36 +2,35 @@ import { notFound } from "next/navigation";
 
 import type { FlowEdge, Primitive } from "~/types";
 import { FlowBuilder } from "~/components/flow-builder";
-import { getWorkflowById } from "~/lib/actions/workflows";
+import { getComponentById } from "~/lib/actions/components";
 
-export default async function WorkflowPage({
+export default async function ComponentPage({
   params,
 }: {
-  params: { workflowId: string };
+  params: { componentId: string };
 }): Promise<JSX.Element> {
-  const workflow = await getWorkflowById({ id: params.workflowId });
+  const components = await getComponentById({
+    id: params.componentId,
+  });
 
-  console.log(workflow);
-
-  if (!workflow) {
+  if (!components) {
     notFound();
   }
 
-  const initialPrimitives: Primitive[] = workflow.flow.primitives.map(
+  const initialPrimitives: Primitive[] = components.flow.primitives.map(
     (primitive) => ({
       id: primitive.id,
       type: primitive.type,
       position: { x: 0, y: 0 },
       data: {
         id: primitive.id,
-        name: workflow.name,
-        description: workflow.description,
-        triggerType: workflow.triggerType,
+        name: components.name,
+        description: components.description,
       },
     }),
   );
 
-  const initialEdges: FlowEdge[] = workflow.flow.edges.map((edge) => ({
+  const initialEdges: FlowEdge[] = components.flow.edges.map((edge) => ({
     ...edge,
   }));
 

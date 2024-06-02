@@ -27,19 +27,22 @@ export const workspaces = pgTable("workspaces", {
 });
 
 export const workspacesRelations = relations(workspaces, ({ many }) => ({
-  compoundBlocks: many(compoundBlocks),
+  components: many(components),
   workflows: many(workflows),
   accessPoints: many(accessPoints),
   resources: many(resources),
 }));
 
-export const compoundBlocks = pgTable("compound_blocks", {
+export const components = pgTable("components", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description"),
-  flow: jsonb("flow").$type<Flow>().default({ nodes: [], edges: [] }).notNull(),
+  flow: jsonb("flow")
+    .$type<Flow>()
+    .default({ primitives: [], edges: [] })
+    .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .$onUpdate(() => new Date())
@@ -49,9 +52,9 @@ export const compoundBlocks = pgTable("compound_blocks", {
     .notNull(),
 });
 
-export const flowsRelations = relations(compoundBlocks, ({ one }) => ({
+export const flowsRelations = relations(components, ({ one }) => ({
   workspace: one(workspaces, {
-    fields: [compoundBlocks.workspaceId],
+    fields: [components.workspaceId],
     references: [workspaces.id],
   }),
 }));
@@ -137,7 +140,7 @@ export const resourcesRelations = relations(resources, ({ one }) => ({
   }),
 }));
 
-export const functionBlocks = pgTable("function_blocks", {
+export const functions = pgTable("functions", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -160,13 +163,13 @@ export const functionBlocks = pgTable("function_blocks", {
  * Zod Schemas
  */
 
-export const blockTypes = z.enum([
-  "access-point-block",
-  "workflow-block",
-  "function-block",
-  "conditional-branch-block",
-  "loop-block",
-  "response-block",
+export const primitiveTypes = z.enum([
+  "access-point",
+  "workflow",
+  "function",
+  "conditional-branch",
+  "loop",
+  "response",
 ]);
 
 // workspaces schemas
@@ -178,13 +181,13 @@ export const insertWorkspaceSchema = createInsertSchema(workspaces, {
     }),
 });
 
-// Compound blocks schemas
-export const compoundBlockSchema = createSelectSchema(compoundBlocks, {
+// Components schemas
+export const componentSchema = createSelectSchema(components, {
   flow: z.object({
-    nodes: z
+    primitives: z
       .object({
         id: z.string(),
-        type: blockTypes,
+        type: primitiveTypes,
       })
       .array(),
     edges: z
@@ -196,7 +199,7 @@ export const compoundBlockSchema = createSelectSchema(compoundBlocks, {
       .array(),
   }),
 });
-export const insertCompoundBlockSchema = createInsertSchema(compoundBlocks, {
+export const insertComponentSchema = createInsertSchema(components, {
   name: (schema) =>
     schema.name.trim().min(1, {
       message: "Name is required.",
@@ -209,10 +212,10 @@ export const insertCompoundBlockSchema = createInsertSchema(compoundBlocks, {
 
 export const workflowSchema = createSelectSchema(workflows, {
   flow: z.object({
-    nodes: z
+    primitives: z
       .object({
         id: z.string(),
-        type: blockTypes,
+        type: primitiveTypes,
       })
       .array(),
     edges: z
@@ -242,10 +245,10 @@ export const insertWorkflowSchema = createInsertSchema(workflows, {
 // Access points schemas
 export const accessPointSchema = createSelectSchema(accessPoints, {
   flow: z.object({
-    nodes: z
+    primitives: z
       .object({
         id: z.string(),
-        type: blockTypes,
+        type: primitiveTypes,
       })
       .array(),
     edges: z

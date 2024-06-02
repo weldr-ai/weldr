@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
 
-import { insertCompoundBlockSchema } from "@integramind/db/schema";
+import { insertComponentSchema } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import {
   Form,
@@ -24,23 +24,23 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import { createCompoundBlock } from "~/lib/actions/compound-blocks";
+import { createComponent } from "~/lib/actions/components";
 
-export function CreateCompoundBlockForm({
-  setCreateCompoundBlockDialogOpen,
+export function CreateComponentForm({
+  setCreateComponentDialogOpen,
 }: {
-  setCreateCompoundBlockDialogOpen?: (open: boolean) => void;
+  setCreateComponentDialogOpen?: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const [state, createCompoundBlockAction] = useFormState(
-    createCompoundBlock,
+  const [state, createComponentAction] = useFormState(
+    createComponent,
     undefined,
   );
-  const form = useForm<z.infer<typeof insertCompoundBlockSchema>>({
+  const form = useForm<z.infer<typeof insertComponentSchema>>({
     mode: "onChange",
-    resolver: zodResolver(insertCompoundBlockSchema),
+    resolver: zodResolver(insertComponentSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -58,17 +58,17 @@ export function CreateCompoundBlockForm({
           form.reset();
           toast({
             title: "Success",
-            description: "Compound block created successfully.",
+            description: "Component created successfully.",
             duration: 2000,
           });
           await queryClient.invalidateQueries({
-            queryKey: ["compound-blocks"],
+            queryKey: ["components"],
           });
-          if (setCreateCompoundBlockDialogOpen) {
-            setCreateCompoundBlockDialogOpen(false);
+          if (setCreateComponentDialogOpen) {
+            setCreateComponentDialogOpen(false);
           }
           router.replace(
-            `/workspaces/${workspaceId}/compound-blocks/${state.payload.id}`,
+            `/workspaces/${workspaceId}/components/${state.payload.id}`,
           );
         } else if (state.status === "validationError") {
           Object.keys(state.errors).forEach((key) => {
@@ -98,7 +98,7 @@ export function CreateCompoundBlockForm({
     form,
     queryClient,
     router,
-    setCreateCompoundBlockDialogOpen,
+    setCreateComponentDialogOpen,
     state,
     workspaceId,
   ]);
@@ -106,7 +106,7 @@ export function CreateCompoundBlockForm({
   return (
     <Form {...form}>
       <form
-        action={createCompoundBlockAction}
+        action={createComponentAction}
         className="flex w-full flex-col space-y-4"
       >
         <FormField
@@ -116,7 +116,7 @@ export function CreateCompoundBlockForm({
             <FormItem>
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter compound block name" {...field} />
+                <Input placeholder="Enter component name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -134,7 +134,7 @@ export function CreateCompoundBlockForm({
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="Enter compound block description"
+                  placeholder="Enter component description"
                   value={field.value ?? ""}
                 />
               </FormControl>
@@ -158,7 +158,7 @@ export function CreateCompoundBlockForm({
 function SubmitButton({
   formState,
 }: {
-  formState: FormState<z.infer<typeof insertCompoundBlockSchema>>;
+  formState: FormState<z.infer<typeof insertComponentSchema>>;
 }) {
   const { pending } = useFormStatus();
   return (

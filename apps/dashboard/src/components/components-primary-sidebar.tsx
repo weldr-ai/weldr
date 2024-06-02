@@ -7,45 +7,45 @@ import { buttonVariants } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
-import { CreateCompoundBlockDialog } from "~/components/create-compound-block-dialog";
-import { getCompoundBlocks } from "~/lib/actions/compound-blocks";
+import { CreateComponentDialog } from "~/components/create-component-dialog";
+import { getComponents } from "~/lib/actions/components";
 
-export function CompoundBlocksPrimarySidebar({
+export function ComponentsPrimarySidebar({
   workspaceId,
 }: {
   workspaceId: string;
 }) {
-  const { compoundBlockId: currentCompoundBlockId } = useParams<{
-    compoundBlockId: string;
+  const { componentId: currentComponentId } = useParams<{
+    componentId: string;
   }>();
   const {
     isLoading,
     isRefetching,
-    data: compoundBlocks,
+    data: components,
   } = useQuery({
-    queryKey: ["compound-blocks"],
-    queryFn: () => getCompoundBlocks({ workspaceId }),
+    queryKey: ["components"],
+    queryFn: () => getComponents({ workspaceId }),
     refetchInterval: 1000 * 60 * 5,
   });
 
   return (
     <div className="flex size-full min-h-[calc(100dvh-128px)] flex-col gap-2 overflow-y-auto">
-      <CreateCompoundBlockDialog />
+      <CreateComponentDialog />
       {!isLoading && !isRefetching ? (
         <ScrollArea className="h-[calc(100dvh-152px)] w-full">
           <div className="flex flex-col gap-1">
-            {compoundBlocks?.map((compoundBlock) => (
+            {components?.map((component) => (
               <Link
-                href={`/workspaces/${workspaceId}/compound-blocks/${compoundBlock.id}`}
-                key={compoundBlock.id}
+                href={`/workspaces/${workspaceId}/components/${component.id}`}
+                key={component.id}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" }),
                   {
-                    "bg-accent": currentCompoundBlockId === compoundBlock.id,
+                    "bg-accent": currentComponentId === component.id,
                   },
                 )}
               >
-                {compoundBlock.name}
+                {component.name}
               </Link>
             ))}
           </div>

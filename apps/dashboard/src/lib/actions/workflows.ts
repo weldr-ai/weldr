@@ -69,10 +69,10 @@ export async function createWorkflow(
             ...validation.data,
             id,
             flow: {
-              nodes: [
+              primitives: [
                 {
                   id,
-                  type: "workflow-block",
+                  type: "workflow",
                 },
               ],
               edges: [],

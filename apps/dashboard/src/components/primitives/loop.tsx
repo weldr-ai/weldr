@@ -1,7 +1,13 @@
-import type { NodeProps } from "reactflow";
 import { memo, useState } from "react";
 import Link from "next/link";
-import { ExternalLink, FileText, PlayCircle, Trash, X } from "lucide-react";
+import {
+  ExternalLink,
+  FileText,
+  PlayCircle,
+  Repeat,
+  Trash,
+  X,
+} from "lucide-react";
 import { Handle, Position, useReactFlow } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
@@ -25,13 +31,12 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { FunctionBlockData } from "~/types";
+import type { LoopPrimitiveProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import { Lambda } from "~/components/icons/lambda";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-export const FunctionBlock = memo(
-  ({ data, isConnectable, selected }: NodeProps<FunctionBlockData>) => {
+export const Loop = memo(
+  ({ data, isConnectable, selected }: LoopPrimitiveProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -68,8 +73,8 @@ export const FunctionBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <Lambda className="size-4 text-primary" />
-                    <span className="text-muted-foreground">Function</span>
+                    <Repeat className="size-4 text-primary" />
+                    <span className="text-muted-foreground">Loop</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
                 </Card>
@@ -78,8 +83,8 @@ export const FunctionBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Lambda className="size-4" />
-                      <span>Function</span>
+                      <Repeat className="size-4 text-primary" />
+                      <span>Loop</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>
                       <Button variant="ghost" size="icon">
@@ -88,24 +93,22 @@ export const FunctionBlock = memo(
                       </Button>
                     </SheetClose>
                   </SheetTitle>
-                  <SheetDescription>
-                    Develop your function here
-                  </SheetDescription>
+                  <SheetDescription>Develop your loop here</SheetDescription>
                 </SheetHeader>
               </SheetContent>
             </Sheet>
           </ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
+            <ContextMenuLabel className="text-xs">Loop</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem className="text-xs">
               <PlayCircle className="mr-3 size-4 text-muted-foreground" />
-              Run with previous blocks
+              Run with previous primitives
             </ContextMenuItem>
             <ContextMenuItem className="flex items-center justify-between text-xs">
               <Link
                 className="flex items-center"
-                href="https://docs.integramind.ai/blocks/ai-processing"
+                href="https://docs.integramind.ai/primitives/query"
                 target="blank"
               >
                 <FileText className="mr-3 size-4 text-muted-foreground" />
@@ -148,4 +151,4 @@ export const FunctionBlock = memo(
   },
 );
 
-FunctionBlock.displayName = "FunctionBlock";
+Loop.displayName = "Loop";

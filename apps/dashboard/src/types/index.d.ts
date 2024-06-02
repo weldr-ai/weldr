@@ -1,27 +1,28 @@
-import type { Edge, Node } from "reactflow";
+import type { Edge, Node, NodeProps } from "reactflow";
 import type { z } from "zod";
 
 import type {
   accessPointSchema,
-  compoundBlockSchema,
+  componentSchema,
   resourceSchema,
   workflowSchema,
   workspaceSchema,
 } from "@integramind/db/schema";
 
+export type PrimitiveType =
+  | "access-point"
+  | "workflow"
+  | "function"
+  | "conditional-branch"
+  | "loop"
+  | "response";
+
 export type FlowEdge = Edge;
 
-export type BlockType =
-  | "access-point-block"
-  | "workflow-block"
-  | "function-block"
-  | "conditional-branch-block"
-  | "loop-block"
-  | "response-block";
+export type BasePrimitive<T> = Node<T, PrimitiveType>;
+export type BasePrimitiveProps<T> = NodeProps<T>;
 
-export type BaseBlock<T> = Node<T, BlockType>;
-
-export interface AccessPointBlockData {
+export interface AccessPointData {
   id: string;
   name: string;
   description?: string | null;
@@ -29,63 +30,70 @@ export interface AccessPointBlockData {
   urlPath: string;
 }
 
-export type TAccessPointBlock = BaseBlock<AccessPointBlockData>;
+export type AccessPointPrimitive = BasePrimitive<AccessPointData>;
+export type AccessPointPrimitiveProps = BasePrimitiveProps<AccessPointData>;
 
-export interface WorkflowTriggerBlockData {
+export interface WorkflowData {
   id: string;
   name: string;
   triggerType: "webhook" | "schedule";
 }
 
-export type TWorkflowTriggerBlock = BaseBlock<WorkflowTriggerBlockData>;
+export type WorkflowPrimitive = BasePrimitive<WorkflowData>;
+export type WorkflowPrimitiveProps = BasePrimitiveProps<WorkflowData>;
 
-export interface FunctionBlockData {
+export interface FunctionData {
   id: string;
   name: string;
   description?: string | null;
 }
 
-export type TFunctionBlock = BaseBlock<FunctionBlockData>;
+export type FunctionPrimitive = BasePrimitive<FunctionData>;
+export type FunctionPrimitiveProps = BasePrimitiveProps<FunctionData>;
 
-export interface ConditionalBranchBlockData {
+export interface ConditionalBranchData {
   id: string;
   name: string;
 }
 
-export type TConditionalBranchBlock = BaseBlock<ConditionalBranchBlockData>;
+export type ConditionalBranchPrimitive = BasePrimitive<ConditionalBranchData>;
+export type ConditionalBranchPrimitiveProps =
+  BasePrimitiveProps<ConditionalBranchData>;
 
-export interface LoopBlockData {
+export interface LoopData {
   id: string;
   name: string;
 }
 
-export type TLoopBlock = BaseBlock<LoopBlockData>;
+export type LoopPrimitive = BasePrimitive<LoopData>;
+export type LoopPrimitiveProps = BasePrimitiveProps<LoopData>;
 
-export interface ResponseBlockData {
+export interface ResponseData {
   id: string;
   name: string;
 }
 
-export type TResponseBlock = BaseBlock<ResponseBlockData>;
+export type ResponsePrimitive = BasePrimitive<ResponseData>;
+export type ResponsePrimitiveProps = BasePrimitiveProps<ResponseData>;
 
-export type BlockData =
-  | AccessPointBlockData
-  | WorkflowTriggerBlockData
-  | FunctionBlockData
-  | ConditionalBranchBlockData
-  | LoopBlockData
-  | ResponseBlockData;
+export type PrimitiveData =
+  | AccessPointData
+  | WorkflowData
+  | FunctionData
+  | ConditionalBranchData
+  | LoopData
+  | ResponseData;
 
-export type Block =
-  | TAccessPointBlock
-  | TWorkflowTriggerBlock
-  | TFunctionBlock
-  | TConditionalBranchBlock
-  | TLoopBlock
-  | TResponseBlock;
+export type Primitive =
+  | AccessPointPrimitive
+  | WorkflowPrimitive
+  | FunctionPrimitive
+  | ConditionalBranchPrimitive
+  | LoopPrimitive
+  | ResponsePrimitive;
 
 export type Workspace = z.infer<typeof workspaceSchema>;
-export type CompoundBlock = z.infer<typeof compoundBlockSchema>;
+export type Component = z.infer<typeof componentSchema>;
 export type Workflow = z.infer<typeof workflowSchema>;
 export type AccessPoint = z.infer<typeof accessPointSchema>;
 export type Resource = z.infer<typeof resourceSchema>;

@@ -33,11 +33,7 @@ export function ActivityBar() {
   );
 
   const handleOnClick = (
-    section:
-      | "compound-blocks"
-      | "access-points"
-      | "workflows"
-      | "data-resources",
+    section: "components" | "access-points" | "workflows" | "data-resources",
   ) => {
     if (activeSection !== section) {
       updateActiveSection(section);
@@ -51,9 +47,9 @@ export function ActivityBar() {
       <div className="flex flex-col gap-2">
         <Button
           className={cn({
-            "bg-accent": activeSection === "compound-blocks",
+            "bg-accent": activeSection === "components",
           })}
-          onClick={() => handleOnClick("compound-blocks")}
+          onClick={() => handleOnClick("components")}
           size="icon"
           variant="ghost"
         >

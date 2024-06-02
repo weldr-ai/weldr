@@ -3,12 +3,9 @@
 import type { z } from "zod";
 
 import { db, eq } from "@integramind/db";
-import {
-  compoundBlocks,
-  insertCompoundBlockSchema,
-} from "@integramind/db/schema";
+import { components, insertComponentSchema } from "@integramind/db/schema";
 
-import type { CompoundBlock } from "~/types";
+import type { Component } from "~/types";
 import { getWorkspaceById } from "./workspaces";
 
 interface FormFields {
@@ -34,12 +31,12 @@ type FormState =
     }
   | undefined;
 
-export async function createCompoundBlock(
+export async function createComponent(
   prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
   const data = Object.fromEntries(formData);
-  const validation = insertCompoundBlockSchema.safeParse(data);
+  const validation = insertComponentSchema.safeParse(data);
 
   const fields: FormFields = Object.keys(data).reduce(
     (acc: FormFields, key: string) => {
@@ -65,11 +62,11 @@ export async function createCompoundBlock(
 
       const result = (
         await db
-          .insert(compoundBlocks)
+          .insert(components)
           .values({
             ...validation.data,
           })
-          .returning({ id: compoundBlocks.id })
+          .returning({ id: components.id })
       )[0];
 
       if (result) {
@@ -98,25 +95,25 @@ export async function createCompoundBlock(
   }
 }
 
-export async function getCompoundBlocks({
+export async function getComponents({
   workspaceId,
 }: {
   workspaceId: string;
-}): Promise<CompoundBlock[]> {
+}): Promise<Component[]> {
   const result = await db
     .select()
-    .from(compoundBlocks)
-    .where(eq(compoundBlocks.workspaceId, workspaceId));
+    .from(components)
+    .where(eq(components.workspaceId, workspaceId));
   return result;
 }
 
-export async function getCompoundBlockById({
+export async function getComponentById({
   id,
 }: {
   id: string;
-}): Promise<CompoundBlock | undefined> {
+}): Promise<Component | undefined> {
   const result = (
-    await db.select().from(compoundBlocks).where(eq(compoundBlocks.id, id))
+    await db.select().from(components).where(eq(components.id, id))
   )[0];
   return result;
 }

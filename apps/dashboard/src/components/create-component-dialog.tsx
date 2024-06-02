@@ -13,32 +13,32 @@ import {
   DialogTrigger,
 } from "@integramind/ui/dialog";
 
-import { CreateCompoundBlockForm } from "~/components/create-compound-block-form";
+import { CreateComponentForm } from "~/components/create-component-form";
 
-export function CreateCompoundBlockDialog() {
-  const [createCompoundBlockDialogOpen, setCreateCompoundBlockDialogOpen] =
+export function CreateComponentDialog() {
+  const [createComponentDialogOpen, setCreateComponentDialogOpen] =
     useState(false);
 
   return (
     <Dialog
-      open={createCompoundBlockDialogOpen}
-      onOpenChange={setCreateCompoundBlockDialogOpen}
+      open={createComponentDialogOpen}
+      onOpenChange={setCreateComponentDialogOpen}
     >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Plus className="mr-1.5 size-3.5" />
-          Create new compound block
+          Create new component
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Compound Block</DialogTitle>
+          <DialogTitle>Create Component</DialogTitle>
           <DialogDescription>
-            Enter the compound block details then press create.
+            Enter the component details then press create.
           </DialogDescription>
         </DialogHeader>
-        <CreateCompoundBlockForm
-          setCreateCompoundBlockDialogOpen={setCreateCompoundBlockDialogOpen}
+        <CreateComponentForm
+          setCreateComponentDialogOpen={setCreateComponentDialogOpen}
         />
       </DialogContent>
     </Dialog>

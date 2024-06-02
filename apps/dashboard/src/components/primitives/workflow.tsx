@@ -1,6 +1,5 @@
 "use client";
 
-import type { NodeProps } from "reactflow";
 import { memo } from "react";
 import { X } from "lucide-react";
 import { Handle, Position } from "reactflow";
@@ -19,12 +18,12 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { WorkflowTriggerBlockData } from "~/types";
+import type { WorkflowPrimitiveProps } from "~/types";
 import { CreateWorkflowForm } from "~/components/create-workflow-form";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-export const WorkflowBlock = memo(
-  ({ data, isConnectable, selected }: NodeProps<WorkflowTriggerBlockData>) => {
+export const Workflow = memo(
+  ({ data, isConnectable, selected }: WorkflowPrimitiveProps) => {
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
     const updateCurrentId = useDevelopmentSheetStore(
       (state) => state.updateCurrentId,
@@ -93,4 +92,4 @@ export const WorkflowBlock = memo(
   },
 );
 
-WorkflowBlock.displayName = "WorkflowBlock";
+Workflow.displayName = "Workflow";

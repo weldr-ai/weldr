@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 interface PrimarySidebarState {
   activeSection:
-    | "compound-blocks"
+    | "components"
     | "access-points"
     | "workflows"
     | "data-resources"
@@ -12,7 +12,7 @@ interface PrimarySidebarState {
 interface PrimarySidebarAction {
   updateActiveSection: (
     activeSection:
-      | "compound-blocks"
+      | "components"
       | "access-points"
       | "workflows"
       | "data-resources",
@@ -23,7 +23,7 @@ interface PrimarySidebarAction {
 export const usePrimarySidebarStore = create<
   PrimarySidebarState & PrimarySidebarAction
 >((set) => ({
-  activeSection: "compound-blocks",
+  activeSection: "components",
   updateActiveSection: (activeSection) =>
     set(() => ({
       activeSection,

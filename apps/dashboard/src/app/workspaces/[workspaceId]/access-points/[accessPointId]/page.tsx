@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 
-import type { Block, FlowEdge } from "~/types";
+import type { FlowEdge, Primitive } from "~/types";
 import { FlowBuilder } from "~/components/flow-builder";
 import { getAccessPointById } from "~/lib/actions/access-points";
 
-export default async function AccessPoint({
+export default async function AccessPointPage({
   params,
 }: {
   params: { accessPointId: string };
@@ -15,24 +15,29 @@ export default async function AccessPoint({
     notFound();
   }
 
-  const initialBlocks: Block[] = accessPoint.flow.nodes.map((node) => ({
-    id: node.id,
-    type: node.type,
-    position: { x: 0, y: 0 },
-    data: {
-      id: node.id,
-      name: accessPoint.name,
-      description: accessPoint.description,
-      actionType: accessPoint.actionType,
-      urlPath: accessPoint.urlPath,
-    },
-  }));
+  const initialPrimitives: Primitive[] = accessPoint.flow.primitives.map(
+    (primitive) => ({
+      id: primitive.id,
+      type: primitive.type,
+      position: { x: 0, y: 0 },
+      data: {
+        id: primitive.id,
+        name: accessPoint.name,
+        description: accessPoint.description,
+        actionType: accessPoint.actionType,
+        urlPath: accessPoint.urlPath,
+      },
+    }),
+  );
 
   const initialEdges: FlowEdge[] = accessPoint.flow.edges.map((edge) => ({
     ...edge,
   }));
 
   return (
-    <FlowBuilder initialBlocks={initialBlocks} initialEdges={initialEdges} />
+    <FlowBuilder
+      initialPrimitives={initialPrimitives}
+      initialEdges={initialEdges}
+    />
   );
 }

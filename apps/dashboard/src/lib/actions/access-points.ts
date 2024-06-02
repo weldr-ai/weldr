@@ -69,10 +69,10 @@ export async function createAccessPoint(
             ...validation.data,
             id,
             flow: {
-              nodes: [
+              primitives: [
                 {
                   id,
-                  type: "access-point-block",
+                  type: "access-point",
                 },
               ],
               edges: [],
