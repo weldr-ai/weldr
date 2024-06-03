@@ -6,10 +6,8 @@ import { PanelLeftClose } from "lucide-react";
 import { Button } from "@integramind/ui/button";
 import { cn } from "@integramind/ui/utils";
 
-import { AccessPointsPrimarySidebar } from "~/components/primary-sidebar/access-points-primary-sidebar";
-import { ComponentsPrimarySidebar } from "~/components/primary-sidebar/components-primary-sidebar";
-import { WorkflowsPrimarySidebar } from "~/components/primary-sidebar/workflows-primary-sidebar";
 import { usePrimarySidebarStore } from "~/lib/store";
+import { FlowList } from "./flow-list";
 
 export function PrimarySidebar() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -27,8 +25,8 @@ export function PrimarySidebar() {
             <span className="text-xs">
               {activeSection === "components"
                 ? "Components"
-                : activeSection === "access-points"
-                  ? "Access Points"
+                : activeSection === "routes"
+                  ? "Routes"
                   : activeSection === "workflows"
                     ? "Workflows"
                     : "Data Resources"}
@@ -48,15 +46,15 @@ export function PrimarySidebar() {
                 hidden: activeSection !== "components",
               })}
             >
-              <ComponentsPrimarySidebar workspaceId={workspaceId} />
+              <FlowList workspaceId={workspaceId} type="component" />
             </div>
-          ) : activeSection === "access-points" ? (
+          ) : activeSection === "routes" ? (
             <div
               className={cn("flex w-full p-2", {
-                hidden: activeSection !== "access-points",
+                hidden: activeSection !== "routes",
               })}
             >
-              <AccessPointsPrimarySidebar workspaceId={workspaceId} />
+              <FlowList workspaceId={workspaceId} type="route" />
             </div>
           ) : activeSection === "workflows" ? (
             <div
@@ -64,7 +62,7 @@ export function PrimarySidebar() {
                 hidden: activeSection !== "workflows",
               })}
             >
-              <WorkflowsPrimarySidebar workspaceId={workspaceId} />
+              <FlowList workspaceId={workspaceId} type="workflow" />
             </div>
           ) : (
             <div

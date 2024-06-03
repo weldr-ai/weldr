@@ -18,12 +18,11 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { AccessPointPrimitiveProps } from "~/types";
-import { CreateAccessPointForm } from "~/components/create-access-point-form";
+import type { RoutePrimitiveProps } from "~/types";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-export const AccessPoint = memo(
-  ({ data, isConnectable, selected }: AccessPointPrimitiveProps) => {
+export const Route = memo(
+  ({ data, isConnectable, selected }: RoutePrimitiveProps) => {
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
     const updateCurrentId = useDevelopmentSheetStore(
       (state) => state.updateCurrentId,
@@ -77,7 +76,6 @@ export const AccessPoint = memo(
               </SheetDescription>
             </SheetHeader>
             {/* FIXME: Pass initial values */}
-            <CreateAccessPointForm />
           </SheetContent>
         </Sheet>
         <Handle
@@ -92,4 +90,4 @@ export const AccessPoint = memo(
   },
 );
 
-AccessPoint.displayName = "AccessPoint";
+Route.displayName = "Route";

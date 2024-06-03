@@ -1,17 +1,17 @@
-export type Type = "number" | "text";
+export type VarType = "number" | "text";
 
 export interface Input {
   name: string;
-  type: Type;
+  type: VarType;
 }
 
 export interface Output {
   name: string;
-  type: Type;
+  type: VarType;
 }
 
 export type PrimitiveType =
-  | "access-point"
+  | "route"
   | "workflow"
   | "function"
   | "conditional-branch"
@@ -29,3 +29,42 @@ export interface Flow {
     target: string;
   }[];
 }
+
+export interface FlowEdge {
+  id: string;
+  source: string;
+  target: string;
+}
+
+export interface FunctionMetadata {
+  id: string;
+  name: string;
+  description: string;
+  type: "function";
+  inputs: Input[];
+  outputs: Output[];
+  generatedCode: string;
+  isCodeUpdated: boolean;
+}
+
+export interface RouteMetadata {
+  id: string;
+  name: string;
+  description: string;
+  type: "route";
+  actionType: "retrieve" | "submit" | "modify" | "delete";
+  urlPath: string;
+}
+
+export interface WorkflowMetadata {
+  id: string;
+  name: string;
+  description: string;
+  type: "workflow";
+  triggerType: "webhook" | "schedule";
+}
+
+export type PrimitiveMetadata =
+  | FunctionMetadata
+  | RouteMetadata
+  | WorkflowMetadata;

@@ -19,7 +19,6 @@ import {
 import { cn } from "@integramind/ui/utils";
 
 import type { WorkflowPrimitiveProps } from "~/types";
-import { CreateWorkflowForm } from "~/components/create-workflow-form";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
 export const Workflow = memo(
@@ -77,7 +76,7 @@ export const Workflow = memo(
               </SheetDescription>
             </SheetHeader>
             {/* FIXME: Pass initial values */}
-            <CreateWorkflowForm />
+            {/* <CreateWorkflowForm /> */}
           </SheetContent>
         </Sheet>
         <Handle

@@ -7,45 +7,58 @@ import { buttonVariants } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
-import { CreateComponentDialog } from "~/components/create-component-dialog";
-import { getComponents } from "~/lib/actions/components";
+import type { FlowType } from "~/types";
+import { getFlows } from "~/lib/actions/flows";
+import { CreateFlowDialog } from "./create-flow-dialog";
 
-export function ComponentsPrimarySidebar({
+export function FlowList({
   workspaceId,
+  type,
 }: {
   workspaceId: string;
+  type: FlowType;
 }) {
-  const { componentId: currentComponentId } = useParams<{
-    componentId: string;
-  }>();
+  const getQueryKey = (type: FlowType) => {
+    switch (type) {
+      case "workflow":
+        return "workflows";
+      case "route":
+        return "routes";
+      case "component":
+        return "components";
+    }
+  };
+  const { flowId: currentFlowId } = useParams<{ flowId: string }>();
   const {
     isLoading,
     isRefetching,
-    data: components,
+    data: flows,
   } = useQuery({
-    queryKey: ["components"],
-    queryFn: () => getComponents({ workspaceId }),
+    queryKey: [getQueryKey(type)],
+    queryFn: () => getFlows({ workspaceId, type }),
     refetchInterval: 1000 * 60 * 5,
   });
 
+  console.log(flows);
+
   return (
     <div className="flex size-full min-h-[calc(100dvh-128px)] flex-col gap-2 overflow-y-auto">
-      <CreateComponentDialog />
+      <CreateFlowDialog type={type} />
       {!isLoading && !isRefetching ? (
         <ScrollArea className="h-[calc(100dvh-152px)] w-full">
           <div className="flex flex-col gap-1">
-            {components?.map((component) => (
+            {flows?.map((flow) => (
               <Link
-                href={`/workspaces/${workspaceId}/components/${component.id}`}
-                key={component.id}
+                href={`/workspaces/${workspaceId}/${type}s/${flow.id}`}
+                key={flow.id}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" }),
                   {
-                    "bg-accent": currentComponentId === component.id,
+                    "bg-accent": currentFlowId === flow.id,
                   },
                 )}
               >
-                {component.name}
+                {flow.name}
               </Link>
             ))}
           </div>

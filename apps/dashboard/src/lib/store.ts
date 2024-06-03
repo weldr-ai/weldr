@@ -3,7 +3,7 @@ import { create } from "zustand";
 interface PrimarySidebarState {
   activeSection:
     | "components"
-    | "access-points"
+    | "routes"
     | "workflows"
     | "data-resources"
     | null;
@@ -11,11 +11,7 @@ interface PrimarySidebarState {
 
 interface PrimarySidebarAction {
   updateActiveSection: (
-    activeSection:
-      | "components"
-      | "access-points"
-      | "workflows"
-      | "data-resources",
+    activeSection: "components" | "routes" | "workflows" | "data-resources",
   ) => void;
   hidePrimaryBar: () => void;
 }

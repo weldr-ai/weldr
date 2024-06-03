@@ -33,7 +33,7 @@ export function ActivityBar() {
   );
 
   const handleOnClick = (
-    section: "components" | "access-points" | "workflows" | "data-resources",
+    section: "components" | "routes" | "workflows" | "data-resources",
   ) => {
     if (activeSection !== section) {
       updateActiveSection(section);
@@ -57,9 +57,9 @@ export function ActivityBar() {
         </Button>
         <Button
           className={cn({
-            "bg-accent": activeSection === "access-points",
+            "bg-accent": activeSection === "routes",
           })}
-          onClick={() => handleOnClick("access-points")}
+          onClick={() => handleOnClick("routes")}
           size="icon"
           variant="ghost"
         >

@@ -13,32 +13,36 @@ import {
   DialogTrigger,
 } from "@integramind/ui/dialog";
 
-import { CreateWorkflowForm } from "~/components/create-workflow-form";
+import type { FlowType } from "~/types";
+import { CreateFlowForm } from "~/components/create-flow-form";
 
-export function CreateWorkflowDialog() {
-  const [createWorkflowDialogOpen, setCreateWorkflowDialogOpen] =
+export function CreateFlowDialog({ type }: { type: FlowType }) {
+  const [createPrimitiveDialogOpen, setCreatePrimitiveDialogOpen] =
     useState(false);
 
   return (
     <Dialog
-      open={createWorkflowDialogOpen}
-      onOpenChange={setCreateWorkflowDialogOpen}
+      open={createPrimitiveDialogOpen}
+      onOpenChange={setCreatePrimitiveDialogOpen}
     >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Plus className="mr-1.5 size-3.5" />
-          Create new workflow
+          Create new {type}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Workflow</DialogTitle>
+          <DialogTitle>
+            Create {type.charAt(0).toUpperCase() + type.slice(1)}
+          </DialogTitle>
           <DialogDescription>
-            Enter the workflow details then press create.
+            Enter the {type} details then press create.
           </DialogDescription>
         </DialogHeader>
-        <CreateWorkflowForm
-          setCreateWorkflowDialogOpen={setCreateWorkflowDialogOpen}
+        <CreateFlowForm
+          type={type}
+          setCreatePrimitiveDialogOpen={setCreatePrimitiveDialogOpen}
         />
       </DialogContent>
     </Dialog>
