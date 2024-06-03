@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import {
   boolean,
   jsonb,
@@ -42,7 +42,7 @@ export const components = pgTable("components", {
   description: text("description"),
   flow: jsonb("flow")
     .$type<Flow>()
-    .default(sql`{ primitives: [], edges: [] }::jsonb`)
+    .default({ primitives: [], edges: [] })
     .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
