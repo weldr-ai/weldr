@@ -33,11 +33,7 @@ export function ActivityBar() {
   );
 
   const handleOnClick = (
-    section:
-      | "compound-blocks"
-      | "access-points"
-      | "workflows"
-      | "data-resources",
+    section: "components" | "routes" | "workflows" | "data-resources",
   ) => {
     if (activeSection !== section) {
       updateActiveSection(section);
@@ -51,9 +47,9 @@ export function ActivityBar() {
       <div className="flex flex-col gap-2">
         <Button
           className={cn({
-            "bg-accent": activeSection === "compound-blocks",
+            "bg-accent": activeSection === "components",
           })}
-          onClick={() => handleOnClick("compound-blocks")}
+          onClick={() => handleOnClick("components")}
           size="icon"
           variant="ghost"
         >
@@ -61,13 +57,13 @@ export function ActivityBar() {
         </Button>
         <Button
           className={cn({
-            "bg-accent": activeSection === "access-points",
+            "bg-accent": activeSection === "routes",
           })}
-          onClick={() => handleOnClick("access-points")}
+          onClick={() => handleOnClick("routes")}
           size="icon"
           variant="ghost"
         >
-          <span className="text-[10px]">HTTP</span>
+          <span className="text-[10px] font-bold">HTTP</span>
         </Button>
         <Button
           className={cn({

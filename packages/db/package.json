@@ -15,7 +15,7 @@
     "lint": "eslint .",
     "check": "pnpm with-env drizzle-kit check:pg --config src/config.ts",
     "generate": "pnpm with-env drizzle-kit generate:pg --config src/config.ts",
-    "migrate": "pnpm with-env tsx src/migrate.ts",
+    "migrate": "pnpm with-env tsx src/migrate.ts --config src/config.ts",
     "migrate:drop": "pnpm with-env drizzle-kit drop --config src/config.ts",
     "pull": "pnpm with-env drizzle-kit introspect:pg --config src/config.ts",
     "push": "pnpm with-env drizzle-kit push:pg --config src/config.ts",
@@ -35,7 +35,8 @@
     "@integramind/eslint-config": "workspace:*",
     "@integramind/prettier-config": "workspace:*",
     "@integramind/tsconfig": "workspace:*",
-    "drizzle-kit": "^0.20.14"
+    "drizzle-kit": "^0.20.14",
+    "tsx": "^4.11.0"
   },
   "peerDependencies": {
     "next-auth": "5.0.0-beta.18"

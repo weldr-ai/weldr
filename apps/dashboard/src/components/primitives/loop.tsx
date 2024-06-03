@@ -1,11 +1,10 @@
-import type { NodeProps } from "reactflow";
 import { memo, useState } from "react";
 import Link from "next/link";
 import {
-  Brain,
   ExternalLink,
   FileText,
   PlayCircle,
+  Repeat,
   Trash,
   X,
 } from "lucide-react";
@@ -32,12 +31,12 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { SemanticBranchBlockData } from "~/types";
+import type { LoopPrimitiveProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-export const SemanticBranchBlock = memo(
-  ({ data, isConnectable, selected }: NodeProps<SemanticBranchBlockData>) => {
+export const Loop = memo(
+  ({ data, isConnectable, selected }: LoopPrimitiveProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -74,10 +73,8 @@ export const SemanticBranchBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <Brain className="size-4 text-primary" />
-                    <span className="text-muted-foreground">
-                      Semantic Branch
-                    </span>
+                    <Repeat className="size-4 text-primary" />
+                    <span className="text-muted-foreground">Loop</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
                 </Card>
@@ -86,8 +83,8 @@ export const SemanticBranchBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Brain className="size-4 text-primary" />
-                      <span>Semantic Branch</span>
+                      <Repeat className="size-4 text-primary" />
+                      <span>Loop</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>
                       <Button variant="ghost" size="icon">
@@ -96,26 +93,22 @@ export const SemanticBranchBlock = memo(
                       </Button>
                     </SheetClose>
                   </SheetTitle>
-                  <SheetDescription>
-                    Develop your semantic branch here
-                  </SheetDescription>
+                  <SheetDescription>Develop your loop here</SheetDescription>
                 </SheetHeader>
               </SheetContent>
             </Sheet>
           </ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuLabel className="text-xs">
-              Semantic Branch
-            </ContextMenuLabel>
+            <ContextMenuLabel className="text-xs">Loop</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem className="text-xs">
               <PlayCircle className="mr-3 size-4 text-muted-foreground" />
-              Run with previous blocks
+              Run with previous primitives
             </ContextMenuItem>
             <ContextMenuItem className="flex items-center justify-between text-xs">
               <Link
                 className="flex items-center"
-                href="https://docs.integramind.ai/blocks/query"
+                href="https://docs.integramind.ai/primitives/query"
                 target="blank"
               >
                 <FileText className="mr-3 size-4 text-muted-foreground" />
@@ -158,4 +151,4 @@ export const SemanticBranchBlock = memo(
   },
 );
 
-SemanticBranchBlock.displayName = "SemanticBranchBlock";
+Loop.displayName = "Loop";

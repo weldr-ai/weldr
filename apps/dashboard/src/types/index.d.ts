@@ -1,31 +1,29 @@
-import type { Edge, Node } from "reactflow";
+import type { Edge, Node, NodeProps } from "reactflow";
 import type { z } from "zod";
 
 import type {
-  accessPointSchema,
-  actionBlockSchema,
-  compoundBlockSchema,
+  flowSchema,
+  flowTypesSchema,
   resourceSchema,
-  workflowSchema,
   workspaceSchema,
 } from "@integramind/db/schema";
 
+export type PrimitiveType =
+  | "route"
+  | "workflow"
+  | "function"
+  | "conditional-branch"
+  | "loop"
+  | "response";
+
+export type FlowType = z.infer<typeof flowTypesSchema>;
+
 export type FlowEdge = Edge;
 
-export type BlockType =
-  | "access-point-block"
-  | "workflow-block"
-  | "query-block"
-  | "action-block"
-  | "logical-processing-block"
-  | "ai-processing-block"
-  | "logical-branch-block"
-  | "semantic-branch-block"
-  | "response-block";
+export type BasePrimitive<T> = Node<T, PrimitiveType>;
+export type BasePrimitiveProps<T> = NodeProps<T>;
 
-export type BaseBlock<T> = Node<T, BlockType>;
-
-export interface AccessPointBlockData {
+export interface RouteMetadata {
   id: string;
   name: string;
   description?: string | null;
@@ -33,90 +31,87 @@ export interface AccessPointBlockData {
   urlPath: string;
 }
 
-export type TAccessPointBlock = BaseBlock<AccessPointBlockData>;
+export type RoutePrimitive = BasePrimitive<RouteMetadata>;
+export type RoutePrimitiveProps = BasePrimitiveProps<RouteMetadata>;
 
-export interface WorkflowTriggerBlockData {
+export interface WorkflowMetadata {
   id: string;
   name: string;
+  description?: string | null;
   triggerType: "webhook" | "schedule";
 }
 
-export type TWorkflowTriggerBlock = BaseBlock<WorkflowTriggerBlockData>;
+export type WorkflowPrimitive = BasePrimitive<WorkflowMetadata>;
+export type WorkflowPrimitiveProps = BasePrimitiveProps<WorkflowMetadata>;
 
-export interface QueryBlockData {
+export type Type = "number" | "text";
+
+export interface Input {
+  name: string;
+  type: Type;
+}
+
+export interface Output {
+  name: string;
+  type: Type;
+}
+
+export interface FunctionMetadata {
+  id: string;
+  name: string;
+  description: string;
+  type: "function";
+  inputs: Input[];
+  outputs: Output[];
+  generatedCode: string;
+  isCodeUpdated: boolean;
+}
+
+export type FunctionPrimitive = BasePrimitive<FunctionMetadata>;
+export type FunctionPrimitiveProps = BasePrimitiveProps<FunctionMetadata>;
+
+export interface ConditionalBranchMetadata {
   id: string;
   name: string;
 }
 
-export type TQueryBlock = BaseBlock<QueryBlockData>;
+export type ConditionalBranchPrimitive =
+  BasePrimitive<ConditionalBranchMetadata>;
+export type ConditionalBranchPrimitiveProps =
+  BasePrimitiveProps<ConditionalBranchMetadata>;
 
-export interface ActionBlockData {
+export interface LoopMetadata {
   id: string;
   name: string;
 }
 
-export type TActionBlock = BaseBlock<QueryBlockData>;
+export type LoopPrimitive = BasePrimitive<LoopMetadata>;
+export type LoopPrimitiveProps = BasePrimitiveProps<LoopMetadata>;
 
-export interface LogicalProcessingBlockData {
+export interface ResponseMetadata {
   id: string;
   name: string;
 }
 
-export type TLogicalProcessingBlock = BaseBlock<LogicalProcessingBlockData>;
+export type ResponsePrimitive = BasePrimitive<ResponseMetadata>;
+export type ResponsePrimitiveProps = BasePrimitiveProps<ResponseMetadata>;
 
-export interface AIProcessingBlockData {
-  id: string;
-  name: string;
-}
+export type PrimitiveMetadata =
+  | RouteMetadata
+  | WorkflowMetadata
+  | FunctionMetadata
+  | ConditionalBranchMetadata
+  | LoopMetadata
+  | ResponseMetadata;
 
-export type TAIProcessingBlock = BaseBlock<AIProcessingBlockData>;
-
-export interface LogicalBranchBlockData {
-  id: string;
-  name: string;
-}
-
-export type TLogicalBranchBlock = BaseBlock<LogicalBranchBlockData>;
-
-export interface SemanticBranchBlockData {
-  id: string;
-  name: string;
-}
-
-export type TSemanticBranchBlock = BaseBlock<SemanticBranchBlockData>;
-
-export interface ResponseBlockData {
-  id: string;
-  name: string;
-}
-
-export type TResponseBlock = BaseBlock<ResponseBlockData>;
-
-export type BlockData =
-  | AccessPointBlockData
-  | WorkflowTriggerBlockData
-  | QueryBlockData
-  | ActionBlockData
-  | LogicalProcessingBlockData
-  | AIProcessingBlockData
-  | LogicalBranchBlockData
-  | SemanticBranchBlockData
-  | ResponseBlockData;
-
-export type Block =
-  | TAccessPointBlock
-  | TWorkflowTriggerBlock
-  | TQueryBlock
-  | TActionBlock
-  | TLogicalProcessingBlock
-  | TAIProcessingBlock
-  | TLogicalBranchBlock
-  | TSemanticBranchBlock
-  | TResponseBlock;
+export type Primitive =
+  | RoutePrimitive
+  | WorkflowPrimitive
+  | FunctionPrimitive
+  | ConditionalBranchPrimitive
+  | LoopPrimitive
+  | ResponsePrimitive;
 
 export type Workspace = z.infer<typeof workspaceSchema>;
-export type CompoundBlock = z.infer<typeof compoundBlockSchema>;
-export type Workflow = z.infer<typeof workflowSchema>;
-export type AccessPoint = z.infer<typeof accessPointSchema>;
-export type ActionBlock = z.infer<typeof actionBlockSchema>;
+export type Flow = z.infer<typeof flowSchema>;
 export type Resource = z.infer<typeof resourceSchema>;

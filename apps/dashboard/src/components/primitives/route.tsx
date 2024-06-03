@@ -1,6 +1,5 @@
 "use client";
 
-import type { NodeProps } from "reactflow";
 import { memo } from "react";
 import { X } from "lucide-react";
 import { Handle, Position } from "reactflow";
@@ -19,12 +18,11 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { AccessPointBlockData } from "~/types";
-import { CreateAccessPointForm } from "~/components/create-access-point-form";
+import type { RoutePrimitiveProps } from "~/types";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-export const AccessPointBlock = memo(
-  ({ data, isConnectable, selected }: NodeProps<AccessPointBlockData>) => {
+export const Route = memo(
+  ({ data, isConnectable, selected }: RoutePrimitiveProps) => {
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
     const updateCurrentId = useDevelopmentSheetStore(
       (state) => state.updateCurrentId,
@@ -78,7 +76,6 @@ export const AccessPointBlock = memo(
               </SheetDescription>
             </SheetHeader>
             {/* FIXME: Pass initial values */}
-            <CreateAccessPointForm />
           </SheetContent>
         </Sheet>
         <Handle
@@ -93,4 +90,4 @@ export const AccessPointBlock = memo(
   },
 );
 
-AccessPointBlock.displayName = "AccessPointBlock";
+Route.displayName = "Route";
