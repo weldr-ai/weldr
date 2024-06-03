@@ -6,10 +6,8 @@ import { PanelLeftClose } from "lucide-react";
 import { Button } from "@integramind/ui/button";
 import { cn } from "@integramind/ui/utils";
 
-import { AccessPointsPrimarySidebar } from "~/components/access-points-primary-sidebar";
-import { WorkflowsPrimarySidebar } from "~/components/workflows-primary-sidebar";
 import { usePrimarySidebarStore } from "~/lib/store";
-import { CompoundBlocksPrimarySidebar } from "./compound-blocks-primary-sidebar";
+import { FlowList } from "./flow-list";
 
 export function PrimarySidebar() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -25,10 +23,10 @@ export function PrimarySidebar() {
         <div className="flex w-64 flex-col items-center border-r bg-muted">
           <div className="flex w-full items-center justify-between border-b px-4 py-[7.5px]">
             <span className="text-xs">
-              {activeSection === "compound-blocks"
-                ? "Compound Blocks"
-                : activeSection === "access-points"
-                  ? "Access Points"
+              {activeSection === "components"
+                ? "Components"
+                : activeSection === "routes"
+                  ? "Routes"
                   : activeSection === "workflows"
                     ? "Workflows"
                     : "Data Resources"}
@@ -42,21 +40,21 @@ export function PrimarySidebar() {
               <PanelLeftClose className="size-3 text-muted-foreground" />
             </Button>
           </div>
-          {activeSection === "compound-blocks" ? (
+          {activeSection === "components" ? (
             <div
               className={cn("flex w-full p-2", {
-                hidden: activeSection !== "compound-blocks",
+                hidden: activeSection !== "components",
               })}
             >
-              <CompoundBlocksPrimarySidebar workspaceId={workspaceId} />
+              <FlowList workspaceId={workspaceId} type="component" />
             </div>
-          ) : activeSection === "access-points" ? (
+          ) : activeSection === "routes" ? (
             <div
               className={cn("flex w-full p-2", {
-                hidden: activeSection !== "access-points",
+                hidden: activeSection !== "routes",
               })}
             >
-              <AccessPointsPrimarySidebar workspaceId={workspaceId} />
+              <FlowList workspaceId={workspaceId} type="route" />
             </div>
           ) : activeSection === "workflows" ? (
             <div
@@ -64,7 +62,7 @@ export function PrimarySidebar() {
                 hidden: activeSection !== "workflows",
               })}
             >
-              <WorkflowsPrimarySidebar workspaceId={workspaceId} />
+              <FlowList workspaceId={workspaceId} type="workflow" />
             </div>
           ) : (
             <div

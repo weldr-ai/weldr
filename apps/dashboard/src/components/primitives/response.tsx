@@ -1,8 +1,7 @@
-import type { NodeProps } from "reactflow";
 import { memo, useState } from "react";
 import Link from "next/link";
 import {
-  Cpu,
+  CornerDownLeft,
   ExternalLink,
   FileText,
   PlayCircle,
@@ -32,16 +31,12 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { LogicalProcessingBlockData } from "~/types";
+import type { ResponsePrimitiveProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-export const LogicalProcessingBlock = memo(
-  ({
-    data,
-    isConnectable,
-    selected,
-  }: NodeProps<LogicalProcessingBlockData>) => {
+export const Response = memo(
+  ({ data, isConnectable, selected }: ResponsePrimitiveProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -78,10 +73,8 @@ export const LogicalProcessingBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <Cpu className="size-4 text-primary" />
-                    <span className="text-muted-foreground">
-                      Logical Processing
-                    </span>
+                    <CornerDownLeft className="size-4 text-primary" />
+                    <span className="text-muted-foreground">Response</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
                 </Card>
@@ -90,8 +83,8 @@ export const LogicalProcessingBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Cpu className="size-4 text-primary" />
-                      <span>Logical Processing</span>
+                      <CornerDownLeft className="size-4 text-primary" />
+                      <span>Response</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>
                       <Button variant="ghost" size="icon">
@@ -101,25 +94,23 @@ export const LogicalProcessingBlock = memo(
                     </SheetClose>
                   </SheetTitle>
                   <SheetDescription>
-                    Develop your logical process here
+                    Develop your response here
                   </SheetDescription>
                 </SheetHeader>
               </SheetContent>
             </Sheet>
           </ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuLabel className="text-xs">
-              Logical Processing
-            </ContextMenuLabel>
+            <ContextMenuLabel className="text-xs">Response</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem className="text-xs">
               <PlayCircle className="mr-3 size-4 text-muted-foreground" />
-              Run with previous blocks
+              Run with previous primitives
             </ContextMenuItem>
             <ContextMenuItem className="flex items-center justify-between text-xs">
               <Link
                 className="flex items-center"
-                href="https://docs.integramind.ai/blocks/query"
+                href="https://docs.integramind.ai/primitives/response"
                 target="blank"
               >
                 <FileText className="mr-3 size-4 text-muted-foreground" />
@@ -162,4 +153,4 @@ export const LogicalProcessingBlock = memo(
   },
 );
 
-LogicalProcessingBlock.displayName = "LogicalProcessingBlock";
+Response.displayName = "Response";

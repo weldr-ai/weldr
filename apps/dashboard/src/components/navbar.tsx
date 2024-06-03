@@ -32,9 +32,9 @@ export function Navbar({ workspace }: { workspace: Workspace }): JSX.Element {
       <div className="flex">
         <nav className="flex items-center text-sm">
           <DropdownMenu>
-            <div className="flex size-14 items-center justify-center border-r">
+            <div className="flex size-14 items-center justify-center border-r p-2">
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="p-0.5">
+                <Button variant="ghost" size="icon" className="size-full">
                   {resolvedTheme === "light" ? (
                     <Image
                       alt="IntegraMind Logo"

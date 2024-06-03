@@ -7,45 +7,58 @@ import { buttonVariants } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
-import { CreateCompoundBlockDialog } from "~/components/create-compound-block-dialog";
-import { getCompoundBlocks } from "~/lib/actions/compound-blocks";
+import type { FlowType } from "~/types";
+import { getFlows } from "~/lib/actions/flows";
+import { CreateFlowDialog } from "./create-flow-dialog";
 
-export function CompoundBlocksPrimarySidebar({
+export function FlowList({
   workspaceId,
+  type,
 }: {
   workspaceId: string;
+  type: FlowType;
 }) {
-  const { compoundBlockId: currentCompoundBlockId } = useParams<{
-    compoundBlockId: string;
-  }>();
+  const getQueryKey = (type: FlowType) => {
+    switch (type) {
+      case "workflow":
+        return "workflows";
+      case "route":
+        return "routes";
+      case "component":
+        return "components";
+    }
+  };
+  const { flowId: currentFlowId } = useParams<{ flowId: string }>();
   const {
     isLoading,
     isRefetching,
-    data: compoundBlocks,
+    data: flows,
   } = useQuery({
-    queryKey: ["compound-blocks"],
-    queryFn: () => getCompoundBlocks({ workspaceId }),
+    queryKey: [getQueryKey(type)],
+    queryFn: () => getFlows({ workspaceId, type }),
     refetchInterval: 1000 * 60 * 5,
   });
 
+  console.log(flows);
+
   return (
     <div className="flex size-full min-h-[calc(100dvh-128px)] flex-col gap-2 overflow-y-auto">
-      <CreateCompoundBlockDialog />
+      <CreateFlowDialog type={type} />
       {!isLoading && !isRefetching ? (
         <ScrollArea className="h-[calc(100dvh-152px)] w-full">
           <div className="flex flex-col gap-1">
-            {compoundBlocks?.map((compoundBlock) => (
+            {flows?.map((flow) => (
               <Link
-                href={`/workspaces/${workspaceId}/compound-blocks/${compoundBlock.id}`}
-                key={compoundBlock.id}
+                href={`/workspaces/${workspaceId}/${type}s/${flow.id}`}
+                key={flow.id}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" }),
                   {
-                    "bg-accent": currentCompoundBlockId === compoundBlock.id,
+                    "bg-accent": currentFlowId === flow.id,
                   },
                 )}
               >
-                {compoundBlock.name}
+                {flow.name}
               </Link>
             ))}
           </div>

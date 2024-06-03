@@ -1,14 +1,6 @@
-import type { NodeProps } from "reactflow";
 import { memo, useState } from "react";
 import Link from "next/link";
-import {
-  ExternalLink,
-  FileText,
-  PlayCircle,
-  Split,
-  Trash,
-  X,
-} from "lucide-react";
+import { ExternalLink, FileText, PlayCircle, Trash, X } from "lucide-react";
 import { Handle, Position, useReactFlow } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
@@ -32,12 +24,13 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { LogicalBranchBlockData } from "~/types";
+import type { FunctionPrimitiveProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
+import { Lambda } from "~/components/icons/lambda";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
-export const LogicalBranchBlock = memo(
-  ({ data, isConnectable, selected }: NodeProps<LogicalBranchBlockData>) => {
+export const Function = memo(
+  ({ data, isConnectable, selected }: FunctionPrimitiveProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -74,10 +67,8 @@ export const LogicalBranchBlock = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <Split className="size-4 text-primary" />
-                    <span className="text-muted-foreground">
-                      Logical Branch
-                    </span>
+                    <Lambda className="size-4 text-primary" />
+                    <span className="text-muted-foreground">Function</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
                 </Card>
@@ -86,8 +77,8 @@ export const LogicalBranchBlock = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Split className="size-4 text-primary" />
-                      <span>Logical Branch</span>
+                      <Lambda className="size-4" />
+                      <span>Function</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>
                       <Button variant="ghost" size="icon">
@@ -97,25 +88,23 @@ export const LogicalBranchBlock = memo(
                     </SheetClose>
                   </SheetTitle>
                   <SheetDescription>
-                    Develop your logical branch here
+                    Develop your function here
                   </SheetDescription>
                 </SheetHeader>
               </SheetContent>
             </Sheet>
           </ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuLabel className="text-xs">
-              Logical Branch
-            </ContextMenuLabel>
+            <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem className="text-xs">
               <PlayCircle className="mr-3 size-4 text-muted-foreground" />
-              Run with previous blocks
+              Run with previous primitives
             </ContextMenuItem>
             <ContextMenuItem className="flex items-center justify-between text-xs">
               <Link
                 className="flex items-center"
-                href="https://docs.integramind.ai/blocks/query"
+                href="https://docs.integramind.ai/primitives/ai-processing"
                 target="blank"
               >
                 <FileText className="mr-3 size-4 text-muted-foreground" />
@@ -158,4 +147,4 @@ export const LogicalBranchBlock = memo(
   },
 );
 
-LogicalBranchBlock.displayName = "LogicalBranchBlock";
+Function.displayName = "Function";

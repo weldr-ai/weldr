@@ -80,7 +80,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-.lucide {
-  @apply stroke-1;
-}

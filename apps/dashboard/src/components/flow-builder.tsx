@@ -5,6 +5,7 @@ import "~/styles/flow-builder.css";
 
 import type { Connection, Edge } from "reactflow";
 import React, { useCallback } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Minus, Plus, Scan } from "lucide-react";
 import ReactFlow, {
   addEdge,
@@ -20,29 +21,24 @@ import ReactFlow, {
 
 import { Button } from "@integramind/ui/button";
 
-import type { Block, BlockType, FlowEdge } from "~/types";
-import { AccessPointBlock } from "~/components/access-point-block";
-import { ActionBlock } from "~/components/action-block";
-import { AIProcessingBlock } from "~/components/ai-processing-block";
-import { BlocksMenu } from "~/components/blocks-menu";
+import type { FlowEdge, Primitive, PrimitiveType } from "~/types";
 import DeletableEdge from "~/components/deletable-edge";
-import { LogicalBranchBlock } from "~/components/logical-branch-block";
-import { LogicalProcessingBlock } from "~/components/logical-processing-block";
-import { QueryBlock } from "~/components/query-block";
-import { ResponseBlock } from "~/components/response-block";
-import { SemanticBranchBlock } from "~/components/semantic-branch-block";
-import { WorkflowBlock } from "~/components/workflow-block";
+import { PrimitivesMenu } from "~/components/primitives-menu";
+import { addFlowEdge, addFlowPrimitive } from "~/lib/actions/flows";
+import { ConditionalBranch } from "./primitives/conditional-branch";
+import { Function } from "./primitives/function";
+import { Loop } from "./primitives/loop";
+import { Response } from "./primitives/response";
+import { Route } from "./primitives/route";
+import { Workflow } from "./primitives/workflow";
 
-const blockTypes = {
-  "access-point-block": AccessPointBlock,
-  "workflow-block": WorkflowBlock,
-  "query-block": QueryBlock,
-  "action-block": ActionBlock,
-  "logical-processing-block": LogicalProcessingBlock,
-  "ai-processing-block": AIProcessingBlock,
-  "logical-branch-block": LogicalBranchBlock,
-  "semantic-branch-block": SemanticBranchBlock,
-  "response-block": ResponseBlock,
+const primitiveTypes = {
+  route: Route,
+  workflow: Workflow,
+  function: Function,
+  "conditional-branch": ConditionalBranch,
+  loop: Loop,
+  response: Response,
 };
 
 const edgeTypes = {
@@ -50,21 +46,41 @@ const edgeTypes = {
 };
 
 export function _FlowBuilder({
-  initialBlocks,
+  flowId,
+  initialPrimitives,
   initialEdges,
 }: {
-  initialBlocks: Block[];
+  flowId: string;
+  initialPrimitives: Primitive[];
   initialEdges: FlowEdge[];
 }) {
+  const updateFlowPrimitivesMutation = useMutation({
+    mutationFn: addFlowPrimitive,
+  });
+  const updateFlowEdgesMutation = useMutation({
+    mutationFn: addFlowEdge,
+  });
+
   const reactFlow = useReactFlow();
   const viewPort = useViewport();
-  const [blocks, setBlocks, onBlocksChange] = useNodesState(initialBlocks);
+  const [primitives, setPrimitives, onPrimitivesChange] =
+    useNodesState(initialPrimitives);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback(
-    (params: Edge | Connection) =>
-      setEdges((eds) => addEdge({ ...params, type: "deletable-edge" }, eds)),
-    [setEdges],
+    async (params: Edge | Connection) => {
+      const newEdgeId = crypto.randomUUID();
+      setEdges((eds) => addEdge({ ...params, type: "deletable-edge" }, eds));
+      await updateFlowEdgesMutation.mutateAsync({
+        id: flowId,
+        edgeMetadata: {
+          id: newEdgeId,
+          source: params.source!,
+          target: params.target!,
+        },
+      });
+    },
+    [flowId, setEdges, updateFlowEdgesMutation],
   );
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -73,68 +89,74 @@ export function _FlowBuilder({
   }, []);
 
   const onDrop = useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
+    async (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      const blockType = event.dataTransfer.getData(
+      const getNewPrimitiveName = (primitiveType: PrimitiveType) => {
+        switch (primitiveType) {
+          case "route":
+            return "New Route";
+          case "workflow":
+            return "New Workflow";
+          case "function":
+            return "New Function";
+          case "conditional-branch":
+            return "New Conditional Branch";
+          case "loop":
+            return "New Loop";
+          case "response":
+            return "New Response";
+        }
+      };
+
+      const primitiveType = event.dataTransfer.getData(
         "application/reactflow",
-      ) as BlockType;
+      ) as PrimitiveType;
 
       // check if the dropped element is valid
-      if (typeof blockType === "undefined" || !blockType) return;
+      if (typeof primitiveType === "undefined" || !primitiveType) return;
 
       const position = reactFlow.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
 
-      const newBlockId = crypto.randomUUID();
+      const newPrimitiveId = crypto.randomUUID();
+      const newPrimitiveName = getNewPrimitiveName(primitiveType);
 
-      const getNewBockName = (blockType: BlockType) => {
-        switch (blockType) {
-          case "access-point-block":
-            return "New Access Point";
-          case "workflow-block":
-            return "New Workflow";
-          case "query-block":
-            return "New Query";
-          case "action-block":
-            return "New Action";
-          case "logical-processing-block":
-            return "New Logical Processing";
-          case "ai-processing-block":
-            return "New AI Processing";
-          case "logical-branch-block":
-            return "New Logical Branch";
-          case "semantic-branch-block":
-            return "New Semantic Branch";
-          case "response-block":
-            return "New Response";
-        }
-      };
-
-      const newBlock: Block = {
-        id: newBlockId,
-        type: blockType,
+      const newPrimitive: Primitive = {
+        id: newPrimitiveId,
+        type: primitiveType,
         position,
-        data: { id: `${newBlockId}`, name: getNewBockName(blockType) },
+        data: { id: newPrimitiveId, name: newPrimitiveName },
       };
 
-      setBlocks((blocks) => blocks.concat(newBlock));
+      setPrimitives((primitives) => primitives.concat(newPrimitive));
+
+      if (primitiveType === "function") {
+        await updateFlowPrimitivesMutation.mutateAsync({
+          id: flowId,
+          primitiveMetadata: {
+            id: newPrimitiveId,
+            type: primitiveType,
+            name: newPrimitiveName,
+          },
+        });
+      }
     },
-    [reactFlow, setBlocks],
+    [flowId, reactFlow, setPrimitives, updateFlowPrimitivesMutation],
   );
 
   return (
     <ReactFlow
-      nodes={blocks}
+      nodes={primitives}
       edges={edges}
-      onNodesChange={onBlocksChange}
+      onNodesChange={onPrimitivesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onDrop={onDrop}
       onDragOver={onDragOver}
-      nodeTypes={blockTypes}
+      nodeTypes={primitiveTypes}
       edgeTypes={edgeTypes}
       deleteKeyCode={null}
       panOnScroll={true}
@@ -201,22 +223,28 @@ export function _FlowBuilder({
         </Button>
       </Panel>
       <Panel position="top-right">
-        <BlocksMenu />
+        <PrimitivesMenu />
       </Panel>
     </ReactFlow>
   );
 }
 
 export function FlowBuilder({
-  initialBlocks,
+  flowId,
+  initialPrimitives,
   initialEdges,
 }: {
-  initialBlocks: Block[];
+  flowId: string;
+  initialPrimitives: Primitive[];
   initialEdges: FlowEdge[];
 }) {
   return (
     <ReactFlowProvider>
-      <_FlowBuilder initialBlocks={initialBlocks} initialEdges={initialEdges} />
+      <_FlowBuilder
+        flowId={flowId}
+        initialPrimitives={initialPrimitives}
+        initialEdges={initialEdges}
+      />
     </ReactFlowProvider>
   );
 }
