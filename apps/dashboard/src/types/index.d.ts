@@ -67,8 +67,8 @@ export interface FunctionMetadata {
   isCodeUpdated: boolean;
 }
 
-export type FunctionPrimitive = BasePrimitive<FunctionMetaData>;
-export type FunctionPrimitiveProps = BasePrimitiveProps<FunctionMetaData>;
+export type FunctionPrimitive = BasePrimitive<FunctionMetadata>;
+export type FunctionPrimitiveProps = BasePrimitiveProps<FunctionMetadata>;
 
 export interface ConditionalBranchMetadata {
   id: string;
