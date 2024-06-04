@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { getWorkspaceById } from "~/lib/actions/workspaces";
+import { getWorkspaceById } from "~/lib/queries/workspaces";
 
 export default async function WorkspacePage({
   params,

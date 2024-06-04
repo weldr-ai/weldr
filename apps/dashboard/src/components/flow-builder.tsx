@@ -1,10 +1,8 @@
 "use client";
 
-import "reactflow/dist/style.css";
-import "~/styles/flow-builder.css";
-
 import type { Connection, Edge } from "reactflow";
 import React, { useCallback } from "react";
+import { createId } from "@paralleldrive/cuid2";
 import { useMutation } from "@tanstack/react-query";
 import { Minus, Plus, Scan } from "lucide-react";
 import ReactFlow, {
@@ -19,12 +17,15 @@ import ReactFlow, {
   useViewport,
 } from "reactflow";
 
+import "reactflow/dist/style.css";
+import "~/styles/flow-builder.css";
+
 import { Button } from "@integramind/ui/button";
 
 import type { FlowEdge, Primitive, PrimitiveType } from "~/types";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
-import { addFlowEdge, addFlowPrimitive } from "~/lib/actions/flows";
+import { addFlowEdge, addFlowPrimitive } from "~/lib/queries/flows";
 import { ConditionalBranch } from "./primitives/conditional-branch";
 import { Function } from "./primitives/function";
 import { Loop } from "./primitives/loop";
@@ -69,7 +70,7 @@ export function _FlowBuilder({
 
   const onConnect = useCallback(
     async (params: Edge | Connection) => {
-      const newEdgeId = crypto.randomUUID();
+      const newEdgeId = createId();
       setEdges((eds) => addEdge({ ...params, type: "deletable-edge" }, eds));
       await updateFlowEdgesMutation.mutateAsync({
         id: flowId,
@@ -121,7 +122,7 @@ export function _FlowBuilder({
         y: event.clientY,
       });
 
-      const newPrimitiveId = crypto.randomUUID();
+      const newPrimitiveId = createId();
       const newPrimitiveName = getNewPrimitiveName(primitiveType);
 
       const newPrimitive: Primitive = {
