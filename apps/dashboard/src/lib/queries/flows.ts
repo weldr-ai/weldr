@@ -1,12 +1,13 @@
 "use server";
 
 import type { z } from "zod";
+import { createId } from "@paralleldrive/cuid2";
 
 import { and, db, eq, sql } from "@integramind/db";
 import { flows, insertFlowSchema } from "@integramind/db/schema";
 
 import type { Flow, FlowType, PrimitiveType } from "~/types";
-import { getWorkspaceById } from "~/lib/actions/workspaces";
+import { getWorkspaceById } from "~/lib/queries/workspaces";
 
 type FormState =
   | {
@@ -51,7 +52,7 @@ export async function createFlow(
         return { status: "error", fields };
       }
 
-      const id = crypto.randomUUID();
+      const id = createId();
 
       const getInitialPrimitive = () => {
         switch (validation.data.type) {

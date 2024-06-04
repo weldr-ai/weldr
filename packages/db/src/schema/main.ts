@@ -1,3 +1,4 @@
+import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -10,7 +11,7 @@ import type { FlowEdge, PrimitiveMetadata } from "../types";
 export const workspaces = pgTable("workspaces", {
   id: text("id")
     .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
+    .$defaultFn(() => createId()),
   name: text("name").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -34,7 +35,7 @@ export const flowTypes = pgEnum("flow_types", [
 export const flows = pgTable("flows", {
   id: text("id")
     .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
+    .$defaultFn(() => createId()),
   name: text("name").notNull(),
   description: text("description"),
   type: flowTypes("type").notNull(),
@@ -56,7 +57,7 @@ export const flows = pgTable("flows", {
 export const resources = pgTable("resources", {
   id: text("id")
     .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
+    .$defaultFn(() => createId()),
   name: text("name").notNull(),
   description: text("description"),
   provider: text("provider"),
@@ -85,9 +86,12 @@ export const resourcesRelations = relations(resources, ({ one }) => ({
 export const workspaceSchema = createSelectSchema(workspaces);
 export const insertWorkspaceSchema = createInsertSchema(workspaces, {
   name: (schema) =>
-    schema.name.trim().min(1, {
-      message: "Name is required.",
-    }),
+    schema.name
+      .trim()
+      .min(1, {
+        message: "Name is required.",
+      })
+      .transform((name) => name.replace(/\s+/g, " ").trim()),
 });
 
 // Resources schemas
@@ -95,9 +99,12 @@ export const resourceSchema = createSelectSchema(resources);
 
 export const insertResourceSchema = createInsertSchema(resources, {
   name: (schema) =>
-    schema.name.trim().min(1, {
-      message: "Name is required.",
-    }),
+    schema.name
+      .trim()
+      .min(1, {
+        message: "Name is required.",
+      })
+      .transform((name) => name.replace(/\s+/g, " ").trim()),
 });
 
 // Flows schemas
@@ -148,9 +155,12 @@ export const flowSchema = createSelectSchema(flows, {
 
 export const insertFlowSchema = z.discriminatedUnion("type", [
   z.object({
-    name: z.string().min(1, {
-      message: "Name is required.",
-    }),
+    name: z
+      .string()
+      .min(1, {
+        message: "Name is required.",
+      })
+      .transform((name) => name.replace(/\s+/g, " ").trim()),
     description: z.string(),
     workspaceId: z.string(),
     type: z.literal("component", {
@@ -158,9 +168,12 @@ export const insertFlowSchema = z.discriminatedUnion("type", [
     }),
   }),
   z.object({
-    name: z.string().min(1, {
-      message: "Name is required.",
-    }),
+    name: z
+      .string()
+      .min(1, {
+        message: "Name is required.",
+      })
+      .transform((name) => name.replace(/\s+/g, " ").trim()),
     description: z.string(),
     workspaceId: z.string(),
     type: z.literal("route", {
@@ -174,9 +187,12 @@ export const insertFlowSchema = z.discriminatedUnion("type", [
     }),
   }),
   z.object({
-    name: z.string().min(1, {
-      message: "Name is required.",
-    }),
+    name: z
+      .string()
+      .min(1, {
+        message: "Name is required.",
+      })
+      .transform((name) => name.replace(/\s+/g, " ").trim()),
     description: z.string(),
     workspaceId: z.string(),
     type: z.literal("workflow", {

@@ -9,7 +9,7 @@ import {
 import { CreateWorkspaceForm } from "~/components/create-workspace-form";
 import { Preview } from "~/components/preview";
 import { WorkspacesDialog } from "~/components/workspaces-dialog";
-import { getWorkspaces } from "~/lib/actions/workspaces";
+import { getWorkspaces } from "~/lib/queries/workspaces";
 
 export default async function Home(): Promise<JSX.Element> {
   const workspaces = await getWorkspaces();

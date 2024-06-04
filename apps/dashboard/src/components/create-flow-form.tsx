@@ -32,7 +32,7 @@ import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
 import type { FlowType } from "~/types";
-import { createFlow } from "~/lib/actions/flows";
+import { createFlow } from "~/lib/queries/flows";
 
 export function CreateFlowForm({
   type,

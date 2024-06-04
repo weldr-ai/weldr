@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import type { FlowEdge, FlowType, Primitive } from "~/types";
 import { FlowBuilder } from "~/components/flow-builder";
-import { getFlowById } from "~/lib/actions/flows";
+import { getFlowById } from "~/lib/queries/flows";
 
 export default async function WorkflowPage({
   params,
