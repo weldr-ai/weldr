@@ -8,7 +8,7 @@ import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
 import type { FlowType } from "~/types";
-import { getFlows } from "~/lib/actions/flows";
+import { getFlows } from "~/lib/queries/flows";
 import { CreateFlowDialog } from "./create-flow-dialog";
 
 export function FlowList({
@@ -38,8 +38,6 @@ export function FlowList({
     queryFn: () => getFlows({ workspaceId, type }),
     refetchInterval: 1000 * 60 * 5,
   });
-
-  console.log(flows);
 
   return (
     <div className="flex size-full min-h-[calc(100dvh-128px)] flex-col gap-2 overflow-y-auto">

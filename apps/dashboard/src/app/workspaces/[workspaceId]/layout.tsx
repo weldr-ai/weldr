@@ -4,7 +4,7 @@ import { ActivityBar } from "~/components/activity-bar";
 import { CommandCenter } from "~/components/command-center";
 import { Navbar } from "~/components/navbar";
 import { PrimarySidebar } from "~/components/primary-sidebar";
-import { getWorkspaceById, getWorkspaces } from "~/lib/actions/workspaces";
+import { getWorkspaceById, getWorkspaces } from "~/lib/queries/workspaces";
 
 export default async function WorkspacesLayout({
   children,
