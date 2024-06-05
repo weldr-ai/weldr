@@ -26,6 +26,40 @@ export const workspacesRelations = relations(workspaces, ({ many }) => ({
   flows: many(flows),
 }));
 
+export const primitiveTypes = pgEnum("primitive_types", [
+  "route",
+  "workflow",
+  "function",
+  "conditional-branch",
+  "loop",
+  "response",
+]);
+
+export const primitives = pgTable("primitives", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: primitiveTypes("type").notNull(),
+  metadata: jsonb("metadata").$type<PrimitiveMetadata>().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+  flowId: text("flow_id")
+    .references(() => flows.id, { onDelete: "cascade" })
+    .notNull(),
+});
+
+export const primitivesRelations = relations(primitives, ({ one }) => ({
+  flow: one(flows, {
+    fields: [primitives.flowId],
+    references: [flows.id],
+  }),
+}));
+
 export const flowTypes = pgEnum("flow_types", [
   "component",
   "workflow",
@@ -39,10 +73,6 @@ export const flows = pgTable("flows", {
   name: text("name").notNull(),
   description: text("description"),
   type: flowTypes("type").notNull(),
-  primitives: jsonb("primitives")
-    .$type<PrimitiveMetadata[]>()
-    .default([])
-    .notNull(),
   edges: jsonb("edges").$type<FlowEdge[]>().default([]).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -53,6 +83,10 @@ export const flows = pgTable("flows", {
     .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
 });
+
+export const flowsRelations = relations(flows, ({ many }) => ({
+  primitives: many(primitives),
+}));
 
 export const resources = pgTable("resources", {
   id: text("id")
@@ -107,43 +141,13 @@ export const insertResourceSchema = createInsertSchema(resources, {
       .transform((name) => name.replace(/\s+/g, " ").trim()),
 });
 
+// Primitives schemas
+export const primitiveSchema = createSelectSchema(primitives);
+
 // Flows schemas
 export const flowTypesSchema = z.enum(flowTypes.enumValues);
 
 export const flowSchema = createSelectSchema(flows, {
-  primitives: z
-    .discriminatedUnion("type", [
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        description: z.string(),
-        type: z.literal("function"),
-        inputs: z
-          .object({ name: z.string(), type: z.enum(["number", "text"]) })
-          .array(),
-        outputs: z
-          .object({ name: z.string(), type: z.enum(["number", "text"]) })
-          .array(),
-        generatedCode: z.string(),
-        isCodeUpdated: z.boolean(),
-      }),
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        description: z.string(),
-        type: z.literal("route"),
-        actionType: z.enum(["retrieve", "submit", "modify", "delete"]),
-        urlPath: z.string(),
-      }),
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        description: z.string(),
-        type: z.literal("workflow"),
-        triggerType: z.enum(["webhook", "schedule"]),
-      }),
-    ])
-    .array(),
   edges: z
     .object({
       id: z.string(),

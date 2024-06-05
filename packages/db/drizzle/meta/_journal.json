@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1717557082213,
+      "tag": "0000_needy_tempest",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1717557113047,
+      "tag": "0001_sturdy_iron_man",
+      "breakpoints": true
+    }
+  ]
+}

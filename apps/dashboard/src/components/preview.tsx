@@ -23,15 +23,13 @@ import { Button } from "@integramind/ui/button";
 import "reactflow/dist/style.css";
 import "~/styles/flow-builder.css";
 
-import type { Edge } from "reactflow";
+import type { Edge, Node } from "reactflow";
 import { Minus, Plus, Scan } from "lucide-react";
 import ReactFlow, { Background, MiniMap, Panel } from "reactflow";
 
 import { Card } from "@integramind/ui/card";
 
-import type { Primitive } from "~/types";
-
-const initialPrimitives: Primitive[] = [];
+const initialNodes: Node[] = [];
 
 const initEdges: Edge[] = [];
 
@@ -107,7 +105,7 @@ export function Preview() {
           </div>
         </div>
         <main className="flex w-full flex-col">
-          <ReactFlow nodes={initialPrimitives} edges={initEdges}>
+          <ReactFlow nodes={initialNodes} edges={initEdges}>
             <Background
               className="bg-background"
               color="hsl(var(--background))"

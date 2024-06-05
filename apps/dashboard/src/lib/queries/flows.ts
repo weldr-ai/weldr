@@ -1,12 +1,11 @@
 "use server";
 
 import type { z } from "zod";
-import { createId } from "@paralleldrive/cuid2";
 
 import { and, db, eq, sql } from "@integramind/db";
-import { flows, insertFlowSchema } from "@integramind/db/schema";
+import { flows, insertFlowSchema, primitives } from "@integramind/db/schema";
 
-import type { Flow, FlowType, PrimitiveType } from "~/types";
+import type { Flow, FlowType } from "~/types";
 import { getWorkspaceById } from "~/lib/queries/workspaces";
 
 type FormState =
@@ -52,47 +51,45 @@ export async function createFlow(
         return { status: "error", fields };
       }
 
-      const id = createId();
-
-      const getInitialPrimitive = () => {
-        switch (validation.data.type) {
-          case "route":
-            return {
-              id,
-              name: validation.data.name,
-              description: validation.data.description,
-              type: validation.data.type,
-              actionType: validation.data.actionType,
-              urlPath: validation.data.urlPath,
-            };
-          case "workflow":
-            return {
-              id,
-              name: validation.data.name,
-              description: validation.data.description,
-              type: validation.data.type,
-              triggerType: validation.data.triggerType,
-            };
-        }
-      };
-
-      const statement = sql`
-        INSERT INTO ${flows} (id, name, description, workspace_id, type, primitives)
-        VALUES (
-          ${id},
-          ${validation.data.name},
-          ${validation.data.description},
-          ${validation.data.workspaceId},
-          ${validation.data.type},
-          '[]'::jsonb || ${getInitialPrimitive()}::jsonb
-        )
-        RETURNING id;`;
-
-      const result = (await db.execute(statement))[0] as
-        | { id: string }
-        | undefined;
+      const result = (
+        await db
+          .insert(flows)
+          .values({
+            name: validation.data.name,
+            description: validation.data.description,
+            workspaceId: validation.data.workspaceId,
+            type: validation.data.type,
+          })
+          .returning({ id: flows.id })
+      )[0];
 
       if (result) {
+        switch (validation.data.type) {
+          case "route":
+            await db.insert(primitives).values({
+              type: "route",
+              name: validation.data.name,
+              description: validation.data.description,
+              metadata: sql`${{
+                type: "route",
+                actionType: validation.data.actionType,
+                urlPath: validation.data.urlPath,
+              }}::jsonb`,
+              flowId: result.id,
+            });
+            break;
+          case "workflow":
+            await db.insert(primitives).values({
+              type: "workflow",
+              name: validation.data.name,
+              description: validation.data.description,
+              metadata: sql`${{
+                type: "workflow",
+                triggerType: validation.data.triggerType,
+              }}::jsonb`,
+              flowId: result.id,
+            });
+        }
         return { status: "success", payload: { id: result.id } };
       } else {
         return { status: "error", fields };
@@ -138,44 +135,13 @@ export async function getFlowById({
 }: {
   id: string;
   type: FlowType;
-}): Promise<Flow | undefined> {
-  const result = (
-    await db
-      .select()
-      .from(flows)
-      .where(and(eq(flows.id, id), eq(flows.type, type)))
-  )[0];
-  return result;
-}
-
-export async function addFlowPrimitive({
-  id,
-  primitiveMetadata,
-}: {
-  id: string;
-  primitiveMetadata: { id: string; type: PrimitiveType; name: string };
-}): Promise<{ id: string } | undefined> {
-  const getPrimitiveMetadata = () => {
-    switch (primitiveMetadata.type) {
-      case "function":
-        return {
-          id: primitiveMetadata.id,
-          type: primitiveMetadata.type,
-          name: primitiveMetadata.name,
-          description: "",
-          inputs: [],
-          outputs: [],
-          generatedCode: "",
-          isCodeUpdated: false,
-        };
-    }
-  };
-  const statement = sql`
-    UPDATE ${flows}
-    SET primitives = primitives || ${getPrimitiveMetadata()}::jsonb
-    WHERE id = ${id}
-    RETURNING id;`;
-  const result = (await db.execute(statement))[0] as { id: string } | undefined;
+}) {
+  const result = await db.query.flows.findFirst({
+    where: and(eq(flows.id, id), eq(flows.type, type)),
+    with: {
+      primitives: true,
+    },
+  });
   return result;
 }
 
