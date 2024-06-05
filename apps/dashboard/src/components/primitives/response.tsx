@@ -31,12 +31,12 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { ResponsePrimitiveProps } from "~/types";
+import type { ResponseNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
 export const Response = memo(
-  ({ data, isConnectable, selected }: ResponsePrimitiveProps) => {
+  ({ data, isConnectable, selected }: ResponseNodeProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);

@@ -1,6 +1,13 @@
 import { notFound } from "next/navigation";
 
-import type { FlowEdge, FlowType, Primitive } from "~/types";
+import type {
+  FlowEdge,
+  FlowNode,
+  FlowType,
+  FunctionMetadata,
+  RouteMetadata,
+  WorkflowMetadata,
+} from "~/types";
 import { FlowBuilder } from "~/components/flow-builder";
 import { getFlowById } from "~/lib/queries/flows";
 
@@ -19,8 +26,8 @@ export default async function WorkflowPage({
     notFound();
   }
 
-  const initialPrimitives: Primitive[] = flow.primitives.map((primitive) => {
-    switch (primitive.type) {
+  const initialNodes: FlowNode[] = flow.primitives.map((primitive) => {
+    switch (primitive.metadata.type) {
       case "route":
         return {
           id: primitive.id,
@@ -30,8 +37,8 @@ export default async function WorkflowPage({
             id: primitive.id,
             name: primitive.name,
             description: primitive.description,
-            actionType: primitive.actionType,
-            urlPath: primitive.urlPath,
+            actionType: (primitive.metadata as RouteMetadata).actionType,
+            urlPath: (primitive.metadata as RouteMetadata).urlPath,
           },
         };
       case "workflow":
@@ -43,7 +50,7 @@ export default async function WorkflowPage({
             id: primitive.id,
             name: primitive.name,
             description: primitive.description,
-            triggerType: primitive.triggerType,
+            triggerType: (primitive.metadata as WorkflowMetadata).triggerType,
           },
         };
       case "function":
@@ -55,10 +62,12 @@ export default async function WorkflowPage({
             id: primitive.id,
             name: primitive.name,
             description: primitive.description,
-            inputs: primitive.inputs,
-            outputs: primitive.outputs,
-            generatedCode: primitive.generatedCode,
-            isCodeUpdated: primitive.isCodeUpdated,
+            inputs: (primitive.metadata as FunctionMetadata).inputs,
+            outputs: (primitive.metadata as FunctionMetadata).outputs,
+            generatedCode: (primitive.metadata as FunctionMetadata)
+              .generatedCode,
+            isCodeUpdated: (primitive.metadata as FunctionMetadata)
+              .isCodeUpdated,
           },
         };
     }
@@ -69,7 +78,7 @@ export default async function WorkflowPage({
   return (
     <FlowBuilder
       flowId={flow.id}
-      initialPrimitives={initialPrimitives ?? []}
+      initialNodes={initialNodes}
       initialEdges={initialEdges}
     />
   );

@@ -4,11 +4,12 @@ import type { z } from "zod";
 import type {
   flowSchema,
   flowTypesSchema,
+  primitiveSchema,
   resourceSchema,
   workspaceSchema,
 } from "@integramind/db/schema";
 
-export type PrimitiveType =
+export type NodeType =
   | "route"
   | "workflow"
   | "function"
@@ -17,32 +18,41 @@ export type PrimitiveType =
   | "response";
 
 export type FlowType = z.infer<typeof flowTypesSchema>;
-
 export type FlowEdge = Edge;
+export type FlowNode =
+  | RouteNode
+  | WorkflowNode
+  | FunctionNode
+  | ConditionalBranchNode
+  | LoopNode
+  | ResponseNode;
 
-export type BasePrimitive<T> = Node<T, PrimitiveType>;
-export type BasePrimitiveProps<T> = NodeProps<T>;
-
-export interface RouteMetadata {
+export type BaseNode<T> = Node<T, NodeType>;
+export type BaseNodeProps<T> = NodeProps<T>;
+export interface BaseNodeData {
   id: string;
   name: string;
   description?: string | null;
+}
+
+export interface RouteMetadata {
+  type: "route";
   actionType: "retrieve" | "submit" | "modify" | "delete";
   urlPath: string;
 }
 
-export type RoutePrimitive = BasePrimitive<RouteMetadata>;
-export type RoutePrimitiveProps = BasePrimitiveProps<RouteMetadata>;
+export type RouteData = BaseNodeData & RouteMetadata;
+export type RouteNode = BaseNode<RouteData>;
+export type RouteNodeProps = BaseNodeProps<RouteData>;
 
 export interface WorkflowMetadata {
-  id: string;
-  name: string;
-  description?: string | null;
+  type: "workflow";
   triggerType: "webhook" | "schedule";
 }
 
-export type WorkflowPrimitive = BasePrimitive<WorkflowMetadata>;
-export type WorkflowPrimitiveProps = BasePrimitiveProps<WorkflowMetadata>;
+export type WorkflowData = BaseNodeData & WorkflowMetadata;
+export type WorkflowNode = BaseNode<WorkflowData>;
+export type WorkflowNodeProps = BaseNodeProps<WorkflowData>;
 
 export type Type = "number" | "text";
 
@@ -57,9 +67,6 @@ export interface Output {
 }
 
 export interface FunctionMetadata {
-  id: string;
-  name: string;
-  description: string;
   type: "function";
   inputs: Input[];
   outputs: Output[];
@@ -67,51 +74,23 @@ export interface FunctionMetadata {
   isCodeUpdated: boolean;
 }
 
-export type FunctionPrimitive = BasePrimitive<FunctionMetadata>;
-export type FunctionPrimitiveProps = BasePrimitiveProps<FunctionMetadata>;
+export type FunctionData = BaseNodeData & FunctionMetadata;
+export type FunctionNode = BaseNode<FunctionData>;
+export type FunctionNodeProps = BaseNodeProps<FunctionData>;
 
-export interface ConditionalBranchMetadata {
-  id: string;
-  name: string;
-}
+export type ConditionalBranchData = BaseNodeData;
+export type ConditionalBranchNode = BaseNode<ConditionalBranchData>;
+export type ConditionalBranchNodeProps = BaseNodeProps<ConditionalBranchData>;
 
-export type ConditionalBranchPrimitive =
-  BasePrimitive<ConditionalBranchMetadata>;
-export type ConditionalBranchPrimitiveProps =
-  BasePrimitiveProps<ConditionalBranchMetadata>;
+export type LoopData = BaseNodeData;
+export type LoopNode = BaseNode<LoopData>;
+export type LoopNodeProps = BaseNodeProps<LoopData>;
 
-export interface LoopMetadata {
-  id: string;
-  name: string;
-}
-
-export type LoopPrimitive = BasePrimitive<LoopMetadata>;
-export type LoopPrimitiveProps = BasePrimitiveProps<LoopMetadata>;
-
-export interface ResponseMetadata {
-  id: string;
-  name: string;
-}
-
-export type ResponsePrimitive = BasePrimitive<ResponseMetadata>;
-export type ResponsePrimitiveProps = BasePrimitiveProps<ResponseMetadata>;
-
-export type PrimitiveMetadata =
-  | RouteMetadata
-  | WorkflowMetadata
-  | FunctionMetadata
-  | ConditionalBranchMetadata
-  | LoopMetadata
-  | ResponseMetadata;
-
-export type Primitive =
-  | RoutePrimitive
-  | WorkflowPrimitive
-  | FunctionPrimitive
-  | ConditionalBranchPrimitive
-  | LoopPrimitive
-  | ResponsePrimitive;
+export type ResponseData = BaseNodeData;
+export type ResponseNode = BaseNode<ResponseData>;
+export type ResponseNodeProps = BaseNodeProps<ResponseData>;
 
 export type Workspace = z.infer<typeof workspaceSchema>;
+export type Primitive = z.infer<typeof primitiveSchema>;
 export type Flow = z.infer<typeof flowSchema>;
 export type Resource = z.infer<typeof resourceSchema>;

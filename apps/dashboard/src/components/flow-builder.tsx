@@ -22,10 +22,11 @@ import "~/styles/flow-builder.css";
 
 import { Button } from "@integramind/ui/button";
 
-import type { FlowEdge, Primitive, PrimitiveType } from "~/types";
+import type { FlowEdge, FlowNode, NodeType } from "~/types";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
-import { addFlowEdge, addFlowPrimitive } from "~/lib/queries/flows";
+import { addFlowEdge } from "~/lib/queries/flows";
+import { createPrimitive } from "~/lib/queries/primitives";
 import { ConditionalBranch } from "./primitives/conditional-branch";
 import { Function } from "./primitives/function";
 import { Loop } from "./primitives/loop";
@@ -33,7 +34,7 @@ import { Response } from "./primitives/response";
 import { Route } from "./primitives/route";
 import { Workflow } from "./primitives/workflow";
 
-const primitiveTypes = {
+const nodeTypes = {
   route: Route,
   workflow: Workflow,
   function: Function,
@@ -48,15 +49,15 @@ const edgeTypes = {
 
 export function _FlowBuilder({
   flowId,
-  initialPrimitives,
+  initialNodes,
   initialEdges,
 }: {
   flowId: string;
-  initialPrimitives: Primitive[];
+  initialNodes: FlowNode[];
   initialEdges: FlowEdge[];
 }) {
-  const updateFlowPrimitivesMutation = useMutation({
-    mutationFn: addFlowPrimitive,
+  const createPrimitiveMutation = useMutation({
+    mutationFn: createPrimitive,
   });
   const updateFlowEdgesMutation = useMutation({
     mutationFn: addFlowEdge,
@@ -64,8 +65,7 @@ export function _FlowBuilder({
 
   const reactFlow = useReactFlow();
   const viewPort = useViewport();
-  const [primitives, setPrimitives, onPrimitivesChange] =
-    useNodesState(initialPrimitives);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback(
@@ -93,8 +93,8 @@ export function _FlowBuilder({
     async (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      const getNewPrimitiveName = (primitiveType: PrimitiveType) => {
-        switch (primitiveType) {
+      const getNewNodeName = (nodeType: NodeType) => {
+        switch (nodeType) {
           case "route":
             return "New Route";
           case "workflow":
@@ -110,54 +110,52 @@ export function _FlowBuilder({
         }
       };
 
-      const primitiveType = event.dataTransfer.getData(
+      const nodeType = event.dataTransfer.getData(
         "application/reactflow",
-      ) as PrimitiveType;
+      ) as NodeType;
 
       // check if the dropped element is valid
-      if (typeof primitiveType === "undefined" || !primitiveType) return;
+      if (typeof nodeType === "undefined" || !nodeType) return;
 
       const position = reactFlow.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
 
-      const newPrimitiveId = createId();
-      const newPrimitiveName = getNewPrimitiveName(primitiveType);
+      const newNodeId = createId();
+      const newNodeName = getNewNodeName(nodeType);
 
-      const newPrimitive: Primitive = {
-        id: newPrimitiveId,
-        type: primitiveType,
+      const newNode: FlowNode = {
+        id: newNodeId,
+        type: nodeType,
         position,
-        data: { id: newPrimitiveId, name: newPrimitiveName },
+        data: { id: newNodeId, name: newNodeName },
       };
 
-      setPrimitives((primitives) => primitives.concat(newPrimitive));
+      setNodes((nodes) => nodes.concat(newNode));
 
-      if (primitiveType === "function") {
-        await updateFlowPrimitivesMutation.mutateAsync({
-          id: flowId,
-          primitiveMetadata: {
-            id: newPrimitiveId,
-            type: primitiveType,
-            name: newPrimitiveName,
-          },
+      if (nodeType === "function") {
+        await createPrimitiveMutation.mutateAsync({
+          id: newNodeId,
+          type: nodeType,
+          name: newNodeName,
+          flowId: flowId,
         });
       }
     },
-    [flowId, reactFlow, setPrimitives, updateFlowPrimitivesMutation],
+    [createPrimitiveMutation, flowId, reactFlow, setNodes],
   );
 
   return (
     <ReactFlow
-      nodes={primitives}
+      nodes={nodes}
       edges={edges}
-      onNodesChange={onPrimitivesChange}
+      onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onDrop={onDrop}
       onDragOver={onDragOver}
-      nodeTypes={primitiveTypes}
+      nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       deleteKeyCode={null}
       panOnScroll={true}
@@ -232,18 +230,18 @@ export function _FlowBuilder({
 
 export function FlowBuilder({
   flowId,
-  initialPrimitives,
+  initialNodes,
   initialEdges,
 }: {
   flowId: string;
-  initialPrimitives: Primitive[];
+  initialNodes: FlowNode[];
   initialEdges: FlowEdge[];
 }) {
   return (
     <ReactFlowProvider>
       <_FlowBuilder
         flowId={flowId}
-        initialPrimitives={initialPrimitives}
+        initialNodes={initialNodes}
         initialEdges={initialEdges}
       />
     </ReactFlowProvider>
