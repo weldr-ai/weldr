@@ -18,11 +18,11 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { RoutePrimitiveProps } from "~/types";
+import type { RouteNodeProps } from "~/types";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
 export const Route = memo(
-  ({ data, isConnectable, selected }: RoutePrimitiveProps) => {
+  ({ data, isConnectable, selected }: RouteNodeProps) => {
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
     const updateCurrentId = useDevelopmentSheetStore(
       (state) => state.updateCurrentId,

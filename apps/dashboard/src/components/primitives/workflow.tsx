@@ -18,11 +18,11 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { WorkflowPrimitiveProps } from "~/types";
+import type { WorkflowNodeProps } from "~/types";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
 export const Workflow = memo(
-  ({ data, isConnectable, selected }: WorkflowPrimitiveProps) => {
+  ({ data, isConnectable, selected }: WorkflowNodeProps) => {
     const currentId = useDevelopmentSheetStore((state) => state.currentId);
     const updateCurrentId = useDevelopmentSheetStore(
       (state) => state.updateCurrentId,

@@ -31,12 +31,12 @@ import {
 } from "@integramind/ui/sheet";
 import { cn } from "@integramind/ui/utils";
 
-import type { ConditionalBranchPrimitiveProps } from "~/types";
+import type { ConditionalBranchNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useDevelopmentSheetStore } from "~/lib/store";
 
 export const ConditionalBranch = memo(
-  ({ data, isConnectable, selected }: ConditionalBranchPrimitiveProps) => {
+  ({ data, isConnectable, selected }: ConditionalBranchNodeProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
