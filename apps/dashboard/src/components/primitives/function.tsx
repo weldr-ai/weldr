@@ -124,7 +124,7 @@ export const Function = memo(
         <ContextMenu>
           <ContextMenuTrigger>
             <Card
-              className="flex h-[78px] w-[256px] cursor-grab flex-col items-start gap-2 bg-muted px-5 py-4"
+              className="drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 bg-muted px-5 py-4"
               onClick={() => {
                 setIsExpanded(true);
                 reactFlow.fitBounds(
@@ -177,9 +177,12 @@ export const Function = memo(
         </ContextMenu>
         <Card
           ref={popoverRef}
-          className={cn("absolute -left-[128px] top-0 z-10 w-[600px]", {
-            hidden: !isExpanded,
-          })}
+          className={cn(
+            "absolute -left-[128px] top-0 z-10 w-[600px] cursor-default",
+            {
+              hidden: !isExpanded,
+            },
+          )}
         >
           <CardHeader className="flex flex-col items-start justify-start px-6 py-4">
             <div className="flex w-full items-center justify-between">

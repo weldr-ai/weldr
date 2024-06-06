@@ -65,7 +65,7 @@ export const Loop = memo(({ data, isConnectable, selected }: LoopNodeProps) => {
             >
               <Card
                 className={cn(
-                  "flex h-[78px] w-[256px] flex-col items-start gap-2 px-5 py-4",
+                  "drag-handle flex h-[84px] w-[256px] flex-col items-start gap-2 px-5 py-4",
                   {
                     "border-primary": selected,
                   },
