@@ -1,10 +1,10 @@
 "use client";
 
-import type { Connection, Edge } from "reactflow";
+import type { Connection, Edge, NodeChange } from "reactflow";
 import React, { useCallback } from "react";
 import { createId } from "@paralleldrive/cuid2";
 import { useMutation } from "@tanstack/react-query";
-import { Minus, Plus, Scan } from "lucide-react";
+import { Minus, PlayCircle, Plus, Scan, Share } from "lucide-react";
 import ReactFlow, {
   addEdge,
   Background,
@@ -25,8 +25,11 @@ import { Button } from "@integramind/ui/button";
 import type { FlowEdge, FlowNode, NodeType } from "~/types";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
-import { addFlowEdge } from "~/lib/queries/flows";
-import { createPrimitive } from "~/lib/queries/primitives";
+import { createEdge } from "~/lib/queries/edges";
+import {
+  createPrimitive,
+  updatePrimitivePosition,
+} from "~/lib/queries/primitives";
 import { ConditionalBranch } from "./primitives/conditional-branch";
 import { Function } from "./primitives/function";
 import { Loop } from "./primitives/loop";
@@ -56,32 +59,33 @@ export function _FlowBuilder({
   initialNodes: FlowNode[];
   initialEdges: FlowEdge[];
 }) {
-  const createPrimitiveMutation = useMutation({
-    mutationFn: createPrimitive,
-  });
-  const updateFlowEdgesMutation = useMutation({
-    mutationFn: addFlowEdge,
-  });
-
   const reactFlow = useReactFlow();
   const viewPort = useViewport();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  const createPrimitiveMutation = useMutation({
+    mutationFn: createPrimitive,
+  });
+  const updatePrimitivePositionMutation = useMutation({
+    mutationFn: updatePrimitivePosition,
+  });
+  const createFlowEdgeMutation = useMutation({
+    mutationFn: createEdge,
+  });
+
   const onConnect = useCallback(
     async (params: Edge | Connection) => {
       const newEdgeId = createId();
       setEdges((eds) => addEdge({ ...params, type: "deletable-edge" }, eds));
-      await updateFlowEdgesMutation.mutateAsync({
-        id: flowId,
-        edgeMetadata: {
-          id: newEdgeId,
-          source: params.source!,
-          target: params.target!,
-        },
+      await createFlowEdgeMutation.mutateAsync({
+        id: newEdgeId,
+        source: params.source!,
+        target: params.target!,
+        flowId: flowId,
       });
     },
-    [flowId, setEdges, updateFlowEdgesMutation],
+    [flowId, setEdges, createFlowEdgeMutation],
   );
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -140,17 +144,38 @@ export function _FlowBuilder({
           type: nodeType,
           name: newNodeName,
           flowId: flowId,
+          positionX: position.x,
+          positionY: position.y,
         });
       }
     },
     [createPrimitiveMutation, flowId, reactFlow, setNodes],
   );
 
+  const customOnNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      onNodesChange(changes);
+      changes.map((change) => {
+        if (change.type === "position") {
+          const node = nodes.find((node) => node.id === change.id);
+          if (node) {
+            updatePrimitivePositionMutation.mutate({
+              id: node.id,
+              positionX: change.position ? change.position.x : node.position.x,
+              positionY: change.position ? change.position.y : node.position.y,
+            });
+          }
+        }
+      });
+    },
+    [nodes, onNodesChange, updatePrimitivePositionMutation],
+  );
+
   return (
     <ReactFlow
       nodes={nodes}
       edges={edges}
-      onNodesChange={onNodesChange}
+      onNodesChange={customOnNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onDrop={onDrop}
@@ -162,7 +187,10 @@ export function _FlowBuilder({
       maxZoom={1}
       fitView={true}
     >
-      <Background className="bg-background" color="hsl(var(--background))" />
+      <Background
+        className="rounded-xl bg-accent dark:bg-background"
+        color="hsl(var(--background))"
+      />
       <MiniMap
         className="bottom-11 bg-background"
         position="bottom-left"
@@ -223,6 +251,25 @@ export function _FlowBuilder({
       </Panel>
       <Panel position="top-right">
         <PrimitivesMenu />
+      </Panel>
+      <Panel position="bottom-right">
+        <div className="flex w-full flex-row items-center justify-end gap-2 px-4">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex min-w-24 max-w-min flex-row items-center justify-center gap-1 border border-success bg-transparent text-success hover:bg-success/10 hover:text-success"
+          >
+            <PlayCircle className="size-3.5" />
+            Run
+          </Button>
+          <Button
+            size="sm"
+            className="flex min-w-24 max-w-min flex-row items-center justify-center gap-1"
+          >
+            <Share className="size-3.5" />
+            Deploy
+          </Button>
+        </div>
       </Panel>
     </ReactFlow>
   );

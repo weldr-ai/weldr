@@ -1,5 +1,6 @@
 import type { EdgeProps } from "reactflow";
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import {
   BaseEdge,
@@ -9,6 +10,8 @@ import {
 } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
+
+import { deleteEdge } from "~/lib/queries/edges";
 
 export default function DeletableEdge({
   id,
@@ -33,8 +36,15 @@ export default function DeletableEdge({
     targetPosition,
   });
 
-  const onEdgeClick = () => {
+  const deleteEdgeMutation = useMutation({
+    mutationFn: deleteEdge,
+  });
+
+  const onEdgeClick = async () => {
     setEdges((edges) => edges.filter((edge) => edge.id !== id));
+    await deleteEdgeMutation.mutateAsync({
+      id,
+    });
   };
 
   return (

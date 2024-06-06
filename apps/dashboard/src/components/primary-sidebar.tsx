@@ -1,9 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { PanelLeftClose } from "lucide-react";
 
-import { Button } from "@integramind/ui/button";
 import { cn } from "@integramind/ui/utils";
 
 import { usePrimarySidebarStore } from "~/lib/store";
@@ -13,15 +11,12 @@ export function PrimarySidebar() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
 
   const activeSection = usePrimarySidebarStore((state) => state.activeSection);
-  const hidePrimaryBar = usePrimarySidebarStore(
-    (state) => state.hidePrimaryBar,
-  );
 
   return (
     <>
       {activeSection && (
-        <div className="flex w-64 flex-col items-center border-r bg-muted">
-          <div className="flex w-full items-center justify-between border-b px-4 py-[7.5px]">
+        <div className="flex w-64 flex-col items-center">
+          <div className="flex h-12 w-full items-center justify-between border-b px-4">
             <span className="text-xs">
               {activeSection === "components"
                 ? "Components"
@@ -31,14 +26,6 @@ export function PrimarySidebar() {
                     ? "Workflows"
                     : "Data Resources"}
             </span>
-            <Button
-              className="size-6 rounded-sm bg-muted"
-              variant="outline"
-              size="icon"
-              onClick={hidePrimaryBar}
-            >
-              <PanelLeftClose className="size-3 text-muted-foreground" />
-            </Button>
           </div>
           {activeSection === "components" ? (
             <div

@@ -40,10 +40,10 @@ export function FlowList({
   });
 
   return (
-    <div className="flex size-full min-h-[calc(100dvh-128px)] flex-col gap-2 overflow-y-auto">
+    <div className="flex size-full flex-col gap-2">
       <CreateFlowDialog type={type} />
       {!isLoading && !isRefetching ? (
-        <ScrollArea className="h-[calc(100dvh-152px)] w-full">
+        <ScrollArea className="h-[calc(100dvh-148px)] w-full">
           <div className="flex flex-col gap-1">
             {flows?.map((flow) => (
               <Link

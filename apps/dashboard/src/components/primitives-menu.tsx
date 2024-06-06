@@ -26,7 +26,7 @@ export function PrimitivesMenu() {
   return (
     <>
       {isVisible ? (
-        <Card className="flex flex-col space-y-2 border-none bg-muted px-6 py-4 shadow-sm">
+        <Card className="flex flex-col space-y-2 bg-muted px-6 py-4 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">Primitives</span>
             <Button
