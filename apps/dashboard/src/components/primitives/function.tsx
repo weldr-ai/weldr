@@ -42,6 +42,7 @@ import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { Lambda } from "~/components/icons/lambda";
 import { deletePrimitive } from "~/lib/queries/primitives";
 import { getJobById } from "~/lib/queries/run";
+import { Editor } from "../editor";
 
 async function postJob(): Promise<{ id: string }> {
   const response = await fetch("/api/run", {
@@ -252,6 +253,7 @@ export const Function = memo(
                 className="flex flex-col gap-0.5 p-2"
               >
                 <span className="text-xs text-muted-foreground">Editor</span>
+                <Editor />
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={40} minSize={25}>
