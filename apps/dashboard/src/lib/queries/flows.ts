@@ -140,27 +140,8 @@ export async function getFlowById({
     where: and(eq(flows.id, id), eq(flows.type, type)),
     with: {
       primitives: true,
+      edges: true,
     },
   });
-  return result;
-}
-
-export async function addFlowEdge({
-  id,
-  edgeMetadata,
-}: {
-  id: string;
-  edgeMetadata: { id: string; source: string; target: string };
-}): Promise<{ id: string } | undefined> {
-  const statement = sql`
-    UPDATE ${flows}
-    SET edges = edges || ${{
-      id: edgeMetadata.id,
-      source: edgeMetadata.source,
-      target: edgeMetadata.target,
-    }}::jsonb
-    WHERE id = ${id}
-    RETURNING id;`;
-  const result = (await db.execute(statement))[0] as { id: string } | undefined;
   return result;
 }

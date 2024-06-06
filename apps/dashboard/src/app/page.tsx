@@ -16,7 +16,7 @@ export default async function Home(): Promise<JSX.Element> {
 
   return (
     <div className="flex w-full">
-      <div id="dialogBackdrop" className="fixed inset-0 z-50 flex bg-black/80">
+      <div className="fixed inset-0 z-50 flex bg-black/80">
         {workspaces.length > 0 ? (
           <WorkspacesDialog workspaces={workspaces} />
         ) : (

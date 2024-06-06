@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -9,10 +9,10 @@ import {
   PlayCircle,
   Trash,
 } from "lucide-react";
-import { Handle, Position, useReactFlow } from "reactflow";
+import { Handle, NodeToolbar, Position, useReactFlow } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
-import { Card } from "@integramind/ui/card";
+import { Card, CardContent, CardHeader } from "@integramind/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -30,11 +30,6 @@ import {
   DropdownMenuTrigger,
 } from "@integramind/ui/dropdown-menu";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@integramind/ui/popover";
-import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -44,7 +39,9 @@ import { ScrollArea } from "@integramind/ui/scroll-area";
 import type { FunctionNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { Lambda } from "~/components/icons/lambda";
+import { deletePrimitive } from "~/lib/queries/primitives";
 import { getJobById } from "~/lib/queries/run";
+import { Editor } from "../editor";
 
 async function postJob(): Promise<{ id: string }> {
   const response = await fetch("/api/run", {
@@ -70,204 +67,123 @@ def get_user(id):
   return response.json() as Promise<{ id: string }>;
 }
 
-export const Function = memo(({ data, isConnectable }: FunctionNodeProps) => {
-  const reactFlow = useReactFlow();
-  const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
-    useState<boolean>(false);
-  const [jobId, setJobId] = useState<string | undefined>();
+export const Function = memo(
+  ({ data, isConnectable, xPos, yPos }: FunctionNodeProps) => {
+    const reactFlow = useReactFlow();
+    const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
+      useState<boolean>(false);
+    const [isExpanded, setIsExpanded] = useState<boolean>(false);
+    const popoverRef = useRef<HTMLDivElement>(null);
+    const [jobId, setJobId] = useState<string | undefined>();
 
-  const postJobMutation = useMutation({
-    mutationFn: postJob,
-    onSuccess: (data) => {
-      setJobId(data.id);
-    },
-  });
+    const deletePrimitiveMutation = useMutation({
+      mutationFn: deletePrimitive,
+    });
+    const postJobMutation = useMutation({
+      mutationFn: postJob,
+      onSuccess: (data) => {
+        setJobId(data.id);
+      },
+    });
 
-  const { data: job, refetch: refetchJob } = useQuery({
-    queryKey: ["job", jobId],
-    queryFn: jobId ? () => getJobById({ id: jobId }) : skipToken,
-  });
+    const { data: job, refetch: refetchJob } = useQuery({
+      queryKey: ["job", jobId],
+      queryFn: jobId ? () => getJobById({ id: jobId }) : skipToken,
+    });
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (job && (job.state === "RUNNING" || job.state === "PENDING")) {
-        void refetchJob();
-      }
-    }, 100);
-    return () => clearInterval(interval);
-  }, [job, refetchJob]);
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (!popoverRef.current?.contains(event.target as Node)) {
+          setIsExpanded(false);
+        }
+      };
+      document.addEventListener("click", handleClickOutside);
 
-  return (
-    <>
-      <Handle
-        className="border-border bg-background p-1"
-        type="source"
-        position={Position.Left}
-        onConnect={(params) => console.log("handle onConnect", params)}
-        isConnectable={isConnectable}
-      />
-      <Popover>
-        <PopoverTrigger>
-          <ContextMenu>
-            <ContextMenuTrigger>
-              <Card className="flex h-[78px] w-[256px] cursor-grab flex-col items-start gap-2 px-5 py-4">
-                <div className="flex items-center gap-2 text-xs">
-                  <Lambda className="size-4 text-primary" />
-                  <span className="text-muted-foreground">Function</span>
-                </div>
-                <span className="text-sm">{data.name}</span>
-              </Card>
-            </ContextMenuTrigger>
-            <ContextMenuContent>
-              <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
-              <ContextMenuSeparator />
-              <ContextMenuItem className="text-xs">
-                <PlayCircle className="mr-3 size-4 text-muted-foreground" />
-                Run with previous primitives
-              </ContextMenuItem>
-              <ContextMenuItem className="flex items-center justify-between text-xs">
-                <Link
-                  className="flex items-center"
-                  href="https://docs.integramind.ai/primitives/ai-processing"
-                  target="blank"
-                >
-                  <FileText className="mr-3 size-4 text-muted-foreground" />
-                  Docs
-                </Link>
-                <ExternalLink className="size-3 text-muted-foreground" />
-              </ContextMenuItem>
-              <ContextMenuSeparator />
-              <ContextMenuItem
-                className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-                onClick={() => setDeleteAlertDialogOpen(true)}
-              >
-                <Trash className="mr-3 size-4" />
-                Delete
-              </ContextMenuItem>
-            </ContextMenuContent>
-          </ContextMenu>
-        </PopoverTrigger>
-        <PopoverContent sideOffset={-78} className="min-w-[600px] p-0">
-          <div className="flex flex-col p-4">
-            <div className="flex w-full items-center justify-between">
+      const interval = setInterval(() => {
+        if (job && (job.state === "RUNNING" || job.state === "PENDING")) {
+          void refetchJob();
+        }
+      }, 100);
+
+      return () => {
+        clearInterval(interval);
+        document.removeEventListener("click", handleClickOutside);
+      };
+    }, [job, refetchJob, setIsExpanded, isExpanded]);
+
+    return (
+      <>
+        <Handle
+          className="border-border bg-background p-1"
+          type="source"
+          position={Position.Left}
+          onConnect={(params) => console.log("handle onConnect", params)}
+          isConnectable={isConnectable}
+        />
+        <ContextMenu>
+          <ContextMenuTrigger>
+            <Card
+              className="flex h-[78px] w-[256px] cursor-grab flex-col items-start gap-2 bg-muted px-5 py-4"
+              onClick={() => {
+                setIsExpanded(true);
+                reactFlow.setCenter(xPos + 150, yPos + 400, {
+                  duration: 500,
+                });
+              }}
+            >
               <div className="flex items-center gap-2 text-xs">
                 <Lambda className="size-4 text-primary" />
                 <span className="text-muted-foreground">Function</span>
               </div>
-              <div className="flex items-center">
-                <Button
-                  className="size-7 text-success hover:text-success"
-                  variant="ghost"
-                  size="icon"
-                  disabled={
-                    postJobMutation.isPending ||
-                    job?.state === "RUNNING" ||
-                    job?.state === "PENDING"
-                  }
-                  onClick={() => postJobMutation.mutate()}
-                >
-                  <PlayCircle className="size-3.5" />
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <Button
-                      className="size-7 text-muted-foreground hover:text-muted-foreground"
-                      variant="ghost"
-                      size="icon"
-                    >
-                      <EllipsisVertical className="size-3.5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="right" align="start">
-                    <DropdownMenuLabel className="text-xs">
-                      Function
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-xs">
-                      <PlayCircle className="mr-3 size-4 text-muted-foreground" />
-                      Run with previous primitives
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center justify-between text-xs">
-                      <Link
-                        className="flex items-center"
-                        href="https://docs.integramind.ai/primitives/ai-processing"
-                        target="blank"
-                      >
-                        <FileText className="mr-3 size-4 text-muted-foreground" />
-                        Docs
-                      </Link>
-                      <ExternalLink className="size-3 text-muted-foreground" />
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-                      onClick={() => setDeleteAlertDialogOpen(true)}
-                    >
-                      <Trash className="mr-3 size-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-            <span className="text-sm">{data.name}</span>
-          </div>
-          <div className="flex h-96">
-            <ResizablePanelGroup direction="vertical" className="flex h-full">
-              <ResizablePanel defaultSize={60} minSize={25}>
-                <div className="flex h-full items-center justify-center">
-                  <span className="font-semibold">Header</span>
+              <span className="text-sm">{data.name}</span>
+            </Card>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
+            <ContextMenuSeparator />
+            <ContextMenuItem className="text-xs">
+              <PlayCircle className="mr-3 size-4 text-muted-foreground" />
+              Run with previous primitives
+            </ContextMenuItem>
+            <ContextMenuItem className="flex items-center justify-between text-xs">
+              <Link
+                className="flex items-center"
+                href="https://docs.integramind.ai/primitives/ai-processing"
+                target="blank"
+              >
+                <FileText className="mr-3 size-4 text-muted-foreground" />
+                Docs
+              </Link>
+              <ExternalLink className="size-3 text-muted-foreground" />
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+              onClick={() => setDeleteAlertDialogOpen(true)}
+            >
+              <Trash className="mr-3 size-4" />
+              Delete
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+        <NodeToolbar
+          align="center"
+          isVisible={isExpanded}
+          position={Position.Bottom}
+          offset={-78}
+        >
+          <Card className="min-w-[600px] max-w-min" ref={popoverRef}>
+            <CardHeader className="flex flex-col items-start justify-start px-6 py-4">
+              <div className="flex w-full items-center justify-between">
+                <div className="flex items-center gap-2 text-xs">
+                  <Lambda className="size-4 text-primary" />
+                  <span className="text-muted-foreground">Function</span>
                 </div>
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={40} minSize={25}>
-                <div className="flex size-full rounded-b-xl bg-background">
-                  {job?.state === "PENDING" || job?.state === "RUNNING" ? (
-                    <div className="flex size-full items-center justify-center">
-                      <Loader2 className="size-6 animate-spin text-primary" />
-                    </div>
-                  ) : (
-                    <>
-                      {!job ? (
-                        <div className="flex size-full items-center justify-center">
-                          <span className="text-muted-foreground">
-                            Click run to return output
-                          </span>
-                        </div>
-                      ) : job.state === "FAILED" ? (
-                        <div className="flex size-full items-center justify-center">
-                          <span className="text-error">Failed</span>
-                        </div>
-                      ) : job.result ? (
-                        <ScrollArea className="h-full">
-                          <pre className="text-wrap">
-                            {JSON.stringify(JSON.parse(job.result), null, 2)}
-                          </pre>
-                        </ScrollArea>
-                      ) : (
-                        <span>SUCCESS</span>
-                      )}
-                    </>
-                  )}
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </div>
-        </PopoverContent>
-      </Popover>
-      {/* <Sheet modal={false} open={currentId === data.id}>
-          <SheetContent className="right-2 top-16 flex h-[calc(100dvh-72px)] w-full flex-col gap-4 rounded-xl border bg-muted p-0">
-            <SheetHeader className="p-6">
-              <SheetTitle className="flex w-full items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Lambda className="size-4" />
-                  <span>Function</span>
-                </div>
-                <div>
+                <div className="flex items-center">
                   <Button
+                    className="size-7 text-success hover:text-success"
                     variant="ghost"
                     size="icon"
-                    className="text-success hover:text-success"
                     disabled={
                       postJobMutation.isPending ||
                       job?.state === "RUNNING" ||
@@ -275,86 +191,124 @@ export const Function = memo(({ data, isConnectable }: FunctionNodeProps) => {
                     }
                     onClick={() => postJobMutation.mutate()}
                   >
-                    <PlayCircle className="size-4" />
+                    <PlayCircle className="size-3.5" />
                   </Button>
-                  <SheetClose onClick={() => removeCurrentId()}>
-                    <Button variant="ghost" size="icon">
-                      <X className="size-4" />
-                      <span className="sr-only">Close</span>
-                    </Button>
-                  </SheetClose>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <Button
+                        className="size-7 text-muted-foreground hover:text-muted-foreground"
+                        variant="ghost"
+                        size="icon"
+                      >
+                        <EllipsisVertical className="size-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start">
+                      <DropdownMenuLabel className="text-xs">
+                        Function
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-xs">
+                        <PlayCircle className="mr-3 size-4 text-muted-foreground" />
+                        Run with previous primitives
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="flex items-center justify-between text-xs">
+                        <Link
+                          className="flex items-center"
+                          href="https://docs.integramind.ai/primitives/ai-processing"
+                          target="blank"
+                        >
+                          <FileText className="mr-3 size-4 text-muted-foreground" />
+                          Docs
+                        </Link>
+                        <ExternalLink className="size-3 text-muted-foreground" />
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                        onClick={() => setDeleteAlertDialogOpen(true)}
+                      >
+                        <Trash className="mr-3 size-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-              </SheetTitle>
-              <SheetDescription className="flex flex-col gap-0.5">
-                Develop your function here
-              </SheetDescription>
-            </SheetHeader>
-            <ResizablePanelGroup
-              direction="vertical"
-              className="h-[calc(100dvh-72px)]"
-            >
-              <ResizablePanel defaultSize={75} minSize={25}>
-                <div className="flex h-full items-center justify-center">
-                  <span className="font-semibold">Header</span>
-                </div>
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={25} minSize={25}>
-                <div className="flex size-full rounded-b-xl bg-background">
-                  {job?.state === "PENDING" || job?.state === "RUNNING" ? (
-                    <div className="flex size-full items-center justify-center">
-                      <Loader2 className="size-6 animate-spin text-primary" />
-                    </div>
-                  ) : (
-                    <>
-                      {!job ? (
-                        <div className="flex size-full items-center justify-center">
-                          <span className="text-muted-foreground">
-                            Click run to return output
-                          </span>
-                        </div>
-                      ) : job.state === "FAILED" ? (
-                        <div className="flex size-full items-center justify-center">
-                          <span className="text-error">Failed</span>
-                        </div>
-                      ) : job.result ? (
-                        <ScrollArea className="h-full">
-                          <pre className="text-wrap">
-                            {JSON.stringify(JSON.parse(job.result), null, 2)}
-                          </pre>
-                        </ScrollArea>
-                      ) : (
-                        <span>SUCCESS</span>
-                      )}
-                    </>
-                  )}
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </SheetContent>
-        </Sheet> */}
-      <DeleteAlertDialog
-        open={deleteAlertDialogOpen}
-        setOpen={setDeleteAlertDialogOpen}
-        onDelete={() =>
-          reactFlow.deleteElements({
-            nodes: [
-              {
-                id: data.id,
-              },
-            ],
-          })
-        }
-      />
-      <Handle
-        className="border-border bg-background p-1"
-        type="target"
-        position={Position.Right}
-        onConnect={(params) => console.log("handle onConnect", params)}
-        isConnectable={isConnectable}
-      />
-    </>
-  );
-});
+              </div>
+              <span className="text-sm">{data.name}</span>
+            </CardHeader>
+            <CardContent className="flex h-[400px] p-0">
+              <ResizablePanelGroup direction="vertical" className="flex h-full">
+                <ResizablePanel
+                  defaultSize={60}
+                  minSize={25}
+                  className="flex flex-col gap-0.5 p-2"
+                >
+                  <span className="text-xs text-muted-foreground">Editor</span>
+                  <Editor />
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={40} minSize={25}>
+                  <div className="flex size-full rounded-b-xl bg-accent">
+                    {job?.state === "PENDING" || job?.state === "RUNNING" ? (
+                      <div className="flex size-full items-center justify-center">
+                        <Loader2 className="size-6 animate-spin text-primary" />
+                      </div>
+                    ) : (
+                      <>
+                        {!job ? (
+                          <div className="flex size-full items-center justify-center">
+                            <span className="text-muted-foreground">
+                              Click run to view output
+                            </span>
+                          </div>
+                        ) : job.state === "FAILED" ? (
+                          <div className="flex size-full items-center justify-center">
+                            <span className="text-error">Failed</span>
+                          </div>
+                        ) : job.result ? (
+                          <ScrollArea className="nowheel h-full p-2">
+                            <pre className="text-wrap">
+                              {JSON.stringify(JSON.parse(job.result), null, 2)}
+                            </pre>
+                          </ScrollArea>
+                        ) : (
+                          <span>SUCCESS</span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            </CardContent>
+          </Card>
+        </NodeToolbar>
+        <DeleteAlertDialog
+          open={deleteAlertDialogOpen}
+          setOpen={setDeleteAlertDialogOpen}
+          onDelete={async () => {
+            reactFlow.deleteElements({
+              nodes: [
+                {
+                  id: data.id,
+                },
+              ],
+            });
+            await deletePrimitiveMutation.mutateAsync({
+              id: data.id,
+            });
+          }}
+        />
+        <Handle
+          className="border-border bg-background p-1"
+          type="target"
+          position={Position.Right}
+          onConnect={(params) => console.log("handle onConnect", params)}
+          isConnectable={isConnectable}
+        />
+      </>
+    );
+  },
+);
 
 Function.displayName = "Function";

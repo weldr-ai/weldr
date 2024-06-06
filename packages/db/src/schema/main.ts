@@ -1,10 +1,17 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
-import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
-import type { FlowEdge, PrimitiveMetadata } from "../types";
+import type { PrimitiveMetadata } from "../types";
 
 // Tables
 
@@ -42,6 +49,8 @@ export const primitives = pgTable("primitives", {
   name: text("name").notNull(),
   description: text("description"),
   type: primitiveTypes("type").notNull(),
+  positionX: integer("position_x").default(0).notNull(),
+  positionY: integer("position_y").default(0).notNull(),
   metadata: jsonb("metadata").$type<PrimitiveMetadata>().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -60,6 +69,29 @@ export const primitivesRelations = relations(primitives, ({ one }) => ({
   }),
 }));
 
+export const edges = pgTable("edges", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  source: text("source")
+    .references(() => primitives.id, { onDelete: "cascade" })
+    .notNull(),
+  target: text("target")
+    .references(() => primitives.id, { onDelete: "cascade" })
+    .notNull(),
+  flow_id: text("flow_id")
+    .references(() => flows.id, { onDelete: "cascade" })
+    .notNull(),
+});
+
+export const edgesRelations = relations(edges, ({ many, one }) => ({
+  primitives: many(primitives),
+  flows: one(flows, {
+    fields: [edges.flow_id],
+    references: [flows.id],
+  }),
+}));
+
 export const flowTypes = pgEnum("flow_types", [
   "component",
   "workflow",
@@ -73,7 +105,6 @@ export const flows = pgTable("flows", {
   name: text("name").notNull(),
   description: text("description"),
   type: flowTypes("type").notNull(),
-  edges: jsonb("edges").$type<FlowEdge[]>().default([]).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -86,6 +117,7 @@ export const flows = pgTable("flows", {
 
 export const flowsRelations = relations(flows, ({ many }) => ({
   primitives: many(primitives),
+  edges: many(edges),
 }));
 
 export const resources = pgTable("resources", {
@@ -130,7 +162,6 @@ export const insertWorkspaceSchema = createInsertSchema(workspaces, {
 
 // Resources schemas
 export const resourceSchema = createSelectSchema(resources);
-
 export const insertResourceSchema = createInsertSchema(resources, {
   name: (schema) =>
     schema.name
@@ -146,17 +177,7 @@ export const primitiveSchema = createSelectSchema(primitives);
 
 // Flows schemas
 export const flowTypesSchema = z.enum(flowTypes.enumValues);
-
-export const flowSchema = createSelectSchema(flows, {
-  edges: z
-    .object({
-      id: z.string(),
-      source: z.string(),
-      target: z.string(),
-    })
-    .array(),
-});
-
+export const flowSchema = createSelectSchema(flows);
 export const insertFlowSchema = z.discriminatedUnion("type", [
   z.object({
     name: z

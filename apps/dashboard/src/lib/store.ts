@@ -1,19 +1,13 @@
 import { create } from "zustand";
 
 interface PrimarySidebarState {
-  activeSection:
-    | "components"
-    | "routes"
-    | "workflows"
-    | "data-resources"
-    | null;
+  activeSection: "components" | "routes" | "workflows" | "data-resources";
 }
 
 interface PrimarySidebarAction {
   updateActiveSection: (
     activeSection: "components" | "routes" | "workflows" | "data-resources",
   ) => void;
-  hidePrimaryBar: () => void;
 }
 
 export const usePrimarySidebarStore = create<
@@ -24,7 +18,6 @@ export const usePrimarySidebarStore = create<
     set(() => ({
       activeSection,
     })),
-  hidePrimaryBar: () => set(() => ({ activeSection: null })),
 }));
 
 interface DevelopmentSheetState {

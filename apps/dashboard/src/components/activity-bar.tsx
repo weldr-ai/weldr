@@ -28,28 +28,15 @@ export function ActivityBar() {
   const updateActiveSection = usePrimarySidebarStore(
     (state) => state.updateActiveSection,
   );
-  const hidePrimaryBar = usePrimarySidebarStore(
-    (state) => state.hidePrimaryBar,
-  );
-
-  const handleOnClick = (
-    section: "components" | "routes" | "workflows" | "data-resources",
-  ) => {
-    if (activeSection !== section) {
-      updateActiveSection(section);
-    } else {
-      hidePrimaryBar();
-    }
-  };
 
   return (
-    <div className="flex w-14 flex-col items-center justify-between border-r p-4">
+    <div className="flex h-full w-14 flex-col items-center justify-between border-r p-4">
       <div className="flex flex-col gap-2">
         <Button
           className={cn({
             "bg-accent": activeSection === "components",
           })}
-          onClick={() => handleOnClick("components")}
+          onClick={() => updateActiveSection("components")}
           size="icon"
           variant="ghost"
         >
@@ -59,7 +46,7 @@ export function ActivityBar() {
           className={cn({
             "bg-accent": activeSection === "routes",
           })}
-          onClick={() => handleOnClick("routes")}
+          onClick={() => updateActiveSection("routes")}
           size="icon"
           variant="ghost"
         >
@@ -69,7 +56,7 @@ export function ActivityBar() {
           className={cn({
             "bg-accent": activeSection === "workflows",
           })}
-          onClick={() => handleOnClick("workflows")}
+          onClick={() => updateActiveSection("workflows")}
           size="icon"
           variant="ghost"
         >
@@ -79,7 +66,7 @@ export function ActivityBar() {
           className={cn({
             "bg-accent": activeSection === "data-resources",
           })}
-          onClick={() => handleOnClick("data-resources")}
+          onClick={() => updateActiveSection("data-resources")}
           size="icon"
           variant="ghost"
         >

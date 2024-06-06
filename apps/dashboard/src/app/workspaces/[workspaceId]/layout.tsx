@@ -22,18 +22,18 @@ export default async function WorkspacesLayout({
   const workspaces = await getWorkspaces();
 
   return (
-    <div className="flex size-full min-h-screen flex-col">
-      <Navbar workspace={workspace} />
-      <div className="flex w-full flex-row">
-        <div className="sticky z-40 flex h-[calc(100dvh-56px)] bg-muted">
-          <ActivityBar />
-          <PrimarySidebar />
+    <>
+      <div className="flex size-full min-h-screen flex-row bg-background dark:bg-muted">
+        <div className="flex flex-col">
+          <Navbar workspace={workspace} />
+          <div className="sticky flex h-[calc(100dvh-56px)]">
+            <ActivityBar />
+            <PrimarySidebar />
+          </div>
         </div>
-        <main className="flex w-full flex-col">
-          {children}
-          <CommandCenter workspaces={workspaces} />
-        </main>
+        <main className="flex w-full">{children}</main>
       </div>
-    </div>
+      <CommandCenter workspaces={workspaces} />
+    </>
   );
 }
