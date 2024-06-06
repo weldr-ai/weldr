@@ -18,7 +18,7 @@ export type NodeType =
   | "response";
 
 export type FlowType = z.infer<typeof flowTypesSchema>;
-export type FlowEdge = Edge;
+export type FlowEdge = Edge<"deletable-edge">;
 export type FlowNode =
   | RouteNode
   | WorkflowNode

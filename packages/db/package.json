@@ -21,7 +21,7 @@
     "push": "pnpm with-env drizzle-kit push:pg --config src/config.ts",
     "studio": "pnpm with-env drizzle-kit studio --config src/config.ts",
     "up": "pnpm with-env drizzle-kit up:pg --config src/config.ts",
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "check-types": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {

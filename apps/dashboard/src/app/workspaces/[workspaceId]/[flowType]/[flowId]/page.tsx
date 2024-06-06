@@ -32,7 +32,7 @@ export default async function WorkflowPage({
         return {
           id: primitive.id,
           type: primitive.type,
-          position: { x: 0, y: 0 },
+          position: { x: primitive.positionX, y: primitive.positionY },
           data: {
             id: primitive.id,
             name: primitive.name,
@@ -45,7 +45,7 @@ export default async function WorkflowPage({
         return {
           id: primitive.id,
           type: primitive.type,
-          position: { x: 0, y: 0 },
+          position: { x: primitive.positionX, y: primitive.positionY },
           data: {
             id: primitive.id,
             name: primitive.name,
@@ -57,7 +57,7 @@ export default async function WorkflowPage({
         return {
           id: primitive.id,
           type: primitive.type,
-          position: { x: 0, y: 0 },
+          position: { x: primitive.positionX, y: primitive.positionY },
           data: {
             id: primitive.id,
             name: primitive.name,
@@ -73,13 +73,22 @@ export default async function WorkflowPage({
     }
   });
 
-  const initialEdges: FlowEdge[] = flow.edges;
+  const initialEdges: FlowEdge[] = flow.edges.map((edge) => ({
+    id: edge.id,
+    source: edge.source,
+    target: edge.target,
+    type: "deletable-edge",
+  }));
 
   return (
-    <FlowBuilder
-      flowId={flow.id}
-      initialNodes={initialNodes}
-      initialEdges={initialEdges}
-    />
+    <div className="flex size-full flex-col gap-2 py-2 pr-2">
+      <div className="flex size-full rounded-xl border">
+        <FlowBuilder
+          flowId={flow.id}
+          initialNodes={initialNodes}
+          initialEdges={initialEdges}
+        />
+      </div>
+    </div>
   );
 }
