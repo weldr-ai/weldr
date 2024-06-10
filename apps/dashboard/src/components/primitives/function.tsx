@@ -39,10 +39,10 @@ import { cn } from "@integramind/ui/utils";
 
 import type { FunctionNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
+import Editor from "~/components/editor";
 import { Lambda } from "~/components/icons/lambda";
 import { deletePrimitive } from "~/lib/queries/primitives";
 import { getJobById } from "~/lib/queries/run";
-import { Editor } from "../editor";
 
 async function postJob(): Promise<{ id: string }> {
   const response = await fetch("/api/run", {
