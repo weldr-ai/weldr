@@ -39,6 +39,7 @@ import { cn } from "@integramind/ui/utils";
 
 import type { FunctionNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
+import Editor from "~/components/editor";
 import { Lambda } from "~/components/icons/lambda";
 import { deletePrimitive } from "~/lib/queries/primitives";
 import { getJobById } from "~/lib/queries/run";
@@ -123,7 +124,7 @@ export const Function = memo(
         <ContextMenu>
           <ContextMenuTrigger>
             <Card
-              className="flex h-[78px] w-[256px] cursor-grab flex-col items-start gap-2 bg-muted px-5 py-4"
+              className="drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 bg-muted px-5 py-4"
               onClick={() => {
                 setIsExpanded(true);
                 reactFlow.fitBounds(
@@ -176,9 +177,12 @@ export const Function = memo(
         </ContextMenu>
         <Card
           ref={popoverRef}
-          className={cn("absolute -left-[128px] top-0 z-10 w-[600px]", {
-            hidden: !isExpanded,
-          })}
+          className={cn(
+            "absolute -left-[128px] top-0 z-10 w-[600px] cursor-default",
+            {
+              hidden: !isExpanded,
+            },
+          )}
         >
           <CardHeader className="flex flex-col items-start justify-start px-6 py-4">
             <div className="flex w-full items-center justify-between">
@@ -252,6 +256,7 @@ export const Function = memo(
                 className="flex flex-col gap-0.5 p-2"
               >
                 <span className="text-xs text-muted-foreground">Editor</span>
+                <Editor />
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={40} minSize={25}>
