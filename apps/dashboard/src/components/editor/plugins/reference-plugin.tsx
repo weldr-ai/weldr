@@ -53,49 +53,6 @@ class ReferenceOption extends MenuOption {
   }
 }
 
-function ReferencesDropdownMenu({
-  selectedIndex,
-  selectOptionAndCleanUp,
-  setHighlightedIndex,
-  options,
-}: {
-  selectedIndex: number | null;
-  selectOptionAndCleanUp: (option: ReferenceOption) => void;
-  setHighlightedIndex: (index: number) => void;
-  options: ReferenceOption[];
-}) {
-  return (
-    <div className="absolute left-3 top-8 z-50 min-w-52 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-      {options.map((option, i: number) => (
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-        <div
-          className={cn(
-            "relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
-            {
-              "bg-accent": selectedIndex === i,
-            },
-          )}
-          tabIndex={-1}
-          role="option"
-          id={"menu-item-" + i}
-          aria-selected={selectedIndex === i}
-          onClick={() => {
-            setHighlightedIndex(i);
-            selectOptionAndCleanUp(option);
-          }}
-          onMouseEnter={() => {
-            setHighlightedIndex(i);
-          }}
-          key={option.key}
-        >
-          {option.icon}
-          <span className="text">{option.name}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function ReferencesPlugin() {
   const [editor] = useLexicalComposerContext();
   const [_queryString, setQueryString] = useState<string | null>(null);
@@ -177,22 +134,41 @@ export function ReferencesPlugin() {
     <LexicalTypeaheadMenuPlugin<ReferenceOption>
       onQueryChange={onQueryChange}
       onSelectOption={onSelectOption}
-      triggerFn={(queryString, editor) => {
-        return checkForTriggerMatch(queryString, editor);
-      }}
+      triggerFn={checkForTriggerMatch}
       options={options}
       menuRenderFn={(
         anchorElement,
         { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex },
       ) =>
         anchorElement && options.length ? (
-          <div className="absolute">
-            <ReferencesDropdownMenu
-              selectedIndex={selectedIndex}
-              selectOptionAndCleanUp={selectOptionAndCleanUp}
-              setHighlightedIndex={setHighlightedIndex}
-              options={options}
-            />
+          <div className="absolute left-3 top-8 z-50 min-w-48 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+            {options.map((option, i: number) => (
+              <div
+                id={"menu-item-" + i}
+                className={cn(
+                  "flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
+                  {
+                    "bg-accent": selectedIndex === i,
+                  },
+                )}
+                tabIndex={-1}
+                role="option"
+                aria-selected={selectedIndex === i}
+                onClick={() => {
+                  setHighlightedIndex(i);
+                  selectOptionAndCleanUp(option);
+                }}
+                onKeyUp={() => setHighlightedIndex(i - 1)}
+                onKeyDown={() => setHighlightedIndex(i + 1)}
+                onMouseEnter={() => {
+                  setHighlightedIndex(i);
+                }}
+                key={option.key}
+              >
+                {option.icon}
+                <span className="text">{option.name}</span>
+              </div>
+            ))}
           </div>
         ) : null
       }
