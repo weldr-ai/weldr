@@ -38,10 +38,10 @@ export function Editor() {
       <div className="relative flex size-full">
         <RichTextPlugin
           contentEditable={
-            <ContentEditable className="flex size-full w-full flex-col rounded-lg border border-input bg-background px-3 py-2 text-sm caret-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" />
+            <ContentEditable className="flex size-full w-full cursor-text flex-col rounded-lg border border-input bg-background px-3 py-2 text-sm caret-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" />
           }
           placeholder={
-            <div className="absolute px-3 py-2 text-sm text-muted-foreground">
+            <div className="absolute px-3.5 py-2 text-sm text-muted-foreground">
               Describe your function
             </div>
           }
