@@ -12,22 +12,8 @@
     {
       "idx": 1,
       "version": "5",
-      "when": 1717557113047,
-      "tag": "0001_sturdy_iron_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1717631143881,
-      "tag": "0002_handy_venom",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1717635841597,
-      "tag": "0003_fuzzy_namorita",
+      "when": 1718187086197,
+      "tag": "0001_stiff_miracleman",
       "breakpoints": true
     }
   ]

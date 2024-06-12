@@ -10,13 +10,13 @@ import {
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 
-import type { NodeType } from "~/types";
-import { Lambda } from "~/components/icons/lambda";
+import type { PrimitiveType } from "~/types";
+import { LambdaIcon } from "~/components/icons/lambda-icon";
 
 export function PrimitivesMenu() {
   const onDragStart = (
     event: React.DragEvent<HTMLDivElement>,
-    primitiveTypes: NodeType,
+    primitiveTypes: PrimitiveType,
   ) => {
     event.dataTransfer.setData("application/reactflow", primitiveTypes);
     event.dataTransfer.effectAllowed = "move";
@@ -44,7 +44,7 @@ export function PrimitivesMenu() {
               onDragStart={(event) => onDragStart(event, "function")}
               draggable
             >
-              <Lambda className="size-4 stroke-primary" />
+              <LambdaIcon className="size-4 stroke-primary" />
               <span className="w-full text-[10px]">Function</span>
             </div>
             <div

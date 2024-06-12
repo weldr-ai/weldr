@@ -18,23 +18,13 @@ export function FlowList({
   workspaceId: string;
   type: FlowType;
 }) {
-  const getQueryKey = (type: FlowType) => {
-    switch (type) {
-      case "workflow":
-        return "workflows";
-      case "route":
-        return "routes";
-      case "component":
-        return "components";
-    }
-  };
   const { flowId: currentFlowId } = useParams<{ flowId: string }>();
   const {
     isLoading,
     isRefetching,
     data: flows,
   } = useQuery({
-    queryKey: [getQueryKey(type)],
+    queryKey: [`${type}s`],
     queryFn: () => getFlows({ workspaceId, type }),
     refetchInterval: 1000 * 60 * 5,
   });

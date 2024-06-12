@@ -22,7 +22,7 @@ import "~/styles/flow-builder.css";
 
 import { Button } from "@integramind/ui/button";
 
-import type { FlowEdge, FlowNode, NodeType } from "~/types";
+import type { FlowEdge, FlowNode, PrimitiveType } from "~/types";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
 import { createEdge } from "~/lib/queries/edges";
@@ -97,7 +97,7 @@ export function _FlowBuilder({
     async (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      const getNewNodeName = (nodeType: NodeType) => {
+      const getNewNodeName = (nodeType: PrimitiveType) => {
         switch (nodeType) {
           case "route":
             return "New Route";
@@ -116,7 +116,7 @@ export function _FlowBuilder({
 
       const nodeType = event.dataTransfer.getData(
         "application/reactflow",
-      ) as NodeType;
+      ) as PrimitiveType;
 
       // check if the dropped element is valid
       if (typeof nodeType === "undefined" || !nodeType) return;

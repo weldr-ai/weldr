@@ -40,7 +40,7 @@ import { cn } from "@integramind/ui/utils";
 import type { FunctionNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
-import { Lambda } from "~/components/icons/lambda";
+import { LambdaIcon } from "~/components/icons/lambda-icon";
 import { deletePrimitive } from "~/lib/queries/primitives";
 import { getJobById } from "~/lib/queries/run";
 
@@ -141,7 +141,7 @@ export const Function = memo(
               }}
             >
               <div className="flex items-center gap-2 text-xs">
-                <Lambda className="size-4 text-primary" />
+                <LambdaIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">Function</span>
               </div>
               <span className="text-sm">{data.name}</span>
@@ -187,7 +187,7 @@ export const Function = memo(
           <CardHeader className="flex flex-col items-start justify-start px-6 py-4">
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 text-xs">
-                <Lambda className="size-4 text-primary" />
+                <LambdaIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">Function</span>
               </div>
               <div className="flex items-center">

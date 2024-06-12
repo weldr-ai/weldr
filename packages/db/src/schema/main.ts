@@ -11,7 +11,7 @@ import {
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
-import type { PrimitiveMetadata } from "../types";
+import type { PrimitiveMetadata, ResourceMetadata } from "../types";
 
 // Tables
 
@@ -29,7 +29,7 @@ export const workspaces = pgTable("workspaces", {
 });
 
 export const workspacesRelations = relations(workspaces, ({ many }) => ({
-  resources: many(resources),
+  dataResources: many(dataResources),
   flows: many(flows),
 }));
 
@@ -120,13 +120,18 @@ export const flowsRelations = relations(flows, ({ many }) => ({
   edges: many(edges),
 }));
 
-export const resources = pgTable("resources", {
+export const dataResourceProviders = pgEnum("data_resource_providers", [
+  "postgres",
+]);
+
+export const dataResources = pgTable("data_resources", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
   name: text("name").notNull(),
   description: text("description"),
-  provider: text("provider"),
+  provider: dataResourceProviders("provider").notNull(),
+  metadata: jsonb("metadata").$type<ResourceMetadata>().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -137,9 +142,9 @@ export const resources = pgTable("resources", {
     .notNull(),
 });
 
-export const resourcesRelations = relations(resources, ({ one }) => ({
+export const resourcesRelations = relations(dataResources, ({ one }) => ({
   workspace: one(workspaces, {
-    fields: [resources.workspaceId],
+    fields: [dataResources.workspaceId],
     references: [workspaces.id],
   }),
 }));
@@ -148,7 +153,7 @@ export const resourcesRelations = relations(resources, ({ one }) => ({
  * Zod Schemas
  */
 
-// Workspaces schemas
+// Workspaces zod schemas
 export const workspaceSchema = createSelectSchema(workspaces);
 export const insertWorkspaceSchema = createInsertSchema(workspaces, {
   name: (schema) =>
@@ -160,22 +165,64 @@ export const insertWorkspaceSchema = createInsertSchema(workspaces, {
       .transform((name) => name.replace(/\s+/g, " ").trim()),
 });
 
-// Resources schemas
-export const resourceSchema = createSelectSchema(resources);
-export const insertResourceSchema = createInsertSchema(resources, {
-  name: (schema) =>
-    schema.name
-      .trim()
+// Data resources zod schemas
+export const dataResourceProvidersSchema = z.enum(
+  dataResourceProviders.enumValues,
+);
+export const dataResourceSchema = createSelectSchema(dataResources);
+export const insertDataResourceSchema = z.discriminatedUnion("provider", [
+  z.object({
+    name: z
+      .string()
       .min(1, {
         message: "Name is required.",
       })
       .transform((name) => name.replace(/\s+/g, " ").trim()),
+    description: z.string(),
+    provider: z.literal("postgres"),
+    connectionString: z.string(),
+    workspaceId: z.string(),
+  }),
+]);
+export const postgresMetadataSchema = z.object({
+  provider: z.literal("postgres"),
+  connectionString: z.string(),
+});
+export const dataResourceMetadataSchema = z.discriminatedUnion("provider", [
+  postgresMetadataSchema,
+]);
+
+// Primitives zod schemas
+export const primitiveTypesSchema = z.enum(primitiveTypes.enumValues);
+export const primitiveSchema = createSelectSchema(primitives);
+export const functionMetadataSchema = z.object({
+  type: z.literal("function"),
+  inputs: z
+    .object({ name: z.string(), type: z.enum(["number", "text"]) })
+    .array(),
+  outputs: z
+    .object({ name: z.string(), type: z.enum(["number", "text"]) })
+    .array(),
+  generatedCode: z.string().optional(),
+  isCodeUpdated: z.boolean().optional(),
+});
+export const routeMetadataSchema = z.object({
+  type: z.literal("route"),
+  actionType: z.enum(["retrieve", "submit", "modify", "delete"]),
+  urlPath: z.string(),
+});
+export const workflowMetadataSchema = z.object({
+  type: z.literal("workflow"),
+  triggerType: z.enum(["webhook", "schedule"]),
 });
 
-// Primitives schemas
-export const primitiveSchema = createSelectSchema(primitives);
+export const primitiveMetadataSchema = z.discriminatedUnion("type", [
+  functionMetadataSchema,
+  routeMetadataSchema,
+  workflowMetadataSchema,
+]);
 
-// Flows schemas
+// Flows zod schemas
 export const flowTypesSchema = z.enum(flowTypes.enumValues);
 export const flowSchema = createSelectSchema(flows);
 export const insertFlowSchema = z.discriminatedUnion("type", [

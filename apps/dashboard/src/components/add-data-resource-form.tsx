@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
 
-import { insertFlowSchema } from "@integramind/db/schema";
+import { insertDataResourceSchema } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import {
   Form,
@@ -21,58 +21,45 @@ import {
   FormMessage,
 } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@integramind/ui/select";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import type { FlowType } from "~/types";
-import { createFlow } from "~/lib/queries/flows";
+import type { DataResourceProvider } from "~/types";
+import { addDataResource } from "~/lib/queries/data-resources";
 
-export function CreateFlowForm({
-  type,
-  setCreatePrimitiveDialogOpen,
+export function AddDataResourceForm({
+  provider,
+  setAddResourceDialogOpen,
 }: {
-  type: FlowType;
-  setCreatePrimitiveDialogOpen?: (open: boolean) => void;
+  provider: DataResourceProvider;
+  setAddResourceDialogOpen?: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const [state, createFlowAction] = useFormState(createFlow, undefined);
+  const [state, addDataResourceAction] = useFormState(
+    addDataResource,
+    undefined,
+  );
 
-  const getMetadataValues = (type: FlowType) => {
-    switch (type) {
-      case "component":
+  const getMetadataValues = (provider: DataResourceProvider) => {
+    switch (provider) {
+      case "postgres":
         return {
-          workspaceId,
-        };
-      case "route":
-        return {
-          actionType: undefined,
-          urlPath: "",
-        };
-      case "workflow":
-        return {
-          triggerType: undefined,
+          connectionString: "",
         };
     }
   };
 
-  const form = useForm<z.infer<typeof insertFlowSchema>>({
+  const form = useForm<z.infer<typeof insertDataResourceSchema>>({
     mode: "onChange",
-    resolver: zodResolver(insertFlowSchema),
+    resolver: zodResolver(insertDataResourceSchema),
     defaultValues: {
       name: "",
       description: "",
-      type,
+      provider,
       workspaceId,
-      ...getMetadataValues(type),
+      ...getMetadataValues(provider),
       ...(state &&
         (state.status === "error" || state.status === "validationError") &&
         state.fields),
@@ -86,16 +73,13 @@ export function CreateFlowForm({
           form.reset();
           toast({
             title: "Success",
-            description: `${type.charAt(0).toUpperCase()}${type.slice(1)} created successfully.`,
+            description: `${provider.charAt(0).toUpperCase()}${provider.slice(1)} added successfully.`,
             duration: 2000,
           });
-          await queryClient.invalidateQueries({ queryKey: [`${type}s`] });
-          if (setCreatePrimitiveDialogOpen) {
-            setCreatePrimitiveDialogOpen(false);
+          await queryClient.invalidateQueries({ queryKey: ["resources"] });
+          if (setAddResourceDialogOpen) {
+            setAddResourceDialogOpen(false);
           }
-          router.replace(
-            `/workspaces/${workspaceId}/${type}s/${state.payload.id}`,
-          );
         } else if (state.status === "validationError") {
           Object.keys(state.errors).forEach((key) => {
             form.setError(
@@ -103,10 +87,8 @@ export function CreateFlowForm({
                 | "name"
                 | "description"
                 | "workspaceId"
-                | "type"
-                | "actionType"
-                | "urlPath"
-                | "triggerType",
+                | "provider"
+                | "connectionString",
               {
                 message: state.errors[key],
               },
@@ -133,101 +115,45 @@ export function CreateFlowForm({
     form,
     queryClient,
     router,
-    setCreatePrimitiveDialogOpen,
+    setAddResourceDialogOpen,
     state,
-    type,
+    provider,
     workspaceId,
   ]);
 
   return (
     <Form {...form}>
       <form
-        action={createFlowAction}
+        action={addDataResourceAction}
         className="flex w-full flex-col space-y-4"
       >
         <FormField
           control={form.control}
-          name={"name"}
+          name="name"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter workflow name" {...field} />
+                <Input placeholder="Enter resource name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        {type === "workflow" && (
+        {provider === "postgres" && (
           <FormField
             control={form.control}
-            name="triggerType"
+            name="connectionString"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs">Type</FormLabel>
+                <FormLabel className="text-xs">Connection string</FormLabel>
                 <FormControl>
-                  <Select
-                    name={field.name}
-                    defaultValue={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Trigger Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="webhook">Webhook</SelectItem>
-                      <SelectItem value="schedule">Schedule</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input placeholder="Enter connection string" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
-        {type === "route" && (
-          <>
-            <FormField
-              control={form.control}
-              name="actionType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Type</FormLabel>
-                  <FormControl>
-                    <Select
-                      name={field.name}
-                      defaultValue={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger className="bg-background">
-                        <SelectValue placeholder="Action Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="retrieve">Retrieve</SelectItem>
-                        <SelectItem value="submit">Submit</SelectItem>
-                        <SelectItem value="modify">Modify</SelectItem>
-                        <SelectItem value="delete">Delete</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="urlPath"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">URL Path</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter action URL path" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
         )}
         <FormField
           control={form.control}
@@ -241,7 +167,7 @@ export function CreateFlowForm({
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="Enter workflow description"
+                  placeholder="Enter resource description"
                   value={field.value ?? ""}
                 />
               </FormControl>
@@ -256,7 +182,7 @@ export function CreateFlowForm({
         />
         <FormField
           control={form.control}
-          name="type"
+          name="provider"
           render={({ field }) => <Input {...field} className="hidden" />}
         />
         <div className="flex w-full justify-end">
@@ -270,7 +196,7 @@ export function CreateFlowForm({
 function SubmitButton({
   formState,
 }: {
-  formState: FormState<z.infer<typeof insertFlowSchema>>;
+  formState: FormState<z.infer<typeof insertDataResourceSchema>>;
 }) {
   const { pending } = useFormStatus();
   return (
@@ -280,7 +206,7 @@ function SubmitButton({
       disabled={!formState.isValid || pending}
     >
       {pending && <Loader2 className="mr-1 size-3 animate-spin" />}
-      Create
+      Add
     </Button>
   );
 }

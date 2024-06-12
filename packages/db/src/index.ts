@@ -5,8 +5,6 @@ import * as schema from "./schema";
 
 export const connectionString = process.env.DATABASE_URL ?? "";
 
-console.log(connectionString);
-
 export * from "drizzle-orm";
 
 const client = postgres(connectionString, { prepare: false });

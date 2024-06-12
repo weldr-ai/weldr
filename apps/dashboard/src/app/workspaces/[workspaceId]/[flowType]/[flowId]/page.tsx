@@ -1,13 +1,6 @@
 import { notFound } from "next/navigation";
 
-import type {
-  FlowEdge,
-  FlowNode,
-  FlowType,
-  FunctionMetadata,
-  RouteMetadata,
-  WorkflowMetadata,
-} from "~/types";
+import type { FlowEdge, FlowNode, FlowType } from "~/types";
 import { FlowBuilder } from "~/components/flow-builder";
 import { getFlowById } from "~/lib/queries/flows";
 
@@ -38,8 +31,8 @@ export default async function WorkflowPage({
             id: primitive.id,
             name: primitive.name,
             description: primitive.description,
-            actionType: (primitive.metadata as RouteMetadata).actionType,
-            urlPath: (primitive.metadata as RouteMetadata).urlPath,
+            actionType: primitive.metadata.actionType,
+            urlPath: primitive.metadata.urlPath,
           },
         };
       case "workflow":
@@ -52,7 +45,7 @@ export default async function WorkflowPage({
             id: primitive.id,
             name: primitive.name,
             description: primitive.description,
-            triggerType: (primitive.metadata as WorkflowMetadata).triggerType,
+            triggerType: primitive.metadata.triggerType,
           },
         };
       case "function":
@@ -65,12 +58,10 @@ export default async function WorkflowPage({
             id: primitive.id,
             name: primitive.name,
             description: primitive.description,
-            inputs: (primitive.metadata as FunctionMetadata).inputs,
-            outputs: (primitive.metadata as FunctionMetadata).outputs,
-            generatedCode: (primitive.metadata as FunctionMetadata)
-              .generatedCode,
-            isCodeUpdated: (primitive.metadata as FunctionMetadata)
-              .isCodeUpdated,
+            inputs: primitive.metadata.inputs,
+            outputs: primitive.metadata.outputs,
+            generatedCode: primitive.metadata.generatedCode,
+            isCodeUpdated: primitive.metadata.isCodeUpdated,
           },
         };
     }

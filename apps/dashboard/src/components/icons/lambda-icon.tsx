@@ -1,6 +1,6 @@
 import { cn } from "@integramind/ui/utils";
 
-export function Lambda({ className }: { className?: string }) {
+export function LambdaIcon({ className }: { className?: string }) {
   return (
     <svg
       className={cn(className)}
