@@ -9,7 +9,7 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 
-import { ResourceNode } from "~/components/editor/nodes/resource-node";
+import { DataResourceNode } from "~/components/editor/nodes/data-resource-node";
 import { ValueNode } from "~/components/editor/nodes/value-node";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 
@@ -26,7 +26,7 @@ function onError(error: Error, _editor: LexicalEditor) {
 export function Editor() {
   const initialConfig: InitialConfigType = {
     namespace: "editor",
-    nodes: [ResourceNode, ValueNode],
+    nodes: [DataResourceNode, ValueNode],
     onError,
     editable: true,
   };

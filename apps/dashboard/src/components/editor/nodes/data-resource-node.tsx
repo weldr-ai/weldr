@@ -8,9 +8,11 @@ import type {
 } from "lexical";
 import type { ReactNode } from "react";
 import { DecoratorNode } from "lexical";
-import { VariableIcon } from "lucide-react";
+import { DatabaseIcon } from "lucide-react";
 
-export type SerializedValueNode = Spread<
+import { PostgreSQLIcon } from "~/components/icons/postgresql-icon";
+
+export type SerializedDataResourceNode = Spread<
   {
     id: string;
     name: string;
@@ -19,18 +21,26 @@ export type SerializedValueNode = Spread<
   SerializedLexicalNode
 >;
 
-function ValueNodeComponent({ name, icon }: { name: string; icon: string }) {
+function DataResourceNodeComponent({
+  name,
+  icon,
+}: {
+  name: string;
+  icon: string;
+}) {
   return (
     <div className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-xs text-accent-foreground">
-      {icon === "value-icon" && (
-        <VariableIcon className="mr-1 size-3 text-primary" />
+      {icon === "postgresql-icon" ? (
+        <PostgreSQLIcon className="mr-1 size-3 text-primary" />
+      ) : (
+        <DatabaseIcon className="mr-1 size-3 text-primary" />
       )}
       {name}
     </div>
   );
 }
 
-export class ValueNode extends DecoratorNode<ReactNode> {
+export class DataResourceNode extends DecoratorNode<ReactNode> {
   __id: string;
   __name: string;
   __icon: string;
@@ -43,15 +53,17 @@ export class ValueNode extends DecoratorNode<ReactNode> {
   }
 
   static getType(): string {
-    return "value";
+    return "data-resource";
   }
 
-  static clone(node: ValueNode): ValueNode {
-    return new ValueNode(node.__id, node.__name, node.__icon);
+  static clone(node: DataResourceNode): DataResourceNode {
+    return new DataResourceNode(node.__id, node.__name, node.__icon);
   }
 
-  static importJSON(serializedNode: SerializedValueNode): ValueNode {
-    const node = $createValueNode(
+  static importJSON(
+    serializedNode: SerializedDataResourceNode,
+  ): DataResourceNode {
+    const node = $createDataResourceNode(
       serializedNode.id,
       serializedNode.name,
       serializedNode.icon,
@@ -59,11 +71,11 @@ export class ValueNode extends DecoratorNode<ReactNode> {
     return node;
   }
 
-  exportJSON(): SerializedValueNode {
+  exportJSON(): SerializedDataResourceNode {
     return {
       id: this.__id,
       name: this.__name,
-      type: "value",
+      type: "data-resource",
       icon: this.__icon,
       version: 1,
     };
@@ -71,13 +83,13 @@ export class ValueNode extends DecoratorNode<ReactNode> {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement("span");
-    element.setAttribute("data-lexical-value", "true");
+    element.setAttribute("data-lexical-data-resource", "true");
     return { element };
   }
 
   createDOM(_config: EditorConfig, _editor: LexicalEditor): HTMLElement {
     const dom = document.createElement("span");
-    dom.setAttribute("data-lexical-value", "true");
+    dom.setAttribute("data-lexical-data-resource", "true");
     return dom;
   }
 
@@ -86,20 +98,20 @@ export class ValueNode extends DecoratorNode<ReactNode> {
   }
 
   decorate(): JSX.Element {
-    return <ValueNodeComponent name={this.__name} icon={this.__icon} />;
+    return <DataResourceNodeComponent name={this.__name} icon={this.__icon} />;
   }
 }
 
-export function $createValueNode(
+export function $createDataResourceNode(
   id: string,
   name: string,
   icon: string,
-): ValueNode {
-  return new ValueNode(id, name, icon);
+): DataResourceNode {
+  return new DataResourceNode(id, name, icon);
 }
 
-export function $isValueNode(
+export function $isDataResourceNode(
   node: LexicalNode | null | undefined,
-): node is ValueNode {
-  return node instanceof ValueNode;
+): node is DataResourceNode {
+  return node instanceof DataResourceNode;
 }

@@ -2,12 +2,12 @@ import { memo, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
 import {
-  EllipsisVertical,
-  ExternalLink,
-  FileText,
-  Loader2,
-  PlayCircle,
-  Trash,
+  EllipsisVerticalIcon,
+  ExternalLinkIcon,
+  FileTextIcon,
+  Loader2Icon,
+  PlayCircleIcon,
+  TrashIcon,
 } from "lucide-react";
 import { Handle, Position, useReactFlow } from "reactflow";
 
@@ -151,7 +151,7 @@ export const Function = memo(
             <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem className="text-xs">
-              <PlayCircle className="mr-3 size-4 text-muted-foreground" />
+              <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
               Run with previous primitives
             </ContextMenuItem>
             <ContextMenuItem className="flex items-center justify-between text-xs">
@@ -160,17 +160,17 @@ export const Function = memo(
                 href="https://docs.integramind.ai/primitives/ai-processing"
                 target="blank"
               >
-                <FileText className="mr-3 size-4 text-muted-foreground" />
+                <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
                 Docs
               </Link>
-              <ExternalLink className="size-3 text-muted-foreground" />
+              <ExternalLinkIcon className="size-3 text-muted-foreground" />
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
               className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
               onClick={() => setDeleteAlertDialogOpen(true)}
             >
-              <Trash className="mr-3 size-4" />
+              <TrashIcon className="mr-3 size-4" />
               Delete
             </ContextMenuItem>
           </ContextMenuContent>
@@ -202,7 +202,7 @@ export const Function = memo(
                   }
                   onClick={() => postJobMutation.mutate()}
                 >
-                  <PlayCircle className="size-3.5" />
+                  <PlayCircleIcon className="size-3.5" />
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger>
@@ -211,7 +211,7 @@ export const Function = memo(
                       variant="ghost"
                       size="icon"
                     >
-                      <EllipsisVertical className="size-3.5" />
+                      <EllipsisVerticalIcon className="size-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent side="right" align="start">
@@ -220,7 +220,7 @@ export const Function = memo(
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-xs">
-                      <PlayCircle className="mr-3 size-4 text-muted-foreground" />
+                      <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
                       Run with previous primitives
                     </DropdownMenuItem>
                     <DropdownMenuItem className="flex items-center justify-between text-xs">
@@ -229,17 +229,17 @@ export const Function = memo(
                         href="https://docs.integramind.ai/primitives/ai-processing"
                         target="blank"
                       >
-                        <FileText className="mr-3 size-4 text-muted-foreground" />
+                        <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
                         Docs
                       </Link>
-                      <ExternalLink className="size-3 text-muted-foreground" />
+                      <ExternalLinkIcon className="size-3 text-muted-foreground" />
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
                       onClick={() => setDeleteAlertDialogOpen(true)}
                     >
-                      <Trash className="mr-3 size-4" />
+                      <TrashIcon className="mr-3 size-4" />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -263,7 +263,7 @@ export const Function = memo(
                 <div className="flex size-full rounded-b-xl bg-accent">
                   {job?.state === "PENDING" || job?.state === "RUNNING" ? (
                     <div className="flex size-full items-center justify-center">
-                      <Loader2 className="size-6 animate-spin text-primary" />
+                      <Loader2Icon className="size-6 animate-spin text-primary" />
                     </div>
                   ) : (
                     <>

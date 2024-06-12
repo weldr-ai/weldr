@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 
 import { Button } from "@integramind/ui/button";
 import {
@@ -27,7 +27,7 @@ export function CreateFlowDialog({ type }: { type: FlowType }) {
     >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <Plus className="mr-1.5 size-3.5" />
+          <PlusIcon className="mr-1.5 size-3.5" />
           Create new {type}
         </Button>
       </DialogTrigger>

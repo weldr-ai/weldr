@@ -1,7 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { Blocks, CircleUser, Database, Plus, Workflow } from "lucide-react";
+import {
+  BlocksIcon,
+  CircleUserIcon,
+  DatabaseIcon,
+  PlusIcon,
+  WorkflowIcon,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@integramind/ui/button";
@@ -50,21 +56,21 @@ export function Preview() {
           <div className="flex h-full w-14 flex-col items-center justify-between border-r p-4">
             <div className="flex flex-col gap-2">
               <Button size="icon" variant="ghost">
-                <Blocks className="size-5" />
+                <BlocksIcon className="size-5" />
               </Button>
               <Button size="icon" variant="ghost">
                 <span className="text-[10px] font-bold">HTTP</span>
               </Button>
               <Button size="icon" variant="ghost">
-                <Workflow className="size-5" />
+                <WorkflowIcon className="size-5" />
               </Button>
               <Button size="icon" variant="ghost">
-                <Database className="size-5" />
+                <DatabaseIcon className="size-5" />
               </Button>
             </div>
 
             <Button size="icon" variant="ghost">
-              <CircleUser className="size-5" />
+              <CircleUserIcon className="size-5" />
               <span className="sr-only">Toggle user menu</span>
             </Button>
           </div>
@@ -74,7 +80,7 @@ export function Preview() {
             </div>
             <div className="flex w-full p-2">
               <Button variant="outline" size="sm" className="w-full">
-                <Plus className="mr-1.5 size-3.5" />
+                <PlusIcon className="mr-1.5 size-3.5" />
                 Create new component
               </Button>
             </div>

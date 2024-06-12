@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 
 import { Button } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
@@ -33,7 +33,7 @@ export function DataResourceList({ workspaceId }: { workspaceId: string }) {
         </ScrollArea>
       ) : (
         <div className="flex h-[calc(100dvh-152px)] items-center justify-center">
-          <Loader2 className="size-8 animate-spin text-primary" />
+          <Loader2Icon className="size-8 animate-spin text-primary" />
         </div>
       )}
     </div>

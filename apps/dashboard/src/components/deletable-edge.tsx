@@ -1,7 +1,7 @@
 import type { EdgeProps } from "reactflow";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { XIcon } from "lucide-react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -67,7 +67,7 @@ export default function DeletableEdge({
                 pointerEvents: "all",
               }}
             >
-              <X className="size-2.5" />
+              <XIcon className="size-2.5" />
             </Button>
           </EdgeLabelRenderer>
         )}

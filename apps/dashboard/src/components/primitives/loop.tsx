@@ -1,12 +1,12 @@
 import { memo, useState } from "react";
 import Link from "next/link";
 import {
-  ExternalLink,
-  FileText,
-  PlayCircle,
-  Repeat,
-  Trash,
-  X,
+  ExternalLinkIcon,
+  FileTextIcon,
+  PlayCircleIcon,
+  RepeatIcon,
+  TrashIcon,
+  XIcon,
 } from "lucide-react";
 import { Handle, Position, useReactFlow } from "reactflow";
 
@@ -72,7 +72,7 @@ export const Loop = memo(({ data, isConnectable, selected }: LoopNodeProps) => {
                 )}
               >
                 <div className="flex items-center gap-2 text-xs">
-                  <Repeat className="size-4 text-primary" />
+                  <RepeatIcon className="size-4 text-primary" />
                   <span className="text-muted-foreground">Loop</span>
                 </div>
                 <span className="text-sm">{data.name}</span>
@@ -82,12 +82,12 @@ export const Loop = memo(({ data, isConnectable, selected }: LoopNodeProps) => {
               <SheetHeader>
                 <SheetTitle className="flex w-full items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Repeat className="size-4 text-primary" />
+                    <RepeatIcon className="size-4 text-primary" />
                     <span>Loop</span>
                   </div>
                   <SheetClose onClick={() => removeCurrentId()}>
                     <Button variant="ghost" size="icon">
-                      <X className="size-4" />
+                      <XIcon className="size-4" />
                       <span className="sr-only">Close</span>
                     </Button>
                   </SheetClose>
@@ -101,7 +101,7 @@ export const Loop = memo(({ data, isConnectable, selected }: LoopNodeProps) => {
           <ContextMenuLabel className="text-xs">Loop</ContextMenuLabel>
           <ContextMenuSeparator />
           <ContextMenuItem className="text-xs">
-            <PlayCircle className="mr-3 size-4 text-muted-foreground" />
+            <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
             Run with previous primitives
           </ContextMenuItem>
           <ContextMenuItem className="flex items-center justify-between text-xs">
@@ -110,17 +110,17 @@ export const Loop = memo(({ data, isConnectable, selected }: LoopNodeProps) => {
               href="https://docs.integramind.ai/primitives/query"
               target="blank"
             >
-              <FileText className="mr-3 size-4 text-muted-foreground" />
+              <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
               Docs
             </Link>
-            <ExternalLink className="size-3 text-muted-foreground" />
+            <ExternalLinkIcon className="size-3 text-muted-foreground" />
           </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem
             className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
             onClick={() => setDeleteAlertDialogOpen(true)}
           >
-            <Trash className="mr-3 size-4" />
+            <TrashIcon className="mr-3 size-4" />
             Delete
           </ContextMenuItem>
         </ContextMenuContent>

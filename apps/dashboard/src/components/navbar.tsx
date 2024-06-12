@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Boxes, Plus, Trash } from "lucide-react";
+import { BoxesIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@integramind/ui/button";
@@ -62,7 +62,7 @@ export function Navbar({ workspace }: { workspace: Workspace }): JSX.Element {
               className="text-xs"
               onClick={() => setCreateWorkspaceDialogOpen(true)}
             >
-              <Plus className="mr-3 size-4 text-muted-foreground" />
+              <PlusIcon className="mr-3 size-4 text-muted-foreground" />
               Create Workspace
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -70,7 +70,7 @@ export function Navbar({ workspace }: { workspace: Workspace }): JSX.Element {
               onClick={() => setCommandCenterOpen(true)}
             >
               <div className="flex gap-3">
-                <Boxes className="size-4 text-muted-foreground" />
+                <BoxesIcon className="size-4 text-muted-foreground" />
                 <span>View All Workspaces</span>
               </div>
               <span className="text-muted-foreground">cmd+k</span>
@@ -80,7 +80,7 @@ export function Navbar({ workspace }: { workspace: Workspace }): JSX.Element {
               className="text-xs text-destructive hover:text-destructive/90 focus:text-destructive/90"
               onClick={() => setDeleteAlertDialogOpen(true)}
             >
-              <Trash className="mr-3 size-4" />
+              <TrashIcon className="mr-3 size-4" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>

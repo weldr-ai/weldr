@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
 
@@ -279,7 +279,7 @@ function SubmitButton({
       aria-disabled={!formState.isValid || pending}
       disabled={!formState.isValid || pending}
     >
-      {pending && <Loader2 className="mr-1 size-3 animate-spin" />}
+      {pending && <Loader2Icon className="mr-1 size-3 animate-spin" />}
       Create
     </Button>
   );

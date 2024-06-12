@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import {
-  CornerDownLeft,
-  PanelRightClose,
-  PanelRightOpen,
-  Repeat,
-  Split,
+  CornerDownLeftIcon,
+  PanelRightCloseIcon,
+  PanelRightOpenIcon,
+  RepeatIcon,
+  SplitIcon,
 } from "lucide-react";
 
 import { Button } from "@integramind/ui/button";
@@ -35,7 +35,7 @@ export function PrimitivesMenu() {
               size="icon"
               onClick={() => setIsVisible(false)}
             >
-              <PanelRightClose className="size-3 text-muted-foreground" />
+              <PanelRightCloseIcon className="size-3 text-muted-foreground" />
             </Button>
           </div>
           <div className="grid w-full grid-cols-2 gap-2">
@@ -52,7 +52,7 @@ export function PrimitivesMenu() {
               onDragStart={(event) => onDragStart(event, "conditional-branch")}
               draggable
             >
-              <Split className="size-4 text-primary" />
+              <SplitIcon className="size-4 text-primary" />
               <span className="w-full text-[10px]">Conditional Branch</span>
             </div>
             <div
@@ -60,7 +60,7 @@ export function PrimitivesMenu() {
               onDragStart={(event) => onDragStart(event, "loop")}
               draggable
             >
-              <Repeat className="size-4 text-primary" />
+              <RepeatIcon className="size-4 text-primary" />
               <span className="w-full text-[10px]">Loop</span>
             </div>
             <div
@@ -68,7 +68,7 @@ export function PrimitivesMenu() {
               onDragStart={(event) => onDragStart(event, "response")}
               draggable
             >
-              <CornerDownLeft className="size-4 text-primary" />
+              <CornerDownLeftIcon className="size-4 text-primary" />
               <span className="w-full text-[10px]">Response</span>
             </div>
           </div>
@@ -80,7 +80,7 @@ export function PrimitivesMenu() {
           size="sm"
           onClick={() => setIsVisible(true)}
         >
-          <PanelRightOpen className="mr-2 size-3.5 text-muted-foreground" />
+          <PanelRightOpenIcon className="mr-2 size-3.5 text-muted-foreground" />
           Show primitives menu
         </Button>
       )}

@@ -6,14 +6,15 @@ import {
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
-import { Database, Variable } from "lucide-react";
+import { DatabaseIcon, VariableIcon } from "lucide-react";
 
 import { cn } from "@integramind/ui/utils";
 
-import type { ResourceNode } from "~/components/editor/nodes/resource-node";
+import type { DataResourceNode } from "~/components/editor/nodes/data-resource-node";
 import type { ValueNode } from "~/components/editor/nodes/value-node";
-import { $createResourceNode } from "~/components/editor/nodes/resource-node";
+import { $createDataResourceNode } from "~/components/editor/nodes/data-resource-node";
 import { $createValueNode } from "~/components/editor/nodes/value-node";
+import { PostgreSQLIcon } from "~/components/icons/postgresql-icon";
 
 class ReferenceOption extends MenuOption {
   // The id of the reference
@@ -21,24 +22,21 @@ class ReferenceOption extends MenuOption {
   // What shows up in the editor
   name: string;
   // Reference type
-  type: "value" | "resource";
+  type: "value" | "data-resource";
   // Icon for display
-  icon?: JSX.Element;
+  icon: string;
   // For extra searching.
   keywords: string[];
-  // TBD
-  keyboardShortcut?: string;
   // What happens when you select this option?
   onSelect: (queryString: string) => void;
 
   constructor(
     id: string,
     name: string,
-    type: "value" | "resource",
+    type: "value" | "data-resource",
     options: {
-      icon?: JSX.Element;
+      icon: string;
       keywords?: string[];
-      keyboardShortcut?: string;
       onSelect: (queryString: string) => void;
     },
   ) {
@@ -48,7 +46,6 @@ class ReferenceOption extends MenuOption {
     this.type = type;
     this.keywords = options.keywords ?? [];
     this.icon = options.icon;
-    this.keyboardShortcut = options.keyboardShortcut;
     this.onSelect = options.onSelect.bind(this);
   }
 }
@@ -75,16 +72,18 @@ export function ReferencesPlugin() {
       closeMenu: () => void,
     ) => {
       editor.update(() => {
-        let referenceNode: ResourceNode | ValueNode;
+        let referenceNode: DataResourceNode | ValueNode;
         if (selectedOption.type === "value") {
           referenceNode = $createValueNode(
             selectedOption.id,
             selectedOption.name,
+            selectedOption.icon,
           );
         } else {
-          referenceNode = $createResourceNode(
+          referenceNode = $createDataResourceNode(
             selectedOption.id,
             selectedOption.name,
+            selectedOption.icon,
           );
         }
         if (nodeToReplace) {
@@ -99,30 +98,30 @@ export function ReferencesPlugin() {
 
   const options = useMemo(() => {
     return [
-      new ReferenceOption(crypto.randomUUID(), "DB1", "resource", {
-        keywords: ["resource"],
-        icon: <Database className="size-3 text-primary" />,
+      new ReferenceOption(crypto.randomUUID(), "DB1", "data-resource", {
+        keywords: ["postgreSQL"],
+        icon: "postgresql-icon",
         onSelect: (queryString) => {
           console.log(queryString);
         },
       }),
-      new ReferenceOption(crypto.randomUUID(), "DB2", "resource", {
-        keywords: ["resource"],
-        icon: <Database className="size-3 text-primary" />,
+      new ReferenceOption(crypto.randomUUID(), "DB2", "data-resource", {
+        keywords: ["data-resource"],
+        icon: "database-icon",
         onSelect: (queryString) => {
           console.log(queryString);
         },
       }),
       new ReferenceOption(crypto.randomUUID(), "age", "value", {
         keywords: ["input"],
-        icon: <Variable className="size-3 text-primary" />,
+        icon: "value-icon",
         onSelect: (queryString) => {
           console.log(queryString);
         },
       }),
       new ReferenceOption(crypto.randomUUID(), "name", "value", {
         keywords: ["input"],
-        icon: <Variable className="size-3 text-primary" />,
+        icon: "value-icon",
         onSelect: (queryString) => {
           console.log(queryString);
         },
@@ -165,7 +164,13 @@ export function ReferencesPlugin() {
                 }}
                 key={option.key}
               >
-                {option.icon}
+                {option.icon === "postgresql-icon" ? (
+                  <PostgreSQLIcon className="size-3 text-primary" />
+                ) : option.icon === "value-icon" ? (
+                  <VariableIcon className="size-3 text-primary" />
+                ) : (
+                  <DatabaseIcon className="size-3 text-primary" />
+                )}
                 <span className="text">{option.name}</span>
               </div>
             ))}
