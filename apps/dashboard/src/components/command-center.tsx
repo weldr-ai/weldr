@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Boxes, Plus } from "lucide-react";
+import { BoxesIcon, PlusIcon } from "lucide-react";
 
 import { Button } from "@integramind/ui/button";
 import {
@@ -61,7 +61,7 @@ export function CommandCenter({ workspaces }: { workspaces: Workspace[] }) {
                 variant="outline"
                 size="icon"
               >
-                <Plus className="size-3 text-muted-foreground" />
+                <PlusIcon className="size-3 text-muted-foreground" />
               </Button>
             </div>
             <div className="grid w-full grid-cols-3 gap-2">
@@ -75,7 +75,7 @@ export function CommandCenter({ workspaces }: { workspaces: Workspace[] }) {
                     router.replace(`/workspaces/${workspace.id}`);
                   }}
                 >
-                  <Boxes className="mb-2 size-24" />
+                  <BoxesIcon className="mb-2 size-24" />
                   {workspace.name}
                 </CommandItem>
               ))}

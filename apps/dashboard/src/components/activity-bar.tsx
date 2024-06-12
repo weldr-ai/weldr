@@ -1,6 +1,11 @@
 "use client";
 
-import { Blocks, CircleUser, Database, Workflow } from "lucide-react";
+import {
+  BlocksIcon,
+  CircleUserIcon,
+  DatabaseIcon,
+  WorkflowIcon,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@integramind/ui/button";
@@ -40,7 +45,7 @@ export function ActivityBar() {
           size="icon"
           variant="ghost"
         >
-          <Blocks className="size-5" />
+          <BlocksIcon className="size-5" />
         </Button>
         <Button
           className={cn({
@@ -60,7 +65,7 @@ export function ActivityBar() {
           size="icon"
           variant="ghost"
         >
-          <Workflow className="size-5" />
+          <WorkflowIcon className="size-5" />
         </Button>
         <Button
           className={cn({
@@ -70,13 +75,13 @@ export function ActivityBar() {
           size="icon"
           variant="ghost"
         >
-          <Database className="size-5" />
+          <DatabaseIcon className="size-5" />
         </Button>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button size="icon" variant="ghost">
-            <CircleUser className="size-5" />
+            <CircleUserIcon className="size-5" />
             <span className="sr-only">Toggle user menu</span>
           </Button>
         </DropdownMenuTrigger>

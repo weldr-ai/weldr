@@ -4,7 +4,13 @@ import type { Connection, Edge, NodeChange } from "reactflow";
 import React, { useCallback } from "react";
 import { createId } from "@paralleldrive/cuid2";
 import { useMutation } from "@tanstack/react-query";
-import { Minus, PlayCircle, Plus, Scan, Share } from "lucide-react";
+import {
+  MinusIcon,
+  PlayCircleIcon,
+  PlusIcon,
+  ScanIcon,
+  ShareIcon,
+} from "lucide-react";
 import ReactFlow, {
   addEdge,
   Background,
@@ -22,7 +28,7 @@ import "~/styles/flow-builder.css";
 
 import { Button } from "@integramind/ui/button";
 
-import type { FlowEdge, FlowNode, NodeType } from "~/types";
+import type { FlowEdge, FlowNode, PrimitiveType } from "~/types";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
 import { createEdge } from "~/lib/queries/edges";
@@ -97,7 +103,7 @@ export function _FlowBuilder({
     async (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      const getNewNodeName = (nodeType: NodeType) => {
+      const getNewNodeName = (nodeType: PrimitiveType) => {
         switch (nodeType) {
           case "route":
             return "New Route";
@@ -116,7 +122,7 @@ export function _FlowBuilder({
 
       const nodeType = event.dataTransfer.getData(
         "application/reactflow",
-      ) as NodeType;
+      ) as PrimitiveType;
 
       // check if the dropped element is valid
       if (typeof nodeType === "undefined" || !nodeType) return;
@@ -213,7 +219,7 @@ export function _FlowBuilder({
             reactFlow.zoomOut();
           }}
         >
-          <Minus className="size-4" />
+          <MinusIcon className="size-4" />
         </Button>
         <Button
           className="w-16 rounded-none"
@@ -236,7 +242,7 @@ export function _FlowBuilder({
             reactFlow.zoomIn();
           }}
         >
-          <Plus className="size-4" />
+          <PlusIcon className="size-4" />
         </Button>
         <Button
           className="rounded-xl rounded-l-none"
@@ -246,7 +252,7 @@ export function _FlowBuilder({
             reactFlow.fitView();
           }}
         >
-          <Scan className="size-4" />
+          <ScanIcon className="size-4" />
         </Button>
       </Panel>
       <Panel position="top-right">
@@ -259,14 +265,14 @@ export function _FlowBuilder({
             variant="outline"
             className="flex min-w-24 max-w-min flex-row items-center justify-center gap-1 border border-success bg-transparent text-success hover:bg-success/10 hover:text-success"
           >
-            <PlayCircle className="size-3.5" />
+            <PlayCircleIcon className="size-3.5" />
             Run
           </Button>
           <Button
             size="sm"
             className="flex min-w-24 max-w-min flex-row items-center justify-center gap-1"
           >
-            <Share className="size-3.5" />
+            <ShareIcon className="size-3.5" />
             Deploy
           </Button>
         </div>

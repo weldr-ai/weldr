@@ -1,36 +1,30 @@
 "use client";
 
+import type { InitialConfigType } from "@lexical/react/LexicalComposer";
 import type { EditorState, LexicalEditor } from "lexical";
-import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
-import { $getRoot, $getSelection } from "lexical";
 
-import { ResourceNode } from "~/components/editor/nodes/resource-node";
+import { DataResourceNode } from "~/components/editor/nodes/data-resource-node";
 import { ValueNode } from "~/components/editor/nodes/value-node";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 
-function onChange(editorState: EditorState) {
-  editorState.read(() => {
-    const root = $getRoot();
-    const selection = $getSelection();
-    console.log(root, selection);
-  });
-}
-
-function onError(error: Error, _editor: LexicalEditor) {
-  console.error(error);
-}
-
-export function Editor() {
-  const initialConfig = {
+export function Editor({
+  onChange,
+  onError,
+}: {
+  onChange: (editorState: EditorState) => void;
+  onError: (error: Error, _editor: LexicalEditor) => void;
+}) {
+  const initialConfig: InitialConfigType = {
     namespace: "editor",
-    nodes: [ResourceNode, ValueNode],
+    nodes: [DataResourceNode, ValueNode],
     onError,
+    editable: true,
   };
 
   return (
@@ -38,7 +32,7 @@ export function Editor() {
       <div className="relative flex size-full">
         <RichTextPlugin
           contentEditable={
-            <ContentEditable className="flex size-full w-full cursor-text flex-col rounded-lg border border-input bg-background px-3 py-2 text-sm caret-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" />
+            <ContentEditable className="flex size-full cursor-text flex-col overflow-scroll rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" />
           }
           placeholder={
             <div className="absolute px-3.5 py-2 text-sm text-muted-foreground">
@@ -47,11 +41,10 @@ export function Editor() {
           }
           ErrorBoundary={LexicalErrorBoundary}
         />
+        <ReferencesPlugin />
       </div>
-      <ReferencesPlugin />
       <OnChangePlugin onChange={onChange} />
       <HistoryPlugin />
-      <AutoFocusPlugin />
     </LexicalComposer>
   );
 }

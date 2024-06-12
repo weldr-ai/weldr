@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 
 import { buttonVariants } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
@@ -18,23 +18,13 @@ export function FlowList({
   workspaceId: string;
   type: FlowType;
 }) {
-  const getQueryKey = (type: FlowType) => {
-    switch (type) {
-      case "workflow":
-        return "workflows";
-      case "route":
-        return "routes";
-      case "component":
-        return "components";
-    }
-  };
   const { flowId: currentFlowId } = useParams<{ flowId: string }>();
   const {
     isLoading,
     isRefetching,
     data: flows,
   } = useQuery({
-    queryKey: [getQueryKey(type)],
+    queryKey: [`${type}s`],
     queryFn: () => getFlows({ workspaceId, type }),
     refetchInterval: 1000 * 60 * 5,
   });
@@ -63,7 +53,7 @@ export function FlowList({
         </ScrollArea>
       ) : (
         <div className="flex h-[calc(100dvh-152px)] items-center justify-center">
-          <Loader2 className="size-8 animate-spin text-primary" />
+          <Loader2Icon className="size-8 animate-spin text-primary" />
         </div>
       )}
     </div>

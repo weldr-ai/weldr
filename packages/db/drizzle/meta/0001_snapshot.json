@@ -1,5 +1,5 @@
 {
-  "id": "ecb7a2f9-b8dd-4083-ba6d-bddb99e9527c",
+  "id": "329b7959-8d61-46ff-884a-11f97955b2b9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
@@ -206,6 +206,138 @@
       },
       "uniqueConstraints": {}
     },
+    "data_resources": {
+      "name": "data_resources",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider": {
+          "name": "provider",
+          "type": "data_resource_providers",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "data_resources_workspace_id_workspaces_id_fk": {
+          "name": "data_resources_workspace_id_workspaces_id_fk",
+          "tableFrom": "data_resources",
+          "tableTo": "workspaces",
+          "columnsFrom": ["workspace_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "edges": {
+      "name": "edges",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target": {
+          "name": "target",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "flow_id": {
+          "name": "flow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "edges_source_primitives_id_fk": {
+          "name": "edges_source_primitives_id_fk",
+          "tableFrom": "edges",
+          "tableTo": "primitives",
+          "columnsFrom": ["source"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "edges_target_primitives_id_fk": {
+          "name": "edges_target_primitives_id_fk",
+          "tableFrom": "edges",
+          "tableTo": "primitives",
+          "columnsFrom": ["target"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "edges_flow_id_flows_id_fk": {
+          "name": "edges_flow_id_flows_id_fk",
+          "tableFrom": "edges",
+          "tableTo": "flows",
+          "columnsFrom": ["flow_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
     "flows": {
       "name": "flows",
       "schema": "",
@@ -233,13 +365,6 @@
           "type": "flow_types",
           "primaryKey": false,
           "notNull": true
-        },
-        "edges": {
-          "name": "edges",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
         },
         "created_at": {
           "name": "created_at",
@@ -305,6 +430,20 @@
           "primaryKey": false,
           "notNull": true
         },
+        "position_x": {
+          "name": "position_x",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "position_y": {
+          "name": "position_y",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "metadata": {
           "name": "metadata",
           "type": "jsonb",
@@ -339,70 +478,6 @@
           "tableFrom": "primitives",
           "tableTo": "flows",
           "columnsFrom": ["flow_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
-    "resources": {
-      "name": "resources",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "provider": {
-          "name": "provider",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "workspace_id": {
-          "name": "workspace_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "resources_workspace_id_workspaces_id_fk": {
-          "name": "resources_workspace_id_workspaces_id_fk",
-          "tableFrom": "resources",
-          "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -975,6 +1050,12 @@
     }
   },
   "enums": {
+    "data_resource_providers": {
+      "name": "data_resource_providers",
+      "values": {
+        "postgres": "postgres"
+      }
+    },
     "flow_types": {
       "name": "flow_types",
       "values": {

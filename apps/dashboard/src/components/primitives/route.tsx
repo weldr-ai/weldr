@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { X } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { Handle, Position } from "reactflow";
 
 import { Badge } from "@integramind/ui/badge";
@@ -66,7 +66,7 @@ export const Route = memo(
                 </div>
                 <SheetClose onClick={() => removeCurrentId()}>
                   <Button variant="ghost" size="icon">
-                    <X className="size-4" />
+                    <XIcon className="size-4" />
                     <span className="sr-only">Close</span>
                   </Button>
                 </SheetClose>

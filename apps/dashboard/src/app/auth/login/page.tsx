@@ -2,7 +2,7 @@
 
 import type { z } from "zod";
 import Image from "next/image";
-import { Loader2 } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 import { useFormState, useFormStatus } from "react-dom";
 
 import { Button } from "@integramind/ui/button";
@@ -130,7 +130,7 @@ function Submit() {
       aria-disabled={pending}
       disabled={pending}
     >
-      {pending && <Loader2 className="mr-1 size-3 animate-spin" />}
+      {pending && <Loader2Icon className="mr-1 size-3 animate-spin" />}
       Continue
     </Button>
   );

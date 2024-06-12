@@ -89,6 +89,7 @@ export async function createFlow(
               }}::jsonb`,
               flowId: result.id,
             });
+            break;
         }
         return { status: "success", payload: { id: result.id } };
       } else {

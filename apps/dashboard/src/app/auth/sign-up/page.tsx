@@ -4,7 +4,7 @@
 // import { useState } from "react";
 // import Image from "next/image";
 // import Link from "next/link";
-// import { Eye, EyeOff, Loader2 } from "lucide-react";
+// import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
 // import { useFormState, useFormStatus } from "react-dom";
 
 // import { Button } from "@integramind/ui/button";
@@ -138,9 +138,9 @@
 //                   className="absolute right-1 top-1 size-7"
 //                 >
 //                   {showPassword ? (
-//                     <EyeOff className="size-3" />
+//                     <EyeOffIcon className="size-3" />
 //                   ) : (
-//                     <Eye className="size-3" />
+//                     <EyeIcon className="size-3" />
 //                   )}
 //                 </Button>
 //                 <Input
@@ -200,7 +200,7 @@
 //       aria-disabled={pending}
 //       disabled={pending}
 //     >
-//       {pending && <Loader2 className="mr-1 size-3 animate-spin" />}
+//       {pending && <Loader2Icon className="mr-1 size-3 animate-spin" />}
 //       Continue
 //     </Button>
 //   );

@@ -1,12 +1,12 @@
 import { memo, useState } from "react";
 import Link from "next/link";
 import {
-  CornerDownLeft,
-  ExternalLink,
-  FileText,
-  PlayCircle,
-  Trash,
-  X,
+  CornerDownLeftIcon,
+  ExternalLinkIcon,
+  FileTextIcon,
+  PlayCircleIcon,
+  TrashIcon,
+  XIcon,
 } from "lucide-react";
 import { Handle, Position, useReactFlow } from "reactflow";
 
@@ -73,7 +73,7 @@ export const Response = memo(
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <CornerDownLeft className="size-4 text-primary" />
+                    <CornerDownLeftIcon className="size-4 text-primary" />
                     <span className="text-muted-foreground">Response</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
@@ -83,12 +83,12 @@ export const Response = memo(
                 <SheetHeader>
                   <SheetTitle className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <CornerDownLeft className="size-4 text-primary" />
+                      <CornerDownLeftIcon className="size-4 text-primary" />
                       <span>Response</span>
                     </div>
                     <SheetClose onClick={() => removeCurrentId()}>
                       <Button variant="ghost" size="icon">
-                        <X className="size-4" />
+                        <XIcon className="size-4" />
                         <span className="sr-only">Close</span>
                       </Button>
                     </SheetClose>
@@ -104,7 +104,7 @@ export const Response = memo(
             <ContextMenuLabel className="text-xs">Response</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem className="text-xs">
-              <PlayCircle className="mr-3 size-4 text-muted-foreground" />
+              <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
               Run with previous primitives
             </ContextMenuItem>
             <ContextMenuItem className="flex items-center justify-between text-xs">
@@ -113,17 +113,17 @@ export const Response = memo(
                 href="https://docs.integramind.ai/primitives/response"
                 target="blank"
               >
-                <FileText className="mr-3 size-4 text-muted-foreground" />
+                <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
                 Docs
               </Link>
-              <ExternalLink className="size-3 text-muted-foreground" />
+              <ExternalLinkIcon className="size-3 text-muted-foreground" />
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
               className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
               onClick={() => setDeleteAlertDialogOpen(true)}
             >
-              <Trash className="mr-3 size-4" />
+              <TrashIcon className="mr-3 size-4" />
               Delete
             </ContextMenuItem>
           </ContextMenuContent>

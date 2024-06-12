@@ -1,13 +1,14 @@
+import type { EditorState, LexicalEditor } from "lexical";
 import { memo, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
 import {
-  EllipsisVertical,
-  ExternalLink,
-  FileText,
-  Loader2,
-  PlayCircle,
-  Trash,
+  EllipsisVerticalIcon,
+  ExternalLinkIcon,
+  FileTextIcon,
+  Loader2Icon,
+  PlayCircleIcon,
+  TrashIcon,
 } from "lucide-react";
 import { Handle, Position, useReactFlow } from "reactflow";
 
@@ -40,7 +41,7 @@ import { cn } from "@integramind/ui/utils";
 import type { FunctionNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
-import { Lambda } from "~/components/icons/lambda";
+import { LambdaIcon } from "~/components/icons/lambda-icon";
 import { deletePrimitive } from "~/lib/queries/primitives";
 import { getJobById } from "~/lib/queries/run";
 
@@ -77,9 +78,21 @@ export const Function = memo(
     const popoverRef = useRef<HTMLDivElement>(null);
     const [jobId, setJobId] = useState<string | undefined>();
 
+    function onChange(editorState: EditorState) {
+      editorState.read(() => {
+        const { root } = editorState.toJSON();
+        console.log(root.children);
+      });
+    }
+
+    function onError(error: Error, _editor: LexicalEditor) {
+      console.error(error);
+    }
+
     const deletePrimitiveMutation = useMutation({
       mutationFn: deletePrimitive,
     });
+
     const postJobMutation = useMutation({
       mutationFn: postJob,
       onSuccess: (data) => {
@@ -141,7 +154,7 @@ export const Function = memo(
               }}
             >
               <div className="flex items-center gap-2 text-xs">
-                <Lambda className="size-4 text-primary" />
+                <LambdaIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">Function</span>
               </div>
               <span className="text-sm">{data.name}</span>
@@ -151,7 +164,7 @@ export const Function = memo(
             <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem className="text-xs">
-              <PlayCircle className="mr-3 size-4 text-muted-foreground" />
+              <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
               Run with previous primitives
             </ContextMenuItem>
             <ContextMenuItem className="flex items-center justify-between text-xs">
@@ -160,17 +173,17 @@ export const Function = memo(
                 href="https://docs.integramind.ai/primitives/ai-processing"
                 target="blank"
               >
-                <FileText className="mr-3 size-4 text-muted-foreground" />
+                <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
                 Docs
               </Link>
-              <ExternalLink className="size-3 text-muted-foreground" />
+              <ExternalLinkIcon className="size-3 text-muted-foreground" />
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
               className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
               onClick={() => setDeleteAlertDialogOpen(true)}
             >
-              <Trash className="mr-3 size-4" />
+              <TrashIcon className="mr-3 size-4" />
               Delete
             </ContextMenuItem>
           </ContextMenuContent>
@@ -178,7 +191,7 @@ export const Function = memo(
         <Card
           ref={popoverRef}
           className={cn(
-            "absolute -left-[128px] top-0 z-10 w-[600px] cursor-default",
+            "nowheel absolute -left-[128px] top-0 z-10 w-[600px] cursor-default",
             {
               hidden: !isExpanded,
             },
@@ -187,7 +200,7 @@ export const Function = memo(
           <CardHeader className="flex flex-col items-start justify-start px-6 py-4">
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 text-xs">
-                <Lambda className="size-4 text-primary" />
+                <LambdaIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">Function</span>
               </div>
               <div className="flex items-center">
@@ -202,7 +215,7 @@ export const Function = memo(
                   }
                   onClick={() => postJobMutation.mutate()}
                 >
-                  <PlayCircle className="size-3.5" />
+                  <PlayCircleIcon className="size-3.5" />
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger>
@@ -211,7 +224,7 @@ export const Function = memo(
                       variant="ghost"
                       size="icon"
                     >
-                      <EllipsisVertical className="size-3.5" />
+                      <EllipsisVerticalIcon className="size-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent side="right" align="start">
@@ -220,7 +233,7 @@ export const Function = memo(
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-xs">
-                      <PlayCircle className="mr-3 size-4 text-muted-foreground" />
+                      <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
                       Run with previous primitives
                     </DropdownMenuItem>
                     <DropdownMenuItem className="flex items-center justify-between text-xs">
@@ -229,17 +242,17 @@ export const Function = memo(
                         href="https://docs.integramind.ai/primitives/ai-processing"
                         target="blank"
                       >
-                        <FileText className="mr-3 size-4 text-muted-foreground" />
+                        <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
                         Docs
                       </Link>
-                      <ExternalLink className="size-3 text-muted-foreground" />
+                      <ExternalLinkIcon className="size-3 text-muted-foreground" />
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
                       onClick={() => setDeleteAlertDialogOpen(true)}
                     >
-                      <Trash className="mr-3 size-4" />
+                      <TrashIcon className="mr-3 size-4" />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -256,14 +269,14 @@ export const Function = memo(
                 className="flex flex-col gap-0.5 p-2"
               >
                 <span className="text-xs text-muted-foreground">Editor</span>
-                <Editor />
+                <Editor onChange={onChange} onError={onError} />
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={40} minSize={25}>
                 <div className="flex size-full rounded-b-xl bg-accent">
                   {job?.state === "PENDING" || job?.state === "RUNNING" ? (
                     <div className="flex size-full items-center justify-center">
-                      <Loader2 className="size-6 animate-spin text-primary" />
+                      <Loader2Icon className="size-6 animate-spin text-primary" />
                     </div>
                   ) : (
                     <>
@@ -278,7 +291,7 @@ export const Function = memo(
                           <span className="text-error">Failed</span>
                         </div>
                       ) : job.result ? (
-                        <ScrollArea className="nowheel h-full p-2">
+                        <ScrollArea className="h-full p-2">
                           <pre className="text-wrap">
                             {JSON.stringify(JSON.parse(job.result), null, 2)}
                           </pre>
