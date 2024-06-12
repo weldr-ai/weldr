@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-export const PostgreSQLIcon = (props: SVGProps<SVGSVGElement>) => (
+export const PostgresIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     preserveAspectRatio="xMidYMid"

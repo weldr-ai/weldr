@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 import { DecoratorNode } from "lexical";
 import { DatabaseIcon } from "lucide-react";
 
-import { PostgreSQLIcon } from "~/components/icons/postgresql-icon";
+import { PostgresIcon } from "~/components/icons/postgres-icon";
 
 export type SerializedDataResourceNode = Spread<
   {
@@ -30,8 +30,8 @@ function DataResourceNodeComponent({
 }) {
   return (
     <div className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-xs text-accent-foreground">
-      {icon === "postgresql-icon" ? (
-        <PostgreSQLIcon className="mr-1 size-3 text-primary" />
+      {icon === "postgres-icon" ? (
+        <PostgresIcon className="mr-1 size-3 text-primary" />
       ) : (
         <DatabaseIcon className="mr-1 size-3 text-primary" />
       )}

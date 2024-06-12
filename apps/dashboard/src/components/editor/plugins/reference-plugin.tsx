@@ -14,9 +14,9 @@ import type { DataResourceNode } from "~/components/editor/nodes/data-resource-n
 import type { ValueNode } from "~/components/editor/nodes/value-node";
 import { $createDataResourceNode } from "~/components/editor/nodes/data-resource-node";
 import { $createValueNode } from "~/components/editor/nodes/value-node";
-import { PostgreSQLIcon } from "~/components/icons/postgresql-icon";
+import { PostgresIcon } from "~/components/icons/postgres-icon";
 
-class ReferenceOption extends MenuOption {
+export class ReferenceOption extends MenuOption {
   // The id of the reference
   id: string;
   // What shows up in the editor
@@ -50,7 +50,7 @@ class ReferenceOption extends MenuOption {
   }
 }
 
-export function ReferencesPlugin() {
+export function ReferencesPlugin({ options }: { options: ReferenceOption[] }) {
   const [editor] = useLexicalComposerContext();
   const [_queryString, setQueryString] = useState<string | null>(null);
 
@@ -96,38 +96,9 @@ export function ReferencesPlugin() {
     [editor],
   );
 
-  const options = useMemo(() => {
-    return [
-      new ReferenceOption(crypto.randomUUID(), "DB1", "data-resource", {
-        keywords: ["postgreSQL"],
-        icon: "postgresql-icon",
-        onSelect: (queryString) => {
-          console.log(queryString);
-        },
-      }),
-      new ReferenceOption(crypto.randomUUID(), "DB2", "data-resource", {
-        keywords: ["data-resource"],
-        icon: "database-icon",
-        onSelect: (queryString) => {
-          console.log(queryString);
-        },
-      }),
-      new ReferenceOption(crypto.randomUUID(), "age", "value", {
-        keywords: ["input"],
-        icon: "value-icon",
-        onSelect: (queryString) => {
-          console.log(queryString);
-        },
-      }),
-      new ReferenceOption(crypto.randomUUID(), "name", "value", {
-        keywords: ["input"],
-        icon: "value-icon",
-        onSelect: (queryString) => {
-          console.log(queryString);
-        },
-      }),
-    ];
-  }, []);
+  const _options = useMemo(() => {
+    return options;
+  }, [options]);
 
   return (
     <LexicalTypeaheadMenuPlugin<ReferenceOption>
@@ -141,7 +112,7 @@ export function ReferencesPlugin() {
       ) =>
         anchorElement && options.length ? (
           <div className="absolute left-3 top-8 z-50 min-w-48 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-            {options.map((option, i: number) => (
+            {_options.map((option, i: number) => (
               <div
                 id={"menu-item-" + i}
                 className={cn(
@@ -164,8 +135,8 @@ export function ReferencesPlugin() {
                 }}
                 key={option.key}
               >
-                {option.icon === "postgresql-icon" ? (
-                  <PostgreSQLIcon className="size-3 text-primary" />
+                {option.icon === "postgres-icon" ? (
+                  <PostgresIcon className="size-3 text-primary" />
                 ) : option.icon === "value-icon" ? (
                   <VariableIcon className="size-3 text-primary" />
                 ) : (

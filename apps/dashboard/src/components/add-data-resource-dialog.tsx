@@ -16,7 +16,7 @@ import { ScrollArea } from "@integramind/ui/scroll-area";
 
 import type { DataResourceProvider } from "~/types";
 import { AddDataResourceForm } from "~/components/add-data-resource-form";
-import { PostgreSQLIcon } from "./icons/postgresql-icon";
+import { PostgresIcon } from "~/components/icons/postgres-icon";
 
 export function AddDataResourceDialog() {
   const [provider, setProvider] = useState<DataResourceProvider | undefined>();
@@ -55,7 +55,7 @@ export function AddDataResourceDialog() {
                 onClick={() => setProvider("postgres")}
                 className="flex h-24 w-full flex-col items-center justify-center gap-2"
               >
-                <PostgreSQLIcon className="size-6" />
+                <PostgresIcon className="size-6" />
                 Postgres
               </Button>
             </div>

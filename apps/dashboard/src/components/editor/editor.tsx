@@ -9,6 +9,7 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 
+import type { ReferenceOption } from "~/components/editor/plugins/reference-plugin";
 import { DataResourceNode } from "~/components/editor/nodes/data-resource-node";
 import { ValueNode } from "~/components/editor/nodes/value-node";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
@@ -23,7 +24,11 @@ function onError(error: Error, _editor: LexicalEditor) {
   console.error(error);
 }
 
-export function Editor() {
+export function Editor({
+  referenceOptions,
+}: {
+  referenceOptions: ReferenceOption[];
+}) {
   const initialConfig: InitialConfigType = {
     namespace: "editor",
     nodes: [DataResourceNode, ValueNode],
@@ -45,7 +50,7 @@ export function Editor() {
           }
           ErrorBoundary={LexicalErrorBoundary}
         />
-        <ReferencesPlugin />
+        <ReferencesPlugin options={referenceOptions} />
       </div>
       <OnChangePlugin onChange={onChange} />
       <HistoryPlugin />

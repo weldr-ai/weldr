@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
 import {
   EllipsisVerticalIcon,
@@ -41,8 +42,10 @@ import type { FunctionNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { LambdaIcon } from "~/components/icons/lambda-icon";
+import { getDataResources } from "~/lib/queries/data-resources";
 import { deletePrimitive } from "~/lib/queries/primitives";
 import { getJobById } from "~/lib/queries/run";
+import { ReferenceOption } from "../editor/plugins/reference-plugin";
 
 async function postJob(): Promise<{ id: string }> {
   const response = await fetch("/api/run", {
@@ -70,6 +73,7 @@ def get_user(id):
 
 export const Function = memo(
   ({ data, isConnectable, xPos, yPos }: FunctionNodeProps) => {
+    const { workspaceId } = useParams<{ workspaceId: string }>();
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -85,6 +89,14 @@ export const Function = memo(
       onSuccess: (data) => {
         setJobId(data.id);
       },
+    });
+    const {
+      isLoading,
+      isRefetching,
+      data: dataResources,
+    } = useQuery({
+      queryKey: ["data-resources"],
+      queryFn: () => getDataResources({ workspaceId }),
     });
 
     const { data: job, refetch: refetchJob } = useQuery({
@@ -256,7 +268,35 @@ export const Function = memo(
                 className="flex flex-col gap-0.5 p-2"
               >
                 <span className="text-xs text-muted-foreground">Editor</span>
-                <Editor />
+                {isLoading || isRefetching ? (
+                  <div className="flex h-full items-center justify-center">
+                    <Loader2Icon className="size-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <Editor
+                    referenceOptions={
+                      dataResources?.map(
+                        (dataResource) =>
+                          new ReferenceOption(
+                            dataResource.id,
+                            dataResource.name,
+                            "data-resource",
+                            {
+                              icon: "postgres-icon",
+                              keywords: [
+                                "postgres",
+                                "data-resource",
+                                dataResource.name,
+                              ],
+                              onSelect: (queryString) => {
+                                console.log(queryString);
+                              },
+                            },
+                          ),
+                      ) ?? []
+                    }
+                  />
+                )}
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={40} minSize={25}>
