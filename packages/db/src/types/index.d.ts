@@ -1,9 +1,9 @@
 import type { z } from "zod";
 
 import type {
+  dataResourceMetadataSchema,
   primitiveMetadataSchema,
   primitiveTypesSchema,
-  resourceMetadataSchema,
 } from "../schema";
 
 export type VarType = "number" | "text";
@@ -39,4 +39,4 @@ export interface FlowEdge {
 }
 
 export type PrimitiveMetadata = z.infer<typeof primitiveMetadataSchema>;
-export type ResourceMetadata = z.infer<typeof resourceMetadataSchema>;
+export type ResourceMetadata = z.infer<typeof dataResourceMetadataSchema>;

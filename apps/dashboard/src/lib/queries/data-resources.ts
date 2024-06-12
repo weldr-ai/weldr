@@ -7,6 +7,7 @@ import {
   dataResources,
   insertDataResourceSchema,
 } from "@integramind/db/schema";
+import { getTables } from "@integramind/db/utils";
 
 import type { DataResource, DataResourceMetadata } from "~/types";
 
@@ -47,13 +48,16 @@ export async function addDataResource(
     if (validation.success) {
       let metadata: DataResourceMetadata;
 
-      switch (validation.data.provider) {
-        case "postgres":
-          metadata = {
-            provider: "postgres",
-            connectionString: validation.data.connectionString,
-          };
-          break;
+      if (validation.data.provider === "postgres") {
+        const result = await getTables(validation.data.connectionString);
+        if (!result) {
+          return { status: "error", fields };
+        }
+        metadata = {
+          provider: "postgres",
+          connectionString: validation.data.connectionString,
+          tables: result,
+        };
       }
 
       const result = (
@@ -63,7 +67,7 @@ export async function addDataResource(
             name: validation.data.name,
             description: validation.data.description,
             provider: validation.data.provider,
-            metadata: sql`${{ ...metadata }}`,
+            metadata: sql`${{ ...metadata! }}`,
             workspaceId: validation.data.workspaceId,
           })
           .returning({ id: dataResources.id })

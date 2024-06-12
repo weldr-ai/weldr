@@ -1,6 +1,6 @@
+import type { EditorState, LexicalEditor } from "lexical";
 import { memo, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
 import {
   EllipsisVerticalIcon,
@@ -42,10 +42,8 @@ import type { FunctionNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { LambdaIcon } from "~/components/icons/lambda-icon";
-import { getDataResources } from "~/lib/queries/data-resources";
 import { deletePrimitive } from "~/lib/queries/primitives";
 import { getJobById } from "~/lib/queries/run";
-import { ReferenceOption } from "../editor/plugins/reference-plugin";
 
 async function postJob(): Promise<{ id: string }> {
   const response = await fetch("/api/run", {
@@ -73,7 +71,6 @@ def get_user(id):
 
 export const Function = memo(
   ({ data, isConnectable, xPos, yPos }: FunctionNodeProps) => {
-    const { workspaceId } = useParams<{ workspaceId: string }>();
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -81,22 +78,26 @@ export const Function = memo(
     const popoverRef = useRef<HTMLDivElement>(null);
     const [jobId, setJobId] = useState<string | undefined>();
 
+    function onChange(editorState: EditorState) {
+      editorState.read(() => {
+        const { root } = editorState.toJSON();
+        console.log(root.children);
+      });
+    }
+
+    function onError(error: Error, _editor: LexicalEditor) {
+      console.error(error);
+    }
+
     const deletePrimitiveMutation = useMutation({
       mutationFn: deletePrimitive,
     });
+
     const postJobMutation = useMutation({
       mutationFn: postJob,
       onSuccess: (data) => {
         setJobId(data.id);
       },
-    });
-    const {
-      isLoading,
-      isRefetching,
-      data: dataResources,
-    } = useQuery({
-      queryKey: ["data-resources"],
-      queryFn: () => getDataResources({ workspaceId }),
     });
 
     const { data: job, refetch: refetchJob } = useQuery({
@@ -190,7 +191,7 @@ export const Function = memo(
         <Card
           ref={popoverRef}
           className={cn(
-            "absolute -left-[128px] top-0 z-10 w-[600px] cursor-default",
+            "nowheel absolute -left-[128px] top-0 z-10 w-[600px] cursor-default",
             {
               hidden: !isExpanded,
             },
@@ -268,35 +269,7 @@ export const Function = memo(
                 className="flex flex-col gap-0.5 p-2"
               >
                 <span className="text-xs text-muted-foreground">Editor</span>
-                {isLoading || isRefetching ? (
-                  <div className="flex h-full items-center justify-center">
-                    <Loader2Icon className="size-8 animate-spin text-primary" />
-                  </div>
-                ) : (
-                  <Editor
-                    referenceOptions={
-                      dataResources?.map(
-                        (dataResource) =>
-                          new ReferenceOption(
-                            dataResource.id,
-                            dataResource.name,
-                            "data-resource",
-                            {
-                              icon: "postgres-icon",
-                              keywords: [
-                                "postgres",
-                                "data-resource",
-                                dataResource.name,
-                              ],
-                              onSelect: (queryString) => {
-                                console.log(queryString);
-                              },
-                            },
-                          ),
-                      ) ?? []
-                    }
-                  />
-                )}
+                <Editor onChange={onChange} onError={onError} />
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={40} minSize={25}>
@@ -318,7 +291,7 @@ export const Function = memo(
                           <span className="text-error">Failed</span>
                         </div>
                       ) : job.result ? (
-                        <ScrollArea className="nowheel h-full p-2">
+                        <ScrollArea className="h-full p-2">
                           <pre className="text-wrap">
                             {JSON.stringify(JSON.parse(job.result), null, 2)}
                           </pre>

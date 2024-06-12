@@ -187,6 +187,12 @@ export const insertDataResourceSchema = z.discriminatedUnion("provider", [
 export const postgresMetadataSchema = z.object({
   provider: z.literal("postgres"),
   connectionString: z.string(),
+  tables: z
+    .object({
+      name: z.string(),
+      columns: z.string().array(),
+    })
+    .array(),
 });
 export const dataResourceMetadataSchema = z.discriminatedUnion("provider", [
   postgresMetadataSchema,

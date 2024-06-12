@@ -9,25 +9,16 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 
-import type { ReferenceOption } from "~/components/editor/plugins/reference-plugin";
 import { DataResourceNode } from "~/components/editor/nodes/data-resource-node";
 import { ValueNode } from "~/components/editor/nodes/value-node";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 
-function onChange(editorState: EditorState) {
-  editorState.read(() => {
-    console.log(editorState.toJSON());
-  });
-}
-
-function onError(error: Error, _editor: LexicalEditor) {
-  console.error(error);
-}
-
 export function Editor({
-  referenceOptions,
+  onChange,
+  onError,
 }: {
-  referenceOptions: ReferenceOption[];
+  onChange: (editorState: EditorState) => void;
+  onError: (error: Error, _editor: LexicalEditor) => void;
 }) {
   const initialConfig: InitialConfigType = {
     namespace: "editor",
@@ -41,7 +32,7 @@ export function Editor({
       <div className="relative flex size-full">
         <RichTextPlugin
           contentEditable={
-            <ContentEditable className="flex size-full cursor-text flex-col rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" />
+            <ContentEditable className="flex size-full cursor-text flex-col overflow-scroll rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" />
           }
           placeholder={
             <div className="absolute px-3.5 py-2 text-sm text-muted-foreground">
@@ -50,7 +41,7 @@ export function Editor({
           }
           ErrorBoundary={LexicalErrorBoundary}
         />
-        <ReferencesPlugin options={referenceOptions} />
+        <ReferencesPlugin />
       </div>
       <OnChangePlugin onChange={onChange} />
       <HistoryPlugin />

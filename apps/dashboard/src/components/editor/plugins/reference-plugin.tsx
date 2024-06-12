@@ -1,20 +1,27 @@
 import type { TextNode } from "lexical";
 import { useCallback, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   LexicalTypeaheadMenuPlugin,
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
+import { useQuery } from "@tanstack/react-query";
 import { DatabaseIcon, VariableIcon } from "lucide-react";
 
 import { cn } from "@integramind/ui/utils";
 
 import type { DataResourceNode } from "~/components/editor/nodes/data-resource-node";
 import type { ValueNode } from "~/components/editor/nodes/value-node";
+import type { DataResourceMetadata } from "~/types";
 import { $createDataResourceNode } from "~/components/editor/nodes/data-resource-node";
 import { $createValueNode } from "~/components/editor/nodes/value-node";
 import { PostgresIcon } from "~/components/icons/postgres-icon";
+import {
+  getDataResourceById,
+  getDataResources,
+} from "~/lib/queries/data-resources";
 
 export class ReferenceOption extends MenuOption {
   // The id of the reference
@@ -50,9 +57,22 @@ export class ReferenceOption extends MenuOption {
   }
 }
 
-export function ReferencesPlugin({ options }: { options: ReferenceOption[] }) {
+export function ReferencesPlugin() {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
   const [_queryString, setQueryString] = useState<string | null>(null);
+  const [dataResourceId, setDataResourceId] = useState<string | undefined>();
+
+  const { data: dataResources } = useQuery({
+    queryKey: ["data-resources"],
+    queryFn: () => getDataResources({ workspaceId }),
+  });
+
+  const { data: dataResource } = useQuery({
+    queryKey: ["data-resource", dataResourceId],
+    queryFn: () => getDataResourceById({ id: dataResourceId! }),
+    enabled: !!dataResourceId,
+  });
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch("/", {
     minLength: 0,
@@ -85,6 +105,7 @@ export function ReferencesPlugin({ options }: { options: ReferenceOption[] }) {
             selectedOption.name,
             selectedOption.icon,
           );
+          setDataResourceId(selectedOption.id);
         }
         if (nodeToReplace) {
           nodeToReplace.replace(referenceNode);
@@ -96,9 +117,75 @@ export function ReferencesPlugin({ options }: { options: ReferenceOption[] }) {
     [editor],
   );
 
-  const _options = useMemo(() => {
+  const options = useMemo(() => {
+    let options: ReferenceOption[] = [];
+
+    if (dataResource) {
+      if (dataResource.provider === "postgres") {
+        options.push(
+          new ReferenceOption(
+            dataResource.id,
+            dataResource.name,
+            "data-resource",
+            {
+              icon: "postgres-icon",
+              keywords: ["postgres", "data-resource", dataResource.name],
+              onSelect: (queryString) => {
+                console.log(queryString);
+              },
+            },
+          ),
+        );
+
+        (dataResource.metadata as DataResourceMetadata).tables.forEach(
+          (table) => {
+            table.columns.forEach((column) =>
+              options.push(
+                new ReferenceOption(
+                  `${table.name}.${column}`,
+                  `${table.name}.${column}`,
+                  "value",
+                  {
+                    icon: "column-icon",
+                    keywords: ["column", column],
+                    onSelect: (queryString) => {
+                      console.log(queryString);
+                    },
+                  },
+                ),
+              ),
+            );
+            options.push(
+              new ReferenceOption(table.name, table.name, "value", {
+                icon: "table-icon",
+                keywords: ["table", table.name],
+                onSelect: (queryString) => {
+                  console.log(queryString);
+                },
+              }),
+            );
+          },
+        );
+      }
+    } else if (dataResources && !dataResourceId) {
+      options = dataResources.map(
+        (dataResource) =>
+          new ReferenceOption(
+            dataResource.id,
+            dataResource.name,
+            "data-resource",
+            {
+              icon: "postgres-icon",
+              keywords: ["postgres", "data-resource", dataResource.name],
+              onSelect: (queryString) => {
+                console.log(queryString);
+              },
+            },
+          ),
+      );
+    }
     return options;
-  }, [options]);
+  }, [dataResource, dataResourceId, dataResources]);
 
   return (
     <LexicalTypeaheadMenuPlugin<ReferenceOption>
@@ -111,8 +198,8 @@ export function ReferencesPlugin({ options }: { options: ReferenceOption[] }) {
         { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex },
       ) =>
         anchorElement && options.length ? (
-          <div className="absolute left-3 top-8 z-50 min-w-48 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-            {_options.map((option, i: number) => (
+          <div className="absolute left-3 top-8 flex max-h-40 min-w-48 flex-col overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+            {options.map((option, i: number) => (
               <div
                 id={"menu-item-" + i}
                 className={cn(
@@ -128,8 +215,12 @@ export function ReferencesPlugin({ options }: { options: ReferenceOption[] }) {
                   setHighlightedIndex(i);
                   selectOptionAndCleanUp(option);
                 }}
-                onKeyUp={() => setHighlightedIndex(i - 1)}
-                onKeyDown={() => setHighlightedIndex(i + 1)}
+                onKeyUp={() => {
+                  setHighlightedIndex(i - 1);
+                }}
+                onKeyDown={() => {
+                  setHighlightedIndex(i + 1);
+                }}
                 onMouseEnter={() => {
                   setHighlightedIndex(i);
                 }}

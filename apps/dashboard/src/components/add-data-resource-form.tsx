@@ -76,7 +76,7 @@ export function AddDataResourceForm({
             description: `${provider.charAt(0).toUpperCase()}${provider.slice(1)} added successfully.`,
             duration: 2000,
           });
-          await queryClient.invalidateQueries({ queryKey: ["resources"] });
+          await queryClient.invalidateQueries({ queryKey: ["data-resources"] });
           if (setAddResourceDialogOpen) {
             setAddResourceDialogOpen(false);
           }
