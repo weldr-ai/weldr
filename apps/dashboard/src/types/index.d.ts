@@ -12,7 +12,7 @@ import type {
   primitiveTypesSchema,
   routeMetadataSchema,
   workflowMetadataSchema,
-  workspaceSchema
+  workspaceSchema,
 } from "@integramind/db/schema";
 
 export type PrimitiveType = z.infer<typeof primitiveTypesSchema>;
@@ -69,4 +69,3 @@ export type Workspace = z.infer<typeof workspaceSchema>;
 export type Flow = z.infer<typeof flowSchema>;
 
 export type Primitive = z.infer<typeof primitiveSchema>;
-export type PrimitiveType = z.infer<typeof primitiveTypesSchema>;
