@@ -1,7 +1,9 @@
+"use client";
+
 import type { EditorState, LexicalEditor } from "lexical";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import Link from "next/link";
-import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
+import { skipToken, useQuery } from "@tanstack/react-query";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
@@ -13,7 +15,7 @@ import {
 import { Handle, Position, useReactFlow } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
-import { Card, CardContent, CardHeader } from "@integramind/ui/card";
+import { Card } from "@integramind/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -30,6 +32,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@integramind/ui/dropdown-menu";
+import {
+  ExpansionCard,
+  ExpansionCardContent,
+  ExpansionCardHeader,
+  ExpansionCardTrigger,
+} from "@integramind/ui/expansion-card";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -70,12 +78,10 @@ def get_user(id):
 }
 
 export const Function = memo(
-  ({ data, isConnectable, xPos, yPos }: FunctionNodeProps) => {
+  ({ data, isConnectable, selected, xPos, yPos }: FunctionNodeProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
-    const [isExpanded, setIsExpanded] = useState<boolean>(false);
-    const popoverRef = useRef<HTMLDivElement>(null);
     const [jobId, setJobId] = useState<string | undefined>();
 
     function onChange(editorState: EditorState) {
@@ -89,30 +95,12 @@ export const Function = memo(
       console.error(error);
     }
 
-    const deletePrimitiveMutation = useMutation({
-      mutationFn: deletePrimitive,
-    });
-
-    const postJobMutation = useMutation({
-      mutationFn: postJob,
-      onSuccess: (data) => {
-        setJobId(data.id);
-      },
-    });
-
     const { data: job, refetch: refetchJob } = useQuery({
       queryKey: ["job", jobId],
       queryFn: jobId ? () => getJobById({ id: jobId }) : skipToken,
     });
 
     useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (!popoverRef.current?.contains(event.target as Node)) {
-          setIsExpanded(false);
-        }
-      };
-      document.addEventListener("click", handleClickOutside);
-
       const interval = setInterval(() => {
         if (job && (job.state === "RUNNING" || job.state === "PENDING")) {
           void refetchJob();
@@ -121,9 +109,8 @@ export const Function = memo(
 
       return () => {
         clearInterval(interval);
-        document.removeEventListener("click", handleClickOutside);
       };
-    }, [job, refetchJob, setIsExpanded, isExpanded]);
+    }, [job, refetchJob]);
 
     return (
       <>
@@ -134,134 +121,135 @@ export const Function = memo(
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
-        <ContextMenu>
-          <ContextMenuTrigger>
-            <Card
-              className="drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 bg-muted px-5 py-4"
-              onClick={() => {
-                setIsExpanded(true);
-                reactFlow.fitBounds(
-                  {
-                    x: xPos,
-                    y: yPos,
-                    width: 256,
-                    height: 400 + 300,
-                  },
-                  {
-                    duration: 500,
-                  },
-                );
-              }}
-            >
-              <div className="flex items-center gap-2 text-xs">
-                <LambdaIcon className="size-4 text-primary" />
-                <span className="text-muted-foreground">Function</span>
+        <ExpansionCard>
+          <ExpansionCardTrigger>
+            <ContextMenu>
+              <ContextMenuTrigger>
+                <Card
+                  className={cn(
+                    "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 bg-muted px-5 py-4",
+                    {
+                      "border-primary": selected,
+                    },
+                  )}
+                  onClick={() => {
+                    reactFlow.fitBounds(
+                      {
+                        x: xPos,
+                        y: yPos,
+                        width: 256,
+                        height: 400 + 300,
+                      },
+                      {
+                        duration: 500,
+                      },
+                    );
+                  }}
+                >
+                  <div className="flex items-center gap-2 text-xs">
+                    <LambdaIcon className="size-4 text-primary" />
+                    <span className="text-muted-foreground">Function</span>
+                  </div>
+                  <span className="text-sm">{data.name}</span>
+                </Card>
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                <ContextMenuLabel className="text-xs">
+                  Function
+                </ContextMenuLabel>
+                <ContextMenuSeparator />
+                <ContextMenuItem className="text-xs">
+                  <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
+                  Run with previous primitives
+                </ContextMenuItem>
+                <ContextMenuItem className="flex items-center justify-between text-xs">
+                  <Link
+                    className="flex items-center"
+                    href="https://docs.integramind.ai/primitives/ai-processing"
+                    target="blank"
+                  >
+                    <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
+                    Docs
+                  </Link>
+                  <ExternalLinkIcon className="size-3 text-muted-foreground" />
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem
+                  className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                  onClick={() => setDeleteAlertDialogOpen(true)}
+                >
+                  <TrashIcon className="mr-3 size-4" />
+                  Delete
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
+          </ExpansionCardTrigger>
+          <ExpansionCardContent className="flex h-[400px] flex-col p-0">
+            <ExpansionCardHeader className="flex flex-col items-start justify-start px-6 py-4">
+              <div className="flex w-full items-center justify-between">
+                <div className="flex items-center gap-2 text-xs">
+                  <LambdaIcon className="size-4 text-primary" />
+                  <span className="text-muted-foreground">Function</span>
+                </div>
+                <div className="flex items-center">
+                  <Button
+                    className="size-7 text-success hover:text-success"
+                    variant="ghost"
+                    size="icon"
+                    disabled={
+                      job?.state === "RUNNING" || job?.state === "PENDING"
+                    }
+                    onClick={async () => {
+                      const job = await postJob();
+                      setJobId(job.id);
+                    }}
+                  >
+                    <PlayCircleIcon className="size-3.5" />
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <Button
+                        className="size-7 text-muted-foreground hover:text-muted-foreground"
+                        variant="ghost"
+                        size="icon"
+                      >
+                        <EllipsisVerticalIcon className="size-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start">
+                      <DropdownMenuLabel className="text-xs">
+                        Function
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-xs">
+                        <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
+                        Run with previous primitives
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="flex items-center justify-between text-xs">
+                        <Link
+                          className="flex items-center"
+                          href="https://docs.integramind.ai/primitives/ai-processing"
+                          target="blank"
+                        >
+                          <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
+                          Docs
+                        </Link>
+                        <ExternalLinkIcon className="size-3 text-muted-foreground" />
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                        onClick={() => setDeleteAlertDialogOpen(true)}
+                      >
+                        <TrashIcon className="mr-3 size-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
               <span className="text-sm">{data.name}</span>
-            </Card>
-          </ContextMenuTrigger>
-          <ContextMenuContent>
-            <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
-            <ContextMenuSeparator />
-            <ContextMenuItem className="text-xs">
-              <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
-              Run with previous primitives
-            </ContextMenuItem>
-            <ContextMenuItem className="flex items-center justify-between text-xs">
-              <Link
-                className="flex items-center"
-                href="https://docs.integramind.ai/primitives/ai-processing"
-                target="blank"
-              >
-                <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
-                Docs
-              </Link>
-              <ExternalLinkIcon className="size-3 text-muted-foreground" />
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-              onClick={() => setDeleteAlertDialogOpen(true)}
-            >
-              <TrashIcon className="mr-3 size-4" />
-              Delete
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
-        <Card
-          ref={popoverRef}
-          className={cn(
-            "nowheel absolute -left-[128px] top-0 z-10 w-[600px] cursor-default",
-            {
-              hidden: !isExpanded,
-            },
-          )}
-        >
-          <CardHeader className="flex flex-col items-start justify-start px-6 py-4">
-            <div className="flex w-full items-center justify-between">
-              <div className="flex items-center gap-2 text-xs">
-                <LambdaIcon className="size-4 text-primary" />
-                <span className="text-muted-foreground">Function</span>
-              </div>
-              <div className="flex items-center">
-                <Button
-                  className="size-7 text-success hover:text-success"
-                  variant="ghost"
-                  size="icon"
-                  disabled={
-                    postJobMutation.isPending ||
-                    job?.state === "RUNNING" ||
-                    job?.state === "PENDING"
-                  }
-                  onClick={() => postJobMutation.mutate()}
-                >
-                  <PlayCircleIcon className="size-3.5" />
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <Button
-                      className="size-7 text-muted-foreground hover:text-muted-foreground"
-                      variant="ghost"
-                      size="icon"
-                    >
-                      <EllipsisVerticalIcon className="size-3.5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="right" align="start">
-                    <DropdownMenuLabel className="text-xs">
-                      Function
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-xs">
-                      <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
-                      Run with previous primitives
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center justify-between text-xs">
-                      <Link
-                        className="flex items-center"
-                        href="https://docs.integramind.ai/primitives/ai-processing"
-                        target="blank"
-                      >
-                        <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
-                        Docs
-                      </Link>
-                      <ExternalLinkIcon className="size-3 text-muted-foreground" />
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-                      onClick={() => setDeleteAlertDialogOpen(true)}
-                    >
-                      <TrashIcon className="mr-3 size-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-            <span className="text-sm">{data.name}</span>
-          </CardHeader>
-          <CardContent className="flex h-[400px] p-0">
+            </ExpansionCardHeader>
             <ResizablePanelGroup direction="vertical" className="flex h-full">
               <ResizablePanel
                 defaultSize={60}
@@ -304,8 +292,8 @@ export const Function = memo(
                 </div>
               </ResizablePanel>
             </ResizablePanelGroup>
-          </CardContent>
-        </Card>
+          </ExpansionCardContent>
+        </ExpansionCard>
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
@@ -317,7 +305,7 @@ export const Function = memo(
                 },
               ],
             });
-            await deletePrimitiveMutation.mutateAsync({
+            await deletePrimitive({
               id: data.id,
             });
           }}
