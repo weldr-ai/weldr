@@ -1,6 +1,6 @@
 "use client";
 
-import type { Connection, Edge, NodeChange } from "reactflow";
+import type { Connection, Edge, Node } from "reactflow";
 import React, { useCallback } from "react";
 import { createId } from "@paralleldrive/cuid2";
 import { useMutation } from "@tanstack/react-query";
@@ -158,33 +158,26 @@ export function _FlowBuilder({
     [createPrimitiveMutation, flowId, reactFlow, setNodes],
   );
 
-  const customOnNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      onNodesChange(changes);
-      changes.map((change) => {
-        if (change.type === "position") {
-          const node = nodes.find((node) => node.id === change.id);
-          if (node) {
-            updatePrimitivePositionMutation.mutate({
-              id: node.id,
-              positionX: change.position ? change.position.x : node.position.x,
-              positionY: change.position ? change.position.y : node.position.y,
-            });
-          }
-        }
+  const onNodeDragStop = useCallback(
+    (_event: React.MouseEvent, node: Node, _nodes: Node[]) => {
+      updatePrimitivePositionMutation.mutate({
+        id: node.id,
+        positionX: Math.floor(node.position.x),
+        positionY: Math.floor(node.position.y),
       });
     },
-    [nodes, onNodesChange, updatePrimitivePositionMutation],
+    [updatePrimitivePositionMutation],
   );
 
   return (
     <ReactFlow
       nodes={nodes}
       edges={edges}
-      onNodesChange={customOnNodesChange}
+      onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onDrop={onDrop}
+      onNodeDragStop={onNodeDragStop}
       onDragOver={onDragOver}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
