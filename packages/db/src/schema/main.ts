@@ -38,7 +38,7 @@ export const primitiveTypes = pgEnum("primitive_types", [
   "workflow",
   "function",
   "conditional-branch",
-  "loop",
+  "iterator",
   "response",
 ]);
 

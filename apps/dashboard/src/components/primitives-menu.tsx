@@ -57,11 +57,11 @@ export function PrimitivesMenu() {
             </div>
             <div
               className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
-              onDragStart={(event) => onDragStart(event, "loop")}
+              onDragStart={(event) => onDragStart(event, "iterator")}
               draggable
             >
               <RepeatIcon className="size-4 text-primary" />
-              <span className="w-full text-[10px]">Loop</span>
+              <span className="w-full text-[10px]">Iterator</span>
             </div>
             <div
               className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"

@@ -12,24 +12,23 @@ export async function createPrimitive({
   positionY,
 }: {
   id: string;
-  type: "function" | "conditional-branch" | "loop" | "response";
+  type: "function" | "conditional-branch" | "iterator" | "response";
   name: string;
   flowId: string;
   positionX: number;
   positionY: number;
 }) {
-  const result = await db.insert(primitives).values({
+  await db.insert(primitives).values({
     id,
     type,
     name,
-    positionX,
-    positionY,
+    positionX: Math.floor(positionX),
+    positionY: Math.floor(positionY),
     flowId,
     metadata: sql`${{
       type,
     }}`,
   });
-  return result;
 }
 
 export async function deletePrimitive({ id }: { id: string }) {
@@ -48,8 +47,8 @@ export async function updatePrimitivePosition({
   await db
     .update(primitives)
     .set({
-      positionX,
-      positionY,
+      positionX: Math.floor(positionX),
+      positionY: Math.floor(positionY),
     })
     .where(eq(primitives.id, id));
 }

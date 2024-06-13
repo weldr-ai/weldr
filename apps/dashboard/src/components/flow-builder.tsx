@@ -1,9 +1,8 @@
 "use client";
 
-import type { Connection, Edge, NodeChange } from "reactflow";
+import type { Connection, Edge, Node } from "reactflow";
 import React, { useCallback } from "react";
 import { createId } from "@paralleldrive/cuid2";
-import { useMutation } from "@tanstack/react-query";
 import {
   MinusIcon,
   PlayCircleIcon,
@@ -31,24 +30,25 @@ import { Button } from "@integramind/ui/button";
 import type { FlowEdge, FlowNode, PrimitiveType } from "~/types";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
+import { ConditionalBranch } from "~/components/primitives/conditional-branch";
+import { Function } from "~/components/primitives/function";
+import { Iterator } from "~/components/primitives/iterator";
+import { Response } from "~/components/primitives/response";
+import { Route } from "~/components/primitives/route";
+import { Workflow } from "~/components/primitives/workflow";
 import { createEdge } from "~/lib/queries/edges";
 import {
   createPrimitive,
+  deletePrimitive,
   updatePrimitivePosition,
 } from "~/lib/queries/primitives";
-import { ConditionalBranch } from "./primitives/conditional-branch";
-import { Function } from "./primitives/function";
-import { Loop } from "./primitives/loop";
-import { Response } from "./primitives/response";
-import { Route } from "./primitives/route";
-import { Workflow } from "./primitives/workflow";
 
 const nodeTypes = {
   route: Route,
   workflow: Workflow,
   function: Function,
   "conditional-branch": ConditionalBranch,
-  loop: Loop,
+  iterator: Iterator,
   response: Response,
 };
 
@@ -70,28 +70,18 @@ export function _FlowBuilder({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  const createPrimitiveMutation = useMutation({
-    mutationFn: createPrimitive,
-  });
-  const updatePrimitivePositionMutation = useMutation({
-    mutationFn: updatePrimitivePosition,
-  });
-  const createFlowEdgeMutation = useMutation({
-    mutationFn: createEdge,
-  });
-
   const onConnect = useCallback(
     async (params: Edge | Connection) => {
       const newEdgeId = createId();
       setEdges((eds) => addEdge({ ...params, type: "deletable-edge" }, eds));
-      await createFlowEdgeMutation.mutateAsync({
+      await createEdge({
         id: newEdgeId,
         source: params.source!,
         target: params.target!,
         flowId: flowId,
       });
     },
-    [flowId, setEdges, createFlowEdgeMutation],
+    [flowId, setEdges],
   );
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -113,8 +103,8 @@ export function _FlowBuilder({
             return "New Function";
           case "conditional-branch":
             return "New Conditional Branch";
-          case "loop":
-            return "New Loop";
+          case "iterator":
+            return "New Iterator";
           case "response":
             return "New Response";
         }
@@ -145,50 +135,51 @@ export function _FlowBuilder({
       setNodes((nodes) => nodes.concat(newNode));
 
       if (nodeType === "function") {
-        await createPrimitiveMutation.mutateAsync({
+        await createPrimitive({
           id: newNodeId,
           type: nodeType,
           name: newNodeName,
+          positionX: Math.floor(position.x),
+          positionY: Math.floor(position.y),
           flowId: flowId,
-          positionX: position.x,
-          positionY: position.y,
         });
       }
     },
-    [createPrimitiveMutation, flowId, reactFlow, setNodes],
+    [flowId, reactFlow, setNodes],
   );
 
-  const customOnNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      onNodesChange(changes);
-      changes.map((change) => {
-        if (change.type === "position") {
-          const node = nodes.find((node) => node.id === change.id);
-          if (node) {
-            updatePrimitivePositionMutation.mutate({
-              id: node.id,
-              positionX: change.position ? change.position.x : node.position.x,
-              positionY: change.position ? change.position.y : node.position.y,
-            });
-          }
-        }
+  const onNodeDragStop = useCallback(
+    async (_event: React.MouseEvent, node: Node, _nodes: Node[]) => {
+      await updatePrimitivePosition({
+        id: node.id,
+        positionX: Math.floor(node.position.x),
+        positionY: Math.floor(node.position.y),
       });
     },
-    [nodes, onNodesChange, updatePrimitivePositionMutation],
+    [],
   );
+
+  const onNodesDelete = useCallback(async (nodes: Node[]) => {
+    for (const node of nodes) {
+      await deletePrimitive({
+        id: node.id,
+      });
+    }
+  }, []);
 
   return (
     <ReactFlow
       nodes={nodes}
       edges={edges}
-      onNodesChange={customOnNodesChange}
+      onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onDrop={onDrop}
+      onNodeDragStop={onNodeDragStop}
       onDragOver={onDragOver}
+      onNodesDelete={onNodesDelete}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
-      deleteKeyCode={null}
       panOnScroll={true}
       maxZoom={1}
       fitView={true}
