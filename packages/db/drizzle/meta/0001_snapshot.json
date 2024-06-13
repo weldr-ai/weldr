@@ -1,5 +1,5 @@
 {
-  "id": "329b7959-8d61-46ff-884a-11f97955b2b9",
+  "id": "a83b16eb-e45b-4552-9f42-9d6340920ce8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
@@ -1071,7 +1071,7 @@
         "workflow": "workflow",
         "function": "function",
         "conditional-branch": "conditional-branch",
-        "loop": "loop",
+        "iterator": "iterator",
         "response": "response"
       }
     }

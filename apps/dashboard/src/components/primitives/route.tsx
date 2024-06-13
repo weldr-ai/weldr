@@ -41,7 +41,7 @@ export const Route = memo(
           <ExpandableCardTrigger>
             <Card
               className={cn(
-                "drag-handle flex h-[84px] w-[256px] flex-col gap-2 px-5 py-4",
+                "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col gap-2 px-5 py-4",
                 {
                   "border-primary": selected,
                 },

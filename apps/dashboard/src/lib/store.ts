@@ -20,26 +20,6 @@ export const usePrimarySidebarStore = create<
     })),
 }));
 
-interface DevelopmentSheetState {
-  currentId: string | null;
-}
-
-interface DevelopmentSheetAction {
-  updateCurrentId: (id: string) => void;
-  removeCurrentId: () => void;
-}
-
-export const useDevelopmentSheetStore = create<
-  DevelopmentSheetState & DevelopmentSheetAction
->((set) => ({
-  currentId: null,
-  updateCurrentId: (id) =>
-    set(() => ({
-      currentId: id,
-    })),
-  removeCurrentId: () => set(() => ({ currentId: null })),
-}));
-
 interface CommandCenterState {
   open: boolean;
 }

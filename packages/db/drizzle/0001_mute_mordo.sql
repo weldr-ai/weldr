@@ -11,7 +11,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- CREATE TYPE "primitive_types" AS ENUM('route', 'workflow', 'function', 'conditional-branch', 'loop', 'response');
+ CREATE TYPE "primitive_types" AS ENUM('route', 'workflow', 'function', 'conditional-branch', 'iterator', 'response');
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -100,24 +100,6 @@ CREATE TABLE IF NOT EXISTS "workspaces" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
---> statement-breakpoint
-ALTER TABLE "tasks" DROP CONSTRAINT "tasks_job_id_fkey";
---> statement-breakpoint
-ALTER TABLE "tasks_log_parts" DROP CONSTRAINT "tasks_log_parts_task_id_fkey";
---> statement-breakpoint
-DROP INDEX IF EXISTS "jobs_ts_idx";--> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "tasks" ADD CONSTRAINT "tasks_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "jobs"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "tasks_log_parts" ADD CONSTRAINT "tasks_log_parts_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "tasks"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "account" ADD CONSTRAINT "account_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
