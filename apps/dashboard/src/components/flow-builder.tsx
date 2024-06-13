@@ -30,25 +30,25 @@ import { Button } from "@integramind/ui/button";
 import type { FlowEdge, FlowNode, PrimitiveType } from "~/types";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
+import { ConditionalBranch } from "~/components/primitives/conditional-branch";
+import { Function } from "~/components/primitives/function";
+import { Iterator } from "~/components/primitives/iterator";
+import { Response } from "~/components/primitives/response";
+import { Route } from "~/components/primitives/route";
+import { Workflow } from "~/components/primitives/workflow";
 import { createEdge } from "~/lib/queries/edges";
 import {
   createPrimitive,
   deletePrimitive,
   updatePrimitivePosition,
 } from "~/lib/queries/primitives";
-import { ConditionalBranch } from "./primitives/conditional-branch";
-import { Function } from "./primitives/function";
-import { Loop } from "./primitives/loop";
-import { Response } from "./primitives/response";
-import { Route } from "./primitives/route";
-import { Workflow } from "./primitives/workflow";
 
 const nodeTypes = {
   route: Route,
   workflow: Workflow,
   function: Function,
   "conditional-branch": ConditionalBranch,
-  loop: Loop,
+  iterator: Iterator,
   response: Response,
 };
 
@@ -103,8 +103,8 @@ export function _FlowBuilder({
             return "New Function";
           case "conditional-branch":
             return "New Conditional Branch";
-          case "loop":
-            return "New Loop";
+          case "iterator":
+            return "New Iterator";
           case "response":
             return "New Response";
         }

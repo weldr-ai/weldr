@@ -12,7 +12,7 @@ export async function createPrimitive({
   positionY,
 }: {
   id: string;
-  type: "function" | "conditional-branch" | "loop" | "response";
+  type: "function" | "conditional-branch" | "iterator" | "response";
   name: string;
   flowId: string;
   positionX: number;

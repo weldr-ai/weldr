@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { cn } from "./utils";
 
-const ExpansionCardContext = React.createContext<{
+const ExpandableCardContext = React.createContext<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }>({
@@ -10,9 +10,9 @@ const ExpansionCardContext = React.createContext<{
   onOpenChange: () => {},
 });
 
-const useExpansionCardContext = () => React.useContext(ExpansionCardContext);
+const useExpandableCardContext = () => React.useContext(ExpandableCardContext);
 
-const ExpansionCard = React.forwardRef<
+const ExpandableCard = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
     open?: boolean;
@@ -22,35 +22,35 @@ const ExpansionCard = React.forwardRef<
   const [isOpen, setOpen] = React.useState(false);
 
   return (
-    <ExpansionCardContext.Provider
+    <ExpandableCardContext.Provider
       value={{
         open: open ?? isOpen,
         onOpenChange: onOpenChange ?? setOpen,
       }}
     >
       <div ref={ref} className={className} {...props} />
-    </ExpansionCardContext.Provider>
+    </ExpandableCardContext.Provider>
   );
 });
-ExpansionCard.displayName = "ExpansionCard";
+ExpandableCard.displayName = "ExpandableCard";
 
-const ExpansionCardTrigger = React.forwardRef<
+const ExpandableCardTrigger = React.forwardRef<
   HTMLButtonElement,
   React.HTMLAttributes<HTMLButtonElement>
 >(({ className, ...props }, ref) => {
-  const { onOpenChange } = useExpansionCardContext();
+  const { onOpenChange } = useExpandableCardContext();
   return (
     <button
       ref={ref}
       className={className}
-      onClick={() => onOpenChange(true)}
       {...props}
+      onClick={() => onOpenChange(true)}
     />
   );
 });
-ExpansionCardTrigger.displayName = "ExpansionCardTrigger";
+ExpandableCardTrigger.displayName = "ExpandableCardTrigger";
 
-const ExpansionCardHeader = React.forwardRef<
+const ExpandableCardHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
@@ -60,9 +60,9 @@ const ExpansionCardHeader = React.forwardRef<
     {...props}
   />
 ));
-ExpansionCardHeader.displayName = "ExpansionCardHeaderHeader";
+ExpandableCardHeader.displayName = "ExpandableCardHeaderHeader";
 
-const ExpansionCardTitle = React.forwardRef<
+const ExpandableCardTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
@@ -72,9 +72,9 @@ const ExpansionCardTitle = React.forwardRef<
     {...props}
   />
 ));
-ExpansionCardTitle.displayName = "ExpansionCardTitle";
+ExpandableCardTitle.displayName = "ExpandableCardTitle";
 
-const ExpansionCardDescription = React.forwardRef<
+const ExpandableCardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
@@ -84,13 +84,13 @@ const ExpansionCardDescription = React.forwardRef<
     {...props}
   />
 ));
-ExpansionCardDescription.displayName = "ExpansionCardDescription";
+ExpandableCardDescription.displayName = "ExpandableCardDescription";
 
-const ExpansionCardContent = React.forwardRef<
+const ExpandableCardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
-  const { open, onOpenChange } = useExpansionCardContext();
+  const { open, onOpenChange } = useExpandableCardContext();
   const contentRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -119,9 +119,9 @@ const ExpansionCardContent = React.forwardRef<
     />
   );
 });
-ExpansionCardContent.displayName = "ExpansionCardContent";
+ExpandableCardContent.displayName = "ExpandableCardContent";
 
-const ExpansionCardFooter = React.forwardRef<
+const ExpandableCardFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
@@ -131,14 +131,14 @@ const ExpansionCardFooter = React.forwardRef<
     {...props}
   />
 ));
-ExpansionCardFooter.displayName = "ExpansionCardFooter";
+ExpandableCardFooter.displayName = "ExpandableCardFooter";
 
 export {
-  ExpansionCard,
-  ExpansionCardContent,
-  ExpansionCardDescription,
-  ExpansionCardFooter,
-  ExpansionCardHeader,
-  ExpansionCardTitle,
-  ExpansionCardTrigger,
+  ExpandableCard,
+  ExpandableCardContent,
+  ExpandableCardDescription,
+  ExpandableCardFooter,
+  ExpandableCardHeader,
+  ExpandableCardTitle,
+  ExpandableCardTrigger,
 };

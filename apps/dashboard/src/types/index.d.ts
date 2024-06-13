@@ -23,7 +23,7 @@ export type FlowNode =
   | WorkflowNode
   | FunctionNode
   | ConditionalBranchNode
-  | LoopNode
+  | IteratorNode
   | ResponseNode;
 
 export type BaseNode<T> = Node<T, PrimitiveType>;
@@ -53,9 +53,9 @@ export type ConditionalBranchData = BaseNodeData;
 export type ConditionalBranchNode = BaseNode<ConditionalBranchData>;
 export type ConditionalBranchNodeProps = BaseNodeProps<ConditionalBranchData>;
 
-export type LoopData = BaseNodeData;
-export type LoopNode = BaseNode<LoopData>;
-export type LoopNodeProps = BaseNodeProps<LoopData>;
+export type IteratorData = BaseNodeData;
+export type IteratorNode = BaseNode<IteratorData>;
+export type IteratorNodeProps = BaseNodeProps<IteratorData>;
 
 export type ResponseData = BaseNodeData;
 export type ResponseNode = BaseNode<ResponseData>;

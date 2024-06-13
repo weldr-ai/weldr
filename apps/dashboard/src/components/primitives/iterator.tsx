@@ -1,15 +1,11 @@
-"use client";
-
-import type { EditorState, LexicalEditor } from "lexical";
-import { memo, useEffect, useState } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
-import { skipToken, useQuery } from "@tanstack/react-query";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
-  Loader2Icon,
   PlayCircleIcon,
+  RepeatIcon,
   TrashIcon,
 } from "lucide-react";
 import { Handle, Position, useReactFlow } from "reactflow";
@@ -38,79 +34,16 @@ import {
   ExpandableCardHeader,
   ExpandableCardTrigger,
 } from "@integramind/ui/expandable-card";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@integramind/ui/resizable";
-import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
-import type { FunctionNodeProps } from "~/types";
+import type { IteratorNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import Editor from "~/components/editor";
-import { LambdaIcon } from "~/components/icons/lambda-icon";
-import { deletePrimitive } from "~/lib/queries/primitives";
-import { getJobById } from "~/lib/queries/run";
 
-async function postJob(): Promise<{ id: string }> {
-  const response = await fetch("/api/run", {
-    method: "POST",
-    body: JSON.stringify({
-      name: "Get user",
-      inputs: [{ name: "id", value: "1" }],
-      functionCode: `
-def get_user(id):
-  import requests
-  url = f"https://jsonplaceholder.typicode.com/posts/{id}"
-  response = requests.get(url)
-  data = response.json()
-  return data
-`,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
-  }
-
-  return response.json() as Promise<{ id: string }>;
-}
-
-export const Function = memo(
-  ({ data, isConnectable, selected, xPos, yPos }: FunctionNodeProps) => {
+export const Iterator = memo(
+  ({ data, isConnectable, xPos, yPos, selected }: IteratorNodeProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
-    const [jobId, setJobId] = useState<string | undefined>();
-
-    function onChange(editorState: EditorState) {
-      editorState.read(() => {
-        const { root } = editorState.toJSON();
-        console.log(root.children);
-      });
-    }
-
-    function onError(error: Error, _editor: LexicalEditor) {
-      console.error(error);
-    }
-
-    const { data: job, refetch: refetchJob } = useQuery({
-      queryKey: ["job", jobId],
-      queryFn: jobId ? () => getJobById({ id: jobId }) : skipToken,
-    });
-
-    useEffect(() => {
-      const interval = setInterval(() => {
-        if (job && (job.state === "RUNNING" || job.state === "PENDING")) {
-          void refetchJob();
-        }
-      }, 100);
-
-      return () => {
-        clearInterval(interval);
-      };
-    }, [job, refetchJob]);
 
     return (
       <>
@@ -147,15 +80,15 @@ export const Function = memo(
                   }}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <LambdaIcon className="size-4 text-primary" />
-                    <span className="text-muted-foreground">Function</span>
+                    <RepeatIcon className="size-4 text-primary" />
+                    <span className="text-muted-foreground">Iterator</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
                 </Card>
               </ContextMenuTrigger>
               <ContextMenuContent>
                 <ContextMenuLabel className="text-xs">
-                  Function
+                  Iterator
                 </ContextMenuLabel>
                 <ContextMenuSeparator />
                 <ContextMenuItem className="text-xs">
@@ -165,7 +98,7 @@ export const Function = memo(
                 <ContextMenuItem className="flex items-center justify-between text-xs">
                   <Link
                     className="flex items-center"
-                    href="https://docs.integramind.ai/primitives/function"
+                    href="https://docs.integramind.ai/primitives/iterator"
                     target="blank"
                   >
                     <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
@@ -188,21 +121,14 @@ export const Function = memo(
             <ExpandableCardHeader className="flex flex-col items-start justify-start px-6 py-4">
               <div className="flex w-full items-center justify-between">
                 <div className="flex items-center gap-2 text-xs">
-                  <LambdaIcon className="size-4 text-primary" />
-                  <span className="text-muted-foreground">Function</span>
+                  <RepeatIcon className="size-4 text-primary" />
+                  <span className="text-muted-foreground">Iterator</span>
                 </div>
                 <div className="flex items-center">
                   <Button
                     className="size-7 text-success hover:text-success"
                     variant="ghost"
                     size="icon"
-                    disabled={
-                      job?.state === "RUNNING" || job?.state === "PENDING"
-                    }
-                    onClick={async () => {
-                      const job = await postJob();
-                      setJobId(job.id);
-                    }}
                   >
                     <PlayCircleIcon className="size-3.5" />
                   </Button>
@@ -218,7 +144,7 @@ export const Function = memo(
                     </DropdownMenuTrigger>
                     <DropdownMenuContent side="right" align="start">
                       <DropdownMenuLabel className="text-xs">
-                        Function
+                        Iterator
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-xs">
@@ -250,65 +176,20 @@ export const Function = memo(
               </div>
               <span className="text-sm">{data.name}</span>
             </ExpandableCardHeader>
-            <ResizablePanelGroup direction="vertical" className="flex h-full">
-              <ResizablePanel
-                defaultSize={60}
-                minSize={25}
-                className="flex flex-col gap-0.5 p-2"
-              >
-                <span className="text-xs text-muted-foreground">Editor</span>
-                <Editor onChange={onChange} onError={onError} />
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={40} minSize={25}>
-                <div className="flex size-full rounded-b-xl bg-accent">
-                  {job?.state === "PENDING" || job?.state === "RUNNING" ? (
-                    <div className="flex size-full items-center justify-center">
-                      <Loader2Icon className="size-6 animate-spin text-primary" />
-                    </div>
-                  ) : (
-                    <>
-                      {!job ? (
-                        <div className="flex size-full items-center justify-center">
-                          <span className="text-muted-foreground">
-                            Click run to view output
-                          </span>
-                        </div>
-                      ) : job.state === "FAILED" ? (
-                        <div className="flex size-full items-center justify-center">
-                          <span className="text-error">Failed</span>
-                        </div>
-                      ) : job.result ? (
-                        <ScrollArea className="h-full p-2">
-                          <pre className="text-wrap">
-                            {JSON.stringify(JSON.parse(job.result), null, 2)}
-                          </pre>
-                        </ScrollArea>
-                      ) : (
-                        <span>SUCCESS</span>
-                      )}
-                    </>
-                  )}
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
           </ExpandableCardContent>
         </ExpandableCard>
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
-          onDelete={async () => {
+          onDelete={() =>
             reactFlow.deleteElements({
               nodes: [
                 {
                   id: data.id,
                 },
               ],
-            });
-            await deletePrimitive({
-              id: data.id,
-            });
-          }}
+            })
+          }
         />
         <Handle
           className="border-border bg-background p-1"
@@ -322,4 +203,4 @@ export const Function = memo(
   },
 );
 
-Function.displayName = "Function";
+Iterator.displayName = "Iterator";
