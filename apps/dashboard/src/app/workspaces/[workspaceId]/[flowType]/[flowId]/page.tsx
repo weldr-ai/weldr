@@ -26,6 +26,7 @@ export default async function WorkflowPage({
           id: primitive.id,
           type: primitive.type,
           dragHandle: ".drag-handle",
+          deletable: false,
           position: { x: primitive.positionX, y: primitive.positionY },
           data: {
             id: primitive.id,
@@ -40,6 +41,7 @@ export default async function WorkflowPage({
           id: primitive.id,
           type: primitive.type,
           dragHandle: ".drag-handle",
+          deletable: false,
           position: { x: primitive.positionX, y: primitive.positionY },
           data: {
             id: primitive.id,

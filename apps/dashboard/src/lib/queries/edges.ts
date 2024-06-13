@@ -14,13 +14,12 @@ export async function createEdge({
   target: string;
   flowId: string;
 }) {
-  const result = await db.insert(edges).values({
+  await db.insert(edges).values({
     id,
     source,
     target,
     flow_id: flowId,
   });
-  return result;
 }
 
 export async function deleteEdge({ id }: { id: string }) {
