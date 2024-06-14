@@ -16,9 +16,11 @@ import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 export function Editor({
   onChange,
   onError,
+  inputs,
 }: {
   onChange: (editorState: EditorState) => void;
   onError: (error: Error, _editor: LexicalEditor) => void;
+  inputs?: string[];
 }) {
   const initialConfig: InitialConfigType = {
     namespace: "editor",
@@ -41,7 +43,7 @@ export function Editor({
           }
           ErrorBoundary={LexicalErrorBoundary}
         />
-        <ReferencesPlugin />
+        <ReferencesPlugin inputs={inputs} />
       </div>
       <OnChangePlugin onChange={onChange} />
       <HistoryPlugin />

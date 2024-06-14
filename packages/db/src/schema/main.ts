@@ -216,10 +216,16 @@ export const routeMetadataSchema = z.object({
   type: z.literal("route"),
   actionType: z.enum(["retrieve", "submit", "modify", "delete"]),
   urlPath: z.string(),
+  inputs: z
+    .object({ name: z.string(), type: z.enum(["number", "text"]) })
+    .array(),
 });
 export const workflowMetadataSchema = z.object({
   type: z.literal("workflow"),
   triggerType: z.enum(["webhook", "schedule"]),
+  inputs: z
+    .object({ name: z.string(), type: z.enum(["number", "text"]) })
+    .array(),
 });
 
 export const primitiveMetadataSchema = z.discriminatedUnion("type", [

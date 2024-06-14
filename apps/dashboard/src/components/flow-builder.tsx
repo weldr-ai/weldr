@@ -129,7 +129,7 @@ export function _FlowBuilder({
         id: newNodeId,
         type: nodeType,
         position,
-        data: { id: newNodeId, name: newNodeName },
+        data: { id: newNodeId, name: newNodeName, type: nodeType },
       };
 
       setNodes((nodes) => nodes.concat(newNode));
