@@ -8,7 +8,7 @@ import type {
 } from "lexical";
 import type { ReactNode } from "react";
 import { DecoratorNode } from "lexical";
-import { VariableIcon } from "lucide-react";
+import { DatabaseIcon, VariableIcon } from "lucide-react";
 
 export type SerializedValueNode = Spread<
   {
@@ -22,7 +22,9 @@ export type SerializedValueNode = Spread<
 function ValueNodeComponent({ name, icon }: { name: string; icon: string }) {
   return (
     <div className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-xs text-accent-foreground">
-      {icon === "value-icon" && (
+      {icon === "database-icon" ? (
+        <DatabaseIcon className="mr-1 size-3 text-primary" />
+      ) : (
         <VariableIcon className="mr-1 size-3 text-primary" />
       )}
       {name}

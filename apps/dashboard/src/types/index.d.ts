@@ -32,6 +32,7 @@ export interface BaseNodeData {
   id: string;
   name: string;
   description?: string | null;
+  type: PrimitiveType;
 }
 
 export type RouteMetadata = z.infer<typeof routeMetadataSchema>;
@@ -69,3 +70,8 @@ export type Workspace = z.infer<typeof workspaceSchema>;
 export type Flow = z.infer<typeof flowSchema>;
 
 export type Primitive = z.infer<typeof primitiveSchema>;
+export type PrimitiveMetadata =
+  | RouteMetadata
+  | WorkflowMetadata
+  | FunctionMetadata;
+export type PrimitiveData = BaseNodeData & PrimitiveMetadata;

@@ -1,7 +1,7 @@
 "use client";
 
 import type { EditorState, LexicalEditor } from "lexical";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { skipToken, useQuery } from "@tanstack/react-query";
 import {
@@ -12,7 +12,7 @@ import {
   PlayCircleIcon,
   TrashIcon,
 } from "lucide-react";
-import { Handle, Position, useReactFlow } from "reactflow";
+import { Handle, Position, useEdges, useNodes, useReactFlow } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
@@ -46,7 +46,7 @@ import {
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
-import type { FunctionNodeProps } from "~/types";
+import type { FunctionNodeProps, PrimitiveData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { LambdaIcon } from "~/components/icons/lambda-icon";
@@ -80,8 +80,36 @@ def get_user(id):
 export const Function = memo(
   ({ data, isConnectable, selected, xPos, yPos }: FunctionNodeProps) => {
     const reactFlow = useReactFlow();
+    const nodes = useNodes<PrimitiveData>();
+    const edges = useEdges<"deletable-edge">();
+    const inputs = useMemo(() => {
+      const parents = edges.reduce((acc, edge) => {
+        if (edge.source === data.id) {
+          const parent = nodes.find((node) => node.id === edge.target);
+          if (parent) {
+            acc.push(parent.data);
+          }
+        }
+        return acc;
+      }, [] as PrimitiveData[]);
+
+      return parents.reduce((acc, parent) => {
+        if (
+          parent.type === "route" ||
+          parent.type === "workflow" ||
+          parent.type === "function"
+        ) {
+          parent.inputs.forEach((input) => {
+            acc.push(input.name);
+          });
+        }
+        return acc;
+      }, [] as string[]);
+    }, [data.id, edges, nodes]);
+
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
+
     const [jobId, setJobId] = useState<string | undefined>();
 
     function onChange(editorState: EditorState) {
@@ -257,7 +285,7 @@ export const Function = memo(
                 className="flex flex-col gap-0.5 p-2"
               >
                 <span className="text-xs text-muted-foreground">Editor</span>
-                <Editor onChange={onChange} onError={onError} />
+                <Editor onChange={onChange} onError={onError} inputs={inputs} />
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={40} minSize={25}>

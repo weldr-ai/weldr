@@ -27,8 +27,6 @@ export function Navbar({ workspace }: { workspace: Workspace }): JSX.Element {
   const [createWorkspaceDialogOpen, setCreateWorkspaceDialogOpen] =
     useState<boolean>(false);
 
-  console.log(resolvedTheme);
-
   return (
     <header className="flex h-14 items-center border-b bg-muted">
       <nav className="flex items-center text-sm">

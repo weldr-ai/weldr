@@ -57,7 +57,7 @@ export class ReferenceOption extends MenuOption {
   }
 }
 
-export function ReferencesPlugin() {
+export function ReferencesPlugin({ inputs }: { inputs?: string[] }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
   const [_queryString, setQueryString] = useState<string | null>(null);
@@ -117,8 +117,30 @@ export function ReferencesPlugin() {
     [editor],
   );
 
+  const inputOptions: ReferenceOption[] = useMemo(
+    () =>
+      inputs
+        ? inputs.map(
+            (input) =>
+              new ReferenceOption(
+                `${input}-${crypto.randomUUID()}`,
+                input,
+                "value",
+                {
+                  icon: "value-icon",
+                  keywords: ["value", input],
+                  onSelect: (queryString) => {
+                    console.log(queryString);
+                  },
+                },
+              ),
+          )
+        : [],
+    [inputs],
+  );
+
   const options = useMemo(() => {
-    let options: ReferenceOption[] = [];
+    const options: ReferenceOption[] = [...inputOptions];
 
     if (dataResource) {
       if (dataResource.provider === "postgres") {
@@ -146,7 +168,7 @@ export function ReferencesPlugin() {
                   `${table.name}.${column}`,
                   "value",
                   {
-                    icon: "column-icon",
+                    icon: "database-icon",
                     keywords: ["column", column],
                     onSelect: (queryString) => {
                       console.log(queryString);
@@ -157,7 +179,7 @@ export function ReferencesPlugin() {
             );
             options.push(
               new ReferenceOption(table.name, table.name, "value", {
-                icon: "table-icon",
+                icon: "database-icon",
                 keywords: ["table", table.name],
                 onSelect: (queryString) => {
                   console.log(queryString);
@@ -168,8 +190,8 @@ export function ReferencesPlugin() {
         );
       }
     } else if (dataResources && !dataResourceId) {
-      options = dataResources.map(
-        (dataResource) =>
+      dataResources.forEach((dataResource) =>
+        options.push(
           new ReferenceOption(
             dataResource.id,
             dataResource.name,
@@ -182,10 +204,12 @@ export function ReferencesPlugin() {
               },
             },
           ),
+        ),
       );
     }
+
     return options;
-  }, [dataResource, dataResourceId, dataResources]);
+  }, [dataResource, dataResourceId, dataResources, inputOptions]);
 
   return (
     <LexicalTypeaheadMenuPlugin<ReferenceOption>
@@ -237,7 +261,11 @@ export function ReferencesPlugin() {
               </div>
             ))}
           </div>
-        ) : null
+        ) : (
+          <div className="absolute left-3 top-8 flex min-w-48 rounded-md border bg-muted p-2 text-xs">
+            No references found.
+          </div>
+        )
       }
     />
   );

@@ -32,8 +32,10 @@ export default async function WorkflowPage({
             id: primitive.id,
             name: primitive.name,
             description: primitive.description,
+            type: primitive.type,
             actionType: primitive.metadata.actionType,
             urlPath: primitive.metadata.urlPath,
+            inputs: primitive.metadata.inputs,
           },
         };
       case "workflow":
@@ -47,7 +49,9 @@ export default async function WorkflowPage({
             id: primitive.id,
             name: primitive.name,
             description: primitive.description,
+            type: primitive.type,
             triggerType: primitive.metadata.triggerType,
+            inputs: primitive.metadata.inputs,
           },
         };
       case "function":
@@ -60,6 +64,7 @@ export default async function WorkflowPage({
             id: primitive.id,
             name: primitive.name,
             description: primitive.description,
+            type: primitive.type,
             inputs: primitive.metadata.inputs,
             outputs: primitive.metadata.outputs,
             generatedCode: primitive.metadata.generatedCode,
