@@ -1,3 +1,4 @@
+import { Badge } from "@integramind/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
 
 export function UseCases() {
@@ -6,9 +7,14 @@ export function UseCases() {
       id="use-cases"
       className="flex size-full scroll-mt-20 flex-col items-center gap-20"
     >
-      <h2 className="max-w-3xl text-center text-4xl font-semibold leading-snug">
-        Empower your team with effortless automation and more!
-      </h2>
+      <div className="flex flex-col items-center justify-center gap-6">
+        <Badge className="rounded-full border border-primary bg-background text-primary">
+          Use Cases
+        </Badge>
+        <h2 className="max-w-3xl text-center text-4xl font-semibold leading-snug">
+          Empower your team with effortless automation and more!
+        </h2>
+      </div>
       <div className="flex size-full rounded-xl border p-10">
         <Tabs
           defaultValue="use-case-1"

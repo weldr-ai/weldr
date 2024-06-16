@@ -22,7 +22,7 @@ export function Footer() {
           <XIcon />
         </Link>
         <Link
-          href="https://discord.gg/integramind"
+          href="https://linkedin.com/company/integramind"
           target="_blank"
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon" }),
