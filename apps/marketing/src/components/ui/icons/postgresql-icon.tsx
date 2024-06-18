@@ -1,6 +1,7 @@
-export function PostgresqlIcon() {
+export function PostgresqlIcon({ className }: { className?: string }) {
   return (
     <svg
+      className={className}
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid"
       viewBox="0 0 256 264"

@@ -3,6 +3,7 @@ import "@integramind/ui/globals.css";
 import type { Metadata } from "next";
 import { Poppins as FontSans } from "next/font/google";
 
+import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
 
 const fontSans = FontSans({
@@ -31,6 +32,7 @@ export default function RootLayout({
         )}
       >
         {children}
+        <Toaster />
       </body>
     </html>
   );

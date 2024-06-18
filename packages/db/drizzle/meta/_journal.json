@@ -15,6 +15,13 @@
       "when": 1718300799287,
       "tag": "0001_mute_mordo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1718670918528,
+      "tag": "0002_aromatic_invaders",
+      "breakpoints": true
     }
   ]
 }

@@ -183,6 +183,9 @@ importers:
       framer-motion:
         specifier: ^11.2.10
         version: 11.2.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      lucide-react:
+        specifier: ^0.363.0
+        version: 0.363.0(react@18.3.1)
       mini-svg-data-uri:
         specifier: ^1.4.4
         version: 1.4.4
@@ -192,7 +195,13 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
     devDependencies:
+      '@integramind/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@integramind/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint

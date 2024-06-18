@@ -7,6 +7,7 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const users = pgTable("user", {
   id: text("id")
@@ -61,3 +62,27 @@ export const verificationTokens = pgTable(
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
   }),
 );
+
+export const waitlist = pgTable("waitlist", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  email: text("email").unique().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export const waitlistSchema = createSelectSchema(waitlist);
+export const insertWaitlistSchema = createInsertSchema(waitlist, {
+  email: (schema) =>
+    schema.email
+      .email("Enter a valid email address")
+      .trim()
+      .min(1, {
+        message: "Email is required.",
+      })
+      .transform((email) => email.toLowerCase()),
+});

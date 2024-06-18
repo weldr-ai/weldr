@@ -16,7 +16,7 @@ export function Footer() {
           target="_blank"
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon" }),
-            "p-2",
+            "p-2 hover:bg-transparent",
           )}
         >
           <XIcon />
@@ -26,7 +26,7 @@ export function Footer() {
           target="_blank"
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon" }),
-            "p-2",
+            "p-2 hover:bg-transparent",
           )}
         >
           <LinkedInIcon />
