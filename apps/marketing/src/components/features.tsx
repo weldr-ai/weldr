@@ -140,16 +140,16 @@ export function Features() {
         <Card className="col-span-1 flex flex-col justify-center gap-4 p-6 shadow-none lg:gap-8 lg:p-8 xl:hidden">
           <div className="dark flex h-[250px] w-full items-center justify-center rounded-xl bg-background p-10 lg:h-[300px]">
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex size-16 items-center justify-center rounded-xl border bg-background p-4">
+              <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
                 <NotionIcon />
               </div>
-              <div className="flex size-16 items-center justify-center rounded-xl border bg-background p-4">
+              <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
                 <SlackIcon />
               </div>
-              <div className="flex size-16 items-center justify-center rounded-xl border bg-background p-4">
+              <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
                 <SalesforceIcon />
               </div>
-              <div className="flex size-16 items-center justify-center rounded-xl border bg-background p-4">
+              <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
                 <PostgresqlIcon />
               </div>
             </div>
@@ -177,16 +177,16 @@ export function Features() {
           <p>Out of the box integrations with popular tools.</p>
         </div>
         <div className="absolute -left-2.5 top-[50px] flex size-full items-center justify-center gap-4">
-          <div className="flex size-16 items-center justify-center rounded-xl border bg-background p-4">
+          <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
             <NotionIcon />
           </div>
-          <div className="flex size-16 items-center justify-center rounded-xl border bg-background p-4">
+          <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
             <SlackIcon />
           </div>
-          <div className="flex size-16 items-center justify-center rounded-xl border bg-background p-4">
+          <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
             <SalesforceIcon />
           </div>
-          <div className="flex size-16 items-center justify-center rounded-xl border bg-background p-4">
+          <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
             <PostgresqlIcon />
           </div>
         </div>
