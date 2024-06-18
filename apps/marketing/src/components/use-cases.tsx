@@ -116,7 +116,7 @@ export function UseCases() {
         </Tabs>
         <div className="block size-full md:hidden">
           <div className="grid w-full grid-cols-1 gap-8 lg:grid-cols-3">
-            <div className="flex size-full flex-col items-center justify-center gap-6 rounded-xl border p-6">
+            <div className="flex size-full flex-col items-center justify-center gap-6 rounded-xl p-6 md:border">
               <div className="flex w-full flex-col items-center justify-center gap-4 text-center">
                 <h3 className="text-2xl font-semibold">Backend APIs</h3>
                 <p className="text-sm">
@@ -147,7 +147,7 @@ export function UseCases() {
                 </div>
               </div>
             </div>
-            <div className="flex size-full flex-col items-center justify-center gap-6 rounded-xl border p-6">
+            <div className="flex size-full flex-col items-center justify-center gap-6 rounded-xl p-6 md:border">
               <div className="flex w-full flex-col items-center justify-center gap-4 text-center">
                 <h3 className="text-2xl font-semibold">Automation Workflows</h3>
                 <p className="text-sm">
@@ -169,7 +169,7 @@ export function UseCases() {
                 </div>
               </div>
             </div>
-            <div className="flex size-full flex-col items-center justify-center gap-6 rounded-xl border p-6">
+            <div className="flex size-full flex-col items-center justify-center gap-6 rounded-xl p-6 md:border">
               <div className="flex w-full flex-col items-center justify-center gap-4 text-center">
                 <h3 className="text-2xl font-semibold">Data Pipelines</h3>
                 <p className="text-sm">
