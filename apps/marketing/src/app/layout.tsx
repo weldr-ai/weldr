@@ -3,8 +3,8 @@ import "@integramind/ui/globals.css";
 import type { Metadata } from "next";
 import { Poppins as FontSans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 
+import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
 
 const fontSans = FontSans({
@@ -16,7 +16,7 @@ const fontSans = FontSans({
 export const metadata: Metadata = {
   title: "IntegraMind",
   description:
-    "Build LLM-powered AI agents in minutes for seamless workflow automation!",
+    "Unlock the potential of our advanced platform to build tailor-made backends, automate workflows, and integrate data effortlessly. No coding necessary, just English!",
 };
 
 export default function RootLayout({
@@ -25,16 +25,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }): JSX.Element {
   return (
-    <html className="dark" lang="en">
+    <html lang="en">
       <body
         className={cn(
-          "min-h-screen bg-background font-sans antialiased",
+          "flex min-h-screen w-full bg-background font-sans antialiased",
           fontSans.variable,
         )}
       >
         {children}
         <Analytics />
-        <SpeedInsights />
+        <Toaster />
       </body>
     </html>
   );
