@@ -28,9 +28,9 @@ export function Features() {
         </h2>
       </div>
       <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 xl:gap-8">
-        <div className="col-span-1 flex flex-col justify-center gap-4 p-6 shadow-none md:border lg:gap-8 lg:p-8 xl:col-span-2">
+        <div className="col-span-1 flex flex-col justify-center gap-4 rounded-xl p-6 shadow-none md:border lg:gap-8 lg:p-8 xl:col-span-2">
           <div className="dark flex h-[250px] w-full flex-col items-center justify-center gap-1 rounded-xl bg-background p-10 text-foreground lg:h-[300px]">
-            <div className="flex w-full flex-wrap items-center gap-1 text-xs md:gap-1.5 lg:text-lg">
+            <div className="flex w-full flex-wrap items-center gap-1 text-xs lg:text-lg">
               From
               <span className="flex items-center rounded-md border bg-accent px-1.5 py-1 text-accent-foreground">
                 <PostgresqlIcon className="mr-2 size-4" />
@@ -68,7 +68,7 @@ export function Features() {
             </p>
           </div>
         </div>
-        <div className="col-span-1 flex flex-col justify-center gap-4 p-6 shadow-none md:border lg:gap-8 lg:p-8">
+        <div className="col-span-1 flex flex-col justify-center gap-4 rounded-xl p-6 shadow-none md:border lg:gap-8 lg:p-8">
           <div className="dark flex h-[250px] w-full flex-col items-center justify-center rounded-xl bg-background p-10 lg:h-[300px]">
             <div className="flex h-16 w-full items-center justify-center rounded-xl border border-pink-500 text-center text-sm text-pink-500 md:text-base">
               When order is placed
@@ -87,7 +87,7 @@ export function Features() {
             </p>
           </div>
         </div>
-        <div className="col-span-1 flex flex-col justify-center gap-4 p-6 shadow-none md:border lg:gap-8 lg:p-8">
+        <div className="col-span-1 flex flex-col justify-center gap-4 rounded-xl p-6 shadow-none md:border lg:gap-8 lg:p-8">
           <div className="flex items-center justify-center">
             <div className="dark h-[250px] w-[250px] items-center justify-center rounded-full bg-background p-10 lg:h-[300px] lg:w-[300px]">
               <div className="flex size-full items-center justify-center rounded-full border bg-accent">
@@ -105,7 +105,7 @@ export function Features() {
             </p>
           </div>
         </div>
-        <div className="col-span-1 flex flex-col justify-center gap-4 p-6 shadow-none md:border lg:gap-8 lg:p-8">
+        <div className="col-span-1 flex flex-col justify-center gap-4 rounded-xl p-6 shadow-none md:border lg:gap-8 lg:p-8">
           <div className="dark flex h-[250px] w-full flex-col items-center justify-center gap-2 rounded-xl bg-background p-10 lg:h-[300px]">
             <div className="grid grid-cols-3 gap-2">
               <div className="size-12 rounded-xl border border-emerald-500" />
@@ -127,7 +127,7 @@ export function Features() {
             </p>
           </div>
         </div>
-        <div className="col-span-1 flex flex-col justify-center gap-4 p-6 shadow-none md:border lg:gap-8 lg:p-8">
+        <div className="col-span-1 flex flex-col justify-center gap-4 rounded-xl p-6 shadow-none md:border lg:gap-8 lg:p-8">
           <div className="dark flex h-[250px] w-full items-center justify-center rounded-xl bg-background p-10 lg:h-[300px]">
             <span className="text-9xl font-black text-muted-foreground">
               UX
@@ -141,7 +141,7 @@ export function Features() {
             </p>
           </div>
         </div>
-        <div className="col-span-1 flex flex-col justify-center gap-4 p-6 shadow-none md:border lg:gap-8 lg:p-8 xl:hidden">
+        <div className="col-span-1 flex flex-col justify-center gap-4 rounded-xl p-6 shadow-none md:border lg:gap-8 lg:p-8 xl:hidden">
           <div className="dark flex h-[250px] w-full items-center justify-center rounded-xl bg-background p-10 lg:h-[300px]">
             <div className="grid grid-cols-2 gap-3">
               <div className="flex size-14 items-center justify-center rounded-xl border bg-background">
