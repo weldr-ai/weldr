@@ -1,6 +1,7 @@
-export function NotionIcon() {
+export function NotionIcon({ className }: { className?: string }) {
   return (
     <svg
+      className={className}
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid"
       viewBox="0 0 256 268"

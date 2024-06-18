@@ -1,5 +1,10 @@
 import Image from "next/image";
-import { DatabaseIcon, RocketIcon, VariableIcon } from "lucide-react";
+import {
+  DatabaseIcon,
+  MoreHorizontalIcon,
+  RocketIcon,
+  VariableIcon,
+} from "lucide-react";
 
 import { Badge } from "@integramind/ui/badge";
 
@@ -139,17 +144,17 @@ export function Features() {
         <div className="col-span-1 flex flex-col justify-center gap-4 p-6 shadow-none md:border lg:gap-8 lg:p-8 xl:hidden">
           <div className="dark flex h-[250px] w-full items-center justify-center rounded-xl bg-background p-10 lg:h-[300px]">
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
-                <NotionIcon />
+              <div className="flex size-14 items-center justify-center rounded-xl border bg-background">
+                <NotionIcon className="size-6" />
               </div>
-              <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
-                <SlackIcon />
+              <div className="flex size-14 items-center justify-center rounded-xl border bg-background">
+                <SlackIcon className="size-6" />
               </div>
-              <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
-                <SalesforceIcon />
+              <div className="flex size-14 items-center justify-center rounded-xl border bg-background">
+                <SalesforceIcon className="size-6" />
               </div>
-              <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
-                <PostgresqlIcon />
+              <div className="flex size-14 items-center justify-center rounded-xl border bg-background">
+                <MoreHorizontalIcon className="text-muted-foreground" />
               </div>
             </div>
           </div>
