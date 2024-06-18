@@ -1,8 +1,11 @@
 import { fileURLToPath } from "url";
 import createJiti from "jiti";
 
-// Import env files to validate at build time. Use jiti so we can load .ts files in here.
-// createJiti(fileURLToPath(import.meta.url))("./src/env");
+const jiti = createJiti(fileURLToPath(import.meta.url));
+
+// Import env here to validate during build. Using jiti we can import .ts files :)
+jiti("./src/lib/env/client.ts");
+jiti("./src/lib/env/server.ts");
 
 /** @type {import("next").NextConfig} */
 const config = {

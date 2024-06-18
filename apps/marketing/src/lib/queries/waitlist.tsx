@@ -2,9 +2,15 @@
 
 import type { z } from "zod";
 import { redirect } from "next/navigation";
+import { Resend } from "resend";
 
 import { db, eq } from "@integramind/db";
 import { insertWaitlistSchema, waitlist } from "@integramind/db/schema";
+
+import { WaitlistConfirmationEmailTemplate } from "~/components/waitlist-confirmation-email-template";
+import { serverEnv } from "~/lib/env/server";
+
+const resend = new Resend(serverEnv.RESEND_API_KEY);
 
 type FormState =
   | {
@@ -59,6 +65,12 @@ export async function joinWaitlist(
     )[0];
 
     if (result) {
+      await resend.emails.send({
+        from: "IntegraMind <noreploy@integramind.ai>",
+        to: [validation.data.email],
+        subject: "Thank you for your interest!",
+        react: WaitlistConfirmationEmailTemplate(),
+      });
       redirect("/waitlist-confirmation");
     } else {
       return { status: "error", fields };
