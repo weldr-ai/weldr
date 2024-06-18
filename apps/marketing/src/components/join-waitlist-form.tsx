@@ -66,7 +66,7 @@ export function JoinWaitlistForm({
 
   return (
     <Form {...form}>
-      <form action={joinWaitlistAction} className="relative z-50">
+      <form action={joinWaitlistAction} className="relative">
         <FormField
           control={form.control}
           name="email"
