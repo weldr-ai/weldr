@@ -64,7 +64,7 @@ export function Features() {
             </h3>
             <p className="max-w-lg text-sm">
               No coding necessary, just English! IntegraMind lets you automate
-              your workflows and build custom tools to solve your problems.
+              your workflows and build custom solutions quickly.
             </p>
           </div>
         </div>
@@ -81,7 +81,7 @@ export function Features() {
           <div className="space-y-2 lg:h-28 lg:space-y-4 xl:h-36">
             <h3 className="text-xl font-semibold lg:text-3xl">Explainable</h3>
             <p className="max-w-lg text-sm">
-              IntegraMind&apos;s AI programming model is designed to be
+              IntegraMind&apos;s programming paradigm is designed to be
               explainable, so users can easily build and maintain their custom
               flows.
             </p>
@@ -122,7 +122,7 @@ export function Features() {
           <div className="space-y-2 md:space-y-4 lg:h-28 xl:h-36">
             <h3 className="text-xl font-semibold lg:text-3xl">Customizable</h3>
             <p className="max-w-lg text-sm">
-              With flow-based programming and English, you can truly build
+              IntegraMind provides few primitives that you can compose to build
               anything you want.
             </p>
           </div>
