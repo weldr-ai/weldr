@@ -1,6 +1,7 @@
 "use server";
 
 import type { z } from "zod";
+import { redirect } from "next/navigation";
 
 import { db, eq } from "@integramind/db";
 import { insertWaitlistSchema, waitlist } from "@integramind/db/schema";
@@ -38,47 +39,43 @@ export async function joinWaitlist(
     {},
   );
 
-  try {
-    if (validation.success) {
-      const doesExist = await db.query.waitlist.findFirst({
-        where: eq(waitlist.email, validation.data.email),
-      });
+  if (validation.success) {
+    const doesExist = await db.query.waitlist.findFirst({
+      where: eq(waitlist.email, validation.data.email),
+    });
 
-      if (doesExist) {
-        return { status: "success", payload: { id: doesExist.id } };
-      }
-
-      const result = (
-        await db
-          .insert(waitlist)
-          .values({
-            ...validation.data,
-          })
-          .onConflictDoNothing()
-          .returning({ id: waitlist.id })
-      )[0];
-
-      if (result) {
-        return { status: "success", payload: { id: result.id } };
-      } else {
-        return { status: "error", fields };
-      }
-    } else {
-      const errors = validation.error.issues.reduce(
-        (acc: Record<string, string>, issue: z.ZodIssue) => {
-          const key = issue.path[0] as string;
-          acc[key] = issue.message;
-          return acc;
-        },
-        {},
-      );
-      return {
-        status: "validationError",
-        fields,
-        errors,
-      };
+    if (doesExist) {
+      redirect("/waitlist-confirmation");
     }
-  } catch (error) {
-    return { status: "error", fields };
+
+    const result = (
+      await db
+        .insert(waitlist)
+        .values({
+          ...validation.data,
+        })
+        .onConflictDoNothing()
+        .returning({ id: waitlist.id })
+    )[0];
+
+    if (result) {
+      redirect("/waitlist-confirmation");
+    } else {
+      return { status: "error", fields };
+    }
+  } else {
+    const errors = validation.error.issues.reduce(
+      (acc: Record<string, string>, issue: z.ZodIssue) => {
+        const key = issue.path[0] as string;
+        acc[key] = issue.message;
+        return acc;
+      },
+      {},
+    );
+    return {
+      status: "validationError",
+      fields,
+      errors,
+    };
   }
 }

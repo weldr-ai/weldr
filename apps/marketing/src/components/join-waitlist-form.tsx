@@ -31,15 +31,7 @@ export function JoinWaitlistForm({
   useEffect(() => {
     async function handleStateUpdate() {
       if (state) {
-        if (state.status === "success") {
-          form.reset();
-          toast({
-            title: "Success",
-            description:
-              "Thank you for your interest! We will get in touch with you soon.",
-            duration: 2000,
-          });
-        } else if (state.status === "validationError") {
+        if (state.status === "validationError") {
           Object.keys(state.errors).forEach((key) => {
             form.setError(key as "email", {
               message: state.errors[key],
@@ -51,7 +43,9 @@ export function JoinWaitlistForm({
             variant: "destructive",
             duration: 2000,
           });
-        } else {
+        }
+
+        if (state.status === "error") {
           toast({
             title: "Error",
             description: "Something went wrong.",
