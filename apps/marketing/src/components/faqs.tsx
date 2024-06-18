@@ -10,40 +10,42 @@ export function FAQs() {
   return (
     <div
       id="faqs"
-      className="flex w-full max-w-screen-md scroll-mt-32 flex-col items-center gap-20"
+      className="flex w-full max-w-screen-md scroll-mt-32 flex-col items-center gap-8 md:gap-20"
     >
-      <div className="flex flex-col items-center justify-center gap-6">
+      <div className="flex flex-col items-center justify-center gap-4 md:gap-6">
         <Badge className="rounded-full border border-primary bg-background text-primary">
           FAQs
         </Badge>
-        <h2 className="max-w-3xl text-center text-4xl font-semibold leading-snug">
+        <h2 className="text-center text-2xl font-semibold leading-snug md:max-w-3xl md:text-4xl">
           Frequently Asked Questions
         </h2>
       </div>
       <Accordion type="single" collapsible className="w-full space-y-2">
         <AccordionItem value="faq-1" className="rounded-xl border px-4">
-          <AccordionTrigger>When will you launch the product?</AccordionTrigger>
+          <AccordionTrigger className="text-start">
+            When will you launch the product?
+          </AccordionTrigger>
           <AccordionContent>
             We aim to launch a beta version by september 2024 for early
             adopters.
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="faq-2" className="rounded-xl border px-4">
-          <AccordionTrigger>
+          <AccordionTrigger className="text-start">
             How IntegraMind is different from other workflow automation tools?
           </AccordionTrigger>
           <AccordionContent>
             Other workflow automation platforms provide predefined building
             blocks and you can&apos;t go beyond that. If the platform that you
             are using doesn&apos;t provide specific integration or block you
-            have to ask the platform developers to develop it for you first. On
-            the other hand, IntegraMind is built to be fully customizable. We
-            only provide few primitives that you can compose to build and
-            integrate anything you want.
+            have to ask the platform developers to develop it for you. On the
+            other hand, IntegraMind is built to be fully customizable. We only
+            provide few primitives that you can compose to build and integrate
+            anything you want.
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="faq-3" className="rounded-xl border px-4">
-          <AccordionTrigger>
+          <AccordionTrigger className="text-start">
             How IntegraMind is different from other no/low-code platforms?
           </AccordionTrigger>
           <AccordionContent>
@@ -58,7 +60,7 @@ export function FAQs() {
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="faq-4" className="rounded-xl border px-4">
-          <AccordionTrigger>
+          <AccordionTrigger className="text-start">
             Is this a replacement for software engineers?
           </AccordionTrigger>
           <AccordionContent>

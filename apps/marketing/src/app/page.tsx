@@ -8,7 +8,7 @@ import { UseCases } from "~/components/use-cases";
 
 export default function Page(): JSX.Element {
   return (
-    <main className="mx-auto flex w-full flex-col items-center gap-32 md:max-w-screen-lg lg:max-w-screen-xl">
+    <main className="flex w-full flex-col items-center justify-center gap-20 px-4 md:max-w-screen-lg md:px-8 lg:max-w-screen-xl lg:gap-32">
       <Navbar />
       <Hero />
       <Features />

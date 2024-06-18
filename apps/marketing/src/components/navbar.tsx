@@ -42,7 +42,7 @@ export function Navbar(): JSX.Element {
   return (
     <nav
       className={cn(
-        "sticky top-4 z-50 flex w-full max-w-screen-lg items-center justify-between rounded-2xl border bg-background/60 px-3 py-2 shadow backdrop-blur-lg transition-all duration-500",
+        "sticky top-2 z-50 flex w-full max-w-screen-lg items-center justify-between rounded-2xl border bg-background/60 px-3 py-2 shadow backdrop-blur-lg transition-all duration-500 md:top-4",
         {
           "max-w-screen-xl border-none shadow-none": isTop,
         },
@@ -58,19 +58,19 @@ export function Navbar(): JSX.Element {
       </Button>
       <div className="flex items-center justify-center gap-10 text-sm">
         <button
-          className="cursor-pointer hover:underline"
+          className="hidden cursor-pointer hover:underline md:block"
           onClick={() => scrollToSection("features")}
         >
           Features
         </button>
         <button
-          className="cursor-pointer hover:underline"
+          className="hidden cursor-pointer hover:underline md:block"
           onClick={() => scrollToSection("use-cases")}
         >
           Use Cases
         </button>
         <button
-          className="cursor-pointer hover:underline"
+          className="hidden cursor-pointer hover:underline md:block"
           onClick={() => scrollToSection("faqs")}
         >
           FAQs

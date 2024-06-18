@@ -66,7 +66,10 @@ export function JoinWaitlistForm({
 
   return (
     <Form {...form}>
-      <form action={joinWaitlistAction} className="relative">
+      <form
+        action={joinWaitlistAction}
+        className="flex w-full flex-col gap-2 md:relative md:w-96 md:gap-0"
+      >
         <FormField
           control={form.control}
           name="email"
@@ -74,7 +77,7 @@ export function JoinWaitlistForm({
             <FormItem>
               <FormControl>
                 <Input
-                  className="h-10 w-96 rounded-full"
+                  className="h-10 w-full rounded-full md:w-96"
                   placeholder="Enter your email"
                   {...field}
                 />
@@ -84,7 +87,7 @@ export function JoinWaitlistForm({
         />
         <SubmitButton
           variant={variant}
-          className="absolute right-1 top-1 rounded-full"
+          className="rounded-full md:absolute md:right-1 md:top-1 md:h-8"
         />
       </form>
     </Form>
@@ -105,7 +108,6 @@ function SubmitButton({
       aria-disabled={pending}
       disabled={pending}
       className={className}
-      size="sm"
       variant={variant}
     >
       {pending && <Loader2Icon className="mr-1 size-3 animate-spin" />}
