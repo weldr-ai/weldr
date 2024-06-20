@@ -203,9 +203,9 @@ export function CreateFlowForm({
                         <SelectValue placeholder="Action Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="retrieve">Retrieve</SelectItem>
-                        <SelectItem value="submit">Submit</SelectItem>
-                        <SelectItem value="modify">Modify</SelectItem>
+                        <SelectItem value="read">Read</SelectItem>
+                        <SelectItem value="create">Create</SelectItem>
+                        <SelectItem value="update">Update</SelectItem>
                         <SelectItem value="delete">Delete</SelectItem>
                       </SelectContent>
                     </Select>

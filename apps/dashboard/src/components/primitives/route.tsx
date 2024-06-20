@@ -1,15 +1,19 @@
 "use client";
 
+import type { z } from "zod";
 import { memo } from "react";
 import Link from "next/link";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
   PlayCircleIcon,
 } from "lucide-react";
+import { useForm } from "react-hook-form";
 import { Handle, Position, useReactFlow } from "reactflow";
 
+import { updateRouteFlowSchema } from "@integramind/db/schema";
 import { Badge } from "@integramind/ui/badge";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
@@ -27,13 +31,42 @@ import {
   ExpandableCardHeader,
   ExpandableCardTrigger,
 } from "@integramind/ui/expandable-card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@integramind/ui/form";
+import { Input } from "@integramind/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@integramind/ui/select";
+import { Textarea } from "@integramind/ui/textarea";
 import { cn } from "@integramind/ui/utils";
 
 import type { RouteNodeProps } from "~/types";
+import { updatePrimitiveRouteById } from "~/lib/queries/primitives";
 
 export const Route = memo(
   ({ data, isConnectable, xPos, yPos, selected }: RouteNodeProps) => {
     const reactFlow = useReactFlow();
+    const form = useForm<z.infer<typeof updateRouteFlowSchema>>({
+      mode: "onChange",
+      resolver: zodResolver(updateRouteFlowSchema),
+      defaultValues: {
+        name: data.name,
+        description: data.description ?? undefined,
+        actionType: data.actionType,
+        urlPath: data.urlPath,
+        inputs: data.inputs,
+      },
+    });
 
     return (
       <>
@@ -61,20 +94,20 @@ export const Route = memo(
               }}
             >
               <div className="flex w-full items-center gap-2 text-xs">
-                <Badge>{data.actionType}</Badge>
+                <Badge>{form.getValues().actionType ?? data.actionType}</Badge>
                 <span className="text-muted-foreground">Route</span>
               </div>
               <span className="flex w-full justify-start text-sm">
-                {data.name}
+                {form.getValues().name ?? data.name}
               </span>
             </Card>
           </ExpandableCardTrigger>
-          <ExpandableCardContent className="flex h-[400px] flex-col p-0">
-            <ExpandableCardHeader className="flex flex-col items-start justify-start px-6 py-4">
+          <ExpandableCardContent className="flex flex-col p-0">
+            <ExpandableCardHeader className="flex flex-col items-start justify-start px-6">
               <div className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
                   <Badge variant="default" className="text-xs">
-                    {data.actionType}
+                    {form.getValues().actionType ?? data.actionType}
                   </Badge>
                   <span className="text-xs text-muted-foreground">Route</span>
                 </div>
@@ -121,6 +154,123 @@ export const Route = memo(
                 </div>
               </div>
             </ExpandableCardHeader>
+            <form className="flex h-full flex-col gap-2 px-6 pb-6">
+              <Form {...form}>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Enter route name"
+                          onChange={async (e) => {
+                            field.onChange(e.target.value);
+                            await updatePrimitiveRouteById({
+                              id: data.id,
+                              name: e.target.value,
+                            });
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">
+                        Description{" "}
+                        <span className="text-muted-foreground">
+                          (optional)
+                        </span>
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Enter route description"
+                          value={field.value}
+                          onChange={async (e) => {
+                            field.onChange(e.target.value);
+                            await updatePrimitiveRouteById({
+                              id: data.id,
+                              description: e.target.value,
+                            });
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="actionType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Type</FormLabel>
+                      <FormControl>
+                        <Select
+                          {...field}
+                          name={field.name}
+                          onValueChange={async (value) => {
+                            field.onChange(value);
+                            await updatePrimitiveRouteById({
+                              id: data.id,
+                              actionType: value as
+                                | "create"
+                                | "read"
+                                | "update"
+                                | "delete",
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="bg-background">
+                            <SelectValue placeholder="Action Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="create">Create</SelectItem>
+                            <SelectItem value="read">Read</SelectItem>
+                            <SelectItem value="update">Update</SelectItem>
+                            <SelectItem value="delete">Delete</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="urlPath"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">URL Path</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Enter action URL path"
+                          value={field.value}
+                          onChange={async (e) => {
+                            field.onChange(e.target.value);
+                            await updatePrimitiveRouteById({
+                              id: data.id,
+                              urlPath: e.target.value,
+                            });
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </Form>
+            </form>
           </ExpandableCardContent>
         </ExpandableCard>
         <Handle

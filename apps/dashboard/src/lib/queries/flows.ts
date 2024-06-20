@@ -74,6 +74,7 @@ export async function createFlow(
                 type: "route",
                 actionType: validation.data.actionType,
                 urlPath: validation.data.urlPath,
+                inputs: [...validation.data.inputs],
               }}::jsonb`,
               flowId: result.id,
             });

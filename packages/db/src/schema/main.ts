@@ -214,7 +214,7 @@ export const functionMetadataSchema = z.object({
 });
 export const routeMetadataSchema = z.object({
   type: z.literal("route"),
-  actionType: z.enum(["retrieve", "submit", "modify", "delete"]),
+  actionType: z.enum(["create", "read", "update", "delete"]),
   urlPath: z.string(),
   inputs: z
     .object({ name: z.string(), type: z.enum(["number", "text"]) })
@@ -246,10 +246,10 @@ export const insertFlowSchema = z.discriminatedUnion("type", [
       })
       .transform((name) => name.replace(/\s+/g, " ").trim()),
     description: z.string(),
-    workspaceId: z.string(),
     type: z.literal("component", {
       message: "Type is required.",
     }),
+    workspaceId: z.string(),
   }),
   z.object({
     name: z
@@ -259,16 +259,19 @@ export const insertFlowSchema = z.discriminatedUnion("type", [
       })
       .transform((name) => name.replace(/\s+/g, " ").trim()),
     description: z.string(),
-    workspaceId: z.string(),
     type: z.literal("route", {
       message: "Type is required.",
     }),
-    actionType: z.enum(["retrieve", "submit", "modify", "delete"], {
+    actionType: z.enum(["create", "read", "update", "delete"], {
       message: "Type is required.",
     }),
     urlPath: z.string().min(1, {
       message: "URL path is required.",
     }),
+    inputs: z
+      .object({ name: z.string(), type: z.enum(["number", "text"]) })
+      .array(),
+    workspaceId: z.string(),
   }),
   z.object({
     name: z
@@ -278,12 +281,29 @@ export const insertFlowSchema = z.discriminatedUnion("type", [
       })
       .transform((name) => name.replace(/\s+/g, " ").trim()),
     description: z.string(),
-    workspaceId: z.string(),
     type: z.literal("workflow", {
       message: "Type is required.",
     }),
     triggerType: z.enum(["webhook", "schedule"], {
       message: "Type is required.",
     }),
+    workspaceId: z.string(),
   }),
 ]);
+
+export const updateRouteFlowSchema = z.object({
+  name: z
+    .string()
+    .min(1, {
+      message: "Name is required.",
+    })
+    .transform((name) => name.replace(/\s+/g, " ").trim())
+    .optional(),
+  description: z.string().optional(),
+  actionType: z.enum(["create", "read", "update", "delete"]).optional(),
+  urlPath: z.string().optional(),
+  inputs: z
+    .object({ name: z.string(), type: z.enum(["number", "text"]) })
+    .array()
+    .optional(),
+});
