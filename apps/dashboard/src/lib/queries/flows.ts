@@ -74,7 +74,7 @@ export async function createFlow(
                 type: "route",
                 actionType: validation.data.actionType,
                 urlPath: validation.data.urlPath,
-                inputs: [...validation.data.inputs],
+                inputs: [],
               }}::jsonb`,
               flowId: result.id,
             });
@@ -131,13 +131,13 @@ export async function getFlows({
   return result;
 }
 
-export async function getFlowById({
+export const getFlowById = async ({
   id,
   type,
 }: {
   id: string;
   type: FlowType;
-}) {
+}) => {
   const result = await db.query.flows.findFirst({
     where: and(eq(flows.id, id), eq(flows.type, type)),
     with: {
@@ -146,4 +146,4 @@ export async function getFlowById({
     },
   });
   return result;
-}
+};

@@ -204,10 +204,18 @@ export const primitiveSchema = createSelectSchema(primitives);
 export const functionMetadataSchema = z.object({
   type: z.literal("function"),
   inputs: z
-    .object({ name: z.string(), type: z.enum(["number", "text"]) })
+    .object({
+      id: z.string(),
+      name: z.string(),
+      type: z.enum(["number", "text"]),
+    })
     .array(),
   outputs: z
-    .object({ name: z.string(), type: z.enum(["number", "text"]) })
+    .object({
+      id: z.string(),
+      name: z.string(),
+      type: z.enum(["number", "text"]),
+    })
     .array(),
   generatedCode: z.string().optional(),
   isCodeUpdated: z.boolean().optional(),
@@ -217,14 +225,22 @@ export const routeMetadataSchema = z.object({
   actionType: z.enum(["create", "read", "update", "delete"]),
   urlPath: z.string(),
   inputs: z
-    .object({ name: z.string(), type: z.enum(["number", "text"]) })
+    .object({
+      id: z.string(),
+      name: z.string(),
+      type: z.enum(["number", "text"]),
+    })
     .array(),
 });
 export const workflowMetadataSchema = z.object({
   type: z.literal("workflow"),
   triggerType: z.enum(["webhook", "schedule"]),
   inputs: z
-    .object({ name: z.string(), type: z.enum(["number", "text"]) })
+    .object({
+      id: z.string(),
+      name: z.string(),
+      type: z.enum(["number", "text"]),
+    })
     .array(),
 });
 
@@ -268,9 +284,6 @@ export const insertFlowSchema = z.discriminatedUnion("type", [
     urlPath: z.string().min(1, {
       message: "URL path is required.",
     }),
-    inputs: z
-      .object({ name: z.string(), type: z.enum(["number", "text"]) })
-      .array(),
     workspaceId: z.string(),
   }),
   z.object({
@@ -303,7 +316,30 @@ export const updateRouteFlowSchema = z.object({
   actionType: z.enum(["create", "read", "update", "delete"]).optional(),
   urlPath: z.string().optional(),
   inputs: z
-    .object({ name: z.string(), type: z.enum(["number", "text"]) })
+    .object({
+      id: z.string(),
+      name: z.string(),
+      type: z.enum(["number", "text"]),
+    })
+    .array()
+    .optional(),
+});
+
+export const updateFunctionSchema = z.object({
+  name: z
+    .string()
+    .min(1, {
+      message: "Name is required.",
+    })
+    .transform((name) => name.replace(/\s+/g, " ").trim())
+    .optional(),
+  description: z.string().optional(),
+  inputs: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      type: z.enum(["number", "text"]),
+    })
     .array()
     .optional(),
 });

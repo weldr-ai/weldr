@@ -8,15 +8,12 @@ import {
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
 import { useQuery } from "@tanstack/react-query";
-import { DatabaseIcon, VariableIcon } from "lucide-react";
+import { Columns2Icon, TableIcon, VariableIcon } from "lucide-react";
 
 import { cn } from "@integramind/ui/utils";
 
-import type { DataResourceNode } from "~/components/editor/nodes/data-resource-node";
-import type { ValueNode } from "~/components/editor/nodes/value-node";
 import type { DataResourceMetadata } from "~/types";
-import { $createDataResourceNode } from "~/components/editor/nodes/data-resource-node";
-import { $createValueNode } from "~/components/editor/nodes/value-node";
+import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
 import { PostgresIcon } from "~/components/icons/postgres-icon";
 import {
   getDataResourceById,
@@ -29,7 +26,7 @@ export class ReferenceOption extends MenuOption {
   // What shows up in the editor
   name: string;
   // Reference type
-  type: "value" | "data-resource";
+  referenceType: "input" | "data-resource";
   // Icon for display
   icon: string;
   // For extra searching.
@@ -40,7 +37,7 @@ export class ReferenceOption extends MenuOption {
   constructor(
     id: string,
     name: string,
-    type: "value" | "data-resource",
+    referenceType: "input" | "data-resource",
     options: {
       icon: string;
       keywords?: string[];
@@ -50,9 +47,9 @@ export class ReferenceOption extends MenuOption {
     super(name);
     this.id = id;
     this.name = name;
-    this.type = type;
-    this.keywords = options.keywords ?? [];
+    this.referenceType = referenceType;
     this.icon = options.icon;
+    this.keywords = options.keywords ?? [];
     this.onSelect = options.onSelect.bind(this);
   }
 }
@@ -92,19 +89,12 @@ export function ReferencesPlugin({ inputs }: { inputs?: string[] }) {
       closeMenu: () => void,
     ) => {
       editor.update(() => {
-        let referenceNode: DataResourceNode | ValueNode;
-        if (selectedOption.type === "value") {
-          referenceNode = $createValueNode(
-            selectedOption.id,
-            selectedOption.name,
-            selectedOption.icon,
-          );
-        } else {
-          referenceNode = $createDataResourceNode(
-            selectedOption.id,
-            selectedOption.name,
-            selectedOption.icon,
-          );
+        const referenceNode = $createReferenceNode(
+          selectedOption.id,
+          selectedOption.name,
+          selectedOption.referenceType,
+        );
+        if (selectedOption.referenceType === "data-resource") {
           setDataResourceId(selectedOption.id);
         }
         if (nodeToReplace) {
@@ -125,10 +115,10 @@ export function ReferencesPlugin({ inputs }: { inputs?: string[] }) {
               new ReferenceOption(
                 `${input}-${crypto.randomUUID()}`,
                 input,
-                "value",
+                "input",
                 {
                   icon: "value-icon",
-                  keywords: ["value", input],
+                  keywords: ["input", input],
                   onSelect: (queryString) => {
                     console.log(queryString);
                   },
@@ -166,9 +156,9 @@ export function ReferencesPlugin({ inputs }: { inputs?: string[] }) {
                 new ReferenceOption(
                   `${table.name}.${column}`,
                   `${table.name}.${column}`,
-                  "value",
+                  "input",
                   {
-                    icon: "database-icon",
+                    icon: "column-icon",
                     keywords: ["column", column],
                     onSelect: (queryString) => {
                       console.log(queryString);
@@ -178,8 +168,8 @@ export function ReferencesPlugin({ inputs }: { inputs?: string[] }) {
               ),
             );
             options.push(
-              new ReferenceOption(table.name, table.name, "value", {
-                icon: "database-icon",
+              new ReferenceOption(table.name, table.name, "input", {
+                icon: "table-icon",
                 keywords: ["table", table.name],
                 onSelect: (queryString) => {
                   console.log(queryString);
@@ -254,8 +244,12 @@ export function ReferencesPlugin({ inputs }: { inputs?: string[] }) {
                   <PostgresIcon className="size-3 text-primary" />
                 ) : option.icon === "value-icon" ? (
                   <VariableIcon className="size-3 text-primary" />
+                ) : option.icon === "column-icon" ? (
+                  <Columns2Icon className="size-3 text-primary" />
+                ) : option.icon === "table-icon" ? (
+                  <TableIcon className="size-3 text-primary" />
                 ) : (
-                  <DatabaseIcon className="size-3 text-primary" />
+                  <></>
                 )}
                 <span className="text">{option.name}</span>
               </div>

@@ -1,9 +1,11 @@
 "use client";
 
+import type { EditorState, LexicalEditor } from "lexical";
 import type { z } from "zod";
 import { memo } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
@@ -50,14 +52,14 @@ import {
 import { Textarea } from "@integramind/ui/textarea";
 import { cn } from "@integramind/ui/utils";
 
-import type { RouteNodeProps } from "~/types";
-import { updatePrimitiveRouteById } from "~/lib/queries/primitives";
+import type { RouteMetadata, RouteNodeProps } from "~/types";
+import { getPrimitiveById, updateRouteById } from "~/lib/queries/primitives";
+import Editor from "../editor";
 
 export const Route = memo(
   ({ data, isConnectable, xPos, yPos, selected }: RouteNodeProps) => {
     const reactFlow = useReactFlow();
     const form = useForm<z.infer<typeof updateRouteFlowSchema>>({
-      mode: "onChange",
       resolver: zodResolver(updateRouteFlowSchema),
       defaultValues: {
         name: data.name,
@@ -67,6 +69,22 @@ export const Route = memo(
         inputs: data.inputs,
       },
     });
+
+    const { data: routeData, refetch } = useQuery({
+      queryKey: [data.id],
+      queryFn: () => getPrimitiveById({ id: data.id }),
+    });
+
+    function onChange(editorState: EditorState) {
+      editorState.read(() => {
+        const { root } = editorState.toJSON();
+        console.log(root.children);
+      });
+    }
+
+    function onError(error: Error, _editor: LexicalEditor) {
+      console.error(error);
+    }
 
     return (
       <>
@@ -94,20 +112,26 @@ export const Route = memo(
               }}
             >
               <div className="flex w-full items-center gap-2 text-xs">
-                <Badge>{form.getValues().actionType ?? data.actionType}</Badge>
+                <Badge>
+                  {routeData
+                    ? (routeData.metadata as RouteMetadata).actionType
+                    : data.actionType}
+                </Badge>
                 <span className="text-muted-foreground">Route</span>
               </div>
               <span className="flex w-full justify-start text-sm">
-                {form.getValues().name ?? data.name}
+                {routeData ? routeData.name : data.name}
               </span>
             </Card>
           </ExpandableCardTrigger>
-          <ExpandableCardContent className="flex flex-col p-0">
-            <ExpandableCardHeader className="flex flex-col items-start justify-start px-6">
+          <ExpandableCardContent className="nowheel flex flex-col p-0">
+            <ExpandableCardHeader className="flex flex-col items-start justify-start px-4 py-4">
               <div className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
                   <Badge variant="default" className="text-xs">
-                    {form.getValues().actionType ?? data.actionType}
+                    {routeData
+                      ? (routeData.metadata as RouteMetadata).actionType
+                      : data.actionType}
                   </Badge>
                   <span className="text-xs text-muted-foreground">Route</span>
                 </div>
@@ -154,7 +178,7 @@ export const Route = memo(
                 </div>
               </div>
             </ExpandableCardHeader>
-            <form className="flex h-full flex-col gap-2 px-6 pb-6">
+            <form className="flex h-full flex-col gap-2 px-4 pb-4">
               <Form {...form}>
                 <FormField
                   control={form.control}
@@ -168,10 +192,11 @@ export const Route = memo(
                           placeholder="Enter route name"
                           onChange={async (e) => {
                             field.onChange(e.target.value);
-                            await updatePrimitiveRouteById({
+                            await updateRouteById({
                               id: data.id,
                               name: e.target.value,
                             });
+                            await refetch();
                           }}
                         />
                       </FormControl>
@@ -197,10 +222,11 @@ export const Route = memo(
                           value={field.value}
                           onChange={async (e) => {
                             field.onChange(e.target.value);
-                            await updatePrimitiveRouteById({
+                            await updateRouteById({
                               id: data.id,
                               description: e.target.value,
                             });
+                            await refetch();
                           }}
                         />
                       </FormControl>
@@ -220,7 +246,7 @@ export const Route = memo(
                           name={field.name}
                           onValueChange={async (value) => {
                             field.onChange(value);
-                            await updatePrimitiveRouteById({
+                            await updateRouteById({
                               id: data.id,
                               actionType: value as
                                 | "create"
@@ -228,6 +254,7 @@ export const Route = memo(
                                 | "update"
                                 | "delete",
                             });
+                            await refetch();
                           }}
                         >
                           <SelectTrigger className="bg-background">
@@ -258,10 +285,11 @@ export const Route = memo(
                           value={field.value}
                           onChange={async (e) => {
                             field.onChange(e.target.value);
-                            await updatePrimitiveRouteById({
+                            await updateRouteById({
                               id: data.id,
                               urlPath: e.target.value,
                             });
+                            await refetch();
                           }}
                         />
                       </FormControl>
@@ -270,6 +298,18 @@ export const Route = memo(
                   )}
                 />
               </Form>
+              <div className="space-y-2">
+                <span className="text-xs">Inputs</span>
+                <Editor
+                  id={data.id}
+                  onChange={onChange}
+                  onError={onError}
+                  inputs={data.inputs}
+                  type="inputs"
+                  className="h-20"
+                  placeholder="Enter inputs"
+                />
+              </div>
             </form>
           </ExpandableCardContent>
         </ExpandableCard>

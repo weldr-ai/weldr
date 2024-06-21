@@ -75,3 +75,9 @@ export type PrimitiveMetadata =
   | WorkflowMetadata
   | FunctionMetadata;
 export type PrimitiveData = BaseNodeData & PrimitiveMetadata;
+
+export interface Input {
+  id: string;
+  name: string;
+  type: "text" | "number";
+}

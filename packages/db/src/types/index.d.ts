@@ -9,11 +9,13 @@ import type {
 export type VarType = "number" | "text";
 
 export interface Input {
+  id: string;
   name: string;
   type: VarType;
 }
 
 export interface Output {
+  id: string;
   name: string;
   type: VarType;
 }
