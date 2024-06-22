@@ -5,7 +5,7 @@ import type { z } from "zod";
 import { and, db, eq, sql } from "@integramind/db";
 import { flows, insertFlowSchema, primitives } from "@integramind/db/schema";
 
-import type { Flow, FlowType } from "~/types";
+import type { Edge, Flow, FlowType, Primitive } from "~/types";
 import { getWorkspaceById } from "~/lib/queries/workspaces";
 
 type FormState =
@@ -131,19 +131,19 @@ export async function getFlows({
   return result;
 }
 
-export const getFlowById = async ({
+export async function getFlowById({
   id,
-  type,
 }: {
   id: string;
-  type: FlowType;
-}) => {
+}): Promise<(Flow & { edges: Edge[]; primitives: Primitive[] }) | undefined> {
   const result = await db.query.flows.findFirst({
-    where: and(eq(flows.id, id), eq(flows.type, type)),
+    where: and(eq(flows.id, id)),
     with: {
       primitives: true,
       edges: true,
     },
   });
-  return result;
-};
+  return result as
+    | (Flow & { edges: Edge[]; primitives: Primitive[] })
+    | undefined;
+}

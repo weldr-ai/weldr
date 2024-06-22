@@ -1,6 +1,12 @@
 "use client";
 
-import type { EditorState, LexicalEditor } from "lexical";
+import type {
+  EditorState,
+  LexicalEditor,
+  SerializedLexicalNode,
+  SerializedParagraphNode,
+  SerializedRootNode,
+} from "lexical";
 import type { z } from "zod";
 import { memo } from "react";
 import Link from "next/link";
@@ -52,13 +58,17 @@ import {
 import { Textarea } from "@integramind/ui/textarea";
 import { cn } from "@integramind/ui/utils";
 
-import type { RouteMetadata, RouteNodeProps } from "~/types";
-import { getPrimitiveById, updateRouteById } from "~/lib/queries/primitives";
+import type { SerializedInputNode } from "../editor/nodes/input-node";
+import type { FlowNode, Input as IInput, RouteNodeProps } from "~/types";
+import {
+  getRoutePrimitiveById,
+  updateRoutePrimitiveById,
+} from "~/lib/queries/primitives";
 import Editor from "../editor";
 
 export const Route = memo(
   ({ data, isConnectable, xPos, yPos, selected }: RouteNodeProps) => {
-    const reactFlow = useReactFlow();
+    const reactFlow = useReactFlow<FlowNode>();
     const form = useForm<z.infer<typeof updateRouteFlowSchema>>({
       resolver: zodResolver(updateRouteFlowSchema),
       defaultValues: {
@@ -72,13 +82,51 @@ export const Route = memo(
 
     const { data: routeData, refetch } = useQuery({
       queryKey: [data.id],
-      queryFn: () => getPrimitiveById({ id: data.id }),
+      queryFn: () => getRoutePrimitiveById({ id: data.id }),
+      initialData: data,
     });
 
     function onChange(editorState: EditorState) {
+      const getInputs = (root: SerializedRootNode<SerializedLexicalNode>) => {
+        const paragraph = root.children.find(
+          (child) => child.type === "paragraph",
+        ) as SerializedParagraphNode | undefined;
+
+        if (paragraph) {
+          return paragraph.children.reduce((acc, child) => {
+            if (child.type === "input") {
+              acc.push({
+                id: (child as SerializedInputNode).inputId,
+                name: (child as SerializedInputNode).name,
+                type: (child as SerializedInputNode).inputType,
+              });
+            }
+            return acc;
+          }, [] as IInput[]);
+        }
+      };
+
       editorState.read(() => {
         const { root } = editorState.toJSON();
-        console.log(root.children);
+        const inputs = getInputs(root);
+        void updateRoutePrimitiveById({
+          id: data.id,
+          inputs,
+        });
+        reactFlow.setNodes((nodes) =>
+          nodes.map((node) => {
+            if (node.id === data.id) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  inputs,
+                },
+              };
+            }
+            return node;
+          }),
+        );
       });
     }
 
@@ -112,15 +160,11 @@ export const Route = memo(
               }}
             >
               <div className="flex w-full items-center gap-2 text-xs">
-                <Badge>
-                  {routeData
-                    ? (routeData.metadata as RouteMetadata).actionType
-                    : data.actionType}
-                </Badge>
+                <Badge>{routeData?.actionType}</Badge>
                 <span className="text-muted-foreground">Route</span>
               </div>
               <span className="flex w-full justify-start text-sm">
-                {routeData ? routeData.name : data.name}
+                {routeData?.name}
               </span>
             </Card>
           </ExpandableCardTrigger>
@@ -129,9 +173,7 @@ export const Route = memo(
               <div className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
                   <Badge variant="default" className="text-xs">
-                    {routeData
-                      ? (routeData.metadata as RouteMetadata).actionType
-                      : data.actionType}
+                    {routeData?.actionType}
                   </Badge>
                   <span className="text-xs text-muted-foreground">Route</span>
                 </div>
@@ -190,9 +232,8 @@ export const Route = memo(
                         <Input
                           {...field}
                           placeholder="Enter route name"
-                          onChange={async (e) => {
-                            field.onChange(e.target.value);
-                            await updateRouteById({
+                          onBlur={async (e) => {
+                            await updateRoutePrimitiveById({
                               id: data.id,
                               name: e.target.value,
                             });
@@ -220,9 +261,8 @@ export const Route = memo(
                           {...field}
                           placeholder="Enter route description"
                           value={field.value}
-                          onChange={async (e) => {
-                            field.onChange(e.target.value);
-                            await updateRouteById({
+                          onBlur={async (e) => {
+                            await updateRoutePrimitiveById({
                               id: data.id,
                               description: e.target.value,
                             });
@@ -246,7 +286,7 @@ export const Route = memo(
                           name={field.name}
                           onValueChange={async (value) => {
                             field.onChange(value);
-                            await updateRouteById({
+                            await updateRoutePrimitiveById({
                               id: data.id,
                               actionType: value as
                                 | "create"
@@ -283,9 +323,8 @@ export const Route = memo(
                           {...field}
                           placeholder="Enter action URL path"
                           value={field.value}
-                          onChange={async (e) => {
-                            field.onChange(e.target.value);
-                            await updateRouteById({
+                          onBlur={async (e) => {
+                            await updateRoutePrimitiveById({
                               id: data.id,
                               urlPath: e.target.value,
                             });

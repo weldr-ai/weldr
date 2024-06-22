@@ -7,12 +7,13 @@ import {
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
+import { createId } from "@paralleldrive/cuid2";
 import { useQuery } from "@tanstack/react-query";
 import { Columns2Icon, TableIcon, VariableIcon } from "lucide-react";
 
 import { cn } from "@integramind/ui/utils";
 
-import type { DataResourceMetadata } from "~/types";
+import type { DataResourceMetadata, Input } from "~/types";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
 import { PostgresIcon } from "~/components/icons/postgres-icon";
 import {
@@ -54,12 +55,13 @@ export class ReferenceOption extends MenuOption {
   }
 }
 
-export function ReferencesPlugin({ inputs }: { inputs?: string[] }) {
+export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
   const [_queryString, setQueryString] = useState<string | null>(null);
   const [dataResourceId, setDataResourceId] = useState<string | undefined>();
 
+  // FIXME: add all the data resources options directly to the dropdown
   const { data: dataResources } = useQuery({
     queryKey: ["data-resources"],
     queryFn: () => getDataResources({ workspaceId }),
@@ -107,27 +109,19 @@ export function ReferencesPlugin({ inputs }: { inputs?: string[] }) {
     [editor],
   );
 
-  const inputOptions: ReferenceOption[] = useMemo(
-    () =>
-      inputs
-        ? inputs.map(
-            (input) =>
-              new ReferenceOption(
-                `${input}-${crypto.randomUUID()}`,
-                input,
-                "input",
-                {
-                  icon: "value-icon",
-                  keywords: ["input", input],
-                  onSelect: (queryString) => {
-                    console.log(queryString);
-                  },
-                },
-              ),
-          )
-        : [],
-    [inputs],
-  );
+  const inputOptions: ReferenceOption[] = useMemo(() => {
+    console.log("FROM REFERENCE PLUGIN", inputs);
+    return inputs.map(
+      (input) =>
+        new ReferenceOption(createId(), input.name, "input", {
+          icon: "value-icon",
+          keywords: ["input", input.name],
+          onSelect: (queryString) => {
+            console.log(queryString);
+          },
+        }),
+    );
+  }, [inputs]);
 
   const options = useMemo(() => {
     const options: ReferenceOption[] = [...inputOptions];

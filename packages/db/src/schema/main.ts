@@ -198,9 +198,15 @@ export const dataResourceMetadataSchema = z.discriminatedUnion("provider", [
   postgresMetadataSchema,
 ]);
 
+// Edges zod schemas
+export const edgeSchema = createSelectSchema(edges);
+export const insertEdgeSchema = createInsertSchema(edges, {
+  id: (schema) => schema.id.uuid(),
+  source: (schema) => schema.source.uuid(),
+  target: (schema) => schema.target.uuid(),
+});
+
 // Primitives zod schemas
-export const primitiveTypesSchema = z.enum(primitiveTypes.enumValues);
-export const primitiveSchema = createSelectSchema(primitives);
 export const functionMetadataSchema = z.object({
   type: z.literal("function"),
   inputs: z
@@ -243,12 +249,15 @@ export const workflowMetadataSchema = z.object({
     })
     .array(),
 });
-
 export const primitiveMetadataSchema = z.discriminatedUnion("type", [
   functionMetadataSchema,
   routeMetadataSchema,
   workflowMetadataSchema,
 ]);
+export const primitiveTypesSchema = z.enum(primitiveTypes.enumValues);
+export const primitiveSchema = createSelectSchema(primitives, {
+  metadata: primitiveMetadataSchema,
+});
 
 // Flows zod schemas
 export const flowTypesSchema = z.enum(flowTypes.enumValues);

@@ -41,6 +41,7 @@ export function CreateFlowForm({
   type: FlowType;
   setCreatePrimitiveDialogOpen?: (open: boolean) => void;
 }) {
+  // FIXME: use suspense with revalidateTag
   const queryClient = useQueryClient();
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();

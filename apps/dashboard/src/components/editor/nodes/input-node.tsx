@@ -10,10 +10,12 @@ import { Suspense } from "react";
 import { DecoratorNode } from "lexical";
 import { HashIcon, TextIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { useReactFlow } from "reactflow";
 
 import { Form, FormControl, FormField, FormItem } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
 
+import type { FlowNode } from "~/types";
 import { updateInput } from "~/lib/queries/primitives";
 
 function InputNodeComponent({
@@ -27,6 +29,7 @@ function InputNodeComponent({
   name: string;
   inputType: "text" | "number";
 }) {
+  const reactFlow = useReactFlow<FlowNode>();
   const form = useForm({
     mode: "onChange",
     defaultValues: {
@@ -35,7 +38,7 @@ function InputNodeComponent({
   });
 
   return (
-    <div className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-xs text-accent-foreground">
+    <div className="inline-flex items-center rounded-md border bg-accent p-1 text-xs text-accent-foreground">
       {inputType === "text" ? (
         <TextIcon className="mr-1 size-3 text-primary" />
       ) : inputType === "number" ? (
@@ -53,15 +56,28 @@ function InputNodeComponent({
                 <FormControl>
                   <Input
                     {...field}
-                    className="h-6 w-20 border-none bg-muted px-1 text-xs"
+                    className="h-5 w-20 border-none bg-muted px-2 py-1 text-xs"
                     placeholder="Enter input name"
-                    onChange={async (e) => {
-                      field.onChange(e.target.value);
-                      await updateInput({
+                    onBlur={async (e) => {
+                      const inputs = await updateInput({
                         id,
                         inputId,
-                        name: field.value,
+                        name: e.target.value,
                       });
+                      reactFlow.setNodes((nodes) =>
+                        nodes.map((node) => {
+                          if (node.id === id) {
+                            return {
+                              ...node,
+                              data: {
+                                ...node.data,
+                                inputs,
+                              },
+                            };
+                          }
+                          return node;
+                        }),
+                      );
                     }}
                   />
                 </FormControl>
@@ -139,13 +155,13 @@ export class InputNode extends DecoratorNode<JSX.Element> {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement("span");
-    element.setAttribute("data-lexical-value", "true");
+    element.setAttribute("data-lexical-input", "true");
     return { element };
   }
 
   createDOM(_config: EditorConfig, _editor: LexicalEditor): HTMLElement {
     const dom = document.createElement("span");
-    dom.setAttribute("data-lexical-value", "true");
+    dom.setAttribute("data-lexical-input", "true");
     return dom;
   }
 

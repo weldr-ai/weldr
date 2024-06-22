@@ -5,6 +5,7 @@ import type {
   dataResourceMetadataSchema,
   dataResourceProvidersSchema,
   dataResourceSchema,
+  edgeSchema,
   flowSchema,
   flowTypesSchema,
   functionMetadataSchema,
@@ -75,6 +76,8 @@ export type PrimitiveMetadata =
   | WorkflowMetadata
   | FunctionMetadata;
 export type PrimitiveData = BaseNodeData & PrimitiveMetadata;
+
+export type Edge = z.infer<typeof edgeSchema>;
 
 export interface Input {
   id: string;

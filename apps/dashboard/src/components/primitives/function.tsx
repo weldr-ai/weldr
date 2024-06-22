@@ -43,7 +43,7 @@ import {
   ExpandableCardTrigger,
 } from "@integramind/ui/expandable-card";
 import { FormField } from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
+import { Input as InputComponent } from "@integramind/ui/input";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -53,11 +53,14 @@ import { ScrollArea } from "@integramind/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
 import { cn } from "@integramind/ui/utils";
 
-import type { FunctionNodeProps, PrimitiveData } from "~/types";
+import type { FunctionNodeProps, Input, PrimitiveData } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { LambdaIcon } from "~/components/icons/lambda-icon";
-import { deletePrimitive, updateFunctionById } from "~/lib/queries/primitives";
+import {
+  deletePrimitive,
+  updateFunctionPrimitiveById,
+} from "~/lib/queries/primitives";
 import { getJobById } from "~/lib/queries/run";
 
 async function postJob(): Promise<{ id: string }> {
@@ -99,6 +102,8 @@ export const Function = memo(
     });
 
     const inputs = useMemo(() => {
+      console.log("NODES FROM FUNCTION", nodes);
+
       const parents = edges.reduce((acc, edge) => {
         if (edge.source === data.id) {
           const parent = nodes.find((node) => node.id === edge.target);
@@ -109,7 +114,7 @@ export const Function = memo(
         return acc;
       }, [] as PrimitiveData[]);
 
-      return parents.reduce((acc, parent) => {
+      const inputs = parents.reduce((acc, parent) => {
         if (
           parent.type === "route" ||
           parent.type === "workflow" ||
@@ -117,12 +122,19 @@ export const Function = memo(
         ) {
           if (parent.inputs) {
             parent.inputs.forEach((input) => {
-              acc.push(input.name);
+              acc.push({
+                id: input.id,
+                name: input.name,
+                type: input.type,
+              });
             });
           }
         }
         return acc;
-      }, [] as string[]);
+      }, [] as Input[]);
+
+      console.log("INPUTS FROM FUNCTION", inputs);
+      return inputs;
     }, [data.id, edges, nodes]);
 
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
@@ -301,12 +313,11 @@ export const Function = memo(
                   control={form.control}
                   name="name"
                   render={({ field }) => (
-                    <Input
+                    <InputComponent
                       {...field}
                       className="h-8 border-none bg-muted p-0 text-sm focus-visible:ring-0"
-                      onChange={async (e) => {
-                        field.onChange(e.target.value);
-                        await updateFunctionById({
+                      onBlur={async (e) => {
+                        await updateFunctionPrimitiveById({
                           id: data.id,
                           name: e.target.value,
                         });
@@ -323,11 +334,12 @@ export const Function = memo(
                 >
                   <span className="text-xs text-muted-foreground">Editor</span>
                   <Editor
+                    id={data.id}
+                    type="description"
+                    inputs={inputs}
+                    placeholder="Describe your function"
                     onChange={onChange}
                     onError={onError}
-                    type="description"
-                    placeholder="Describe your function"
-                    inputs={inputs}
                   />
                 </ResizablePanel>
                 <ResizableHandle className="border-b" withHandle />

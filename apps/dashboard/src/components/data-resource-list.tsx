@@ -8,6 +8,7 @@ import { getDataResources } from "~/lib/queries/data-resources";
 import { AddDataResourceDialog } from "./add-data-resource-dialog";
 
 export function DataResourceList({ workspaceId }: { workspaceId: string }) {
+  // FIXME: use suspense with revalidateTag
   const {
     isLoading,
     isRefetching,

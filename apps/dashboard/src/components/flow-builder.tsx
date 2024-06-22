@@ -1,6 +1,10 @@
 "use client";
 
-import type { Connection, Edge, Node } from "reactflow";
+import type {
+  Connection,
+  Edge as ReactFlowEdge,
+  Node as ReactFlowNode,
+} from "reactflow";
 import React, { useCallback } from "react";
 import { createId } from "@paralleldrive/cuid2";
 import {
@@ -71,7 +75,7 @@ export function _FlowBuilder({
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback(
-    async (params: Edge | Connection) => {
+    async (params: ReactFlowEdge | Connection) => {
       const newEdgeId = createId();
       setEdges((eds) => addEdge({ ...params, type: "deletable-edge" }, eds));
       await createEdge({
@@ -149,7 +153,11 @@ export function _FlowBuilder({
   );
 
   const onNodeDragStop = useCallback(
-    async (_event: React.MouseEvent, node: Node, _nodes: Node[]) => {
+    async (
+      _event: React.MouseEvent,
+      node: ReactFlowNode,
+      _nodes: ReactFlowNode[],
+    ) => {
       await updatePrimitivePosition({
         id: node.id,
         positionX: Math.floor(node.position.x),
@@ -159,7 +167,7 @@ export function _FlowBuilder({
     [],
   );
 
-  const onNodesDelete = useCallback(async (nodes: Node[]) => {
+  const onNodesDelete = useCallback(async (nodes: ReactFlowNode[]) => {
     for (const node of nodes) {
       await deletePrimitive({
         id: node.id,

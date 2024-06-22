@@ -19,6 +19,7 @@ export function FlowList({
   type: FlowType;
 }) {
   const { flowId: currentFlowId } = useParams<{ flowId: string }>();
+  // FIXME: use suspense with revalidateTag
   const {
     isLoading,
     isRefetching,

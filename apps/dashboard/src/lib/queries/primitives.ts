@@ -6,10 +6,10 @@ import type {
   updateFunctionSchema,
   updateRouteFlowSchema,
 } from "@integramind/db/schema";
-import { db, eq, sql } from "@integramind/db";
+import { and, db, eq, sql } from "@integramind/db";
 import { primitives } from "@integramind/db/schema";
 
-import type { Input } from "~/types";
+import type { Input, RouteData, RouteMetadata } from "~/types";
 
 // FIXME: many of these queries should be optimized
 
@@ -70,12 +70,37 @@ export async function getPrimitiveById({ id }: { id: string }) {
   return result;
 }
 
-export async function updateRouteById({
+export async function getRoutePrimitiveById({
+  id,
+}: {
+  id: string;
+}): Promise<RouteData | undefined> {
+  const result = await db.query.primitives.findFirst({
+    where: and(eq(primitives.id, id), eq(primitives.type, "route")),
+  });
+
+  if (!result) {
+    return;
+  }
+
+  return {
+    id: result.id,
+    name: result.name,
+    description: result.description,
+    type: "route",
+    actionType: (result.metadata as RouteMetadata).actionType,
+    urlPath: (result.metadata as RouteMetadata).urlPath,
+    inputs: (result.metadata as RouteMetadata).inputs,
+  };
+}
+
+export async function updateRoutePrimitiveById({
   id,
   name,
   description,
   actionType,
   urlPath,
+  inputs,
 }: z.infer<typeof updateRouteFlowSchema> & { id: string }) {
   const result = await db.query.primitives.findFirst({
     where: eq(primitives.id, id),
@@ -94,7 +119,7 @@ export async function updateRouteById({
         type: "route",
         actionType: actionType ?? result.metadata.actionType,
         urlPath: urlPath ?? result.metadata.urlPath,
-        inputs: result.metadata.inputs,
+        inputs: inputs ?? result.metadata.inputs,
       }}::jsonb`,
     })
     .where(eq(primitives.id, id));
@@ -123,15 +148,19 @@ export async function updateInput({
     return;
   }
 
+  const updatedInputs = updateInputById(result.metadata.inputs, inputId, name);
+
   await db
     .update(primitives)
     .set({
       metadata: sql`${{
         ...result.metadata,
-        inputs: [...updateInputById(result.metadata.inputs, inputId, name)],
+        inputs: [...updatedInputs],
       }}::jsonb`,
     })
     .where(eq(primitives.id, id));
+
+  return updatedInputs;
 }
 
 export async function addInput({
@@ -167,7 +196,7 @@ export async function addInput({
     .where(eq(primitives.id, id));
 }
 
-export async function updateFunctionById({
+export async function updateFunctionPrimitiveById({
   id,
   name,
   description,

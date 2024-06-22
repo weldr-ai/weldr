@@ -34,6 +34,7 @@ export function AddDataResourceForm({
   provider: DataResourceProvider;
   setAddResourceDialogOpen?: (open: boolean) => void;
 }) {
+  // FIXME: use suspense with revalidateTag
   const queryClient = useQueryClient();
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
