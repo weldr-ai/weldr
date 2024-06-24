@@ -8,9 +8,8 @@ import { db, eq } from "@integramind/db";
 import { insertWaitlistSchema, waitlist } from "@integramind/db/schema";
 
 import { WaitlistConfirmationEmailTemplate } from "~/components/waitlist-confirmation-email-template";
-import { serverEnv } from "~/lib/env/server";
 
-const resend = new Resend(serverEnv.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY ?? "");
 
 type FormState =
   | {

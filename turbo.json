@@ -33,10 +33,5 @@
       "cache": false
     }
   },
-  "globalEnv": [
-    "DATABASE_URL",
-    "RESEND_API_KEY",
-    "NEXT_PUBLIC_BASE_URL",
-    "AUTH_SECRET"
-  ]
+  "globalEnv": ["DATABASE_URL", "RESEND_API_KEY", "NEXT_PUBLIC_BASE_URL"]
 }

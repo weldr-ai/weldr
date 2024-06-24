@@ -7,8 +7,6 @@ import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
 
-import { clientEnv } from "~/lib/env/client";
-
 const fontSans = FontSans({
   subsets: ["latin"],
   weight: "400",
@@ -19,7 +17,7 @@ export const metadata: Metadata = {
   title: "IntegraMind",
   description:
     "Build backend APIs, automation workflows, and data pipelines with no coding, just English!",
-  metadataBase: new URL(clientEnv.NEXT_PUBLIC_BASE_URL),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? ""),
 };
 
 export default function RootLayout({
