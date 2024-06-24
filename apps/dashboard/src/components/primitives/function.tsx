@@ -102,8 +102,6 @@ export const Function = memo(
     });
 
     const inputs = useMemo(() => {
-      console.log("NODES FROM FUNCTION", nodes);
-
       const parents = edges.reduce((acc, edge) => {
         if (edge.source === data.id) {
           const parent = nodes.find((node) => node.id === edge.target);
@@ -132,8 +130,6 @@ export const Function = memo(
         }
         return acc;
       }, [] as Input[]);
-
-      console.log("INPUTS FROM FUNCTION", inputs);
       return inputs;
     }, [data.id, edges, nodes]);
 

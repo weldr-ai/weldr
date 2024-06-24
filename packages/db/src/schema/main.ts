@@ -190,7 +190,12 @@ export const postgresMetadataSchema = z.object({
   tables: z
     .object({
       name: z.string(),
-      columns: z.string().array(),
+      columns: z
+        .object({
+          name: z.string(),
+          type: z.string(),
+        })
+        .array(),
     })
     .array(),
 });

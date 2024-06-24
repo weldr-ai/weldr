@@ -9,10 +9,17 @@ import {
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
 import { createId } from "@paralleldrive/cuid2";
 import { useQuery } from "@tanstack/react-query";
-import { Columns2Icon, TableIcon, VariableIcon } from "lucide-react";
+import {
+  ColumnsIcon,
+  HashIcon,
+  TableIcon,
+  TextIcon,
+  VariableIcon,
+} from "lucide-react";
 
 import { cn } from "@integramind/ui/utils";
 
+import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import type { DataResourceMetadata, Input } from "~/types";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
 import { PostgresIcon } from "~/components/icons/postgres-icon";
@@ -27,9 +34,17 @@ export class ReferenceOption extends MenuOption {
   // What shows up in the editor
   name: string;
   // Reference type
-  referenceType: "input" | "data-resource";
+  referenceType: "input" | "database" | "database-table" | "database-column";
+  // Data type
+  dataType?: "text" | "number";
   // Icon for display
-  icon: string;
+  icon:
+    | "database-icon"
+    | "number-icon"
+    | "text-icon"
+    | "value-icon"
+    | "database-column-icon"
+    | "database-table-icon";
   // For extra searching.
   keywords: string[];
   // What happens when you select this option?
@@ -38,17 +53,25 @@ export class ReferenceOption extends MenuOption {
   constructor(
     id: string,
     name: string,
-    referenceType: "input" | "data-resource",
+    referenceType: "input" | "database" | "database-table" | "database-column",
     options: {
-      icon: string;
+      icon:
+        | "database-icon"
+        | "number-icon"
+        | "text-icon"
+        | "value-icon"
+        | "database-column-icon"
+        | "database-table-icon";
       keywords?: string[];
       onSelect: (queryString: string) => void;
     },
+    dataType?: "text" | "number",
   ) {
     super(name);
     this.id = id;
     this.name = name;
     this.referenceType = referenceType;
+    this.dataType = dataType;
     this.icon = options.icon;
     this.keywords = options.keywords ?? [];
     this.onSelect = options.onSelect.bind(this);
@@ -91,12 +114,32 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
       closeMenu: () => void,
     ) => {
       editor.update(() => {
-        const referenceNode = $createReferenceNode(
-          selectedOption.id,
-          selectedOption.name,
-          selectedOption.referenceType,
-        );
-        if (selectedOption.referenceType === "data-resource") {
+        let referenceNode: ReferenceNode;
+        if (selectedOption.dataType === "number") {
+          referenceNode = $createReferenceNode(
+            selectedOption.id,
+            selectedOption.name,
+            selectedOption.referenceType,
+            selectedOption.icon,
+            "number",
+          );
+        } else if (selectedOption.dataType === "text") {
+          referenceNode = $createReferenceNode(
+            selectedOption.id,
+            selectedOption.name,
+            selectedOption.referenceType,
+            selectedOption.icon,
+            "text",
+          );
+        } else {
+          referenceNode = $createReferenceNode(
+            selectedOption.id,
+            selectedOption.name,
+            selectedOption.referenceType,
+            selectedOption.icon,
+          );
+        }
+        if (selectedOption.referenceType === "database") {
           setDataResourceId(selectedOption.id);
         }
         if (nodeToReplace) {
@@ -110,11 +153,10 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   );
 
   const inputOptions: ReferenceOption[] = useMemo(() => {
-    console.log("FROM REFERENCE PLUGIN", inputs);
     return inputs.map(
       (input) =>
         new ReferenceOption(createId(), input.name, "input", {
-          icon: "value-icon",
+          icon: input.type === "number" ? "number-icon" : "text-icon",
           keywords: ["input", input.name],
           onSelect: (queryString) => {
             console.log(queryString);
@@ -129,18 +171,13 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
     if (dataResource) {
       if (dataResource.provider === "postgres") {
         options.push(
-          new ReferenceOption(
-            dataResource.id,
-            dataResource.name,
-            "data-resource",
-            {
-              icon: "postgres-icon",
-              keywords: ["postgres", "data-resource", dataResource.name],
-              onSelect: (queryString) => {
-                console.log(queryString);
-              },
+          new ReferenceOption(dataResource.id, dataResource.name, "database", {
+            icon: "database-icon",
+            keywords: ["postgres", "data-resource", dataResource.name],
+            onSelect: (queryString) => {
+              console.log(queryString);
             },
-          ),
+          }),
         );
 
         (dataResource.metadata as DataResourceMetadata).tables.forEach(
@@ -148,22 +185,23 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
             table.columns.forEach((column) =>
               options.push(
                 new ReferenceOption(
-                  `${table.name}.${column}`,
-                  `${table.name}.${column}`,
-                  "input",
+                  `${table.name}.${column.name}`,
+                  `${table.name}.${column.name}`,
+                  "database-column",
                   {
-                    icon: "column-icon",
-                    keywords: ["column", column],
+                    icon: "database-column-icon",
+                    keywords: ["column", column.name],
                     onSelect: (queryString) => {
                       console.log(queryString);
                     },
                   },
+                  column.type === "text" ? "text" : "number",
                 ),
               ),
             );
             options.push(
-              new ReferenceOption(table.name, table.name, "input", {
-                icon: "table-icon",
+              new ReferenceOption(table.name, table.name, "database-table", {
+                icon: "database-table-icon",
                 keywords: ["table", table.name],
                 onSelect: (queryString) => {
                   console.log(queryString);
@@ -176,18 +214,13 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
     } else if (dataResources && !dataResourceId) {
       dataResources.forEach((dataResource) =>
         options.push(
-          new ReferenceOption(
-            dataResource.id,
-            dataResource.name,
-            "data-resource",
-            {
-              icon: "postgres-icon",
-              keywords: ["postgres", "data-resource", dataResource.name],
-              onSelect: (queryString) => {
-                console.log(queryString);
-              },
+          new ReferenceOption(dataResource.id, dataResource.name, "database", {
+            icon: "database-icon",
+            keywords: ["postgres", "data-resource", dataResource.name],
+            onSelect: (queryString) => {
+              console.log(queryString);
             },
-          ),
+          }),
         ),
       );
     }
@@ -234,13 +267,17 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
                 }}
                 key={option.key}
               >
-                {option.icon === "postgres-icon" ? (
+                {option.icon === "database-icon" ? (
                   <PostgresIcon className="size-3 text-primary" />
                 ) : option.icon === "value-icon" ? (
                   <VariableIcon className="size-3 text-primary" />
-                ) : option.icon === "column-icon" ? (
-                  <Columns2Icon className="size-3 text-primary" />
-                ) : option.icon === "table-icon" ? (
+                ) : option.icon === "number-icon" ? (
+                  <HashIcon className="size-3 text-primary" />
+                ) : option.icon === "text-icon" ? (
+                  <TextIcon className="size-3 text-primary" />
+                ) : option.icon === "database-column-icon" ? (
+                  <ColumnsIcon className="size-3 text-primary" />
+                ) : option.icon === "database-table-icon" ? (
                   <TableIcon className="size-3 text-primary" />
                 ) : (
                   <></>

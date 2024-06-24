@@ -5,7 +5,10 @@ import { Client } from "pg";
 export async function getTables(connectionString: string): Promise<
   | {
       name: string;
-      columns: string[];
+      columns: {
+        name: string;
+        type: string;
+      }[];
     }[]
   | false
 > {
@@ -14,10 +17,16 @@ export async function getTables(connectionString: string): Promise<
   try {
     await client.connect();
     const db = drizzle(client);
-    const query = sql<{ name: string; columns: string[] }>`
+    const query = sql<{
+      name: string;
+      columns: {
+        name: string;
+        type: string;
+      }[];
+    }>`
       SELECT
           t.table_name AS name,
-          json_agg(c.column_name) AS columns
+          json_agg(json_build_object('name', c.column_name, 'type', c.data_type)) AS columns
       FROM
           information_schema.tables t
       LEFT JOIN
@@ -27,10 +36,16 @@ export async function getTables(connectionString: string): Promise<
       WHERE
           t.table_schema = 'public'
       GROUP BY
-          t.table_name
+          t.table_name;
     `;
     const result = await db.execute(query);
-    return result.rows as { name: string; columns: string[] }[];
+    return result.rows as {
+      name: string;
+      columns: {
+        name: string;
+        type: string;
+      }[];
+    }[];
   } catch (error) {
     return false;
   } finally {
