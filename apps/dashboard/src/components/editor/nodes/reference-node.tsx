@@ -147,6 +147,20 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
     return { element };
   }
 
+  getTextContent(): string {
+    switch (this.__referenceType) {
+      case "input":
+        return `input ${this.__name.replace(/ /g, "_").toLowerCase()} of type ${this.__dataType}`;
+      case "database":
+      case "database-table":
+        return `${this.__name}`;
+      case "database-column":
+        return `column ${this.__name} of type ${this.__dataType}`;
+      default:
+        return "";
+    }
+  }
+
   createDOM(_config: EditorConfig, _editor: LexicalEditor): HTMLElement {
     const dom = document.createElement("span");
     dom.setAttribute("data-lexical-reference", "true");

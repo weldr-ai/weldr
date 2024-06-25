@@ -200,6 +200,12 @@ export async function updateFunctionPrimitiveById({
   id,
   name,
   description,
+  inputs,
+  outputs,
+  resource,
+  rawDescription,
+  generatedCode,
+  isCodeUpdated,
 }: z.infer<typeof updateFunctionSchema> & { id: string }) {
   const result = await db.query.primitives.findFirst({
     where: eq(primitives.id, id),
@@ -214,6 +220,15 @@ export async function updateFunctionPrimitiveById({
     .set({
       name: name,
       description: description,
+      metadata: sql`${{
+        ...result.metadata,
+        inputs: inputs ?? result.metadata.inputs,
+        outputs: outputs ?? result.metadata.outputs,
+        resource: resource ?? result.metadata.resource,
+        rawDescription: rawDescription ?? result.metadata.rawDescription,
+        generatedCode: generatedCode ?? result.metadata.generatedCode,
+        isCodeUpdated: isCodeUpdated ?? result.metadata.isCodeUpdated,
+      }}::jsonb`,
     })
     .where(eq(primitives.id, id));
 }

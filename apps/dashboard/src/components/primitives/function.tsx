@@ -1,11 +1,12 @@
 "use client";
 
-import type { EditorState, LexicalEditor } from "lexical";
+import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import type { z } from "zod";
 import { memo, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { skipToken, useQuery } from "@tanstack/react-query";
+import { $getRoot } from "lexical";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
@@ -53,7 +54,13 @@ import { ScrollArea } from "@integramind/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
 import { cn } from "@integramind/ui/utils";
 
-import type { FunctionNodeProps, Input, PrimitiveData } from "~/types";
+import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
+import type {
+  FunctionNodeProps,
+  FunctionRawDescription,
+  Input,
+  PrimitiveData,
+} from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { LambdaIcon } from "~/components/icons/lambda-icon";
@@ -113,11 +120,7 @@ export const Function = memo(
       }, [] as PrimitiveData[]);
 
       const inputs = parents.reduce((acc, parent) => {
-        if (
-          parent.type === "route" ||
-          parent.type === "workflow" ||
-          parent.type === "function"
-        ) {
+        if (parent.type === "route" || parent.type === "workflow") {
           if (parent.inputs) {
             parent.inputs.forEach((input) => {
               acc.push({
@@ -140,8 +143,60 @@ export const Function = memo(
 
     function onChange(editorState: EditorState) {
       editorState.read(() => {
-        const { root } = editorState.toJSON();
-        console.log(root.children);
+        const root = $getRoot();
+        const children = (root.getChildren()[0] as ParagraphNode).getChildren();
+
+        const description = root.getTextContent();
+        const rawDescription = children.reduce((acc, child) => {
+          if (child.__type === "text") {
+            acc.push({
+              type: "text",
+              value: child.getTextContent(),
+            });
+          } else if (child.__type === "reference") {
+            const referenceNode = child as ReferenceNode;
+            acc.push({
+              type: "reference",
+              id: referenceNode.__id,
+              referenceType: referenceNode.__referenceType,
+              name: referenceNode.__name,
+              icon: referenceNode.__icon,
+              dataType: referenceNode.__dataType,
+            });
+          }
+          return acc;
+        }, [] as FunctionRawDescription[]);
+        const inputs: Input[] = [];
+        let resource: { id: string; provider: string } | null = null;
+
+        children.forEach((child) => {
+          if (child.__type === "reference") {
+            const referenceNode = child as ReferenceNode;
+            if (
+              referenceNode.__referenceType === "input" &&
+              referenceNode.__dataType
+            ) {
+              inputs.push({
+                id: referenceNode.__id,
+                name: referenceNode.__name,
+                type: referenceNode.__dataType,
+              });
+            } else if (referenceNode.__referenceType === "database") {
+              resource = {
+                id: referenceNode.__id,
+                provider: "postgres",
+              };
+            }
+          }
+        });
+
+        void updateFunctionPrimitiveById({
+          id: data.id,
+          description,
+          inputs,
+          resource,
+          rawDescription,
+        });
       });
     }
 
@@ -311,6 +366,7 @@ export const Function = memo(
                   render={({ field }) => (
                     <InputComponent
                       {...field}
+                      autoComplete="off"
                       className="h-8 border-none bg-muted p-0 text-sm focus-visible:ring-0"
                       onBlur={async (e) => {
                         await updateFunctionPrimitiveById({
@@ -334,6 +390,7 @@ export const Function = memo(
                     type="description"
                     inputs={inputs}
                     placeholder="Describe your function"
+                    rawDescription={data.rawDescription}
                     onChange={onChange}
                     onError={onError}
                   />

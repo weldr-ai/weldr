@@ -7,7 +7,6 @@ import {
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
-import { createId } from "@paralleldrive/cuid2";
 import { useQuery } from "@tanstack/react-query";
 import {
   ColumnsIcon,
@@ -16,7 +15,9 @@ import {
   TextIcon,
   VariableIcon,
 } from "lucide-react";
+import * as ReactDOM from "react-dom";
 
+import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
@@ -81,7 +82,7 @@ export class ReferenceOption extends MenuOption {
 export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
-  const [_queryString, setQueryString] = useState<string | null>(null);
+  const [queryString, setQueryString] = useState<string | null>(null);
   const [dataResourceId, setDataResourceId] = useState<string | undefined>();
 
   // FIXME: add all the data resources options directly to the dropdown
@@ -115,21 +116,16 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
     ) => {
       editor.update(() => {
         let referenceNode: ReferenceNode;
-        if (selectedOption.dataType === "number") {
+        if (
+          selectedOption.referenceType === "input" ||
+          selectedOption.referenceType === "database-column"
+        ) {
           referenceNode = $createReferenceNode(
             selectedOption.id,
             selectedOption.name,
             selectedOption.referenceType,
             selectedOption.icon,
-            "number",
-          );
-        } else if (selectedOption.dataType === "text") {
-          referenceNode = $createReferenceNode(
-            selectedOption.id,
-            selectedOption.name,
-            selectedOption.referenceType,
-            selectedOption.icon,
-            "text",
+            selectedOption.dataType,
           );
         } else {
           referenceNode = $createReferenceNode(
@@ -153,15 +149,22 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   );
 
   const inputOptions: ReferenceOption[] = useMemo(() => {
+    console.log(inputs);
     return inputs.map(
       (input) =>
-        new ReferenceOption(createId(), input.name, "input", {
-          icon: input.type === "number" ? "number-icon" : "text-icon",
-          keywords: ["input", input.name],
-          onSelect: (queryString) => {
-            console.log(queryString);
+        new ReferenceOption(
+          input.id,
+          input.name,
+          "input",
+          {
+            icon: input.type === "number" ? "number-icon" : "text-icon",
+            keywords: ["input", input.name],
+            onSelect: (queryString) => {
+              console.log(queryString);
+            },
           },
-        }),
+          input.type,
+        ),
     );
   }, [inputs]);
 
@@ -190,7 +193,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
                   "database-column",
                   {
                     icon: "database-column-icon",
-                    keywords: ["column", column.name],
+                    keywords: ["column", dataResource.name, column.name],
                     onSelect: (queryString) => {
                       console.log(queryString);
                     },
@@ -202,7 +205,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
             options.push(
               new ReferenceOption(table.name, table.name, "database-table", {
                 icon: "database-table-icon",
-                keywords: ["table", table.name],
+                keywords: ["table", dataResource.name, table.name],
                 onSelect: (queryString) => {
                   console.log(queryString);
                 },
@@ -216,7 +219,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
         options.push(
           new ReferenceOption(dataResource.id, dataResource.name, "database", {
             icon: "database-icon",
-            keywords: ["postgres", "data-resource", dataResource.name],
+            keywords: ["data resource", "database", dataResource.name],
             onSelect: (queryString) => {
               console.log(queryString);
             },
@@ -225,8 +228,18 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
       );
     }
 
-    return options;
-  }, [dataResource, dataResourceId, dataResources, inputOptions]);
+    if (!queryString) {
+      return options;
+    }
+
+    const regex = new RegExp(queryString, "i");
+
+    return options.filter(
+      (option) =>
+        regex.test(option.name) ||
+        option.keywords.some((keyword) => regex.test(keyword)),
+    );
+  }, [dataResource, dataResourceId, dataResources, inputOptions, queryString]);
 
   return (
     <LexicalTypeaheadMenuPlugin<ReferenceOption>
@@ -235,57 +248,64 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
       triggerFn={checkForTriggerMatch}
       options={options}
       menuRenderFn={(
-        anchorElement,
+        anchorElementRef,
         { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex },
       ) =>
-        anchorElement && options.length ? (
-          <div className="absolute left-3 top-8 flex max-h-40 min-w-48 flex-col overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-            {options.map((option, i: number) => (
-              <div
-                id={"menu-item-" + i}
-                className={cn(
-                  "flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
-                  {
-                    "bg-accent": selectedIndex === i,
-                  },
-                )}
-                tabIndex={-1}
-                role="option"
-                aria-selected={selectedIndex === i}
-                onClick={() => {
-                  setHighlightedIndex(i);
-                  selectOptionAndCleanUp(option);
-                }}
-                onKeyUp={() => {
-                  setHighlightedIndex(i - 1);
-                }}
-                onKeyDown={() => {
-                  setHighlightedIndex(i + 1);
-                }}
-                onMouseEnter={() => {
-                  setHighlightedIndex(i);
-                }}
-                key={option.key}
-              >
-                {option.icon === "database-icon" ? (
-                  <PostgresIcon className="size-3 text-primary" />
-                ) : option.icon === "value-icon" ? (
-                  <VariableIcon className="size-3 text-primary" />
-                ) : option.icon === "number-icon" ? (
-                  <HashIcon className="size-3 text-primary" />
-                ) : option.icon === "text-icon" ? (
-                  <TextIcon className="size-3 text-primary" />
-                ) : option.icon === "database-column-icon" ? (
-                  <ColumnsIcon className="size-3 text-primary" />
-                ) : option.icon === "database-table-icon" ? (
-                  <TableIcon className="size-3 text-primary" />
-                ) : (
-                  <></>
-                )}
-                <span className="text">{option.name}</span>
-              </div>
-            ))}
-          </div>
+        anchorElementRef?.current && options.length ? (
+          ReactDOM.createPortal(
+            <div>
+              <ScrollArea className="h-full w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+                <ul className="max-h-40">
+                  {options.map((option, i: number) => (
+                    <li
+                      id={"menu-item-" + i}
+                      className={cn(
+                        "flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
+                        {
+                          "bg-accent": selectedIndex === i,
+                        },
+                      )}
+                      tabIndex={-1}
+                      role="option"
+                      aria-selected={selectedIndex === i}
+                      onClick={() => {
+                        setHighlightedIndex(i);
+                        selectOptionAndCleanUp(option);
+                      }}
+                      onKeyUp={() => {
+                        setHighlightedIndex(i);
+                      }}
+                      onKeyDown={() => {
+                        setHighlightedIndex(i);
+                      }}
+                      onMouseEnter={() => {
+                        setHighlightedIndex(i);
+                      }}
+                      key={option.key}
+                    >
+                      {option.icon === "database-icon" ? (
+                        <PostgresIcon className="size-3 text-primary" />
+                      ) : option.icon === "value-icon" ? (
+                        <VariableIcon className="size-3 text-primary" />
+                      ) : option.icon === "number-icon" ? (
+                        <HashIcon className="size-3 text-primary" />
+                      ) : option.icon === "text-icon" ? (
+                        <TextIcon className="size-3 text-primary" />
+                      ) : option.icon === "database-column-icon" ? (
+                        <ColumnsIcon className="size-3 text-primary" />
+                      ) : option.icon === "database-table-icon" ? (
+                        <TableIcon className="size-3 text-primary" />
+                      ) : (
+                        <></>
+                      )}
+                      <span className="text">{option.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            </div>,
+            anchorElementRef.current,
+          )
         ) : (
           <div className="absolute left-3 top-8 flex min-w-48 rounded-md border bg-muted p-2 text-xs">
             No references found.

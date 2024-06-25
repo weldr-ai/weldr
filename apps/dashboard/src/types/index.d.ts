@@ -9,6 +9,7 @@ import type {
   flowSchema,
   flowTypesSchema,
   functionMetadataSchema,
+  functionRawDescriptionSchema,
   primitiveSchema,
   primitiveTypesSchema,
   routeMetadataSchema,
@@ -76,6 +77,9 @@ export type PrimitiveMetadata =
   | WorkflowMetadata
   | FunctionMetadata;
 export type PrimitiveData = BaseNodeData & PrimitiveMetadata;
+export type FunctionRawDescription = z.infer<
+  typeof functionRawDescriptionSchema
+>;
 
 export type Edge = z.infer<typeof edgeSchema>;
 

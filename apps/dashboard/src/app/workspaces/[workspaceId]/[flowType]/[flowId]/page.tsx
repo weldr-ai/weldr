@@ -65,8 +65,8 @@ export default async function WorkflowPage({
             type: primitive.type,
             inputs: primitive.metadata.inputs,
             outputs: primitive.metadata.outputs,
-            generatedCode: primitive.metadata.generatedCode,
-            isCodeUpdated: primitive.metadata.isCodeUpdated,
+            resource: primitive.metadata.resource,
+            rawDescription: primitive.metadata.rawDescription,
           },
         };
     }

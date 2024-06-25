@@ -212,6 +212,33 @@ export const insertEdgeSchema = createInsertSchema(edges, {
 });
 
 // Primitives zod schemas
+export const functionRawDescriptionSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("text"),
+    value: z.string(),
+  }),
+  z.object({
+    type: z.literal("reference"),
+    id: z.string(),
+    referenceType: z.enum([
+      "input",
+      "database",
+      "database-table",
+      "database-column",
+    ]),
+    name: z.string(),
+    icon: z.enum([
+      "database-icon",
+      "number-icon",
+      "text-icon",
+      "value-icon",
+      "database-column-icon",
+      "database-table-icon",
+    ]),
+    dataType: z.enum(["text", "number"]).optional(),
+  }),
+]);
+
 export const functionMetadataSchema = z.object({
   type: z.literal("function"),
   inputs: z
@@ -228,6 +255,13 @@ export const functionMetadataSchema = z.object({
       type: z.enum(["number", "text"]),
     })
     .array(),
+  resource: z
+    .object({
+      id: z.string(),
+      provider: z.enum(dataResourceProviders.enumValues),
+    })
+    .optional(),
+  rawDescription: functionRawDescriptionSchema.array().optional(),
   generatedCode: z.string().optional(),
   isCodeUpdated: z.boolean().optional(),
 });
@@ -356,4 +390,15 @@ export const updateFunctionSchema = z.object({
     })
     .array()
     .optional(),
+  outputs: z.string().optional(),
+  resource: z
+    .object({
+      id: z.string(),
+      provider: z.enum(dataResourceProviders.enumValues),
+    })
+    .nullable()
+    .optional(),
+  rawDescription: functionRawDescriptionSchema.array().optional(),
+  generatedCode: z.string().optional(),
+  isCodeUpdated: z.boolean().optional(),
 });
