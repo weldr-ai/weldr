@@ -422,7 +422,13 @@ export const updateFunctionSchema = z.object({
     })
     .array()
     .optional(),
-  outputs: z.string().optional(),
+  outputs: z
+    .object({
+      name: z.string(),
+      type: z.enum(["number", "text"]),
+    })
+    .array()
+    .optional(),
   resource: z
     .object({
       id: z.string(),

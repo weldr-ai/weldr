@@ -254,13 +254,27 @@ export const Function = memo(
       const interval = setInterval(() => {
         if (job && (job.state === "RUNNING" || job.state === "PENDING")) {
           void refetchJob();
+        } else if (job?.state === "COMPLETED" && job.result) {
+          const parsedResult =
+            (
+              JSON.parse(job.result) as {
+                response: Record<string, string | number>[];
+              }
+            )?.response[0] ?? {};
+          updateFunction.mutate({
+            id: data.id,
+            outputs: Object.keys(parsedResult).map((key) => ({
+              name: key,
+              type: typeof parsedResult[key] === "number" ? "number" : "text",
+            })),
+          });
         }
       }, 100);
 
       return () => {
         clearInterval(interval);
       };
-    }, [job, refetchJob]);
+    }, [data.id, job, refetchJob, updateFunction]);
 
     if (!functionData) {
       return null;
@@ -507,15 +521,18 @@ export const Function = memo(
                                       {Object.keys(
                                         (
                                           JSON.parse(job.result) as {
-                                            response: Record<string, string>[];
+                                            response: Record<
+                                              string,
+                                              string | number
+                                            >[];
                                           }
                                         )?.response[0] ?? {},
-                                      ).map((row, idx) => (
+                                      ).map((head, idx) => (
                                         <TableHead
                                           key={idx}
                                           className="flex w-full items-center"
                                         >
-                                          {row}
+                                          {head}
                                         </TableHead>
                                       ))}
                                     </TableRow>
@@ -523,7 +540,10 @@ export const Function = memo(
                                   <TableBody className="flex w-full flex-col">
                                     {(
                                       JSON.parse(job.result) as {
-                                        response: Record<string, string>[];
+                                        response: Record<
+                                          string,
+                                          string | number
+                                        >[];
                                       }
                                     ).response.map((row, idx) => (
                                       <TableRow
