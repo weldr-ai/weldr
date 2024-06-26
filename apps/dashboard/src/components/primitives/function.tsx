@@ -5,7 +5,7 @@ import type { z } from "zod";
 import { memo, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { skipToken, useQuery } from "@tanstack/react-query";
+import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
 import { $getRoot } from "lexical";
 import {
   EllipsisVerticalIcon,
@@ -113,6 +113,10 @@ export const Function = memo(
       },
     });
 
+    const updateFunction = useMutation({
+      mutationFn: updateFunctionPrimitiveById,
+    });
+
     const inputs = useMemo(() => {
       const parents = edges.reduce((acc, edge) => {
         if (edge.source === data.id) {
@@ -128,6 +132,24 @@ export const Function = memo(
         if (parent.type === "route" || parent.type === "workflow") {
           if (parent.inputs) {
             parent.inputs.forEach((input) => {
+              const foundInput = data.inputs.find(
+                (item) => item.id === input.id,
+              );
+
+              if (foundInput && foundInput.testValue !== input.testValue) {
+                updateFunction.mutate({
+                  id: data.id,
+                  inputs: data.inputs.map((item) =>
+                    item.id === input.id
+                      ? {
+                          ...item,
+                          testValue: input.testValue,
+                        }
+                      : item,
+                  ),
+                });
+              }
+
               acc.push({
                 id: input.id,
                 name: input.name,
@@ -140,7 +162,7 @@ export const Function = memo(
         return acc;
       }, [] as Input[]);
       return inputs;
-    }, [data.id, edges, nodes]);
+    }, [data.id, data.inputs, edges, nodes]);
 
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -422,7 +444,7 @@ export const Function = memo(
               </ExpandableCardHeader>
               <ResizablePanelGroup direction="vertical" className="flex h-full">
                 <ResizablePanel
-                  defaultSize={60}
+                  defaultSize={65}
                   minSize={25}
                   className="flex flex-col gap-2 px-4 pb-4"
                 >
@@ -439,8 +461,8 @@ export const Function = memo(
                 </ResizablePanel>
                 <ResizableHandle className="border-b" withHandle />
                 <ResizablePanel
-                  defaultSize={0}
-                  minSize={15}
+                  defaultSize={35}
+                  minSize={8}
                   className="flex size-full rounded-b-xl px-4 py-4"
                 >
                   <Tabs
