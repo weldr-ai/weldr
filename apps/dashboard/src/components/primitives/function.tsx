@@ -53,6 +53,14 @@ import {
   ResizablePanelGroup,
 } from "@integramind/ui/resizable";
 import { ScrollArea } from "@integramind/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@integramind/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
 import { cn } from "@integramind/ui/utils";
 
@@ -308,7 +316,7 @@ export const Function = memo(
               </ContextMenuContent>
             </ContextMenu>
           </ExpandableCardTrigger>
-          <ExpandableCardContent className="nowheel flex h-[400px] flex-col p-0">
+          <ExpandableCardContent className="nowheel flex h-[600px] w-[800px] flex-col p-0">
             <div className="flex size-full flex-col">
               <ExpandableCardHeader className="flex flex-col items-start justify-start px-4 py-4">
                 <div className="flex w-full items-center justify-between">
@@ -470,14 +478,50 @@ export const Function = memo(
                                 <span className="text-error">Failed</span>
                               </div>
                             ) : job.result ? (
-                              <ScrollArea className="h-full p-2">
-                                <pre className="text-wrap">
-                                  {JSON.stringify(
-                                    JSON.parse(job.result),
-                                    null,
-                                    2,
-                                  )}
-                                </pre>
+                              <ScrollArea className="size-full">
+                                <Table className="flex w-full flex-col">
+                                  <TableHeader className="flex w-full">
+                                    <TableRow className="flex w-full">
+                                      {Object.keys(
+                                        (
+                                          JSON.parse(job.result) as {
+                                            response: Record<string, string>[];
+                                          }
+                                        )?.response[0] ?? {},
+                                      ).map((row, idx) => (
+                                        <TableHead
+                                          key={idx}
+                                          className="flex w-full items-center"
+                                        >
+                                          {row}
+                                        </TableHead>
+                                      ))}
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody className="flex w-full flex-col">
+                                    {(
+                                      JSON.parse(job.result) as {
+                                        response: Record<string, string>[];
+                                      }
+                                    ).response.map((row, idx) => (
+                                      <TableRow
+                                        key={idx}
+                                        className="flex w-full"
+                                      >
+                                        {Object.keys(row).map(
+                                          (key: string, idx) => (
+                                            <TableCell
+                                              key={idx}
+                                              className="flex w-full"
+                                            >
+                                              {row[key]}
+                                            </TableCell>
+                                          ),
+                                        )}
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
                               </ScrollArea>
                             ) : (
                               <span>SUCCESS</span>
