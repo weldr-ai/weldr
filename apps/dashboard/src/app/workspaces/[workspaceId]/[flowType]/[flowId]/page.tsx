@@ -67,6 +67,7 @@ export default async function WorkflowPage({
             outputs: primitive.metadata.outputs,
             resource: primitive.metadata.resource,
             rawDescription: primitive.metadata.rawDescription,
+            isLocked: primitive.metadata.isLocked,
           },
         };
     }

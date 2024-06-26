@@ -236,6 +236,11 @@ export const functionRawDescriptionSchema = z.discriminatedUnion("type", [
       "database-table-icon",
     ]),
     dataType: z.enum(["text", "number"]).optional(),
+    testValue: z
+      .union([z.string(), z.number()])
+      .nullable()
+      .optional()
+      .default(null),
   }),
 ]);
 
@@ -246,6 +251,11 @@ export const functionMetadataSchema = z.object({
       id: z.string(),
       name: z.string(),
       type: z.enum(["number", "text"]),
+      testValue: z
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .default(null),
     })
     .array(),
   outputs: z
@@ -260,10 +270,12 @@ export const functionMetadataSchema = z.object({
       id: z.string(),
       provider: z.enum(dataResourceProviders.enumValues),
     })
+    .nullable()
     .optional(),
   rawDescription: functionRawDescriptionSchema.array().optional(),
-  generatedCode: z.string().optional(),
-  isCodeUpdated: z.boolean().optional(),
+  generatedCode: z.string().nullable().optional(),
+  isCodeUpdated: z.boolean().default(false).optional(),
+  isLocked: z.boolean().default(false).optional(),
 });
 export const routeMetadataSchema = z.object({
   type: z.literal("route"),
@@ -419,6 +431,7 @@ export const updateFunctionSchema = z.object({
     .nullable()
     .optional(),
   rawDescription: functionRawDescriptionSchema.array().optional(),
-  generatedCode: z.string().optional(),
+  generatedCode: z.string().nullable().optional(),
   isCodeUpdated: z.boolean().optional(),
+  isLocked: z.boolean().default(false).optional(),
 });

@@ -80,6 +80,7 @@ export function Editor({ ...props }: EditorProps) {
             item.referenceType,
             item.icon,
             item.dataType,
+            item.testValue,
           );
           paragraph.append(referenceNode);
         }

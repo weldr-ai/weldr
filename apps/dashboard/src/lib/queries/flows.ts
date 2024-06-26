@@ -143,7 +143,5 @@ export async function getFlowById({
       edges: true,
     },
   });
-  return result as
-    | (Flow & { edges: Edge[]; primitives: Primitive[] })
-    | undefined;
+  return result;
 }

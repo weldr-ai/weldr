@@ -12,8 +12,10 @@ import {
   ExternalLinkIcon,
   FileTextIcon,
   Loader2Icon,
+  LockIcon,
   PlayCircleIcon,
   TrashIcon,
+  UnlockIcon,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Handle, Position, useEdges, useNodes, useReactFlow } from "reactflow";
@@ -66,29 +68,25 @@ import Editor from "~/components/editor";
 import { LambdaIcon } from "~/components/icons/lambda-icon";
 import {
   deletePrimitive,
+  getFunctionPrimitiveById,
   updateFunctionPrimitiveById,
 } from "~/lib/queries/primitives";
 import { getJobById } from "~/lib/queries/run";
 
-async function postJob(): Promise<{ id: string }> {
+async function runPrimitive({
+  id,
+}: {
+  id: string;
+}): Promise<{ id: string | null }> {
   const response = await fetch("/api/run", {
     method: "POST",
     body: JSON.stringify({
-      name: "Get user",
-      inputs: [{ name: "id", value: "1" }],
-      functionCode: `
-def get_user(id):
-  import requests
-  url = f"https://jsonplaceholder.typicode.com/posts/{id}"
-  response = requests.get(url)
-  data = response.json()
-  return data
-`,
+      id,
     }),
   });
 
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
+  if (!response.ok || response.status !== 200) {
+    return { id: null };
   }
 
   return response.json() as Promise<{ id: string }>;
@@ -104,7 +102,6 @@ export const Function = memo(
       defaultValues: {
         name: data.name,
         description: data.description ?? undefined,
-        inputs: data.inputs,
       },
     });
 
@@ -127,7 +124,7 @@ export const Function = memo(
                 id: input.id,
                 name: input.name,
                 type: input.type,
-                testValue: input.testValue ?? null,
+                testValue: input.testValue,
               });
             });
           }
@@ -140,7 +137,18 @@ export const Function = memo(
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
-    const [jobId, setJobId] = useState<string | undefined>();
+    const [jobId, setJobId] = useState<string | null>(null);
+
+    const { data: functionData, refetch } = useQuery({
+      queryKey: [data.id],
+      queryFn: () => getFunctionPrimitiveById({ id: data.id }),
+      initialData: data,
+    });
+
+    const { data: job, refetch: refetchJob } = useQuery({
+      queryKey: ["job", jobId],
+      queryFn: jobId ? () => getJobById({ id: jobId }) : skipToken,
+    });
 
     function onChange(editorState: EditorState) {
       editorState.read(() => {
@@ -163,6 +171,7 @@ export const Function = memo(
               name: referenceNode.__name,
               icon: referenceNode.__icon,
               dataType: referenceNode.__dataType,
+              testValue: referenceNode.__testValue ?? null,
             });
           }
           return acc;
@@ -198,18 +207,18 @@ export const Function = memo(
           inputs,
           resource,
           rawDescription,
+          isCodeUpdated:
+            functionData?.description?.trim().toLowerCase() ===
+            description.trim().toLowerCase(),
         });
+
+        void refetch();
       });
     }
 
     function onError(error: Error, _editor: LexicalEditor) {
       console.error(error);
     }
-
-    const { data: job, refetch: refetchJob } = useQuery({
-      queryKey: ["job", jobId],
-      queryFn: jobId ? () => getJobById({ id: jobId }) : skipToken,
-    });
 
     useEffect(() => {
       const interval = setInterval(() => {
@@ -222,6 +231,10 @@ export const Function = memo(
         clearInterval(interval);
       };
     }, [job, refetchJob]);
+
+    if (!functionData) {
+      return null;
+    }
 
     return (
       <>
@@ -261,9 +274,7 @@ export const Function = memo(
                     <LambdaIcon className="size-4 text-primary" />
                     <span className="text-muted-foreground">Function</span>
                   </div>
-                  <span className="text-sm">
-                    {form.getValues("name") ?? data.name}
-                  </span>
+                  <span className="text-sm">{functionData?.name}</span>
                 </Card>
               </ContextMenuTrigger>
               <ContextMenuContent>
@@ -298,7 +309,7 @@ export const Function = memo(
             </ContextMenu>
           </ExpandableCardTrigger>
           <ExpandableCardContent className="nowheel flex h-[400px] flex-col p-0">
-            <form {...form} className="flex size-full flex-col">
+            <div className="flex size-full flex-col">
               <ExpandableCardHeader className="flex flex-col items-start justify-start px-4 py-4">
                 <div className="flex w-full items-center justify-between">
                   <div className="flex items-center gap-2 text-xs">
@@ -314,11 +325,30 @@ export const Function = memo(
                         job?.state === "RUNNING" || job?.state === "PENDING"
                       }
                       onClick={async () => {
-                        const job = await postJob();
+                        const job = await runPrimitive({ id: functionData.id });
+                        console.log(job);
                         setJobId(job.id);
                       }}
                     >
                       <PlayCircleIcon className="size-3.5" />
+                    </Button>
+                    <Button
+                      className="size-7 text-muted-foreground hover:text-muted-foreground"
+                      variant="ghost"
+                      size="icon"
+                      onClick={async () => {
+                        await updateFunctionPrimitiveById({
+                          id: functionData.id,
+                          isLocked: !functionData.isLocked,
+                        });
+                        await refetch();
+                      }}
+                    >
+                      {functionData.isLocked ? (
+                        <LockIcon className="size-3.5" />
+                      ) : (
+                        <UnlockIcon className="size-3.5" />
+                      )}
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger>
@@ -369,12 +399,14 @@ export const Function = memo(
                     <InputComponent
                       {...field}
                       autoComplete="off"
+                      value={functionData?.name}
                       className="h-8 border-none bg-muted p-0 text-sm focus-visible:ring-0"
                       onBlur={async (e) => {
                         await updateFunctionPrimitiveById({
                           id: data.id,
                           name: e.target.value,
                         });
+                        await refetch();
                       }}
                     />
                   )}
@@ -388,11 +420,11 @@ export const Function = memo(
                 >
                   <span className="text-xs text-muted-foreground">Editor</span>
                   <Editor
-                    id={data.id}
+                    id={functionData.id}
                     type="description"
                     inputs={inputs}
                     placeholder="Describe your function"
-                    rawDescription={data.rawDescription}
+                    rawDescription={functionData.rawDescription}
                     onChange={onChange}
                     onError={onError}
                   />
@@ -465,7 +497,7 @@ export const Function = memo(
                   </Tabs>
                 </ResizablePanel>
               </ResizablePanelGroup>
-            </form>
+            </div>
           </ExpandableCardContent>
         </ExpandableCard>
         <DeleteAlertDialog

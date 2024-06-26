@@ -38,6 +38,8 @@ export class ReferenceOption extends MenuOption {
   referenceType: "input" | "database" | "database-table" | "database-column";
   // Data type
   dataType?: "text" | "number";
+  // Test value
+  testValue?: string | number | null;
   // Icon for display
   icon:
     | "database-icon"
@@ -67,12 +69,14 @@ export class ReferenceOption extends MenuOption {
       onSelect: (queryString: string) => void;
     },
     dataType?: "text" | "number",
+    testValue?: string | number | null,
   ) {
     super(name);
     this.id = id;
     this.name = name;
     this.referenceType = referenceType;
     this.dataType = dataType;
+    this.testValue = testValue;
     this.icon = options.icon;
     this.keywords = options.keywords ?? [];
     this.onSelect = options.onSelect.bind(this);
@@ -126,6 +130,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
             selectedOption.referenceType,
             selectedOption.icon,
             selectedOption.dataType,
+            selectedOption.testValue,
           );
         } else {
           referenceNode = $createReferenceNode(
@@ -149,7 +154,6 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   );
 
   const inputOptions: ReferenceOption[] = useMemo(() => {
-    console.log(inputs);
     return inputs.map(
       (input) =>
         new ReferenceOption(
@@ -164,6 +168,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
             },
           },
           input.type,
+          input.testValue,
         ),
     );
   }, [inputs]);

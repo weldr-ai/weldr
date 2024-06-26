@@ -9,7 +9,13 @@ import type {
 import { and, db, eq, sql } from "@integramind/db";
 import { primitives } from "@integramind/db/schema";
 
-import type { Input, RouteData, RouteMetadata } from "~/types";
+import type {
+  FunctionData,
+  FunctionMetadata,
+  Input,
+  RouteData,
+  RouteMetadata,
+} from "~/types";
 
 // FIXME: many of these queries should be optimized
 
@@ -35,9 +41,18 @@ export async function createPrimitive({
     positionX: Math.floor(positionX),
     positionY: Math.floor(positionY),
     flowId,
-    metadata: sql`${{
-      type,
-    }}`,
+    metadata: sql`${
+      {
+        type,
+        isLocked: false,
+        inputs: [],
+        outputs: [],
+        resource: null,
+        rawDescription: [],
+        generatedCode: undefined,
+        isCodeUpdated: false,
+      } as FunctionMetadata
+    }::jsonb`,
   });
 }
 
@@ -68,6 +83,76 @@ export async function getPrimitiveById({ id }: { id: string }) {
     where: eq(primitives.id, id),
   });
   return result;
+}
+
+export async function getFunctionPrimitiveById({
+  id,
+}: {
+  id: string;
+}): Promise<
+  | Pick<
+      FunctionData,
+      | "id"
+      | "name"
+      | "description"
+      | "type"
+      | "inputs"
+      | "outputs"
+      | "resource"
+      | "rawDescription"
+      | "isCodeUpdated"
+      | "isLocked"
+    >
+  | undefined
+> {
+  const result = await db.query.primitives.findFirst({
+    where: and(eq(primitives.id, id), eq(primitives.type, "function")),
+  });
+
+  if (!result) {
+    return;
+  }
+
+  return {
+    id: result.id,
+    name: result.name,
+    description: result.description,
+    type: "function",
+    inputs: result.metadata.inputs,
+    outputs: (result.metadata as FunctionMetadata).outputs,
+    resource: (result.metadata as FunctionMetadata).resource,
+    rawDescription: (result.metadata as FunctionMetadata).rawDescription,
+    isCodeUpdated: (result.metadata as FunctionMetadata).isCodeUpdated,
+    isLocked: (result.metadata as FunctionMetadata).isLocked,
+  };
+}
+
+export async function getFunctionPrimitiveWithSecretsById({
+  id,
+}: {
+  id: string;
+}): Promise<FunctionData | undefined> {
+  const result = await db.query.primitives.findFirst({
+    where: and(eq(primitives.id, id), eq(primitives.type, "function")),
+  });
+
+  if (!result) {
+    return;
+  }
+
+  return {
+    id: result.id,
+    name: result.name,
+    description: result.description,
+    type: "function",
+    inputs: result.metadata.inputs,
+    outputs: (result.metadata as FunctionMetadata).outputs,
+    resource: (result.metadata as FunctionMetadata).resource,
+    rawDescription: (result.metadata as FunctionMetadata).rawDescription,
+    generatedCode: (result.metadata as FunctionMetadata).generatedCode,
+    isCodeUpdated: (result.metadata as FunctionMetadata).isCodeUpdated,
+    isLocked: (result.metadata as FunctionMetadata).isLocked,
+  };
 }
 
 export async function getRoutePrimitiveById({
@@ -224,6 +309,7 @@ export async function updateFunctionPrimitiveById({
   rawDescription,
   generatedCode,
   isCodeUpdated,
+  isLocked,
 }: z.infer<typeof updateFunctionSchema> & { id: string }) {
   const result = await db.query.primitives.findFirst({
     where: eq(primitives.id, id),
@@ -246,6 +332,7 @@ export async function updateFunctionPrimitiveById({
         rawDescription: rawDescription ?? result.metadata.rawDescription,
         generatedCode: generatedCode ?? result.metadata.generatedCode,
         isCodeUpdated: isCodeUpdated ?? result.metadata.isCodeUpdated,
+        isLocked: isLocked ?? result.metadata.isLocked,
       }}::jsonb`,
     })
     .where(eq(primitives.id, id));
