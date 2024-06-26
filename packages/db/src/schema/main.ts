@@ -273,6 +273,11 @@ export const routeMetadataSchema = z.object({
     .object({
       id: z.string(),
       name: z.string(),
+      testValue: z
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .default(null),
       type: z.enum(["number", "text"]),
     })
     .array(),
@@ -284,6 +289,11 @@ export const workflowMetadataSchema = z.object({
     .object({
       id: z.string(),
       name: z.string(),
+      testValue: z
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .default(null),
       type: z.enum(["number", "text"]),
     })
     .array(),
@@ -367,6 +377,11 @@ export const updateRouteFlowSchema = z.object({
     .object({
       id: z.string(),
       name: z.string(),
+      testValue: z
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .default(null),
       type: z.enum(["number", "text"]),
     })
     .array()
@@ -386,6 +401,11 @@ export const updateFunctionSchema = z.object({
     .object({
       id: z.string(),
       name: z.string(),
+      testValue: z
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .default(null),
       type: z.enum(["number", "text"]),
     })
     .array()

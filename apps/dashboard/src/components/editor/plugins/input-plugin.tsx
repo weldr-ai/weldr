@@ -19,6 +19,8 @@ export class InputOption extends MenuOption {
   id: string;
   // What shows up in the editor
   name: string;
+  // Test value
+  testValue?: string | number | null;
   // Input type
   inputType: "text" | "number";
   // Icon for display
@@ -37,10 +39,12 @@ export class InputOption extends MenuOption {
       keywords?: string[];
       onSelect: (queryString: string) => void;
     },
+    testValue?: string | number | null,
   ) {
     super(name);
     this.id = id;
     this.name = name;
+    this.testValue = testValue;
     this.inputType = inputType;
     this.icon = options.icon;
     this.keywords = options.keywords ?? [];
@@ -76,6 +80,7 @@ export function InputsPlugin({ id }: { id: string }) {
           inputId,
           selectedOption.name,
           selectedOption.inputType,
+          selectedOption.testValue ?? null,
         );
         if (nodeToReplace) {
           nodeToReplace.replace(inputNode);

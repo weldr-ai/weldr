@@ -127,6 +127,7 @@ export const Function = memo(
                 id: input.id,
                 name: input.name,
                 type: input.type,
+                testValue: input.testValue ?? null,
               });
             });
           }
@@ -180,6 +181,7 @@ export const Function = memo(
                 id: referenceNode.__id,
                 name: referenceNode.__name,
                 type: referenceNode.__dataType,
+                testValue: referenceNode.__testValue ?? null,
               });
             } else if (referenceNode.__referenceType === "database") {
               resource = {

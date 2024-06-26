@@ -57,7 +57,13 @@ export function Editor({ ...props }: EditorProps) {
     if (props.type === "inputs") {
       props.inputs.forEach((input) => {
         paragraph.append(
-          $createInputNode(props.id, input.id, input.name, input.type),
+          $createInputNode(
+            props.id,
+            input.id,
+            input.name,
+            input.type,
+            input.testValue,
+          ),
         );
         paragraph.append($createTextNode(" "));
       });

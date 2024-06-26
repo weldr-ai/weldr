@@ -22,18 +22,21 @@ function InputNodeComponent({
   id,
   inputId,
   name,
+  testValue,
   inputType,
 }: {
   id: string;
   inputId: string;
   name: string;
   inputType: "text" | "number";
+  testValue?: string | number | null;
 }) {
   const reactFlow = useReactFlow<FlowNode>();
   const form = useForm({
     mode: "onChange",
     defaultValues: {
       name,
+      testValue,
     },
   });
 
@@ -46,7 +49,7 @@ function InputNodeComponent({
       ) : (
         <></>
       )}
-      <form>
+      <form className="flex gap-1">
         <Form {...form}>
           <FormField
             control={form.control}
@@ -56,6 +59,7 @@ function InputNodeComponent({
                 <FormControl>
                   <Input
                     {...field}
+                    autoComplete="off"
                     className="h-5 w-20 border-none bg-muted px-2 py-1 text-xs"
                     placeholder="Enter input name"
                     onBlur={async (e) => {
@@ -63,6 +67,49 @@ function InputNodeComponent({
                         id,
                         inputId,
                         name: e.target.value,
+                      });
+                      reactFlow.setNodes((nodes) =>
+                        nodes.map((node) => {
+                          if (node.id === id) {
+                            return {
+                              ...node,
+                              data: {
+                                ...node.data,
+                                inputs,
+                              },
+                            };
+                          }
+                          return node;
+                        }),
+                      );
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="testValue"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Input
+                    {...field}
+                    autoComplete="off"
+                    value={field.value ?? undefined}
+                    className="h-5 w-20 border-none bg-muted px-2 py-1 text-xs"
+                    placeholder="Enter test value"
+                    onBlur={async (e) => {
+                      const inputs = await updateInput({
+                        id,
+                        inputId,
+                        testValue:
+                          inputType === "text"
+                            ? e.target.value
+                            : inputType === "number"
+                              ? Number(e.target.value)
+                              : null,
                       });
                       reactFlow.setNodes((nodes) =>
                         nodes.map((node) => {
@@ -96,6 +143,7 @@ export type SerializedInputNode = Spread<
     inputId: string;
     name: string;
     inputType: "text" | "number";
+    testValue?: string | number | null;
   },
   SerializedLexicalNode
 >;
@@ -105,17 +153,20 @@ export class InputNode extends DecoratorNode<JSX.Element> {
   __inputId: string;
   __name: string;
   __inputType: "text" | "number";
+  __testValue?: string | number | null;
 
   constructor(
     id: string,
     inputId: string,
     name: string,
     inputType: "text" | "number",
+    testValue?: string | number | null,
   ) {
     super();
     this.__id = id;
     this.__inputId = inputId;
     this.__name = name;
+    this.__testValue = testValue;
     this.__inputType = inputType;
   }
 
@@ -129,6 +180,7 @@ export class InputNode extends DecoratorNode<JSX.Element> {
       node.__inputId,
       node.__name,
       node.__inputType,
+      node.__testValue,
     );
   }
 
@@ -138,6 +190,7 @@ export class InputNode extends DecoratorNode<JSX.Element> {
       serializedNode.inputId,
       serializedNode.name,
       serializedNode.inputType,
+      serializedNode.testValue,
     );
     return node;
   }
@@ -147,6 +200,7 @@ export class InputNode extends DecoratorNode<JSX.Element> {
       id: this.__id,
       inputId: this.__inputId,
       name: this.__name,
+      testValue: this.__testValue,
       inputType: this.__inputType,
       type: "input",
       version: 1,
@@ -184,6 +238,7 @@ export class InputNode extends DecoratorNode<JSX.Element> {
           id={this.__id}
           inputId={this.__inputId}
           name={this.__name}
+          testValue={this.__testValue}
           inputType={this.__inputType}
         />
       </Suspense>
@@ -196,8 +251,9 @@ export function $createInputNode(
   inputId: string,
   name: string,
   inputType: "text" | "number",
+  testValue?: string | number | null,
 ): InputNode {
-  return new InputNode(id, inputId, name, inputType);
+  return new InputNode(id, inputId, name, inputType, testValue);
 }
 
 export function $isInputNode(

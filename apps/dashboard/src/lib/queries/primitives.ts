@@ -129,14 +129,27 @@ export async function updateInput({
   id,
   inputId,
   name,
+  testValue,
 }: {
   id: string;
   inputId: string;
-  name: string;
+  name?: string;
+  testValue?: string | number | null;
 }) {
-  function updateInputById(inputs: Input[], id: string, name: string): Input[] {
+  function updateInputById(
+    inputs: Input[],
+    id: string,
+    name?: string,
+    testValue?: string | number | null,
+  ): Input[] {
     return inputs.map((input) =>
-      input.id === id ? { ...input, name } : input,
+      input.id === id
+        ? {
+            ...input,
+            name: name ?? input.name,
+            testValue: testValue ?? input.testValue,
+          }
+        : input,
     );
   }
 
@@ -148,7 +161,12 @@ export async function updateInput({
     return;
   }
 
-  const updatedInputs = updateInputById(result.metadata.inputs, inputId, name);
+  const updatedInputs = updateInputById(
+    result.metadata.inputs,
+    inputId,
+    name,
+    testValue,
+  );
 
   await db
     .update(primitives)

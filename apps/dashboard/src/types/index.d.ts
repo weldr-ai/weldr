@@ -87,4 +87,5 @@ export interface Input {
   id: string;
   name: string;
   type: "text" | "number";
+  testValue: string | number | null;
 }

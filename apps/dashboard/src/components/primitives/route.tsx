@@ -98,6 +98,7 @@ export const Route = memo(
               acc.push({
                 id: (child as SerializedInputNode).inputId,
                 name: (child as SerializedInputNode).name,
+                testValue: (child as SerializedInputNode).testValue ?? null,
                 type: (child as SerializedInputNode).inputType,
               });
             }
