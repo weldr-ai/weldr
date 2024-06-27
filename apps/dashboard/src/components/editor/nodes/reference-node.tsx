@@ -30,7 +30,7 @@ export type SerializedReferenceNode = Spread<
       | "value-icon"
       | "database-column-icon"
       | "database-table-icon";
-    dataType?: "text" | "number";
+    dataType?: "text" | "number" | "functionResponse";
     testValue?: string | number | null;
   },
   SerializedLexicalNode
@@ -75,7 +75,7 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   __id: string;
   __name: string;
   __referenceType: "input" | "database" | "database-table" | "database-column";
-  __dataType?: "text" | "number";
+  __dataType?: "text" | "number" | "functionResponse";
   __testValue?: string | number | null;
   __icon:
     | "database-icon"
@@ -96,7 +96,7 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
       | "value-icon"
       | "database-column-icon"
       | "database-table-icon",
-    dataType?: "text" | "number",
+    dataType?: "text" | "number" | "functionResponse",
     testValue?: string | number | null,
   ) {
     super();
@@ -193,7 +193,7 @@ export function $createReferenceNode(
     | "value-icon"
     | "database-column-icon"
     | "database-table-icon",
-  dataType?: "text" | "number",
+  dataType?: "text" | "number" | "functionResponse",
   testValue?: string | number | null,
 ): ReferenceNode {
   return new ReferenceNode(id, name, referenceType, icon, dataType, testValue);

@@ -1,6 +1,4 @@
-import type { NextRequest } from "next/server";
 import type { z } from "zod";
-import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { parse } from "pg-connection-string";
 
@@ -35,7 +33,7 @@ function parsePostgresConnectionString(connectionUrl: string) {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const data = (await req.json()) as {
     id: string;
   };
@@ -45,7 +43,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!functionPrimitive) {
-    return NextResponse.json({ error: "Function not found", status: 404 });
+    return Response.json({ error: "Function not found" }, { status: 404 });
   }
 
   const inputs: {
@@ -60,7 +58,7 @@ export async function POST(req: NextRequest) {
         value: input.testValue,
       });
     } else {
-      return NextResponse.json({ error: "Missing test value", status: 400 });
+      return Response.json({ error: "Missing test value" }, { status: 400 });
     }
   }
 
@@ -182,5 +180,5 @@ export async function POST(req: NextRequest) {
     id: string;
   };
 
-  return NextResponse.json({ ...job });
+  return Response.json({ ...job });
 }

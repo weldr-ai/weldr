@@ -119,8 +119,8 @@ export const Function = memo(
 
     const inputs = useMemo(() => {
       const parents = edges.reduce((acc, edge) => {
-        if (edge.source === data.id) {
-          const parent = nodes.find((node) => node.id === edge.target);
+        if (edge.target === data.id) {
+          const parent = nodes.find((node) => node.id === edge.source);
           if (parent) {
             acc.push(parent.data);
           }
@@ -132,24 +132,25 @@ export const Function = memo(
         if (parent.type === "route" || parent.type === "workflow") {
           if (parent.inputs) {
             parent.inputs.forEach((input) => {
-              const foundInput = data.inputs.find(
-                (item) => item.id === input.id,
-              );
+              if (data.inputs) {
+                const foundInput = data.inputs.find(
+                  (item) => item.id === input.id,
+                );
 
-              if (foundInput && foundInput.testValue !== input.testValue) {
-                updateFunction.mutate({
-                  id: data.id,
-                  inputs: data.inputs.map((item) =>
-                    item.id === input.id
-                      ? {
-                          ...item,
-                          testValue: input.testValue,
-                        }
-                      : item,
-                  ),
-                });
+                if (foundInput && foundInput.testValue !== input.testValue) {
+                  updateFunction.mutate({
+                    id: data.id,
+                    inputs: data.inputs.map((item) =>
+                      item.id === input.id
+                        ? {
+                            ...item,
+                            testValue: input.testValue,
+                          }
+                        : item,
+                    ),
+                  });
+                }
               }
-
               acc.push({
                 id: input.id,
                 name: input.name,
@@ -158,10 +159,28 @@ export const Function = memo(
               });
             });
           }
+        } else if (parent.type === "function") {
+          if (parent.outputs) {
+            acc.push({
+              id: parent.id,
+              name: parent.name,
+              type: "functionResponse",
+              testValue: null,
+            });
+            parent.outputs.forEach((output) => {
+              acc.push({
+                id: output.id,
+                name: `${parent.name}.${output.name}`,
+                type: output.type,
+                testValue: null,
+              });
+            });
+          }
         }
         return acc;
       }, [] as Input[]);
       return inputs;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data.id, data.inputs, edges, nodes]);
 
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
@@ -173,11 +192,13 @@ export const Function = memo(
       queryKey: [data.id],
       queryFn: () => getFunctionPrimitiveById({ id: data.id }),
       initialData: data,
+      refetchInterval: false,
     });
 
     const { data: job, refetch: refetchJob } = useQuery({
       queryKey: ["job", jobId],
       queryFn: jobId ? () => getJobById({ id: jobId }) : skipToken,
+      refetchInterval: false,
     });
 
     function onChange(editorState: EditorState) {
@@ -269,7 +290,7 @@ export const Function = memo(
             })),
           });
         }
-      }, 100);
+      }, 1000);
 
       return () => {
         clearInterval(interval);
@@ -284,7 +305,7 @@ export const Function = memo(
       <>
         <Handle
           className="border-border bg-background p-1"
-          type="source"
+          type="target"
           position={Position.Left}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
@@ -443,7 +464,6 @@ export const Function = memo(
                     <InputComponent
                       {...field}
                       autoComplete="off"
-                      value={functionData?.name}
                       className="h-8 border-none bg-muted p-0 text-sm focus-visible:ring-0"
                       onBlur={async (e) => {
                         await updateFunctionPrimitiveById({
@@ -451,6 +471,7 @@ export const Function = memo(
                           name: e.target.value,
                         });
                         await refetch();
+                        form.setValue("name", e.target.value);
                       }}
                     />
                   )}
@@ -604,7 +625,7 @@ export const Function = memo(
         />
         <Handle
           className="border-border bg-background p-1"
-          type="target"
+          type="source"
           position={Position.Right}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}

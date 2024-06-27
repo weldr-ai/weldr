@@ -38,6 +38,7 @@ import { cn } from "@integramind/ui/utils";
 
 import type { ResponseNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
+import { deletePrimitive } from "~/lib/queries/primitives";
 
 export const Response = memo(
   ({ data, isConnectable, xPos, yPos, selected }: ResponseNodeProps) => {
@@ -49,7 +50,7 @@ export const Response = memo(
       <>
         <Handle
           className="border-border bg-background p-1"
-          type="source"
+          type="target"
           position={Position.Left}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
@@ -181,19 +182,22 @@ export const Response = memo(
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
-          onDelete={() =>
+          onDelete={async () => {
             reactFlow.deleteElements({
               nodes: [
                 {
                   id: data.id,
                 },
               ],
-            })
-          }
+            });
+            await deletePrimitive({
+              id: data.id,
+            });
+          }}
         />
         <Handle
           className="border-border bg-background p-1"
-          type="target"
+          type="source"
           position={Position.Right}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}

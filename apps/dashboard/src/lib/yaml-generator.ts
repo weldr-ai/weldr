@@ -89,7 +89,7 @@ tasks:
                 )
                 cursor = connection.cursor(cursor_factory=RealDictCursor)
                 query = "${sqlQuery.replace(/\n/g, " ")}"
-                cursor.execute(query, (${inputs.map((input) => input.name).join(", ")},))
+                cursor.execute(query${inputs && ", "}${inputs?.map((input) => input.name).join(", ")})
                 rows = cursor.fetchall()
                 result = []
                 for row in rows:

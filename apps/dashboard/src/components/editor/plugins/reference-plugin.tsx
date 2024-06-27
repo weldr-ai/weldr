@@ -37,7 +37,7 @@ export class ReferenceOption extends MenuOption {
   // Reference type
   referenceType: "input" | "database" | "database-table" | "database-column";
   // Data type
-  dataType?: "text" | "number";
+  dataType?: "text" | "number" | "functionResponse";
   // Test value
   testValue?: string | number | null;
   // Icon for display
@@ -68,7 +68,7 @@ export class ReferenceOption extends MenuOption {
       keywords?: string[];
       onSelect: (queryString: string) => void;
     },
-    dataType?: "text" | "number",
+    dataType?: "text" | "number" | "functionResponse",
     testValue?: string | number | null,
   ) {
     super(name);

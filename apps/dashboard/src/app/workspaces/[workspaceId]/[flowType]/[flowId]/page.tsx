@@ -70,6 +70,20 @@ export default async function WorkflowPage({
             isLocked: primitive.metadata.isLocked,
           },
         };
+      case "response":
+        return {
+          id: primitive.id,
+          type: primitive.type,
+          dragHandle: ".drag-handle",
+          deletable: false,
+          position: { x: primitive.positionX, y: primitive.positionY },
+          data: {
+            id: primitive.id,
+            name: primitive.name,
+            description: primitive.description,
+            type: primitive.type,
+          },
+        };
     }
   });
 

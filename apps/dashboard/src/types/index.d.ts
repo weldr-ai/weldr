@@ -10,6 +10,7 @@ import type {
   flowTypesSchema,
   functionMetadataSchema,
   functionRawDescriptionSchema,
+  jobSchema,
   primitiveSchema,
   primitiveTypesSchema,
   routeMetadataSchema,
@@ -86,6 +87,8 @@ export type Edge = z.infer<typeof edgeSchema>;
 export interface Input {
   id: string;
   name: string;
-  type: "text" | "number";
+  type: "text" | "number" | "functionResponse";
   testValue: string | number | null;
 }
+
+export type Job = z.infer<typeof jobSchema>;

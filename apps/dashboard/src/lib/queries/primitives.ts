@@ -41,18 +41,9 @@ export async function createPrimitive({
     positionX: Math.floor(positionX),
     positionY: Math.floor(positionY),
     flowId,
-    metadata: sql`${
-      {
-        type,
-        isLocked: false,
-        inputs: [],
-        outputs: [],
-        resource: null,
-        rawDescription: [],
-        generatedCode: undefined,
-        isCodeUpdated: false,
-      } as FunctionMetadata
-    }::jsonb`,
+    metadata: sql`${{
+      type,
+    }}::jsonb`,
   });
 }
 

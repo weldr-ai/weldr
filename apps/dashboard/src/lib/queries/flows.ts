@@ -5,7 +5,7 @@ import type { z } from "zod";
 import { and, db, eq, sql } from "@integramind/db";
 import { flows, insertFlowSchema, primitives } from "@integramind/db/schema";
 
-import type { Edge, Flow, FlowType, Primitive } from "~/types";
+import type { Edge, Flow, FlowType, Primitive, RouteMetadata } from "~/types";
 import { getWorkspaceById } from "~/lib/queries/workspaces";
 
 type FormState =
@@ -144,4 +144,50 @@ export async function getFlowById({
     },
   });
   return result;
+}
+
+export async function getRouteFlowByPath({
+  urlPath,
+}: {
+  urlPath: string;
+}): Promise<
+  | {
+      flow: Flow & { primitives: Primitive[]; edges: Edge[] };
+      config: Omit<RouteMetadata, "type">;
+    }
+  | undefined
+> {
+  const result = await db
+    .select({
+      metadata: primitives.metadata,
+      flowId: primitives.flowId,
+    })
+    .from(primitives)
+    .where(
+      and(
+        eq(primitives.type, "route"),
+        sql`primitives.metadata::jsonb->>'urlPath' = ${urlPath}`,
+      ),
+    );
+
+  if (!result[0]) {
+    return;
+  }
+
+  const flow = await getFlowById({
+    id: result[0].flowId,
+  });
+
+  if (!flow) {
+    return;
+  }
+
+  return {
+    flow,
+    config: {
+      actionType: (result[0].metadata as RouteMetadata).actionType,
+      urlPath: (result[0].metadata as RouteMetadata).urlPath,
+      inputs: (result[0].metadata as RouteMetadata).inputs,
+    },
+  };
 }

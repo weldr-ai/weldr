@@ -60,13 +60,17 @@ function InputNodeComponent({
                   <Input
                     {...field}
                     autoComplete="off"
-                    className="h-5 w-20 border-none bg-muted px-2 py-1 text-xs"
+                    className="h-5 border-none bg-muted px-2 py-1 text-xs"
                     placeholder="Enter input name"
                     onBlur={async (e) => {
+                      const newValue = e.target.value
+                        .replace(/\s+/g, "_")
+                        .trim();
+                      form.setValue("name", newValue);
                       const inputs = await updateInput({
                         id,
                         inputId,
-                        name: e.target.value,
+                        name: newValue,
                       });
                       reactFlow.setNodes((nodes) =>
                         nodes.map((node) => {

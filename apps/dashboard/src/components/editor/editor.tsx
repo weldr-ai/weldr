@@ -61,7 +61,7 @@ export function Editor({ ...props }: EditorProps) {
             props.id,
             input.id,
             input.name,
-            input.type,
+            input.type as "text" | "number",
             input.testValue,
           ),
         );

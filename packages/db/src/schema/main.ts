@@ -206,9 +206,9 @@ export const dataResourceMetadataSchema = z.discriminatedUnion("provider", [
 // Edges zod schemas
 export const edgeSchema = createSelectSchema(edges);
 export const insertEdgeSchema = createInsertSchema(edges, {
-  id: (schema) => schema.id.uuid(),
-  source: (schema) => schema.source.uuid(),
-  target: (schema) => schema.target.uuid(),
+  id: (schema) => schema.id.cuid2(),
+  source: (schema) => schema.source.cuid2(),
+  target: (schema) => schema.target.cuid2(),
 });
 
 // Primitives zod schemas
@@ -235,7 +235,7 @@ export const functionRawDescriptionSchema = z.discriminatedUnion("type", [
       "database-column-icon",
       "database-table-icon",
     ]),
-    dataType: z.enum(["text", "number"]).optional(),
+    dataType: z.enum(["text", "number", "functionResponse"]).optional(),
     testValue: z
       .union([z.string(), z.number()])
       .nullable()
@@ -310,10 +310,28 @@ export const workflowMetadataSchema = z.object({
     })
     .array(),
 });
+export const responseMetadataSchema = z.object({
+  type: z.literal("response"),
+  name: z.string(),
+  description: z.string().optional(),
+  inputs: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      testValue: z
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .default(null),
+      type: z.enum(["number", "text"]),
+    })
+    .array(),
+});
 export const primitiveMetadataSchema = z.discriminatedUnion("type", [
   functionMetadataSchema,
   routeMetadataSchema,
   workflowMetadataSchema,
+  responseMetadataSchema,
 ]);
 export const primitiveTypesSchema = z.enum(primitiveTypes.enumValues);
 export const primitiveSchema = createSelectSchema(primitives, {
@@ -394,7 +412,7 @@ export const updateRouteFlowSchema = z.object({
         .nullable()
         .optional()
         .default(null),
-      type: z.enum(["number", "text"]),
+      type: z.enum(["number", "text", "functionResponse"]),
     })
     .array()
     .optional(),
@@ -418,14 +436,14 @@ export const updateFunctionSchema = z.object({
         .nullable()
         .optional()
         .default(null),
-      type: z.enum(["number", "text"]),
+      type: z.enum(["number", "text", "functionResponse"]),
     })
     .array()
     .optional(),
   outputs: z
     .object({
       name: z.string(),
-      type: z.enum(["number", "text"]),
+      type: z.enum(["number", "text", "functionResponse"]),
     })
     .array()
     .optional(),
