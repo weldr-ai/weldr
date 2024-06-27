@@ -26,7 +26,7 @@ export function UseCases() {
                 Backend APIs
               </TabsTrigger>
               <TabsTrigger value="use-case-2" className="w-full">
-                Automation Workflows
+                Workflows
               </TabsTrigger>
               <TabsTrigger value="use-case-3" className="w-full">
                 Data Pipelines
@@ -71,7 +71,7 @@ export function UseCases() {
               className="min-h-72 w-full space-y-10 rounded-xl border p-10"
             >
               <div className="flex w-full flex-col items-center justify-center gap-4">
-                <h3 className="text-3xl font-semibold">Automation Workflows</h3>
+                <h3 className="text-3xl font-semibold">Workflows</h3>
                 <p className="max-w-xl text-center">
                   Create custom workflows that to automate repetitive tasks and
                   streamline your business processes
@@ -149,7 +149,7 @@ export function UseCases() {
             </div>
             <div className="flex size-full flex-col items-center justify-center gap-6 rounded-xl p-6 md:border">
               <div className="flex w-full flex-col items-center justify-center gap-4 text-center">
-                <h3 className="text-2xl font-semibold">Automation Workflows</h3>
+                <h3 className="text-2xl font-semibold">Workflows</h3>
                 <p className="text-sm">
                   Create custom workflows that to automate repetitive tasks and
                   streamline your business processes

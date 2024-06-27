@@ -16,7 +16,7 @@ export function Hero() {
         <span>Build Custom</span>
         <FlipWords
           className="text-center text-primary"
-          words={["Backend APIs", "Automation Workflows", "Data Pipelines"]}
+          words={["Backend APIs", "Workflows", "Data Pipelines"]}
         />
       </div>
       <p className="z-10 max-w-2xl text-center text-base lg:text-xl">
