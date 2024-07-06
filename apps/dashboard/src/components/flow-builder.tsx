@@ -138,7 +138,12 @@ export function _FlowBuilder({
 
       setNodes((nodes) => nodes.concat(newNode));
 
-      if (nodeType === "function") {
+      if (
+        nodeType === "function" ||
+        nodeType === "conditional-branch" ||
+        nodeType === "iterator" ||
+        nodeType === "response"
+      ) {
         await createPrimitive({
           id: newNodeId,
           type: nodeType,

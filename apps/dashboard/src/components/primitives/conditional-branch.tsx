@@ -55,7 +55,7 @@ export const ConditionalBranch = memo(
       <>
         <Handle
           className="border-border bg-background p-1"
-          type="source"
+          type="target"
           position={Position.Left}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
@@ -203,7 +203,7 @@ export const ConditionalBranch = memo(
         />
         <Handle
           className="border-border bg-background p-1"
-          type="target"
+          type="source"
           position={Position.Right}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}

@@ -12,10 +12,10 @@ import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
 import { cn } from "@integramind/ui/utils";
 
-import type { Input } from "~/types";
+import type { FunctionRawDescription, Input } from "~/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 import { $createInputNode, InputNode } from "./nodes/input-node";
-import { ReferenceNode } from "./nodes/reference-node";
+import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
 import { InputsPlugin } from "./plugins/input-plugin";
 
 interface EditorBaseProps {
@@ -25,10 +25,20 @@ interface EditorBaseProps {
   onError: (error: Error, editor: LexicalEditor) => void;
   className?: string;
   placeholder?: string;
-  inputs: Input[];
 }
 
-export function Editor({ ...props }: EditorBaseProps) {
+type EditorProps =
+  | ({
+      type: "description";
+      rawDescription?: FunctionRawDescription[];
+      inputs: Input[];
+    } & EditorBaseProps)
+  | ({
+      type: "inputs";
+      inputs: Input[];
+    } & EditorBaseProps);
+
+export function Editor({ ...props }: EditorProps) {
   const nodes = [];
 
   switch (props.type) {
@@ -43,14 +53,40 @@ export function Editor({ ...props }: EditorBaseProps) {
   function $getEditorState() {
     const root = $getRoot();
     const paragraph = $createParagraphNode();
+
     if (props.type === "inputs") {
       props.inputs.forEach((input) => {
         paragraph.append(
-          $createInputNode(props.id, input.id, input.name, input.type),
+          $createInputNode(
+            props.id,
+            input.id,
+            input.name,
+            input.type as "text" | "number",
+            input.testValue,
+          ),
         );
         paragraph.append($createTextNode(" "));
       });
     }
+
+    if (props.type === "description" && props.rawDescription) {
+      props.rawDescription.forEach((item) => {
+        if (item.type === "text") {
+          paragraph.append($createTextNode(item.value));
+        } else if (item.type === "reference") {
+          const referenceNode = $createReferenceNode(
+            item.id,
+            item.name,
+            item.referenceType,
+            item.icon,
+            item.dataType,
+            item.testValue,
+          );
+          paragraph.append(referenceNode);
+        }
+      });
+    }
+
     root.append(paragraph);
   }
 
@@ -65,6 +101,10 @@ export function Editor({ ...props }: EditorBaseProps) {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <div className="relative flex size-full">
+        {props.type === "inputs" && <InputsPlugin id={props.id} />}
+        {props.type === "description" && (
+          <ReferencesPlugin inputs={props.inputs} />
+        )}
         <RichTextPlugin
           contentEditable={
             <ContentEditable
@@ -81,10 +121,6 @@ export function Editor({ ...props }: EditorBaseProps) {
           }
           ErrorBoundary={LexicalErrorBoundary}
         />
-        {props.type === "inputs" && <InputsPlugin id={props.id} />}
-        {props.type === "description" && (
-          <ReferencesPlugin inputs={props.inputs} />
-        )}
       </div>
       <OnChangePlugin onChange={props.onChange} />
       <HistoryPlugin />

@@ -65,8 +65,23 @@ export default async function WorkflowPage({
             type: primitive.type,
             inputs: primitive.metadata.inputs,
             outputs: primitive.metadata.outputs,
-            generatedCode: primitive.metadata.generatedCode,
-            isCodeUpdated: primitive.metadata.isCodeUpdated,
+            resource: primitive.metadata.resource,
+            rawDescription: primitive.metadata.rawDescription,
+            isLocked: primitive.metadata.isLocked,
+          },
+        };
+      case "response":
+        return {
+          id: primitive.id,
+          type: primitive.type,
+          dragHandle: ".drag-handle",
+          deletable: false,
+          position: { x: primitive.positionX, y: primitive.positionY },
+          data: {
+            id: primitive.id,
+            name: primitive.name,
+            description: primitive.description,
+            type: primitive.type,
           },
         };
     }

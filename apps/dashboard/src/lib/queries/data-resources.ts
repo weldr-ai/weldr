@@ -50,6 +50,7 @@ export async function addDataResource(
 
       if (validation.data.provider === "postgres") {
         const result = await getTables(validation.data.connectionString);
+        console.log(result);
         if (!result) {
           return { status: "error", fields };
         }

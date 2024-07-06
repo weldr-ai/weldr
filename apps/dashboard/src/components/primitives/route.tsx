@@ -98,6 +98,7 @@ export const Route = memo(
               acc.push({
                 id: (child as SerializedInputNode).inputId,
                 name: (child as SerializedInputNode).name,
+                testValue: (child as SerializedInputNode).testValue ?? null,
                 type: (child as SerializedInputNode).inputType,
               });
             }
@@ -353,7 +354,7 @@ export const Route = memo(
           </ExpandableCardContent>
         </ExpandableCard>
         <Handle
-          type="target"
+          type="source"
           className="border-border bg-background p-1"
           position={Position.Right}
           onConnect={(params) => console.log("handle onConnect", params)}

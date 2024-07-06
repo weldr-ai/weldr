@@ -4,223 +4,6 @@
   "version": "5",
   "dialect": "pg",
   "tables": {
-    "nodes": {
-      "name": "nodes",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "varchar(32)",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "queue": {
-          "name": "queue",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "started_at": {
-          "name": "started_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "last_heartbeat_at": {
-          "name": "last_heartbeat_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "cpu_percent": {
-          "name": "cpu_percent",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "hostname": {
-          "name": "hostname",
-          "type": "varchar(128)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "task_count": {
-          "name": "task_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "version_": {
-          "name": "version_",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "idx_nodes_heartbeat": {
-          "name": "idx_nodes_heartbeat",
-          "columns": ["last_heartbeat_at"],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
-    "jobs": {
-      "name": "jobs",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "varchar(32)",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(256)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "state": {
-          "name": "state",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "started_at": {
-          "name": "started_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "completed_at": {
-          "name": "completed_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "failed_at": {
-          "name": "failed_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tasks": {
-          "name": "tasks",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "position": {
-          "name": "position",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "inputs": {
-          "name": "inputs",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "context": {
-          "name": "context",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "parent_id": {
-          "name": "parent_id",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "task_count": {
-          "name": "task_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "output_": {
-          "name": "output_",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "result": {
-          "name": "result",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "error_": {
-          "name": "error_",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "defaults": {
-          "name": "defaults",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "webhooks": {
-          "name": "webhooks",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ts": {
-          "name": "ts",
-          "type": "tsvector",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "idx_jobs_state": {
-          "name": "idx_jobs_state",
-          "columns": ["state"],
-          "isUnique": false
-        },
-        "jobs_ts_idx": {
-          "name": "jobs_ts_idx",
-          "columns": ["ts"],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
     "tasks": {
       "name": "tasks",
       "schema": "",
@@ -536,9 +319,825 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
+    },
+    "waitlist": {
+      "name": "waitlist",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "waitlist_email_unique": {
+          "columns": ["email"],
+          "nullsNotDistinct": false,
+          "name": "waitlist_email_unique"
+        }
+      }
+    },
+    "user": {
+      "name": "user",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "emailVerified": {
+          "name": "emailVerified",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "session": {
+      "name": "session",
+      "schema": "",
+      "columns": {
+        "sessionToken": {
+          "name": "sessionToken",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires": {
+          "name": "expires",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "session_userId_user_id_fk": {
+          "name": "session_userId_user_id_fk",
+          "tableFrom": "session",
+          "tableTo": "user",
+          "schemaTo": "public",
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "workspaces": {
+      "name": "workspaces",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "data_resources": {
+      "name": "data_resources",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider": {
+          "name": "provider",
+          "type": "data_resource_providers",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "data_resources_workspace_id_workspaces_id_fk": {
+          "name": "data_resources_workspace_id_workspaces_id_fk",
+          "tableFrom": "data_resources",
+          "tableTo": "workspaces",
+          "schemaTo": "public",
+          "columnsFrom": ["workspace_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "primitives": {
+      "name": "primitives",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "primitive_types",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position_x": {
+          "name": "position_x",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "position_y": {
+          "name": "position_y",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "flow_id": {
+          "name": "flow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "primitives_flow_id_flows_id_fk": {
+          "name": "primitives_flow_id_flows_id_fk",
+          "tableFrom": "primitives",
+          "tableTo": "flows",
+          "schemaTo": "public",
+          "columnsFrom": ["flow_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "edges": {
+      "name": "edges",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target": {
+          "name": "target",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "flow_id": {
+          "name": "flow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "edges_source_primitives_id_fk": {
+          "name": "edges_source_primitives_id_fk",
+          "tableFrom": "edges",
+          "tableTo": "primitives",
+          "schemaTo": "public",
+          "columnsFrom": ["source"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "edges_target_primitives_id_fk": {
+          "name": "edges_target_primitives_id_fk",
+          "tableFrom": "edges",
+          "tableTo": "primitives",
+          "schemaTo": "public",
+          "columnsFrom": ["target"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "edges_flow_id_flows_id_fk": {
+          "name": "edges_flow_id_flows_id_fk",
+          "tableFrom": "edges",
+          "tableTo": "flows",
+          "schemaTo": "public",
+          "columnsFrom": ["flow_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "flows": {
+      "name": "flows",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "flow_types",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "flows_workspace_id_workspaces_id_fk": {
+          "name": "flows_workspace_id_workspaces_id_fk",
+          "tableFrom": "flows",
+          "tableTo": "workspaces",
+          "schemaTo": "public",
+          "columnsFrom": ["workspace_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "nodes": {
+      "name": "nodes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(32)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "queue": {
+          "name": "queue",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_heartbeat_at": {
+          "name": "last_heartbeat_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cpu_percent": {
+          "name": "cpu_percent",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hostname": {
+          "name": "hostname",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "task_count": {
+          "name": "task_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version_": {
+          "name": "version_",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_nodes_heartbeat": {
+          "name": "idx_nodes_heartbeat",
+          "columns": ["last_heartbeat_at"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "jobs": {
+      "name": "jobs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(32)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state": {
+          "name": "state",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failed_at": {
+          "name": "failed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tasks": {
+          "name": "tasks",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inputs": {
+          "name": "inputs",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "context": {
+          "name": "context",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "task_count": {
+          "name": "task_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "output_": {
+          "name": "output_",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "result": {
+          "name": "result",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_": {
+          "name": "error_",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "defaults": {
+          "name": "defaults",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "webhooks": {
+          "name": "webhooks",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ts": {
+          "name": "ts",
+          "type": "tsvector",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_jobs_state": {
+          "name": "idx_jobs_state",
+          "columns": ["state"],
+          "isUnique": false
+        },
+        "jobs_ts_idx": {
+          "name": "jobs_ts_idx",
+          "columns": ["ts"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "verificationToken": {
+      "name": "verificationToken",
+      "schema": "",
+      "columns": {
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires": {
+          "name": "expires",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "verificationToken_identifier_token_pk": {
+          "name": "verificationToken_identifier_token_pk",
+          "columns": ["identifier", "token"]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "account": {
+      "name": "account",
+      "schema": "",
+      "columns": {
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "providerAccountId": {
+          "name": "providerAccountId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token_type": {
+          "name": "token_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_token": {
+          "name": "id_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_state": {
+          "name": "session_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_userId_user_id_fk": {
+          "name": "account_userId_user_id_fk",
+          "tableFrom": "account",
+          "tableTo": "user",
+          "schemaTo": "public",
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_provider_providerAccountId_pk": {
+          "name": "account_provider_providerAccountId_pk",
+          "columns": ["provider", "providerAccountId"]
+        }
+      },
+      "uniqueConstraints": {}
     }
   },
-  "enums": {},
+  "enums": {
+    "data_resource_providers": {
+      "name": "data_resource_providers",
+      "values": {
+        "postgres": "postgres"
+      }
+    },
+    "flow_types": {
+      "name": "flow_types",
+      "values": {
+        "route": "route",
+        "workflow": "workflow",
+        "component": "component"
+      }
+    },
+    "primitive_types": {
+      "name": "primitive_types",
+      "values": {
+        "iterator": "iterator",
+        "conditional-branch": "conditional-branch",
+        "function": "function",
+        "workflow": "workflow",
+        "route": "route"
+      }
+    }
+  },
   "schemas": {},
   "_meta": {
     "schemas": {},

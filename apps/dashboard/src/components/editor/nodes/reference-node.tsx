@@ -8,7 +8,13 @@ import type {
 } from "lexical";
 import type { ReactNode } from "react";
 import { DecoratorNode } from "lexical";
-import { VariableIcon } from "lucide-react";
+import {
+  ColumnsIcon,
+  HashIcon,
+  TableIcon,
+  TextIcon,
+  VariableIcon,
+} from "lucide-react";
 
 import { PostgresIcon } from "~/components/icons/postgres-icon";
 
@@ -16,24 +22,49 @@ export type SerializedReferenceNode = Spread<
   {
     id: string;
     name: string;
-    referenceType: "input" | "data-resource";
+    referenceType: "input" | "database" | "database-table" | "database-column";
+    icon:
+      | "database-icon"
+      | "number-icon"
+      | "text-icon"
+      | "value-icon"
+      | "database-column-icon"
+      | "database-table-icon";
+    dataType?: "text" | "number" | "functionResponse";
+    testValue?: string | number | null;
   },
   SerializedLexicalNode
 >;
 
 function ReferenceNodeComponent({
   name,
-  referenceType,
+  icon,
 }: {
   name: string;
-  referenceType: "input" | "data-resource";
+  icon:
+    | "database-icon"
+    | "number-icon"
+    | "text-icon"
+    | "value-icon"
+    | "database-column-icon"
+    | "database-table-icon";
 }) {
   return (
     <div className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-xs text-accent-foreground">
-      {referenceType === "data-resource" ? (
+      {icon === "database-icon" ? (
         <PostgresIcon className="mr-1 size-3 text-primary" />
-      ) : (
+      ) : icon === "number-icon" ? (
+        <HashIcon className="mr-1 size-3 text-primary" />
+      ) : icon === "text-icon" ? (
+        <TextIcon className="mr-1 size-3 text-primary" />
+      ) : icon === "value-icon" ? (
         <VariableIcon className="mr-1 size-3 text-primary" />
+      ) : icon === "database-column-icon" ? (
+        <ColumnsIcon className="mr-1 size-3 text-primary" />
+      ) : icon === "database-table-icon" ? (
+        <TableIcon className="mr-1 size-3 text-primary" />
+      ) : (
+        <></>
       )}
       {name}
     </div>
@@ -43,17 +74,38 @@ function ReferenceNodeComponent({
 export class ReferenceNode extends DecoratorNode<ReactNode> {
   __id: string;
   __name: string;
-  __referenceType: "input" | "data-resource";
+  __referenceType: "input" | "database" | "database-table" | "database-column";
+  __dataType?: "text" | "number" | "functionResponse";
+  __testValue?: string | number | null;
+  __icon:
+    | "database-icon"
+    | "number-icon"
+    | "text-icon"
+    | "value-icon"
+    | "database-column-icon"
+    | "database-table-icon";
 
   constructor(
     id: string,
     name: string,
-    referenceType: "input" | "data-resource",
+    referenceType: "input" | "database" | "database-table" | "database-column",
+    icon:
+      | "database-icon"
+      | "number-icon"
+      | "text-icon"
+      | "value-icon"
+      | "database-column-icon"
+      | "database-table-icon",
+    dataType?: "text" | "number" | "functionResponse",
+    testValue?: string | number | null,
   ) {
     super();
     this.__id = id;
     this.__name = name;
     this.__referenceType = referenceType;
+    this.__dataType = dataType;
+    this.__icon = icon;
+    this.__testValue = testValue;
   }
 
   static getType(): string {
@@ -61,7 +113,14 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   }
 
   static clone(node: ReferenceNode): ReferenceNode {
-    return new ReferenceNode(node.__id, node.__name, node.__referenceType);
+    return new ReferenceNode(
+      node.__id,
+      node.__name,
+      node.__referenceType,
+      node.__icon,
+      node.__dataType,
+      node.__testValue,
+    );
   }
 
   static importJSON(serializedNode: SerializedReferenceNode): ReferenceNode {
@@ -69,6 +128,9 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
       serializedNode.id,
       serializedNode.name,
       serializedNode.referenceType,
+      serializedNode.icon,
+      serializedNode.dataType,
+      serializedNode.testValue,
     );
     return node;
   }
@@ -79,6 +141,8 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
       name: this.__name,
       type: "reference",
       referenceType: this.__referenceType,
+      icon: this.__icon,
+      dataType: this.__dataType,
       version: 1,
     };
   }
@@ -87,6 +151,20 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
     const element = document.createElement("span");
     element.setAttribute("data-lexical-reference", "true");
     return { element };
+  }
+
+  getTextContent(): string {
+    switch (this.__referenceType) {
+      case "input":
+        return `input ${this.__name.replace(/ /g, "_").toLowerCase()} of type ${this.__dataType}`;
+      case "database":
+      case "database-table":
+        return `${this.__name}`;
+      case "database-column":
+        return `column ${this.__name} of type ${this.__dataType}`;
+      default:
+        return "";
+    }
   }
 
   createDOM(_config: EditorConfig, _editor: LexicalEditor): HTMLElement {
@@ -100,21 +178,25 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   }
 
   decorate(): JSX.Element {
-    return (
-      <ReferenceNodeComponent
-        name={this.__name}
-        referenceType={this.__referenceType}
-      />
-    );
+    return <ReferenceNodeComponent name={this.__name} icon={this.__icon} />;
   }
 }
 
 export function $createReferenceNode(
   id: string,
   name: string,
-  referenceType: "input" | "data-resource",
+  referenceType: "input" | "database" | "database-table" | "database-column",
+  icon:
+    | "database-icon"
+    | "number-icon"
+    | "text-icon"
+    | "value-icon"
+    | "database-column-icon"
+    | "database-table-icon",
+  dataType?: "text" | "number" | "functionResponse",
+  testValue?: string | number | null,
 ): ReferenceNode {
-  return new ReferenceNode(id, name, referenceType);
+  return new ReferenceNode(id, name, referenceType, icon, dataType, testValue);
 }
 
 export function $isReferenceNode(

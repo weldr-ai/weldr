@@ -1,18 +1,21 @@
 "use client";
 
-import type { EditorState, LexicalEditor } from "lexical";
+import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import type { z } from "zod";
 import { memo, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { skipToken, useQuery } from "@tanstack/react-query";
+import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
+import { $getRoot } from "lexical";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
   Loader2Icon,
+  LockIcon,
   PlayCircleIcon,
   TrashIcon,
+  UnlockIcon,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Handle, Position, useEdges, useNodes, useReactFlow } from "reactflow";
@@ -50,38 +53,48 @@ import {
   ResizablePanelGroup,
 } from "@integramind/ui/resizable";
 import { ScrollArea } from "@integramind/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@integramind/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
 import { cn } from "@integramind/ui/utils";
 
-import type { FunctionNodeProps, Input, PrimitiveData } from "~/types";
+import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
+import type {
+  FunctionNodeProps,
+  FunctionRawDescription,
+  Input,
+  PrimitiveData,
+} from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { LambdaIcon } from "~/components/icons/lambda-icon";
 import {
   deletePrimitive,
+  getFunctionPrimitiveById,
   updateFunctionPrimitiveById,
 } from "~/lib/queries/primitives";
 import { getJobById } from "~/lib/queries/run";
 
-async function postJob(): Promise<{ id: string }> {
+async function runPrimitive({
+  id,
+}: {
+  id: string;
+}): Promise<{ id: string | null }> {
   const response = await fetch("/api/run", {
     method: "POST",
     body: JSON.stringify({
-      name: "Get user",
-      inputs: [{ name: "id", value: "1" }],
-      functionCode: `
-def get_user(id):
-  import requests
-  url = f"https://jsonplaceholder.typicode.com/posts/{id}"
-  response = requests.get(url)
-  data = response.json()
-  return data
-`,
+      id,
     }),
   });
 
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
+  if (!response.ok || response.status !== 200) {
+    return { id: null };
   }
 
   return response.json() as Promise<{ id: string }>;
@@ -97,16 +110,17 @@ export const Function = memo(
       defaultValues: {
         name: data.name,
         description: data.description ?? undefined,
-        inputs: data.inputs,
       },
     });
 
-    const inputs = useMemo(() => {
-      console.log("NODES FROM FUNCTION", nodes);
+    const updateFunction = useMutation({
+      mutationFn: updateFunctionPrimitiveById,
+    });
 
+    const inputs = useMemo(() => {
       const parents = edges.reduce((acc, edge) => {
-        if (edge.source === data.id) {
-          const parent = nodes.find((node) => node.id === edge.target);
+        if (edge.target === data.id) {
+          const parent = nodes.find((node) => node.id === edge.source);
           if (parent) {
             acc.push(parent.data);
           }
@@ -115,37 +129,141 @@ export const Function = memo(
       }, [] as PrimitiveData[]);
 
       const inputs = parents.reduce((acc, parent) => {
-        if (
-          parent.type === "route" ||
-          parent.type === "workflow" ||
-          parent.type === "function"
-        ) {
+        if (parent.type === "route" || parent.type === "workflow") {
           if (parent.inputs) {
             parent.inputs.forEach((input) => {
+              if (data.inputs) {
+                const foundInput = data.inputs.find(
+                  (item) => item.id === input.id,
+                );
+
+                if (foundInput && foundInput.testValue !== input.testValue) {
+                  updateFunction.mutate({
+                    id: data.id,
+                    inputs: data.inputs.map((item) =>
+                      item.id === input.id
+                        ? {
+                            ...item,
+                            testValue: input.testValue,
+                          }
+                        : item,
+                    ),
+                  });
+                }
+              }
               acc.push({
                 id: input.id,
                 name: input.name,
                 type: input.type,
+                testValue: input.testValue,
+              });
+            });
+          }
+        } else if (parent.type === "function") {
+          if (parent.outputs) {
+            acc.push({
+              id: parent.id,
+              name: parent.name,
+              type: "functionResponse",
+              testValue: null,
+            });
+            parent.outputs.forEach((output) => {
+              acc.push({
+                id: output.id,
+                name: `${parent.name}.${output.name}`,
+                type: output.type,
+                testValue: null,
               });
             });
           }
         }
         return acc;
       }, [] as Input[]);
-
-      console.log("INPUTS FROM FUNCTION", inputs);
       return inputs;
-    }, [data.id, edges, nodes]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data.id, data.inputs, edges, nodes]);
 
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
-    const [jobId, setJobId] = useState<string | undefined>();
+    const [jobId, setJobId] = useState<string | null>(null);
+
+    const { data: functionData, refetch } = useQuery({
+      queryKey: [data.id],
+      queryFn: () => getFunctionPrimitiveById({ id: data.id }),
+      initialData: data,
+      refetchInterval: false,
+    });
+
+    const { data: job, refetch: refetchJob } = useQuery({
+      queryKey: ["job", jobId],
+      queryFn: jobId ? () => getJobById({ id: jobId }) : skipToken,
+      refetchInterval: false,
+    });
 
     function onChange(editorState: EditorState) {
       editorState.read(() => {
-        const { root } = editorState.toJSON();
-        console.log(root.children);
+        const root = $getRoot();
+        const children = (root.getChildren()[0] as ParagraphNode).getChildren();
+
+        const description = root.getTextContent();
+        const rawDescription = children.reduce((acc, child) => {
+          if (child.__type === "text") {
+            acc.push({
+              type: "text",
+              value: child.getTextContent(),
+            });
+          } else if (child.__type === "reference") {
+            const referenceNode = child as ReferenceNode;
+            acc.push({
+              type: "reference",
+              id: referenceNode.__id,
+              referenceType: referenceNode.__referenceType,
+              name: referenceNode.__name,
+              icon: referenceNode.__icon,
+              dataType: referenceNode.__dataType,
+              testValue: referenceNode.__testValue ?? null,
+            });
+          }
+          return acc;
+        }, [] as FunctionRawDescription[]);
+        const inputs: Input[] = [];
+        let resource: { id: string; provider: string } | null = null;
+
+        children.forEach((child) => {
+          if (child.__type === "reference") {
+            const referenceNode = child as ReferenceNode;
+            if (
+              referenceNode.__referenceType === "input" &&
+              referenceNode.__dataType
+            ) {
+              inputs.push({
+                id: referenceNode.__id,
+                name: referenceNode.__name,
+                type: referenceNode.__dataType,
+                testValue: referenceNode.__testValue ?? null,
+              });
+            } else if (referenceNode.__referenceType === "database") {
+              resource = {
+                id: referenceNode.__id,
+                provider: "postgres",
+              };
+            }
+          }
+        });
+
+        void updateFunctionPrimitiveById({
+          id: data.id,
+          description,
+          inputs,
+          resource,
+          rawDescription,
+          isCodeUpdated:
+            functionData?.description?.trim().toLowerCase() ===
+            description.trim().toLowerCase(),
+        });
+
+        void refetch();
       });
     }
 
@@ -153,28 +271,41 @@ export const Function = memo(
       console.error(error);
     }
 
-    const { data: job, refetch: refetchJob } = useQuery({
-      queryKey: ["job", jobId],
-      queryFn: jobId ? () => getJobById({ id: jobId }) : skipToken,
-    });
-
     useEffect(() => {
       const interval = setInterval(() => {
         if (job && (job.state === "RUNNING" || job.state === "PENDING")) {
           void refetchJob();
+        } else if (job?.state === "COMPLETED" && job.result) {
+          const parsedResult =
+            (
+              JSON.parse(job.result) as {
+                response: Record<string, string | number>[];
+              }
+            )?.response[0] ?? {};
+          updateFunction.mutate({
+            id: data.id,
+            outputs: Object.keys(parsedResult).map((key) => ({
+              name: key,
+              type: typeof parsedResult[key] === "number" ? "number" : "text",
+            })),
+          });
         }
-      }, 100);
+      }, 1000);
 
       return () => {
         clearInterval(interval);
       };
-    }, [job, refetchJob]);
+    }, [data.id, job, refetchJob, updateFunction]);
+
+    if (!functionData) {
+      return null;
+    }
 
     return (
       <>
         <Handle
           className="border-border bg-background p-1"
-          type="source"
+          type="target"
           position={Position.Left}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
@@ -208,9 +339,7 @@ export const Function = memo(
                     <LambdaIcon className="size-4 text-primary" />
                     <span className="text-muted-foreground">Function</span>
                   </div>
-                  <span className="text-sm">
-                    {form.getValues("name") ?? data.name}
-                  </span>
+                  <span className="text-sm">{functionData?.name}</span>
                 </Card>
               </ContextMenuTrigger>
               <ContextMenuContent>
@@ -244,8 +373,8 @@ export const Function = memo(
               </ContextMenuContent>
             </ContextMenu>
           </ExpandableCardTrigger>
-          <ExpandableCardContent className="nowheel flex h-[400px] flex-col p-0">
-            <form {...form} className="flex size-full flex-col">
+          <ExpandableCardContent className="nowheel flex h-[600px] w-[800px] flex-col p-0">
+            <div className="flex size-full flex-col">
               <ExpandableCardHeader className="flex flex-col items-start justify-start px-4 py-4">
                 <div className="flex w-full items-center justify-between">
                   <div className="flex items-center gap-2 text-xs">
@@ -261,11 +390,30 @@ export const Function = memo(
                         job?.state === "RUNNING" || job?.state === "PENDING"
                       }
                       onClick={async () => {
-                        const job = await postJob();
+                        const job = await runPrimitive({ id: functionData.id });
+                        console.log(job);
                         setJobId(job.id);
                       }}
                     >
                       <PlayCircleIcon className="size-3.5" />
+                    </Button>
+                    <Button
+                      className="size-7 text-muted-foreground hover:text-muted-foreground"
+                      variant="ghost"
+                      size="icon"
+                      onClick={async () => {
+                        await updateFunctionPrimitiveById({
+                          id: functionData.id,
+                          isLocked: !functionData.isLocked,
+                        });
+                        await refetch();
+                      }}
+                    >
+                      {functionData.isLocked ? (
+                        <LockIcon className="size-3.5" />
+                      ) : (
+                        <UnlockIcon className="size-3.5" />
+                      )}
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger>
@@ -315,12 +463,15 @@ export const Function = memo(
                   render={({ field }) => (
                     <InputComponent
                       {...field}
+                      autoComplete="off"
                       className="h-8 border-none bg-muted p-0 text-sm focus-visible:ring-0"
                       onBlur={async (e) => {
                         await updateFunctionPrimitiveById({
                           id: data.id,
                           name: e.target.value,
                         });
+                        await refetch();
+                        form.setValue("name", e.target.value);
                       }}
                     />
                   )}
@@ -328,24 +479,25 @@ export const Function = memo(
               </ExpandableCardHeader>
               <ResizablePanelGroup direction="vertical" className="flex h-full">
                 <ResizablePanel
-                  defaultSize={60}
+                  defaultSize={65}
                   minSize={25}
                   className="flex flex-col gap-2 px-4 pb-4"
                 >
                   <span className="text-xs text-muted-foreground">Editor</span>
                   <Editor
-                    id={data.id}
+                    id={functionData.id}
                     type="description"
                     inputs={inputs}
                     placeholder="Describe your function"
+                    rawDescription={functionData.rawDescription}
                     onChange={onChange}
                     onError={onError}
                   />
                 </ResizablePanel>
                 <ResizableHandle className="border-b" withHandle />
                 <ResizablePanel
-                  defaultSize={0}
-                  minSize={15}
+                  defaultSize={35}
+                  minSize={8}
                   className="flex size-full rounded-b-xl px-4 py-4"
                 >
                   <Tabs
@@ -383,14 +535,56 @@ export const Function = memo(
                                 <span className="text-error">Failed</span>
                               </div>
                             ) : job.result ? (
-                              <ScrollArea className="h-full p-2">
-                                <pre className="text-wrap">
-                                  {JSON.stringify(
-                                    JSON.parse(job.result),
-                                    null,
-                                    2,
-                                  )}
-                                </pre>
+                              <ScrollArea className="size-full">
+                                <Table className="flex w-full flex-col">
+                                  <TableHeader className="flex w-full">
+                                    <TableRow className="flex w-full">
+                                      {Object.keys(
+                                        (
+                                          JSON.parse(job.result) as {
+                                            response: Record<
+                                              string,
+                                              string | number
+                                            >[];
+                                          }
+                                        )?.response[0] ?? {},
+                                      ).map((head, idx) => (
+                                        <TableHead
+                                          key={idx}
+                                          className="flex w-full items-center"
+                                        >
+                                          {head}
+                                        </TableHead>
+                                      ))}
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody className="flex w-full flex-col">
+                                    {(
+                                      JSON.parse(job.result) as {
+                                        response: Record<
+                                          string,
+                                          string | number
+                                        >[];
+                                      }
+                                    ).response.map((row, idx) => (
+                                      <TableRow
+                                        key={idx}
+                                        className="flex w-full"
+                                      >
+                                        {Object.keys(row).map(
+                                          (key: string, idx) => (
+                                            <TableCell
+                                              key={idx}
+                                              className="flex w-full"
+                                            >
+                                              {row[key]}
+                                            </TableCell>
+                                          ),
+                                        )}
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
                               </ScrollArea>
                             ) : (
                               <span>SUCCESS</span>
@@ -410,7 +604,7 @@ export const Function = memo(
                   </Tabs>
                 </ResizablePanel>
               </ResizablePanelGroup>
-            </form>
+            </div>
           </ExpandableCardContent>
         </ExpandableCard>
         <DeleteAlertDialog
@@ -431,7 +625,7 @@ export const Function = memo(
         />
         <Handle
           className="border-border bg-background p-1"
-          type="target"
+          type="source"
           position={Position.Right}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
