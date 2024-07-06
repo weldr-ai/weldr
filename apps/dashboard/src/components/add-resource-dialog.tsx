@@ -14,12 +14,12 @@ import {
 } from "@integramind/ui/dialog";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 
-import type { DataResourceProvider } from "~/types";
-import { AddDataResourceForm } from "~/components/add-data-resource-form";
+import type { ResourceProvider } from "~/types";
+import { AddResourceForm } from "~/components/add-resource-form";
 import { PostgresIcon } from "~/components/icons/postgres-icon";
 
-export function AddDataResourceDialog() {
-  const [provider, setProvider] = useState<DataResourceProvider | undefined>();
+export function AddResourceDialog() {
+  const [provider, setProvider] = useState<ResourceProvider | undefined>();
   const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
 
   return (
@@ -30,12 +30,12 @@ export function AddDataResourceDialog() {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <PlusIcon className="mr-1.5 size-3.5" />
-          Add new data resource
+          Add new resource
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add new data resource</DialogTitle>
+          <DialogTitle>Add new resource</DialogTitle>
           <DialogDescription>
             {provider
               ? `Enter your ${provider} details then press add.`
@@ -43,7 +43,7 @@ export function AddDataResourceDialog() {
           </DialogDescription>
         </DialogHeader>
         {provider ? (
-          <AddDataResourceForm
+          <AddResourceForm
             provider={provider}
             setAddResourceDialogOpen={setAddResourceDialogOpen}
           />

@@ -4,30 +4,30 @@ import { Loader2Icon } from "lucide-react";
 import { Button } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 
-import { getDataResources } from "~/lib/queries/data-resources";
-import { AddDataResourceDialog } from "./add-data-resource-dialog";
+import { getResources } from "~/lib/queries/resources";
+import { AddResourceDialog } from "./add-resource-dialog";
 
-export function DataResourceList({ workspaceId }: { workspaceId: string }) {
+export function ResourceList({ workspaceId }: { workspaceId: string }) {
   // FIXME: use suspense with revalidateTag
   const {
     isLoading,
     isRefetching,
-    data: dataResources,
+    data: resources,
   } = useQuery({
-    queryKey: ["data-resources"],
-    queryFn: () => getDataResources({ workspaceId }),
+    queryKey: ["resources"],
+    queryFn: () => getResources({ workspaceId }),
     refetchInterval: 1000 * 60 * 5,
   });
 
   return (
     <div className="flex size-full flex-col gap-2">
-      <AddDataResourceDialog />
+      <AddResourceDialog />
       {!isLoading && !isRefetching ? (
         <ScrollArea className="h-[calc(100dvh-148px)] w-full">
           <div className="flex flex-col">
-            {dataResources?.map((dataResource) => (
-              <Button key={dataResource.id} variant="ghost" size="sm">
-                {dataResource.name}
+            {resources?.map((resource) => (
+              <Button key={resource.id} variant="ghost" size="sm">
+                {resource.name}
               </Button>
             ))}
           </div>

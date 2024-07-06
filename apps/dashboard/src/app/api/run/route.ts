@@ -4,11 +4,11 @@ import { parse } from "pg-connection-string";
 
 import type { postgresMetadataSchema } from "@integramind/db/schema";
 
-import { getDataResourceById } from "~/lib/queries/data-resources";
 import {
   getFunctionPrimitiveWithSecretsById,
   updateFunctionPrimitiveById,
 } from "~/lib/queries/primitives";
+import { getResourceById } from "~/lib/queries/resources";
 import { createPythonJobYaml, createSQLJobYaml } from "~/lib/yaml-generator";
 
 const openai = new OpenAI({
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
   let jobYaml: string;
 
   if (functionPrimitive.resource) {
-    const resource = await getDataResourceById({
+    const resource = await getResourceById({
       id: functionPrimitive.resource.id,
     });
 

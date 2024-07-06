@@ -10,8 +10,8 @@ import type {
   Job,
   Primitive,
 } from "~/types";
-import { getDataResourceById } from "~/lib/queries/data-resources";
 import { getRouteFlowByPath } from "~/lib/queries/flows";
+import { getResourceById } from "~/lib/queries/resources";
 import { getJobById } from "~/lib/queries/run";
 import { createPythonJobYaml, createSQLJobYaml } from "~/lib/yaml-generator";
 
@@ -116,7 +116,7 @@ const executeFunction = async (
   let jobYaml: string;
 
   if (functionData.resource) {
-    const resource = await getDataResourceById({
+    const resource = await getResourceById({
       id: functionData.resource.id,
     });
 

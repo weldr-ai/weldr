@@ -3,7 +3,7 @@
 import {
   BlocksIcon,
   CircleUserIcon,
-  DatabaseIcon,
+  UnplugIcon,
   WorkflowIcon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -69,13 +69,13 @@ export function ActivityBar() {
         </Button>
         <Button
           className={cn({
-            "bg-accent": activeSection === "data-resources",
+            "bg-accent": activeSection === "resources",
           })}
-          onClick={() => updateActiveSection("data-resources")}
+          onClick={() => updateActiveSection("resources")}
           size="icon"
           variant="ghost"
         >
-          <DatabaseIcon className="size-5" />
+          <UnplugIcon className="size-5" />
         </Button>
       </div>
       <DropdownMenu>

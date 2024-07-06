@@ -2,9 +2,6 @@ import type { Edge, Node, NodeProps } from "reactflow";
 import type { z } from "zod";
 
 import type {
-  dataResourceMetadataSchema,
-  dataResourceProvidersSchema,
-  dataResourceSchema,
   edgeSchema,
   flowSchema,
   flowTypesSchema,
@@ -13,6 +10,9 @@ import type {
   jobSchema,
   primitiveSchema,
   primitiveTypesSchema,
+  resourceMetadataSchema,
+  resourceProvidersSchema,
+  resourceSchema,
   routeMetadataSchema,
   workflowMetadataSchema,
   workspaceSchema,
@@ -65,9 +65,9 @@ export type ResponseData = BaseNodeData;
 export type ResponseNode = BaseNode<ResponseData>;
 export type ResponseNodeProps = BaseNodeProps<ResponseData>;
 
-export type DataResourceMetadata = z.infer<typeof dataResourceMetadataSchema>;
-export type DataResource = z.infer<typeof dataResourceSchema>;
-export type DataResourceProvider = z.infer<typeof dataResourceProvidersSchema>;
+export type ResourceMetadata = z.infer<typeof resourceMetadataSchema>;
+export type Resource = z.infer<typeof resourceSchema>;
+export type ResourceProvider = z.infer<typeof resourceProvidersSchema>;
 
 export type Workspace = z.infer<typeof workspaceSchema>;
 export type Flow = z.infer<typeof flowSchema>;

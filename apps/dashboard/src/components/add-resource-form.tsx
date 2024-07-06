@@ -10,7 +10,7 @@ import { Loader2Icon } from "lucide-react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
 
-import { insertDataResourceSchema } from "@integramind/db/schema";
+import { insertResourceSchema } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import {
   Form,
@@ -24,26 +24,23 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import type { DataResourceProvider } from "~/types";
-import { addDataResource } from "~/lib/queries/data-resources";
+import type { ResourceProvider } from "~/types";
+import { addResource } from "~/lib/queries/resources";
 
-export function AddDataResourceForm({
+export function AddResourceForm({
   provider,
   setAddResourceDialogOpen,
 }: {
-  provider: DataResourceProvider;
+  provider: ResourceProvider;
   setAddResourceDialogOpen?: (open: boolean) => void;
 }) {
   // FIXME: use suspense with revalidateTag
   const queryClient = useQueryClient();
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const [state, addDataResourceAction] = useFormState(
-    addDataResource,
-    undefined,
-  );
+  const [state, addResourceAction] = useFormState(addResource, undefined);
 
-  const getMetadataValues = (provider: DataResourceProvider) => {
+  const getMetadataValues = (provider: ResourceProvider) => {
     switch (provider) {
       case "postgres":
         return {
@@ -52,9 +49,9 @@ export function AddDataResourceForm({
     }
   };
 
-  const form = useForm<z.infer<typeof insertDataResourceSchema>>({
+  const form = useForm<z.infer<typeof insertResourceSchema>>({
     mode: "onChange",
-    resolver: zodResolver(insertDataResourceSchema),
+    resolver: zodResolver(insertResourceSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -77,7 +74,7 @@ export function AddDataResourceForm({
             description: `${provider.charAt(0).toUpperCase()}${provider.slice(1)} added successfully.`,
             duration: 2000,
           });
-          await queryClient.invalidateQueries({ queryKey: ["data-resources"] });
+          await queryClient.invalidateQueries({ queryKey: ["resources"] });
           if (setAddResourceDialogOpen) {
             setAddResourceDialogOpen(false);
           }
@@ -125,7 +122,7 @@ export function AddDataResourceForm({
   return (
     <Form {...form}>
       <form
-        action={addDataResourceAction}
+        action={addResourceAction}
         className="flex w-full flex-col space-y-4"
       >
         <FormField
@@ -197,7 +194,7 @@ export function AddDataResourceForm({
 function SubmitButton({
   formState,
 }: {
-  formState: FormState<z.infer<typeof insertDataResourceSchema>>;
+  formState: FormState<z.infer<typeof insertResourceSchema>>;
 }) {
   const { pending } = useFormStatus();
   return (

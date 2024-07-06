@@ -29,7 +29,7 @@ export const workspaces = pgTable("workspaces", {
 });
 
 export const workspacesRelations = relations(workspaces, ({ many }) => ({
-  dataResources: many(dataResources),
+  resources: many(resources),
   flows: many(flows),
 }));
 
@@ -120,17 +120,15 @@ export const flowsRelations = relations(flows, ({ many }) => ({
   edges: many(edges),
 }));
 
-export const dataResourceProviders = pgEnum("data_resource_providers", [
-  "postgres",
-]);
+export const resourceProviders = pgEnum("resource_providers", ["postgres"]);
 
-export const dataResources = pgTable("data_resources", {
+export const resources = pgTable("resources", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
   name: text("name").notNull(),
   description: text("description"),
-  provider: dataResourceProviders("provider").notNull(),
+  provider: resourceProviders("provider").notNull(),
   metadata: jsonb("metadata").$type<ResourceMetadata>().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -142,9 +140,9 @@ export const dataResources = pgTable("data_resources", {
     .notNull(),
 });
 
-export const resourcesRelations = relations(dataResources, ({ one }) => ({
+export const resourcesRelations = relations(resources, ({ one }) => ({
   workspace: one(workspaces, {
-    fields: [dataResources.workspaceId],
+    fields: [resources.workspaceId],
     references: [workspaces.id],
   }),
 }));
@@ -165,12 +163,10 @@ export const insertWorkspaceSchema = createInsertSchema(workspaces, {
       .transform((name) => name.replace(/\s+/g, " ").trim()),
 });
 
-// Data resources zod schemas
-export const dataResourceProvidersSchema = z.enum(
-  dataResourceProviders.enumValues,
-);
-export const dataResourceSchema = createSelectSchema(dataResources);
-export const insertDataResourceSchema = z.discriminatedUnion("provider", [
+// resources zod schemas
+export const resourceProvidersSchema = z.enum(resourceProviders.enumValues);
+export const resourceSchema = createSelectSchema(resources);
+export const insertResourceSchema = z.discriminatedUnion("provider", [
   z.object({
     name: z
       .string()
@@ -199,7 +195,7 @@ export const postgresMetadataSchema = z.object({
     })
     .array(),
 });
-export const dataResourceMetadataSchema = z.discriminatedUnion("provider", [
+export const resourceMetadataSchema = z.discriminatedUnion("provider", [
   postgresMetadataSchema,
 ]);
 
@@ -268,7 +264,7 @@ export const functionMetadataSchema = z.object({
   resource: z
     .object({
       id: z.string(),
-      provider: z.enum(dataResourceProviders.enumValues),
+      provider: z.enum(resourceProviders.enumValues),
     })
     .nullable()
     .optional(),
@@ -450,7 +446,7 @@ export const updateFunctionSchema = z.object({
   resource: z
     .object({
       id: z.string(),
-      provider: z.enum(dataResourceProviders.enumValues),
+      provider: z.enum(resourceProviders.enumValues),
     })
     .nullable()
     .optional(),

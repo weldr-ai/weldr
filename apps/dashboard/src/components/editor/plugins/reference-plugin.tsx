@@ -21,13 +21,10 @@ import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
-import type { DataResourceMetadata, Input } from "~/types";
+import type { Input, ResourceMetadata } from "~/types";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
 import { PostgresIcon } from "~/components/icons/postgres-icon";
-import {
-  getDataResourceById,
-  getDataResources,
-} from "~/lib/queries/data-resources";
+import { getResourceById, getResources } from "~/lib/queries/resources";
 
 export class ReferenceOption extends MenuOption {
   // The id of the reference
@@ -87,18 +84,18 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
-  const [dataResourceId, setDataResourceId] = useState<string | undefined>();
+  const [resourceId, setResourceId] = useState<string | undefined>();
 
-  // FIXME: add all the data resources options directly to the dropdown
-  const { data: dataResources } = useQuery({
-    queryKey: ["data-resources"],
-    queryFn: () => getDataResources({ workspaceId }),
+  // FIXME: add all the resources options directly to the dropdown
+  const { data: resources } = useQuery({
+    queryKey: ["resources"],
+    queryFn: () => getResources({ workspaceId }),
   });
 
-  const { data: dataResource } = useQuery({
-    queryKey: ["data-resource", dataResourceId],
-    queryFn: () => getDataResourceById({ id: dataResourceId! }),
-    enabled: !!dataResourceId,
+  const { data: resource } = useQuery({
+    queryKey: ["resource", resourceId],
+    queryFn: () => getResourceById({ id: resourceId! }),
+    enabled: !!resourceId,
   });
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch("/", {
@@ -141,7 +138,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
           );
         }
         if (selectedOption.referenceType === "database") {
-          setDataResourceId(selectedOption.id);
+          setResourceId(selectedOption.id);
         }
         if (nodeToReplace) {
           nodeToReplace.replace(referenceNode);
@@ -176,55 +173,53 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   const options = useMemo(() => {
     const options: ReferenceOption[] = [...inputOptions];
 
-    if (dataResource) {
-      if (dataResource.provider === "postgres") {
+    if (resource) {
+      if (resource.provider === "postgres") {
         options.push(
-          new ReferenceOption(dataResource.id, dataResource.name, "database", {
+          new ReferenceOption(resource.id, resource.name, "database", {
             icon: "database-icon",
-            keywords: ["postgres", "data-resource", dataResource.name],
+            keywords: ["postgres", "resource", resource.name],
             onSelect: (queryString) => {
               console.log(queryString);
             },
           }),
         );
 
-        (dataResource.metadata as DataResourceMetadata).tables.forEach(
-          (table) => {
-            table.columns.forEach((column) =>
-              options.push(
-                new ReferenceOption(
-                  `${table.name}.${column.name}`,
-                  `${table.name}.${column.name}`,
-                  "database-column",
-                  {
-                    icon: "database-column-icon",
-                    keywords: ["column", dataResource.name, column.name],
-                    onSelect: (queryString) => {
-                      console.log(queryString);
-                    },
-                  },
-                  column.type === "text" ? "text" : "number",
-                ),
-              ),
-            );
+        (resource.metadata as ResourceMetadata).tables.forEach((table) => {
+          table.columns.forEach((column) =>
             options.push(
-              new ReferenceOption(table.name, table.name, "database-table", {
-                icon: "database-table-icon",
-                keywords: ["table", dataResource.name, table.name],
-                onSelect: (queryString) => {
-                  console.log(queryString);
+              new ReferenceOption(
+                `${table.name}.${column.name}`,
+                `${table.name}.${column.name}`,
+                "database-column",
+                {
+                  icon: "database-column-icon",
+                  keywords: ["column", resource.name, column.name],
+                  onSelect: (queryString) => {
+                    console.log(queryString);
+                  },
                 },
-              }),
-            );
-          },
-        );
+                column.type === "text" ? "text" : "number",
+              ),
+            ),
+          );
+          options.push(
+            new ReferenceOption(table.name, table.name, "database-table", {
+              icon: "database-table-icon",
+              keywords: ["table", resource.name, table.name],
+              onSelect: (queryString) => {
+                console.log(queryString);
+              },
+            }),
+          );
+        });
       }
-    } else if (dataResources && !dataResourceId) {
-      dataResources.forEach((dataResource) =>
+    } else if (resources && !resourceId) {
+      resources.forEach((resource) =>
         options.push(
-          new ReferenceOption(dataResource.id, dataResource.name, "database", {
+          new ReferenceOption(resource.id, resource.name, "database", {
             icon: "database-icon",
-            keywords: ["data resource", "database", dataResource.name],
+            keywords: ["resource", "database", resource.name],
             onSelect: (queryString) => {
               console.log(queryString);
             },
@@ -244,7 +239,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
         regex.test(option.name) ||
         option.keywords.some((keyword) => regex.test(keyword)),
     );
-  }, [dataResource, dataResourceId, dataResources, inputOptions, queryString]);
+  }, [resource, resourceId, resources, inputOptions, queryString]);
 
   return (
     <LexicalTypeaheadMenuPlugin<ReferenceOption>
