@@ -44,7 +44,11 @@ export function AddResourceForm({
     switch (provider) {
       case "postgres":
         return {
-          connectionString: "",
+          host: "",
+          port: 5432,
+          user: "",
+          password: "",
+          database: "",
         };
     }
   };
@@ -86,7 +90,11 @@ export function AddResourceForm({
                 | "description"
                 | "workspaceId"
                 | "provider"
-                | "connectionString",
+                | "host"
+                | "port"
+                | "user"
+                | "password"
+                | "database",
               {
                 message: state.errors[key],
               },
@@ -139,19 +147,73 @@ export function AddResourceForm({
           )}
         />
         {provider === "postgres" && (
-          <FormField
-            control={form.control}
-            name="connectionString"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">Connection string</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter connection string" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <>
+            <FormField
+              control={form.control}
+              name="host"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Host</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter host" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="port"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Port</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter port" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="user"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">User</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter user" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Password</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="database"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Database</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter database" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
         )}
         <FormField
           control={form.control}

@@ -27,7 +27,6 @@ export function FlowList({
   } = useQuery({
     queryKey: [`${type}s`],
     queryFn: () => getFlows({ workspaceId, type }),
-    refetchInterval: 1000 * 60 * 5,
   });
 
   return (

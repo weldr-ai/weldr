@@ -263,7 +263,7 @@ export function _FlowBuilder({
         <PrimitivesMenu />
       </Panel>
       <Panel position="bottom-right">
-        <div className="flex w-full flex-row items-center justify-end gap-2 px-4">
+        <div className="flex w-full flex-row items-center justify-end gap-2">
           <Button
             size="sm"
             variant="outline"

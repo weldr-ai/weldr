@@ -165,7 +165,6 @@ export const insertWorkspaceSchema = createInsertSchema(workspaces, {
 
 // resources zod schemas
 export const resourceProvidersSchema = z.enum(resourceProviders.enumValues);
-export const resourceSchema = createSelectSchema(resources);
 export const insertResourceSchema = z.discriminatedUnion("provider", [
   z.object({
     name: z
@@ -176,28 +175,28 @@ export const insertResourceSchema = z.discriminatedUnion("provider", [
       .transform((name) => name.replace(/\s+/g, " ").trim()),
     description: z.string(),
     provider: z.literal("postgres"),
-    connectionString: z.string(),
+    host: z.string(),
+    port: z.number(),
+    user: z.string(),
+    password: z.string(),
+    database: z.string(),
     workspaceId: z.string(),
   }),
 ]);
 export const postgresMetadataSchema = z.object({
   provider: z.literal("postgres"),
-  connectionString: z.string(),
-  tables: z
-    .object({
-      name: z.string(),
-      columns: z
-        .object({
-          name: z.string(),
-          type: z.string(),
-        })
-        .array(),
-    })
-    .array(),
+  host: z.string(),
+  port: z.number(),
+  user: z.string(),
+  password: z.string(),
+  database: z.string(),
 });
 export const resourceMetadataSchema = z.discriminatedUnion("provider", [
   postgresMetadataSchema,
 ]);
+export const resourceSchema = createSelectSchema(resources, {
+  metadata: resourceMetadataSchema,
+});
 
 // Edges zod schemas
 export const edgeSchema = createSelectSchema(edges);

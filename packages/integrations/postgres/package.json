@@ -1,0 +1,32 @@
+{
+  "name": "@integramind/integrations-postgres",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf .turbo node_modules",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint .",
+    "check-types": "tsc --noEmit --emitDeclarationOnly false"
+  },
+  "dependencies": {
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@integramind/eslint-config": "workspace:*",
+    "@integramind/prettier-config": "workspace:*",
+    "@integramind/tsconfig": "workspace:*"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@integramind/eslint-config/base"
+    ]
+  },
+  "prettier": "@integramind/prettier-config"
+}

@@ -2,9 +2,10 @@
 
 import type { z } from "zod";
 
+import type { Table } from "@integramind/integrations-postgres";
 import { db, eq, sql } from "@integramind/db";
 import { insertResourceSchema, resources } from "@integramind/db/schema";
-import { getTables } from "@integramind/db/utils";
+import { sync } from "@integramind/integrations-postgres";
 
 import type { Resource, ResourceMetadata } from "~/types";
 
@@ -46,15 +47,13 @@ export async function addResource(
       let metadata: ResourceMetadata;
 
       if (validation.data.provider === "postgres") {
-        const result = await getTables(validation.data.connectionString);
-        console.log(result);
-        if (!result) {
-          return { status: "error", fields };
-        }
         metadata = {
           provider: "postgres",
-          connectionString: validation.data.connectionString,
-          tables: result,
+          host: validation.data.host,
+          port: Number(validation.data.port),
+          user: validation.data.user,
+          password: validation.data.password,
+          database: validation.data.database,
         };
       }
 
@@ -96,13 +95,39 @@ export async function addResource(
   }
 }
 
-export async function getResourceById({
-  id,
-}: {
-  id: string;
-}): Promise<Resource | undefined> {
+export async function getResourceById({ id }: { id: string }): Promise<
+  | (Resource & {
+      metadata: {
+        tables: Table[];
+      };
+    })
+  | undefined
+> {
   const result = await db.select().from(resources).where(eq(resources.id, id));
-  return result[0];
+
+  if (!result[0]) {
+    return;
+  }
+
+  if (result[0].provider === "postgres") {
+    const auth = result[0].metadata;
+
+    const tables = await sync({
+      host: auth.host,
+      port: auth.port,
+      user: auth.user,
+      password: auth.password,
+      database: auth.database,
+    });
+
+    return {
+      ...result[0],
+      metadata: {
+        ...result[0].metadata,
+        tables,
+      },
+    };
+  }
 }
 
 export async function getResources({ workspaceId }: { workspaceId: string }) {

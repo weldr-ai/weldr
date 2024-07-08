@@ -16,7 +16,6 @@ export function ResourceList({ workspaceId }: { workspaceId: string }) {
   } = useQuery({
     queryKey: ["resources"],
     queryFn: () => getResources({ workspaceId }),
-    refetchInterval: 1000 * 60 * 5,
   });
 
   return (

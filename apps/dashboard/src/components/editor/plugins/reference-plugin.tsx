@@ -21,7 +21,7 @@ import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
-import type { Input, ResourceMetadata } from "~/types";
+import type { Input } from "~/types";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
 import { PostgresIcon } from "~/components/icons/postgres-icon";
 import { getResourceById, getResources } from "~/lib/queries/resources";
@@ -86,7 +86,6 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   const [queryString, setQueryString] = useState<string | null>(null);
   const [resourceId, setResourceId] = useState<string | undefined>();
 
-  // FIXME: add all the resources options directly to the dropdown
   const { data: resources } = useQuery({
     queryKey: ["resources"],
     queryFn: () => getResources({ workspaceId }),
@@ -185,7 +184,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
           }),
         );
 
-        (resource.metadata as ResourceMetadata).tables.forEach((table) => {
+        resource.metadata.tables.forEach((table) => {
           table.columns.forEach((column) =>
             options.push(
               new ReferenceOption(

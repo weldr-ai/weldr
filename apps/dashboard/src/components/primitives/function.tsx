@@ -2,16 +2,15 @@
 
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import type { z } from "zod";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { $getRoot } from "lexical";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
-  Loader2Icon,
   LockIcon,
   PlayCircleIcon,
   TrashIcon,
@@ -52,15 +51,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@integramind/ui/resizable";
-import { ScrollArea } from "@integramind/ui/scroll-area";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@integramind/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
 import { cn } from "@integramind/ui/utils";
 
@@ -79,26 +69,6 @@ import {
   getFunctionPrimitiveById,
   updateFunctionPrimitiveById,
 } from "~/lib/queries/primitives";
-import { getJobById } from "~/lib/queries/run";
-
-async function runPrimitive({
-  id,
-}: {
-  id: string;
-}): Promise<{ id: string | null }> {
-  const response = await fetch("/api/run", {
-    method: "POST",
-    body: JSON.stringify({
-      id,
-    }),
-  });
-
-  if (!response.ok || response.status !== 200) {
-    return { id: null };
-  }
-
-  return response.json() as Promise<{ id: string }>;
-}
 
 export const Function = memo(
   ({ data, isConnectable, selected, xPos, yPos }: FunctionNodeProps) => {
@@ -186,18 +156,10 @@ export const Function = memo(
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
-    const [jobId, setJobId] = useState<string | null>(null);
-
     const { data: functionData, refetch } = useQuery({
       queryKey: [data.id],
       queryFn: () => getFunctionPrimitiveById({ id: data.id }),
       initialData: data,
-      refetchInterval: false,
-    });
-
-    const { data: job, refetch: refetchJob } = useQuery({
-      queryKey: ["job", jobId],
-      queryFn: jobId ? () => getJobById({ id: jobId }) : skipToken,
       refetchInterval: false,
     });
 
@@ -270,32 +232,6 @@ export const Function = memo(
     function onError(error: Error, _editor: LexicalEditor) {
       console.error(error);
     }
-
-    useEffect(() => {
-      const interval = setInterval(() => {
-        if (job && (job.state === "RUNNING" || job.state === "PENDING")) {
-          void refetchJob();
-        } else if (job?.state === "COMPLETED" && job.result) {
-          const parsedResult =
-            (
-              JSON.parse(job.result) as {
-                response: Record<string, string | number>[];
-              }
-            )?.response[0] ?? {};
-          updateFunction.mutate({
-            id: data.id,
-            outputs: Object.keys(parsedResult).map((key) => ({
-              name: key,
-              type: typeof parsedResult[key] === "number" ? "number" : "text",
-            })),
-          });
-        }
-      }, 1000);
-
-      return () => {
-        clearInterval(interval);
-      };
-    }, [data.id, job, refetchJob, updateFunction]);
 
     if (!functionData) {
       return null;
@@ -386,14 +322,6 @@ export const Function = memo(
                       className="size-7 text-success hover:text-success"
                       variant="ghost"
                       size="icon"
-                      disabled={
-                        job?.state === "RUNNING" || job?.state === "PENDING"
-                      }
-                      onClick={async () => {
-                        const job = await runPrimitive({ id: functionData.id });
-                        console.log(job);
-                        setJobId(job.id);
-                      }}
                     >
                       <PlayCircleIcon className="size-3.5" />
                     </Button>
@@ -516,82 +444,7 @@ export const Function = memo(
                       value="result"
                       className="size-full rounded-lg bg-background"
                     >
-                      <div className="flex size-full items-center justify-center px-6">
-                        {job?.state === "PENDING" ||
-                        job?.state === "RUNNING" ? (
-                          <div className="flex size-full items-center justify-center">
-                            <Loader2Icon className="size-6 animate-spin text-primary" />
-                          </div>
-                        ) : (
-                          <>
-                            {!job ? (
-                              <div className="flex size-full items-center justify-center px-6">
-                                <span className="text-muted-foreground">
-                                  Click run to view output
-                                </span>
-                              </div>
-                            ) : job.state === "FAILED" ? (
-                              <div className="flex size-full items-center justify-center">
-                                <span className="text-error">Failed</span>
-                              </div>
-                            ) : job.result ? (
-                              <ScrollArea className="size-full">
-                                <Table className="flex w-full flex-col">
-                                  <TableHeader className="flex w-full">
-                                    <TableRow className="flex w-full">
-                                      {Object.keys(
-                                        (
-                                          JSON.parse(job.result) as {
-                                            response: Record<
-                                              string,
-                                              string | number
-                                            >[];
-                                          }
-                                        )?.response[0] ?? {},
-                                      ).map((head, idx) => (
-                                        <TableHead
-                                          key={idx}
-                                          className="flex w-full items-center"
-                                        >
-                                          {head}
-                                        </TableHead>
-                                      ))}
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody className="flex w-full flex-col">
-                                    {(
-                                      JSON.parse(job.result) as {
-                                        response: Record<
-                                          string,
-                                          string | number
-                                        >[];
-                                      }
-                                    ).response.map((row, idx) => (
-                                      <TableRow
-                                        key={idx}
-                                        className="flex w-full"
-                                      >
-                                        {Object.keys(row).map(
-                                          (key: string, idx) => (
-                                            <TableCell
-                                              key={idx}
-                                              className="flex w-full"
-                                            >
-                                              {row[key]}
-                                            </TableCell>
-                                          ),
-                                        )}
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </ScrollArea>
-                            ) : (
-                              <span>SUCCESS</span>
-                            )}
-                          </>
-                        )}
-                      </div>
+                      <div className="flex size-full items-center justify-center px-6"></div>
                     </TabsContent>
                     <TabsContent
                       value="summary"

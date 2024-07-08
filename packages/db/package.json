@@ -6,8 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema/index.ts",
-    "./types": "./src/types/index.d.ts",
-    "./utils": "./src/utils.ts"
+    "./types": "./src/types/index.d.ts"
   },
   "scripts": {
     "build": "tsc",
@@ -41,6 +40,7 @@
     "@integramind/tsconfig": "workspace:*",
     "@types/pg": "^8.11.6",
     "drizzle-kit": "^0.20.14",
+    "postgres": "^3.4.4",
     "tsx": "^4.11.0"
   },
   "peerDependencies": {
