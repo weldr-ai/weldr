@@ -7,7 +7,6 @@ import type {
   flowTypesSchema,
   functionMetadataSchema,
   functionRawDescriptionSchema,
-  jobSchema,
   primitiveSchema,
   primitiveTypesSchema,
   resourceMetadataSchema,
@@ -90,5 +89,3 @@ export interface Input {
   type: "text" | "number" | "functionResponse";
   testValue: string | number | null;
 }
-
-export type Job = z.infer<typeof jobSchema>;

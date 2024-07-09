@@ -1,2 +1,6 @@
 export * from "./auth";
-export * from "./main";
+export * from "./edges";
+export * from "./flows";
+export * from "./primitives";
+export * from "./resources";
+export * from "./workspaces";
