@@ -153,7 +153,11 @@ export function CreateFlowForm({
             <FormItem>
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter workflow name" {...field} />
+                <Input
+                  autoComplete="off"
+                  placeholder={`Enter ${type} name`}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -222,7 +226,11 @@ export function CreateFlowForm({
                 <FormItem>
                   <FormLabel className="text-xs">URL Path</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter action URL path" {...field} />
+                    <Input
+                      autoComplete="off"
+                      placeholder="Enter action URL path"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

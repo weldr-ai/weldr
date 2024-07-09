@@ -176,7 +176,7 @@ export const insertResourceSchema = z.discriminatedUnion("provider", [
     description: z.string(),
     provider: z.literal("postgres"),
     host: z.string(),
-    port: z.number(),
+    port: z.string().transform((port) => Number(port)),
     user: z.string(),
     password: z.string(),
     database: z.string(),
