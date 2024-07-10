@@ -1,8 +1,6 @@
 "use client";
 
-import type { ZodIssue } from "zod";
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
 import { useFormState, useFormStatus } from "react-dom";
@@ -19,31 +17,21 @@ import { Input } from "@integramind/ui/input";
 import { Label } from "@integramind/ui/label";
 import { cn } from "@integramind/ui/utils";
 
+import { GoogleIcon } from "~/components/icons/google-icon";
+import { IntegraMindIcon } from "~/components/icons/integramind-icon";
+import { MicrosoftIcon } from "~/components/icons/microsoft-icon";
 import { signInWithMagicLink } from "~/lib/auth/actions";
 
 export default function SignIn() {
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [state, formAction] = useFormState(signInWithMagicLink, {
-    errors: [],
-  });
-
-  const firstNameErrors = findErrors("firstName", state.errors);
-  const lastNameErrors = findErrors("lastName", state.errors);
-  const emailErrors = findErrors("email", state.errors);
-  const passwordErrors = findErrors("password", state.errors);
+  const [_, formAction] = useFormState(signInWithMagicLink, undefined);
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center">
       <Card className="mx-auto w-full max-w-md border-hidden bg-transparent p-8 shadow-none md:border-solid md:bg-card md:shadow-sm">
         <CardHeader className="flex flex-col items-start justify-start">
           <CardTitle className="flex flex-col gap-4">
-            <Image
-              alt="IntegraMind"
-              height={40}
-              priority
-              src="/logo.svg"
-              width={40}
-            />
+            <IntegraMindIcon className="size-8" />
             <span className="text-xl">Sign up to IntegraMind</span>
           </CardTitle>
           <CardDescription className="text-center">
@@ -54,22 +42,12 @@ export default function SignIn() {
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-2">
               <Button className="w-full" variant="outline" size="icon">
-                <Image
-                  alt="Google"
-                  height={16}
-                  priority
-                  src="/logos/google.svg"
-                  width={16}
-                />
+                <GoogleIcon className="size-4" />
+                <span className="sr-only">Google Logo</span>
               </Button>
               <Button className="w-full" variant="outline" size="icon">
-                <Image
-                  alt="Microsoft"
-                  height={16}
-                  priority
-                  src="/logos/microsoft.svg"
-                  width={16}
-                />
+                <MicrosoftIcon className="size-4" />
+                <span className="sr-only">Microsoft Logo</span>
               </Button>
             </div>
             <Link
@@ -100,7 +78,6 @@ export default function SignIn() {
                   placeholder="Your first name"
                   required
                 />
-                <ErrorMessages errorFor="firstName" errors={firstNameErrors} />
               </div>
 
               <div className="flex flex-col gap-2">
@@ -112,7 +89,6 @@ export default function SignIn() {
                   placeholder="Your last name"
                   required
                 />
-                <ErrorMessages errorFor="lastName" errors={lastNameErrors} />
               </div>
             </div>
 
@@ -125,7 +101,6 @@ export default function SignIn() {
                 placeholder="Your email address"
                 required
               />
-              <ErrorMessages errorFor="email" errors={emailErrors} />
             </div>
 
             <div className="flex flex-col gap-2">
@@ -152,14 +127,16 @@ export default function SignIn() {
                   required
                 />
               </div>
-              <ErrorMessages errorFor="password" errors={passwordErrors} />
             </div>
             <Submit />
           </form>
           <div className="flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground md:flex-row md:gap-0">
             <div>
               Have an account?{" "}
-              <Link href="/sign-in" className="text-primary hover:underline">
+              <Link
+                href="/auth/sign-in"
+                className="text-primary hover:underline"
+              >
                 Sign in
               </Link>
             </div>
@@ -206,27 +183,3 @@ function Submit() {
     </Button>
   );
 }
-
-const ErrorMessages = ({
-  errorFor,
-  errors,
-}: {
-  errorFor: string;
-  errors: string[];
-}) => {
-  if (errors.length === 0) return null;
-  return (
-    <ul className="peer text-xs text-destructive">
-      {errors.map((error) => (
-        <li key={`${errorFor}#${error}`}>{error}</li>
-      ))}
-    </ul>
-  );
-};
-
-const findErrors = (fieldName: string, errors: ZodIssue[]) =>
-  errors
-    .filter((item) => {
-      return item.path.includes(fieldName);
-    })
-    .map((item) => item.message);

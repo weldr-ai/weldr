@@ -1,0 +1,17 @@
+import { redirect } from "next/navigation";
+
+import { auth } from "@integramind/auth";
+
+export default async function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}): Promise<JSX.Element> {
+  const session = await auth();
+
+  if (session && session.user) {
+    redirect("/");
+  }
+
+  return <>{children}</>;
+}

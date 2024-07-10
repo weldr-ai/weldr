@@ -10,6 +10,7 @@ import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
 
 import { QueryProvider } from "~/components/query-client-provider";
+import { TRPCReactProvider } from "~/lib/trpc/react";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -42,12 +43,14 @@ export default async function RootLayout({
           disableTransitionOnChange
           enableSystem
         >
-          <QueryProvider>
-            {children}
-            <Toaster />
-            <Analytics />
-            <SpeedInsights />
-          </QueryProvider>
+          <TRPCReactProvider>
+            <QueryProvider>
+              {children}
+              <Toaster />
+              <Analytics />
+              <SpeedInsights />
+            </QueryProvider>
+          </TRPCReactProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -198,11 +198,11 @@ export function _FlowBuilder({
       fitView={true}
     >
       <Background
-        className="rounded-xl bg-accent dark:bg-background"
+        className="rounded-xl bg-[#F0F0F3] dark:bg-background"
         color="hsl(var(--background))"
       />
       <MiniMap
-        className="bottom-11 bg-background"
+        className="bottom-11 bg-[#F0F0F3] dark:bg-background"
         position="bottom-left"
         style={{
           height: 100,
@@ -213,7 +213,7 @@ export function _FlowBuilder({
       />
       <Panel
         position="bottom-left"
-        className="flex flex-row rounded-xl border bg-muted"
+        className="flex flex-row rounded-xl border bg-background dark:bg-muted"
       >
         <Button
           className="rounded-xl rounded-r-none"

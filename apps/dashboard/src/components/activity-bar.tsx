@@ -25,6 +25,7 @@ import {
 } from "@integramind/ui/dropdown-menu";
 import { cn } from "@integramind/ui/utils";
 
+import { signOut } from "~/lib/auth/actions";
 import { usePrimarySidebarStore } from "~/lib/store";
 
 export function ActivityBar() {
@@ -108,7 +109,7 @@ export function ActivityBar() {
           </DropdownMenuSub>
           <DropdownMenuItem>Settings</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Logout</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => signOut()}>Logout</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

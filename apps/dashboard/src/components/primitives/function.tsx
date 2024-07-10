@@ -69,6 +69,7 @@ import {
   getFunctionPrimitiveById,
   updateFunctionPrimitiveById,
 } from "~/lib/queries/primitives";
+import { api } from "~/lib/trpc/react";
 
 export const Function = memo(
   ({ data, isConnectable, selected, xPos, yPos }: FunctionNodeProps) => {
@@ -237,6 +238,8 @@ export const Function = memo(
       return null;
     }
 
+    const { data: hello } = api.hello.get.useQuery();
+
     return (
       <>
         <Handle
@@ -252,7 +255,7 @@ export const Function = memo(
               <ContextMenuTrigger>
                 <Card
                   className={cn(
-                    "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 bg-muted px-5 py-4",
+                    "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 px-5 py-4 dark:bg-muted",
                     {
                       "border-primary": selected,
                     },
@@ -322,6 +325,9 @@ export const Function = memo(
                       className="size-7 text-success hover:text-success"
                       variant="ghost"
                       size="icon"
+                      onClick={() => {
+                        console.log(hello);
+                      }}
                     >
                       <PlayCircleIcon className="size-3.5" />
                     </Button>
