@@ -1,15 +1,25 @@
 {
   "name": "@integramind/integrations-postgres",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.0.1",
+  "private": false,
+  "publishConfig": {
+    "access": "restricted"
+  },
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.js"
+    }
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "clean": "rm -rf .turbo node_modules",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "clean": "git clean -xdf .turbo node_modules dist",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint .",
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
@@ -20,7 +30,8 @@
   "devDependencies": {
     "@integramind/eslint-config": "workspace:*",
     "@integramind/prettier-config": "workspace:*",
-    "@integramind/tsconfig": "workspace:*"
+    "@integramind/tsconfig": "workspace:*",
+    "tsup": "^8.1.0"
   },
   "eslintConfig": {
     "root": true,

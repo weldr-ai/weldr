@@ -1,6 +1,7 @@
+import type { Context } from "isolated-vm";
 import ivm from "isolated-vm";
 
-import {
+import type {
   CodeModule,
   CodeSandbox,
   ExecuteIsolateParams,
@@ -80,7 +81,7 @@ const executeIsolate = async ({
 const initIsolateContext = async ({
   isolate,
   codeContext,
-}: InitContextParams): Promise<any> => {
+}: InitContextParams): Promise<Context> => {
   const isolateContext = await isolate.createContext();
   const ivm = getIvm();
   for (const [key, value] of Object.entries(codeContext)) {
@@ -100,7 +101,7 @@ const serializeCodeModule = (codeModule: CodeModule): string => {
 
 let instance: CodeSandbox | null = null;
 
-export const initCodeSandbox = async (): Promise<CodeSandbox> => {
+export const initCodeSandbox = (): CodeSandbox => {
   if (instance === null) {
     instance = codeSandbox;
   }

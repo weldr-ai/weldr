@@ -1,18 +1,13 @@
 {
   "name": "@integramind/api",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./src/index.ts"
-    }
+    ".": "./src/index.ts"
   },
   "scripts": {
-    "build": "tsx src/index.ts",
-    "dev": "tsx --watch src/index.ts",
-    "clean": "rm -rf .turbo node_modules",
+    "clean": "git clean -xdf .turbo node_modules dist",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint .",
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
@@ -27,8 +22,7 @@
   "devDependencies": {
     "@integramind/eslint-config": "workspace:*",
     "@integramind/prettier-config": "workspace:*",
-    "@integramind/tsconfig": "workspace:*",
-    "tsx": "^4.11.0"
+    "@integramind/tsconfig": "workspace:*"
   },
   "eslintConfig": {
     "root": true,

@@ -10,12 +10,7 @@ const config = {
     node: true,
   },
   parser: "@typescript-eslint/parser",
-  parserOptions: {
-    ecmaVersion: 2022,
-    sourceType: "module",
-    project: "./tsconfig.json",
-    tsconfigRootDir: __dirname,
-  },
+  parserOptions: { project: true },
   plugins: ["@typescript-eslint", "import"],
   rules: {
     "turbo/no-undeclared-env-vars": "off",
@@ -29,7 +24,7 @@ const config = {
     ],
     "@typescript-eslint/no-misused-promises": [
       "error",
-      { checksVoidReturn: false, checkConditionals: true }, // Adjusted for better error handling in asynchronous operations
+      { checksVoidReturn: false },
     ],
     "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
   },

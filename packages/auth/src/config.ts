@@ -23,7 +23,7 @@ const adapter = DrizzleAdapter(db, {
   sessionsTable: sessions,
 });
 
-export const authConfig = {
+export const authConfig: NextAuthConfig = {
   pages: {
     signIn: "/auth/sign-in",
     signOut: "/auth/sign-out",

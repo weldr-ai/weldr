@@ -1,15 +1,19 @@
 {
   "extends": "@integramind/tsconfig/base.json",
   "compilerOptions": {
+    "traceResolution": true,
     "lib": ["es2022", "dom", "dom.iterable"],
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "@integramind/integrations-postgres": [
+        "../../packages/integrations/postgres/src"
+      ]
     },
     "plugins": [{ "name": "next" }],
     "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json",
-    "module": "esnext"
+    "module": "ESNext"
   },
   "include": [".", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]

@@ -1,18 +1,15 @@
 {
   "name": "@integramind/db",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema/index.ts",
-    "./types": "./src/types/index.d.ts",
     "./queries": "./src/queries/index.ts"
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "clean": "rm -rf .turbo node_modules",
+    "clean": "git clean -xdf .turbo node_modules dist",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint .",
     "check": "pnpm with-env drizzle-kit check:pg --config src/config.ts",
@@ -41,8 +38,7 @@
     "@integramind/tsconfig": "workspace:*",
     "@types/pg": "^8.11.6",
     "drizzle-kit": "^0.20.14",
-    "postgres": "^3.4.4",
-    "tsx": "^4.11.0"
+    "postgres": "^3.4.4"
   },
   "peerDependencies": {
     "next-auth": "5.0.0-beta.18"

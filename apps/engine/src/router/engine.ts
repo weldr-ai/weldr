@@ -8,7 +8,7 @@ import { checkMethod, getExecutionOrder } from "../lib/utils";
 const router = express.Router();
 
 router.get("/primitives/:primitiveId", async (_req, res) => {
-  const codeSandbox = await initCodeSandbox();
+  const codeSandbox = initCodeSandbox();
   const result = await codeSandbox.runScript({
     script: `
       const code = async (inputs) => {

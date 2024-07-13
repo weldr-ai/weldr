@@ -12,7 +12,6 @@ import { ZodError } from "zod";
 
 import type { Session } from "@integramind/auth";
 import { auth, validateToken } from "@integramind/auth";
-import { db } from "@integramind/db";
 
 /**
  * Isomorphic Session getter for API requests
@@ -37,10 +36,13 @@ const isomorphicGetSession = async (headers: Headers) => {
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: {
+export const createTRPCContext: (opts: {
   headers: Headers;
   session: Session | null;
-}) => {
+}) => Promise<{
+  session: Session | null;
+  token: string | null;
+}> = async (opts) => {
   const authToken = opts.headers.get("Authorization") ?? null;
   const session = await isomorphicGetSession(opts.headers);
 
@@ -49,7 +51,6 @@ export const createTRPCContext = async (opts: {
 
   return {
     session,
-    db,
     token: authToken,
   };
 };

@@ -26,7 +26,7 @@ export function getExecutionOrder(
   // Populate maps based on edges
   edges.forEach((edge) => {
     childrenMap.get(edge.source)?.add(edge.target);
-    parentCountMap.set(edge.target, (parentCountMap.get(edge.target) || 0) + 1);
+    parentCountMap.set(edge.target, (parentCountMap.get(edge.target) ?? 0) + 1);
   });
 
   // Find starting nodes (nodes with no parents)

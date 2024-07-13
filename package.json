@@ -7,8 +7,8 @@
   },
   "scripts": {
     "build": "turbo build",
-    "clean": "git clean -xdf node_modules",
-    "clean:workspaces": "turbo clean",
+    "clean": "rm -rf .turbo node_modules",
+    "clean:ws": "turbo clean",
     "commit": "git-cz",
     "db:check": "pnpm -F @integramind/db check",
     "db:generate": "pnpm -F @integramind/db generate",
@@ -26,10 +26,11 @@
     "lint:ws": "pnpm dlx sherif@latest",
     "lint:staged": "lint-staged",
     "postinstall": "pnpm lint:ws",
-    "publish": "turbo publish",
+    "publish-packages": "changeset version && changeset publish",
     "check-types": "turbo check-types"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.7",
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
     "@commitlint/cz-commitlint": "^19.2.0",

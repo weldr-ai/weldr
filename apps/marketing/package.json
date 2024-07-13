@@ -1,10 +1,10 @@
 {
-  "name": "marketing",
-  "version": "0.1.0",
+  "name": "@integramind/marketing",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
     "build": "pnpm with-env next build",
-    "clean": "git clean -xdf .next .turbo node_modules",
+    "clean": "git clean -xdf .next .turbo node_modules dist",
     "dev": "pnpm with-env next dev --turbo -p 3000",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "dotenv -v SKIP_ENV_VALIDATION=1 next lint",
@@ -13,18 +13,19 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
+    "@integramind/db": "workspace:*",
     "@integramind/ui": "workspace:*",
     "@vercel/analytics": "^1.2.2",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.363.0",
     "mini-svg-data-uri": "^1.4.4",
+    "next": "^14.2.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "resend": "^3.3.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@integramind/db": "workspace:*",
     "@integramind/eslint-config": "workspace:*",
     "@integramind/prettier-config": "workspace:*",
     "@integramind/tailwind-config": "workspace:*",
