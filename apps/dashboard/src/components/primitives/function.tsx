@@ -69,7 +69,6 @@ import {
   getFunctionPrimitiveById,
   updateFunctionPrimitiveById,
 } from "~/lib/queries/primitives";
-import { api } from "~/lib/trpc/react";
 
 export const Function = memo(
   ({ data, isConnectable, selected, xPos, yPos }: FunctionNodeProps) => {
@@ -238,8 +237,6 @@ export const Function = memo(
       return null;
     }
 
-    const { data: hello } = api.hello.get.useQuery();
-
     return (
       <>
         <Handle
@@ -325,9 +322,6 @@ export const Function = memo(
                       className="size-7 text-success hover:text-success"
                       variant="ghost"
                       size="icon"
-                      onClick={() => {
-                        console.log(hello);
-                      }}
                     >
                       <PlayCircleIcon className="size-3.5" />
                     </Button>
