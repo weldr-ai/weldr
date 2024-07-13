@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema/index.ts",
-    "./types": "./src/types/index.d.ts"
+    "./types": "./src/types/index.d.ts",
+    "./queries": "./src/queries/index.ts"
   },
   "scripts": {
     "build": "tsc",

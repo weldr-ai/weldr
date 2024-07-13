@@ -30,7 +30,7 @@
   "eslintConfig": {
     "root": true,
     "extends": [
-      "@integramind/eslint-config/base"
+      "@integramind/eslint-config/express"
     ]
   },
   "prettier": "@integramind/prettier-config"

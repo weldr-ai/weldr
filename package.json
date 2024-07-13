@@ -26,6 +26,7 @@
     "lint:ws": "pnpm dlx sherif@latest",
     "lint:staged": "lint-staged",
     "postinstall": "pnpm lint:ws",
+    "publish": "turbo publish",
     "check-types": "turbo check-types"
   },
   "devDependencies": {

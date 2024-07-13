@@ -1,34 +1,62 @@
 import express from "express";
-import ivm from "isolated-vm";
+
+import { getRouteFlowByPath } from "@integramind/db/queries";
+
+import { initCodeSandbox } from "../lib/executor";
+import { checkMethod, getExecutionOrder } from "../lib/utils";
 
 const router = express.Router();
 
-router.get("/", (_req, res) => {
-  const isolate = new ivm.Isolate({ memoryLimit: 128 });
-  const context = isolate.createContextSync();
-  const global = context.global;
+router.get("/primitives/:primitiveId", async (_req, res) => {
+  const codeSandbox = await initCodeSandbox();
+  const result = await codeSandbox.runScript({
+    script: `
+      const code = async (inputs) => {
+        return {
+          x: inputs.x,
+          y: inputs.y,
+        };
+      };
+      code(inputs);
+    `,
+    scriptContext: {
+      inputs: {
+        x: 10,
+        y: 20,
+      },
+    },
+  });
 
-  global.setSync("global", global.derefInto());
+  return res.json({ result });
+});
 
-  // Load a function into the VM that returns an object
-  const script = isolate.compileScriptSync(
-    "function returnObject() { return { x: 10, y: 20 }; }",
+router.use("/:workspaceId/*", async (req, res) => {
+  const workspaceId = req.params.workspaceId;
+
+  const baseRoute = `/api/engine/${workspaceId}`;
+  const path = req.originalUrl.slice(baseRoute.length);
+
+  const method = req.method as "GET" | "POST" | "PUT" | "DELETE";
+
+  const route = await getRouteFlowByPath({
+    workspaceId,
+    urlPath: path,
+  });
+
+  if (!route) {
+    return res.status(404).send("Not found");
+  }
+
+  if (!checkMethod(method, route.config.actionType)) {
+    return res.status(405).send("Method not allowed");
+  }
+
+  const executionOrder = getExecutionOrder(
+    route.flow.primitives,
+    route.flow.edges,
   );
 
-  script.runSync(context);
-
-  // Reference to the function within the VM
-  const fnReference = context.global.getSync("returnObject", {
-    reference: true,
-  });
-
-  // Apply the function within the context and transfer the result
-  const result = fnReference.applySync(null, [], {
-    result: { copy: true },
-    arguments: { copy: true },
-  });
-
-  res.json({ result });
+  return res.status(200).json(executionOrder);
 });
 
 export default router;
