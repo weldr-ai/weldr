@@ -61,7 +61,7 @@ export const Response = memo(
               <ContextMenuTrigger>
                 <Card
                   className={cn(
-                    "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 bg-muted px-5 py-4",
+                    "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 bg-background px-5  py-4 dark:bg-muted",
                     {
                       "border-primary": selected,
                     },

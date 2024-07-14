@@ -267,7 +267,7 @@ export function _FlowBuilder({
           <Button
             size="sm"
             variant="outline"
-            className="flex min-w-24 max-w-min flex-row items-center justify-center gap-1 border border-success bg-transparent text-success hover:bg-success/10 hover:text-success"
+            className="flex min-w-24 max-w-min flex-row items-center justify-center gap-1 bg-background text-success hover:bg-success/10 hover:text-success"
           >
             <PlayCircleIcon className="size-3.5" />
             Run
