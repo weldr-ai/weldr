@@ -8,7 +8,7 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
-import { createSelectSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 import type { PrimitiveMetadata } from "../types";
@@ -224,4 +224,16 @@ export const primitiveTypesSchema = z.enum(primitiveTypes.enumValues);
 
 export const primitiveSchema = createSelectSchema(primitives, {
   metadata: primitiveMetadataSchema,
+});
+
+export const createPrimitiveSchema = createInsertSchema(primitives, {
+  type: z.enum(["function", "conditional-branch", "iterator", "response"]),
+}).pick({
+  id: true,
+  name: true,
+  type: true,
+  flowId: true,
+  positionX: true,
+  positionY: true,
+  metadata: true,
 });

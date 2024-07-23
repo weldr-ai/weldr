@@ -1,13 +1,13 @@
 "use client";
 
-import type { FormState } from "react-hook-form";
-import type { z } from "zod";
-import { useEffect } from "react";
-import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon } from "lucide-react";
+import Link from "next/link";
+import { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
+import type { z } from "zod";
 
 import { signInWithMagicLinkSchema } from "@integramind/auth/validators";
 import { Button } from "@integramind/ui/button";
@@ -53,11 +53,11 @@ export default function SignIn() {
   useEffect(() => {
     if (state) {
       if (state.status === "validationError") {
-        Object.keys(state.errors).forEach((key) => {
+        for (const key of Object.keys(state.errors)) {
           form.setError(key as "email", {
             message: state.errors[key],
           });
-        });
+        }
         toast({
           title: "Validation Error",
           description: "Please enter fields correctly.",

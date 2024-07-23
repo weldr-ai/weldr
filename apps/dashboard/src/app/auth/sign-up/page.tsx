@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 
 import { Button, buttonVariants } from "@integramind/ui/button";

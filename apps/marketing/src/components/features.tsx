@@ -1,10 +1,10 @@
-import Image from "next/image";
 import {
   DatabaseIcon,
   MoreHorizontalIcon,
   RocketIcon,
   VariableIcon,
 } from "lucide-react";
+import Image from "next/image";
 
 import { Badge } from "@integramind/ui/badge";
 

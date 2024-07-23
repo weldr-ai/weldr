@@ -1,6 +1,6 @@
 import type { DefaultSession } from "next-auth";
-import { cache } from "react";
 import NextAuth from "next-auth";
+import { cache } from "react";
 
 import { authConfig } from "./config";
 

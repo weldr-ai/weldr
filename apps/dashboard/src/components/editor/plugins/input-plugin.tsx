@@ -1,5 +1,3 @@
-import type { TextNode } from "lexical";
-import { useCallback, useMemo, useState } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   LexicalTypeaheadMenuPlugin,
@@ -7,7 +5,9 @@ import {
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
 import { createId } from "@paralleldrive/cuid2";
+import type { TextNode } from "lexical";
 import { HashIcon, TextIcon } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 
 import { cn } from "@integramind/ui/utils";
 
@@ -60,12 +60,9 @@ export function InputsPlugin({ id }: { id: string }) {
     minLength: 0,
   });
 
-  const onQueryChange = useCallback(
-    (matchingString: string | null) => {
-      setQueryString(matchingString);
-    },
-    [setQueryString],
-  );
+  const onQueryChange = useCallback((matchingString: string | null) => {
+    setQueryString(matchingString);
+  }, []);
 
   const onSelectOption = useCallback(
     async (
@@ -131,7 +128,7 @@ export function InputsPlugin({ id }: { id: string }) {
           <div className="absolute left-3 top-8 flex max-h-40 min-w-48 flex-col overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
             {options.map((option, i: number) => (
               <div
-                id={"menu-item-" + i}
+                id={`menu-item-${i}`}
                 className={cn(
                   "flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
                   {

@@ -1,13 +1,11 @@
-import type { TextNode } from "lexical";
-import { useCallback, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   LexicalTypeaheadMenuPlugin,
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
-import { useQuery } from "@tanstack/react-query";
+import { skipToken, useQuery } from "@tanstack/react-query";
+import type { TextNode } from "lexical";
 import {
   ColumnsIcon,
   HashIcon,
@@ -15,16 +13,18 @@ import {
   TextIcon,
   VariableIcon,
 } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 import * as ReactDOM from "react-dom";
 
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
-import type { Input } from "~/types";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
 import { PostgresIcon } from "~/components/icons/postgres-icon";
 import { getResourceById, getResources } from "~/lib/queries/resources";
+import type { Input } from "~/types";
 
 export class ReferenceOption extends MenuOption {
   // The id of the reference
@@ -93,7 +93,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
 
   const { data: resource } = useQuery({
     queryKey: ["resource", resourceId],
-    queryFn: () => getResourceById({ id: resourceId! }),
+    queryFn: resourceId ? () => getResourceById({ id: resourceId }) : skipToken,
     enabled: !!resourceId,
   });
 
@@ -101,12 +101,9 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
     minLength: 0,
   });
 
-  const onQueryChange = useCallback(
-    (matchingString: string | null) => {
-      setQueryString(matchingString);
-    },
-    [setQueryString],
-  );
+  const onQueryChange = useCallback((matchingString: string | null) => {
+    setQueryString(matchingString);
+  }, []);
 
   const onSelectOption = useCallback(
     (
@@ -184,8 +181,8 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
           }),
         );
 
-        resource.metadata.tables.forEach((table) => {
-          table.columns.forEach((column) =>
+        for (const table of resource.metadata.tables) {
+          for (const column of table.columns) {
             options.push(
               new ReferenceOption(
                 `${table.name}.${column.name}`,
@@ -200,8 +197,8 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
                 },
                 column.type === "text" ? "text" : "number",
               ),
-            ),
-          );
+            );
+          }
           options.push(
             new ReferenceOption(table.name, table.name, "database-table", {
               icon: "database-table-icon",
@@ -211,10 +208,10 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
               },
             }),
           );
-        });
+        }
       }
     } else if (resources && !resourceId) {
-      resources.forEach((resource) =>
+      for (const resource of resources) {
         options.push(
           new ReferenceOption(resource.id, resource.name, "database", {
             icon: "database-icon",
@@ -223,8 +220,8 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
               console.log(queryString);
             },
           }),
-        ),
-      );
+        );
+      }
     }
 
     if (!queryString) {
@@ -254,10 +251,10 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
           ReactDOM.createPortal(
             <div>
               <ScrollArea className="h-full w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-                <ul className="max-h-40">
+                <div className="max-h-40">
                   {options.map((option, i: number) => (
-                    <li
-                      id={"menu-item-" + i}
+                    <div
+                      id={`menu-item-${i}`}
                       className={cn(
                         "flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
                         {
@@ -298,9 +295,9 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
                         <></>
                       )}
                       <span className="text">{option.name}</span>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </ScrollArea>
             </div>,
             anchorElementRef.current,

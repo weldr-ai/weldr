@@ -1,25 +1,29 @@
 "use client";
 
-import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
-import type { z } from "zod";
-import { memo, useMemo, useState } from "react";
-import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
+  Loader2Icon,
   LockIcon,
   PlayCircleIcon,
   TrashIcon,
   UnlockIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { memo, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Handle, Position, useEdges, useNodes, useReactFlow } from "reactflow";
+import type { z } from "zod";
 
-import { updateFunctionSchema } from "@integramind/db/schema";
+import {
+  type resourceProvidersSchema,
+  updateFunctionSchema,
+} from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 import {
@@ -51,26 +55,61 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@integramind/ui/resizable";
+import { ScrollArea } from "@integramind/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@integramind/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
 import { cn } from "@integramind/ui/utils";
 
-import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
-import type {
-  FunctionNodeProps,
-  FunctionRawDescription,
-  Input,
-  PrimitiveData,
-} from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
+import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { LambdaIcon } from "~/components/icons/lambda-icon";
 import {
   deletePrimitive,
   getFunctionPrimitiveById,
   updateFunctionPrimitiveById,
 } from "~/lib/queries/primitives";
+import type {
+  FunctionNodeProps,
+  FunctionRawDescription,
+  Input,
+  PrimitiveData,
+} from "~/types";
 
-export const Function = memo(
+async function executeFunction({
+  id,
+}: {
+  id: string;
+}): Promise<{ result: Record<string, string | number>[] }> {
+  const response = await fetch(
+    `http://localhost:3002/api/engine/primitives/${id}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (response.status !== 200) {
+    throw new Error("Failed to execute function");
+  }
+
+  const data = (await response.json()) as {
+    result: Record<string, string | number>[];
+  };
+
+  return data;
+}
+
+export const FunctionNode = memo(
   ({ data, isConnectable, selected, xPos, yPos }: FunctionNodeProps) => {
     const reactFlow = useReactFlow();
     const nodes = useNodes<PrimitiveData>();
@@ -87,6 +126,27 @@ export const Function = memo(
       mutationFn: updateFunctionPrimitiveById,
     });
 
+    const {
+      data: executionResult,
+      refetch: refetchExecutionResult,
+      isLoading: isLoadingExecutionResult,
+      isRefetching: isRefetchingExecutionResult,
+    } = useQuery({
+      queryKey: [`execution-result-${data.id}`],
+      queryFn: () => executeFunction({ id: data.id }),
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      enabled: false,
+    });
+
+    const { data: functionData, refetch: refetchFunctionData } = useQuery({
+      queryKey: [data.id],
+      queryFn: () => getFunctionPrimitiveById({ id: data.id }),
+      initialData: data,
+      refetchInterval: false,
+    });
+
     const inputs = useMemo(() => {
       const parents = edges.reduce((acc, edge) => {
         if (edge.target === data.id) {
@@ -101,8 +161,8 @@ export const Function = memo(
       const inputs = parents.reduce((acc, parent) => {
         if (parent.type === "route" || parent.type === "workflow") {
           if (parent.inputs) {
-            parent.inputs.forEach((input) => {
-              if (data.inputs) {
+            for (const input of parent.inputs) {
+              if (functionData?.inputs) {
                 const foundInput = data.inputs.find(
                   (item) => item.id === input.id,
                 );
@@ -121,13 +181,14 @@ export const Function = memo(
                   });
                 }
               }
+
               acc.push({
                 id: input.id,
                 name: input.name,
                 type: input.type,
                 testValue: input.testValue,
               });
-            });
+            }
           }
         } else if (parent.type === "function") {
           if (parent.outputs) {
@@ -137,31 +198,25 @@ export const Function = memo(
               type: "functionResponse",
               testValue: null,
             });
-            parent.outputs.forEach((output) => {
+            for (const output of parent.outputs) {
               acc.push({
                 id: output.id,
                 name: `${parent.name}.${output.name}`,
                 type: output.type,
                 testValue: null,
               });
-            });
+            }
           }
         }
         return acc;
       }, [] as Input[]);
+
       return inputs;
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data.id, data.inputs, edges, nodes]);
+    }, [data, edges, functionData, nodes, updateFunction]);
 
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
-
-    const { data: functionData, refetch } = useQuery({
-      queryKey: [data.id],
-      queryFn: () => getFunctionPrimitiveById({ id: data.id }),
-      initialData: data,
-      refetchInterval: false,
-    });
 
     function onChange(editorState: EditorState) {
       editorState.read(() => {
@@ -190,9 +245,12 @@ export const Function = memo(
           return acc;
         }, [] as FunctionRawDescription[]);
         const inputs: Input[] = [];
-        let resource: { id: string; provider: string } | null = null;
+        let resource: {
+          id: string;
+          provider: z.infer<typeof resourceProvidersSchema>;
+        } | null = null;
 
-        children.forEach((child) => {
+        for (const child of children) {
           if (child.__type === "reference") {
             const referenceNode = child as ReferenceNode;
             if (
@@ -212,7 +270,7 @@ export const Function = memo(
               };
             }
           }
-        });
+        }
 
         void updateFunctionPrimitiveById({
           id: data.id,
@@ -221,11 +279,11 @@ export const Function = memo(
           resource,
           rawDescription,
           isCodeUpdated:
-            functionData?.description?.trim().toLowerCase() ===
+            data.description?.trim().toLowerCase() ===
             description.trim().toLowerCase(),
         });
 
-        void refetch();
+        void refetchFunctionData();
       });
     }
 
@@ -322,6 +380,15 @@ export const Function = memo(
                       className="size-7 text-success hover:text-success"
                       variant="ghost"
                       size="icon"
+                      aria-disabled={
+                        isLoadingExecutionResult || isRefetchingExecutionResult
+                      }
+                      disabled={
+                        isLoadingExecutionResult || isRefetchingExecutionResult
+                      }
+                      onClick={async () => {
+                        await refetchExecutionResult();
+                      }}
                     >
                       <PlayCircleIcon className="size-3.5" />
                     </Button>
@@ -331,10 +398,10 @@ export const Function = memo(
                       size="icon"
                       onClick={async () => {
                         await updateFunctionPrimitiveById({
-                          id: functionData.id,
+                          id: data.id,
                           isLocked: !functionData.isLocked,
                         });
-                        await refetch();
+                        await refetchFunctionData();
                       }}
                     >
                       {functionData.isLocked ? (
@@ -397,8 +464,9 @@ export const Function = memo(
                         await updateFunctionPrimitiveById({
                           id: data.id,
                           name: e.target.value,
+                          isCodeUpdated: e.target.value === functionData.name,
                         });
-                        await refetch();
+                        await refetchFunctionData();
                         form.setValue("name", e.target.value);
                       }}
                     />
@@ -413,7 +481,7 @@ export const Function = memo(
                 >
                   <span className="text-xs text-muted-foreground">Editor</span>
                   <Editor
-                    id={functionData.id}
+                    id={data.id}
                     type="description"
                     inputs={inputs}
                     placeholder="Describe your function"
@@ -444,7 +512,74 @@ export const Function = memo(
                       value="result"
                       className="size-full rounded-lg bg-background"
                     >
-                      <div className="flex size-full items-center justify-center px-6"></div>
+                      <div className="flex size-full items-center justify-center px-6">
+                        {!executionResult ? (
+                          <>
+                            {isLoadingExecutionResult ||
+                            isRefetchingExecutionResult ? (
+                              <div className="flex items-center justify-center">
+                                <Loader2Icon className="size-6 animate-spin text-primary" />
+                              </div>
+                            ) : (
+                              <div className="text-sm text-muted-foreground">
+                                Click run to execute the function
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {isLoadingExecutionResult ||
+                            isRefetchingExecutionResult ? (
+                              <div className="flex items-center justify-center">
+                                <Loader2Icon className="size-6 animate-spin text-primary" />
+                              </div>
+                            ) : (
+                              <ScrollArea className="size-full">
+                                <Table className="flex w-full flex-col">
+                                  <TableHeader className="flex w-full">
+                                    <TableRow className="flex w-full">
+                                      {Object.keys(
+                                        executionResult.result[0] ?? {},
+                                      ).map((head, idx) => (
+                                        <TableHead
+                                          key={`${idx}-${head}`}
+                                          className="flex w-full items-center"
+                                        >
+                                          {head}
+                                        </TableHead>
+                                      ))}
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody className="flex w-full flex-col">
+                                    {executionResult.result.map(
+                                      (
+                                        row: Record<string, string | number>,
+                                        idx,
+                                      ) => (
+                                        <TableRow
+                                          key={`${idx}-${row.id}`}
+                                          className="flex w-full"
+                                        >
+                                          {Object.keys(row).map(
+                                            (key: string, idx) => (
+                                              <TableCell
+                                                key={`${idx}-${key}`}
+                                                className="flex w-full"
+                                              >
+                                                {row[key]}
+                                              </TableCell>
+                                            ),
+                                          )}
+                                        </TableRow>
+                                      ),
+                                    )}
+                                  </TableBody>
+                                </Table>
+                              </ScrollArea>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </TabsContent>
                     <TabsContent
                       value="summary"
@@ -488,4 +623,4 @@ export const Function = memo(
   },
 );
 
-Function.displayName = "Function";
+FunctionNode.displayName = "Function";

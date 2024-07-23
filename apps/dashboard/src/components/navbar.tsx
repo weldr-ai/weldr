@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { BoxesIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useState } from "react";
 
 import { Button } from "@integramind/ui/button";
 import {
@@ -13,10 +13,10 @@ import {
   DropdownMenuTrigger,
 } from "@integramind/ui/dropdown-menu";
 
-import type { Workspace } from "~/types";
 import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useCommandCenterStore } from "~/lib/store";
+import type { Workspace } from "~/types";
 import { IntegraMind2Icon } from "./icons/integramind2-icon";
 
 export function Navbar({ workspace }: { workspace: Workspace }): JSX.Element {

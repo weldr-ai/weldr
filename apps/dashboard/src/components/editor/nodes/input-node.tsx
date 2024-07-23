@@ -6,17 +6,18 @@ import type {
   SerializedLexicalNode,
   Spread,
 } from "lexical";
-import { Suspense } from "react";
 import { DecoratorNode } from "lexical";
 import { HashIcon, TextIcon } from "lucide-react";
+import { Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { useReactFlow } from "reactflow";
 
 import { Form, FormControl, FormField, FormItem } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
 
-import type { FlowNode } from "~/types";
 import { updateInput } from "~/lib/queries/primitives";
+import { toCamelCase } from "~/lib/utils";
+import type { FlowNode } from "~/types";
 
 function InputNodeComponent({
   id,
@@ -63,9 +64,7 @@ function InputNodeComponent({
                     className="h-5 border-none bg-muted px-2 py-1 text-xs"
                     placeholder="Enter input name"
                     onBlur={async (e) => {
-                      const newValue = e.target.value
-                        .replace(/\s+/g, "_")
-                        .trim();
+                      const newValue = toCamelCase(e.target.value);
                       form.setValue("name", newValue);
                       const inputs = await updateInput({
                         id,

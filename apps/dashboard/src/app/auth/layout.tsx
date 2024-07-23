@@ -9,7 +9,7 @@ export default async function AuthLayout({
 }): Promise<JSX.Element> {
   const session = await auth();
 
-  if (session && session.user) {
+  if (session?.user) {
     redirect("/");
   }
 

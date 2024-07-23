@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { AppWindowMacIcon, ServerIcon, WebhookIcon } from "lucide-react";
+import Image from "next/image";
 
 import { Badge } from "@integramind/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";

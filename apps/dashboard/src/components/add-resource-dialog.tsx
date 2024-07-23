@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { PlusIcon } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@integramind/ui/button";
 import {
@@ -14,9 +14,9 @@ import {
 } from "@integramind/ui/dialog";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 
-import type { ResourceProvider } from "~/types";
 import { AddResourceForm } from "~/components/add-resource-form";
 import { PostgresIcon } from "~/components/icons/postgres-icon";
+import type { ResourceProvider } from "~/types";
 
 export function AddResourceDialog() {
   const [provider, setProvider] = useState<ResourceProvider | undefined>();

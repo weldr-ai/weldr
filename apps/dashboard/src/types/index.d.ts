@@ -1,4 +1,4 @@
-import type { Edge, Node, NodeProps } from "reactflow";
+import type { Node, NodeProps, Edge as ReactFlowEdge } from "reactflow";
 import type { z } from "zod";
 
 import type {
@@ -19,7 +19,7 @@ import type {
 
 export type PrimitiveType = z.infer<typeof primitiveTypesSchema>;
 export type FlowType = z.infer<typeof flowTypesSchema>;
-export type FlowEdge = Edge<"deletable-edge">;
+export type FlowEdge = ReactFlowEdge<"deletable-edge">;
 export type FlowNode =
   | RouteNode
   | WorkflowNode

@@ -1,5 +1,3 @@
-import { memo, useState } from "react";
-import Link from "next/link";
 import {
   CornerDownLeftIcon,
   EllipsisVerticalIcon,
@@ -8,6 +6,8 @@ import {
   PlayCircleIcon,
   TrashIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { memo, useState } from "react";
 import { Handle, Position, useReactFlow } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
@@ -36,9 +36,9 @@ import {
 } from "@integramind/ui/expandable-card";
 import { cn } from "@integramind/ui/utils";
 
-import type { ResponseNodeProps } from "~/types";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { deletePrimitive } from "~/lib/queries/primitives";
+import type { ResponseNodeProps } from "~/types";
 
 export const Response = memo(
   ({ data, isConnectable, xPos, yPos, selected }: ResponseNodeProps) => {

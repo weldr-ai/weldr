@@ -1,8 +1,8 @@
 import "@integramind/ui/globals.css";
 
+import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
 import { Poppins as FontSans } from "next/font/google";
-import { Analytics } from "@vercel/analytics/react";
 
 import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";

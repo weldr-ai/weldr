@@ -6,12 +6,13 @@
  * tl;dr - this is where all the tRPC server stuff is created and plugged in.
  * The pieces you will need to use are documented accordingly near the end
  */
-import { initTRPC, TRPCError } from "@trpc/server";
+import { TRPCError, initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
 import type { Session } from "@integramind/auth";
 import { auth, validateToken } from "@integramind/auth";
+import { db } from "@integramind/db";
 
 /**
  * Isomorphic Session getter for API requests
@@ -42,6 +43,7 @@ export const createTRPCContext: (opts: {
 }) => Promise<{
   session: Session | null;
   token: string | null;
+  db: typeof db;
 }> = async (opts) => {
   const authToken = opts.headers.get("Authorization") ?? null;
   const session = await isomorphicGetSession(opts.headers);
@@ -52,6 +54,7 @@ export const createTRPCContext: (opts: {
   return {
     session,
     token: authToken,
+    db,
   };
 };
 

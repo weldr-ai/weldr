@@ -6,8 +6,6 @@
     "build": "pnpm with-env next build",
     "clean": "git clean -xdf .next .turbo node_modules dist",
     "dev": "pnpm with-env next dev -p 3001",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "dotenv -v SKIP_ENV_VALIDATION=1 next lint",
     "start": "pnpm with-env next start",
     "check-types": "tsc --noEmit",
     "with-env": "dotenv -e ../../.env --"
@@ -33,7 +31,6 @@
     "lucide-react": "^0.363.0",
     "next": "^14.2.4",
     "next-themes": "^0.3.0",
-    "openai": "^4.52.0",
     "pg": "^8.12.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -45,8 +42,6 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "@integramind/eslint-config": "workspace:*",
-    "@integramind/prettier-config": "workspace:*",
     "@integramind/tailwind-config": "workspace:*",
     "@integramind/tsconfig": "workspace:*",
     "@types/node": "^20.11.24",
@@ -57,17 +52,7 @@
     "eslint": "^8.57.0",
     "jiti": "^1.21.0",
     "postcss": "^8.4.38",
-    "prettier": "^3.2.5",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.4.3"
-  },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@integramind/eslint-config/base",
-      "@integramind/eslint-config/nextjs",
-      "@integramind/eslint-config/react"
-    ]
-  },
-  "prettier": "@integramind/prettier-config"
+    "typescript": "^5.5.3"
+  }
 }

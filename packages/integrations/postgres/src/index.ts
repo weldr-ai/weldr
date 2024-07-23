@@ -1,6 +1,8 @@
-import { Client } from "pg";
+import pg from "pg";
 
-export interface PostgresAuth {
+const { Client } = pg;
+
+interface PostgresAuth {
   host: string;
   port: number;
   user: string;
@@ -39,7 +41,7 @@ export const pgClient = async (
   return client;
 };
 
-export async function auth(auth: PostgresAuth) {
+export async function auth({ auth }: { auth: PostgresAuth }) {
   try {
     const client = await pgClient(auth);
     await client.end();
@@ -54,7 +56,11 @@ export async function auth(auth: PostgresAuth) {
   };
 }
 
-export async function sync(auth: PostgresAuth): Promise<Table[]> {
+export async function getInfo({
+  auth,
+}: {
+  auth: PostgresAuth;
+}): Promise<Table[]> {
   const client = await pgClient(auth);
   return new Promise((resolve, reject) => {
     client.query(
@@ -67,7 +73,7 @@ export async function sync(auth: PostgresAuth): Promise<Table[]> {
       WHERE t.table_schema = 'public'
       GROUP BY t.table_name;`,
       [],
-      function (
+      (
         error: unknown,
         results: {
           rows: {
@@ -78,7 +84,7 @@ export async function sync(auth: PostgresAuth): Promise<Table[]> {
             }[];
           }[];
         },
-      ) {
+      ) => {
         if (error) {
           void client.end();
           return reject(error);
@@ -90,17 +96,21 @@ export async function sync(auth: PostgresAuth): Promise<Table[]> {
   });
 }
 
-export async function executeQuery(
-  auth: PostgresAuth,
-  query: string,
-  values: unknown[] = [],
-) {
+export async function executeQuery({
+  auth,
+  query,
+  values = [],
+}: {
+  auth: PostgresAuth;
+  query: string;
+  values: unknown[];
+}) {
   const client = await pgClient(auth);
   return new Promise((resolve, reject) => {
     client.query(
       query,
       values,
-      function (error: unknown, results: { rows: unknown }) {
+      (error: unknown, results: { rows: unknown }) => {
         if (error) {
           void client.end();
           return reject(error);
@@ -111,3 +121,29 @@ export async function executeQuery(
     );
   });
 }
+
+export async function run(
+  actionName: string,
+  context: Record<string, unknown>,
+) {
+  switch (actionName) {
+    case "executeQuery":
+      return executeQuery({
+        ...context,
+      } as { auth: PostgresAuth; query: string; values: unknown[] });
+    default:
+      throw new Error(`Action ${actionName} not found`);
+  }
+}
+
+export const actions = [
+  `function executeQuery({
+    auth,
+    query,
+    values = [],
+  }: {
+    auth: PostgresAuth;
+    query: string;
+    values: unknown[];
+  }): Promise<unknown>`,
+];

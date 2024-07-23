@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 
-import type { FlowEdge, FlowNode } from "~/types";
 import { FlowBuilder } from "~/components/flow-builder";
 import { getFlowById } from "~/lib/queries/flows";
+import type { FlowEdge, FlowNode } from "~/types";
 
 export default async function WorkflowPage({
   params,

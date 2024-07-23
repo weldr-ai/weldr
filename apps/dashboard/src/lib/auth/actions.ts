@@ -1,7 +1,7 @@
 "use server";
 
-import type { z } from "zod";
 import { redirect } from "next/navigation";
+import type { z } from "zod";
 
 import { signOut as nextAuthSignOut, signIn } from "@integramind/auth";
 import { signInWithMagicLinkSchema } from "@integramind/auth/validators";

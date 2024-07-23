@@ -1,9 +1,9 @@
 import "@integramind/ui/globals.css";
 
-import type { Metadata } from "next";
-import { Poppins as FontSans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import type { Metadata } from "next";
+import { Poppins as FontSans } from "next/font/google";
 
 import { ThemeProvider } from "@integramind/ui/theme-provider";
 import { Toaster } from "@integramind/ui/toaster";

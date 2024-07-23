@@ -1,9 +1,9 @@
+import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import type {
   DefaultSession,
   NextAuthConfig,
   Session as NextAuthSession,
 } from "next-auth";
-import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import Resend from "next-auth/providers/resend";
 
 import { db } from "@integramind/db";

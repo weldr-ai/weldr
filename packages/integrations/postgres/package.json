@@ -20,24 +20,13 @@
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "clean": "git clean -xdf .turbo node_modules dist",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint .",
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
     "pg": "^8.12.0"
   },
   "devDependencies": {
-    "@integramind/eslint-config": "workspace:*",
-    "@integramind/prettier-config": "workspace:*",
     "@integramind/tsconfig": "workspace:*",
     "tsup": "^8.1.0"
-  },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@integramind/eslint-config/base"
-    ]
-  },
-  "prettier": "@integramind/prettier-config"
+  }
 }

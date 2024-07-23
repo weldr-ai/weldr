@@ -1,14 +1,14 @@
 "use client";
 
-import type { FormState } from "react-hook-form";
-import type { z } from "zod";
-import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
+import type { z } from "zod";
 
 import { insertResourceSchema } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
@@ -24,8 +24,8 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import type { ResourceProvider } from "~/types";
 import { addResource } from "~/lib/queries/resources";
+import type { ResourceProvider } from "~/types";
 
 export function AddResourceForm({
   provider,
@@ -83,7 +83,7 @@ export function AddResourceForm({
             setAddResourceDialogOpen(false);
           }
         } else if (state.status === "validationError") {
-          Object.keys(state.errors).forEach((key) => {
+          for (const key of Object.keys(state.errors)) {
             form.setError(
               key as
                 | "name"
@@ -99,7 +99,7 @@ export function AddResourceForm({
                 message: state.errors[key],
               },
             );
-          });
+          }
           toast({
             title: "Validation Error",
             description: "Please enter fields correctly.",
@@ -117,15 +117,7 @@ export function AddResourceForm({
       }
     }
     void handleStateUpdate();
-  }, [
-    form,
-    queryClient,
-    router,
-    setAddResourceDialogOpen,
-    state,
-    provider,
-    workspaceId,
-  ]);
+  }, [form, queryClient, setAddResourceDialogOpen, state, provider]);
 
   return (
     <Form {...form}>

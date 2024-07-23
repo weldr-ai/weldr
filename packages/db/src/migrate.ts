@@ -11,7 +11,7 @@ const main = async () => {
   try {
     await migrate(db, { migrationsFolder: "./drizzle" });
     await sql.end();
-    console.log(`🚀 Successfully migrated database!`);
+    console.log("🚀 Successfully migrated database!");
   } catch (err) {
     console.error("😪 Error migrating database:", err);
     process.exit(1);

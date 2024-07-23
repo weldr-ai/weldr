@@ -1,13 +1,13 @@
 "use client";
 
-import type { FormState } from "react-hook-form";
-import type { z } from "zod";
-import { useEffect } from "react";
-import { redirect } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon } from "lucide-react";
+import { redirect } from "next/navigation";
+import { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
+import type { z } from "zod";
 
 import { insertWorkspaceSchema } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
@@ -53,12 +53,12 @@ export function CreateWorkspaceForm() {
         });
         redirect(`/${state.payload.id}`);
       } else if (state.status === "validationError") {
-        Object.keys(state.errors).forEach((key) => {
+        for (const key of Object.keys(state.errors)) {
           const fieldName = key as "name" | "description";
           form.setError(fieldName, {
             message: state.errors[fieldName],
           });
-        });
+        }
         toast({
           title: "Validation Error",
           description: "Please enter fields correctly.",

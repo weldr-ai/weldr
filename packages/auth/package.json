@@ -10,8 +10,6 @@
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint ./src/*.ts",
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
@@ -25,15 +23,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@integramind/eslint-config": "workspace:*",
-    "@integramind/prettier-config": "workspace:*",
     "@integramind/tsconfig": "workspace:*"
-  },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@integramind/eslint-config/base"
-    ]
-  },
-  "prettier": "@integramind/prettier-config"
+  }
 }

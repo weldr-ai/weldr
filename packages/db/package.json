@@ -5,13 +5,12 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./types": "./src/types/index.d.ts",
     "./schema": "./src/schema/index.ts",
-    "./queries": "./src/queries/index.ts"
+    "./queries/*": "./src/queries/*.ts"
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint .",
     "check": "pnpm with-env drizzle-kit check:pg --config src/config.ts",
     "generate": "pnpm with-env drizzle-kit generate:pg --config src/config.ts",
     "migrate": "pnpm with-env tsx src/migrate.ts --config src/config.ts",
@@ -33,8 +32,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@integramind/eslint-config": "workspace:*",
-    "@integramind/prettier-config": "workspace:*",
     "@integramind/tsconfig": "workspace:*",
     "@types/pg": "^8.11.6",
     "drizzle-kit": "^0.20.14",
@@ -42,12 +39,5 @@
   },
   "peerDependencies": {
     "next-auth": "5.0.0-beta.18"
-  },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@integramind/eslint-config/base"
-    ]
-  },
-  "prettier": "@integramind/prettier-config"
+  }
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Boxes, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { Button } from "@integramind/ui/button";
 import {
@@ -14,9 +14,9 @@ import {
   CommandList,
 } from "@integramind/ui/command";
 
-import type { Workspace } from "~/types";
 import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { useCommandCenterStore } from "~/lib/store";
+import type { Workspace } from "~/types";
 
 export function WorkspacesDialog({ workspaces }: { workspaces: Workspace[] }) {
   const router = useRouter();

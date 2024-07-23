@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
   CornerDownLeftIcon,
   PanelRightCloseIcon,
@@ -6,12 +5,14 @@ import {
   RepeatIcon,
   SplitIcon,
 } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 
-import type { PrimitiveType } from "~/types";
 import { LambdaIcon } from "~/components/icons/lambda-icon";
+import type { PrimitiveType } from "~/types";
 
 export function PrimitivesMenu() {
   const onDragStart = (

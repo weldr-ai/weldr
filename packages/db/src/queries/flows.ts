@@ -1,8 +1,8 @@
 import { and, eq, sql } from "drizzle-orm";
 
-import type { Edge, Flow, Primitive, RouteMetadata } from "../types";
 import { db } from "..";
 import { flows, primitives } from "../schema";
+import type { Edge, Flow, Primitive, RouteMetadata } from "../types";
 
 export async function getFlowById({
   id,

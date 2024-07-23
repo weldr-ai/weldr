@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { PlusIcon } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@integramind/ui/button";
 import {
@@ -13,8 +13,8 @@ import {
   DialogTrigger,
 } from "@integramind/ui/dialog";
 
-import type { FlowType } from "~/types";
 import { CreateFlowForm } from "~/components/create-flow-form";
+import type { FlowType } from "~/types";
 
 export function CreateFlowDialog({ type }: { type: FlowType }) {
   const [createPrimitiveDialogOpen, setCreatePrimitiveDialogOpen] =

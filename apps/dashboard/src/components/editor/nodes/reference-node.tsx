@@ -6,7 +6,6 @@ import type {
   SerializedLexicalNode,
   Spread,
 } from "lexical";
-import type { ReactNode } from "react";
 import { DecoratorNode } from "lexical";
 import {
   ColumnsIcon,
@@ -15,8 +14,10 @@ import {
   TextIcon,
   VariableIcon,
 } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { PostgresIcon } from "~/components/icons/postgres-icon";
+import { toCamelCase } from "~/lib/utils";
 
 export type SerializedReferenceNode = Spread<
   {
@@ -156,7 +157,7 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   getTextContent(): string {
     switch (this.__referenceType) {
       case "input":
-        return `input '${this.__name.replace(/ /g, "_").toLowerCase()}' of type '${this.__dataType}'`;
+        return `input '${toCamelCase(this.__name)}' of type '${this.__dataType}'`;
       case "database":
         return `postgres database '${this.__name}'`;
       case "database-table":

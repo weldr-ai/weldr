@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 import { Button } from "@integramind/ui/button";
 import { cn } from "@integramind/ui/utils";
@@ -58,18 +58,21 @@ export function Navbar(): JSX.Element {
       </Button>
       <div className="flex items-center justify-center gap-10 text-sm">
         <button
+          type="button"
           className="hidden cursor-pointer hover:underline md:block"
           onClick={() => scrollToSection("features")}
         >
           Features
         </button>
         <button
+          type="button"
           className="hidden cursor-pointer hover:underline md:block"
           onClick={() => scrollToSection("use-cases")}
         >
           Use Cases
         </button>
         <button
+          type="button"
           className="hidden cursor-pointer hover:underline md:block"
           onClick={() => scrollToSection("faqs")}
         >

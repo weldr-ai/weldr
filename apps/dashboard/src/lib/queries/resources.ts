@@ -2,10 +2,10 @@
 
 import type { z } from "zod";
 
-import type { Table } from "@integramind/integrations-postgres";
 import { db, eq, sql } from "@integramind/db";
 import { insertResourceSchema, resources } from "@integramind/db/schema";
-import { sync } from "@integramind/integrations-postgres";
+import type { Table } from "@integramind/integrations-postgres";
+import { getInfo } from "@integramind/integrations-postgres";
 
 import type { Resource, ResourceMetadata } from "~/types";
 
@@ -44,7 +44,7 @@ export async function addResource(
 
   try {
     if (validation.success) {
-      let metadata: ResourceMetadata;
+      let metadata: ResourceMetadata | undefined;
 
       if (validation.data.provider === "postgres") {
         metadata = {
@@ -57,6 +57,10 @@ export async function addResource(
         };
       }
 
+      if (!metadata) {
+        return { status: "error", fields };
+      }
+
       const result = (
         await db
           .insert(resources)
@@ -64,7 +68,7 @@ export async function addResource(
             name: validation.data.name,
             description: validation.data.description,
             provider: validation.data.provider,
-            metadata: sql`${{ ...metadata! }}`,
+            metadata: sql`${{ ...metadata }}`,
             workspaceId: validation.data.workspaceId,
           })
           .returning({ id: resources.id })
@@ -72,24 +76,22 @@ export async function addResource(
 
       if (result) {
         return { status: "success", payload: { id: result.id } };
-      } else {
-        return { status: "error", fields };
       }
-    } else {
-      const errors = validation.error.issues.reduce(
-        (acc: Record<string, string>, issue: z.ZodIssue) => {
-          const key = issue.path[0] as string;
-          acc[key] = issue.message;
-          return acc;
-        },
-        {},
-      );
-      return {
-        status: "validationError",
-        fields,
-        errors,
-      };
+      return { status: "error", fields };
     }
+    const errors = validation.error.issues.reduce(
+      (acc: Record<string, string>, issue: z.ZodIssue) => {
+        const key = issue.path[0] as string;
+        acc[key] = issue.message;
+        return acc;
+      },
+      {},
+    );
+    return {
+      status: "validationError",
+      fields,
+      errors,
+    };
   } catch (error) {
     return { status: "error", fields };
   }
@@ -112,12 +114,14 @@ export async function getResourceById({ id }: { id: string }): Promise<
   if (result[0].provider === "postgres") {
     const auth = result[0].metadata;
 
-    const tables = await sync({
-      host: auth.host,
-      port: auth.port,
-      user: auth.user,
-      password: auth.password,
-      database: auth.database,
+    const tables = await getInfo({
+      auth: {
+        host: auth.host,
+        port: auth.port,
+        user: auth.user,
+        password: auth.password,
+        database: auth.database,
+      },
     });
 
     return {

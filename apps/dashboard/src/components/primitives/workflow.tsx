@@ -1,13 +1,13 @@
 "use client";
 
-import { memo } from "react";
-import Link from "next/link";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
   PlayCircleIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { memo } from "react";
 import { Handle, Position, useReactFlow } from "reactflow";
 
 import { Badge } from "@integramind/ui/badge";

@@ -1,4 +1,3 @@
-import type { AdapterAccount } from "next-auth/adapters";
 import { createId } from "@paralleldrive/cuid2";
 import {
   integer,
@@ -8,6 +7,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import type { AdapterAccount } from "next-auth/adapters";
 
 export const users = pgTable("user", {
   id: text("id")

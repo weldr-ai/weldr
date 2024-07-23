@@ -1,6 +1,7 @@
 export function IntegraMindIcon({ className }: { className?: string }) {
   return (
     <svg
+      role="graphics-symbol"
       className={className}
       width="666"
       height="666"
@@ -8,6 +9,7 @@ export function IntegraMindIcon({ className }: { className?: string }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
+      <title>IntegraMind</title>
       <circle
         cx="333.582"
         cy="56.6364"

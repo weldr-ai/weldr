@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
 import { DashIcon } from "@radix-ui/react-icons";
 import { OTPInput, OTPInputContext } from "input-otp";
+import * as React from "react";
 
 import { cn } from "./utils";
 
@@ -63,10 +63,11 @@ const InputOTPSeparator = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div">
 >(({ ...props }, ref) => (
+  // biome-ignore lint/a11y/useAriaPropsForRole: <explanation>
   <div ref={ref} role="separator" {...props}>
     <DashIcon />
   </div>
 ));
 InputOTPSeparator.displayName = "InputOTPSeparator";
 
-export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator };
+export { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot };
