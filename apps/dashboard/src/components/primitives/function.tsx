@@ -67,10 +67,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
 import { cn } from "@integramind/ui/utils";
 
+import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
-import { LambdaIcon } from "~/components/icons/lambda-icon";
 import {
   deletePrimitive,
   getFunctionPrimitiveById,

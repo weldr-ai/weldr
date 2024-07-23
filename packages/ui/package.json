@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./*": "./src/*.tsx",
+    "./icons/*": "./src/icons/*.tsx",
     "./use-toast": "./src/use-toast.ts",
     "./utils": "./src/utils.ts",
     "./globals.css": "./src/styles/globals.css"

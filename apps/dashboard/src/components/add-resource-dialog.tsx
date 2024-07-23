@@ -14,8 +14,8 @@ import {
 } from "@integramind/ui/dialog";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 
+import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
 import { AddResourceForm } from "~/components/add-resource-form";
-import { PostgresIcon } from "~/components/icons/postgres-icon";
 import type { ResourceProvider } from "~/types";
 
 export function AddResourceDialog() {

@@ -20,9 +20,9 @@ import * as ReactDOM from "react-dom";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
+import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
-import { PostgresIcon } from "~/components/icons/postgres-icon";
 import { getResourceById, getResources } from "~/lib/queries/resources";
 import type { Input } from "~/types";
 

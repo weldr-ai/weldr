@@ -15,6 +15,10 @@
     "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json",
     "module": "ESNext"
   },
-  "include": [".", ".next/types/**/*.ts"],
+  "include": [
+    ".",
+    ".next/types/**/*.ts",
+    "../../packages/ui/src/icons/google-icon.tsx"
+  ],
   "exclude": ["node_modules"]
 }

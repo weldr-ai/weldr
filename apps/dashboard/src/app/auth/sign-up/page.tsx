@@ -17,9 +17,9 @@ import { Input } from "@integramind/ui/input";
 import { Label } from "@integramind/ui/label";
 import { cn } from "@integramind/ui/utils";
 
-import { GoogleIcon } from "~/components/icons/google-icon";
-import { IntegraMindIcon } from "~/components/icons/integramind-icon";
-import { MicrosoftIcon } from "~/components/icons/microsoft-icon";
+import { GoogleIcon } from "@integramind/ui/icons/google-icon";
+import { IntegraMindIcon } from "@integramind/ui/icons/integramind-icon";
+import { MicrosoftIcon } from "@integramind/ui/icons/microsoft-icon";
 import { signInWithMagicLink } from "~/lib/auth/actions";
 
 export default function SignIn() {

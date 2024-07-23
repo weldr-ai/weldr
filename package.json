@@ -21,6 +21,7 @@
     "dev": "turbo dev --parallel",
     "format-and-lint": "biome check .",
     "format-and-lint:fix": "biome check . --write",
+    "lint:staged": "lint-staged",
     "publish-packages": "changeset version && changeset publish",
     "check-types": "turbo check-types"
   },

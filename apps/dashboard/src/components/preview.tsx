@@ -15,7 +15,7 @@ import "~/styles/flow-builder.css";
 
 import { useTheme } from "next-themes";
 
-import { IntegraMind2Icon } from "./icons/integramind2-icon";
+import { IntegraMind2Icon } from "@integramind/ui/icons/integramind2-icon";
 
 export function Preview() {
   const { resolvedTheme } = useTheme();
