@@ -1,11 +1,5 @@
 "use client";
 
-import type {
-  Connection,
-  Edge as ReactFlowEdge,
-  Node as ReactFlowNode,
-} from "reactflow";
-import React, { useCallback } from "react";
 import { createId } from "@paralleldrive/cuid2";
 import {
   MinusIcon,
@@ -14,6 +8,13 @@ import {
   ScanIcon,
   ShareIcon,
 } from "lucide-react";
+import type React from "react";
+import { useCallback } from "react";
+import type {
+  Connection,
+  Edge as ReactFlowEdge,
+  Node as ReactFlowNode,
+} from "reactflow";
 import ReactFlow, {
   addEdge,
   Background,
@@ -29,28 +30,29 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import "~/styles/flow-builder.css";
 
+import type { PrimitiveMetadata } from "@integramind/db/types";
 import { Button } from "@integramind/ui/button";
 
-import type { FlowEdge, FlowNode, PrimitiveType } from "~/types";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
 import { ConditionalBranch } from "~/components/primitives/conditional-branch";
-import { Function } from "~/components/primitives/function";
+import { FunctionNode } from "~/components/primitives/function";
 import { Iterator } from "~/components/primitives/iterator";
 import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
 import { Workflow } from "~/components/primitives/workflow";
 import { createEdge } from "~/lib/queries/edges";
 import {
-  createPrimitive,
   deletePrimitive,
   updatePrimitivePosition,
 } from "~/lib/queries/primitives";
+import { api } from "~/lib/trpc/react";
+import type { FlowEdge, FlowNode, PrimitiveType } from "~/types";
 
 const nodeTypes = {
   route: Route,
   workflow: Workflow,
-  function: Function,
+  function: FunctionNode,
   "conditional-branch": ConditionalBranch,
   iterator: Iterator,
   response: Response,
@@ -74,16 +76,21 @@ export function _FlowBuilder({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  const createPrimitive = api.primitives.create.useMutation();
+
   const onConnect = useCallback(
     async (params: ReactFlowEdge | Connection) => {
       const newEdgeId = createId();
       setEdges((eds) => addEdge({ ...params, type: "deletable-edge" }, eds));
-      await createEdge({
-        id: newEdgeId,
-        source: params.source!,
-        target: params.target!,
-        flowId: flowId,
-      });
+
+      if (params.source && params.target) {
+        await createEdge({
+          id: newEdgeId,
+          source: params.source,
+          target: params.target,
+          flowId: flowId,
+        });
+      }
     },
     [flowId, setEdges],
   );
@@ -99,10 +106,6 @@ export function _FlowBuilder({
 
       const getNewNodeName = (nodeType: PrimitiveType) => {
         switch (nodeType) {
-          case "route":
-            return "New Route";
-          case "workflow":
-            return "New Workflow";
           case "function":
             return "New Function";
           case "conditional-branch":
@@ -111,12 +114,17 @@ export function _FlowBuilder({
             return "New Iterator";
           case "response":
             return "New Response";
+          case "route":
+          case "workflow":
+            throw new Error("Invalid node type");
         }
       };
 
-      const nodeType = event.dataTransfer.getData(
-        "application/reactflow",
-      ) as PrimitiveType;
+      const nodeType = event.dataTransfer.getData("application/reactflow") as
+        | "function"
+        | "conditional-branch"
+        | "iterator"
+        | "response";
 
       // check if the dropped element is valid
       if (typeof nodeType === "undefined" || !nodeType) return;
@@ -129,32 +137,28 @@ export function _FlowBuilder({
       const newNodeId = createId();
       const newNodeName = getNewNodeName(nodeType);
 
-      const newNode: FlowNode = {
-        id: newNodeId,
-        type: nodeType,
-        position,
-        data: { id: newNodeId, name: newNodeName, type: nodeType },
-      };
-
-      setNodes((nodes) => nodes.concat(newNode));
-
-      if (
-        nodeType === "function" ||
-        nodeType === "conditional-branch" ||
-        nodeType === "iterator" ||
-        nodeType === "response"
-      ) {
-        await createPrimitive({
+      setNodes((nodes) =>
+        nodes.concat({
           id: newNodeId,
           type: nodeType,
-          name: newNodeName,
-          positionX: Math.floor(position.x),
-          positionY: Math.floor(position.y),
-          flowId: flowId,
-        });
-      }
+          position: { x: Math.floor(position.x), y: Math.floor(position.y) },
+          data: { id: newNodeId, name: newNodeName, type: nodeType },
+        } as FlowNode),
+      );
+
+      await createPrimitive.mutateAsync({
+        id: newNodeId,
+        type: nodeType,
+        name: newNodeName,
+        positionX: Math.floor(position.x),
+        positionY: Math.floor(position.y),
+        flowId,
+        metadata: {
+          type: nodeType,
+        } as PrimitiveMetadata,
+      });
     },
-    [flowId, reactFlow, setNodes],
+    [createPrimitive, flowId, reactFlow, setNodes],
   );
 
   const onNodeDragStop = useCallback(
@@ -198,11 +202,11 @@ export function _FlowBuilder({
       fitView={true}
     >
       <Background
-        className="rounded-xl bg-accent dark:bg-background"
+        className="rounded-xl bg-[#F0F0F3] dark:bg-background"
         color="hsl(var(--background))"
       />
       <MiniMap
-        className="bottom-11 bg-background"
+        className="bottom-11 bg-[#F0F0F3] dark:bg-background"
         position="bottom-left"
         style={{
           height: 100,
@@ -213,7 +217,7 @@ export function _FlowBuilder({
       />
       <Panel
         position="bottom-left"
-        className="flex flex-row rounded-xl border bg-muted"
+        className="flex flex-row rounded-xl border bg-background dark:bg-muted"
       >
         <Button
           className="rounded-xl rounded-r-none"
@@ -263,11 +267,11 @@ export function _FlowBuilder({
         <PrimitivesMenu />
       </Panel>
       <Panel position="bottom-right">
-        <div className="flex w-full flex-row items-center justify-end gap-2 px-4">
+        <div className="flex w-full flex-row items-center justify-end gap-2">
           <Button
             size="sm"
             variant="outline"
-            className="flex min-w-24 max-w-min flex-row items-center justify-center gap-1 border border-success bg-transparent text-success hover:bg-success/10 hover:text-success"
+            className="flex min-w-24 max-w-min flex-row items-center justify-center gap-1 bg-background text-success hover:bg-success/10 hover:text-success"
           >
             <PlayCircleIcon className="size-3.5" />
             Run

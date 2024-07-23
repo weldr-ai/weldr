@@ -1,8 +1,8 @@
 "use server";
 
-import type { z } from "zod";
 import { redirect } from "next/navigation";
 import { Resend } from "resend";
+import type { z } from "zod";
 
 import { db, eq } from "@integramind/db";
 import { insertWaitlistSchema, waitlist } from "@integramind/db/schema";

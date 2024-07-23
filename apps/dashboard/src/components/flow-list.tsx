@@ -1,14 +1,14 @@
-import Link from "next/link";
-import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
 import { buttonVariants } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
-import type { FlowType } from "~/types";
 import { getFlows } from "~/lib/queries/flows";
+import type { FlowType } from "~/types";
 import { CreateFlowDialog } from "./create-flow-dialog";
 
 export function FlowList({
@@ -27,7 +27,6 @@ export function FlowList({
   } = useQuery({
     queryKey: [`${type}s`],
     queryFn: () => getFlows({ workspaceId, type }),
-    refetchInterval: 1000 * 60 * 5,
   });
 
   return (

@@ -1,13 +1,11 @@
-import type { TextNode } from "lexical";
-import { useCallback, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   LexicalTypeaheadMenuPlugin,
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
-import { useQuery } from "@tanstack/react-query";
+import { skipToken, useQuery } from "@tanstack/react-query";
+import type { TextNode } from "lexical";
 import {
   ColumnsIcon,
   HashIcon,
@@ -15,19 +13,18 @@ import {
   TextIcon,
   VariableIcon,
 } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 import * as ReactDOM from "react-dom";
 
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
-import type { DataResourceMetadata, Input } from "~/types";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
 import { PostgresIcon } from "~/components/icons/postgres-icon";
-import {
-  getDataResourceById,
-  getDataResources,
-} from "~/lib/queries/data-resources";
+import { getResourceById, getResources } from "~/lib/queries/resources";
+import type { Input } from "~/types";
 
 export class ReferenceOption extends MenuOption {
   // The id of the reference
@@ -87,30 +84,26 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
-  const [dataResourceId, setDataResourceId] = useState<string | undefined>();
+  const [resourceId, setResourceId] = useState<string | undefined>();
 
-  // FIXME: add all the data resources options directly to the dropdown
-  const { data: dataResources } = useQuery({
-    queryKey: ["data-resources"],
-    queryFn: () => getDataResources({ workspaceId }),
+  const { data: resources } = useQuery({
+    queryKey: ["resources"],
+    queryFn: () => getResources({ workspaceId }),
   });
 
-  const { data: dataResource } = useQuery({
-    queryKey: ["data-resource", dataResourceId],
-    queryFn: () => getDataResourceById({ id: dataResourceId! }),
-    enabled: !!dataResourceId,
+  const { data: resource } = useQuery({
+    queryKey: ["resource", resourceId],
+    queryFn: resourceId ? () => getResourceById({ id: resourceId }) : skipToken,
+    enabled: !!resourceId,
   });
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch("/", {
     minLength: 0,
   });
 
-  const onQueryChange = useCallback(
-    (matchingString: string | null) => {
-      setQueryString(matchingString);
-    },
-    [setQueryString],
-  );
+  const onQueryChange = useCallback((matchingString: string | null) => {
+    setQueryString(matchingString);
+  }, []);
 
   const onSelectOption = useCallback(
     (
@@ -141,7 +134,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
           );
         }
         if (selectedOption.referenceType === "database") {
-          setDataResourceId(selectedOption.id);
+          setResourceId(selectedOption.id);
         }
         if (nodeToReplace) {
           nodeToReplace.replace(referenceNode);
@@ -176,61 +169,59 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   const options = useMemo(() => {
     const options: ReferenceOption[] = [...inputOptions];
 
-    if (dataResource) {
-      if (dataResource.provider === "postgres") {
+    if (resource) {
+      if (resource.provider === "postgres") {
         options.push(
-          new ReferenceOption(dataResource.id, dataResource.name, "database", {
+          new ReferenceOption(resource.id, resource.name, "database", {
             icon: "database-icon",
-            keywords: ["postgres", "data-resource", dataResource.name],
+            keywords: ["postgres", "resource", resource.name],
             onSelect: (queryString) => {
               console.log(queryString);
             },
           }),
         );
 
-        (dataResource.metadata as DataResourceMetadata).tables.forEach(
-          (table) => {
-            table.columns.forEach((column) =>
-              options.push(
-                new ReferenceOption(
-                  `${table.name}.${column.name}`,
-                  `${table.name}.${column.name}`,
-                  "database-column",
-                  {
-                    icon: "database-column-icon",
-                    keywords: ["column", dataResource.name, column.name],
-                    onSelect: (queryString) => {
-                      console.log(queryString);
-                    },
+        for (const table of resource.metadata.tables) {
+          for (const column of table.columns) {
+            options.push(
+              new ReferenceOption(
+                `${table.name}.${column.name}`,
+                `${table.name}.${column.name}`,
+                "database-column",
+                {
+                  icon: "database-column-icon",
+                  keywords: ["column", resource.name, column.name],
+                  onSelect: (queryString) => {
+                    console.log(queryString);
                   },
-                  column.type === "text" ? "text" : "number",
-                ),
+                },
+                column.type === "text" ? "text" : "number",
               ),
             );
-            options.push(
-              new ReferenceOption(table.name, table.name, "database-table", {
-                icon: "database-table-icon",
-                keywords: ["table", dataResource.name, table.name],
-                onSelect: (queryString) => {
-                  console.log(queryString);
-                },
-              }),
-            );
-          },
-        );
+          }
+          options.push(
+            new ReferenceOption(table.name, table.name, "database-table", {
+              icon: "database-table-icon",
+              keywords: ["table", resource.name, table.name],
+              onSelect: (queryString) => {
+                console.log(queryString);
+              },
+            }),
+          );
+        }
       }
-    } else if (dataResources && !dataResourceId) {
-      dataResources.forEach((dataResource) =>
+    } else if (resources && !resourceId) {
+      for (const resource of resources) {
         options.push(
-          new ReferenceOption(dataResource.id, dataResource.name, "database", {
+          new ReferenceOption(resource.id, resource.name, "database", {
             icon: "database-icon",
-            keywords: ["data resource", "database", dataResource.name],
+            keywords: ["resource", "database", resource.name],
             onSelect: (queryString) => {
               console.log(queryString);
             },
           }),
-        ),
-      );
+        );
+      }
     }
 
     if (!queryString) {
@@ -244,7 +235,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
         regex.test(option.name) ||
         option.keywords.some((keyword) => regex.test(keyword)),
     );
-  }, [dataResource, dataResourceId, dataResources, inputOptions, queryString]);
+  }, [resource, resourceId, resources, inputOptions, queryString]);
 
   return (
     <LexicalTypeaheadMenuPlugin<ReferenceOption>
@@ -260,10 +251,10 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
           ReactDOM.createPortal(
             <div>
               <ScrollArea className="h-full w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-                <ul className="max-h-40">
+                <div className="max-h-40">
                   {options.map((option, i: number) => (
-                    <li
-                      id={"menu-item-" + i}
+                    <div
+                      id={`menu-item-${i}`}
                       className={cn(
                         "flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
                         {
@@ -304,9 +295,9 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
                         <></>
                       )}
                       <span className="text">{option.name}</span>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </ScrollArea>
             </div>,
             anchorElementRef.current,

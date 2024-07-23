@@ -1,7 +1,7 @@
 "use server";
 
-import type { z } from "zod";
 import { revalidatePath } from "next/cache";
+import type { z } from "zod";
 
 import { db, eq } from "@integramind/db";
 import { insertWorkspaceSchema, workspaces } from "@integramind/db/schema";
@@ -64,24 +64,22 @@ export async function createWorkspace(
       if (result) {
         revalidatePath("/workspaces/[id]", "layout");
         return { status: "success", payload: { id: result.id } };
-      } else {
-        return { status: "error", fields };
       }
-    } else {
-      const errors = validation.error.issues.reduce(
-        (acc: Record<string, string>, issue: z.ZodIssue) => {
-          const key = issue.path[0] as string;
-          acc[key] = issue.message;
-          return acc;
-        },
-        {},
-      );
-      return {
-        status: "validationError",
-        fields,
-        errors,
-      };
+      return { status: "error", fields };
     }
+    const errors = validation.error.issues.reduce(
+      (acc: Record<string, string>, issue: z.ZodIssue) => {
+        const key = issue.path[0] as string;
+        acc[key] = issue.message;
+        return acc;
+      },
+      {},
+    );
+    return {
+      status: "validationError",
+      fields,
+      errors,
+    };
   } catch (error) {
     return { status: "error", fields };
   }

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
 import { BoxesIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useState } from "react";
 
 import { Button } from "@integramind/ui/button";
 import {
@@ -14,10 +13,11 @@ import {
   DropdownMenuTrigger,
 } from "@integramind/ui/dropdown-menu";
 
-import type { Workspace } from "~/types";
 import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useCommandCenterStore } from "~/lib/store";
+import type { Workspace } from "~/types";
+import { IntegraMind2Icon } from "./icons/integramind2-icon";
 
 export function Navbar({ workspace }: { workspace: Workspace }): JSX.Element {
   const { resolvedTheme } = useTheme();
@@ -28,29 +28,16 @@ export function Navbar({ workspace }: { workspace: Workspace }): JSX.Element {
     useState<boolean>(false);
 
   return (
-    <header className="flex h-14 items-center border-b bg-muted">
+    <header className="flex h-14 items-center border-b">
       <nav className="flex items-center text-sm">
         <DropdownMenu>
           <div className="flex size-14 items-center justify-center border-r p-2">
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="size-full">
-                {resolvedTheme === "light" ? (
-                  <Image
-                    alt="IntegraMind Logo"
-                    height={40}
-                    priority
-                    src="/logo.svg"
-                    width={40}
-                  />
-                ) : (
-                  <Image
-                    alt="IntegraMind Logo"
-                    height={40}
-                    priority
-                    src="/logo-dark.svg"
-                    width={40}
-                  />
-                )}
+                <IntegraMind2Icon
+                  className="size-6"
+                  theme={resolvedTheme === "light" ? "light" : "dark"}
+                />
                 <span className="sr-only">IntegraMind</span>
               </Button>
             </DropdownMenuTrigger>

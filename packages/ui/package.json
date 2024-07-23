@@ -1,20 +1,18 @@
 {
   "name": "@integramind/ui",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
-  "scripts": {
-    "add-component": "pnpm dlx shadcn-ui add",
-    "clean": "rm -rf .turbo node_modules",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint ./src/*.tsx ./src/*.ts",
-    "check-types": "tsc --noEmit --emitDeclarationOnly false"
-  },
   "exports": {
     "./*": "./src/*.tsx",
-    "./globals.css": "./src/styles/globals.css",
     "./use-toast": "./src/use-toast.ts",
-    "./utils": "./src/utils.ts"
+    "./utils": "./src/utils.ts",
+    "./globals.css": "./src/styles/globals.css"
+  },
+  "scripts": {
+    "add-component": "pnpm dlx shadcn-ui add",
+    "clean": "git clean -xdf .turbo node_modules dist",
+    "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -66,8 +64,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@integramind/eslint-config": "workspace:*",
-    "@integramind/prettier-config": "workspace:*",
     "@integramind/tailwind-config": "workspace:*",
     "@integramind/tsconfig": "workspace:*",
     "@types/eslint": "^8.56.6",
@@ -76,19 +72,11 @@
     "autoprefixer": "^10.4.18",
     "eslint": "^8.57.0",
     "postcss": "^8.4.38",
-    "prettier": "^3.2.5",
     "react": "^18.2.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.4.3"
   },
   "peerDependencies": {
     "react": "^18.2.0"
-  },
-  "eslintConfig": {
-    "extends": [
-      "@integramind/eslint-config/base",
-      "@integramind/eslint-config/react"
-    ]
-  },
-  "prettier": "@integramind/prettier-config"
+  }
 }

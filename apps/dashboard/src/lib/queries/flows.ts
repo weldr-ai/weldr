@@ -5,8 +5,8 @@ import type { z } from "zod";
 import { and, db, eq, sql } from "@integramind/db";
 import { flows, insertFlowSchema, primitives } from "@integramind/db/schema";
 
-import type { Edge, Flow, FlowType, Primitive, RouteMetadata } from "~/types";
 import { getWorkspaceById } from "~/lib/queries/workspaces";
+import type { Edge, Flow, FlowType, Primitive, RouteMetadata } from "~/types";
 
 type FormState =
   | {
@@ -93,24 +93,22 @@ export async function createFlow(
             break;
         }
         return { status: "success", payload: { id: result.id } };
-      } else {
-        return { status: "error", fields };
       }
-    } else {
-      const errors = validation.error.issues.reduce(
-        (acc: Record<string, string>, issue: z.ZodIssue) => {
-          const key = issue.path[0] as string;
-          acc[key] = issue.message;
-          return acc;
-        },
-        {},
-      );
-      return {
-        status: "validationError",
-        fields,
-        errors,
-      };
+      return { status: "error", fields };
     }
+    const errors = validation.error.issues.reduce(
+      (acc: Record<string, string>, issue: z.ZodIssue) => {
+        const key = issue.path[0] as string;
+        acc[key] = issue.message;
+        return acc;
+      },
+      {},
+    );
+    return {
+      status: "validationError",
+      fields,
+      errors,
+    };
   } catch (error) {
     console.log(error);
     return { status: "error", fields };

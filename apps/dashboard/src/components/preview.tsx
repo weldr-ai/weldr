@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   BlocksIcon,
   CircleUserIcon,
@@ -8,12 +7,15 @@ import {
   PlusIcon,
   WorkflowIcon,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 
 import { Button } from "@integramind/ui/button";
 
 import "reactflow/dist/style.css";
 import "~/styles/flow-builder.css";
+
+import { useTheme } from "next-themes";
+
+import { IntegraMind2Icon } from "./icons/integramind2-icon";
 
 export function Preview() {
   const { resolvedTheme } = useTheme();
@@ -25,23 +27,10 @@ export function Preview() {
           <nav className="flex items-center text-sm">
             <div className="flex size-14 items-center justify-center border-r p-2">
               <Button variant="ghost" size="icon" className="size-full">
-                {resolvedTheme === "light" ? (
-                  <Image
-                    alt="IntegraMind Logo"
-                    height={40}
-                    priority
-                    src="/logo.svg"
-                    width={40}
-                  />
-                ) : (
-                  <Image
-                    alt="IntegraMind Logo"
-                    height={40}
-                    priority
-                    src="/logo-dark.svg"
-                    width={40}
-                  />
-                )}
+                <IntegraMind2Icon
+                  className="size-6"
+                  theme={resolvedTheme === "light" ? "light" : "dark"}
+                />
                 <span className="sr-only">IntegraMind</span>
               </Button>
             </div>

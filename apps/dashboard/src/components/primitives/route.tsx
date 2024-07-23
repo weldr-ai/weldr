@@ -1,5 +1,7 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import type {
   EditorState,
   LexicalEditor,
@@ -7,19 +9,17 @@ import type {
   SerializedParagraphNode,
   SerializedRootNode,
 } from "lexical";
-import type { z } from "zod";
-import { memo } from "react";
-import Link from "next/link";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
   PlayCircleIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { memo } from "react";
 import { useForm } from "react-hook-form";
 import { Handle, Position, useReactFlow } from "reactflow";
+import type { z } from "zod";
 
 import { updateRouteFlowSchema } from "@integramind/db/schema";
 import { Badge } from "@integramind/ui/badge";
@@ -58,13 +58,13 @@ import {
 import { Textarea } from "@integramind/ui/textarea";
 import { cn } from "@integramind/ui/utils";
 
-import type { SerializedInputNode } from "../editor/nodes/input-node";
-import type { FlowNode, Input as IInput, RouteNodeProps } from "~/types";
 import {
   getRoutePrimitiveById,
   updateRoutePrimitiveById,
 } from "~/lib/queries/primitives";
+import type { FlowNode, Input as IInput, RouteNodeProps } from "~/types";
 import Editor from "../editor";
+import type { SerializedInputNode } from "../editor/nodes/input-node";
 
 export const Route = memo(
   ({ data, isConnectable, xPos, yPos, selected }: RouteNodeProps) => {

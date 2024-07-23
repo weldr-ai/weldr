@@ -2,11 +2,11 @@
 
 import type { z } from "zod";
 
+import { and, db, eq, sql } from "@integramind/db";
 import type {
   updateFunctionSchema,
   updateRouteFlowSchema,
 } from "@integramind/db/schema";
-import { and, db, eq, sql } from "@integramind/db";
 import { primitives } from "@integramind/db/schema";
 
 import type {

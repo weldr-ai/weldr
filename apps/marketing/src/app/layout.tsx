@@ -1,8 +1,8 @@
 import "@integramind/ui/globals.css";
 
+import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
 import { Poppins as FontSans } from "next/font/google";
-import { Analytics } from "@vercel/analytics/react";
 
 import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
@@ -16,7 +16,7 @@ const fontSans = FontSans({
 export const metadata: Metadata = {
   title: "IntegraMind",
   description:
-    "Build backend APIs, automation workflows, and data pipelines with no coding, just English!",
+    "Build backend APIs, workflows, and data pipelines with no coding, just English!",
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? ""),
 };
 

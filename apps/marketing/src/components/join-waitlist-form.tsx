@@ -1,11 +1,11 @@
 "use client";
 
-import type { z } from "zod";
-import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon } from "lucide-react";
+import { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
+import type { z } from "zod";
 
 import { insertWaitlistSchema } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
@@ -32,11 +32,11 @@ export function JoinWaitlistForm({
     async function handleStateUpdate() {
       if (state) {
         if (state.status === "validationError") {
-          Object.keys(state.errors).forEach((key) => {
+          for (const key of Object.keys(state.errors)) {
             form.setError(key as "email", {
               message: state.errors[key],
             });
-          });
+          }
           toast({
             title: "Validation Error",
             description: "Please enter a valid email address.",

@@ -5,8 +5,8 @@ import { useParams } from "next/navigation";
 import { cn } from "@integramind/ui/utils";
 
 import { usePrimarySidebarStore } from "~/lib/store";
-import { DataResourceList } from "./data-resource-list";
 import { FlowList } from "./flow-list";
+import { ResourceList } from "./resource-list";
 
 export function PrimarySidebar() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -25,7 +25,7 @@ export function PrimarySidebar() {
                   ? "Routes"
                   : activeSection === "workflows"
                     ? "Workflows"
-                    : "Data Resources"}
+                    : "Resources"}
             </span>
           </div>
           {activeSection === "components" ? (
@@ -55,10 +55,10 @@ export function PrimarySidebar() {
           ) : (
             <div
               className={cn("flex w-full p-2", {
-                hidden: activeSection !== "data-resources",
+                hidden: activeSection !== "resources",
               })}
             >
-              <DataResourceList workspaceId={workspaceId} />
+              <ResourceList workspaceId={workspaceId} />
             </div>
           )}
         </div>

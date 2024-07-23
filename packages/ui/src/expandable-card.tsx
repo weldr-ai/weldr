@@ -103,7 +103,7 @@ const ExpandableCardContent = React.forwardRef<
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
-  }, [open, onOpenChange]);
+  }, [onOpenChange]);
 
   return (
     <div

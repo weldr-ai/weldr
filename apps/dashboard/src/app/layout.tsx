@@ -1,15 +1,16 @@
 import "@integramind/ui/globals.css";
 
-import type { Metadata } from "next";
-import { Poppins as FontSans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import type { Metadata } from "next";
+import { Poppins as FontSans } from "next/font/google";
 
 import { ThemeProvider } from "@integramind/ui/theme-provider";
 import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
 
 import { QueryProvider } from "~/components/query-client-provider";
+import { TRPCReactProvider } from "~/lib/trpc/react";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -42,12 +43,14 @@ export default async function RootLayout({
           disableTransitionOnChange
           enableSystem
         >
-          <QueryProvider>
-            {children}
-            <Toaster />
-            <Analytics />
-            <SpeedInsights />
-          </QueryProvider>
+          <TRPCReactProvider>
+            <QueryProvider>
+              {children}
+              <Toaster />
+              <Analytics />
+              <SpeedInsights />
+            </QueryProvider>
+          </TRPCReactProvider>
         </ThemeProvider>
       </body>
     </html>

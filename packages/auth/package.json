@@ -1,36 +1,28 @@
 {
   "name": "@integramind/auth",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./rsc": "./src/rsc.ts",
+    "./validators": "./src/validators.ts"
   },
   "scripts": {
-    "clean": "rm -rf .turbo node_modules",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint ./src/*.ts",
+    "clean": "git clean -xdf .turbo node_modules dist",
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@auth/drizzle-adapter": "^1.0.1",
     "@integramind/db": "workspace:*",
-    "next-auth": "5.0.0-beta.18",
+    "@auth/core": "0.32.0",
+    "@auth/drizzle-adapter": "^1.4.1",
+    "next": "^14.2.4",
+    "next-auth": "5.0.0-beta.19",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@integramind/eslint-config": "workspace:*",
-    "@integramind/prettier-config": "workspace:*",
     "@integramind/tsconfig": "workspace:*"
-  },
-  "peerDependencies": {
-    "next": "^14.2.3"
-  },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@integramind/eslint-config/base"
-    ]
-  },
-  "prettier": "@integramind/prettier-config"
+  }
 }

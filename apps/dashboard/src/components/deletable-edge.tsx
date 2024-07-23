@@ -1,6 +1,6 @@
-import type { EdgeProps } from "reactflow";
-import { useState } from "react";
 import { XIcon } from "lucide-react";
+import { useState } from "react";
+import type { EdgeProps } from "reactflow";
 import {
   BaseEdge,
   EdgeLabelRenderer,

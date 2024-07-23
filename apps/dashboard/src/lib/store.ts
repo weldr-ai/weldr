@@ -1,12 +1,12 @@
 import { create } from "zustand";
 
 interface PrimarySidebarState {
-  activeSection: "components" | "routes" | "workflows" | "data-resources";
+  activeSection: "components" | "routes" | "workflows" | "resources";
 }
 
 interface PrimarySidebarAction {
   updateActiveSection: (
-    activeSection: "components" | "routes" | "workflows" | "data-resources",
+    activeSection: "components" | "routes" | "workflows" | "resources",
   ) => void;
 }
 

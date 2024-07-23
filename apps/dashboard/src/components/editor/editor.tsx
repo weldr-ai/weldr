@@ -1,19 +1,19 @@
 "use client";
 
 import type { InitialConfigType } from "@lexical/react/LexicalComposer";
-import type { EditorState, LexicalEditor } from "lexical";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import type { EditorState, LexicalEditor } from "lexical";
 import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
 import { cn } from "@integramind/ui/utils";
 
-import type { FunctionRawDescription, Input } from "~/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
+import type { FunctionRawDescription, Input } from "~/types";
 import { $createInputNode, InputNode } from "./nodes/input-node";
 import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
 import { InputsPlugin } from "./plugins/input-plugin";
@@ -55,7 +55,7 @@ export function Editor({ ...props }: EditorProps) {
     const paragraph = $createParagraphNode();
 
     if (props.type === "inputs") {
-      props.inputs.forEach((input) => {
+      for (const input of props.inputs) {
         paragraph.append(
           $createInputNode(
             props.id,
@@ -66,11 +66,11 @@ export function Editor({ ...props }: EditorProps) {
           ),
         );
         paragraph.append($createTextNode(" "));
-      });
+      }
     }
 
     if (props.type === "description" && props.rawDescription) {
-      props.rawDescription.forEach((item) => {
+      for (const item of props.rawDescription) {
         if (item.type === "text") {
           paragraph.append($createTextNode(item.value));
         } else if (item.type === "reference") {
@@ -84,7 +84,7 @@ export function Editor({ ...props }: EditorProps) {
           );
           paragraph.append(referenceNode);
         }
-      });
+      }
     }
 
     root.append(paragraph);

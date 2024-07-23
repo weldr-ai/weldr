@@ -1,18 +1,17 @@
-import type { Edge, Node, NodeProps } from "reactflow";
+import type { Node, NodeProps, Edge as ReactFlowEdge } from "reactflow";
 import type { z } from "zod";
 
 import type {
-  dataResourceMetadataSchema,
-  dataResourceProvidersSchema,
-  dataResourceSchema,
   edgeSchema,
   flowSchema,
   flowTypesSchema,
   functionMetadataSchema,
   functionRawDescriptionSchema,
-  jobSchema,
   primitiveSchema,
   primitiveTypesSchema,
+  resourceMetadataSchema,
+  resourceProvidersSchema,
+  resourceSchema,
   routeMetadataSchema,
   workflowMetadataSchema,
   workspaceSchema,
@@ -20,7 +19,7 @@ import type {
 
 export type PrimitiveType = z.infer<typeof primitiveTypesSchema>;
 export type FlowType = z.infer<typeof flowTypesSchema>;
-export type FlowEdge = Edge<"deletable-edge">;
+export type FlowEdge = ReactFlowEdge<"deletable-edge">;
 export type FlowNode =
   | RouteNode
   | WorkflowNode
@@ -65,9 +64,9 @@ export type ResponseData = BaseNodeData;
 export type ResponseNode = BaseNode<ResponseData>;
 export type ResponseNodeProps = BaseNodeProps<ResponseData>;
 
-export type DataResourceMetadata = z.infer<typeof dataResourceMetadataSchema>;
-export type DataResource = z.infer<typeof dataResourceSchema>;
-export type DataResourceProvider = z.infer<typeof dataResourceProvidersSchema>;
+export type ResourceMetadata = z.infer<typeof resourceMetadataSchema>;
+export type Resource = z.infer<typeof resourceSchema>;
+export type ResourceProvider = z.infer<typeof resourceProvidersSchema>;
 
 export type Workspace = z.infer<typeof workspaceSchema>;
 export type Flow = z.infer<typeof flowSchema>;
@@ -90,5 +89,3 @@ export interface Input {
   type: "text" | "number" | "functionResponse";
   testValue: string | number | null;
 }
-
-export type Job = z.infer<typeof jobSchema>;

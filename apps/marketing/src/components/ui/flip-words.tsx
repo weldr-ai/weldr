@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useState } from "react";
 
 import { cn } from "@integramind/ui/utils";
 
@@ -54,13 +54,13 @@ export const FlipWords = ({
         className={cn("relative inline-block text-left ", className)}
         key={currentWord}
       >
-        {currentWord.split("").map((letter, index) => (
+        {currentWord.split("").map((letter, idx) => (
           <motion.span
-            key={currentWord + index}
+            key={`${idx}-${currentWord}`}
             initial={{ opacity: 0, y: 0, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{
-              delay: index * 0.08,
+              delay: idx * 0.08,
             }}
           >
             {letter}

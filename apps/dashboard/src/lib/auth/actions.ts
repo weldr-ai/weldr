@@ -1,34 +1,65 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
+import type { z } from "zod";
 
-import { signIn } from "@integramind/auth";
+import { signOut as nextAuthSignOut, signIn } from "@integramind/auth";
+import { signInWithMagicLinkSchema } from "@integramind/auth/validators";
 
-const userSchema = z.object({
-  email: z.string().email("Valid email is required"),
-});
+type FormState =
+  | {
+      status: "validationError";
+      fields: Record<string, string>;
+      errors: Record<string, string>;
+    }
+  | {
+      status: "error";
+      fields: Record<string, string>;
+    }
+  | undefined;
 
 export async function signInWithMagicLink(
-  _prevState: { errors: z.ZodIssue[] },
+  prevState: FormState,
   formData: FormData,
-) {
-  try {
-    const validation = await userSchema.safeParseAsync({
-      email: formData.get("email"),
-    });
+): Promise<FormState> {
+  const data = Object.fromEntries(formData) as Record<string, string>;
+  const validation = signInWithMagicLinkSchema.safeParse(data);
 
-    if (validation.success) {
-      await signIn("resend", {
-        email: validation.data.email,
-        redirect: true,
-        redirectTo: "/",
-      });
-      redirect(`/auth/email-sent-confirmation?email=${validation.data.email}`);
-    } else {
-      return { errors: validation.error.issues };
-    }
-  } catch (error) {
-    return { errors: [] };
+  // TODO: move these functions to a common lib file
+  const fields: Record<string, string> = Object.entries(data).reduce(
+    (acc: Record<string, string>, [key, value]) => {
+      acc[key] = value;
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
+
+  if (validation.success) {
+    await signIn("resend", {
+      email: validation.data.email,
+      redirect: false,
+    });
+    redirect(`/auth/verify-email?email=${validation.data.email}`);
+  } else {
+    // TODO: move these functions to a common lib file
+    const errors = validation.error.issues.reduce(
+      (acc: Record<string, string>, issue: z.ZodIssue) => {
+        const key = issue.path[0] as string;
+        acc[key] = issue.message;
+        return acc;
+      },
+      {},
+    );
+    return {
+      status: "validationError",
+      fields,
+      errors,
+    };
   }
+}
+
+export async function signOut() {
+  await nextAuthSignOut({
+    redirectTo: "/auth/sign-in",
+  });
 }

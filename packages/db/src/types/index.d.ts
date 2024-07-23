@@ -1,9 +1,16 @@
 import type { z } from "zod";
 
 import type {
-  dataResourceMetadataSchema,
+  edgeSchema,
+  flowSchema,
+  flowTypesSchema,
+  functionMetadataSchema,
   primitiveMetadataSchema,
+  primitiveSchema,
   primitiveTypesSchema,
+  resourceMetadataSchema,
+  resourceSchema,
+  routeMetadataSchema,
 } from "../schema";
 
 export type VarType = "number" | "text";
@@ -12,6 +19,7 @@ export interface Input {
   id: string;
   name: string;
   type: VarType;
+  testValue?: string | number | null;
 }
 
 export interface Output {
@@ -20,25 +28,26 @@ export interface Output {
   type: VarType;
 }
 
-export type PrimitiveType = z.infer<typeof primitiveTypesSchema>;
-
-export interface Flow {
-  primitives: {
-    id: string;
-    type: PrimitiveType;
-  }[];
-  edges: {
-    id: string;
-    source: string;
-    target: string;
-  }[];
-}
-
-export interface FlowEdge {
+export interface PrimitiveBaseData {
   id: string;
-  source: string;
-  target: string;
+  name: string;
+  description?: string | null;
+  type: PrimitiveType;
 }
 
+export type FlowType = z.infer<typeof flowTypesSchema>;
+export type Flow = z.infer<typeof flowSchema>;
+export type Edge = z.infer<typeof edgeSchema>;
+
+export type Primitive = z.infer<typeof primitiveSchema>;
+export type PrimitiveType = z.infer<typeof primitiveTypesSchema>;
 export type PrimitiveMetadata = z.infer<typeof primitiveMetadataSchema>;
-export type ResourceMetadata = z.infer<typeof dataResourceMetadataSchema>;
+
+export type Resource = z.infer<typeof resourceSchema>;
+export type ResourceMetadata = z.infer<typeof resourceMetadataSchema>;
+
+export type FunctionData = PrimitiveBaseData & FunctionMetadata;
+export type FunctionMetadata = z.infer<typeof functionMetadataSchema>;
+
+export type RouteData = PrimitiveBaseData & RouteMetadata;
+export type RouteMetadata = z.infer<typeof routeMetadataSchema>;

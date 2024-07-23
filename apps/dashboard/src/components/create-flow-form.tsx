@@ -1,14 +1,14 @@
 "use client";
 
-import type { FormState } from "react-hook-form";
-import type { z } from "zod";
-import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
+import type { z } from "zod";
 
 import { insertFlowSchema } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
@@ -31,8 +31,8 @@ import {
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import type { FlowType } from "~/types";
 import { createFlow } from "~/lib/queries/flows";
+import type { FlowType } from "~/types";
 
 export function CreateFlowForm({
   type,
@@ -98,7 +98,7 @@ export function CreateFlowForm({
             `/workspaces/${workspaceId}/${type}s/${state.payload.id}`,
           );
         } else if (state.status === "validationError") {
-          Object.keys(state.errors).forEach((key) => {
+          for (const key of Object.keys(state.errors)) {
             form.setError(
               key as
                 | "name"
@@ -112,7 +112,7 @@ export function CreateFlowForm({
                 message: state.errors[key],
               },
             );
-          });
+          }
           toast({
             title: "Validation Error",
             description: "Please enter fields correctly.",
@@ -153,7 +153,11 @@ export function CreateFlowForm({
             <FormItem>
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter workflow name" {...field} />
+                <Input
+                  autoComplete="off"
+                  placeholder={`Enter ${type} name`}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -222,7 +226,11 @@ export function CreateFlowForm({
                 <FormItem>
                   <FormLabel className="text-xs">URL Path</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter action URL path" {...field} />
+                    <Input
+                      autoComplete="off"
+                      placeholder="Enter action URL path"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

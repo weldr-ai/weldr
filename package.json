@@ -7,8 +7,8 @@
   },
   "scripts": {
     "build": "turbo build",
-    "clean": "git clean -xdf node_modules",
-    "clean:workspaces": "turbo clean",
+    "clean": "rm -rf .turbo node_modules",
+    "clean:ws": "turbo clean",
     "commit": "git-cz",
     "db:check": "pnpm -F @integramind/db check",
     "db:generate": "pnpm -F @integramind/db generate",
@@ -19,22 +19,18 @@
     "db:studio": "pnpm -F @integramind/db studio",
     "db:up": "pnpm -F @integramind/db up",
     "dev": "turbo dev --parallel",
-    "format": "turbo format --continue -- --cache --cache-location node_modules/.cache/.prettiercache",
-    "format:fix": "turbo format --continue -- --write --cache --cache-location node_modules/.cache/.prettiercache",
-    "lint": "turbo lint --continue -- --cache --cache-location node_modules/.cache/.eslintcache",
-    "lint:fix": "turbo lint --continue -- --fix --cache --cache-location node_modules/.cache/.eslintcache",
-    "lint:ws": "pnpm dlx sherif@latest",
-    "lint:staged": "lint-staged",
-    "postinstall": "pnpm lint:ws",
+    "format-and-lint": "biome check .",
+    "format-and-lint:fix": "biome check . --write",
+    "publish-packages": "changeset version && changeset publish",
     "check-types": "turbo check-types"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.8.3",
+    "@changesets/cli": "^2.27.7",
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
     "@commitlint/cz-commitlint": "^19.2.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
-    "@integramind/eslint-config": "workspace:*",
-    "@integramind/prettier-config": "workspace:*",
     "@integramind/tsconfig": "workspace:*",
     "@turbo/gen": "^1.13.3",
     "@typescript-eslint/parser": "^7.11.0",
@@ -43,11 +39,9 @@
     "husky": "^9.0.11",
     "inquirer": "^9.2.22",
     "lint-staged": "^15.2.5",
-    "prettier": "^3.2.5",
     "turbo": "^2.0.4",
     "typescript": "^5.4.5"
   },
-  "prettier": "@integramind/prettier-config",
   "config": {
     "commitizen": {
       "path": "@commitlint/cz-commitlint"

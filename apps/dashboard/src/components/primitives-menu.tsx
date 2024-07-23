@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
   CornerDownLeftIcon,
   PanelRightCloseIcon,
@@ -6,12 +5,14 @@ import {
   RepeatIcon,
   SplitIcon,
 } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 
-import type { PrimitiveType } from "~/types";
 import { LambdaIcon } from "~/components/icons/lambda-icon";
+import type { PrimitiveType } from "~/types";
 
 export function PrimitivesMenu() {
   const onDragStart = (
@@ -26,11 +27,13 @@ export function PrimitivesMenu() {
   return (
     <>
       {isVisible ? (
-        <Card className="flex flex-col space-y-2 bg-muted px-6 py-4 shadow-sm">
+        <Card className="flex flex-col space-y-2 bg-background px-6 py-4 shadow-sm dark:bg-muted">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Primitives</span>
+            <span className="text-xs text-foreground dark:text-muted-foreground">
+              Primitives
+            </span>
             <Button
-              className="size-6 rounded-sm bg-muted"
+              className="size-6 rounded-sm dark:bg-muted"
               variant="outline"
               size="icon"
               onClick={() => setIsVisible(false)}
@@ -40,7 +43,7 @@ export function PrimitivesMenu() {
           </div>
           <div className="grid w-full grid-cols-2 gap-2">
             <div
-              className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
               onDragStart={(event) => onDragStart(event, "function")}
               draggable
             >
@@ -48,7 +51,7 @@ export function PrimitivesMenu() {
               <span className="w-full text-[10px]">Function</span>
             </div>
             <div
-              className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
               onDragStart={(event) => onDragStart(event, "conditional-branch")}
               draggable
             >
@@ -56,7 +59,7 @@ export function PrimitivesMenu() {
               <span className="w-full text-[10px]">Conditional Branch</span>
             </div>
             <div
-              className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
               onDragStart={(event) => onDragStart(event, "iterator")}
               draggable
             >
@@ -64,7 +67,7 @@ export function PrimitivesMenu() {
               <span className="w-full text-[10px]">Iterator</span>
             </div>
             <div
-              className="flex w-full items-center justify-center gap-2 rounded-lg border bg-accent p-2 text-accent-foreground hover:cursor-grab"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
               onDragStart={(event) => onDragStart(event, "response")}
               draggable
             >
@@ -75,7 +78,7 @@ export function PrimitivesMenu() {
         </Card>
       ) : (
         <Button
-          className="bg-muted hover:bg-accent"
+          className="bg-background hover:bg-accent dark:bg-muted"
           variant="outline"
           size="sm"
           onClick={() => setIsVisible(true)}
