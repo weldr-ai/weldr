@@ -185,10 +185,11 @@ export const primitiveSchema = createSelectSchema(primitives, {
 });
 
 export const createPrimitiveSchema = createInsertSchema(primitives, {
-  type: z.enum(["function", "conditional-branch", "iterator", "response"]),
+  type: z.enum(primitiveTypes.enumValues),
 }).pick({
   id: true,
   name: true,
+  description: true,
   type: true,
   flowId: true,
   positionX: true,

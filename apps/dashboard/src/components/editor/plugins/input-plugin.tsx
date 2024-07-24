@@ -12,7 +12,7 @@ import { useCallback, useMemo, useState } from "react";
 import { cn } from "@integramind/ui/utils";
 
 import { $createInputNode } from "~/components/editor/nodes/input-node";
-import { addInput } from "~/lib/queries/primitives";
+import { api } from "~/lib/trpc/react";
 
 export class InputOption extends MenuOption {
   // The id of the reference
@@ -56,6 +56,8 @@ export function InputsPlugin({ id }: { id: string }) {
   const [editor] = useLexicalComposerContext();
   const [_queryString, setQueryString] = useState<string | null>(null);
 
+  const addInput = api.primitives.addInput.useMutation();
+
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch("/", {
     minLength: 0,
   });
@@ -65,7 +67,7 @@ export function InputsPlugin({ id }: { id: string }) {
   }, []);
 
   const onSelectOption = useCallback(
-    async (
+    (
       selectedOption: InputOption,
       nodeToReplace: TextNode | null,
       closeMenu: () => void,
@@ -85,14 +87,14 @@ export function InputsPlugin({ id }: { id: string }) {
         inputNode.decorate();
         closeMenu();
       });
-      await addInput({
+      addInput.mutate({
         id: selectedOption.id,
         inputId,
         name: selectedOption.name,
         type: selectedOption.inputType,
       });
     },
-    [editor],
+    [editor, addInput],
   );
 
   const options = useMemo(() => {

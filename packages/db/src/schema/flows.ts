@@ -1,7 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import { pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import { createSelectSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 import { edges } from "./edges";
@@ -39,56 +39,7 @@ export const flowsRelations = relations(flows, ({ many }) => ({
 // Zod schemas
 export const flowTypesSchema = z.enum(flowTypes.enumValues);
 export const flowSchema = createSelectSchema(flows);
-export const insertFlowSchema = z.discriminatedUnion("type", [
-  z.object({
-    name: z
-      .string()
-      .min(1, {
-        message: "Name is required.",
-      })
-      .transform((name) => name.replace(/\s+/g, " ").trim()),
-    description: z.string(),
-    type: z.literal("component", {
-      message: "Type is required.",
-    }),
-    workspaceId: z.string(),
-  }),
-  z.object({
-    name: z
-      .string()
-      .min(1, {
-        message: "Name is required.",
-      })
-      .transform((name) => name.replace(/\s+/g, " ").trim()),
-    description: z.string(),
-    type: z.literal("route", {
-      message: "Type is required.",
-    }),
-    actionType: z.enum(["create", "read", "update", "delete"], {
-      message: "Type is required.",
-    }),
-    urlPath: z.string().min(1, {
-      message: "URL path is required.",
-    }),
-    workspaceId: z.string(),
-  }),
-  z.object({
-    name: z
-      .string()
-      .min(1, {
-        message: "Name is required.",
-      })
-      .transform((name) => name.replace(/\s+/g, " ").trim()),
-    description: z.string(),
-    type: z.literal("workflow", {
-      message: "Type is required.",
-    }),
-    triggerType: z.enum(["webhook", "schedule"], {
-      message: "Type is required.",
-    }),
-    workspaceId: z.string(),
-  }),
-]);
+export const insertFlowSchema = createInsertSchema(flows);
 
 export const updateRouteFlowSchema = z.object({
   name: z

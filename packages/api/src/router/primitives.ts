@@ -5,7 +5,7 @@ import {
   primitives,
   updatePrimitiveSchema,
 } from "@integramind/db/schema";
-import type { PrimitiveMetadata } from "@integramind/db/types";
+import type { Input } from "@integramind/db/types";
 
 import { type SQL, and, eq, sql } from "@integramind/db";
 import { z } from "zod";
@@ -63,7 +63,7 @@ export const primitivesRouter = {
           flowId: input.flowId,
           positionX: input.positionX,
           positionY: input.positionY,
-          metadata: input.metadata as PrimitiveMetadata,
+          metadata: sql`${input.metadata}::jsonb`,
         })
         .returning({
           id: primitives.id,
@@ -131,5 +131,96 @@ export const primitivesRouter = {
       }
 
       return updatedPrimitive[0];
+    }),
+  updateInput: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        inputId: z.string(),
+        name: z.string().optional(),
+        testValue: z.union([z.string(), z.number()]).nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      function updateInputById(
+        inputs: Input[],
+        id: string,
+        name?: string,
+        testValue?: string | number | null,
+      ): Input[] {
+        return inputs.map((input) =>
+          input.id === id
+            ? {
+                ...input,
+                name: name ?? input.name,
+                testValue: testValue ?? input.testValue,
+              }
+            : input,
+        );
+      }
+
+      const result = await ctx.db.query.primitives.findFirst({
+        where: eq(primitives.id, input.id),
+      });
+
+      if (!result || result.metadata.type !== "route") {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Primitive not found",
+        });
+      }
+
+      const updatedInputs = updateInputById(
+        result.metadata.inputs,
+        input.inputId,
+        input.name,
+        input.testValue,
+      );
+
+      await ctx.db
+        .update(primitives)
+        .set({
+          metadata: sql`${{
+            ...result.metadata,
+            inputs: [...updatedInputs],
+          }}::jsonb`,
+        })
+        .where(eq(primitives.id, input.id));
+
+      return updatedInputs;
+    }),
+  addInput: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        inputId: z.string(),
+        name: z.string(),
+        type: z.enum(["text", "number"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.db.query.primitives.findFirst({
+        where: eq(primitives.id, input.id),
+      });
+
+      if (!result || result.metadata.type !== "route") {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Primitive not found",
+        });
+      }
+
+      await ctx.db
+        .update(primitives)
+        .set({
+          metadata: sql`${{
+            ...result.metadata,
+            inputs: [
+              ...(result.metadata.inputs ? result.metadata.inputs : []),
+              { id: input.inputId, name: input.name, type: input.type },
+            ],
+          }}::jsonb`,
+        })
+        .where(eq(primitives.id, input.id));
     }),
 };

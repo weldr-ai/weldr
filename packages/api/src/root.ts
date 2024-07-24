@@ -1,7 +1,10 @@
 import { authRouter } from "./router/auth";
 import { edgesRouter } from "./router/edges";
+import { flowsRouter } from "./router/flows";
 import { helloRouter } from "./router/hello";
 import { primitivesRouter } from "./router/primitives";
+import { resourcesRouter } from "./router/resources";
+import { workspacesRouter } from "./router/workspaces";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
@@ -9,6 +12,9 @@ export const appRouter = createTRPCRouter({
   hello: helloRouter,
   primitives: primitivesRouter,
   edges: edgesRouter,
+  resources: resourcesRouter,
+  workspaces: workspacesRouter,
+  flows: flowsRouter,
 });
 
 // export type definition of API

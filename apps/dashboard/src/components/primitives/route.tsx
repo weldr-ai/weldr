@@ -57,6 +57,8 @@ import {
 import { Textarea } from "@integramind/ui/textarea";
 import { cn } from "@integramind/ui/utils";
 
+import Editor from "~/components/editor";
+import type { SerializedInputNode } from "~/components/editor/nodes/input-node";
 import { api } from "~/lib/trpc/react";
 import type {
   FlowNode,
@@ -64,8 +66,6 @@ import type {
   RouteMetadata,
   RouteNodeProps,
 } from "~/types";
-import Editor from "../editor";
-import type { SerializedInputNode } from "../editor/nodes/input-node";
 
 export const Route = memo(
   ({ data, isConnectable, xPos, yPos, selected }: RouteNodeProps) => {

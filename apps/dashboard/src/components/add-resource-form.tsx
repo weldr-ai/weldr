@@ -3,14 +3,17 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
-import type { z } from "zod";
+import { z } from "zod";
 
-import { insertResourceSchema } from "@integramind/db/schema";
+import {
+  insertResourceSchema,
+  postgresMetadataSchema,
+} from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import {
   Form,
@@ -24,8 +27,12 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import { addResource } from "~/lib/queries/resources";
+import { addResource } from "~/lib/actions/resources";
 import type { ResourceProvider } from "~/types";
+
+const validationSchema = insertResourceSchema.extend({
+  metadata: z.discriminatedUnion("provider", [postgresMetadataSchema]),
+});
 
 export function AddResourceForm({
   provider,
@@ -34,9 +41,7 @@ export function AddResourceForm({
   provider: ResourceProvider;
   setAddResourceDialogOpen?: (open: boolean) => void;
 }) {
-  // FIXME: use suspense with revalidateTag
   const queryClient = useQueryClient();
-  const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [state, addResourceAction] = useFormState(addResource, undefined);
 
@@ -53,15 +58,15 @@ export function AddResourceForm({
     }
   };
 
-  const form = useForm<z.infer<typeof insertResourceSchema>>({
+  const form = useForm<z.infer<typeof validationSchema>>({
     mode: "onChange",
-    resolver: zodResolver(insertResourceSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       name: "",
       description: "",
       provider,
       workspaceId,
-      ...getMetadataValues(provider),
+      metadata: getMetadataValues(provider),
       ...(state &&
         (state.status === "error" || state.status === "validationError") &&
         state.fields),
@@ -90,11 +95,11 @@ export function AddResourceForm({
                 | "description"
                 | "workspaceId"
                 | "provider"
-                | "host"
-                | "port"
-                | "user"
-                | "password"
-                | "database",
+                | "metadata.host"
+                | "metadata.port"
+                | "metadata.user"
+                | "metadata.password"
+                | "metadata.database",
               {
                 message: state.errors[key],
               },
@@ -142,7 +147,7 @@ export function AddResourceForm({
           <>
             <FormField
               control={form.control}
-              name="host"
+              name="metadata.host"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs">Host</FormLabel>
@@ -155,7 +160,7 @@ export function AddResourceForm({
             />
             <FormField
               control={form.control}
-              name="port"
+              name="metadata.port"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs">Port</FormLabel>
@@ -168,7 +173,7 @@ export function AddResourceForm({
             />
             <FormField
               control={form.control}
-              name="user"
+              name="metadata.user"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs">User</FormLabel>
@@ -181,7 +186,7 @@ export function AddResourceForm({
             />
             <FormField
               control={form.control}
-              name="password"
+              name="metadata.password"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs">Password</FormLabel>
@@ -194,7 +199,7 @@ export function AddResourceForm({
             />
             <FormField
               control={form.control}
-              name="database"
+              name="metadata.database"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs">Database</FormLabel>
@@ -248,7 +253,7 @@ export function AddResourceForm({
 function SubmitButton({
   formState,
 }: {
-  formState: FormState<z.infer<typeof insertResourceSchema>>;
+  formState: FormState<z.infer<typeof validationSchema>>;
 }) {
   const { pending } = useFormStatus();
   return (

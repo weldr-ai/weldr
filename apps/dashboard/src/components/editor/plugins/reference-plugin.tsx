@@ -1,10 +1,11 @@
+"use client";
+
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   LexicalTypeaheadMenuPlugin,
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
-import { skipToken, useQuery } from "@tanstack/react-query";
 import type { TextNode } from "lexical";
 import {
   ColumnsIcon,
@@ -23,7 +24,7 @@ import { cn } from "@integramind/ui/utils";
 import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
-import { getResourceById, getResources } from "~/lib/queries/resources";
+import { api } from "~/lib/trpc/react";
 import type { Input } from "~/types";
 
 export class ReferenceOption extends MenuOption {
@@ -86,16 +87,18 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   const [queryString, setQueryString] = useState<string | null>(null);
   const [resourceId, setResourceId] = useState<string | undefined>();
 
-  const { data: resources } = useQuery({
-    queryKey: ["resources"],
-    queryFn: () => getResources({ workspaceId }),
+  const { data: resources } = api.resources.getAll.useQuery({
+    workspaceId,
   });
 
-  const { data: resource } = useQuery({
-    queryKey: ["resource", resourceId],
-    queryFn: resourceId ? () => getResourceById({ id: resourceId }) : skipToken,
-    enabled: !!resourceId,
-  });
+  const { data: resource } = api.resources.getById.useQuery(
+    {
+      id: resourceId ?? "",
+    },
+    {
+      enabled: !!resourceId,
+    },
+  );
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch("/", {
     minLength: 0,

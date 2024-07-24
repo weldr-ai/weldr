@@ -15,7 +15,6 @@
     "@integramind/api": "workspace:*",
     "@integramind/db": "workspace:*",
     "@integramind/shared": "workspace:*",
-    "@integramind/integrations-postgres": "workspace:*",
     "cors": "^2.8.5",
     "express": "^4.19.2"
   },

@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
 import { toast } from "@integramind/ui/use-toast";
 
-import { joinWaitlist } from "~/lib/queries/waitlist";
+import { joinWaitlist } from "~/lib/actions/waitlist";
 
 export function JoinWaitlistForm({
   variant = "default",

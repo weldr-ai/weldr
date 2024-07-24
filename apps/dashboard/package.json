@@ -15,7 +15,6 @@
     "@integramind/api": "workspace:*",
     "@integramind/auth": "workspace:*",
     "@integramind/db": "workspace:*",
-    "@integramind/integrations-postgres": "workspace:*",
     "@integramind/ui": "workspace:*",
     "@integramind/shared": "workspace:*",
     "@lexical/react": "^0.16.0",

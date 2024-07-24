@@ -71,9 +71,6 @@ importers:
       '@integramind/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@integramind/integrations-postgres':
-        specifier: workspace:*
-        version: link:../../packages/integrations/postgres
       '@integramind/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -198,9 +195,6 @@ importers:
       '@integramind/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@integramind/integrations-postgres':
-        specifier: workspace:*
-        version: link:../../packages/integrations/postgres
       '@integramind/shared':
         specifier: workspace:*
         version: link:../../packages/shared
