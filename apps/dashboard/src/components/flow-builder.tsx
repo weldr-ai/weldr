@@ -42,10 +42,6 @@ import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
 import { Workflow } from "~/components/primitives/workflow";
 import { createEdge } from "~/lib/queries/edges";
-import {
-  deletePrimitive,
-  updatePrimitivePosition,
-} from "~/lib/queries/primitives";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, PrimitiveType } from "~/types";
 
@@ -77,6 +73,8 @@ export function _FlowBuilder({
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const createPrimitive = api.primitives.create.useMutation();
+  const deletePrimitive = api.primitives.delete.useMutation();
+  const updatePrimitive = api.primitives.update.useMutation();
 
   const onConnect = useCallback(
     async (params: ReactFlowEdge | Connection) => {
@@ -167,22 +165,29 @@ export function _FlowBuilder({
       node: ReactFlowNode,
       _nodes: ReactFlowNode[],
     ) => {
-      await updatePrimitivePosition({
-        id: node.id,
-        positionX: Math.floor(node.position.x),
-        positionY: Math.floor(node.position.y),
+      await updatePrimitive.mutate({
+        where: {
+          id: node.id,
+        },
+        payload: {
+          positionX: Math.floor(node.position.x),
+          positionY: Math.floor(node.position.y),
+        },
       });
     },
-    [],
+    [updatePrimitive],
   );
 
-  const onNodesDelete = useCallback(async (nodes: ReactFlowNode[]) => {
-    for (const node of nodes) {
-      await deletePrimitive({
-        id: node.id,
-      });
-    }
-  }, []);
+  const onNodesDelete = useCallback(
+    async (nodes: ReactFlowNode[]) => {
+      for (const node of nodes) {
+        deletePrimitive.mutate({
+          id: node.id,
+        });
+      }
+    },
+    [deletePrimitive],
+  );
 
   return (
     <ReactFlow

@@ -1,11 +1,7 @@
 {
-  "extends": "@integramind/tsconfig/base.json",
+  "extends": "@integramind/tsconfig/internal-package.json",
   "compilerOptions": {
     "outDir": "dist",
-    "baseUrl": ".",
-    "paths": {
-      "~/*": ["./src/*"]
-    },
     "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"
   },
   "include": ["src"],

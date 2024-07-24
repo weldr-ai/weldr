@@ -44,4 +44,6 @@ dist/
 # turbo
 .turbo
 
-tmp/
+# nitro
+.output/
+.nitro/

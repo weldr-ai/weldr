@@ -5,27 +5,25 @@
   "type": "module",
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsx --watch --no-node-snapshot src/index.ts",
-    "clean": "git clean -xdf .turbo node_modules dist",
+    "dev": "tsx --watch src/index.ts",
+    "preview": "node .output/server/index.mjs",
+    "clean": "git clean -xdf .turbo .nitro node_modules dist",
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
+    "@integramind/ai": "workspace:*",
     "@integramind/api": "workspace:*",
-    "@integramind/auth": "workspace:*",
     "@integramind/db": "workspace:*",
+    "@integramind/shared": "workspace:*",
     "@integramind/integrations-postgres": "workspace:*",
-    "@trpc/server": "11.0.0-rc.441",
     "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "isolated-vm": "^5.0.1",
-    "openai": "^4.52.0",
-    "typescript": "^5.5.3",
-    "zod": "^3.23.8"
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "@integramind/tsconfig": "workspace:*",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "typescript": "^5.5.3",
     "tsup": "^8.1.0",
     "tsx": "^4.16.2"
   }

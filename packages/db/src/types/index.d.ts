@@ -11,6 +11,7 @@ import type {
   resourceMetadataSchema,
   resourceSchema,
   routeMetadataSchema,
+  workflowMetadataSchema,
 } from "../schema";
 
 export type VarType = "number" | "text";
@@ -51,3 +52,6 @@ export type FunctionMetadata = z.infer<typeof functionMetadataSchema>;
 
 export type RouteData = PrimitiveBaseData & RouteMetadata;
 export type RouteMetadata = z.infer<typeof routeMetadataSchema>;
+
+export type WorkflowData = PrimitiveBaseData & WorkflowMetadata;
+export type WorkflowMetadata = z.infer<typeof workflowMetadataSchema>;

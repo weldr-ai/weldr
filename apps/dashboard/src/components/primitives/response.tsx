@@ -37,7 +37,7 @@ import {
 import { cn } from "@integramind/ui/utils";
 
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import { deletePrimitive } from "~/lib/queries/primitives";
+import { api } from "~/lib/trpc/react";
 import type { ResponseNodeProps } from "~/types";
 
 export const Response = memo(
@@ -45,6 +45,8 @@ export const Response = memo(
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
+
+    const deletePrimitive = api.primitives.delete.useMutation();
 
     return (
       <>
@@ -190,7 +192,7 @@ export const Response = memo(
                 },
               ],
             });
-            await deletePrimitive({
+            deletePrimitive.mutate({
               id: data.id,
             });
           }}

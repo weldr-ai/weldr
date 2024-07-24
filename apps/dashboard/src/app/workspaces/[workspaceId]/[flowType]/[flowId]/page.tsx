@@ -31,9 +31,17 @@ export default async function WorkflowPage({
             name: primitive.name,
             description: primitive.description,
             type: primitive.type,
-            actionType: primitive.metadata.actionType,
-            urlPath: primitive.metadata.urlPath,
-            inputs: primitive.metadata.inputs,
+            positionX: primitive.positionX,
+            positionY: primitive.positionY,
+            createdAt: primitive.createdAt,
+            updatedAt: primitive.updatedAt,
+            flowId: primitive.flowId,
+            metadata: {
+              type: primitive.type,
+              actionType: primitive.metadata.actionType,
+              urlPath: primitive.metadata.urlPath,
+              inputs: primitive.metadata.inputs,
+            },
           },
         };
       case "workflow":
@@ -48,8 +56,16 @@ export default async function WorkflowPage({
             name: primitive.name,
             description: primitive.description,
             type: primitive.type,
-            triggerType: primitive.metadata.triggerType,
-            inputs: primitive.metadata.inputs,
+            positionX: primitive.positionX,
+            positionY: primitive.positionY,
+            createdAt: primitive.createdAt,
+            updatedAt: primitive.updatedAt,
+            flowId: primitive.flowId,
+            metadata: {
+              type: primitive.type,
+              triggerType: primitive.metadata.triggerType,
+              inputs: primitive.metadata.inputs,
+            },
           },
         };
       case "function":
@@ -63,11 +79,19 @@ export default async function WorkflowPage({
             name: primitive.name,
             description: primitive.description,
             type: primitive.type,
-            inputs: primitive.metadata.inputs,
-            outputs: primitive.metadata.outputs,
-            resource: primitive.metadata.resource,
-            rawDescription: primitive.metadata.rawDescription,
-            isLocked: primitive.metadata.isLocked,
+            positionX: primitive.positionX,
+            positionY: primitive.positionY,
+            createdAt: primitive.createdAt,
+            updatedAt: primitive.updatedAt,
+            flowId: primitive.flowId,
+            metadata: {
+              type: primitive.type,
+              inputs: primitive.metadata.inputs,
+              outputs: primitive.metadata.outputs,
+              resource: primitive.metadata.resource,
+              rawDescription: primitive.metadata.rawDescription,
+              isLocked: primitive.metadata.isLocked,
+            },
           },
         };
       case "response":
@@ -82,6 +106,11 @@ export default async function WorkflowPage({
             name: primitive.name,
             description: primitive.description,
             type: primitive.type,
+            positionX: primitive.positionX,
+            positionY: primitive.positionY,
+            createdAt: primitive.createdAt,
+            updatedAt: primitive.updatedAt,
+            flowId: primitive.flowId,
           },
         };
     }

@@ -33,22 +33,27 @@ export type BaseNodeProps<T> = NodeProps<T>;
 export interface BaseNodeData {
   id: string;
   name: string;
-  description?: string | null;
+  description: string | null;
   type: PrimitiveType;
+  positionX: number;
+  positionY: number;
+  createdAt: Date;
+  updatedAt: Date;
+  flowId: string;
 }
 
 export type RouteMetadata = z.infer<typeof routeMetadataSchema>;
-export type RouteData = BaseNodeData & RouteMetadata;
+export type RouteData = BaseNodeData & { metadata: RouteMetadata };
 export type RouteNode = BaseNode<RouteData>;
 export type RouteNodeProps = BaseNodeProps<RouteData>;
 
 export type WorkflowMetadata = z.infer<typeof workflowMetadataSchema>;
-export type WorkflowData = BaseNodeData & WorkflowMetadata;
+export type WorkflowData = BaseNodeData & { metadata: WorkflowMetadata };
 export type WorkflowNode = BaseNode<WorkflowData>;
 export type WorkflowNodeProps = BaseNodeProps<WorkflowData>;
 
 export type FunctionMetadata = z.infer<typeof functionMetadataSchema>;
-export type FunctionData = BaseNodeData & FunctionMetadata;
+export type FunctionData = BaseNodeData & { metadata: FunctionMetadata };
 export type FunctionNode = BaseNode<FunctionData>;
 export type FunctionNodeProps = BaseNodeProps<FunctionData>;
 

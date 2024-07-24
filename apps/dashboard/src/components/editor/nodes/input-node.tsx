@@ -15,8 +15,8 @@ import { useReactFlow } from "reactflow";
 import { Form, FormControl, FormField, FormItem } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
 
+import { toCamelCase } from "@integramind/shared/utils";
 import { updateInput } from "~/lib/queries/primitives";
-import { toCamelCase } from "~/lib/utils";
 import type { FlowNode } from "~/types";
 
 function InputNodeComponent({

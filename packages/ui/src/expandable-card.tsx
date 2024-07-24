@@ -93,6 +93,7 @@ const ExpandableCardContent = React.forwardRef<
   const { open, onOpenChange } = useExpandableCardContext();
   const contentRef = React.useRef<HTMLDivElement>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: More control is needed here
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!contentRef.current?.contains(event.target as Node)) {
@@ -103,7 +104,7 @@ const ExpandableCardContent = React.forwardRef<
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
-  }, [onOpenChange]);
+  }, [open, onOpenChange]);
 
   return (
     <div
