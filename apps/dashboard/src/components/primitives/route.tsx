@@ -115,7 +115,7 @@ export const Route = memo(
         }
       };
 
-      editorState.read(() => {
+      editorState.read(async () => {
         const { root } = editorState.toJSON();
         const inputs = getInputs(root);
         updateRoute.mutate({
@@ -252,7 +252,7 @@ export const Route = memo(
                           {...field}
                           placeholder="Enter route name"
                           onBlur={async (e) => {
-                            updateRoute.mutate({
+                            await updateRoute.mutateAsync({
                               where: {
                                 id: data.id,
                                 type: "route",
@@ -286,7 +286,7 @@ export const Route = memo(
                           placeholder="Enter route description"
                           value={field.value}
                           onBlur={async (e) => {
-                            updateRoute.mutate({
+                            await updateRoute.mutateAsync({
                               where: {
                                 id: data.id,
                                 type: "route",
@@ -315,7 +315,7 @@ export const Route = memo(
                           name={field.name}
                           onValueChange={async (value) => {
                             field.onChange(value);
-                            updateRoute.mutate({
+                            await updateRoute.mutateAsync({
                               where: {
                                 id: data.id,
                                 type: "route",
@@ -361,7 +361,7 @@ export const Route = memo(
                           placeholder="Enter action URL path"
                           value={field.value}
                           onBlur={async (e) => {
-                            updateRoute.mutate({
+                            await updateRoute.mutateAsync({
                               where: {
                                 id: data.id,
                                 type: "route",

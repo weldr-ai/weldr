@@ -184,7 +184,7 @@ export const Response = memo(
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
-          onDelete={async () => {
+          onDelete={() => {
             reactFlow.deleteElements({
               nodes: [
                 {

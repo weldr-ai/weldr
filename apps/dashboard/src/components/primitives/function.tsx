@@ -236,7 +236,7 @@ export const FunctionNode = memo(
       useState<boolean>(false);
 
     function onChange(editorState: EditorState) {
-      editorState.read(() => {
+      editorState.read(async () => {
         const root = $getRoot();
         const children = (root.getChildren()[0] as ParagraphNode).getChildren();
 
@@ -419,7 +419,7 @@ export const FunctionNode = memo(
                       className="size-7 text-muted-foreground hover:text-muted-foreground"
                       variant="ghost"
                       size="icon"
-                      onClick={async () => {
+                      onClick={() => {
                         updateFunction.mutate({
                           where: {
                             id: data.id,
@@ -492,7 +492,7 @@ export const FunctionNode = memo(
                       {...field}
                       autoComplete="off"
                       className="h-8 border-none bg-muted p-0 text-sm focus-visible:ring-0"
-                      onBlur={async (e) => {
+                      onBlur={(e) => {
                         updateFunction.mutate({
                           where: {
                             id: data.id,
@@ -641,7 +641,7 @@ export const FunctionNode = memo(
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
-          onDelete={async () => {
+          onDelete={() => {
             reactFlow.deleteElements({
               nodes: [
                 {
