@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
 import type {
   EditorState,
   LexicalEditor,
@@ -58,13 +57,15 @@ import {
 import { Textarea } from "@integramind/ui/textarea";
 import { cn } from "@integramind/ui/utils";
 
-import {
-  getRoutePrimitiveById,
-  updateRoutePrimitiveById,
-} from "~/lib/queries/primitives";
-import type { FlowNode, Input as IInput, RouteNodeProps } from "~/types";
-import Editor from "../editor";
-import type { SerializedInputNode } from "../editor/nodes/input-node";
+import Editor from "~/components/editor";
+import type { SerializedInputNode } from "~/components/editor/nodes/input-node";
+import { api } from "~/lib/trpc/react";
+import type {
+  FlowNode,
+  Input as IInput,
+  RouteMetadata,
+  RouteNodeProps,
+} from "~/types";
 
 export const Route = memo(
   ({ data, isConnectable, xPos, yPos, selected }: RouteNodeProps) => {
@@ -74,17 +75,24 @@ export const Route = memo(
       defaultValues: {
         name: data.name,
         description: data.description ?? undefined,
-        actionType: data.actionType,
-        urlPath: data.urlPath,
-        inputs: data.inputs,
+        actionType: data.metadata.actionType,
+        urlPath: data.metadata.urlPath,
+        inputs: data.metadata.inputs,
       },
     });
 
-    const { data: routeData, refetch } = useQuery({
-      queryKey: [data.id],
-      queryFn: () => getRoutePrimitiveById({ id: data.id }),
-      initialData: data,
-    });
+    const updateRoute = api.primitives.update.useMutation();
+    const { data: routeData, refetch: refetchRouteData } =
+      api.primitives.getByIdAndType.useQuery(
+        {
+          id: data.id,
+          type: "route",
+        },
+        {
+          refetchInterval: false,
+          initialData: data,
+        },
+      );
 
     function onChange(editorState: EditorState) {
       const getInputs = (root: SerializedRootNode<SerializedLexicalNode>) => {
@@ -107,12 +115,20 @@ export const Route = memo(
         }
       };
 
-      editorState.read(() => {
+      editorState.read(async () => {
         const { root } = editorState.toJSON();
         const inputs = getInputs(root);
-        void updateRoutePrimitiveById({
-          id: data.id,
-          inputs,
+        updateRoute.mutate({
+          where: {
+            id: data.id,
+            type: "route",
+          },
+          payload: {
+            metadata: {
+              type: "route",
+              inputs,
+            },
+          },
         });
         reactFlow.setNodes((nodes) =>
           nodes.map((node) => {
@@ -161,7 +177,9 @@ export const Route = memo(
               }}
             >
               <div className="flex w-full items-center gap-2 text-xs">
-                <Badge>{routeData?.actionType}</Badge>
+                <Badge>
+                  {(routeData.metadata as RouteMetadata).actionType}
+                </Badge>
                 <span className="text-muted-foreground">Route</span>
               </div>
               <span className="flex w-full justify-start text-sm">
@@ -174,7 +192,7 @@ export const Route = memo(
               <div className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
                   <Badge variant="default" className="text-xs">
-                    {routeData?.actionType}
+                    {(routeData.metadata as RouteMetadata).actionType}
                   </Badge>
                   <span className="text-xs text-muted-foreground">Route</span>
                 </div>
@@ -234,11 +252,16 @@ export const Route = memo(
                           {...field}
                           placeholder="Enter route name"
                           onBlur={async (e) => {
-                            await updateRoutePrimitiveById({
-                              id: data.id,
-                              name: e.target.value,
+                            await updateRoute.mutateAsync({
+                              where: {
+                                id: data.id,
+                                type: "route",
+                              },
+                              payload: {
+                                name: e.target.value,
+                              },
                             });
-                            await refetch();
+                            await refetchRouteData();
                           }}
                         />
                       </FormControl>
@@ -263,11 +286,16 @@ export const Route = memo(
                           placeholder="Enter route description"
                           value={field.value}
                           onBlur={async (e) => {
-                            await updateRoutePrimitiveById({
-                              id: data.id,
-                              description: e.target.value,
+                            await updateRoute.mutateAsync({
+                              where: {
+                                id: data.id,
+                                type: "route",
+                              },
+                              payload: {
+                                description: e.target.value,
+                              },
                             });
-                            await refetch();
+                            await refetchRouteData();
                           }}
                         />
                       </FormControl>
@@ -287,15 +315,23 @@ export const Route = memo(
                           name={field.name}
                           onValueChange={async (value) => {
                             field.onChange(value);
-                            await updateRoutePrimitiveById({
-                              id: data.id,
-                              actionType: value as
-                                | "create"
-                                | "read"
-                                | "update"
-                                | "delete",
+                            await updateRoute.mutateAsync({
+                              where: {
+                                id: data.id,
+                                type: "route",
+                              },
+                              payload: {
+                                metadata: {
+                                  type: "route",
+                                  actionType: value as
+                                    | "create"
+                                    | "read"
+                                    | "update"
+                                    | "delete",
+                                },
+                              },
                             });
-                            await refetch();
+                            await refetchRouteData();
                           }}
                         >
                           <SelectTrigger className="bg-background">
@@ -325,11 +361,19 @@ export const Route = memo(
                           placeholder="Enter action URL path"
                           value={field.value}
                           onBlur={async (e) => {
-                            await updateRoutePrimitiveById({
-                              id: data.id,
-                              urlPath: e.target.value,
+                            await updateRoute.mutateAsync({
+                              where: {
+                                id: data.id,
+                                type: "route",
+                              },
+                              payload: {
+                                metadata: {
+                                  type: "route",
+                                  urlPath: e.target.value,
+                                },
+                              },
                             });
-                            await refetch();
+                            await refetchRouteData();
                           }}
                         />
                       </FormControl>
@@ -344,7 +388,7 @@ export const Route = memo(
                   id={data.id}
                   onChange={onChange}
                   onError={onError}
-                  inputs={data.inputs}
+                  inputs={data.metadata.inputs}
                   type="inputs"
                   className="h-20"
                   placeholder="Enter inputs"

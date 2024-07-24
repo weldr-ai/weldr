@@ -61,7 +61,7 @@ export const Workflow = memo(
               }}
             >
               <div className="flex w-full items-center gap-2 text-xs">
-                <Badge>{data.triggerType}</Badge>
+                <Badge>{data.metadata.triggerType}</Badge>
                 <span className="text-muted-foreground">Workflow</span>
               </div>
               <span className="flex w-full justify-start text-sm">
@@ -74,7 +74,7 @@ export const Workflow = memo(
               <div className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
                   <Badge variant="default" className="text-xs">
-                    {data.triggerType}
+                    {data.metadata.triggerType}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     Workflow

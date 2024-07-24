@@ -16,7 +16,7 @@ export const edges = pgTable("edges", {
   target: text("target")
     .references(() => primitives.id, { onDelete: "cascade" })
     .notNull(),
-  flow_id: text("flow_id")
+  flowId: text("flow_id")
     .references(() => flows.id, { onDelete: "cascade" })
     .notNull(),
 });
@@ -24,7 +24,7 @@ export const edges = pgTable("edges", {
 export const edgesRelations = relations(edges, ({ many, one }) => ({
   primitives: many(primitives),
   flows: one(flows, {
-    fields: [edges.flow_id],
+    fields: [edges.flowId],
     references: [flows.id],
   }),
 }));

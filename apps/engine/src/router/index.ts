@@ -1,9 +1,9 @@
 import express from "express";
 
-import engineRoutes from "./engine";
+import executorRoutes from "./executor";
 
 const router = express.Router();
 
-router.use("/engine", engineRoutes);
+router.use("/execute", executorRoutes);
 
 export default router;

@@ -1,15 +1,11 @@
 import express from "express";
 
-import { getRouteFlowByPath } from "@integramind/db/queries/flows";
-import {
-  getFunctionPrimitiveWithSecretsById,
-  updateFunctionPrimitiveById,
-} from "@integramind/db/queries/primitives";
-import { getResourceById } from "@integramind/db/queries/resources";
-import type { Resource } from "@integramind/db/types";
+import type { Resource, RouteMetadata } from "@integramind/db/types";
 
-import { executePrimitive } from "~/lib/native-executor";
-import { generateCode } from "~/lib/openai";
+import { generateCode } from "@integramind/ai";
+import { and, db, eq, sql } from "@integramind/db";
+import { flows, primitives, resources } from "@integramind/db/schema";
+import { executePrimitive } from "~/lib/executor";
 import {
   checkMethod,
   getExecutionOrder,
@@ -24,38 +20,44 @@ const router = express.Router();
 router.use("/primitives/:primitiveId", async (req, res) => {
   const { primitiveId } = req.params;
 
-  const primitive = await getFunctionPrimitiveWithSecretsById({
-    id: primitiveId,
+  const primitive = await db.query.primitives.findFirst({
+    where: eq(primitives.id, primitiveId),
   });
 
-  if (!primitive) {
-    return res.status(404).json({ error: "Function not found" });
+  if (!primitive || primitive.metadata.type !== "function") {
+    return {
+      status: 404,
+      body: { error: "Function not found" },
+    };
   }
 
   const inputs: Record<string, string | number> = {};
 
-  for (const input of primitive.inputs) {
+  for (const input of primitive.metadata.inputs) {
     if (input.testValue) {
       inputs[toCamelCase(input.name)] = input.testValue;
     } else {
-      return Response.json({ error: "Missing test value" }, { status: 400 });
+      return {
+        status: 400,
+        body: { error: "Missing test value" },
+      };
     }
   }
 
   let resource: Resource | undefined;
 
-  if (primitive.resource) {
-    resource = await getResourceById({
-      id: primitive.resource?.id,
+  if (primitive.metadata.resource) {
+    resource = await db.query.resources.findFirst({
+      where: eq(resources.id, primitive.metadata.resource.id),
     });
   }
 
-  const code = primitive.generatedCode;
+  const code = primitive.metadata.generatedCode;
 
   if (
     primitive.description &&
-    !primitive.isLocked &&
-    !primitive.isCodeUpdated
+    !primitive.metadata.isLocked &&
+    !primitive.metadata.isCodeUpdated
   ) {
     let resourceInfo:
       | { actions: string[]; getInfo: (auth: unknown) => Promise<unknown> }
@@ -66,7 +68,10 @@ router.use("/primitives/:primitiveId", async (req, res) => {
     }
 
     if (!resourceInfo) {
-      return res.status(500).json({ error: "Server error" });
+      return {
+        status: 500,
+        body: { error: "Server error" },
+      };
     }
 
     const systemMessage = getSystemMessage(resource !== undefined);
@@ -90,18 +95,25 @@ router.use("/primitives/:primitiveId", async (req, res) => {
 
     const functionCode = await generateCode(systemMessage, userMessage);
 
-    await updateFunctionPrimitiveById({
+    await db.update(primitives).set({
       id: primitive.id,
-      generatedCode: functionCode,
-      isCodeUpdated: true,
+      metadata: {
+        ...primitive.metadata,
+        type: "function",
+        generatedCode: functionCode,
+        isCodeUpdated: true,
+      },
     });
   }
 
   if (!code) {
-    return res.status(500).json({ error: "Server error" });
+    return {
+      status: 500,
+      body: { error: "Server error" },
+    };
   }
 
-  const resources = resource
+  const resourcesInfo = resource
     ? [
         {
           [resource.provider]: {
@@ -116,7 +128,7 @@ router.use("/primitives/:primitiveId", async (req, res) => {
   const executionResult = await executePrimitive(
     primitive.name,
     code,
-    resources,
+    resourcesInfo,
     inputs,
   );
 
@@ -124,7 +136,10 @@ router.use("/primitives/:primitiveId", async (req, res) => {
     ? [...(executionResult as unknown[])]
     : [executionResult];
 
-  return res.json({ result });
+  return {
+    status: 200,
+    body: { result },
+  };
 });
 
 router.use("/:workspaceId/*", async (req, res) => {
@@ -135,10 +150,43 @@ router.use("/:workspaceId/*", async (req, res) => {
 
   const method = req.method as "GET" | "POST" | "PUT" | "DELETE";
 
-  const route = await getRouteFlowByPath({
-    workspaceId,
-    urlPath: path,
+  const result = await db
+    .select({
+      metadata: primitives.metadata,
+      flowId: primitives.flowId,
+    })
+    .from(primitives)
+    .where(
+      and(
+        eq(primitives.type, "route"),
+        sql`primitives.metadata::jsonb->>'urlPath' = ${path}`,
+      ),
+    );
+
+  if (!result[0]) {
+    return;
+  }
+
+  const flow = await db.query.flows.findFirst({
+    where: eq(flows.id, result[0].flowId),
+    with: {
+      primitives: true,
+      edges: true,
+    },
   });
+
+  if (!flow) {
+    return;
+  }
+
+  const route = {
+    flow,
+    config: {
+      actionType: (result[0].metadata as RouteMetadata).actionType,
+      urlPath: (result[0].metadata as RouteMetadata).urlPath,
+      inputs: (result[0].metadata as RouteMetadata).inputs,
+    },
+  };
 
   if (!route) {
     return res.status(404).send("Not found");

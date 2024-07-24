@@ -1,7 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import { createSelectSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 import type { ResourceMetadata } from "../types";
@@ -36,24 +36,8 @@ export const resourcesRelations = relations(resources, ({ one }) => ({
 
 // Zod schemas
 export const resourceProvidersSchema = z.enum(resourceProviders.enumValues);
-export const insertResourceSchema = z.discriminatedUnion("provider", [
-  z.object({
-    name: z
-      .string()
-      .min(1, {
-        message: "Name is required.",
-      })
-      .transform((name) => name.replace(/\s+/g, " ").trim()),
-    description: z.string(),
-    provider: z.literal("postgres"),
-    host: z.string(),
-    port: z.string().transform((port) => Number(port)),
-    user: z.string(),
-    password: z.string(),
-    database: z.string(),
-    workspaceId: z.string(),
-  }),
-]);
+export const insertResourceSchema = createInsertSchema(resources);
+
 export const postgresMetadataSchema = z.object({
   provider: z.literal("postgres"),
   host: z.string(),
@@ -62,9 +46,11 @@ export const postgresMetadataSchema = z.object({
   password: z.string(),
   database: z.string(),
 });
+
 export const resourceMetadataSchema = z.discriminatedUnion("provider", [
   postgresMetadataSchema,
 ]);
+
 export const resourceSchema = createSelectSchema(resources, {
   metadata: resourceMetadataSchema,
 });

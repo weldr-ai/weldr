@@ -8,9 +8,13 @@ import { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
-import type { z } from "zod";
+import { z } from "zod";
 
-import { insertFlowSchema } from "@integramind/db/schema";
+import {
+  insertFlowSchema,
+  routeMetadataSchema,
+  workflowMetadataSchema,
+} from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import {
   Form,
@@ -31,8 +35,15 @@ import {
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import { createFlow } from "~/lib/queries/flows";
+import { createFlow } from "~/lib/actions/flows";
 import type { FlowType } from "~/types";
+
+const validationSchema = insertFlowSchema.extend({
+  metadata: z.discriminatedUnion("type", [
+    routeMetadataSchema,
+    workflowMetadataSchema,
+  ]),
+});
 
 export function CreateFlowForm({
   type,
@@ -41,7 +52,6 @@ export function CreateFlowForm({
   type: FlowType;
   setCreatePrimitiveDialogOpen?: (open: boolean) => void;
 }) {
-  // FIXME: use suspense with revalidateTag
   const queryClient = useQueryClient();
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -50,30 +60,25 @@ export function CreateFlowForm({
   const getMetadataValues = (type: FlowType) => {
     switch (type) {
       case "component":
-        return {
-          workspaceId,
-        };
+        return {};
       case "route":
         return {
           actionType: undefined,
           urlPath: "",
         };
       case "workflow":
-        return {
-          triggerType: undefined,
-        };
     }
   };
 
-  const form = useForm<z.infer<typeof insertFlowSchema>>({
+  const form = useForm<z.infer<typeof validationSchema>>({
     mode: "onChange",
-    resolver: zodResolver(insertFlowSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       name: "",
       description: "",
       type,
       workspaceId,
-      ...getMetadataValues(type),
+      metadata: getMetadataValues(type),
       ...(state &&
         (state.status === "error" || state.status === "validationError") &&
         state.fields),
@@ -105,9 +110,9 @@ export function CreateFlowForm({
                 | "description"
                 | "workspaceId"
                 | "type"
-                | "actionType"
-                | "urlPath"
-                | "triggerType",
+                | "metadata.actionType"
+                | "metadata.urlPath"
+                | "metadata.triggerType",
               {
                 message: state.errors[key],
               },
@@ -166,7 +171,7 @@ export function CreateFlowForm({
         {type === "workflow" && (
           <FormField
             control={form.control}
-            name="triggerType"
+            name="metadata.triggerType"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Type</FormLabel>
@@ -194,7 +199,7 @@ export function CreateFlowForm({
           <>
             <FormField
               control={form.control}
-              name="actionType"
+              name="metadata.actionType"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs">Type</FormLabel>
@@ -221,7 +226,7 @@ export function CreateFlowForm({
             />
             <FormField
               control={form.control}
-              name="urlPath"
+              name="metadata.urlPath"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs">URL Path</FormLabel>
@@ -279,7 +284,7 @@ export function CreateFlowForm({
 function SubmitButton({
   formState,
 }: {
-  formState: FormState<z.infer<typeof insertFlowSchema>>;
+  formState: FormState<z.infer<typeof validationSchema>>;
 }) {
   const { pending } = useFormStatus();
   return (

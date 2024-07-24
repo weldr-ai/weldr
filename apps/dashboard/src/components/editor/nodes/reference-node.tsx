@@ -16,8 +16,8 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { PostgresIcon } from "~/components/icons/postgres-icon";
-import { toCamelCase } from "~/lib/utils";
+import { toCamelCase } from "@integramind/shared/utils";
+import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
 
 export type SerializedReferenceNode = Spread<
   {

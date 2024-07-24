@@ -118,48 +118,6 @@ export const functionMetadataSchema = z.object({
   isLocked: z.boolean().default(false).optional(),
 });
 
-export const updateFunctionSchema = z.object({
-  name: z
-    .string()
-    .min(1, {
-      message: "Name is required.",
-    })
-    .transform((name) => name.replace(/\s+/g, " ").trim())
-    .optional(),
-  description: z.string().optional(),
-  inputs: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      testValue: z
-        .union([z.string(), z.number()])
-        .nullable()
-        .optional()
-        .default(null),
-      type: z.enum(["number", "text", "functionResponse"]),
-    })
-    .array()
-    .optional(),
-  outputs: z
-    .object({
-      name: z.string(),
-      type: z.enum(["number", "text", "functionResponse"]),
-    })
-    .array()
-    .optional(),
-  resource: z
-    .object({
-      id: z.string(),
-      provider: z.enum(resourceProviders.enumValues),
-    })
-    .nullable()
-    .optional(),
-  rawDescription: functionRawDescriptionSchema.array().optional(),
-  generatedCode: z.string().nullable().optional(),
-  isCodeUpdated: z.boolean().optional(),
-  isLocked: z.boolean().default(false).optional(),
-});
-
 export const routeMetadataSchema = z.object({
   type: z.literal("route"),
   actionType: z.enum(["create", "read", "update", "delete"]),
@@ -227,13 +185,99 @@ export const primitiveSchema = createSelectSchema(primitives, {
 });
 
 export const createPrimitiveSchema = createInsertSchema(primitives, {
-  type: z.enum(["function", "conditional-branch", "iterator", "response"]),
+  type: z.enum(primitiveTypes.enumValues),
 }).pick({
   id: true,
   name: true,
+  description: true,
   type: true,
   flowId: true,
   positionX: true,
   positionY: true,
   metadata: true,
+});
+
+export const updateFunctionSchema = z.object({
+  type: z.literal("function"),
+  inputs: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      testValue: z
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .default(null),
+      type: z.enum(["number", "text", "functionResponse"]),
+    })
+    .array()
+    .optional(),
+  outputs: z
+    .object({
+      name: z.string(),
+      type: z.enum(["number", "text", "functionResponse"]),
+    })
+    .array()
+    .optional(),
+  resource: z
+    .object({
+      id: z.string(),
+      provider: z.enum(resourceProviders.enumValues),
+    })
+    .nullable()
+    .optional(),
+  rawDescription: functionRawDescriptionSchema.array().optional(),
+  generatedCode: z.string().nullable().optional(),
+  isCodeUpdated: z.boolean().optional(),
+  isLocked: z.boolean().default(false).optional(),
+});
+
+export const updateRouteSchema = z.object({
+  type: z.literal("route"),
+  actionType: z.enum(["create", "read", "update", "delete"]).optional(),
+  urlPath: z.string().optional(),
+  inputs: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      testValue: z
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .default(null),
+      type: z.enum(["number", "text", "functionResponse"]),
+    })
+    .array()
+    .optional(),
+});
+
+export const updateWorkflowSchema = z.object({
+  type: z.literal("workflow"),
+  triggerType: z.enum(["webhook", "schedule"]).optional(),
+});
+
+export const updatePrimitiveMetadataSchema = z.discriminatedUnion("type", [
+  updateFunctionSchema,
+  updateRouteSchema,
+  updateWorkflowSchema,
+]);
+
+export const updatePrimitiveSchema = z.object({
+  where: z.object({
+    id: z.string(),
+    type: z.enum(primitiveTypes.enumValues).optional(),
+  }),
+  payload: z.object({
+    name: z
+      .string()
+      .min(1, {
+        message: "Name is required.",
+      })
+      .transform((name) => name.replace(/\s+/g, " ").trim())
+      .optional(),
+    description: z.string().optional(),
+    positionX: z.number().optional(),
+    positionY: z.number().optional(),
+    metadata: updatePrimitiveMetadataSchema.optional(),
+  }),
 });

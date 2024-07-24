@@ -1,6 +1,7 @@
 {
   "extends": "@integramind/tsconfig/base.json",
   "compilerOptions": {
+    "traceResolution": true,
     "lib": ["es2022", "dom", "dom.iterable"],
     "jsx": "preserve",
     "baseUrl": ".",
@@ -11,6 +12,10 @@
     "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json",
     "module": "esnext"
   },
-  "include": [".", ".next/types/**/*.ts"],
+  "include": [
+    ".",
+    ".next/types/**/*.ts",
+    "../../packages/ui/src/icons/linkedin-icon.tsx"
+  ],
   "exclude": ["node_modules"]
 }

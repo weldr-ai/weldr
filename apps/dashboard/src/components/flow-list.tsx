@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -7,7 +6,7 @@ import { buttonVariants } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
-import { getFlows } from "~/lib/queries/flows";
+import { api } from "~/lib/trpc/react";
 import type { FlowType } from "~/types";
 import { CreateFlowDialog } from "./create-flow-dialog";
 
@@ -19,14 +18,13 @@ export function FlowList({
   type: FlowType;
 }) {
   const { flowId: currentFlowId } = useParams<{ flowId: string }>();
-  // FIXME: use suspense with revalidateTag
   const {
+    data: flows,
     isLoading,
     isRefetching,
-    data: flows,
-  } = useQuery({
-    queryKey: [`${type}s`],
-    queryFn: () => getFlows({ workspaceId, type }),
+  } = api.flows.getAll.useQuery({
+    workspaceId,
+    type,
   });
 
   return (

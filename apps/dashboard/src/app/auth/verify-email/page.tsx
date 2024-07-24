@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 
-import { IntegraMindIcon } from "~/components/icons/integramind-icon";
+import { IntegraMindIcon } from "@integramind/ui/icons/integramind-icon";
 
 export default function EmailSentConfirmation() {
   const searchParams = useSearchParams();

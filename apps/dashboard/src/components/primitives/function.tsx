@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
@@ -23,6 +22,7 @@ import type { z } from "zod";
 import {
   type resourceProvidersSchema,
   updateFunctionSchema,
+  type updatePrimitiveSchema,
 } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
@@ -67,16 +67,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
 import { cn } from "@integramind/ui/utils";
 
+import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
+import { useQuery } from "@tanstack/react-query";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
-import { LambdaIcon } from "~/components/icons/lambda-icon";
-import {
-  deletePrimitive,
-  getFunctionPrimitiveById,
-  updateFunctionPrimitiveById,
-} from "~/lib/queries/primitives";
+import { api } from "~/lib/trpc/react";
 import type {
+  FunctionMetadata,
   FunctionNodeProps,
   FunctionRawDescription,
   Input,
@@ -89,7 +87,7 @@ async function executeFunction({
   id: string;
 }): Promise<{ result: Record<string, string | number>[] }> {
   const response = await fetch(
-    `http://localhost:3002/api/engine/primitives/${id}`,
+    `http://localhost:3002/api/execute/primitives/${id}`,
     {
       method: "POST",
       headers: {
@@ -114,17 +112,35 @@ export const FunctionNode = memo(
     const reactFlow = useReactFlow();
     const nodes = useNodes<PrimitiveData>();
     const edges = useEdges<"deletable-edge">();
-    const form = useForm<z.infer<typeof updateFunctionSchema>>({
+    const form = useForm<z.infer<typeof updatePrimitiveSchema>>({
       resolver: zodResolver(updateFunctionSchema),
       defaultValues: {
-        name: data.name,
-        description: data.description ?? undefined,
+        payload: {
+          name: data.name,
+          description: data.description ?? undefined,
+        },
       },
     });
 
-    const updateFunction = useMutation({
-      mutationFn: updateFunctionPrimitiveById,
+    const { data: functionData, refetch: refetchFunctionData } =
+      api.primitives.getByIdAndType.useQuery(
+        {
+          id: data.id,
+          type: "function",
+        },
+        {
+          refetchInterval: 5 * 60 * 1000,
+          initialData: data,
+        },
+      );
+
+    const updateFunction = api.primitives.update.useMutation({
+      onSuccess: async () => {
+        await refetchFunctionData();
+      },
     });
+
+    const deletePrimitive = api.primitives.delete.useMutation();
 
     const {
       data: executionResult,
@@ -138,13 +154,6 @@ export const FunctionNode = memo(
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       enabled: false,
-    });
-
-    const { data: functionData, refetch: refetchFunctionData } = useQuery({
-      queryKey: [data.id],
-      queryFn: () => getFunctionPrimitiveById({ id: data.id }),
-      initialData: data,
-      refetchInterval: false,
     });
 
     const inputs = useMemo(() => {
@@ -162,22 +171,30 @@ export const FunctionNode = memo(
         if (parent.type === "route" || parent.type === "workflow") {
           if (parent.inputs) {
             for (const input of parent.inputs) {
-              if (functionData?.inputs) {
-                const foundInput = data.inputs.find(
+              if (functionData?.metadata.inputs) {
+                const foundInput = data.metadata.inputs.find(
                   (item) => item.id === input.id,
                 );
 
                 if (foundInput && foundInput.testValue !== input.testValue) {
                   updateFunction.mutate({
-                    id: data.id,
-                    inputs: data.inputs.map((item) =>
-                      item.id === input.id
-                        ? {
-                            ...item,
-                            testValue: input.testValue,
-                          }
-                        : item,
-                    ),
+                    where: {
+                      id: data.id,
+                      type: "function",
+                    },
+                    payload: {
+                      metadata: {
+                        type: "function",
+                        inputs: data.metadata.inputs.map((item) =>
+                          item.id === input.id
+                            ? {
+                                ...item,
+                                testValue: input.testValue,
+                              }
+                            : item,
+                        ),
+                      },
+                    },
                   });
                 }
               }
@@ -219,7 +236,7 @@ export const FunctionNode = memo(
       useState<boolean>(false);
 
     function onChange(editorState: EditorState) {
-      editorState.read(() => {
+      editorState.read(async () => {
         const root = $getRoot();
         const children = (root.getChildren()[0] as ParagraphNode).getChildren();
 
@@ -272,18 +289,24 @@ export const FunctionNode = memo(
           }
         }
 
-        void updateFunctionPrimitiveById({
-          id: data.id,
-          description,
-          inputs,
-          resource,
-          rawDescription,
-          isCodeUpdated:
-            data.description?.trim().toLowerCase() ===
-            description.trim().toLowerCase(),
+        updateFunction.mutate({
+          where: {
+            id: data.id,
+            type: "function",
+          },
+          payload: {
+            description,
+            metadata: {
+              type: "function",
+              inputs,
+              resource,
+              rawDescription,
+              isCodeUpdated:
+                data.description?.trim().toLowerCase() ===
+                description.trim().toLowerCase(),
+            },
+          },
         });
-
-        void refetchFunctionData();
       });
     }
 
@@ -396,15 +419,24 @@ export const FunctionNode = memo(
                       className="size-7 text-muted-foreground hover:text-muted-foreground"
                       variant="ghost"
                       size="icon"
-                      onClick={async () => {
-                        await updateFunctionPrimitiveById({
-                          id: data.id,
-                          isLocked: !functionData.isLocked,
+                      onClick={() => {
+                        updateFunction.mutate({
+                          where: {
+                            id: data.id,
+                            type: "function",
+                          },
+                          payload: {
+                            metadata: {
+                              type: "function",
+                              isLocked: !(
+                                functionData.metadata as FunctionMetadata
+                              ).isLocked,
+                            },
+                          },
                         });
-                        await refetchFunctionData();
                       }}
                     >
-                      {functionData.isLocked ? (
+                      {(functionData.metadata as FunctionMetadata).isLocked ? (
                         <LockIcon className="size-3.5" />
                       ) : (
                         <UnlockIcon className="size-3.5" />
@@ -454,20 +486,28 @@ export const FunctionNode = memo(
                 </div>
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="payload.name"
                   render={({ field }) => (
                     <InputComponent
                       {...field}
                       autoComplete="off"
                       className="h-8 border-none bg-muted p-0 text-sm focus-visible:ring-0"
-                      onBlur={async (e) => {
-                        await updateFunctionPrimitiveById({
-                          id: data.id,
-                          name: e.target.value,
-                          isCodeUpdated: e.target.value === functionData.name,
+                      onBlur={(e) => {
+                        updateFunction.mutate({
+                          where: {
+                            id: data.id,
+                            type: "function",
+                          },
+                          payload: {
+                            name: e.target.value,
+                            metadata: {
+                              type: "function",
+                              isCodeUpdated:
+                                e.target.value === functionData.name,
+                            },
+                          },
                         });
-                        await refetchFunctionData();
-                        form.setValue("name", e.target.value);
+                        form.setValue("payload.name", e.target.value);
                       }}
                     />
                   )}
@@ -485,7 +525,9 @@ export const FunctionNode = memo(
                     type="description"
                     inputs={inputs}
                     placeholder="Describe your function"
-                    rawDescription={functionData.rawDescription}
+                    rawDescription={
+                      (functionData.metadata as FunctionMetadata).rawDescription
+                    }
                     onChange={onChange}
                     onError={onError}
                   />
@@ -531,6 +573,7 @@ export const FunctionNode = memo(
                             {isLoadingExecutionResult ||
                             isRefetchingExecutionResult ? (
                               <div className="flex items-center justify-center">
+                                fuck
                                 <Loader2Icon className="size-6 animate-spin text-primary" />
                               </div>
                             ) : (
@@ -598,7 +641,7 @@ export const FunctionNode = memo(
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
-          onDelete={async () => {
+          onDelete={() => {
             reactFlow.deleteElements({
               nodes: [
                 {
@@ -606,7 +649,7 @@ export const FunctionNode = memo(
                 },
               ],
             });
-            await deletePrimitive({
+            deletePrimitive.mutate({
               id: data.id,
             });
           }}

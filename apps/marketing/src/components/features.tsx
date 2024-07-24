@@ -8,10 +8,10 @@ import Image from "next/image";
 
 import { Badge } from "@integramind/ui/badge";
 
-import { NotionIcon } from "./ui/icons/notion-icon";
-import { PostgresqlIcon } from "./ui/icons/postgresql-icon";
-import { SalesforceIcon } from "./ui/icons/salesforce-icon";
-import { SlackIcon } from "./ui/icons/slack-icon";
+import { NotionIcon } from "@integramind/ui/icons/notion-icon";
+import { PostgresqlIcon } from "@integramind/ui/icons/postgresql-icon";
+import { SalesforceIcon } from "@integramind/ui/icons/salesforce-icon";
+import { SlackIcon } from "@integramind/ui/icons/slack-icon";
 
 export function Features() {
   return (

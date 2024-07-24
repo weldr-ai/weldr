@@ -1,3 +1,5 @@
+"use client";
+
 import type {
   DOMExportOutput,
   EditorConfig,
@@ -15,8 +17,8 @@ import { useReactFlow } from "reactflow";
 import { Form, FormControl, FormField, FormItem } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
 
-import { updateInput } from "~/lib/queries/primitives";
-import { toCamelCase } from "~/lib/utils";
+import { toCamelCase } from "@integramind/shared/utils";
+import { api } from "~/lib/trpc/react";
 import type { FlowNode } from "~/types";
 
 function InputNodeComponent({
@@ -41,6 +43,8 @@ function InputNodeComponent({
     },
   });
 
+  const updateInput = api.primitives.updateInput.useMutation();
+
   return (
     <div className="inline-flex items-center rounded-md border bg-accent p-1 text-xs text-accent-foreground">
       {inputType === "text" ? (
@@ -63,10 +67,10 @@ function InputNodeComponent({
                     autoComplete="off"
                     className="h-5 border-none bg-muted px-2 py-1 text-xs"
                     placeholder="Enter input name"
-                    onBlur={async (e) => {
+                    onBlur={(e) => {
                       const newValue = toCamelCase(e.target.value);
                       form.setValue("name", newValue);
-                      const inputs = await updateInput({
+                      const inputs = updateInput.mutate({
                         id,
                         inputId,
                         name: newValue,
@@ -103,8 +107,8 @@ function InputNodeComponent({
                     value={field.value ?? undefined}
                     className="h-5 w-20 border-none bg-muted px-2 py-1 text-xs"
                     placeholder="Enter test value"
-                    onBlur={async (e) => {
-                      const inputs = await updateInput({
+                    onBlur={(e) => {
+                      const inputs = updateInput.mutate({
                         id,
                         inputId,
                         testValue:

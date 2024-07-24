@@ -3,10 +3,8 @@
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 
-import { db, eq } from "@integramind/db";
-import { insertWorkspaceSchema, workspaces } from "@integramind/db/schema";
-
-import type { Workspace } from "~/types";
+import { insertWorkspaceSchema } from "@integramind/db/schema";
+import { api } from "~/lib/trpc/rsc";
 
 interface FormFields {
   name?: string;
@@ -52,14 +50,9 @@ export async function createWorkspace(
 
   try {
     if (validation.success) {
-      const result = (
-        await db
-          .insert(workspaces)
-          .values({
-            ...validation.data,
-          })
-          .returning({ id: workspaces.id })
-      )[0];
+      const result = await api.workspaces.create({
+        name: validation.data.name,
+      });
 
       if (result) {
         revalidatePath("/workspaces/[id]", "layout");
@@ -83,24 +76,4 @@ export async function createWorkspace(
   } catch (error) {
     return { status: "error", fields };
   }
-}
-
-export async function getWorkspaces(): Promise<Workspace[]> {
-  const result = await db.select().from(workspaces);
-  return result;
-}
-
-export async function deleteWorkspace({ id }: { id: string }) {
-  await db.delete(workspaces).where(eq(workspaces.id, id));
-}
-
-export async function getWorkspaceById({
-  id,
-}: {
-  id: string;
-}): Promise<Workspace | undefined> {
-  const result = (
-    await db.select().from(workspaces).where(eq(workspaces.id, id))
-  )[0];
-  return result;
 }

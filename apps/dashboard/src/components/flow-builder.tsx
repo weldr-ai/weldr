@@ -41,11 +41,6 @@ import { Iterator } from "~/components/primitives/iterator";
 import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
 import { Workflow } from "~/components/primitives/workflow";
-import { createEdge } from "~/lib/queries/edges";
-import {
-  deletePrimitive,
-  updatePrimitivePosition,
-} from "~/lib/queries/primitives";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, PrimitiveType } from "~/types";
 
@@ -77,6 +72,10 @@ export function _FlowBuilder({
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const createPrimitive = api.primitives.create.useMutation();
+  const deletePrimitive = api.primitives.delete.useMutation();
+  const updatePrimitive = api.primitives.update.useMutation();
+
+  const createEdge = api.edges.create.useMutation();
 
   const onConnect = useCallback(
     async (params: ReactFlowEdge | Connection) => {
@@ -84,15 +83,15 @@ export function _FlowBuilder({
       setEdges((eds) => addEdge({ ...params, type: "deletable-edge" }, eds));
 
       if (params.source && params.target) {
-        await createEdge({
+        await createEdge.mutateAsync({
           id: newEdgeId,
           source: params.source,
           target: params.target,
-          flowId: flowId,
+          flowId,
         });
       }
     },
-    [flowId, setEdges],
+    [flowId, setEdges, createEdge],
   );
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -167,22 +166,29 @@ export function _FlowBuilder({
       node: ReactFlowNode,
       _nodes: ReactFlowNode[],
     ) => {
-      await updatePrimitivePosition({
-        id: node.id,
-        positionX: Math.floor(node.position.x),
-        positionY: Math.floor(node.position.y),
+      await updatePrimitive.mutateAsync({
+        where: {
+          id: node.id,
+        },
+        payload: {
+          positionX: Math.floor(node.position.x),
+          positionY: Math.floor(node.position.y),
+        },
       });
     },
-    [],
+    [updatePrimitive],
   );
 
-  const onNodesDelete = useCallback(async (nodes: ReactFlowNode[]) => {
-    for (const node of nodes) {
-      await deletePrimitive({
-        id: node.id,
-      });
-    }
-  }, []);
+  const onNodesDelete = useCallback(
+    async (nodes: ReactFlowNode[]) => {
+      for (const node of nodes) {
+        await deletePrimitive.mutateAsync({
+          id: node.id,
+        });
+      }
+    },
+    [deletePrimitive],
+  );
 
   return (
     <ReactFlow

@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 
-import { LambdaIcon } from "~/components/icons/lambda-icon";
+import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
 import type { PrimitiveType } from "~/types";
 
 export function PrimitivesMenu() {

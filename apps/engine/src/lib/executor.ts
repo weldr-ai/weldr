@@ -1,109 +1,85 @@
-import type { Context } from "isolated-vm";
-import ivm from "isolated-vm";
+import vm from "node:vm";
+import ts from "typescript";
 
-import type {
-  CodeModule,
-  CodeSandbox,
-  ExecuteIsolateParams,
-  InitContextParams,
-} from "../types";
+import { toCamelCase } from "@integramind/shared/utils";
 
-let ivmCache: typeof ivm;
+type Context = Record<string, unknown>;
 
-const getIvm = () => {
-  if (!ivmCache) {
-    ivmCache = ivm;
-  }
-  return ivmCache;
-};
-
-export const codeSandbox: CodeSandbox = {
-  async runCodeModule({ codeModule, inputs }) {
-    const ivm = getIvm();
-    const isolate = new ivm.Isolate({ memoryLimit: 128 });
-
-    try {
-      const isolateContext = await initIsolateContext({
-        isolate,
-        codeContext: {
-          inputs,
-        },
-      });
-
-      const serializedCodeModule = serializeCodeModule(codeModule);
-
-      return await executeIsolate({
-        isolate,
-        isolateContext,
-        code: serializedCodeModule,
-      });
-    } finally {
-      isolate.dispose();
-    }
-  },
-
-  async runScript({ script, scriptContext }) {
-    const ivm = getIvm();
-    const isolate = new ivm.Isolate({ memoryLimit: 128 });
-
-    try {
-      const isolateContext = await initIsolateContext({
-        isolate,
-        codeContext: scriptContext,
-      });
-
-      return await executeIsolate({
-        isolate,
-        isolateContext,
-        code: script,
-      });
-    } finally {
-      isolate.dispose();
-    }
-  },
-};
-
-const executeIsolate = async ({
-  isolate,
-  isolateContext,
-  code,
-}: ExecuteIsolateParams): Promise<unknown> => {
-  const isolateScript = await isolate.compileScript(code);
-
-  const outRef = await isolateScript.run(isolateContext, {
-    reference: true,
-    promise: true,
+async function compileTypeScript(code: string): Promise<string> {
+  const result = ts.transpileModule(code, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS },
   });
+  return result.outputText;
+}
 
-  return outRef.copy();
-};
+async function runInVM(code: string, context: Context): Promise<unknown> {
+  const vmContext = vm.createContext(context);
+  const script = new vm.Script(code);
+  return script.runInContext(vmContext) as unknown;
+}
 
-const initIsolateContext = async ({
-  isolate,
-  codeContext,
-}: InitContextParams): Promise<Context> => {
-  const isolateContext = await isolate.createContext();
-  const ivm = getIvm();
-  for (const [key, value] of Object.entries(codeContext)) {
-    await isolateContext.global.set(
-      key,
-      new ivm.ExternalCopy(value).copyInto(),
-    );
+export async function runTypeScriptInVM(
+  tsCode: string,
+  context: Context,
+): Promise<unknown> {
+  const jsCode = await compileTypeScript(tsCode);
+  return await runInVM(jsCode, context);
+}
+
+export async function injectResources(
+  resources: Record<string, { auth: unknown }>[],
+) {
+  const resolvedImports: Record<
+    string,
+    {
+      auth: unknown;
+      run: (
+        actionName: string,
+        context: Record<string, unknown>,
+      ) => Promise<unknown>;
+    }
+  > = {};
+
+  for (const resource of resources) {
+    const resourceName = Object.keys(resource)[0] as string;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const { run } = await import(`@integramind/integrations-${resourceName}`);
+    resolvedImports[resourceName] = {
+      run: run as (
+        actionName: string,
+        context: Record<string, unknown>,
+      ) => Promise<unknown>,
+      auth: (resource[resourceName] as { auth: unknown }).auth,
+    };
   }
 
-  return isolateContext;
-};
+  return resolvedImports;
+}
 
-const serializeCodeModule = (codeModule: CodeModule): string => {
-  const serializedCodeFunction = codeModule.code.toString();
-  return `const code = ${serializedCodeFunction}; code(inputs);`;
-};
+export async function executeCode(
+  code: string,
+  resources: Record<string, { auth: unknown }>[],
+  inputs: Record<string, unknown>,
+) {
+  const resolvedResources = await injectResources(resources);
+  const result = await runTypeScriptInVM(code, {
+    ...resolvedResources,
+    ...inputs,
+  });
+  return result;
+}
 
-let instance: CodeSandbox | null = null;
-
-export const initCodeSandbox = (): CodeSandbox => {
-  if (instance === null) {
-    instance = codeSandbox;
-  }
-  return instance;
-};
+export async function executePrimitive(
+  primitiveName: string,
+  code: string,
+  resources: Record<string, { auth: unknown }>[],
+  inputs: Record<string, unknown>,
+) {
+  const updatedCode = `
+  ${code}
+  ${toCamelCase(primitiveName)}({${Object.keys(inputs)
+    .map((key) => `${toCamelCase(key)}: ${inputs[key] as string}`)
+    .join(", ")}});
+  `;
+  return await executeCode(updatedCode, resources, inputs);
+}

@@ -18,9 +18,10 @@
     "db:push": "pnpm -F @integramind/db push",
     "db:studio": "pnpm -F @integramind/db studio",
     "db:up": "pnpm -F @integramind/db up",
-    "dev": "turbo dev --parallel",
+    "dev": "turbo watch dev",
     "format-and-lint": "biome check .",
     "format-and-lint:fix": "biome check . --write",
+    "lint:staged": "lint-staged",
     "publish-packages": "changeset version && changeset publish",
     "check-types": "turbo check-types"
   },
@@ -39,7 +40,7 @@
     "husky": "^9.0.11",
     "inquirer": "^9.2.22",
     "lint-staged": "^15.2.5",
-    "turbo": "^2.0.4",
+    "turbo": "^2.0.9",
     "typescript": "^5.4.5"
   },
   "config": {

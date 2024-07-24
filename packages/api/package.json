@@ -11,8 +11,11 @@
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
+    "@integramind/ai": "workspace:*",
     "@integramind/auth": "workspace:*",
     "@integramind/db": "workspace:*",
+    "@integramind/shared": "workspace:*",
+    "@integramind/integrations-postgres": "workspace:*",
     "@trpc/server": "11.0.0-rc.441",
     "superjson": "^2.2.1",
     "zod": "^3.23.8"

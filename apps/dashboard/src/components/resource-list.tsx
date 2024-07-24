@@ -1,21 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
 
 import { Button } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 
-import { getResources } from "~/lib/queries/resources";
+import { api } from "~/lib/trpc/react";
 import { AddResourceDialog } from "./add-resource-dialog";
 
 export function ResourceList({ workspaceId }: { workspaceId: string }) {
-  // FIXME: use suspense with revalidateTag
   const {
+    data: resources,
     isLoading,
     isRefetching,
-    data: resources,
-  } = useQuery({
-    queryKey: ["resources"],
-    queryFn: () => getResources({ workspaceId }),
+  } = api.resources.getAll.useQuery({
+    workspaceId,
   });
 
   return (
