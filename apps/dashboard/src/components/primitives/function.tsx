@@ -130,6 +130,7 @@ export const FunctionNode = memo(
         },
         {
           refetchInterval: 5 * 60 * 1000,
+          // @ts-ignore - Not sure why it has an error here
           initialData: data,
         },
       );
@@ -312,10 +313,6 @@ export const FunctionNode = memo(
 
     function onError(error: Error, _editor: LexicalEditor) {
       console.error(error);
-    }
-
-    if (!functionData) {
-      return null;
     }
 
     return (

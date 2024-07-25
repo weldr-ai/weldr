@@ -80,7 +80,7 @@ export const flowsRouter = {
   getRouteFlowByPath: protectedProcedure
     .input(
       z.object({
-        urlPath: z.string(),
+        path: z.string(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -93,7 +93,7 @@ export const flowsRouter = {
         .where(
           and(
             eq(primitives.type, "route"),
-            sql`primitives.metadata::jsonb->>'urlPath' = ${input.urlPath}`,
+            sql`primitives.metadata::jsonb->>'path' = ${input.path}`,
           ),
         );
 
@@ -122,8 +122,8 @@ export const flowsRouter = {
       return {
         flow,
         config: {
-          actionType: (result[0].metadata as RouteMetadata).actionType,
-          urlPath: (result[0].metadata as RouteMetadata).urlPath,
+          method: (result[0].metadata as RouteMetadata).method,
+          path: (result[0].metadata as RouteMetadata).path,
           inputs: (result[0].metadata as RouteMetadata).inputs,
         },
       };

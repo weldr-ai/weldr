@@ -7,7 +7,6 @@ import { and, db, eq, sql } from "@integramind/db";
 import { flows, primitives, resources } from "@integramind/db/schema";
 import { executePrimitive } from "~/lib/executor";
 import {
-  checkMethod,
   getExecutionOrder,
   getResourceInfo,
   getSystemMessage,
@@ -159,7 +158,7 @@ router.use("/:workspaceId/*", async (req, res) => {
     .where(
       and(
         eq(primitives.type, "route"),
-        sql`primitives.metadata::jsonb->>'urlPath' = ${path}`,
+        sql`primitives.metadata::jsonb->>'path' = ${path}`,
       ),
     );
 
@@ -182,8 +181,8 @@ router.use("/:workspaceId/*", async (req, res) => {
   const route = {
     flow,
     config: {
-      actionType: (result[0].metadata as RouteMetadata).actionType,
-      urlPath: (result[0].metadata as RouteMetadata).urlPath,
+      method: (result[0].metadata as RouteMetadata).method,
+      path: (result[0].metadata as RouteMetadata).path,
       inputs: (result[0].metadata as RouteMetadata).inputs,
     },
   };
@@ -192,7 +191,7 @@ router.use("/:workspaceId/*", async (req, res) => {
     return res.status(404).send("Not found");
   }
 
-  if (!checkMethod(method, route.config.actionType)) {
+  if (method.toLowerCase() !== route.config.path.toLowerCase()) {
     return res.status(405).send("Method not allowed");
   }
 

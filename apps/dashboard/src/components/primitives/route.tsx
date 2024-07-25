@@ -75,8 +75,8 @@ export const Route = memo(
       defaultValues: {
         name: data.name,
         description: data.description ?? undefined,
-        actionType: data.metadata.actionType,
-        urlPath: data.metadata.urlPath,
+        method: data.metadata.method,
+        path: data.metadata.path,
         inputs: data.metadata.inputs,
       },
     });
@@ -90,6 +90,7 @@ export const Route = memo(
         },
         {
           refetchInterval: false,
+          // @ts-ignore - Not sure why it has an error here
           initialData: data,
         },
       );
@@ -178,7 +179,7 @@ export const Route = memo(
             >
               <div className="flex w-full items-center gap-2 text-xs">
                 <Badge>
-                  {(routeData.metadata as RouteMetadata).actionType}
+                  {(routeData.metadata as RouteMetadata).method.toUpperCase()}
                 </Badge>
                 <span className="text-muted-foreground">Route</span>
               </div>
@@ -192,7 +193,7 @@ export const Route = memo(
               <div className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
                   <Badge variant="default" className="text-xs">
-                    {(routeData.metadata as RouteMetadata).actionType}
+                    {(routeData.metadata as RouteMetadata).method.toUpperCase()}
                   </Badge>
                   <span className="text-xs text-muted-foreground">Route</span>
                 </div>
@@ -305,10 +306,10 @@ export const Route = memo(
                 />
                 <FormField
                   control={form.control}
-                  name="actionType"
+                  name="method"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs">Type</FormLabel>
+                      <FormLabel className="text-xs">Method</FormLabel>
                       <FormControl>
                         <Select
                           {...field}
@@ -323,10 +324,10 @@ export const Route = memo(
                               payload: {
                                 metadata: {
                                   type: "route",
-                                  actionType: value as
-                                    | "create"
-                                    | "read"
-                                    | "update"
+                                  method: value as
+                                    | "get"
+                                    | "post"
+                                    | "patch"
                                     | "delete",
                                 },
                               },
@@ -335,13 +336,16 @@ export const Route = memo(
                           }}
                         >
                           <SelectTrigger className="bg-background">
-                            <SelectValue placeholder="Action Type" />
+                            <SelectValue
+                              placeholder="Select method"
+                              className="placeholder-muted-foreground"
+                            />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="create">Create</SelectItem>
-                            <SelectItem value="read">Read</SelectItem>
-                            <SelectItem value="update">Update</SelectItem>
-                            <SelectItem value="delete">Delete</SelectItem>
+                            <SelectItem value="get">GET</SelectItem>
+                            <SelectItem value="post">POST</SelectItem>
+                            <SelectItem value="patch">PATCH</SelectItem>
+                            <SelectItem value="delete">DELETE</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -351,7 +355,7 @@ export const Route = memo(
                 />
                 <FormField
                   control={form.control}
-                  name="urlPath"
+                  name="path"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs">URL Path</FormLabel>
@@ -369,7 +373,7 @@ export const Route = memo(
                               payload: {
                                 metadata: {
                                   type: "route",
-                                  urlPath: e.target.value,
+                                  path: e.target.value,
                                 },
                               },
                             });

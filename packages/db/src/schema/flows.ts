@@ -60,8 +60,8 @@ export const updateRouteFlowSchema = z.object({
     .transform((name) => name.replace(/\s+/g, " ").trim())
     .optional(),
   description: z.string().optional(),
-  actionType: z.enum(["create", "read", "update", "delete"]).optional(),
-  urlPath: z.string().optional(),
+  method: z.enum(["get", "post", "patch", "delete"]).optional(),
+  path: z.string().optional(),
   inputs: z
     .object({
       id: z.string(),

@@ -44,7 +44,9 @@ export const resourcesRelations = relations(resources, ({ one }) => ({
 
 // Zod schemas
 export const resourceProvidersSchema = z.enum(resourceProviders.enumValues);
-export const insertResourceSchema = createInsertSchema(resources);
+export const insertResourceSchema = createInsertSchema(resources).omit({
+  createdBy: true,
+});
 
 export const postgresMetadataSchema = z.object({
   provider: z.literal("postgres"),

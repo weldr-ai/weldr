@@ -42,4 +42,4 @@ export const insertWorkspaceSchema = createInsertSchema(workspaces, {
         message: "Name is required.",
       })
       .transform((name) => name.replace(/\s+/g, " ").trim()),
-});
+}).omit({ createdBy: true });

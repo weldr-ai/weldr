@@ -128,8 +128,8 @@ export const functionMetadataSchema = z.object({
 
 export const routeMetadataSchema = z.object({
   type: z.literal("route"),
-  actionType: z.enum(["create", "read", "update", "delete"]),
-  urlPath: z.string(),
+  method: z.enum(["get", "post", "patch", "delete"]),
+  path: z.string(),
   inputs: z
     .object({
       id: z.string(),
@@ -192,17 +192,8 @@ export const primitiveSchema = createSelectSchema(primitives, {
   metadata: primitiveMetadataSchema,
 });
 
-export const insertPrimitiveSchema = createInsertSchema(primitives, {
-  type: z.enum(primitiveTypes.enumValues),
-}).pick({
-  id: true,
-  name: true,
-  description: true,
-  type: true,
-  flowId: true,
-  positionX: true,
-  positionY: true,
-  metadata: true,
+export const insertPrimitiveSchema = createInsertSchema(primitives).omit({
+  createdBy: true,
 });
 
 export const updateFunctionSchema = z.object({
@@ -242,8 +233,8 @@ export const updateFunctionSchema = z.object({
 
 export const updateRouteSchema = z.object({
   type: z.literal("route"),
-  actionType: z.enum(["create", "read", "update", "delete"]).optional(),
-  urlPath: z.string().optional(),
+  method: z.enum(["get", "post", "patch", "delete"]).optional(),
+  path: z.string().optional(),
   inputs: z
     .object({
       id: z.string(),

@@ -79,19 +79,6 @@ export function getExecutionOrder(
   return result;
 }
 
-export function checkMethod(
-  reqMethod: "GET" | "POST" | "PUT" | "DELETE",
-  actionType: "create" | "read" | "update" | "delete",
-) {
-  const actionTypeToMethod: Record<string, string> = {
-    create: "POST",
-    read: "GET",
-    update: "PUT",
-    delete: "DELETE",
-  };
-  return actionTypeToMethod[actionType] === reqMethod;
-}
-
 export function extractCode(
   code: string,
   language: "typescript" | "javascript",
