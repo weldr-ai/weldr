@@ -5,6 +5,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 import type { ResourceMetadata } from "../types";
+import { users } from "./auth";
 import { workspaces } from "./workspaces";
 
 export const resourceProviders = pgEnum("resource_providers", ["postgres"]);
@@ -25,12 +26,19 @@ export const resources = pgTable("resources", {
   workspaceId: text("workspace_id")
     .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
+  createdBy: text("created_by")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
 });
 
 export const resourcesRelations = relations(resources, ({ one }) => ({
   workspace: one(workspaces, {
     fields: [resources.workspaceId],
     references: [workspaces.id],
+  }),
+  user: one(users, {
+    fields: [resources.createdBy],
+    references: [users.id],
   }),
 }));
 

@@ -1,4 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
+import { relations } from "drizzle-orm";
 import {
   integer,
   pgTable,
@@ -8,6 +9,11 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import type { AdapterAccount } from "next-auth/adapters";
+import { edges } from "./edges";
+import { flows } from "./flows";
+import { primitives } from "./primitives";
+import { resources } from "./resources";
+import { workspaces } from "./workspaces";
 
 export const users = pgTable("user", {
   id: text("id")
@@ -18,6 +24,14 @@ export const users = pgTable("user", {
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
 });
+
+export const usersRelations = relations(users, ({ many }) => ({
+  workspaces: many(workspaces),
+  flows: many(flows),
+  primitives: many(primitives),
+  edges: many(edges),
+  resources: many(resources),
+}));
 
 export const accounts = pgTable(
   "account",

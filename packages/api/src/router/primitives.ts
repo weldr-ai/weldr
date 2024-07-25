@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
 import {
-  createPrimitiveSchema,
+  insertPrimitiveSchema,
   primitives,
   updatePrimitiveSchema,
 } from "@integramind/db/schema";
@@ -12,11 +12,45 @@ import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
 export const primitivesRouter = {
+  create: protectedProcedure
+    .input(insertPrimitiveSchema)
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.db
+        .insert(primitives)
+        .values({
+          name: input.name,
+          type: input.type,
+          flowId: input.flowId,
+          positionX: input.positionX,
+          positionY: input.positionY,
+          metadata: sql`${input.metadata}::jsonb`,
+          createdBy: ctx.session.user.id,
+        })
+        .returning({
+          id: primitives.id,
+          type: primitives.type,
+          name: primitives.name,
+          positionX: primitives.positionX,
+          positionY: primitives.positionY,
+        });
+
+      if (!result[0]) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create primitive",
+        });
+      }
+
+      return result[0];
+    }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.primitives.findFirst({
-        where: eq(primitives.id, input.id),
+        where: and(
+          eq(primitives.id, input.id),
+          eq(primitives.createdBy, ctx.session.user.id),
+        ),
       });
 
       if (!result) {
@@ -40,6 +74,7 @@ export const primitivesRouter = {
         where: and(
           eq(primitives.id, input.id),
           eq(primitives.type, input.type),
+          eq(primitives.createdBy, ctx.session.user.id),
         ),
       });
 
@@ -52,45 +87,25 @@ export const primitivesRouter = {
 
       return result;
     }),
-  create: protectedProcedure
-    .input(createPrimitiveSchema)
-    .mutation(async ({ ctx, input }) => {
-      const result = await ctx.db
-        .insert(primitives)
-        .values({
-          name: input.name,
-          type: input.type,
-          flowId: input.flowId,
-          positionX: input.positionX,
-          positionY: input.positionY,
-          metadata: sql`${input.metadata}::jsonb`,
-        })
-        .returning({
-          id: primitives.id,
-          type: primitives.type,
-          name: primitives.name,
-          positionX: primitives.positionX,
-          positionY: primitives.positionY,
-        });
-
-      if (!result[0]) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create primitive",
-        });
-      }
-
-      return result[0];
-    }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.delete(primitives).where(eq(primitives.id, input.id));
+      await ctx.db
+        .delete(primitives)
+        .where(
+          and(
+            eq(primitives.id, input.id),
+            eq(primitives.createdBy, ctx.session.user.id),
+          ),
+        );
     }),
   update: protectedProcedure
     .input(updatePrimitiveSchema)
     .mutation(async ({ ctx, input }) => {
-      const where: SQL[] = [eq(primitives.id, input.where.id)];
+      const where: SQL[] = [
+        eq(primitives.id, input.where.id),
+        eq(primitives.createdBy, ctx.session.user.id),
+      ];
 
       if (input.where.type) {
         where.push(eq(primitives.type, input.where.type));
@@ -120,7 +135,12 @@ export const primitivesRouter = {
             ...input.payload.metadata,
           }}::jsonb`,
         })
-        .where(eq(primitives.id, savedPrimitive.id))
+        .where(
+          and(
+            eq(primitives.id, savedPrimitive.id),
+            eq(primitives.createdBy, ctx.session.user.id),
+          ),
+        )
         .returning({ id: primitives.id });
 
       if (!updatedPrimitive[0]) {
@@ -160,7 +180,10 @@ export const primitivesRouter = {
       }
 
       const result = await ctx.db.query.primitives.findFirst({
-        where: eq(primitives.id, input.id),
+        where: and(
+          eq(primitives.id, input.id),
+          eq(primitives.createdBy, ctx.session.user.id),
+        ),
       });
 
       if (!result || result.metadata.type !== "route") {
@@ -185,7 +208,12 @@ export const primitivesRouter = {
             inputs: [...updatedInputs],
           }}::jsonb`,
         })
-        .where(eq(primitives.id, input.id));
+        .where(
+          and(
+            eq(primitives.id, input.id),
+            eq(primitives.createdBy, ctx.session.user.id),
+          ),
+        );
 
       return updatedInputs;
     }),
@@ -200,7 +228,10 @@ export const primitivesRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.db.query.primitives.findFirst({
-        where: eq(primitives.id, input.id),
+        where: and(
+          eq(primitives.id, input.id),
+          eq(primitives.createdBy, ctx.session.user.id),
+        ),
       });
 
       if (!result || result.metadata.type !== "route") {
@@ -221,6 +252,11 @@ export const primitivesRouter = {
             ],
           }}::jsonb`,
         })
-        .where(eq(primitives.id, input.id));
+        .where(
+          and(
+            eq(primitives.id, input.id),
+            eq(primitives.createdBy, ctx.session.user.id),
+          ),
+        );
     }),
 };

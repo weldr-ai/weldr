@@ -12,6 +12,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 import type { PrimitiveMetadata } from "../types";
+import { users } from "./auth";
 import { flows } from "./flows";
 import { resourceProviders } from "./resources";
 
@@ -42,12 +43,19 @@ export const primitives = pgTable("primitives", {
   flowId: text("flow_id")
     .references(() => flows.id, { onDelete: "cascade" })
     .notNull(),
+  createdBy: text("created_by")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
 });
 
 export const primitivesRelations = relations(primitives, ({ one }) => ({
   flow: one(flows, {
     fields: [primitives.flowId],
     references: [flows.id],
+  }),
+  user: one(users, {
+    fields: [primitives.createdBy],
+    references: [users.id],
   }),
 }));
 
@@ -184,7 +192,7 @@ export const primitiveSchema = createSelectSchema(primitives, {
   metadata: primitiveMetadataSchema,
 });
 
-export const createPrimitiveSchema = createInsertSchema(primitives, {
+export const insertPrimitiveSchema = createInsertSchema(primitives, {
   type: z.enum(primitiveTypes.enumValues),
 }).pick({
   id: true,

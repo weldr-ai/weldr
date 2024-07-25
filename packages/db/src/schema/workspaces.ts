@@ -3,6 +3,7 @@ import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
+import { users } from "./auth";
 import { flows } from "./flows";
 import { resources } from "./resources";
 
@@ -17,11 +18,18 @@ export const workspaces = pgTable("workspaces", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
+  createdBy: text("created_by")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
 });
 
-export const workspacesRelations = relations(workspaces, ({ many }) => ({
+export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   resources: many(resources),
   flows: many(flows),
+  user: one(users, {
+    fields: [workspaces.createdBy],
+    references: [users.id],
+  }),
 }));
 
 // Zod schemas

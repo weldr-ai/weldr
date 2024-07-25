@@ -31,6 +31,5 @@
     "//#clean": {
       "cache": false
     }
-  },
-  "globalEnv": ["DATABASE_URL", "APP_ENV"]
+  }
 }
