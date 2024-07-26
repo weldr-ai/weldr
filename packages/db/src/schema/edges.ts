@@ -3,6 +3,7 @@ import { relations } from "drizzle-orm";
 import { pgTable, text } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
+import { users } from "./auth";
 import { flows } from "./flows";
 import { primitives } from "./primitives";
 
@@ -19,6 +20,9 @@ export const edges = pgTable("edges", {
   flowId: text("flow_id")
     .references(() => flows.id, { onDelete: "cascade" })
     .notNull(),
+  createdBy: text("created_by")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
 });
 
 export const edgesRelations = relations(edges, ({ many, one }) => ({
@@ -26,6 +30,10 @@ export const edgesRelations = relations(edges, ({ many, one }) => ({
   flows: one(flows, {
     fields: [edges.flowId],
     references: [flows.id],
+  }),
+  user: one(users, {
+    fields: [edges.createdBy],
+    references: [users.id],
   }),
 }));
 
@@ -35,4 +43,4 @@ export const insertEdgeSchema = createInsertSchema(edges, {
   id: (schema) => schema.id.cuid2(),
   source: (schema) => schema.source.cuid2(),
   target: (schema) => schema.target.cuid2(),
-});
+}).omit({ createdBy: true });

@@ -12,104 +12,14 @@ export default async function WorkflowPage({
   try {
     const flow = await api.flows.getById({ id: params.flowId });
 
-    const initialNodes: FlowNode[] = flow.primitives.map((primitive) => {
-      switch (primitive.metadata.type) {
-        case "route":
-          return {
-            id: primitive.id,
-            type: primitive.type,
-            dragHandle: ".drag-handle",
-            deletable: false,
-            position: { x: primitive.positionX, y: primitive.positionY },
-            data: {
-              id: primitive.id,
-              name: primitive.name,
-              description: primitive.description,
-              type: primitive.type,
-              positionX: primitive.positionX,
-              positionY: primitive.positionY,
-              createdAt: primitive.createdAt,
-              updatedAt: primitive.updatedAt,
-              flowId: primitive.flowId,
-              metadata: {
-                type: primitive.type,
-                actionType: primitive.metadata.actionType,
-                urlPath: primitive.metadata.urlPath,
-                inputs: primitive.metadata.inputs,
-              },
-            },
-          };
-        case "workflow":
-          return {
-            id: primitive.id,
-            type: primitive.type,
-            dragHandle: ".drag-handle",
-            deletable: false,
-            position: { x: primitive.positionX, y: primitive.positionY },
-            data: {
-              id: primitive.id,
-              name: primitive.name,
-              description: primitive.description,
-              type: primitive.type,
-              positionX: primitive.positionX,
-              positionY: primitive.positionY,
-              createdAt: primitive.createdAt,
-              updatedAt: primitive.updatedAt,
-              flowId: primitive.flowId,
-              metadata: {
-                type: primitive.type,
-                triggerType: primitive.metadata.triggerType,
-                inputs: primitive.metadata.inputs,
-              },
-            },
-          };
-        case "function":
-          return {
-            id: primitive.id,
-            type: primitive.type,
-            dragHandle: ".drag-handle",
-            position: { x: primitive.positionX, y: primitive.positionY },
-            data: {
-              id: primitive.id,
-              name: primitive.name,
-              description: primitive.description,
-              type: primitive.type,
-              positionX: primitive.positionX,
-              positionY: primitive.positionY,
-              createdAt: primitive.createdAt,
-              updatedAt: primitive.updatedAt,
-              flowId: primitive.flowId,
-              metadata: {
-                type: primitive.type,
-                inputs: primitive.metadata.inputs,
-                outputs: primitive.metadata.outputs,
-                resource: primitive.metadata.resource,
-                rawDescription: primitive.metadata.rawDescription,
-                isLocked: primitive.metadata.isLocked,
-              },
-            },
-          };
-        case "response":
-          return {
-            id: primitive.id,
-            type: primitive.type,
-            dragHandle: ".drag-handle",
-            deletable: false,
-            position: { x: primitive.positionX, y: primitive.positionY },
-            data: {
-              id: primitive.id,
-              name: primitive.name,
-              description: primitive.description,
-              type: primitive.type,
-              positionX: primitive.positionX,
-              positionY: primitive.positionY,
-              createdAt: primitive.createdAt,
-              updatedAt: primitive.updatedAt,
-              flowId: primitive.flowId,
-            },
-          };
-      }
-    });
+    const initialNodes: FlowNode[] = flow.primitives.map((primitive) => ({
+      id: primitive.id,
+      type: primitive.type,
+      dragHandle: ".drag-handle",
+      deletable: false,
+      position: { x: primitive.positionX, y: primitive.positionY },
+      data: primitive,
+    }));
 
     const initialEdges: FlowEdge[] = flow.edges.map((edge) => ({
       id: edge.id,

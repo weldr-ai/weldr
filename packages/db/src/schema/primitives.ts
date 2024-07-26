@@ -12,6 +12,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 import type { PrimitiveMetadata } from "../types";
+import { users } from "./auth";
 import { flows } from "./flows";
 import { resourceProviders } from "./resources";
 
@@ -42,12 +43,19 @@ export const primitives = pgTable("primitives", {
   flowId: text("flow_id")
     .references(() => flows.id, { onDelete: "cascade" })
     .notNull(),
+  createdBy: text("created_by")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
 });
 
 export const primitivesRelations = relations(primitives, ({ one }) => ({
   flow: one(flows, {
     fields: [primitives.flowId],
     references: [flows.id],
+  }),
+  user: one(users, {
+    fields: [primitives.createdBy],
+    references: [users.id],
   }),
 }));
 
@@ -120,8 +128,8 @@ export const functionMetadataSchema = z.object({
 
 export const routeMetadataSchema = z.object({
   type: z.literal("route"),
-  actionType: z.enum(["create", "read", "update", "delete"]),
-  urlPath: z.string(),
+  method: z.enum(["get", "post", "patch", "delete"]),
+  path: z.string(),
   inputs: z
     .object({
       id: z.string(),
@@ -184,17 +192,8 @@ export const primitiveSchema = createSelectSchema(primitives, {
   metadata: primitiveMetadataSchema,
 });
 
-export const createPrimitiveSchema = createInsertSchema(primitives, {
-  type: z.enum(primitiveTypes.enumValues),
-}).pick({
-  id: true,
-  name: true,
-  description: true,
-  type: true,
-  flowId: true,
-  positionX: true,
-  positionY: true,
-  metadata: true,
+export const insertPrimitiveSchema = createInsertSchema(primitives).omit({
+  createdBy: true,
 });
 
 export const updateFunctionSchema = z.object({
@@ -234,8 +233,8 @@ export const updateFunctionSchema = z.object({
 
 export const updateRouteSchema = z.object({
   type: z.literal("route"),
-  actionType: z.enum(["create", "read", "update", "delete"]).optional(),
-  urlPath: z.string().optional(),
+  method: z.enum(["get", "post", "patch", "delete"]).optional(),
+  path: z.string().optional(),
   inputs: z
     .object({
       id: z.string(),

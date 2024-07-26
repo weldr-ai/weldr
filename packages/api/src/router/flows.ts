@@ -21,6 +21,7 @@ export const flowsRouter = {
           description: input.description,
           type: input.type,
           workspaceId: input.workspaceId,
+          createdBy: ctx.session.user.id,
         })
         .returning({ id: flows.id });
 
@@ -39,6 +40,7 @@ export const flowsRouter = {
         where: and(
           eq(flows.workspaceId, input.workspaceId),
           eq(flows.type, input.type),
+          eq(flows.createdBy, ctx.session.user.id),
         ),
       });
       return result;
@@ -47,7 +49,10 @@ export const flowsRouter = {
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.flows.findFirst({
-        where: eq(flows.id, input.id),
+        where: and(
+          eq(flows.id, input.id),
+          eq(flows.createdBy, ctx.session.user.id),
+        ),
         with: {
           primitives: true,
           edges: true,
@@ -66,12 +71,16 @@ export const flowsRouter = {
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.delete(flows).where(eq(flows.id, input.id));
+      await ctx.db
+        .delete(flows)
+        .where(
+          and(eq(flows.id, input.id), eq(flows.createdBy, ctx.session.user.id)),
+        );
     }),
   getRouteFlowByPath: protectedProcedure
     .input(
       z.object({
-        urlPath: z.string(),
+        path: z.string(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -84,7 +93,7 @@ export const flowsRouter = {
         .where(
           and(
             eq(primitives.type, "route"),
-            sql`primitives.metadata::jsonb->>'urlPath' = ${input.urlPath}`,
+            sql`primitives.metadata::jsonb->>'path' = ${input.path}`,
           ),
         );
 
@@ -113,8 +122,8 @@ export const flowsRouter = {
       return {
         flow,
         config: {
-          actionType: (result[0].metadata as RouteMetadata).actionType,
-          urlPath: (result[0].metadata as RouteMetadata).urlPath,
+          method: (result[0].metadata as RouteMetadata).method,
+          path: (result[0].metadata as RouteMetadata).path,
           inputs: (result[0].metadata as RouteMetadata).inputs,
         },
       };

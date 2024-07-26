@@ -32,5 +32,5 @@
       "cache": false
     }
   },
-  "globalEnv": ["DATABASE_URL", "APP_ENV"]
+  "globalEnv": ["DATABASE_URL"]
 }

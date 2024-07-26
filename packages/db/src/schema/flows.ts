@@ -4,6 +4,7 @@ import { pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
+import { users } from "./auth";
 import { edges } from "./edges";
 import { primitives } from "./primitives";
 import { workspaces } from "./workspaces";
@@ -29,17 +30,26 @@ export const flows = pgTable("flows", {
   workspaceId: text("workspace_id")
     .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
+  createdBy: text("created_by")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
 });
 
-export const flowsRelations = relations(flows, ({ many }) => ({
+export const flowsRelations = relations(flows, ({ many, one }) => ({
   primitives: many(primitives),
   edges: many(edges),
+  user: one(users, {
+    fields: [flows.createdBy],
+    references: [users.id],
+  }),
 }));
 
 // Zod schemas
 export const flowTypesSchema = z.enum(flowTypes.enumValues);
 export const flowSchema = createSelectSchema(flows);
-export const insertFlowSchema = createInsertSchema(flows);
+export const insertFlowSchema = createInsertSchema(flows).omit({
+  createdBy: true,
+});
 
 export const updateRouteFlowSchema = z.object({
   name: z
@@ -50,8 +60,8 @@ export const updateRouteFlowSchema = z.object({
     .transform((name) => name.replace(/\s+/g, " ").trim())
     .optional(),
   description: z.string().optional(),
-  actionType: z.enum(["create", "read", "update", "delete"]).optional(),
-  urlPath: z.string().optional(),
+  method: z.enum(["get", "post", "patch", "delete"]).optional(),
+  path: z.string().optional(),
   inputs: z
     .object({
       id: z.string(),

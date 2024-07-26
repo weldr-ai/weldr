@@ -63,8 +63,8 @@ export function CreateFlowForm({
         return {};
       case "route":
         return {
-          actionType: undefined,
-          urlPath: "",
+          method: undefined,
+          path: "",
         };
       case "workflow":
     }
@@ -110,8 +110,8 @@ export function CreateFlowForm({
                 | "description"
                 | "workspaceId"
                 | "type"
-                | "metadata.actionType"
-                | "metadata.urlPath"
+                | "metadata.method"
+                | "metadata.path"
                 | "metadata.triggerType",
               {
                 message: state.errors[key],
@@ -199,7 +199,7 @@ export function CreateFlowForm({
           <>
             <FormField
               control={form.control}
-              name="metadata.actionType"
+              name="metadata.method"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs">Type</FormLabel>
@@ -226,7 +226,7 @@ export function CreateFlowForm({
             />
             <FormField
               control={form.control}
-              name="metadata.urlPath"
+              name="metadata.path"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs">URL Path</FormLabel>

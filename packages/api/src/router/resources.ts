@@ -1,4 +1,4 @@
-import { eq, sql } from "@integramind/db";
+import { and, eq, sql } from "@integramind/db";
 import { insertResourceSchema, resources } from "@integramind/db/schema";
 import { type Table, getInfo } from "@integramind/integrations-postgres";
 import { z } from "zod";
@@ -16,6 +16,7 @@ export const resourcesRouter = {
           provider: input.provider,
           metadata: sql`${input.metadata}::jsonb`,
           workspaceId: input.workspaceId,
+          createdBy: ctx.session.user.id,
         })
         .returning({ id: resources.id });
 
@@ -29,7 +30,10 @@ export const resourcesRouter = {
     .input(z.object({ workspaceId: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.resources.findMany({
-        where: eq(resources.workspaceId, input.workspaceId),
+        where: and(
+          eq(resources.workspaceId, input.workspaceId),
+          eq(resources.createdBy, ctx.session.user.id),
+        ),
       });
       return result;
     }),
@@ -37,7 +41,10 @@ export const resourcesRouter = {
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.resources.findFirst({
-        where: eq(resources.id, input.id),
+        where: and(
+          eq(resources.id, input.id),
+          eq(resources.createdBy, ctx.session.user.id),
+        ),
       });
 
       if (!result) {
