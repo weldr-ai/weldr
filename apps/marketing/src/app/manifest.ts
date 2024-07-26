@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "IntegraMind",
     short_name: "IntegraMind",
     description:
-      "Build backend APIs, workflows, and data pipelines with no coding, just English!",
+      "Create backend APIs, automation workflows, and data pipelines using only plain English, no coding required!",
     start_url: "/",
     display: "standalone",
     background_color: "#3E63DD",

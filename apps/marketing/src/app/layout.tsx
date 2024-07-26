@@ -16,7 +16,7 @@ const fontSans = FontSans({
 export const metadata: Metadata = {
   title: "IntegraMind",
   description:
-    "Build backend APIs, workflows, and data pipelines with no coding, just English!",
+    "Create backend APIs, automation workflows, and data pipelines using only plain English, no coding required!",
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? ""),
 };
 

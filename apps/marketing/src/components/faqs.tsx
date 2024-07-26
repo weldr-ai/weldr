@@ -26,8 +26,7 @@ export function FAQs() {
             When will you launch the product?
           </AccordionTrigger>
           <AccordionContent>
-            We aim to launch a beta version for early adopters by the first
-            quarter of 2025.
+            We aim to launch the product for early adopters by October 2024.
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="faq-3" className="rounded-xl border px-4">

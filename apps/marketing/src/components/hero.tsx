@@ -20,9 +20,9 @@ export function Hero() {
         />
       </div>
       <p className="z-10 max-w-2xl text-center text-base lg:text-xl">
-        Our state-of-the-art platform allows you to build your own custom
-        backend APIs, automate workflows, and data pipelines with no code, just
-        English.
+        Our platform enables you to create custom backend APIs, automate
+        workflows, and build data pipelines using only plain English, without
+        any coding.
       </p>
       <div className="hidden md:block">
         <JoinWaitlistForm />
