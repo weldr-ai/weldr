@@ -64,15 +64,32 @@ import { updateRouteFlowSchema } from "@integramind/shared/validators/flows";
 import Editor from "~/components/editor";
 import type { SerializedInputNode } from "~/components/editor/nodes/input-node";
 import { api } from "~/lib/trpc/react";
-import type { FlowNode, FlowNodeProps } from "~/types";
+import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Route = memo(
-  ({ data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
-    if (data.type !== "route") {
+  ({ data: _data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
+    if (_data.type !== "route") {
       throw new Error("Invalid node type");
     }
 
-    const reactFlow = useReactFlow<FlowNode>();
+    const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
+      {
+        id: _data.id,
+      },
+      {
+        refetchInterval: false,
+        initialData: _data,
+      },
+    );
+    const data = fetchedData as RoutePrimitive;
+
+    const updateRoute = api.primitives.update.useMutation({
+      onSuccess: async () => {
+        await refetch();
+      },
+    });
+
+    const reactFlow = useReactFlow<FlowNode, FlowEdge>();
     const form = useForm<z.infer<typeof updateRouteFlowSchema>>({
       resolver: zodResolver(updateRouteFlowSchema),
       defaultValues: {
@@ -83,20 +100,6 @@ export const Route = memo(
         inputs: data.metadata.inputs,
       },
     });
-
-    const updateRoute = api.primitives.update.useMutation();
-    const { data: fetchedData, refetch: refetchRouteData } =
-      api.primitives.getById.useQuery(
-        {
-          id: data.id,
-        },
-        {
-          refetchInterval: false,
-          // @ts-ignore - Not sure why it has an error here
-          initialData: data,
-        },
-      );
-    const routeData = fetchedData as RoutePrimitive;
 
     function onChange(editorState: EditorState) {
       const getInputs = (root: SerializedRootNode<SerializedLexicalNode>) => {
@@ -180,11 +183,11 @@ export const Route = memo(
               }}
             >
               <div className="flex w-full items-center gap-2 text-xs">
-                <Badge>{routeData.metadata.method.toUpperCase()}</Badge>
+                <Badge>{data.metadata.method.toUpperCase()}</Badge>
                 <span className="text-muted-foreground">Route</span>
               </div>
               <span className="flex w-full justify-start text-sm">
-                {routeData?.name}
+                {data.name}
               </span>
             </Card>
           </ExpandableCardTrigger>
@@ -193,7 +196,7 @@ export const Route = memo(
               <div className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
                   <Badge variant="default" className="text-xs">
-                    {routeData.metadata.method.toUpperCase()}
+                    {data.metadata.method.toUpperCase()}
                   </Badge>
                   <span className="text-xs text-muted-foreground">Route</span>
                 </div>
@@ -262,7 +265,6 @@ export const Route = memo(
                                 name: e.target.value,
                               },
                             });
-                            await refetchRouteData();
                           }}
                         />
                       </FormControl>
@@ -296,7 +298,6 @@ export const Route = memo(
                                 description: e.target.value,
                               },
                             });
-                            await refetchRouteData();
                           }}
                         />
                       </FormControl>
@@ -331,7 +332,6 @@ export const Route = memo(
                                 },
                               },
                             });
-                            await refetchRouteData();
                           }}
                         >
                           <SelectTrigger className="bg-background">
@@ -375,7 +375,6 @@ export const Route = memo(
                                 },
                               },
                             });
-                            await refetchRouteData();
                           }}
                         />
                       </FormControl>
@@ -390,7 +389,7 @@ export const Route = memo(
                   id={data.id}
                   onChange={onChange}
                   onError={onError}
-                  inputs={data.metadata.inputs}
+                  inputs={data.metadata.inputs ?? []}
                   type="inputs"
                   className="h-20"
                   placeholder="Enter inputs"

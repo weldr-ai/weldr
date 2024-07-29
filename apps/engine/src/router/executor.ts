@@ -37,7 +37,7 @@ router.use("/primitives/:primitiveId", async (req, res) => {
 
   const inputs: Record<string, string | number> = {};
 
-  for (const input of primitive.metadata.inputs) {
+  for (const input of primitive.metadata.inputs ?? []) {
     if (input.testValue) {
       inputs[toCamelCase(input.name)] = input.testValue;
     } else {

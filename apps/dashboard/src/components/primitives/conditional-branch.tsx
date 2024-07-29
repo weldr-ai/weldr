@@ -37,13 +37,16 @@ import {
 import { cn } from "@integramind/ui/utils";
 
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import type { FlowNodeProps } from "~/types";
+import { api } from "~/lib/trpc/react";
+import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const ConditionalBranch = memo(
   ({ data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
-    const reactFlow = useReactFlow();
+    const reactFlow = useReactFlow<FlowNode, FlowEdge>();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
+
+    const deleteConditionalBranch = api.primitives.delete.useMutation();
 
     return (
       <>
@@ -185,15 +188,18 @@ export const ConditionalBranch = memo(
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
-          onDelete={() =>
+          onDelete={() => {
             reactFlow.deleteElements({
               nodes: [
                 {
                   id: data.id,
                 },
               ],
-            })
-          }
+            });
+            deleteConditionalBranch.mutate({
+              id: data.id,
+            });
+          }}
         />
         <Handle
           className="border-border bg-background p-1"

@@ -57,14 +57,16 @@ export const functionPrimitiveMetadataSchema = z.object({
         .optional()
         .default(null),
     })
-    .array(),
+    .array()
+    .optional(),
   outputs: z
     .object({
       id: z.string(),
       name: z.string(),
       type: z.enum(["number", "text"]),
     })
-    .array(),
+    .array()
+    .optional(),
   resource: z
     .object({
       id: z.string(),
@@ -97,7 +99,8 @@ export const routePrimitiveMetadataSchema = z.object({
         .default(null),
       type: z.enum(["number", "text"]),
     })
-    .array(),
+    .array()
+    .optional(),
 });
 
 export const routePrimitiveSchema = primitiveBaseSchema.extend({
@@ -118,7 +121,8 @@ export const workflowPrimitiveMetadataSchema = z.object({
         .default(null),
       type: z.enum(["number", "text"]),
     })
-    .array(),
+    .array()
+    .optional(),
 });
 
 export const workflowPrimitiveSchema = primitiveBaseSchema.extend({
@@ -138,7 +142,8 @@ export const responsePrimitiveMetadataSchema = z.object({
         .default(null),
       type: z.enum(["number", "text"]),
     })
-    .array(),
+    .array()
+    .optional(),
 });
 
 export const responsePrimitiveSchema = primitiveBaseSchema.extend({
@@ -187,7 +192,7 @@ export const primitiveMetadataSchema = z.union([
   conditionalBranchPrimitiveMetadataSchema,
 ]);
 
-export const insertPrimitiveSchema = z.object({
+export const insertPrimitiveBaseSchema = z.object({
   name: z
     .string()
     .min(1, {
@@ -195,7 +200,6 @@ export const insertPrimitiveSchema = z.object({
     })
     .transform((name) => name.replace(/\s+/g, " ").trim()),
   description: z.string().trim().optional(),
-  type: primitiveTypesSchema,
   positionX: z.number().optional(),
   positionY: z.number().optional(),
   metadata: primitiveMetadataSchema,
@@ -203,6 +207,21 @@ export const insertPrimitiveSchema = z.object({
     message: "Flow is required.",
   }),
 });
+
+export const insertBuildingPrimitiveSchema = insertPrimitiveBaseSchema.extend({
+  isBuilding: z.literal(true),
+  type: z.enum(["function", "iterator", "conditional-branch", "response"]),
+});
+
+export const insertFlowPrimitiveSchema = insertPrimitiveBaseSchema.extend({
+  isBuilding: z.literal(false),
+  type: z.enum(["route", "workflow"]),
+});
+
+export const insertPrimitiveSchema = z.discriminatedUnion("isBuilding", [
+  insertBuildingPrimitiveSchema,
+  insertFlowPrimitiveSchema,
+]);
 
 export const updatePrimitiveBaseSchema = z.object({
   name: z

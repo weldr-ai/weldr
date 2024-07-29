@@ -38,15 +38,15 @@ import { cn } from "@integramind/ui/utils";
 
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { api } from "~/lib/trpc/react";
-import type { FlowNodeProps } from "~/types";
+import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Response = memo(
   ({ data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
-    const reactFlow = useReactFlow();
+    const reactFlow = useReactFlow<FlowNode, FlowEdge>();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
-    const deletePrimitive = api.primitives.delete.useMutation();
+    const deleteResponse = api.primitives.delete.useMutation();
 
     return (
       <>
@@ -192,7 +192,7 @@ export const Response = memo(
                 },
               ],
             });
-            deletePrimitive.mutate({
+            deleteResponse.mutate({
               id: data.id,
             });
           }}

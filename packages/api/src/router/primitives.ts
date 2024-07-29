@@ -7,7 +7,7 @@ import type {
   RoutePrimitive,
 } from "@integramind/shared/types";
 
-import { type SQL, and, eq, sql } from "@integramind/db";
+import { type SQL, and, eq, notInArray, sql } from "@integramind/db";
 import {
   insertPrimitiveSchema,
   primitiveSchema,
@@ -23,13 +23,9 @@ export const primitivesRouter = {
       const result = await ctx.db
         .insert(primitives)
         .values({
-          name: input.name,
-          type: input.type,
-          positionX: input.positionX,
-          positionY: input.positionY,
+          ...input,
           metadata: sql`${input.metadata}::jsonb`,
           createdBy: ctx.session.user.id,
-          flowId: input.flowId,
         })
         .returning({
           id: primitives.id,
@@ -82,6 +78,7 @@ export const primitivesRouter = {
         .where(
           and(
             eq(primitives.id, input.id),
+            notInArray(primitives.type, ["route", "workflow"]),
             eq(primitives.createdBy, ctx.session.user.id),
           ),
         );
@@ -178,7 +175,7 @@ export const primitivesRouter = {
       }
 
       const updatedInputs = updateInputById(
-        result.metadata.inputs,
+        result.metadata.inputs ?? [],
         input.inputId,
         input.name,
         input.testValue,

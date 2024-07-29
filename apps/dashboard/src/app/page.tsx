@@ -1,3 +1,4 @@
+import { auth } from "@integramind/auth";
 import {
   Card,
   CardContent,
@@ -5,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@integramind/ui/card";
+import { redirect } from "next/navigation";
 
 import { CreateWorkspaceForm } from "~/components/create-workspace-form";
 import { Preview } from "~/components/preview";
@@ -12,6 +14,12 @@ import { WorkspacesDialog } from "~/components/workspaces-dialog";
 import { api } from "~/lib/trpc/rsc";
 
 export default async function Home(): Promise<JSX.Element> {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/auth/sign-in");
+  }
+
   const workspaces = await api.workspaces.getAll();
 
   return (

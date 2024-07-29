@@ -79,7 +79,7 @@ import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { api } from "~/lib/trpc/react";
-import type { FlowNodeProps } from "~/types";
+import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 async function executeFunction({
   id,
@@ -108,12 +108,31 @@ async function executeFunction({
 }
 
 export const FunctionNode = memo(
-  ({ data, isConnectable, selected, xPos, yPos }: FlowNodeProps) => {
-    if (data.type !== "function") {
+  ({ data: _data, isConnectable, selected, xPos, yPos }: FlowNodeProps) => {
+    if (_data.type !== "function") {
       throw new Error("Invalid node type");
     }
 
-    const reactFlow = useReactFlow();
+    const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
+      {
+        id: _data.id,
+      },
+      {
+        refetchInterval: 5 * 60 * 1000,
+        initialData: _data,
+      },
+    );
+    const data = fetchedData as FunctionPrimitive;
+
+    const updateFunction = api.primitives.update.useMutation({
+      onSuccess: async () => {
+        await refetch();
+      },
+    });
+
+    const deleteFunction = api.primitives.delete.useMutation();
+
+    const reactFlow = useReactFlow<FlowNode, FlowEdge>();
     const nodes = useNodes<Primitive>();
     const edges = useEdges<"deletable-edge">();
     const form = useForm<z.infer<typeof updatePrimitiveSchema>>({
@@ -125,30 +144,6 @@ export const FunctionNode = memo(
         },
       },
     });
-
-    const { data: fetchedData, refetch: refetchFunctionData } =
-      api.primitives.getById.useQuery(
-        {
-          id: data.id,
-        },
-        {
-          refetchInterval: 5 * 60 * 1000,
-          initialData: {
-            ...data,
-            positionX: xPos,
-            positionY: yPos,
-          },
-        },
-      );
-    const functionData = fetchedData as FunctionPrimitive;
-
-    const updateFunction = api.primitives.update.useMutation({
-      onSuccess: async () => {
-        await refetchFunctionData();
-      },
-    });
-
-    const deletePrimitive = api.primitives.delete.useMutation();
 
     const {
       data: executionResult,
@@ -179,7 +174,7 @@ export const FunctionNode = memo(
         if (parent.type === "route" || parent.type === "workflow") {
           if (parent.metadata.inputs) {
             for (const input of parent.metadata.inputs) {
-              if (functionData?.metadata.inputs) {
+              if (data.metadata.inputs) {
                 const foundInput = data.metadata.inputs.find(
                   (item) => item.id === input.id,
                 );
@@ -235,7 +230,7 @@ export const FunctionNode = memo(
 
       return inputs;
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data, edges, functionData, nodes, updateFunction]);
+    }, [data, edges, nodes, updateFunction]);
 
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -356,7 +351,7 @@ export const FunctionNode = memo(
                     <LambdaIcon className="size-4 text-primary" />
                     <span className="text-muted-foreground">Function</span>
                   </div>
-                  <span className="text-sm">{functionData?.name}</span>
+                  <span className="text-sm">{data.name}</span>
                 </Card>
               </ContextMenuTrigger>
               <ContextMenuContent>
@@ -427,13 +422,13 @@ export const FunctionNode = memo(
                           payload: {
                             type: "function",
                             metadata: {
-                              isLocked: !functionData.metadata.isLocked,
+                              isLocked: !data.metadata.isLocked,
                             },
                           },
                         });
                       }}
                     >
-                      {functionData.metadata.isLocked ? (
+                      {data.metadata.isLocked ? (
                         <LockIcon className="size-3.5" />
                       ) : (
                         <UnlockIcon className="size-3.5" />
@@ -498,8 +493,7 @@ export const FunctionNode = memo(
                             type: "function",
                             name: e.target.value,
                             metadata: {
-                              isCodeUpdated:
-                                e.target.value === functionData.name,
+                              isCodeUpdated: e.target.value === data.name,
                             },
                           },
                         });
@@ -521,7 +515,7 @@ export const FunctionNode = memo(
                     type="description"
                     inputs={inputs}
                     placeholder="Describe your function"
-                    rawDescription={functionData.metadata.rawDescription}
+                    rawDescription={data.metadata.rawDescription}
                     onChange={onChange}
                     onError={onError}
                   />
@@ -643,7 +637,7 @@ export const FunctionNode = memo(
                 },
               ],
             });
-            deletePrimitive.mutate({
+            deleteFunction.mutate({
               id: data.id,
             });
           }}
@@ -659,5 +653,3 @@ export const FunctionNode = memo(
     );
   },
 );
-
-FunctionNode.displayName = "Function";

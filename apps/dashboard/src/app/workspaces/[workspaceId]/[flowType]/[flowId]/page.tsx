@@ -17,7 +17,7 @@ export default async function WorkflowPage({
       id: primitive.id,
       type: primitive.type,
       dragHandle: ".drag-handle",
-      deletable: false,
+      deletable: primitive.type !== "route" && primitive.type !== "workflow",
       position: { x: primitive.positionX, y: primitive.positionY },
       data: {
         id: primitive.id,

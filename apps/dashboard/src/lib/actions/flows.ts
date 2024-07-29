@@ -62,6 +62,7 @@ export async function createFlow(
           validation.data.type === "workflow"
         ) {
           await api.primitives.create({
+            isBuilding: false,
             name: validation.data.name,
             description: validation.data.description,
             type: validation.data.type,

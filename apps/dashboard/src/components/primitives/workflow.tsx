@@ -28,7 +28,7 @@ import {
   ExpandableCardTrigger,
 } from "@integramind/ui/expandable-card";
 import { cn } from "@integramind/ui/utils";
-import type { FlowNodeProps } from "~/types";
+import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Workflow = memo(
   ({ data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
@@ -36,7 +36,7 @@ export const Workflow = memo(
       throw new Error("Invalid node type");
     }
 
-    const reactFlow = useReactFlow();
+    const reactFlow = useReactFlow<FlowNode, FlowEdge>();
 
     return (
       <>
