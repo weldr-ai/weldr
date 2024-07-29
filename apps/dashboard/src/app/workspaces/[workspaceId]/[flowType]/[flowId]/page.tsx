@@ -1,3 +1,4 @@
+import type { Primitive } from "@integramind/shared/types";
 import { notFound } from "next/navigation";
 
 import { FlowBuilder } from "~/components/flow-builder";
@@ -18,7 +19,17 @@ export default async function WorkflowPage({
       dragHandle: ".drag-handle",
       deletable: false,
       position: { x: primitive.positionX, y: primitive.positionY },
-      data: primitive,
+      data: {
+        id: primitive.id,
+        name: primitive.name,
+        description: primitive.description,
+        type: primitive.type,
+        metadata: primitive.metadata,
+        createdAt: primitive.createdAt,
+        updatedAt: primitive.updatedAt,
+        createdBy: primitive.createdBy,
+        flowId: primitive.flowId,
+      } as Primitive,
     }));
 
     const initialEdges: FlowEdge[] = flow.edges.map((edge) => ({

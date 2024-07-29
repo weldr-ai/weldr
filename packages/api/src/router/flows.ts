@@ -1,18 +1,17 @@
 import { and, eq, sql } from "@integramind/db";
+import { flows, primitives } from "@integramind/db/schema";
+import type { RouteMetadata } from "@integramind/shared/types";
 import {
+  baseInsertFlowSchema,
   flowTypesSchema,
-  flows,
-  insertFlowSchema,
-  primitives,
-} from "@integramind/db/schema";
-import type { RouteMetadata } from "@integramind/db/types";
+} from "@integramind/shared/validators/flows";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
 export const flowsRouter = {
   create: protectedProcedure
-    .input(insertFlowSchema)
+    .input(baseInsertFlowSchema)
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.db
         .insert(flows)
@@ -33,7 +32,7 @@ export const flowsRouter = {
       }
       return result[0];
     }),
-  getAll: protectedProcedure
+  getAllByType: protectedProcedure
     .input(z.object({ workspaceId: z.string(), type: flowTypesSchema }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.flows.findMany({

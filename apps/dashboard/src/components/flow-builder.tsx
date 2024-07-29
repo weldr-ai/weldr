@@ -30,9 +30,9 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import "~/styles/flow-builder.css";
 
-import type { PrimitiveMetadata } from "@integramind/db/types";
 import { Button } from "@integramind/ui/button";
 
+import type { Primitive, PrimitiveType } from "@integramind/shared/types";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
 import { ConditionalBranch } from "~/components/primitives/conditional-branch";
@@ -42,7 +42,7 @@ import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
 import { Workflow } from "~/components/primitives/workflow";
 import { api } from "~/lib/trpc/react";
-import type { FlowEdge, FlowNode, PrimitiveType } from "~/types";
+import type { FlowEdge, FlowNode } from "~/types";
 
 const nodeTypes = {
   route: Route,
@@ -133,20 +133,9 @@ export function _FlowBuilder({
         y: event.clientY,
       });
 
-      const newNodeId = createId();
       const newNodeName = getNewNodeName(nodeType);
 
-      setNodes((nodes) =>
-        nodes.concat({
-          id: newNodeId,
-          type: nodeType,
-          position: { x: Math.floor(position.x), y: Math.floor(position.y) },
-          data: { id: newNodeId, name: newNodeName, type: nodeType },
-        } as FlowNode),
-      );
-
-      await createPrimitive.mutateAsync({
-        id: newNodeId,
+      const newNode = await createPrimitive.mutateAsync({
         type: nodeType,
         name: newNodeName,
         positionX: Math.floor(position.x),
@@ -154,8 +143,27 @@ export function _FlowBuilder({
         flowId,
         metadata: {
           type: nodeType,
-        } as PrimitiveMetadata,
+        },
       });
+
+      setNodes((nodes) =>
+        nodes.concat({
+          id: newNode.id,
+          type: newNode.type,
+          position: { x: newNode.positionX, y: newNode.positionY },
+          data: {
+            id: newNode.id,
+            name: newNode.name,
+            description: newNode.description,
+            type: newNode.type,
+            metadata: newNode.metadata,
+            createdAt: newNode.createdAt,
+            updatedAt: newNode.updatedAt,
+            createdBy: newNode.createdBy,
+            flowId: newNode.flowId,
+          } as Primitive,
+        }),
+      );
     },
     [createPrimitive, flowId, reactFlow, setNodes],
   );
@@ -171,6 +179,7 @@ export function _FlowBuilder({
           id: node.id,
         },
         payload: {
+          type: node.type as PrimitiveType,
           positionX: Math.floor(node.position.x),
           positionY: Math.floor(node.position.y),
         },

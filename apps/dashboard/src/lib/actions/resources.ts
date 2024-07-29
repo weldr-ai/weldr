@@ -1,11 +1,7 @@
 "use server";
 
-import { z } from "zod";
-
-import {
-  insertResourceSchema,
-  postgresMetadataSchema,
-} from "@integramind/db/schema";
+import { insertResourceSchema } from "@integramind/shared/validators/resources";
+import type { z } from "zod";
 
 import { api } from "~/lib/trpc/rsc";
 
@@ -27,16 +23,12 @@ type FormState =
     }
   | undefined;
 
-const validationSchema = insertResourceSchema.extend({
-  metadata: z.discriminatedUnion("provider", [postgresMetadataSchema]),
-});
-
 export async function addResource(
   prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
   const data = Object.fromEntries(formData) as Record<string, string>;
-  const validation = validationSchema.safeParse(data);
+  const validation = insertResourceSchema.safeParse(data);
 
   const fields: Record<string, string> = Object.entries(data).reduce(
     (acc: Record<string, string>, [key, value]) => {

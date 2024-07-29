@@ -1,9 +1,9 @@
 "use server";
 
+import { insertWorkspaceSchema } from "@integramind/shared/validators/workspaces";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 
-import { insertWorkspaceSchema } from "@integramind/db/schema";
 import { api } from "~/lib/trpc/rsc";
 
 interface FormFields {

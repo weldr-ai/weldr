@@ -14,9 +14,9 @@ import {
   CommandList,
 } from "@integramind/ui/command";
 
+import type { Workspace } from "@integramind/shared/types";
 import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { useCommandCenterStore } from "~/lib/store";
-import type { Workspace } from "~/types";
 
 // TODO: the command center should be a complete center to navigate the workspace quickly
 export function CommandCenter({ workspaces }: { workspaces: Workspace[] }) {

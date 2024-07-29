@@ -5,11 +5,16 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./utils": "./src/utils.ts"
+    "./utils": "./src/utils.ts",
+    "./validators/*": "./src/validators/*.ts",
+    "./types": "./src/types/index.d.ts"
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@integramind/tsconfig": "workspace:*"

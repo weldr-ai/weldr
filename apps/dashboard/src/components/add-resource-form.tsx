@@ -8,12 +8,8 @@ import { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import type { z } from "zod";
 
-import {
-  insertResourceSchema,
-  postgresMetadataSchema,
-} from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import {
   Form,
@@ -27,12 +23,9 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
+import type { ResourceProvider } from "@integramind/shared/types";
+import { insertResourceSchema } from "@integramind/shared/validators/resources";
 import { addResource } from "~/lib/actions/resources";
-import type { ResourceProvider } from "~/types";
-
-const validationSchema = insertResourceSchema.extend({
-  metadata: z.discriminatedUnion("provider", [postgresMetadataSchema]),
-});
 
 export function AddResourceForm({
   provider,
@@ -58,9 +51,9 @@ export function AddResourceForm({
     }
   };
 
-  const form = useForm<z.infer<typeof validationSchema>>({
+  const form = useForm<z.infer<typeof insertResourceSchema>>({
     mode: "onChange",
-    resolver: zodResolver(validationSchema),
+    resolver: zodResolver(insertResourceSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -253,7 +246,7 @@ export function AddResourceForm({
 function SubmitButton({
   formState,
 }: {
-  formState: FormState<z.infer<typeof validationSchema>>;
+  formState: FormState<z.infer<typeof insertResourceSchema>>;
 }) {
   const { pending } = useFormStatus();
   return (

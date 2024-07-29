@@ -37,16 +37,10 @@ import {
 import { cn } from "@integramind/ui/utils";
 
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import type { ConditionalBranchNodeProps } from "~/types";
+import type { FlowNodeProps } from "~/types";
 
 export const ConditionalBranch = memo(
-  ({
-    data,
-    isConnectable,
-    xPos,
-    yPos,
-    selected,
-  }: ConditionalBranchNodeProps) => {
+  ({ data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);

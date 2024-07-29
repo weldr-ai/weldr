@@ -1,9 +1,4 @@
-import type { z } from "zod";
-
-import type { edgeSchema, primitiveSchema } from "@integramind/db/schema";
-
-export type Primitive = z.infer<typeof primitiveSchema>;
-export type Edge = z.infer<typeof edgeSchema>;
+import type { Edge, Primitive } from "@integramind/shared/types";
 
 export function getExecutionOrder(
   primitives: Primitive[],

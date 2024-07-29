@@ -6,8 +6,8 @@ import { buttonVariants } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
+import type { FlowType } from "@integramind/shared/types";
 import { api } from "~/lib/trpc/react";
-import type { FlowType } from "~/types";
 import { CreateFlowDialog } from "./create-flow-dialog";
 
 export function FlowList({
@@ -22,7 +22,7 @@ export function FlowList({
     data: flows,
     isLoading,
     isRefetching,
-  } = api.flows.getAll.useQuery({
+  } = api.flows.getAllByType.useQuery({
     workspaceId,
     type,
   });

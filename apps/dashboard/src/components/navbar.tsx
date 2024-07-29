@@ -13,11 +13,11 @@ import {
   DropdownMenuTrigger,
 } from "@integramind/ui/dropdown-menu";
 
+import type { Workspace } from "@integramind/shared/types";
 import { IntegraMind2Icon } from "@integramind/ui/icons/integramind2-icon";
 import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useCommandCenterStore } from "~/lib/store";
-import type { Workspace } from "~/types";
 
 export function Navbar({ workspace }: { workspace: Workspace }): JSX.Element {
   const { resolvedTheme } = useTheme();

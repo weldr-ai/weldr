@@ -14,9 +14,9 @@ import {
   CommandList,
 } from "@integramind/ui/command";
 
+import type { Workspace } from "@integramind/shared/types";
 import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { useCommandCenterStore } from "~/lib/store";
-import type { Workspace } from "~/types";
 
 export function WorkspacesDialog({ workspaces }: { workspaces: Workspace[] }) {
   const router = useRouter();

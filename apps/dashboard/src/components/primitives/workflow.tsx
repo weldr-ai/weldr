@@ -28,11 +28,14 @@ import {
   ExpandableCardTrigger,
 } from "@integramind/ui/expandable-card";
 import { cn } from "@integramind/ui/utils";
-
-import type { WorkflowNodeProps } from "~/types";
+import type { FlowNodeProps } from "~/types";
 
 export const Workflow = memo(
-  ({ data, isConnectable, xPos, yPos, selected }: WorkflowNodeProps) => {
+  ({ data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
+    if (data.type !== "workflow") {
+      throw new Error("Invalid node type");
+    }
+
     const reactFlow = useReactFlow();
 
     return (

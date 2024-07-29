@@ -1,5 +1,6 @@
 import { and, eq } from "@integramind/db";
-import { edges, insertEdgeSchema } from "@integramind/db/schema";
+import { edges } from "@integramind/db/schema";
+import { insertEdgeSchema } from "@integramind/shared/validators/edges";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 

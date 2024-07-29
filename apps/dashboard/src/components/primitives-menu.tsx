@@ -11,8 +11,8 @@ import { useState } from "react";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 
+import type { PrimitiveType } from "@integramind/shared/types";
 import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
-import type { PrimitiveType } from "~/types";
 
 export function PrimitivesMenu() {
   const onDragStart = (
