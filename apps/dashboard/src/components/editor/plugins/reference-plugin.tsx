@@ -21,11 +21,11 @@ import * as ReactDOM from "react-dom";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
+import type { Input } from "@integramind/shared/types";
 import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
 import { api } from "~/lib/trpc/react";
-import type { Input } from "~/types";
 
 export class ReferenceOption extends MenuOption {
   // The id of the reference

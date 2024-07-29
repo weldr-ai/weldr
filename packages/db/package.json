@@ -23,6 +23,7 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
+    "@integramind/shared": "workspace:*",
     "@paralleldrive/cuid2": "^2.2.2",
     "dashboard": "^0.0.1",
     "drizzle-orm": "^0.30.10",

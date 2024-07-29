@@ -38,10 +38,10 @@ import { cn } from "@integramind/ui/utils";
 
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { api } from "~/lib/trpc/react";
-import type { ResponseNodeProps } from "~/types";
+import type { FlowNodeProps } from "~/types";
 
 export const Response = memo(
-  ({ data, isConnectable, xPos, yPos, selected }: ResponseNodeProps) => {
+  ({ data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);

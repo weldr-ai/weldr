@@ -9,7 +9,6 @@ import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { insertWorkspaceSchema } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import {
   Form,
@@ -23,6 +22,7 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
+import { insertWorkspaceSchema } from "@integramind/shared/validators/workspaces";
 import { createWorkspace } from "~/lib/actions/workspaces";
 
 export function CreateWorkspaceForm() {

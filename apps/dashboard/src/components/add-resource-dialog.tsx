@@ -14,9 +14,9 @@ import {
 } from "@integramind/ui/dialog";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 
+import type { ResourceProvider } from "@integramind/shared/types";
 import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
 import { AddResourceForm } from "~/components/add-resource-form";
-import type { ResourceProvider } from "~/types";
 
 export function AddResourceDialog() {
   const [provider, setProvider] = useState<ResourceProvider | undefined>();

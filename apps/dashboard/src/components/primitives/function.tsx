@@ -19,11 +19,6 @@ import { useForm } from "react-hook-form";
 import { Handle, Position, useEdges, useNodes, useReactFlow } from "reactflow";
 import type { z } from "zod";
 
-import {
-  type resourceProvidersSchema,
-  updateFunctionSchema,
-  type updatePrimitiveSchema,
-} from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 import {
@@ -67,19 +62,24 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
 import { cn } from "@integramind/ui/utils";
 
+import type {
+  FunctionPrimitive,
+  FunctionRawDescription,
+  Input,
+  Primitive,
+} from "@integramind/shared/types";
+import {
+  updateFunctionSchema,
+  type updatePrimitiveSchema,
+} from "@integramind/shared/validators/primitives";
+import type { resourceProvidersSchema } from "@integramind/shared/validators/resources";
 import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
 import { useQuery } from "@tanstack/react-query";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { api } from "~/lib/trpc/react";
-import type {
-  FunctionMetadata,
-  FunctionNodeProps,
-  FunctionRawDescription,
-  Input,
-  PrimitiveData,
-} from "~/types";
+import type { FlowNodeProps } from "~/types";
 
 async function executeFunction({
   id,
@@ -108,9 +108,13 @@ async function executeFunction({
 }
 
 export const FunctionNode = memo(
-  ({ data, isConnectable, selected, xPos, yPos }: FunctionNodeProps) => {
+  ({ data, isConnectable, selected, xPos, yPos }: FlowNodeProps) => {
+    if (data.type !== "function") {
+      throw new Error("Invalid node type");
+    }
+
     const reactFlow = useReactFlow();
-    const nodes = useNodes<PrimitiveData>();
+    const nodes = useNodes<Primitive>();
     const edges = useEdges<"deletable-edge">();
     const form = useForm<z.infer<typeof updatePrimitiveSchema>>({
       resolver: zodResolver(updateFunctionSchema),
@@ -122,18 +126,21 @@ export const FunctionNode = memo(
       },
     });
 
-    const { data: functionData, refetch: refetchFunctionData } =
-      api.primitives.getByIdAndType.useQuery(
+    const { data: fetchedData, refetch: refetchFunctionData } =
+      api.primitives.getById.useQuery(
         {
           id: data.id,
-          type: "function",
         },
         {
           refetchInterval: 5 * 60 * 1000,
-          // @ts-ignore - Not sure why it has an error here
-          initialData: data,
+          initialData: {
+            ...data,
+            positionX: xPos,
+            positionY: yPos,
+          },
         },
       );
+    const functionData = fetchedData as FunctionPrimitive;
 
     const updateFunction = api.primitives.update.useMutation({
       onSuccess: async () => {
@@ -158,7 +165,7 @@ export const FunctionNode = memo(
     });
 
     const inputs = useMemo(() => {
-      const parents = edges.reduce((acc, edge) => {
+      const parents = edges.reduce((acc: Primitive[], edge) => {
         if (edge.target === data.id) {
           const parent = nodes.find((node) => node.id === edge.source);
           if (parent) {
@@ -166,12 +173,12 @@ export const FunctionNode = memo(
           }
         }
         return acc;
-      }, [] as PrimitiveData[]);
+      }, []);
 
       const inputs = parents.reduce((acc, parent) => {
         if (parent.type === "route" || parent.type === "workflow") {
-          if (parent.inputs) {
-            for (const input of parent.inputs) {
+          if (parent.metadata.inputs) {
+            for (const input of parent.metadata.inputs) {
               if (functionData?.metadata.inputs) {
                 const foundInput = data.metadata.inputs.find(
                   (item) => item.id === input.id,
@@ -179,13 +186,10 @@ export const FunctionNode = memo(
 
                 if (foundInput && foundInput.testValue !== input.testValue) {
                   updateFunction.mutate({
-                    where: {
-                      id: data.id,
-                      type: "function",
-                    },
+                    where: { id: data.id },
                     payload: {
+                      type: "function",
                       metadata: {
-                        type: "function",
                         inputs: data.metadata.inputs.map((item) =>
                           item.id === input.id
                             ? {
@@ -209,14 +213,14 @@ export const FunctionNode = memo(
             }
           }
         } else if (parent.type === "function") {
-          if (parent.outputs) {
+          if (parent.metadata.outputs) {
             acc.push({
               id: parent.id,
               name: parent.name,
               type: "functionResponse",
               testValue: null,
             });
-            for (const output of parent.outputs) {
+            for (const output of parent.metadata.outputs) {
               acc.push({
                 id: output.id,
                 name: `${parent.name}.${output.name}`,
@@ -293,12 +297,11 @@ export const FunctionNode = memo(
         updateFunction.mutate({
           where: {
             id: data.id,
-            type: "function",
           },
           payload: {
+            type: "function",
             description,
             metadata: {
-              type: "function",
               inputs,
               resource,
               rawDescription,
@@ -420,20 +423,17 @@ export const FunctionNode = memo(
                         updateFunction.mutate({
                           where: {
                             id: data.id,
-                            type: "function",
                           },
                           payload: {
+                            type: "function",
                             metadata: {
-                              type: "function",
-                              isLocked: !(
-                                functionData.metadata as FunctionMetadata
-                              ).isLocked,
+                              isLocked: !functionData.metadata.isLocked,
                             },
                           },
                         });
                       }}
                     >
-                      {(functionData.metadata as FunctionMetadata).isLocked ? (
+                      {functionData.metadata.isLocked ? (
                         <LockIcon className="size-3.5" />
                       ) : (
                         <UnlockIcon className="size-3.5" />
@@ -493,12 +493,11 @@ export const FunctionNode = memo(
                         updateFunction.mutate({
                           where: {
                             id: data.id,
-                            type: "function",
                           },
                           payload: {
+                            type: "function",
                             name: e.target.value,
                             metadata: {
-                              type: "function",
                               isCodeUpdated:
                                 e.target.value === functionData.name,
                             },
@@ -522,9 +521,7 @@ export const FunctionNode = memo(
                     type="description"
                     inputs={inputs}
                     placeholder="Describe your function"
-                    rawDescription={
-                      (functionData.metadata as FunctionMetadata).rawDescription
-                    }
+                    rawDescription={functionData.metadata.rawDescription}
                     onChange={onChange}
                     onError={onError}
                   />

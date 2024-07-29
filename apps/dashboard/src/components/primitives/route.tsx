@@ -20,7 +20,6 @@ import { useForm } from "react-hook-form";
 import { Handle, Position, useReactFlow } from "reactflow";
 import type { z } from "zod";
 
-import { updateRouteFlowSchema } from "@integramind/db/schema";
 import { Badge } from "@integramind/ui/badge";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
@@ -57,18 +56,22 @@ import {
 import { Textarea } from "@integramind/ui/textarea";
 import { cn } from "@integramind/ui/utils";
 
+import type {
+  RoutePrimitive,
+  Input as TInput,
+} from "@integramind/shared/types";
+import { updateRouteFlowSchema } from "@integramind/shared/validators/flows";
 import Editor from "~/components/editor";
 import type { SerializedInputNode } from "~/components/editor/nodes/input-node";
 import { api } from "~/lib/trpc/react";
-import type {
-  FlowNode,
-  Input as IInput,
-  RouteMetadata,
-  RouteNodeProps,
-} from "~/types";
+import type { FlowNode, FlowNodeProps } from "~/types";
 
 export const Route = memo(
-  ({ data, isConnectable, xPos, yPos, selected }: RouteNodeProps) => {
+  ({ data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
+    if (data.type !== "route") {
+      throw new Error("Invalid node type");
+    }
+
     const reactFlow = useReactFlow<FlowNode>();
     const form = useForm<z.infer<typeof updateRouteFlowSchema>>({
       resolver: zodResolver(updateRouteFlowSchema),
@@ -82,11 +85,10 @@ export const Route = memo(
     });
 
     const updateRoute = api.primitives.update.useMutation();
-    const { data: routeData, refetch: refetchRouteData } =
-      api.primitives.getByIdAndType.useQuery(
+    const { data: fetchedData, refetch: refetchRouteData } =
+      api.primitives.getById.useQuery(
         {
           id: data.id,
-          type: "route",
         },
         {
           refetchInterval: false,
@@ -94,6 +96,7 @@ export const Route = memo(
           initialData: data,
         },
       );
+    const routeData = fetchedData as RoutePrimitive;
 
     function onChange(editorState: EditorState) {
       const getInputs = (root: SerializedRootNode<SerializedLexicalNode>) => {
@@ -112,7 +115,7 @@ export const Route = memo(
               });
             }
             return acc;
-          }, [] as IInput[]);
+          }, [] as TInput[]);
         }
       };
 
@@ -122,11 +125,10 @@ export const Route = memo(
         updateRoute.mutate({
           where: {
             id: data.id,
-            type: "route",
           },
           payload: {
+            type: "route",
             metadata: {
-              type: "route",
               inputs,
             },
           },
@@ -178,9 +180,7 @@ export const Route = memo(
               }}
             >
               <div className="flex w-full items-center gap-2 text-xs">
-                <Badge>
-                  {(routeData.metadata as RouteMetadata).method.toUpperCase()}
-                </Badge>
+                <Badge>{routeData.metadata.method.toUpperCase()}</Badge>
                 <span className="text-muted-foreground">Route</span>
               </div>
               <span className="flex w-full justify-start text-sm">
@@ -193,7 +193,7 @@ export const Route = memo(
               <div className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
                   <Badge variant="default" className="text-xs">
-                    {(routeData.metadata as RouteMetadata).method.toUpperCase()}
+                    {routeData.metadata.method.toUpperCase()}
                   </Badge>
                   <span className="text-xs text-muted-foreground">Route</span>
                 </div>
@@ -256,9 +256,9 @@ export const Route = memo(
                             await updateRoute.mutateAsync({
                               where: {
                                 id: data.id,
-                                type: "route",
                               },
                               payload: {
+                                type: "route",
                                 name: e.target.value,
                               },
                             });
@@ -290,9 +290,9 @@ export const Route = memo(
                             await updateRoute.mutateAsync({
                               where: {
                                 id: data.id,
-                                type: "route",
                               },
                               payload: {
+                                type: "route",
                                 description: e.target.value,
                               },
                             });
@@ -319,11 +319,10 @@ export const Route = memo(
                             await updateRoute.mutateAsync({
                               where: {
                                 id: data.id,
-                                type: "route",
                               },
                               payload: {
+                                type: "route",
                                 metadata: {
-                                  type: "route",
                                   method: value as
                                     | "get"
                                     | "post"
@@ -368,11 +367,10 @@ export const Route = memo(
                             await updateRoute.mutateAsync({
                               where: {
                                 id: data.id,
-                                type: "route",
                               },
                               payload: {
+                                type: "route",
                                 metadata: {
-                                  type: "route",
                                   path: e.target.value,
                                 },
                               },

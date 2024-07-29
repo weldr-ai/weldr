@@ -1,7 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import { pgTable, text } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { users } from "./auth";
 import { flows } from "./flows";
@@ -36,11 +35,3 @@ export const edgesRelations = relations(edges, ({ many, one }) => ({
     references: [users.id],
   }),
 }));
-
-// Zod schemas
-export const edgeSchema = createSelectSchema(edges);
-export const insertEdgeSchema = createInsertSchema(edges, {
-  id: (schema) => schema.id.cuid2(),
-  source: (schema) => schema.source.cuid2(),
-  target: (schema) => schema.target.cuid2(),
-}).omit({ createdBy: true });

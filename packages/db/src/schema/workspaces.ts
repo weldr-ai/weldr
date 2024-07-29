@@ -1,7 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { users } from "./auth";
 import { flows } from "./flows";
@@ -31,15 +30,3 @@ export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
     references: [users.id],
   }),
 }));
-
-// Zod schemas
-export const workspaceSchema = createSelectSchema(workspaces);
-export const insertWorkspaceSchema = createInsertSchema(workspaces, {
-  name: (schema) =>
-    schema.name
-      .trim()
-      .min(1, {
-        message: "Name is required.",
-      })
-      .transform((name) => name.replace(/\s+/g, " ").trim()),
-}).omit({ createdBy: true });

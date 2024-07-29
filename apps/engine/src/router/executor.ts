@@ -1,6 +1,11 @@
 import express from "express";
 
-import type { Resource, RouteMetadata } from "@integramind/db/types";
+import type {
+  FunctionPrimitive,
+  Primitive,
+  Resource,
+  RouteMetadata,
+} from "@integramind/shared/types";
 
 import { generateCode } from "@integramind/ai";
 import { and, db, eq, sql } from "@integramind/db";
@@ -19,11 +24,11 @@ const router = express.Router();
 router.use("/primitives/:primitiveId", async (req, res) => {
   const { primitiveId } = req.params;
 
-  const primitive = await db.query.primitives.findFirst({
+  const primitive = (await db.query.primitives.findFirst({
     where: eq(primitives.id, primitiveId),
-  });
+  })) as FunctionPrimitive;
 
-  if (!primitive || primitive.metadata.type !== "function") {
+  if (!primitive || primitive.type !== "function") {
     return {
       status: 404,
       body: { error: "Function not found" },
@@ -135,10 +140,9 @@ router.use("/primitives/:primitiveId", async (req, res) => {
     ? [...(executionResult as unknown[])]
     : [executionResult];
 
-  return {
-    status: 200,
-    body: { result },
-  };
+  console.log(result);
+
+  res.status(200).json({ result });
 });
 
 router.use("/:workspaceId/*", async (req, res) => {
@@ -196,7 +200,7 @@ router.use("/:workspaceId/*", async (req, res) => {
   }
 
   const executionOrder = getExecutionOrder(
-    route.flow.primitives,
+    route.flow.primitives as Primitive[],
     route.flow.edges,
   );
 

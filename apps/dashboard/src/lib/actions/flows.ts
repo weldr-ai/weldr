@@ -1,12 +1,7 @@
 "use server";
 
-import { z } from "zod";
-
-import {
-  insertFlowSchema,
-  routeMetadataSchema,
-  workflowMetadataSchema,
-} from "@integramind/db/schema";
+import { insertFlowSchema } from "@integramind/shared/validators/flows";
+import type { z } from "zod";
 
 import { api } from "~/lib/trpc/rsc";
 
@@ -28,20 +23,13 @@ type FormState =
     }
   | undefined;
 
-const validationSchema = insertFlowSchema.extend({
-  metadata: z.discriminatedUnion("type", [
-    routeMetadataSchema,
-    workflowMetadataSchema,
-  ]),
-});
-
 export async function createFlow(
   prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
   const data = Object.fromEntries(formData) as Record<string, string>;
 
-  const validation = validationSchema.safeParse(data);
+  const validation = insertFlowSchema.safeParse(data);
 
   const fields: Record<string, string> = Object.entries(data).reduce(
     (acc: Record<string, string>, [key, value]) => {
@@ -74,7 +62,6 @@ export async function createFlow(
           validation.data.type === "workflow"
         ) {
           await api.primitives.create({
-            id: result.id,
             name: validation.data.name,
             description: validation.data.description,
             type: validation.data.type,

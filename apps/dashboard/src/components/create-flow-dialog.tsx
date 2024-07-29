@@ -13,8 +13,8 @@ import {
   DialogTrigger,
 } from "@integramind/ui/dialog";
 
+import type { FlowType } from "@integramind/shared/types";
 import { CreateFlowForm } from "~/components/create-flow-form";
-import type { FlowType } from "~/types";
 
 export function CreateFlowDialog({ type }: { type: FlowType }) {
   const [createPrimitiveDialogOpen, setCreatePrimitiveDialogOpen] =

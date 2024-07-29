@@ -1,13 +1,18 @@
 import { TRPCError } from "@trpc/server";
 
-import {
-  insertPrimitiveSchema,
-  primitives,
-  updatePrimitiveSchema,
-} from "@integramind/db/schema";
-import type { Input } from "@integramind/db/types";
+import { primitives } from "@integramind/db/schema";
+import type {
+  Input,
+  Primitive,
+  RoutePrimitive,
+} from "@integramind/shared/types";
 
 import { type SQL, and, eq, sql } from "@integramind/db";
+import {
+  insertPrimitiveSchema,
+  primitiveSchema,
+  updatePrimitiveSchema,
+} from "@integramind/shared/validators/primitives";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
@@ -20,18 +25,24 @@ export const primitivesRouter = {
         .values({
           name: input.name,
           type: input.type,
-          flowId: input.flowId,
           positionX: input.positionX,
           positionY: input.positionY,
           metadata: sql`${input.metadata}::jsonb`,
           createdBy: ctx.session.user.id,
+          flowId: input.flowId,
         })
         .returning({
           id: primitives.id,
           type: primitives.type,
           name: primitives.name,
+          description: primitives.description,
           positionX: primitives.positionX,
           positionY: primitives.positionY,
+          metadata: primitives.metadata,
+          createdBy: primitives.createdBy,
+          createdAt: primitives.createdAt,
+          updatedAt: primitives.updatedAt,
+          flowId: primitives.flowId,
         });
 
       if (!result[0]) {
@@ -45,6 +56,7 @@ export const primitivesRouter = {
     }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
+    .output(primitiveSchema)
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.primitives.findFirst({
         where: and(
@@ -60,32 +72,7 @@ export const primitivesRouter = {
         });
       }
 
-      return result;
-    }),
-  getByIdAndType: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        type: z.enum(["function", "route", "workflow"]),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query.primitives.findFirst({
-        where: and(
-          eq(primitives.id, input.id),
-          eq(primitives.type, input.type),
-          eq(primitives.createdBy, ctx.session.user.id),
-        ),
-      });
-
-      if (!result || result.metadata.type !== input.type) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Primitive not found",
-        });
-      }
-
-      return result;
+      return result as Primitive;
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -106,10 +93,6 @@ export const primitivesRouter = {
         eq(primitives.id, input.where.id),
         eq(primitives.createdBy, ctx.session.user.id),
       ];
-
-      if (input.where.type) {
-        where.push(eq(primitives.type, input.where.type));
-      }
 
       const savedPrimitive = await ctx.db.query.primitives.findFirst({
         where: and(...where),
@@ -179,14 +162,15 @@ export const primitivesRouter = {
         );
       }
 
-      const result = await ctx.db.query.primitives.findFirst({
+      const result = (await ctx.db.query.primitives.findFirst({
         where: and(
           eq(primitives.id, input.id),
+          eq(primitives.type, "route"),
           eq(primitives.createdBy, ctx.session.user.id),
         ),
-      });
+      })) as RoutePrimitive;
 
-      if (!result || result.metadata.type !== "route") {
+      if (!result) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Primitive not found",
@@ -227,14 +211,15 @@ export const primitivesRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const result = await ctx.db.query.primitives.findFirst({
+      const result = (await ctx.db.query.primitives.findFirst({
         where: and(
           eq(primitives.id, input.id),
+          eq(primitives.type, "route"),
           eq(primitives.createdBy, ctx.session.user.id),
         ),
-      });
+      })) as RoutePrimitive;
 
-      if (!result || result.metadata.type !== "route") {
+      if (!result) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Primitive not found",

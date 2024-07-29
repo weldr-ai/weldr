@@ -1,6 +1,7 @@
 import { and, eq, sql } from "@integramind/db";
-import { insertResourceSchema, resources } from "@integramind/db/schema";
+import { resources } from "@integramind/db/schema";
 import { type Table, getInfo } from "@integramind/integrations-postgres";
+import { insertResourceSchema } from "@integramind/shared/validators/resources";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 

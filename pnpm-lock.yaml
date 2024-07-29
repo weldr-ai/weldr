@@ -371,6 +371,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@integramind/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@paralleldrive/cuid2':
         specifier: ^2.2.2
         version: 2.2.2
@@ -420,6 +423,10 @@ importers:
         version: 8.1.0(postcss@8.4.39)(ts-node@10.9.2(@types/node@20.14.10)(typescript@5.5.3))(typescript@5.5.3)
 
   packages/shared:
+    dependencies:
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
     devDependencies:
       '@integramind/tsconfig':
         specifier: workspace:*

@@ -37,10 +37,10 @@ import {
 import { cn } from "@integramind/ui/utils";
 
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import type { IteratorNodeProps } from "~/types";
+import type { FlowNodeProps } from "~/types";
 
 export const Iterator = memo(
-  ({ data, isConnectable, xPos, yPos, selected }: IteratorNodeProps) => {
+  ({ data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
     const reactFlow = useReactFlow();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);

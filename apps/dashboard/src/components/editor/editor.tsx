@@ -12,8 +12,8 @@ import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
 import { cn } from "@integramind/ui/utils";
 
+import type { FunctionRawDescription, Input } from "@integramind/shared/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
-import type { FunctionRawDescription, Input } from "~/types";
 import { $createInputNode, InputNode } from "./nodes/input-node";
 import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
 import { InputsPlugin } from "./plugins/input-plugin";
