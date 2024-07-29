@@ -318,6 +318,9 @@ importers:
       '@integramind/db':
         specifier: workspace:*
         version: link:../db
+      '@integramind/deployer':
+        specifier: workspace:*
+        version: link:../deployer
       '@integramind/integrations-postgres':
         specifier: workspace:*
         version: link:../integrations/postgres
@@ -408,6 +411,16 @@ importers:
       postgres:
         specifier: ^3.4.4
         version: 3.4.4
+
+  packages/deployer:
+    dependencies:
+      axios:
+        specifier: ^1.7.2
+        version: 1.7.2
+    devDependencies:
+      '@integramind/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
 
   packages/integrations/postgres:
     dependencies:
@@ -2951,6 +2964,9 @@ packages:
     peerDependencies:
       postcss: ^8.1.0
 
+  axios@1.7.2:
+    resolution: {integrity: sha512-2A8QhOMrbomlDuiLeK9XibIBzuHeRcqqNOHp0Cyp5EoJ1IFDh+XZH3A6BkXtv0K4gFGCI0Y4BM7B1wOEi0Rmgw==}
+
   backbone@1.6.0:
     resolution: {integrity: sha512-13PUjmsgw/49EowNcQvfG4gmczz1ximTMhUktj0Jfrjth0MVaTxehpU+qYYX4MxnuIuhmvBLC6/ayxuAGnOhbA==}
 
@@ -3818,6 +3834,15 @@ packages:
 
   flatted@3.3.1:
     resolution: {integrity: sha512-X8cqMLLie7KsNUDSdzeN8FYK9rEt4Dt67OsG/DNGnYTSDBG4uFAJFBnUeiV+zCVAvwFy56IjM9sH51jVaEhNxw==}
+
+  follow-redirects@1.15.6:
+    resolution: {integrity: sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
 
   foreground-child@3.2.1:
     resolution: {integrity: sha512-PXUUyLqrR2XCWICfv6ukppP96sdFwWbNEnfEMt7jNsISjMsvaLNinAHNDYyvkyU+SZG2BTSbT5NjG+vZslfGTA==}
@@ -8415,6 +8440,14 @@ snapshots:
       postcss: 8.4.39
       postcss-value-parser: 4.2.0
 
+  axios@1.7.2:
+    dependencies:
+      follow-redirects: 1.15.6
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+
   backbone@1.6.0:
     dependencies:
       underscore: 1.13.6
@@ -9412,6 +9445,8 @@ snapshots:
       rimraf: 3.0.2
 
   flatted@3.3.1: {}
+
+  follow-redirects@1.15.6: {}
 
   foreground-child@3.2.1:
     dependencies:

@@ -32,5 +32,10 @@
       "cache": false
     }
   },
-  "globalEnv": ["DATABASE_URL"]
+  "globalEnv": [
+    "DATABASE_URL",
+    "FLY_API_HOSTNAME",
+    "FLY_API_TOKEN",
+    "FLY_ORG_SLUG"
+  ]
 }

@@ -1,4 +1,5 @@
 import { authRouter } from "./router/auth";
+import { deployerRouter } from "./router/deployer";
 import { edgesRouter } from "./router/edges";
 import { flowsRouter } from "./router/flows";
 import { helloRouter } from "./router/hello";
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
   resources: resourcesRouter,
   workspaces: workspacesRouter,
   flows: flowsRouter,
+  deployer: deployerRouter,
 });
 
 // export type definition of API
