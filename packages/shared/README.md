@@ -1,0 +1,1 @@
+# `@integramind/shared`

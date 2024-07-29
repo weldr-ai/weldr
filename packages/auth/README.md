@@ -1,1 +1,1 @@
-# `auth`
+# `@integramind/auth`
