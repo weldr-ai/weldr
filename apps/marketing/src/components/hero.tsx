@@ -16,13 +16,12 @@ export function Hero() {
         <span>Build Custom</span>
         <FlipWords
           className="text-center text-primary"
-          words={["Backend APIs", "Workflows", "Data Pipelines"]}
+          words={["Backend APIs", "Workflows", "Integrations"]}
         />
       </div>
       <p className="z-10 max-w-2xl text-center text-base lg:text-xl">
-        Our platform enables you to create custom backend APIs, automate
-        workflows, and build data pipelines using only plain English, without
-        any coding.
+        Create backend APIs, automation workflows, and integrations using only
+        plain English, no coding required!
       </p>
       <div className="hidden md:block">
         <JoinWaitlistForm />
