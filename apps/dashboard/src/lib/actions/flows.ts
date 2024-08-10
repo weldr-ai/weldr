@@ -1,6 +1,8 @@
 "use server";
 
+import { formDataToStructuredObject } from "@integramind/shared/utils";
 import { insertFlowSchema } from "@integramind/shared/validators/flows";
+import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 
 import { api } from "~/lib/trpc/rsc";
@@ -28,8 +30,8 @@ export async function createFlow(
   formData: FormData,
 ): Promise<FormState> {
   const data = Object.fromEntries(formData) as Record<string, string>;
-
-  const validation = insertFlowSchema.safeParse(data);
+  const dataStructured = formDataToStructuredObject(data);
+  const validation = insertFlowSchema.safeParse(dataStructured);
 
   const fields: Record<string, string> = Object.entries(data).reduce(
     (acc: Record<string, string>, [key, value]) => {
@@ -49,31 +51,39 @@ export async function createFlow(
         return { status: "error", fields };
       }
 
-      const result = await api.flows.create({
+      let result: { id: string };
+
+      const commonData = {
         name: validation.data.name,
         description: validation.data.description,
         workspaceId: validation.data.workspaceId,
-        type: validation.data.type,
-      });
+      };
 
-      if (result) {
-        if (
-          validation.data.type === "route" ||
-          validation.data.type === "workflow"
-        ) {
-          await api.primitives.create({
-            isBuilding: false,
-            name: validation.data.name,
-            description: validation.data.description,
-            type: validation.data.type,
-            metadata: validation.data.metadata,
-            flowId: result.id,
-          });
-        }
-        return { status: "success", payload: { id: result.id } };
+      if (validation.data.type === "route") {
+        result = await api.flows.create({
+          ...commonData,
+          type: "route",
+          metadata: validation.data.metadata,
+        });
+      } else if (validation.data.type === "workflow") {
+        result = await api.flows.create({
+          ...commonData,
+          type: "workflow",
+          metadata: validation.data.metadata,
+        });
+      } else {
+        result = await api.flows.create({
+          ...commonData,
+          type: "component",
+        });
       }
 
-      return { status: "error", fields };
+      if (!result) {
+        return { status: "error", fields };
+      }
+
+      revalidatePath("/workspaces/[id]", "layout");
+      return { status: "success", payload: { id: result.id } };
     }
     const errors = validation.error.issues.reduce(
       (acc: Record<string, string>, issue: z.ZodIssue) => {

@@ -175,30 +175,31 @@ export const primitiveTypesSchema = z.enum([
 ]);
 
 export const primitiveSchema = z.discriminatedUnion("type", [
-  functionPrimitiveSchema,
   routePrimitiveSchema,
   workflowPrimitiveSchema,
+  functionPrimitiveSchema,
   responsePrimitiveSchema,
   iteratorPrimitiveSchema,
   conditionalBranchPrimitiveSchema,
 ]);
 
 export const primitiveMetadataSchema = z.union([
-  functionPrimitiveMetadataSchema,
   routePrimitiveMetadataSchema,
   workflowPrimitiveMetadataSchema,
+  functionPrimitiveMetadataSchema,
   responsePrimitiveMetadataSchema,
   iteratorPrimitiveMetadataSchema,
   conditionalBranchPrimitiveMetadataSchema,
 ]);
 
-export const insertPrimitiveBaseSchema = z.object({
+export const insertPrimitiveSchema = z.object({
   name: z
     .string()
     .min(1, {
       message: "Name is required.",
     })
     .transform((name) => name.replace(/\s+/g, " ").trim()),
+  type: z.enum(["function", "iterator", "conditional-branch", "response"]),
   description: z.string().trim().optional(),
   positionX: z.number().optional(),
   positionY: z.number().optional(),
@@ -207,21 +208,6 @@ export const insertPrimitiveBaseSchema = z.object({
     message: "Flow is required.",
   }),
 });
-
-export const insertBuildingPrimitiveSchema = insertPrimitiveBaseSchema.extend({
-  isBuilding: z.literal(true),
-  type: z.enum(["function", "iterator", "conditional-branch", "response"]),
-});
-
-export const insertFlowPrimitiveSchema = insertPrimitiveBaseSchema.extend({
-  isBuilding: z.literal(false),
-  type: z.enum(["route", "workflow"]),
-});
-
-export const insertPrimitiveSchema = z.discriminatedUnion("isBuilding", [
-  insertBuildingPrimitiveSchema,
-  insertFlowPrimitiveSchema,
-]);
 
 export const updatePrimitiveBaseSchema = z.object({
   name: z

@@ -1,8 +1,4 @@
 import { z } from "zod";
-import {
-  routePrimitiveMetadataSchema,
-  workflowPrimitiveMetadataSchema,
-} from "./primitives";
 
 export const flowTypesSchema = z.enum(["component", "workflow", "route"]);
 
@@ -37,12 +33,20 @@ export const insertComponentFlowSchema = baseInsertFlowSchema.extend({
 
 export const insertRouteFlowSchema = baseInsertFlowSchema.extend({
   type: z.literal("route"),
-  metadata: routePrimitiveMetadataSchema,
+  metadata: z.object({
+    method: z.enum(["get", "post", "patch", "delete"]),
+    path: z.string().transform((path) => {
+      if (path.startsWith("/")) return path.trim();
+      return `/${path.trim()}`;
+    }),
+  }),
 });
 
 export const insertWorkflowFlowSchema = baseInsertFlowSchema.extend({
   type: z.literal("workflow"),
-  metadata: workflowPrimitiveMetadataSchema,
+  metadata: z.object({
+    triggerType: z.enum(["webhook", "schedule"]),
+  }),
 });
 
 export const insertFlowSchema = z.discriminatedUnion("type", [

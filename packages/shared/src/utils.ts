@@ -1,3 +1,7 @@
+export function isCamelCase(str: string): boolean {
+  return /^[a-z][a-zA-Z]*$/.test(str);
+}
+
 export function toCamelCase(str: string): string {
   // Check if the string is already in camelCase
   if (isCamelCase(str)) {
@@ -15,6 +19,32 @@ export function toCamelCase(str: string): string {
     .join(""); // Join all words into a single string
 }
 
-function isCamelCase(str: string): boolean {
-  return /^[a-z][a-zA-Z]*$/.test(str);
+type NestedObject = {
+  [key: string]: string | number | boolean | NestedObject;
+};
+
+export function formDataToStructuredObject(
+  obj: Record<string, string>,
+): NestedObject {
+  const result: NestedObject = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (key.includes(".")) {
+      const keys = key.split(".");
+      let current: NestedObject = result;
+
+      keys.forEach((k, index) => {
+        if (index === keys.length - 1) {
+          current[k] = value;
+        } else {
+          current[k] = (current[k] as NestedObject) || {};
+          current = current[k] as NestedObject;
+        }
+      });
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return result;
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -41,26 +40,27 @@ export function CreateFlowForm({
   type: FlowType;
   setCreatePrimitiveDialogOpen?: (open: boolean) => void;
 }) {
-  const queryClient = useQueryClient();
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [state, createFlowAction] = useFormState(createFlow, undefined);
 
   const getInitialValues = (type: FlowType) => {
+    const commonInitialValues = {
+      name: "",
+      description: "",
+      workspaceId,
+    };
+
     switch (type) {
       case "component":
         return {
-          name: "",
-          description: "",
+          ...commonInitialValues,
           type,
-          workspaceId,
         };
       case "route":
         return {
-          name: "",
-          description: "",
+          ...commonInitialValues,
           type,
-          workspaceId,
           metadata: {
             method: undefined,
             path: "",
@@ -68,10 +68,8 @@ export function CreateFlowForm({
         };
       case "workflow":
         return {
-          name: "",
-          description: "",
+          ...commonInitialValues,
           type,
-          workspaceId,
           metadata: {
             triggerType: undefined,
           },
@@ -100,7 +98,6 @@ export function CreateFlowForm({
             description: `${type.charAt(0).toUpperCase()}${type.slice(1)} created successfully.`,
             duration: 2000,
           });
-          await queryClient.invalidateQueries({ queryKey: [`${type}s`] });
           if (setCreatePrimitiveDialogOpen) {
             setCreatePrimitiveDialogOpen(false);
           }
@@ -140,15 +137,7 @@ export function CreateFlowForm({
       }
     }
     void handleStateUpdate();
-  }, [
-    form,
-    queryClient,
-    router,
-    setCreatePrimitiveDialogOpen,
-    state,
-    type,
-    workspaceId,
-  ]);
+  }, [form, router, setCreatePrimitiveDialogOpen, state, type, workspaceId]);
 
   return (
     <Form {...form}>
@@ -207,7 +196,7 @@ export function CreateFlowForm({
               name="metadata.method"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs">Type</FormLabel>
+                  <FormLabel className="text-xs">HTTP Method</FormLabel>
                   <FormControl>
                     <Select
                       name={field.name}
@@ -215,13 +204,13 @@ export function CreateFlowForm({
                       onValueChange={field.onChange}
                     >
                       <SelectTrigger className="bg-background">
-                        <SelectValue placeholder="Action Type" />
+                        <SelectValue placeholder="HTTP Method" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="read">Read</SelectItem>
-                        <SelectItem value="create">Create</SelectItem>
-                        <SelectItem value="update">Update</SelectItem>
-                        <SelectItem value="delete">Delete</SelectItem>
+                        <SelectItem value="get">GET</SelectItem>
+                        <SelectItem value="post">POST</SelectItem>
+                        <SelectItem value="patch">PATCH</SelectItem>
+                        <SelectItem value="delete">DELETE</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>
