@@ -145,7 +145,7 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">Host</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter host" {...field} />
+                    <Input {...field} placeholder="Enter host" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -158,7 +158,16 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">Port</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter port" {...field} />
+                    <Input
+                      {...field}
+                      placeholder="Enter port"
+                      onChange={(event) =>
+                        form.setValue(
+                          "metadata.port",
+                          Number(event.target.value),
+                        )
+                      }
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -171,7 +180,7 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">User</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter user" {...field} />
+                    <Input {...field} placeholder="Enter user" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -184,7 +193,7 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter password" {...field} />
+                    <Input {...field} placeholder="Enter password" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -197,7 +206,7 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">Database</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter database" {...field} />
+                    <Input {...field} placeholder="Enter database" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

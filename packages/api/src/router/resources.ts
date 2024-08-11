@@ -2,6 +2,7 @@ import { and, eq, sql } from "@integramind/db";
 import { resources } from "@integramind/db/schema";
 import { type Table, getInfo } from "@integramind/integrations-postgres";
 import { insertResourceSchema } from "@integramind/shared/validators/resources";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
@@ -22,7 +23,10 @@ export const resourcesRouter = {
         .returning({ id: resources.id });
 
       if (!result[0]) {
-        throw new Error("Failed to create resource");
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create resource",
+        });
       }
 
       return result[0];

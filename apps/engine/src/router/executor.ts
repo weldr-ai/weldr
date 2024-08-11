@@ -29,10 +29,7 @@ router.use("/primitives/:primitiveId", async (req, res) => {
   })) as FunctionPrimitive;
 
   if (!primitive || primitive.type !== "function") {
-    return {
-      status: 404,
-      body: { error: "Function not found" },
-    };
+    return res.status(404).json({ error: "Function not found" });
   }
 
   const inputs: Record<string, string | number> = {};
@@ -40,11 +37,6 @@ router.use("/primitives/:primitiveId", async (req, res) => {
   for (const input of primitive.metadata.inputs ?? []) {
     if (input.testValue) {
       inputs[toCamelCase(input.name)] = input.testValue;
-    } else {
-      return {
-        status: 400,
-        body: { error: "Missing test value" },
-      };
     }
   }
 
@@ -72,10 +64,7 @@ router.use("/primitives/:primitiveId", async (req, res) => {
     }
 
     if (!resourceInfo) {
-      return {
-        status: 500,
-        body: { error: "Server error" },
-      };
+      return res.status(500).json({ error: "Server error" });
     }
 
     const systemMessage = getSystemMessage(resource !== undefined);
@@ -99,22 +88,21 @@ router.use("/primitives/:primitiveId", async (req, res) => {
 
     const functionCode = await generateCode(systemMessage, userMessage);
 
-    await db.update(primitives).set({
-      id: primitive.id,
-      metadata: {
-        ...primitive.metadata,
-        type: "function",
-        generatedCode: functionCode,
-        isCodeUpdated: true,
-      },
-    });
+    await db
+      .update(primitives)
+      .set({
+        metadata: {
+          ...primitive.metadata,
+          type: "function",
+          generatedCode: functionCode,
+          isCodeUpdated: true,
+        },
+      })
+      .where(eq(primitives.id, primitive.id));
   }
 
   if (!code) {
-    return {
-      status: 500,
-      body: { error: "Server error" },
-    };
+    return res.status(500).json({ error: "Server error" });
   }
 
   const resourcesInfo = resource
@@ -167,7 +155,7 @@ router.use("/:workspaceId/*", async (req, res) => {
     );
 
   if (!result[0]) {
-    return;
+    return res.status(404).json({ error: "Route not found" });
   }
 
   const flow = await db.query.flows.findFirst({
@@ -179,7 +167,7 @@ router.use("/:workspaceId/*", async (req, res) => {
   });
 
   if (!flow) {
-    return;
+    return res.status(404).json({ error: "Flow not found" });
   }
 
   const route = {

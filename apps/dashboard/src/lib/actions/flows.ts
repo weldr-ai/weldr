@@ -43,20 +43,16 @@ export async function createFlow(
 
   try {
     if (validation.success) {
-      const workspace = api.workspaces.getById({
+      const workspace = await api.workspaces.getById({
         id: validation.data.workspaceId,
       });
-
-      if (!workspace) {
-        return { status: "error", fields };
-      }
 
       let result: { id: string };
 
       const commonData = {
         name: validation.data.name,
         description: validation.data.description,
-        workspaceId: validation.data.workspaceId,
+        workspaceId: workspace.id,
       };
 
       if (validation.data.type === "route") {
@@ -78,13 +74,10 @@ export async function createFlow(
         });
       }
 
-      if (!result) {
-        return { status: "error", fields };
-      }
-
       revalidatePath("/workspaces/[id]", "layout");
       return { status: "success", payload: { id: result.id } };
     }
+
     const errors = validation.error.issues.reduce(
       (acc: Record<string, string>, issue: z.ZodIssue) => {
         const key = issue.path[0] as string;
@@ -93,6 +86,7 @@ export async function createFlow(
       },
       {},
     );
+
     return {
       status: "validationError",
       fields,

@@ -46,7 +46,26 @@ export const insertResourceBaseSchema = z.object({
 
 export const insertPostgresResourceSchema = insertResourceBaseSchema.extend({
   provider: z.literal("postgres"),
-  metadata: postgresMetadataSchema,
+  metadata: z.object({
+    host: z.string().min(1, {
+      message: "Host is required.",
+    }),
+    port: z.preprocess(
+      (val) => (typeof val === "string" ? Number.parseInt(val, 10) : val),
+      z.number().int().positive({
+        message: "Port must be a positive integer.",
+      }),
+    ),
+    user: z.string().min(1, {
+      message: "User is required.",
+    }),
+    password: z.string().min(1, {
+      message: "Password is required.",
+    }),
+    database: z.string().min(1, {
+      message: "Database is required.",
+    }),
+  }),
 });
 
 export const insertResourceSchema = z.discriminatedUnion("provider", [

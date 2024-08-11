@@ -58,8 +58,10 @@ export async function createWorkspace(
         revalidatePath("/workspaces/[id]", "layout");
         return { status: "success", payload: { id: result.id } };
       }
+
       return { status: "error", fields };
     }
+
     const errors = validation.error.issues.reduce(
       (acc: Record<string, string>, issue: z.ZodIssue) => {
         const key = issue.path[0] as string;
@@ -68,6 +70,7 @@ export async function createWorkspace(
       },
       {},
     );
+
     return {
       status: "validationError",
       fields,
