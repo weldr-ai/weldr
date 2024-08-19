@@ -62,16 +62,16 @@ ${
   resourceInfo &&
   `
 ${resourceInfo.name} information
-Type: ${toCamelCase(resourceInfo.type)}
+Type: ${toCamelCase(resourceInfo.type.trim())}
 
 Metadata:
 ${resourceInfo.metadata}
 
-Available actions for resource "${toCamelCase(resourceInfo.type)}":
+Available actions for resource "${toCamelCase(resourceInfo.type.trim())}":
 ${resourceInfo.actions.map((action) => `- ${action}`).join("\n")}
 
 Resource object name:
-${toCamelCase(resourceInfo.type)}
+${toCamelCase(resourceInfo.type.trim())}
   `
 }
 

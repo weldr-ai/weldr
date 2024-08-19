@@ -68,7 +68,7 @@ function InputNodeComponent({
                     className="h-5 border-none bg-muted px-2 py-1 text-xs"
                     placeholder="Enter input name"
                     onBlur={(e) => {
-                      const newValue = toCamelCase(e.target.value);
+                      const newValue = toCamelCase(e.target.value.trim());
                       form.setValue("name", newValue);
                       const inputs = updateInput.mutate({
                         id,

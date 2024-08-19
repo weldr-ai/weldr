@@ -1,29 +1,24 @@
 {
   "name": "@integramind/engine",
   "version": "0.0.1",
-  "private": true,
   "type": "module",
+  "private": true,
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsx --watch src/index.ts",
-    "preview": "node .output/server/index.mjs",
-    "clean": "git clean -xdf .turbo .nitro node_modules dist",
-    "check-types": "tsc --noEmit --emitDeclarationOnly false"
+    "build": "nitro build",
+    "dev": "pnpm with-env nitro dev --port 3002",
+    "prepare": "nitro prepare",
+    "preview": "pnpm with-env node .output/server/index.mjs",
+    "clean": "git clean -xdf .turbo node_modules dist",
+    "check-types": "tsc --noEmit --emitDeclarationOnly false",
+    "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@integramind/ai": "workspace:*",
-    "@integramind/api": "workspace:*",
-    "@integramind/db": "workspace:*",
-    "@integramind/shared": "workspace:*",
-    "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "axios": "^1.7.3",
+    "handlebars": "^4.7.8"
   },
   "devDependencies": {
     "@integramind/tsconfig": "workspace:*",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
-    "typescript": "^5.5.3",
-    "tsup": "^8.1.0",
-    "tsx": "^4.16.2"
+    "dotenv-cli": "^7.4.1",
+    "nitropack": "latest"
   }
 }

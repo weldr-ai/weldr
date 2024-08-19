@@ -1,6 +1,5 @@
 import { and, eq } from "@integramind/db";
 import { workspaces } from "@integramind/db/schema";
-import { FlyClient } from "@integramind/deployer";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
@@ -25,8 +24,7 @@ export const workspacesRouter = {
           });
         }
 
-        // Attempt to create the Fly app with retry logic
-        await FlyClient.createFlyAppWithRetry(result[0].id);
+        // TODO: Create fly app and init executor
 
         return result[0];
       });
