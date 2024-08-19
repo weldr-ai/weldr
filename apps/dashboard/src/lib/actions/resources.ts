@@ -1,5 +1,6 @@
 "use server";
 
+import type { BaseFormState } from "@integramind/shared/types";
 import { formDataToStructuredObject } from "@integramind/shared/utils";
 import { insertResourceSchema } from "@integramind/shared/validators/resources";
 import { revalidatePath } from "next/cache";
@@ -7,23 +8,20 @@ import type { z } from "zod";
 
 import { api } from "~/lib/trpc/rsc";
 
-type FormState =
-  | {
-      status: "success";
-      payload: {
-        id: string;
-      };
-    }
-  | {
-      status: "validationError";
-      fields: Record<string, string>;
-      errors: Record<string, string>;
-    }
-  | {
-      status: "error";
-      fields: Record<string, string>;
-    }
-  | undefined;
+interface FormFields {
+  name: string;
+  description: string;
+  workspaceId: string;
+  provider: string;
+  metadata: Record<string, string>;
+}
+
+type FormState = BaseFormState<
+  FormFields,
+  {
+    id: string;
+  }
+>;
 
 export async function addResource(
   prevState: FormState,
@@ -33,12 +31,12 @@ export async function addResource(
   const dataStructured = formDataToStructuredObject(data);
   const validation = insertResourceSchema.safeParse(dataStructured);
 
-  const fields: Record<string, string> = Object.entries(data).reduce(
-    (acc: Record<string, string>, [key, value]) => {
-      acc[key] = value;
+  const fields = Object.entries(data).reduce(
+    (acc: Record<keyof FormFields, string>, [key, value]) => {
+      acc[key as keyof FormFields] = value;
       return acc;
     },
-    {},
+    {} as Record<keyof FormFields, string>,
   );
 
   try {
@@ -60,12 +58,12 @@ export async function addResource(
     }
 
     const errors = validation.error.issues.reduce(
-      (acc: Record<string, string>, issue: z.ZodIssue) => {
-        const key = issue.path[0] as string;
+      (acc: Record<keyof FormFields, string>, issue: z.ZodIssue) => {
+        const key = issue.path[0] as keyof FormFields;
         acc[key] = issue.message;
         return acc;
       },
-      {},
+      {} as Record<keyof FormFields, string>,
     );
 
     return {

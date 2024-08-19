@@ -57,8 +57,10 @@ export function AddResourceForm({
     defaultValues: {
       name: "",
       description: "",
+      // @ts-ignore
       provider,
       workspaceId,
+      // @ts-ignore
       metadata: getMetadataValues(provider),
       ...(state &&
         (state.status === "error" || state.status === "validationError") &&
@@ -81,22 +83,12 @@ export function AddResourceForm({
             setAddResourceDialogOpen(false);
           }
         } else if (state.status === "validationError") {
-          for (const key of Object.keys(state.errors)) {
-            form.setError(
-              key as
-                | "name"
-                | "description"
-                | "workspaceId"
-                | "provider"
-                | "metadata.host"
-                | "metadata.port"
-                | "metadata.user"
-                | "metadata.password"
-                | "metadata.database",
-              {
-                message: state.errors[key],
-              },
-            );
+          for (const key of Object.keys(state.errors) as Array<
+            keyof typeof state.errors
+          >) {
+            form.setError(key, {
+              message: state.errors[key],
+            });
           }
           toast({
             title: "Validation Error",

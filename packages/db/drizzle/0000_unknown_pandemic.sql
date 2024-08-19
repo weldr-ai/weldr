@@ -16,11 +16,11 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "account" (
-	"userId" text NOT NULL,
+CREATE TABLE IF NOT EXISTS "accounts" (
+	"user_id" text NOT NULL,
 	"type" text NOT NULL,
 	"provider" text NOT NULL,
-	"providerAccountId" text NOT NULL,
+	"provider_account_id" text NOT NULL,
 	"refresh_token" text,
 	"access_token" text,
 	"expires_at" integer,
@@ -28,28 +28,28 @@ CREATE TABLE IF NOT EXISTS "account" (
 	"scope" text,
 	"id_token" text,
 	"session_state" text,
-	CONSTRAINT "account_provider_providerAccountId_pk" PRIMARY KEY("provider","providerAccountId")
+	CONSTRAINT "accounts_provider_provider_account_id_pk" PRIMARY KEY("provider","provider_account_id")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "session" (
-	"sessionToken" text PRIMARY KEY NOT NULL,
-	"userId" text NOT NULL,
+CREATE TABLE IF NOT EXISTS "sessions" (
+	"session_token" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
 	"expires" timestamp NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "user" (
+CREATE TABLE IF NOT EXISTS "users" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text,
 	"email" text NOT NULL,
-	"emailVerified" timestamp,
+	"email_verified" timestamp,
 	"image" text
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "verificationToken" (
+CREATE TABLE IF NOT EXISTS "verification_tokens" (
 	"identifier" text NOT NULL,
 	"token" text NOT NULL,
 	"expires" timestamp NOT NULL,
-	CONSTRAINT "verificationToken_identifier_token_pk" PRIMARY KEY("identifier","token")
+	CONSTRAINT "verification_tokens_identifier_token_pk" PRIMARY KEY("identifier","token")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "waitlist" (
@@ -109,19 +109,20 @@ CREATE TABLE IF NOT EXISTS "workspaces" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
+	"executor_machine_id" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" text NOT NULL
 );
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "account" ADD CONSTRAINT "account_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "session" ADD CONSTRAINT "session_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -145,7 +146,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "edges" ADD CONSTRAINT "edges_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "user"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "edges" ADD CONSTRAINT "edges_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -157,7 +158,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "flows" ADD CONSTRAINT "flows_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "user"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "flows" ADD CONSTRAINT "flows_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -169,7 +170,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "primitives" ADD CONSTRAINT "primitives_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "user"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "primitives" ADD CONSTRAINT "primitives_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -181,13 +182,13 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "resources" ADD CONSTRAINT "resources_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "user"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "resources" ADD CONSTRAINT "resources_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "workspaces" ADD CONSTRAINT "workspaces_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "user"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "workspaces" ADD CONSTRAINT "workspaces_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

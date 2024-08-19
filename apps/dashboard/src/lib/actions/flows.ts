@@ -1,29 +1,22 @@
 "use server";
 
+import type { BaseFormState } from "@integramind/shared/types";
 import { formDataToStructuredObject } from "@integramind/shared/utils";
 import { insertFlowSchema } from "@integramind/shared/validators/flows";
 import { revalidatePath } from "next/cache";
-import type { z } from "zod";
 
 import { api } from "~/lib/trpc/rsc";
 
-type FormState =
-  | {
-      status: "success";
-      payload: {
-        id: string;
-      };
-    }
-  | {
-      status: "validationError";
-      fields: Record<string, string>;
-      errors: Record<string, string>;
-    }
-  | {
-      status: "error";
-      fields: Record<string, string>;
-    }
-  | undefined;
+interface FormFields {
+  name: string;
+}
+
+type FormState = BaseFormState<
+  FormFields,
+  {
+    id: string;
+  }
+>;
 
 export async function createFlow(
   prevState: FormState,
@@ -33,12 +26,12 @@ export async function createFlow(
   const dataStructured = formDataToStructuredObject(data);
   const validation = insertFlowSchema.safeParse(dataStructured);
 
-  const fields: Record<string, string> = Object.entries(data).reduce(
-    (acc: Record<string, string>, [key, value]) => {
-      acc[key] = value;
+  const fields = Object.entries(data).reduce(
+    (acc, [key, value]) => {
+      acc[key as keyof FormFields] = value;
       return acc;
     },
-    {} as Record<string, string>,
+    {} as Record<keyof FormFields, string>,
   );
 
   try {
@@ -79,12 +72,11 @@ export async function createFlow(
     }
 
     const errors = validation.error.issues.reduce(
-      (acc: Record<string, string>, issue: z.ZodIssue) => {
-        const key = issue.path[0] as string;
-        acc[key] = issue.message;
+      (acc, issue) => {
+        acc[issue.path[0] as keyof FormFields] = issue.message;
         return acc;
       },
-      {},
+      {} as Record<keyof FormFields, string>,
     );
 
     return {

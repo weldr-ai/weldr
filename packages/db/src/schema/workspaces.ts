@@ -12,6 +12,7 @@ export const workspaces = pgTable("workspaces", {
     .$defaultFn(() => createId()),
   name: text("name").notNull(),
   description: text("description"),
+  executorMachineId: text("executor_machine_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

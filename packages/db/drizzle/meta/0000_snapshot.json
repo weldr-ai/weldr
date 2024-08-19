@@ -1,15 +1,15 @@
 {
-  "id": "d4d5f9bd-ddcf-4a64-9298-14a6631c71b2",
+  "id": "060dac9b-7d57-485f-95ca-2124e4d83eea",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
   "tables": {
-    "account": {
-      "name": "account",
+    "accounts": {
+      "name": "accounts",
       "schema": "",
       "columns": {
-        "userId": {
-          "name": "userId",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -26,8 +26,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "providerAccountId": {
-          "name": "providerAccountId",
+        "provider_account_id": {
+          "name": "provider_account_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -77,36 +77,36 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "account_userId_user_id_fk": {
-          "name": "account_userId_user_id_fk",
-          "tableFrom": "account",
-          "tableTo": "user",
-          "columnsFrom": ["userId"],
+        "accounts_user_id_users_id_fk": {
+          "name": "accounts_user_id_users_id_fk",
+          "tableFrom": "accounts",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
-        "account_provider_providerAccountId_pk": {
-          "name": "account_provider_providerAccountId_pk",
-          "columns": ["provider", "providerAccountId"]
+        "accounts_provider_provider_account_id_pk": {
+          "name": "accounts_provider_provider_account_id_pk",
+          "columns": ["provider", "provider_account_id"]
         }
       },
       "uniqueConstraints": {}
     },
-    "session": {
-      "name": "session",
+    "sessions": {
+      "name": "sessions",
       "schema": "",
       "columns": {
-        "sessionToken": {
-          "name": "sessionToken",
+        "session_token": {
+          "name": "session_token",
           "type": "text",
           "primaryKey": true,
           "notNull": true
         },
-        "userId": {
-          "name": "userId",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -120,11 +120,11 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "session_userId_user_id_fk": {
-          "name": "session_userId_user_id_fk",
-          "tableFrom": "session",
-          "tableTo": "user",
-          "columnsFrom": ["userId"],
+        "sessions_user_id_users_id_fk": {
+          "name": "sessions_user_id_users_id_fk",
+          "tableFrom": "sessions",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -133,8 +133,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "user": {
-      "name": "user",
+    "users": {
+      "name": "users",
       "schema": "",
       "columns": {
         "id": {
@@ -155,8 +155,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "emailVerified": {
-          "name": "emailVerified",
+        "email_verified": {
+          "name": "email_verified",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
@@ -173,8 +173,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "verificationToken": {
-      "name": "verificationToken",
+    "verification_tokens": {
+      "name": "verification_tokens",
       "schema": "",
       "columns": {
         "identifier": {
@@ -199,8 +199,8 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "verificationToken_identifier_token_pk": {
-          "name": "verificationToken_identifier_token_pk",
+        "verification_tokens_identifier_token_pk": {
+          "name": "verification_tokens_identifier_token_pk",
           "columns": ["identifier", "token"]
         }
       },
@@ -312,10 +312,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "edges_created_by_user_id_fk": {
-          "name": "edges_created_by_user_id_fk",
+        "edges_created_by_users_id_fk": {
+          "name": "edges_created_by_users_id_fk",
           "tableFrom": "edges",
-          "tableTo": "user",
+          "tableTo": "users",
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -391,10 +391,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "flows_created_by_user_id_fk": {
-          "name": "flows_created_by_user_id_fk",
+        "flows_created_by_users_id_fk": {
+          "name": "flows_created_by_users_id_fk",
           "tableFrom": "flows",
-          "tableTo": "user",
+          "tableTo": "users",
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -490,10 +490,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "primitives_created_by_user_id_fk": {
-          "name": "primitives_created_by_user_id_fk",
+        "primitives_created_by_users_id_fk": {
+          "name": "primitives_created_by_users_id_fk",
           "tableFrom": "primitives",
-          "tableTo": "user",
+          "tableTo": "users",
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -575,10 +575,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "resources_created_by_user_id_fk": {
-          "name": "resources_created_by_user_id_fk",
+        "resources_created_by_users_id_fk": {
+          "name": "resources_created_by_users_id_fk",
           "tableFrom": "resources",
-          "tableTo": "user",
+          "tableTo": "users",
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -610,6 +610,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "executor_machine_id": {
+          "name": "executor_machine_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -633,10 +639,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "workspaces_created_by_user_id_fk": {
-          "name": "workspaces_created_by_user_id_fk",
+        "workspaces_created_by_users_id_fk": {
+          "name": "workspaces_created_by_users_id_fk",
           "tableFrom": "workspaces",
-          "tableTo": "user",
+          "tableTo": "users",
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
           "onDelete": "cascade",

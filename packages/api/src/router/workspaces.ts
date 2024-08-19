@@ -9,10 +9,13 @@ export const workspacesRouter = {
     .input(z.object({ name: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.transaction(async (tx) => {
+        // TODO: Create fly app and init executor
+
         const result = await tx
           .insert(workspaces)
           .values({
             name: input.name,
+            executorMachineId: "",
             createdBy: ctx.session.user.id,
           })
           .returning({ id: workspaces.id });
@@ -23,8 +26,6 @@ export const workspacesRouter = {
             message: "Failed to create workspace",
           });
         }
-
-        // TODO: Create fly app and init executor
 
         return result[0];
       });

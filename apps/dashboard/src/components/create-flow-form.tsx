@@ -105,20 +105,12 @@ export function CreateFlowForm({
             `/workspaces/${workspaceId}/${type}s/${state.payload.id}`,
           );
         } else if (state.status === "validationError") {
-          for (const key of Object.keys(state.errors)) {
-            form.setError(
-              key as
-                | "name"
-                | "description"
-                | "workspaceId"
-                | "type"
-                | "metadata.method"
-                | "metadata.path"
-                | "metadata.triggerType",
-              {
-                message: state.errors[key],
-              },
-            );
+          for (const key of Object.keys(state.errors) as Array<
+            keyof typeof state.errors
+          >) {
+            form.setError(key, {
+              message: state.errors[key],
+            });
           }
           toast({
             title: "Validation Error",

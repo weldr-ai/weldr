@@ -1,5 +1,6 @@
 "use server";
 
+import type { BaseFormState } from "@integramind/shared/types";
 import { insertWorkspaceSchema } from "@integramind/shared/validators/workspaces";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
@@ -11,23 +12,12 @@ interface FormFields {
   description?: string;
 }
 
-type FormState =
-  | {
-      status: "success";
-      payload: {
-        id: string;
-      };
-    }
-  | {
-      status: "validationError";
-      fields: FormFields;
-      errors: FormFields;
-    }
-  | {
-      status: "error";
-      fields: FormFields;
-    }
-  | undefined;
+type FormState = BaseFormState<
+  FormFields,
+  {
+    id: string;
+  }
+>;
 
 export async function createWorkspace(
   prevState: FormState,
@@ -36,16 +26,16 @@ export async function createWorkspace(
   const data = Object.fromEntries(formData);
   const validation = insertWorkspaceSchema.safeParse(data);
 
-  const fields: FormFields = Object.keys(data).reduce(
-    (acc: FormFields, key: string) => {
-      const fieldName = key as "name" | "description";
+  const fields = Object.keys(data).reduce(
+    (acc: Record<keyof FormFields, string>, key: string) => {
+      const fieldName = key as keyof FormFields;
       const data = acc[fieldName];
       if (data) {
         acc[fieldName] = data.toString();
       }
       return acc;
     },
-    {},
+    {} as Record<keyof FormFields, string>,
   );
 
   try {
@@ -63,12 +53,12 @@ export async function createWorkspace(
     }
 
     const errors = validation.error.issues.reduce(
-      (acc: Record<string, string>, issue: z.ZodIssue) => {
-        const key = issue.path[0] as string;
+      (acc: Record<keyof FormFields, string>, issue: z.ZodIssue) => {
+        const key = issue.path[0] as keyof FormFields;
         acc[key] = issue.message;
         return acc;
       },
-      {},
+      {} as Record<keyof FormFields, string>,
     );
 
     return {

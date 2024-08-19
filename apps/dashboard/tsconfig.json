@@ -6,15 +6,12 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
-      "@integramind/integrations-postgres": [
-        "../../packages/integrations/postgres/src"
-      ]
+      "~/*": ["./src/*"]
     },
     "plugins": [{ "name": "next" }],
     "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json",
     "module": "esnext"
   },
-  "include": [".", ".next/types/**/*.ts"],
+  "include": [".", ".next/types/**/*.ts", "../../packages/auth/src/templates"],
   "exclude": ["node_modules"]
 }
