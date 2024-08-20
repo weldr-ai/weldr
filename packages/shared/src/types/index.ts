@@ -80,7 +80,10 @@ export type FunctionRawDescription = z.infer<
   typeof functionRawDescriptionSchema
 >;
 
-export type BaseFormState<FormFields, TPayload = unknown> =
+export type BaseFormState<
+  FormFields = Record<string, string>,
+  TPayload = unknown,
+> =
   | {
       status: "success";
       payload: TPayload;
@@ -88,12 +91,12 @@ export type BaseFormState<FormFields, TPayload = unknown> =
     }
   | {
       status: "validationError";
-      fields: Record<keyof FormFields, string>;
-      errors: Record<keyof FormFields, string>;
+      fields: FormFields;
+      errors: FormFields;
     }
   | {
       status: "error";
-      fields: Record<keyof FormFields, string>;
+      fields: FormFields;
       message?: string;
     }
   | undefined;

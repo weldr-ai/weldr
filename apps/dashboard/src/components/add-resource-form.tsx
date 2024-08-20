@@ -23,7 +23,10 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import type { ResourceProvider } from "@integramind/shared/types";
+import type {
+  ResourceMetadata,
+  ResourceProvider,
+} from "@integramind/shared/types";
 import { insertResourceSchema } from "@integramind/shared/validators/resources";
 import { addResource } from "~/lib/actions/resources";
 
@@ -38,9 +41,10 @@ export function AddResourceForm({
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [state, addResourceAction] = useFormState(addResource, undefined);
 
-  const getMetadataValues = (provider: ResourceProvider) => {
+  const getMetadataValues = (provider: ResourceProvider): ResourceMetadata => {
     switch (provider) {
       case "postgres":
+      case "mysql":
         return {
           host: "",
           port: 5432,
@@ -56,11 +60,9 @@ export function AddResourceForm({
     resolver: zodResolver(insertResourceSchema),
     defaultValues: {
       name: "",
-      description: "",
-      // @ts-ignore
-      provider,
+      description: undefined,
       workspaceId,
-      // @ts-ignore
+      provider,
       metadata: getMetadataValues(provider),
       ...(state &&
         (state.status === "error" || state.status === "validationError") &&
@@ -83,10 +85,8 @@ export function AddResourceForm({
             setAddResourceDialogOpen(false);
           }
         } else if (state.status === "validationError") {
-          for (const key of Object.keys(state.errors) as Array<
-            keyof typeof state.errors
-          >) {
-            form.setError(key, {
+          for (const key of Object.keys(state.errors)) {
+            form.setError(key as keyof typeof form.formState.errors, {
               message: state.errors[key],
             });
           }

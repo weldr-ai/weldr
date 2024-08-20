@@ -8,7 +8,7 @@
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
     "@radix-ui/colors": "^3.0.0",

@@ -10,9 +10,9 @@ export const workspaces = pgTable("workspaces", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
-  name: text("name").notNull(),
+  name: text("name").unique().notNull(),
   description: text("description"),
-  executorMachineId: text("executor_machine_id").notNull(),
+  executorMachineId: text("executor_machine_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

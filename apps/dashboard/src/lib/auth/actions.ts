@@ -5,18 +5,11 @@ import type { z } from "zod";
 
 import { signOut as nextAuthSignOut, signIn } from "@integramind/auth";
 import { signInWithMagicLinkSchema } from "@integramind/auth/validators";
+import type { BaseFormState } from "@integramind/shared/types";
 
-type FormState =
-  | {
-      status: "validationError";
-      fields: Record<string, string>;
-      errors: Record<string, string>;
-    }
-  | {
-      status: "error";
-      fields: Record<string, string>;
-    }
-  | undefined;
+type FormFields = z.infer<typeof signInWithMagicLinkSchema>;
+
+type FormState = BaseFormState<FormFields>;
 
 export async function signInWithMagicLink(
   prevState: FormState,
@@ -25,13 +18,12 @@ export async function signInWithMagicLink(
   const data = Object.fromEntries(formData) as Record<string, string>;
   const validation = signInWithMagicLinkSchema.safeParse(data);
 
-  // TODO: move these functions to a common lib file
-  const fields: Record<string, string> = Object.entries(data).reduce(
-    (acc: Record<string, string>, [key, value]) => {
-      acc[key] = value;
+  const fields = Object.entries(data).reduce(
+    (acc: FormFields, [key, value]) => {
+      acc[key as keyof FormFields] = value;
       return acc;
     },
-    {} as Record<string, string>,
+    {} as FormFields,
   );
 
   if (validation.success) {
@@ -41,14 +33,13 @@ export async function signInWithMagicLink(
     });
     redirect(`/auth/verify-email?email=${validation.data.email}`);
   } else {
-    // TODO: move these functions to a common lib file
     const errors = validation.error.issues.reduce(
-      (acc: Record<string, string>, issue: z.ZodIssue) => {
-        const key = issue.path[0] as string;
+      (acc: FormFields, issue: z.ZodIssue) => {
+        const key = issue.path[0] as keyof FormFields;
         acc[key] = issue.message;
         return acc;
       },
-      {},
+      {} as FormFields,
     );
     return {
       status: "validationError",

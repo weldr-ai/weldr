@@ -6,7 +6,10 @@ import type { ResourceMetadata } from "@integramind/shared/types";
 import { users } from "./auth";
 import { workspaces } from "./workspaces";
 
-export const resourceProviders = pgEnum("resource_providers", ["postgres"]);
+export const resourceProviders = pgEnum("resource_providers", [
+  "postgres",
+  "mysql",
+]);
 
 export const resources = pgTable("resources", {
   id: text("id")

@@ -12,7 +12,7 @@
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
     "check": "pnpm with-env drizzle-kit check:pg --config src/config.ts",
-    "generate": "pnpm with-env drizzle-kit generate:pg --config src/config.ts",
+    "generate": "pnpm with-env drizzle-kit generate --config src/config.ts",
     "migrate": "pnpm with-env tsx src/migrate.ts --config src/config.ts",
     "migrate:drop": "pnpm with-env drizzle-kit drop --config src/config.ts",
     "pull": "pnpm with-env drizzle-kit introspect:pg --config src/config.ts",
@@ -34,7 +34,7 @@
   "devDependencies": {
     "@integramind/tsconfig": "workspace:*",
     "@types/pg": "^8.11.6",
-    "drizzle-kit": "^0.20.14",
+    "drizzle-kit": "^0.24.0",
     "postgres": "^3.4.4"
   },
   "peerDependencies": {

@@ -8,20 +8,7 @@ import type { z } from "zod";
 
 import { api } from "~/lib/trpc/rsc";
 
-interface FormFields {
-  name: string;
-  description: string;
-  workspaceId: string;
-  provider: string;
-  metadata: Record<string, string>;
-}
-
-type FormState = BaseFormState<
-  FormFields,
-  {
-    id: string;
-  }
->;
+type FormState = BaseFormState;
 
 export async function addResource(
   prevState: FormState,
@@ -32,11 +19,11 @@ export async function addResource(
   const validation = insertResourceSchema.safeParse(dataStructured);
 
   const fields = Object.entries(data).reduce(
-    (acc: Record<keyof FormFields, string>, [key, value]) => {
-      acc[key as keyof FormFields] = value;
+    (acc: Record<string, string>, [key, value]) => {
+      acc[key] = value;
       return acc;
     },
-    {} as Record<keyof FormFields, string>,
+    {} as Record<string, string>,
   );
 
   try {
@@ -58,12 +45,12 @@ export async function addResource(
     }
 
     const errors = validation.error.issues.reduce(
-      (acc: Record<keyof FormFields, string>, issue: z.ZodIssue) => {
-        const key = issue.path[0] as keyof FormFields;
+      (acc: Record<string, string>, issue: z.ZodIssue) => {
+        const key = issue.path[0] as string;
         acc[key] = issue.message;
         return acc;
       },
-      {} as Record<keyof FormFields, string>,
+      {} as Record<string, string>,
     );
 
     return {

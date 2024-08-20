@@ -14,65 +14,37 @@ interface FlyApp {
   };
 }
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 2000;
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export async function createFlyApp(workspaceName: string) {
-  try {
-    const response = await axios.post(
-      `${process.env.FLY_API_HOSTNAME}/v1/apps`,
-      {
-        app_name: workspaceName,
-        org_slug: process.env.FLY_ORG_SLUG,
-        network: `${workspaceName}-network`,
+export async function createFlyApp(workspaceId: string): Promise<FlyApp> {
+  const response = await axios.post(
+    `${process.env.FLY_API_HOSTNAME}/v1/apps`,
+    {
+      app_name: workspaceId,
+      org_slug: process.env.FLY_ORG_SLUG,
+      network: `${workspaceId}-network`,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.FLY_API_TOKEN}`,
+        "Content-Type": "application/json",
       },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.FLY_API_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      },
-    );
+    },
+  );
 
-    if (response.status !== 201) {
-      console.error("Unexpected response from Fly.io:", response.status);
-      throw new Error("Error creating app: Unexpected response from Fly.io");
-    }
-
-    await exec(`fly ips allocate-v4 -a ${workspaceName}`);
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const errorMessage =
-        error.response?.data?.error ||
-        "An error occurred while creating the app";
-      console.error("Error creating app:", errorMessage);
-      throw new Error(errorMessage);
-    }
-    console.error("Error creating app:", error);
+  if (response.status !== 201) {
+    console.error("Unexpected response from Fly.io:", response.status);
+    throw new Error("Error creating app: Unexpected response from Fly.io");
   }
+
+  return response.data;
 }
 
-export async function createFlyAppWithRetry(workspaceName: string) {
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const app = await createFlyApp(workspaceName);
-      console.log(`Fly app created successfully on attempt ${attempt}:`, app);
-      return;
-    } catch (error) {
-      console.error(`Attempt ${attempt} failed:`, error);
-      if (attempt === MAX_RETRIES) {
-        throw error;
-      }
-      await sleep(RETRY_DELAY);
-    }
-  }
+export async function allocateFlyIp(workspaceId: string) {
+  await exec(`fly ips allocate-v4 -a ${workspaceId} --yes`);
 }
 
-export async function getFlyApp(workspaceName: string) {
+export async function getFlyApp(workspaceId: string) {
   const response = await axios.get<FlyApp>(
-    `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceName}`,
+    `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceId}`,
     {
       headers: {
         Authorization: `Bearer ${process.env.FLY_API_TOKEN}`,
@@ -88,9 +60,9 @@ export async function getFlyApp(workspaceName: string) {
   return response.data;
 }
 
-export async function deleteFlyApp(workspaceName: string, force = false) {
+export async function deleteFlyApp(workspaceId: string, force = false) {
   const response = await axios.delete(
-    `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceName}?force=${force}`,
+    `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceId}?force=${force}`,
     {
       headers: {
         Authorization: `Bearer ${process.env.FLY_API_TOKEN}`,
@@ -106,23 +78,27 @@ export async function deleteFlyApp(workspaceName: string, force = false) {
   return response.data;
 }
 
-export async function createDockerImage(
-  workspaceName: string,
-  imageName: string,
-) {
+export async function createExecutorDockerImage(workspaceId: string) {
   try {
     await exec(
-      `docker tag integramind/${imageName}:latest registry.fly.io/${workspaceName}:${imageName}`,
+      `docker tag integramind/executor:latest registry.fly.io/${workspaceId}:executor`,
     );
-    await exec(`docker push registry.fly.io/${workspaceName}:${imageName}`);
+    await exec(`docker push registry.fly.io/${workspaceId}:executor`);
   } catch (error) {
     throw new Error(`An error occurred while pushing Docker image: ${error}`);
   }
 }
 
 export async function createFlyMachine(
-  workspaceName: string,
-  imageName: string,
+  workspaceId: string,
+  image: string,
+  config?: {
+    guest?: {
+      cpu_kind?: "shared" | "performance";
+      cpus?: number;
+      memory_mb?: number;
+    };
+  },
 ): Promise<{ id: string } | undefined> {
   const headers = {
     "Content-Type": "application/json",
@@ -131,11 +107,11 @@ export async function createFlyMachine(
 
   const data = {
     config: {
-      image: `registry.fly.io/${workspaceName}:${imageName}`,
+      image,
       guest: {
-        cpu_kind: "shared",
-        cpus: 1,
-        memory_mb: 256,
+        cpu_kind: config?.guest?.cpu_kind ?? "shared",
+        cpus: config?.guest?.cpus ?? 1,
+        memory_mb: config?.guest?.memory_mb ?? 256,
       },
       services: [
         {
@@ -156,16 +132,13 @@ export async function createFlyMachine(
     },
   };
 
-  try {
-    const response = await axios.post(
-      `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceName}/machines`,
-      data,
-      { headers },
-    );
-    return {
-      id: response.data.id,
-    };
-  } catch (error) {
-    console.error(error);
-  }
+  const response = await axios.post(
+    `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceId}/machines`,
+    data,
+    { headers },
+  );
+
+  return {
+    id: response.data.id,
+  };
 }

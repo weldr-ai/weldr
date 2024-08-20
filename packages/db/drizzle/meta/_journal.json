@@ -1,12 +1,12 @@
 {
-  "version": "5",
-  "dialect": "pg",
+  "version": "7",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1724100148133,
-      "tag": "0000_unknown_pandemic",
+      "version": "7",
+      "when": 1724146069513,
+      "tag": "0000_overconfident_madrox",
       "breakpoints": true
     }
   ]

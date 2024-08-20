@@ -1,10 +1,10 @@
 {
-  "id": "060dac9b-7d57-485f-95ca-2124e4d83eea",
+  "id": "12a65563-f809-4c43-b300-fccd500cb5ff",
   "prevId": "00000000-0000-0000-0000-000000000000",
-  "version": "5",
-  "dialect": "pg",
+  "version": "7",
+  "dialect": "postgresql",
   "tables": {
-    "accounts": {
+    "public.accounts": {
       "name": "accounts",
       "schema": "",
       "columns": {
@@ -95,7 +95,86 @@
       },
       "uniqueConstraints": {}
     },
-    "sessions": {
+    "public.authenticators": {
+      "name": "authenticators",
+      "schema": "",
+      "columns": {
+        "credential_id": {
+          "name": "credential_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_account_id": {
+          "name": "provider_account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credential_public_key": {
+          "name": "credential_public_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "counter": {
+          "name": "counter",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credential_device_type": {
+          "name": "credential_device_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credential_backed_up": {
+          "name": "credential_backed_up",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transports": {
+          "name": "transports",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "authenticators_user_id_users_id_fk": {
+          "name": "authenticators_user_id_users_id_fk",
+          "tableFrom": "authenticators",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "authenticators_user_id_credential_id_pk": {
+          "name": "authenticators_user_id_credential_id_pk",
+          "columns": ["user_id", "credential_id"]
+        }
+      },
+      "uniqueConstraints": {
+        "authenticators_credential_id_unique": {
+          "name": "authenticators_credential_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["credential_id"]
+        }
+      }
+    },
+    "public.sessions": {
       "name": "sessions",
       "schema": "",
       "columns": {
@@ -133,7 +212,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "users": {
+    "public.users": {
       "name": "users",
       "schema": "",
       "columns": {
@@ -153,7 +232,7 @@
           "name": "email",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "email_verified": {
           "name": "email_verified",
@@ -171,9 +250,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": ["email"]
+        }
+      }
     },
-    "verification_tokens": {
+    "public.verification_tokens": {
       "name": "verification_tokens",
       "schema": "",
       "columns": {
@@ -206,7 +291,7 @@
       },
       "uniqueConstraints": {}
     },
-    "waitlist": {
+    "public.waitlist": {
       "name": "waitlist",
       "schema": "",
       "columns": {
@@ -248,7 +333,7 @@
         }
       }
     },
-    "edges": {
+    "public.edges": {
       "name": "edges",
       "schema": "",
       "columns": {
@@ -325,7 +410,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "flows": {
+    "public.flows": {
       "name": "flows",
       "schema": "",
       "columns": {
@@ -350,6 +435,7 @@
         "type": {
           "name": "type",
           "type": "flow_types",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -404,7 +490,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "primitives": {
+    "public.primitives": {
       "name": "primitives",
       "schema": "",
       "columns": {
@@ -429,6 +515,7 @@
         "type": {
           "name": "type",
           "type": "primitive_types",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -503,7 +590,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "resources": {
+    "public.resources": {
       "name": "resources",
       "schema": "",
       "columns": {
@@ -528,6 +615,7 @@
         "provider": {
           "name": "provider",
           "type": "resource_providers",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -588,7 +676,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "workspaces": {
+    "public.workspaces": {
       "name": "workspaces",
       "schema": "",
       "columns": {
@@ -614,7 +702,7 @@
           "name": "executor_machine_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -650,37 +738,41 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {
+        "workspaces_name_unique": {
+          "name": "workspaces_name_unique",
+          "nullsNotDistinct": false,
+          "columns": ["name"]
+        }
+      }
     }
   },
   "enums": {
-    "flow_types": {
+    "public.flow_types": {
       "name": "flow_types",
-      "values": {
-        "component": "component",
-        "workflow": "workflow",
-        "route": "route"
-      }
+      "schema": "public",
+      "values": ["component", "workflow", "route"]
     },
-    "primitive_types": {
+    "public.primitive_types": {
       "name": "primitive_types",
-      "values": {
-        "route": "route",
-        "workflow": "workflow",
-        "function": "function",
-        "conditional-branch": "conditional-branch",
-        "iterator": "iterator",
-        "response": "response"
-      }
+      "schema": "public",
+      "values": [
+        "route",
+        "workflow",
+        "function",
+        "conditional-branch",
+        "iterator",
+        "response"
+      ]
     },
-    "resource_providers": {
+    "public.resource_providers": {
       "name": "resource_providers",
-      "values": {
-        "postgres": "postgres"
-      }
+      "schema": "public",
+      "values": ["postgres", "mysql"]
     }
   },
   "schemas": {},
+  "sequences": {},
   "_meta": {
     "columns": {},
     "schemas": {},

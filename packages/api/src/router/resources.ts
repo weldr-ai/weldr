@@ -1,4 +1,4 @@
-import { and, eq, sql } from "@integramind/db";
+import { and, eq } from "@integramind/db";
 import { resources } from "@integramind/db/schema";
 import { type Table, getInfo } from "@integramind/integrations-postgres";
 import { insertResourceSchema } from "@integramind/shared/validators/resources";
@@ -15,10 +15,10 @@ export const resourcesRouter = {
         .values({
           name: input.name,
           description: input.description,
-          provider: input.provider,
-          metadata: sql`${input.metadata}::jsonb`,
           workspaceId: input.workspaceId,
           createdBy: ctx.session.user.id,
+          provider: input.provider,
+          metadata: input.metadata,
         })
         .returning({ id: resources.id });
 

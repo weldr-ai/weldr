@@ -19,10 +19,10 @@ import { workspaces } from "./workspaces";
 export const users = pgTable("users", {
   id: text("id")
     .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
+    .$defaultFn(() => createId()),
   name: text("name"),
   email: text("email").unique(),
-  emailVerified: timestamp("emailVerified", { mode: "date" }),
+  emailVerified: timestamp("email_verified", { mode: "date" }),
   image: text("image"),
 });
 
@@ -83,8 +83,8 @@ export const verificationTokens = pgTable(
 export const authenticators = pgTable(
   "authenticators",
   {
-    credentialID: text("credentialID").notNull().unique(),
-    userId: text("userId")
+    credentialID: text("credential_id").notNull().unique(),
+    userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     providerAccountId: text("provider_account_id").notNull(),

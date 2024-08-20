@@ -1,6 +1,7 @@
 import { and, eq } from "@integramind/db";
 import { workspaces } from "@integramind/db/schema";
 import { TRPCError } from "@trpc/server";
+import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
@@ -9,25 +10,57 @@ export const workspacesRouter = {
     .input(z.object({ name: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.transaction(async (tx) => {
-        // TODO: Create fly app and init executor
-
         const result = await tx
           .insert(workspaces)
           .values({
             name: input.name,
-            executorMachineId: "",
             createdBy: ctx.session.user.id,
           })
           .returning({ id: workspaces.id });
 
-        if (!result[0]) {
+        const workspace = result[0];
+
+        if (!workspace) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to create workspace",
           });
         }
 
-        return result[0];
+        const response = await ofetch<{ executorMachineId: string }>(
+          `${process.env.ENGINE_API_URL}/api/workspaces`,
+          {
+            method: "POST",
+            retry: 3,
+            retryDelay: 1000,
+            body: {
+              workspaceId: workspace.id,
+            },
+            async onRequestError({ request, options, error }) {
+              console.log("[fetch request error]", request, error);
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Failed to create workspace",
+              });
+            },
+            async onResponseError({ request, response, options }) {
+              console.log("[fetch response error]", request, response);
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Failed to create workspace",
+              });
+            },
+          },
+        );
+
+        await tx
+          .update(workspaces)
+          .set({
+            executorMachineId: response.executorMachineId,
+          })
+          .where(eq(workspaces.id, workspace.id));
+
+        return workspace;
       });
     }),
   getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -58,6 +91,25 @@ export const workspacesRouter = {
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const response = await ofetch(
+        `${process.env.ENGINE_API_URL}/api/workspaces`,
+        {
+          method: "DELETE",
+          retry: 3,
+          retryDelay: 1000,
+          body: {
+            workspaceId: input.id,
+          },
+        },
+      );
+
+      if (response.status !== 200) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete workspace",
+        });
+      }
+
       await ctx.db
         .delete(workspaces)
         .where(

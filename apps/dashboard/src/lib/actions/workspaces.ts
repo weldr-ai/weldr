@@ -26,17 +26,14 @@ export async function createWorkspace(
   const data = Object.fromEntries(formData);
   const validation = insertWorkspaceSchema.safeParse(data);
 
-  const fields = Object.keys(data).reduce(
-    (acc: Record<keyof FormFields, string>, key: string) => {
-      const fieldName = key as keyof FormFields;
-      const data = acc[fieldName];
-      if (data) {
-        acc[fieldName] = data.toString();
-      }
-      return acc;
-    },
-    {} as Record<keyof FormFields, string>,
-  );
+  const fields = Object.keys(data).reduce((acc: FormFields, key: string) => {
+    const fieldName = key as keyof FormFields;
+    const data = acc[fieldName];
+    if (data) {
+      acc[fieldName] = data.toString();
+    }
+    return acc;
+  }, {} as FormFields);
 
   try {
     if (validation.success) {
@@ -53,12 +50,12 @@ export async function createWorkspace(
     }
 
     const errors = validation.error.issues.reduce(
-      (acc: Record<keyof FormFields, string>, issue: z.ZodIssue) => {
+      (acc: FormFields, issue: z.ZodIssue) => {
         const key = issue.path[0] as keyof FormFields;
         acc[key] = issue.message;
         return acc;
       },
-      {} as Record<keyof FormFields, string>,
+      {} as FormFields,
     );
 
     return {

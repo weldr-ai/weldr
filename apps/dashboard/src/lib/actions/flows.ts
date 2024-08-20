@@ -26,13 +26,10 @@ export async function createFlow(
   const dataStructured = formDataToStructuredObject(data);
   const validation = insertFlowSchema.safeParse(dataStructured);
 
-  const fields = Object.entries(data).reduce(
-    (acc, [key, value]) => {
-      acc[key as keyof FormFields] = value;
-      return acc;
-    },
-    {} as Record<keyof FormFields, string>,
-  );
+  const fields = Object.entries(data).reduce((acc, [key, value]) => {
+    acc[key as keyof FormFields] = value;
+    return acc;
+  }, {} as FormFields);
 
   try {
     if (validation.success) {
@@ -71,13 +68,10 @@ export async function createFlow(
       return { status: "success", payload: { id: result.id } };
     }
 
-    const errors = validation.error.issues.reduce(
-      (acc, issue) => {
-        acc[issue.path[0] as keyof FormFields] = issue.message;
-        return acc;
-      },
-      {} as Record<keyof FormFields, string>,
-    );
+    const errors = validation.error.issues.reduce((acc, issue) => {
+      acc[issue.path[0] as keyof FormFields] = issue.message;
+      return acc;
+    }, {} as FormFields);
 
     return {
       status: "validationError",

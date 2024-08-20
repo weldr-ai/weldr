@@ -19,7 +19,16 @@ export const baseInsertFlowSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .transform((name) => name.replace(/\s+/g, " ").trim()),
+    .regex(/^[a-z0-9-]+$/, {
+      message: "Name must only contain lowercase letters, numbers, and hyphens",
+    })
+    .regex(/^[a-z0-9].*[a-z0-9]$/, {
+      message: "Name must not start or end with a hyphen",
+    })
+    .regex(/^(?!.*--).*$/, {
+      message: "Name contain consecutive hyphens",
+    })
+    .transform((name) => name.replace(/\s+/g, "-").toLowerCase().trim()),
   description: z.string().trim().optional(),
   type: flowTypesSchema,
   workspaceId: z.string().min(1, {
@@ -61,7 +70,16 @@ export const updateRouteFlowSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .transform((name) => name.replace(/\s+/g, " ").trim())
+    .regex(/^[a-z0-9-]+$/, {
+      message: "Name must only contain lowercase letters, numbers, and hyphens",
+    })
+    .regex(/^[a-z0-9].*[a-z0-9]$/, {
+      message: "Name must not start or end with a hyphen",
+    })
+    .regex(/^(?!.*--).*$/, {
+      message: "Name contain consecutive hyphens",
+    })
+    .transform((name) => name.replace(/\s+/g, "-").toLowerCase().trim())
     .optional(),
   description: z.string().optional(),
   method: z.enum(["get", "post", "patch", "delete"]).optional(),
