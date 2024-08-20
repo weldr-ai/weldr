@@ -4,8 +4,10 @@
 
 .react-flow__edge-path {
   @apply stroke-border;
+  @apply stroke-2;
 }
 
 .react-flow__connection-path {
   @apply stroke-border;
+  @apply stroke-2;
 }

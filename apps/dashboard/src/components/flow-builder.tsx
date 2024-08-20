@@ -1,6 +1,23 @@
 "use client";
 
 import { createId } from "@paralleldrive/cuid2";
+import type {
+  ColorMode,
+  Connection,
+  Node as ReactFlowNode,
+} from "@xyflow/react";
+import {
+  Background,
+  MiniMap,
+  Panel,
+  ReactFlow,
+  ReactFlowProvider,
+  addEdge,
+  useEdgesState,
+  useNodesState,
+  useReactFlow,
+  useViewport,
+} from "@xyflow/react";
 import {
   MinusIcon,
   PlayCircleIcon,
@@ -10,29 +27,14 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useCallback } from "react";
-import type {
-  Connection,
-  Edge as ReactFlowEdge,
-  Node as ReactFlowNode,
-} from "reactflow";
-import ReactFlow, {
-  addEdge,
-  Background,
-  MiniMap,
-  Panel,
-  ReactFlowProvider,
-  useEdgesState,
-  useNodesState,
-  useReactFlow,
-  useViewport,
-} from "reactflow";
 
-import "reactflow/dist/style.css";
+import "@xyflow/react/dist/base.css";
 import "~/styles/flow-builder.css";
 
 import { Button } from "@integramind/ui/button";
 
 import type { Primitive, PrimitiveType } from "@integramind/shared/types";
+import { useTheme } from "next-themes";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
 import { ConditionalBranch } from "~/components/primitives/conditional-branch";
@@ -68,6 +70,7 @@ export function _FlowBuilder({
 }) {
   const reactFlow = useReactFlow();
   const viewPort = useViewport();
+  const { resolvedTheme } = useTheme();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -78,15 +81,18 @@ export function _FlowBuilder({
   const createEdge = api.edges.create.useMutation();
 
   const onConnect = useCallback(
-    async (params: ReactFlowEdge | Connection) => {
+    async (connection: Connection) => {
       const newEdgeId = createId();
-      setEdges((eds) => addEdge({ ...params, type: "deletable-edge" }, eds));
 
-      if (params.source && params.target) {
+      setEdges((eds) =>
+        addEdge({ ...connection, type: "deletable-edge" }, eds),
+      );
+
+      if (connection.source && connection.target) {
         await createEdge.mutateAsync({
           id: newEdgeId,
-          source: params.source,
-          target: params.target,
+          source: connection.source,
+          target: connection.target,
           flowId,
         });
       }
@@ -106,13 +112,13 @@ export function _FlowBuilder({
       const getNewNodeName = (nodeType: PrimitiveType) => {
         switch (nodeType) {
           case "function":
-            return "New Function";
+            return "new-function";
           case "conditional-branch":
-            return "New Conditional Branch";
+            return "new-conditional-branch";
           case "iterator":
-            return "New Iterator";
+            return "new-iterator";
           case "response":
-            return "New Response";
+            return "new-response";
           case "route":
           case "workflow":
             throw new Error("Invalid node type");
@@ -213,24 +219,26 @@ export function _FlowBuilder({
       panOnScroll={true}
       maxZoom={1}
       fitView={true}
+      colorMode={resolvedTheme as ColorMode}
     >
       <Background
-        className="rounded-xl bg-[#F0F0F3] dark:bg-background"
+        className="border rounded-xl bg-background"
         color="hsl(var(--background))"
       />
       <MiniMap
-        className="bottom-11 bg-[#F0F0F3] dark:bg-background"
+        className="bottom-11"
+        bgColor="hsl(var(--background))"
+        nodeColor="hsl(var(--accent))"
+        maskColor="hsl(var(--accent))"
         position="bottom-left"
         style={{
-          height: 100,
+          height: 110,
           width: 172,
         }}
-        nodeColor="hsl(var(--muted-foreground))"
-        maskColor="hsl(var(--muted-foreground))"
       />
       <Panel
         position="bottom-left"
-        className="flex flex-row rounded-xl border bg-background dark:bg-muted"
+        className="flex bg-background flex-row rounded-xl border"
       >
         <Button
           className="rounded-xl rounded-r-none"

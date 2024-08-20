@@ -1,5 +1,6 @@
 "use client";
 
+import { useReactFlow } from "@xyflow/react";
 import type {
   DOMExportOutput,
   EditorConfig,
@@ -12,7 +13,6 @@ import { DecoratorNode } from "lexical";
 import { HashIcon, TextIcon } from "lucide-react";
 import { Suspense } from "react";
 import { useForm } from "react-hook-form";
-import { useReactFlow } from "reactflow";
 
 import { Form, FormControl, FormField, FormItem } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";

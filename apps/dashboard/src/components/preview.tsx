@@ -10,9 +10,6 @@ import {
 
 import { Button } from "@integramind/ui/button";
 
-import "reactflow/dist/style.css";
-import "~/styles/flow-builder.css";
-
 import { useTheme } from "next-themes";
 
 import { IntegraMind2Icon } from "@integramind/ui/icons/integramind2-icon";

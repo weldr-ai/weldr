@@ -1,6 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Handle,
+  Position,
+  useEdges,
+  useNodes,
+  useReactFlow,
+} from "@xyflow/react";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
@@ -16,7 +23,6 @@ import {
 import Link from "next/link";
 import { memo, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Handle, Position, useEdges, useNodes, useReactFlow } from "reactflow";
 import type { z } from "zod";
 
 import { Button } from "@integramind/ui/button";
@@ -43,8 +49,14 @@ import {
   ExpandableCardHeader,
   ExpandableCardTrigger,
 } from "@integramind/ui/expandable-card";
-import { FormField } from "@integramind/ui/form";
-import { Input as InputComponent } from "@integramind/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@integramind/ui/form";
+import { Input } from "@integramind/ui/input";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -65,7 +77,7 @@ import { cn } from "@integramind/ui/utils";
 import type {
   FunctionPrimitive,
   FunctionRawDescription,
-  Input,
+  Input as IInput,
   Primitive,
 } from "@integramind/shared/types";
 import {
@@ -74,6 +86,7 @@ import {
 } from "@integramind/shared/validators/primitives";
 import type { resourceProvidersSchema } from "@integramind/shared/validators/resources";
 import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
+import { Label } from "@integramind/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
@@ -108,7 +121,13 @@ async function executeFunction({
 }
 
 export const FunctionNode = memo(
-  ({ data: _data, isConnectable, selected, xPos, yPos }: FlowNodeProps) => {
+  ({
+    data: _data,
+    isConnectable,
+    selected,
+    positionAbsoluteX,
+    positionAbsoluteY,
+  }: FlowNodeProps) => {
     if (_data.type !== "function") {
       throw new Error("Invalid node type");
     }
@@ -133,8 +152,8 @@ export const FunctionNode = memo(
     const deleteFunction = api.primitives.delete.useMutation();
 
     const reactFlow = useReactFlow<FlowNode, FlowEdge>();
-    const nodes = useNodes<Primitive>();
-    const edges = useEdges<"deletable-edge">();
+    const nodes = useNodes<FlowNode>();
+    const edges = useEdges<FlowEdge>();
     const form = useForm<z.infer<typeof updatePrimitiveSchema>>({
       resolver: zodResolver(updateFunctionSchema),
       defaultValues: {
@@ -226,7 +245,7 @@ export const FunctionNode = memo(
           }
         }
         return acc;
-      }, [] as Input[]);
+      }, [] as IInput[]);
 
       return inputs;
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,7 +280,7 @@ export const FunctionNode = memo(
           }
           return acc;
         }, [] as FunctionRawDescription[]);
-        const inputs: Input[] = [];
+        const inputs: IInput[] = [];
         let resource: {
           id: string;
           provider: z.infer<typeof resourceProvidersSchema>;
@@ -315,13 +334,6 @@ export const FunctionNode = memo(
 
     return (
       <>
-        <Handle
-          className="border-border bg-background p-1"
-          type="target"
-          position={Position.Left}
-          onConnect={(params) => console.log("handle onConnect", params)}
-          isConnectable={isConnectable}
-        />
         <ExpandableCard>
           <ExpandableCardTrigger>
             <ContextMenu>
@@ -336,8 +348,8 @@ export const FunctionNode = memo(
                   onClick={() => {
                     reactFlow.fitBounds(
                       {
-                        x: xPos,
-                        y: yPos,
+                        x: positionAbsoluteX,
+                        y: positionAbsoluteY,
                         width: 400,
                         height: 400 + 300,
                       },
@@ -387,7 +399,7 @@ export const FunctionNode = memo(
           </ExpandableCardTrigger>
           <ExpandableCardContent className="nowheel flex h-[600px] w-[800px] flex-col p-0">
             <div className="flex size-full flex-col">
-              <ExpandableCardHeader className="flex flex-col items-start justify-start px-4 py-4">
+              <ExpandableCardHeader className="flex flex-col items-start justify-start">
                 <div className="flex w-full items-center justify-between">
                   <div className="flex items-center gap-2 text-xs">
                     <LambdaIcon className="size-4 text-primary" />
@@ -476,156 +488,186 @@ export const FunctionNode = memo(
                     </DropdownMenu>
                   </div>
                 </div>
-                <FormField
-                  control={form.control}
-                  name="payload.name"
-                  render={({ field }) => (
-                    <InputComponent
-                      {...field}
-                      autoComplete="off"
-                      className="h-8 border-none bg-muted p-0 text-sm focus-visible:ring-0"
-                      onBlur={(e) => {
-                        updateFunction.mutate({
-                          where: {
-                            id: data.id,
-                          },
-                          payload: {
-                            type: "function",
-                            name: e.target.value,
-                            metadata: {
-                              isCodeUpdated: e.target.value === data.name,
-                            },
-                          },
-                        });
-                        form.setValue("payload.name", e.target.value);
-                      }}
-                    />
-                  )}
-                />
               </ExpandableCardHeader>
-              <ResizablePanelGroup direction="vertical" className="flex h-full">
-                <ResizablePanel
-                  defaultSize={65}
-                  minSize={25}
-                  className="flex flex-col gap-2 px-4 pb-4"
+              <div className="flex flex-col h-full gap-6">
+                <div className="px-4">
+                  <Form {...form}>
+                    <FormField
+                      control={form.control}
+                      name="payload.name"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col w-full">
+                          <FormControl>
+                            <Input
+                              {...field}
+                              autoComplete="off"
+                              className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
+                              placeholder="Function name"
+                              onBlur={(e) => {
+                                updateFunction.mutate({
+                                  where: {
+                                    id: data.id,
+                                  },
+                                  payload: {
+                                    type: "function",
+                                    name: e.target.value,
+                                    metadata: {
+                                      isCodeUpdated:
+                                        e.target.value === data.name,
+                                    },
+                                  },
+                                });
+                                form.setValue("payload.name", e.target.value);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </Form>
+                </div>
+                <ResizablePanelGroup
+                  direction="vertical"
+                  className="flex h-full"
                 >
-                  <span className="text-xs text-muted-foreground">Editor</span>
-                  <Editor
-                    id={data.id}
-                    type="description"
-                    inputs={inputs}
-                    placeholder="Describe your function"
-                    rawDescription={data.metadata.rawDescription}
-                    onChange={onChange}
-                    onError={onError}
-                  />
-                </ResizablePanel>
-                <ResizableHandle className="border-b" withHandle />
-                <ResizablePanel
-                  defaultSize={35}
-                  minSize={8}
-                  className="flex size-full rounded-b-xl px-4 py-4"
-                >
-                  <Tabs
-                    defaultValue="result"
-                    className="flex w-full flex-col space-y-4"
+                  <ResizablePanel
+                    defaultSize={65}
+                    minSize={25}
+                    className="flex flex-col gap-2 px-4 pb-4"
                   >
-                    <TabsList className="w-full justify-start bg-accent">
-                      <TabsTrigger className="w-full" value="result">
-                        Result
-                      </TabsTrigger>
-                      <TabsTrigger className="w-full" value="summary">
-                        Summary
-                      </TabsTrigger>
-                    </TabsList>
-                    <TabsContent
-                      value="result"
-                      className="size-full rounded-lg bg-background"
+                    <Label className="text-xs">Editor</Label>
+                    <Editor
+                      id={data.id}
+                      type="description"
+                      inputs={inputs}
+                      placeholder="Describe your function"
+                      rawDescription={data.metadata.rawDescription}
+                      onChange={onChange}
+                      onError={onError}
+                    />
+                  </ResizablePanel>
+                  <ResizableHandle className="border-b" withHandle />
+                  <ResizablePanel
+                    defaultSize={35}
+                    minSize={8}
+                    className="flex size-full rounded-b-xl p-4"
+                  >
+                    <Tabs
+                      defaultValue="result"
+                      className="flex w-full flex-col space-y-4"
                     >
-                      <div className="flex size-full items-center justify-center px-6">
-                        {!executionResult ? (
-                          <>
-                            {isLoadingExecutionResult ||
-                            isRefetchingExecutionResult ? (
-                              <div className="flex items-center justify-center">
-                                <Loader2Icon className="size-6 animate-spin text-primary" />
-                              </div>
-                            ) : (
-                              <div className="text-sm text-muted-foreground">
-                                Click run to execute the function
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            {isLoadingExecutionResult ||
-                            isRefetchingExecutionResult ? (
-                              <div className="flex items-center justify-center">
-                                fuck
-                                <Loader2Icon className="size-6 animate-spin text-primary" />
-                              </div>
-                            ) : (
-                              <ScrollArea className="size-full">
-                                <Table className="flex w-full flex-col">
-                                  <TableHeader className="flex w-full">
-                                    <TableRow className="flex w-full">
-                                      {Object.keys(
-                                        executionResult.result[0] ?? {},
-                                      ).map((head, idx) => (
-                                        <TableHead
-                                          key={`${idx}-${head}`}
-                                          className="flex w-full items-center"
-                                        >
-                                          {head}
-                                        </TableHead>
-                                      ))}
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody className="flex w-full flex-col">
-                                    {executionResult.result.map(
-                                      (
-                                        row: Record<string, string | number>,
-                                        idx,
-                                      ) => (
-                                        <TableRow
-                                          key={`${idx}-${row.id}`}
-                                          className="flex w-full"
-                                        >
-                                          {Object.keys(row).map(
-                                            (key: string, idx) => (
-                                              <TableCell
-                                                key={`${idx}-${key}`}
-                                                className="flex w-full"
-                                              >
-                                                {row[key]}
-                                              </TableCell>
-                                            ),
-                                          )}
-                                        </TableRow>
-                                      ),
-                                    )}
-                                  </TableBody>
-                                </Table>
-                              </ScrollArea>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </TabsContent>
-                    <TabsContent
-                      value="summary"
-                      className="size-full rounded-lg bg-background"
-                    >
-                      <div className="flex size-full items-center justify-center px-6 text-muted-foreground">
-                        General info
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </ResizablePanel>
-              </ResizablePanelGroup>
+                      <TabsList className="w-full justify-start bg-accent">
+                        <TabsTrigger className="w-full" value="result">
+                          Result
+                        </TabsTrigger>
+                        <TabsTrigger className="w-full" value="summary">
+                          Summary
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent
+                        value="result"
+                        className="size-full rounded-lg bg-background"
+                      >
+                        <div className="flex size-full items-center justify-center px-6">
+                          {!executionResult ? (
+                            <>
+                              {isLoadingExecutionResult ||
+                              isRefetchingExecutionResult ? (
+                                <div className="flex items-center justify-center">
+                                  <Loader2Icon className="size-6 animate-spin text-primary" />
+                                </div>
+                              ) : (
+                                <div className="text-sm text-muted-foreground">
+                                  Click run to execute the function
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {isLoadingExecutionResult ||
+                              isRefetchingExecutionResult ? (
+                                <div className="flex items-center justify-center">
+                                  fuck
+                                  <Loader2Icon className="size-6 animate-spin text-primary" />
+                                </div>
+                              ) : (
+                                <ScrollArea className="size-full">
+                                  <Table className="flex w-full flex-col">
+                                    <TableHeader className="flex w-full">
+                                      <TableRow className="flex w-full">
+                                        {Object.keys(
+                                          executionResult.result[0] ?? {},
+                                        ).map((head, idx) => (
+                                          <TableHead
+                                            key={`${idx}-${head}`}
+                                            className="flex w-full items-center"
+                                          >
+                                            {head}
+                                          </TableHead>
+                                        ))}
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody className="flex w-full flex-col">
+                                      {executionResult.result.map(
+                                        (
+                                          row: Record<string, string | number>,
+                                          idx,
+                                        ) => (
+                                          <TableRow
+                                            key={`${idx}-${row.id}`}
+                                            className="flex w-full"
+                                          >
+                                            {Object.keys(row).map(
+                                              (key: string, idx) => (
+                                                <TableCell
+                                                  key={`${idx}-${key}`}
+                                                  className="flex w-full"
+                                                >
+                                                  {row[key]}
+                                                </TableCell>
+                                              ),
+                                            )}
+                                          </TableRow>
+                                        ),
+                                      )}
+                                    </TableBody>
+                                  </Table>
+                                </ScrollArea>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </TabsContent>
+                      <TabsContent
+                        value="summary"
+                        className="size-full rounded-lg bg-background"
+                      >
+                        <div className="flex size-full items-center justify-center px-6 text-muted-foreground">
+                          General info
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              </div>
             </div>
           </ExpandableCardContent>
         </ExpandableCard>
+        <Handle
+          className="border rounded-full bg-background p-1"
+          type="target"
+          onConnect={(params) => console.log("handle onConnect", params)}
+          position={Position.Left}
+          isConnectable={isConnectable}
+        />
+        <Handle
+          className="border rounded-full bg-background p-1"
+          type="source"
+          position={Position.Right}
+          onConnect={(params) => console.log("handle onConnect", params)}
+          isConnectable={isConnectable}
+        />
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
@@ -641,13 +683,6 @@ export const FunctionNode = memo(
               id: data.id,
             });
           }}
-        />
-        <Handle
-          className="border-border bg-background p-1"
-          type="source"
-          position={Position.Right}
-          onConnect={(params) => console.log("handle onConnect", params)}
-          isConnectable={isConnectable}
         />
       </>
     );

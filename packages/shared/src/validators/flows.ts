@@ -44,10 +44,16 @@ export const insertRouteFlowSchema = baseInsertFlowSchema.extend({
   type: z.literal("route"),
   metadata: z.object({
     method: z.enum(["get", "post", "patch", "delete"]),
-    path: z.string().transform((path) => {
-      if (path.startsWith("/")) return path.trim();
-      return `/${path.trim()}`;
-    }),
+    path: z
+      .string()
+      .regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
+        message:
+          "Invalid endpoint. Must start with '/' and contain only lowercase letters and hyphens.",
+      })
+      .transform((path) => {
+        if (path.startsWith("/")) return path.trim();
+        return `/${path.trim()}`;
+      }),
   }),
 });
 
@@ -83,7 +89,17 @@ export const updateRouteFlowSchema = z.object({
     .optional(),
   description: z.string().optional(),
   method: z.enum(["get", "post", "patch", "delete"]).optional(),
-  path: z.string().optional(),
+  path: z
+    .string()
+    .regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
+      message:
+        "Invalid endpoint. Must start with '/' and contain only lowercase letters and hyphens.",
+    })
+    .transform((path) => {
+      if (path.startsWith("/")) return path.trim();
+      return `/${path.trim()}`;
+    })
+    .optional(),
   inputs: z
     .object({
       id: z.string(),

@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Handle, Position, useReactFlow } from "@xyflow/react";
 import type {
   EditorState,
   LexicalEditor,
@@ -17,7 +18,6 @@ import {
 import Link from "next/link";
 import { memo } from "react";
 import { useForm } from "react-hook-form";
-import { Handle, Position, useReactFlow } from "reactflow";
 import type { z } from "zod";
 
 import { Badge } from "@integramind/ui/badge";
@@ -61,13 +61,20 @@ import type {
   Input as TInput,
 } from "@integramind/shared/types";
 import { updateRouteFlowSchema } from "@integramind/shared/validators/flows";
+import { Label } from "@integramind/ui/label";
 import Editor from "~/components/editor";
 import type { SerializedInputNode } from "~/components/editor/nodes/input-node";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Route = memo(
-  ({ data: _data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
+  ({
+    data: _data,
+    isConnectable,
+    positionAbsoluteX,
+    positionAbsoluteY,
+    selected,
+  }: FlowNodeProps) => {
     if (_data.type !== "route") {
       return;
     }
@@ -90,6 +97,7 @@ export const Route = memo(
     });
 
     const reactFlow = useReactFlow<FlowNode, FlowEdge>();
+
     const form = useForm<z.infer<typeof updateRouteFlowSchema>>({
       resolver: zodResolver(updateRouteFlowSchema),
       defaultValues: {
@@ -171,8 +179,8 @@ export const Route = memo(
               onClick={() => {
                 reactFlow.fitBounds(
                   {
-                    x: xPos,
-                    y: yPos,
+                    x: positionAbsoluteX,
+                    y: positionAbsoluteY,
                     width: 400,
                     height: 400 + 300,
                   },
@@ -192,7 +200,7 @@ export const Route = memo(
             </Card>
           </ExpandableCardTrigger>
           <ExpandableCardContent className="nowheel flex flex-col p-0">
-            <ExpandableCardHeader className="flex flex-col items-start justify-start px-4 py-4">
+            <ExpandableCardHeader className="flex flex-col items-start justify-start">
               <div className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
                   <Badge variant="default" className="text-xs">
@@ -243,18 +251,19 @@ export const Route = memo(
                 </div>
               </div>
             </ExpandableCardHeader>
-            <form className="flex h-full flex-col gap-2 px-4 pb-4">
-              <Form {...form}>
+            <Form {...form}>
+              <div className="flex flex-col gap-6 px-4 pb-4">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs">Name</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="Enter route name"
+                          autoComplete="off"
+                          className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
+                          placeholder="Route name"
                           onBlur={async (e) => {
                             await updateRoute.mutateAsync({
                               where: {
@@ -272,135 +281,137 @@ export const Route = memo(
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">
-                        Description{" "}
-                        <span className="text-muted-foreground">
-                          (optional)
-                        </span>
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Enter route description"
-                          value={field.value}
-                          onBlur={async (e) => {
-                            await updateRoute.mutateAsync({
-                              where: {
-                                id: data.id,
-                              },
-                              payload: {
-                                type: "route",
-                                description: e.target.value,
-                              },
-                            });
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="method"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">Method</FormLabel>
-                      <FormControl>
-                        <Select
-                          {...field}
-                          name={field.name}
-                          onValueChange={async (value) => {
-                            field.onChange(value);
-                            await updateRoute.mutateAsync({
-                              where: {
-                                id: data.id,
-                              },
-                              payload: {
-                                type: "route",
-                                metadata: {
-                                  method: value as
-                                    | "get"
-                                    | "post"
-                                    | "patch"
-                                    | "delete",
+                <div className="flex flex-col gap-2">
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">
+                          Description{" "}
+                          <span className="text-muted-foreground">
+                            (optional)
+                          </span>
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            autoComplete="off"
+                            placeholder="Enter route description"
+                            value={field.value}
+                            onBlur={async (e) => {
+                              await updateRoute.mutateAsync({
+                                where: {
+                                  id: data.id,
                                 },
-                              },
-                            });
-                          }}
-                        >
-                          <SelectTrigger className="bg-background">
-                            <SelectValue
-                              placeholder="Select method"
-                              className="placeholder-muted-foreground"
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="get">GET</SelectItem>
-                            <SelectItem value="post">POST</SelectItem>
-                            <SelectItem value="patch">PATCH</SelectItem>
-                            <SelectItem value="delete">DELETE</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="path"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">URL Path</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Enter action URL path"
-                          value={field.value}
-                          onBlur={async (e) => {
-                            await updateRoute.mutateAsync({
-                              where: {
-                                id: data.id,
-                              },
-                              payload: {
-                                type: "route",
-                                metadata: {
-                                  path: e.target.value,
+                                payload: {
+                                  type: "route",
+                                  description: e.target.value,
                                 },
-                              },
-                            });
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </Form>
-              <div className="space-y-2">
-                <span className="text-xs">Inputs</span>
-                <Editor
-                  id={data.id}
-                  onChange={onChange}
-                  onError={onError}
-                  inputs={data.metadata.inputs ?? []}
-                  type="inputs"
-                  className="h-20"
-                  placeholder="Enter inputs"
-                />
+                              });
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="method"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Method</FormLabel>
+                        <FormControl>
+                          <Select
+                            {...field}
+                            autoComplete="off"
+                            name={field.name}
+                            onValueChange={async (value) => {
+                              field.onChange(value);
+                              await updateRoute.mutateAsync({
+                                where: {
+                                  id: data.id,
+                                },
+                                payload: {
+                                  type: "route",
+                                  metadata: {
+                                    method:
+                                      value as RoutePrimitive["metadata"]["method"],
+                                  },
+                                },
+                              });
+                            }}
+                          >
+                            <SelectTrigger className="bg-background">
+                              <SelectValue
+                                placeholder="Select method"
+                                className="placeholder-muted-foreground"
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="get">GET</SelectItem>
+                              <SelectItem value="post">POST</SelectItem>
+                              <SelectItem value="patch">PATCH</SelectItem>
+                              <SelectItem value="delete">DELETE</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="path"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">URL Path</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            autoComplete="off"
+                            placeholder="Enter action URL path"
+                            value={field.value}
+                            onBlur={async (e) => {
+                              await updateRoute.mutateAsync({
+                                where: {
+                                  id: data.id,
+                                },
+                                payload: {
+                                  type: "route",
+                                  metadata: {
+                                    path: e.target.value,
+                                  },
+                                },
+                              });
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="space-y-2">
+                    <Label className="text-xs">Inputs</Label>
+                    <Editor
+                      id={data.id}
+                      onChange={onChange}
+                      onError={onError}
+                      inputs={data.metadata.inputs ?? []}
+                      type="inputs"
+                      className="h-20"
+                      placeholder="Enter inputs"
+                    />
+                  </div>
+                </div>
               </div>
-            </form>
+            </Form>
           </ExpandableCardContent>
         </ExpandableCard>
         <Handle
           type="source"
-          className="border-border bg-background p-1"
+          className="border rounded-full bg-background p-1"
           position={Position.Right}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}

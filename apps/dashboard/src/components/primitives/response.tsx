@@ -1,3 +1,4 @@
+import { Handle, Position, useReactFlow } from "@xyflow/react";
 import {
   CornerDownLeftIcon,
   EllipsisVerticalIcon,
@@ -8,7 +9,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { memo, useState } from "react";
-import { Handle, Position, useReactFlow } from "reactflow";
 
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
@@ -41,7 +41,13 @@ import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Response = memo(
-  ({ data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
+  ({
+    data,
+    isConnectable,
+    positionAbsoluteX,
+    positionAbsoluteY,
+    selected,
+  }: FlowNodeProps) => {
     const reactFlow = useReactFlow<FlowNode, FlowEdge>();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -50,13 +56,6 @@ export const Response = memo(
 
     return (
       <>
-        <Handle
-          className="border-border bg-background p-1"
-          type="target"
-          position={Position.Left}
-          onConnect={(params) => console.log("handle onConnect", params)}
-          isConnectable={isConnectable}
-        />
         <ExpandableCard>
           <ExpandableCardTrigger>
             <ContextMenu>
@@ -71,8 +70,8 @@ export const Response = memo(
                   onClick={() => {
                     reactFlow.fitBounds(
                       {
-                        x: xPos,
-                        y: yPos,
+                        x: positionAbsoluteX,
+                        y: positionAbsoluteY,
                         width: 400,
                         height: 400 + 300,
                       },
@@ -198,7 +197,14 @@ export const Response = memo(
           }}
         />
         <Handle
-          className="border-border bg-background p-1"
+          className="border rounded-full bg-background p-1"
+          type="target"
+          position={Position.Left}
+          onConnect={(params) => console.log("handle onConnect", params)}
+          isConnectable={isConnectable}
+        />
+        <Handle
+          className="border rounded-full bg-background p-1"
           type="source"
           position={Position.Right}
           onConnect={(params) => console.log("handle onConnect", params)}

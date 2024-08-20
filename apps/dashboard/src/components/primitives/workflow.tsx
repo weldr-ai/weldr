@@ -1,5 +1,6 @@
 "use client";
 
+import { Handle, Position, useReactFlow } from "@xyflow/react";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
@@ -8,7 +9,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { memo } from "react";
-import { Handle, Position, useReactFlow } from "reactflow";
 
 import { Badge } from "@integramind/ui/badge";
 import { Button } from "@integramind/ui/button";
@@ -31,7 +31,13 @@ import { cn } from "@integramind/ui/utils";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Workflow = memo(
-  ({ data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
+  ({
+    data,
+    isConnectable,
+    positionAbsoluteX,
+    positionAbsoluteY,
+    selected,
+  }: FlowNodeProps) => {
     if (data.type !== "workflow") {
       throw new Error("Invalid node type");
     }
@@ -52,8 +58,8 @@ export const Workflow = memo(
               onClick={() => {
                 reactFlow.fitBounds(
                   {
-                    x: xPos,
-                    y: yPos,
+                    x: positionAbsoluteX,
+                    y: positionAbsoluteY,
                     width: 400,
                     height: 400 + 300,
                   },
@@ -130,7 +136,7 @@ export const Workflow = memo(
         </ExpandableCard>
         <Handle
           type="target"
-          className="border-border bg-background p-1"
+          className="border rounded-full bg-background p-1"
           position={Position.Right}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}

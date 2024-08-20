@@ -1,12 +1,12 @@
-import { XIcon } from "lucide-react";
-import { useState } from "react";
-import type { EdgeProps } from "reactflow";
+import type { EdgeProps } from "@xyflow/react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
   getBezierPath,
   useReactFlow,
-} from "reactflow";
+} from "@xyflow/react";
+import { XIcon } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@integramind/ui/button";
 
