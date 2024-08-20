@@ -1,88 +1,78 @@
 "use server";
 
+import type { BaseFormState } from "@integramind/shared/types";
+import { formDataToStructuredObject } from "@integramind/shared/utils";
 import { insertFlowSchema } from "@integramind/shared/validators/flows";
-import type { z } from "zod";
+import { revalidatePath } from "next/cache";
 
 import { api } from "~/lib/trpc/rsc";
 
-type FormState =
-  | {
-      status: "success";
-      payload: {
-        id: string;
-      };
-    }
-  | {
-      status: "validationError";
-      fields: Record<string, string>;
-      errors: Record<string, string>;
-    }
-  | {
-      status: "error";
-      fields: Record<string, string>;
-    }
-  | undefined;
+interface FormFields {
+  name: string;
+}
+
+type FormState = BaseFormState<
+  FormFields,
+  {
+    id: string;
+  }
+>;
 
 export async function createFlow(
   prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
   const data = Object.fromEntries(formData) as Record<string, string>;
+  const dataStructured = formDataToStructuredObject(data);
+  const validation = insertFlowSchema.safeParse(dataStructured);
 
-  const validation = insertFlowSchema.safeParse(data);
-
-  const fields: Record<string, string> = Object.entries(data).reduce(
-    (acc: Record<string, string>, [key, value]) => {
-      acc[key] = value;
-      return acc;
-    },
-    {} as Record<string, string>,
-  );
+  const fields = Object.entries(data).reduce((acc, [key, value]) => {
+    acc[key as keyof FormFields] = value;
+    return acc;
+  }, {} as FormFields);
 
   try {
     if (validation.success) {
-      const workspace = api.workspaces.getById({
+      const workspace = await api.workspaces.getById({
         id: validation.data.workspaceId,
       });
 
-      if (!workspace) {
-        return { status: "error", fields };
-      }
+      let result: { id: string };
 
-      const result = await api.flows.create({
+      const commonData = {
         name: validation.data.name,
         description: validation.data.description,
-        workspaceId: validation.data.workspaceId,
-        type: validation.data.type,
-      });
+        workspaceId: workspace.id,
+      };
 
-      if (result) {
-        if (
-          validation.data.type === "route" ||
-          validation.data.type === "workflow"
-        ) {
-          await api.primitives.create({
-            isBuilding: false,
-            name: validation.data.name,
-            description: validation.data.description,
-            type: validation.data.type,
-            metadata: validation.data.metadata,
-            flowId: result.id,
-          });
-        }
-        return { status: "success", payload: { id: result.id } };
+      if (validation.data.type === "route") {
+        result = await api.flows.create({
+          ...commonData,
+          type: "route",
+          metadata: validation.data.metadata,
+        });
+      } else if (validation.data.type === "workflow") {
+        result = await api.flows.create({
+          ...commonData,
+          type: "workflow",
+          metadata: validation.data.metadata,
+        });
+      } else {
+        result = await api.flows.create({
+          ...commonData,
+          type: "component",
+        });
       }
 
-      return { status: "error", fields };
+      revalidatePath("/workspaces/[id]", "layout");
+      return { status: "success", payload: { id: result.id } };
     }
-    const errors = validation.error.issues.reduce(
-      (acc: Record<string, string>, issue: z.ZodIssue) => {
-        const key = issue.path[0] as string;
-        acc[key] = issue.message;
-        return acc;
-      },
-      {},
-    );
+
+    const errors = validation.error.issues.reduce((acc, issue) => {
+      acc[issue.path[0] as keyof FormFields] = issue.message;
+      return acc;
+    }, {} as FormFields);
+
     return {
       status: "validationError",
       fields,

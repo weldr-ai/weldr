@@ -7,7 +7,7 @@
     "clean": "git clean -xdf .next .turbo node_modules dist",
     "dev": "pnpm with-env next dev --turbo -p 3000",
     "start": "pnpm with-env next start",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {

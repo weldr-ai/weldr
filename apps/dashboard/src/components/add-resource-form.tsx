@@ -23,7 +23,10 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import type { ResourceProvider } from "@integramind/shared/types";
+import type {
+  ResourceMetadata,
+  ResourceProvider,
+} from "@integramind/shared/types";
 import { insertResourceSchema } from "@integramind/shared/validators/resources";
 import { addResource } from "~/lib/actions/resources";
 
@@ -38,9 +41,10 @@ export function AddResourceForm({
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [state, addResourceAction] = useFormState(addResource, undefined);
 
-  const getMetadataValues = (provider: ResourceProvider) => {
+  const getMetadataValues = (provider: ResourceProvider): ResourceMetadata => {
     switch (provider) {
       case "postgres":
+      case "mysql":
         return {
           host: "",
           port: 5432,
@@ -56,9 +60,9 @@ export function AddResourceForm({
     resolver: zodResolver(insertResourceSchema),
     defaultValues: {
       name: "",
-      description: "",
-      provider,
+      description: undefined,
       workspaceId,
+      provider,
       metadata: getMetadataValues(provider),
       ...(state &&
         (state.status === "error" || state.status === "validationError") &&
@@ -82,21 +86,9 @@ export function AddResourceForm({
           }
         } else if (state.status === "validationError") {
           for (const key of Object.keys(state.errors)) {
-            form.setError(
-              key as
-                | "name"
-                | "description"
-                | "workspaceId"
-                | "provider"
-                | "metadata.host"
-                | "metadata.port"
-                | "metadata.user"
-                | "metadata.password"
-                | "metadata.database",
-              {
-                message: state.errors[key],
-              },
-            );
+            form.setError(key as keyof typeof form.formState.errors, {
+              message: state.errors[key],
+            });
           }
           toast({
             title: "Validation Error",
@@ -145,7 +137,7 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">Host</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter host" {...field} />
+                    <Input {...field} placeholder="Enter host" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -158,7 +150,16 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">Port</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter port" {...field} />
+                    <Input
+                      {...field}
+                      placeholder="Enter port"
+                      onChange={(event) =>
+                        form.setValue(
+                          "metadata.port",
+                          Number(event.target.value),
+                        )
+                      }
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -171,7 +172,7 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">User</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter user" {...field} />
+                    <Input {...field} placeholder="Enter user" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -184,7 +185,7 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter password" {...field} />
+                    <Input {...field} placeholder="Enter password" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -197,7 +198,7 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">Database</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter database" {...field} />
+                    <Input {...field} placeholder="Enter database" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

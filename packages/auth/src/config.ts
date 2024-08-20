@@ -7,7 +7,13 @@ import type {
 import Resend from "next-auth/providers/resend";
 
 import { db } from "@integramind/db";
-import { accounts, sessions, users } from "@integramind/db/schema";
+import {
+  accounts,
+  authenticators,
+  sessions,
+  users,
+  verificationTokens,
+} from "@integramind/db/schema";
 
 declare module "next-auth" {
   interface Session {
@@ -19,8 +25,11 @@ declare module "next-auth" {
 
 const adapter = DrizzleAdapter(db, {
   usersTable: users,
+  // @ts-ignore
   accountsTable: accounts,
   sessionsTable: sessions,
+  verificationTokensTable: verificationTokens,
+  authenticatorsTable: authenticators,
 });
 
 export const authConfig: NextAuthConfig = {

@@ -53,8 +53,10 @@ export default function SignIn() {
   useEffect(() => {
     if (state) {
       if (state.status === "validationError") {
-        for (const key of Object.keys(state.errors)) {
-          form.setError(key as "email", {
+        for (const key of Object.keys(state.errors) as Array<
+          keyof typeof state.errors
+        >) {
+          form.setError(key, {
             message: state.errors[key],
           });
         }

@@ -1,66 +1,58 @@
 "use server";
 
+import type { BaseFormState } from "@integramind/shared/types";
+import { formDataToStructuredObject } from "@integramind/shared/utils";
 import { insertResourceSchema } from "@integramind/shared/validators/resources";
+import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 
 import { api } from "~/lib/trpc/rsc";
 
-type FormState =
-  | {
-      status: "success";
-      payload: {
-        id: string;
-      };
-    }
-  | {
-      status: "validationError";
-      fields: Record<string, string>;
-      errors: Record<string, string>;
-    }
-  | {
-      status: "error";
-      fields: Record<string, string>;
-    }
-  | undefined;
+type FormState = BaseFormState;
 
 export async function addResource(
   prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
   const data = Object.fromEntries(formData) as Record<string, string>;
-  const validation = insertResourceSchema.safeParse(data);
+  const dataStructured = formDataToStructuredObject(data);
+  const validation = insertResourceSchema.safeParse(dataStructured);
 
-  const fields: Record<string, string> = Object.entries(data).reduce(
+  const fields = Object.entries(data).reduce(
     (acc: Record<string, string>, [key, value]) => {
       acc[key] = value;
       return acc;
     },
-    {},
+    {} as Record<string, string>,
   );
 
   try {
     if (validation.success) {
+      const workspace = await api.workspaces.getById({
+        id: validation.data.workspaceId,
+      });
+
       const result = await api.resources.create({
         name: validation.data.name,
         description: validation.data.description,
+        workspaceId: workspace.id,
         provider: validation.data.provider,
         metadata: validation.data.metadata,
-        workspaceId: validation.data.workspaceId,
       });
 
-      if (result) {
-        return { status: "success", payload: { id: result.id } };
-      }
-      return { status: "error", fields };
+      revalidatePath("/workspaces/[id]", "layout");
+      return { status: "success", payload: { id: result.id } };
     }
+
     const errors = validation.error.issues.reduce(
       (acc: Record<string, string>, issue: z.ZodIssue) => {
         const key = issue.path[0] as string;
         acc[key] = issue.message;
         return acc;
       },
-      {},
+      {} as Record<string, string>,
     );
+
     return {
       status: "validationError",
       fields,

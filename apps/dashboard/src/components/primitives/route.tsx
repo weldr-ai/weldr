@@ -69,7 +69,7 @@ import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 export const Route = memo(
   ({ data: _data, isConnectable, xPos, yPos, selected }: FlowNodeProps) => {
     if (_data.type !== "route") {
-      throw new Error("Invalid node type");
+      return;
     }
 
     const { data: fetchedData, refetch } = api.primitives.getById.useQuery(

@@ -79,3 +79,24 @@ export type ResponsePrimitive = z.infer<typeof responsePrimitiveSchema>;
 export type FunctionRawDescription = z.infer<
   typeof functionRawDescriptionSchema
 >;
+
+export type BaseFormState<
+  FormFields = Record<string, string>,
+  TPayload = unknown,
+> =
+  | {
+      status: "success";
+      payload: TPayload;
+      message?: string;
+    }
+  | {
+      status: "validationError";
+      fields: FormFields;
+      errors: FormFields;
+    }
+  | {
+      status: "error";
+      fields: FormFields;
+      message?: string;
+    }
+  | undefined;

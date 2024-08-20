@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@integramind/shared": "workspace:*",
-    "openai": "^4.52.0"
+    "ofetch": "^1.3.4",
+    "openai": "^4.52.0",
+    "scule": "^1.3.0"
   },
   "devDependencies": {
     "@integramind/tsconfig": "workspace:*"

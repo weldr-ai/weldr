@@ -1,8 +1,4 @@
 import { z } from "zod";
-import {
-  routePrimitiveMetadataSchema,
-  workflowPrimitiveMetadataSchema,
-} from "./primitives";
 
 export const flowTypesSchema = z.enum(["component", "workflow", "route"]);
 
@@ -23,7 +19,16 @@ export const baseInsertFlowSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .transform((name) => name.replace(/\s+/g, " ").trim()),
+    .regex(/^[a-z0-9-]+$/, {
+      message: "Name must only contain lowercase letters, numbers, and hyphens",
+    })
+    .regex(/^[a-z0-9].*[a-z0-9]$/, {
+      message: "Name must not start or end with a hyphen",
+    })
+    .regex(/^(?!.*--).*$/, {
+      message: "Name contain consecutive hyphens",
+    })
+    .transform((name) => name.replace(/\s+/g, "-").toLowerCase().trim()),
   description: z.string().trim().optional(),
   type: flowTypesSchema,
   workspaceId: z.string().min(1, {
@@ -37,12 +42,20 @@ export const insertComponentFlowSchema = baseInsertFlowSchema.extend({
 
 export const insertRouteFlowSchema = baseInsertFlowSchema.extend({
   type: z.literal("route"),
-  metadata: routePrimitiveMetadataSchema,
+  metadata: z.object({
+    method: z.enum(["get", "post", "patch", "delete"]),
+    path: z.string().transform((path) => {
+      if (path.startsWith("/")) return path.trim();
+      return `/${path.trim()}`;
+    }),
+  }),
 });
 
 export const insertWorkflowFlowSchema = baseInsertFlowSchema.extend({
   type: z.literal("workflow"),
-  metadata: workflowPrimitiveMetadataSchema,
+  metadata: z.object({
+    triggerType: z.enum(["webhook", "schedule"]),
+  }),
 });
 
 export const insertFlowSchema = z.discriminatedUnion("type", [
@@ -57,7 +70,16 @@ export const updateRouteFlowSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .transform((name) => name.replace(/\s+/g, " ").trim())
+    .regex(/^[a-z0-9-]+$/, {
+      message: "Name must only contain lowercase letters, numbers, and hyphens",
+    })
+    .regex(/^[a-z0-9].*[a-z0-9]$/, {
+      message: "Name must not start or end with a hyphen",
+    })
+    .regex(/^(?!.*--).*$/, {
+      message: "Name contain consecutive hyphens",
+    })
+    .transform((name) => name.replace(/\s+/g, "-").toLowerCase().trim())
     .optional(),
   description: z.string().optional(),
   method: z.enum(["get", "post", "patch", "delete"]).optional(),

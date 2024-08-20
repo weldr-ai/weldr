@@ -138,7 +138,6 @@ export function _FlowBuilder({
       const newNode = await createPrimitive.mutateAsync({
         type: nodeType,
         name: newNodeName,
-        isBuilding: true,
         positionX: Math.floor(position.x),
         positionY: Math.floor(position.y),
         flowId,

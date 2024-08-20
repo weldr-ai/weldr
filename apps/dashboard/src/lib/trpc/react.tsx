@@ -65,5 +65,5 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 const getBaseUrl = () => {
   if (typeof window !== "undefined") return window.location.origin;
   if (process.env.API_BASE_URL) return process.env.API_BASE_URL;
-  return `http://localhost:${process.env.API_PORT ?? 3000}`;
+  return "http://localhost:3000";
 };

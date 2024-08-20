@@ -2,8 +2,8 @@ import { and, eq, sql } from "@integramind/db";
 import { flows, primitives } from "@integramind/db/schema";
 import type { RouteMetadata } from "@integramind/shared/types";
 import {
-  baseInsertFlowSchema,
   flowTypesSchema,
+  insertFlowSchema,
 } from "@integramind/shared/validators/flows";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -11,26 +11,63 @@ import { protectedProcedure } from "../trpc";
 
 export const flowsRouter = {
   create: protectedProcedure
-    .input(baseInsertFlowSchema)
+    .input(insertFlowSchema)
     .mutation(async ({ ctx, input }) => {
-      const result = await ctx.db
-        .insert(flows)
-        .values({
-          name: input.name,
-          description: input.description,
-          type: input.type,
-          workspaceId: input.workspaceId,
-          createdBy: ctx.session.user.id,
-        })
-        .returning({ id: flows.id });
-
-      if (!result[0]) {
+      if (
+        input.type !== "route" &&
+        input.type !== "workflow" &&
+        input.type !== "component"
+      ) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create flow",
         });
       }
-      return result[0];
+
+      const result = await ctx.db.transaction(async (tx) => {
+        const flowResult = await tx
+          .insert(flows)
+          .values({
+            name: input.name,
+            description: input.description,
+            type: input.type,
+            workspaceId: input.workspaceId,
+            createdBy: ctx.session.user.id,
+          })
+          .returning({ id: flows.id });
+
+        if (!flowResult[0]) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create flow",
+          });
+        }
+
+        if (input.type === "route" || input.type === "workflow") {
+          const primitiveResult = await tx
+            .insert(primitives)
+            .values({
+              name: input.name,
+              description: input.description,
+              type: input.type,
+              metadata: sql`${input.metadata}::jsonb`,
+              createdBy: ctx.session.user.id,
+              flowId: flowResult[0].id,
+            })
+            .returning({ id: primitives.id });
+
+          if (!primitiveResult[0]) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create primitive",
+            });
+          }
+        }
+
+        return flowResult[0];
+      });
+
+      return result;
     }),
   getAllByType: protectedProcedure
     .input(z.object({ workspaceId: z.string(), type: flowTypesSchema }))
