@@ -4,6 +4,8 @@ import { createId } from "@paralleldrive/cuid2";
 import type {
   ColorMode,
   Connection,
+  Edge,
+  Node,
   Node as ReactFlowNode,
 } from "@xyflow/react";
 import {
@@ -13,6 +15,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   addEdge,
+  getOutgoers,
   useEdgesState,
   useNodesState,
   useReactFlow,
@@ -203,6 +206,30 @@ export function _FlowBuilder({
     [deletePrimitive],
   );
 
+  const isValidConnection = useCallback(
+    (connection: Connection | Edge) => {
+      const target = nodes.find((node) => node.id === connection.target);
+
+      const hasCycle = (node: Node, visited = new Set()) => {
+        if (visited.has(node.id)) return false;
+
+        visited.add(node.id);
+
+        for (const outgoer of getOutgoers(node, nodes, edges)) {
+          if (outgoer.id === connection.source) return true;
+          if (hasCycle(outgoer, visited)) return true;
+        }
+      };
+
+      if (!target) return false;
+
+      if (target?.id === connection.source) return false;
+
+      return !hasCycle(target);
+    },
+    [nodes, edges],
+  );
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -210,6 +237,7 @@ export function _FlowBuilder({
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
+      isValidConnection={isValidConnection}
       onDrop={onDrop}
       onNodeDragStop={onNodeDragStop}
       onDragOver={onDragOver}
