@@ -1,15 +1,42 @@
 import { and, eq } from "@integramind/db";
 import { resources } from "@integramind/db/schema";
 import { type Table, getInfo } from "@integramind/integrations-postgres";
-import { insertResourceSchema } from "@integramind/shared/validators/resources";
+import { insertResourceSchema as _insertResourceSchema } from "@integramind/shared/validators/resources";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
+
+const insertResourceSchema = _insertResourceSchema.transform((data) => {
+  if (data.provider === "postgres" || data.provider === "mysql") {
+    return {
+      ...data,
+      metadata: {
+        ...data.metadata,
+        port: Number(data.metadata.port),
+      },
+    };
+  }
+  return data;
+});
 
 export const resourcesRouter = {
   create: protectedProcedure
     .input(insertResourceSchema)
     .mutation(async ({ ctx, input }) => {
+      const doesExist = await ctx.db.query.resources.findFirst({
+        where: and(
+          eq(resources.name, input.name),
+          eq(resources.workspaceId, input.workspaceId),
+        ),
+      });
+
+      if (doesExist) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Resource name must be unique",
+        });
+      }
+
       const result = await ctx.db
         .insert(resources)
         .values({

@@ -1,5 +1,6 @@
 import { and, eq } from "@integramind/db";
 import { workspaces } from "@integramind/db/schema";
+import { insertWorkspaceSchema } from "@integramind/shared/validators/workspaces";
 import { TRPCError } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";
@@ -7,13 +8,15 @@ import { protectedProcedure } from "../trpc";
 
 export const workspacesRouter = {
   create: protectedProcedure
-    .input(z.object({ name: z.string() }))
+    .input(insertWorkspaceSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.transaction(async (tx) => {
         const result = await tx
           .insert(workspaces)
           .values({
             name: input.name,
+            subdomain: input.subdomain,
+            description: input.description,
             createdBy: ctx.session.user.id,
           })
           .returning({ id: workspaces.id });
