@@ -86,6 +86,23 @@ export const primitivesRouter = {
   update: protectedProcedure
     .input(updatePrimitiveSchema)
     .mutation(async ({ ctx, input }) => {
+      if (input.payload.name) {
+        const isUnique = await ctx.db.query.primitives.findFirst({
+          where: and(
+            eq(primitives.name, input.payload.name),
+            eq(primitives.flowId, input.where.flowId),
+            eq(primitives.createdBy, ctx.session.user.id),
+          ),
+        });
+
+        if (isUnique) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Primitive name already exists",
+          });
+        }
+      }
+
       const where: SQL[] = [
         eq(primitives.id, input.where.id),
         eq(primitives.createdBy, ctx.session.user.id),

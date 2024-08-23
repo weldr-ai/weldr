@@ -1,5 +1,5 @@
 {
-  "id": "12a65563-f809-4c43-b300-fccd500cb5ff",
+  "id": "071a4f70-de48-4d08-b3e4-4f2050245437",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -81,8 +81,12 @@
           "name": "accounts_user_id_users_id_fk",
           "tableFrom": "accounts",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -90,7 +94,10 @@
       "compositePrimaryKeys": {
         "accounts_provider_provider_account_id_pk": {
           "name": "accounts_provider_provider_account_id_pk",
-          "columns": ["provider", "provider_account_id"]
+          "columns": [
+            "provider",
+            "provider_account_id"
+          ]
         }
       },
       "uniqueConstraints": {}
@@ -154,8 +161,12 @@
           "name": "authenticators_user_id_users_id_fk",
           "tableFrom": "authenticators",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -163,14 +174,19 @@
       "compositePrimaryKeys": {
         "authenticators_user_id_credential_id_pk": {
           "name": "authenticators_user_id_credential_id_pk",
-          "columns": ["user_id", "credential_id"]
+          "columns": [
+            "user_id",
+            "credential_id"
+          ]
         }
       },
       "uniqueConstraints": {
         "authenticators_credential_id_unique": {
           "name": "authenticators_credential_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["credential_id"]
+          "columns": [
+            "credential_id"
+          ]
         }
       }
     },
@@ -203,8 +219,12 @@
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -254,7 +274,9 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       }
     },
@@ -286,7 +308,10 @@
       "compositePrimaryKeys": {
         "verification_tokens_identifier_token_pk": {
           "name": "verification_tokens_identifier_token_pk",
-          "columns": ["identifier", "token"]
+          "columns": [
+            "identifier",
+            "token"
+          ]
         }
       },
       "uniqueConstraints": {}
@@ -329,7 +354,9 @@
         "waitlist_email_unique": {
           "name": "waitlist_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       }
     },
@@ -374,8 +401,12 @@
           "name": "edges_source_primitives_id_fk",
           "tableFrom": "edges",
           "tableTo": "primitives",
-          "columnsFrom": ["source"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "source"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -383,8 +414,12 @@
           "name": "edges_target_primitives_id_fk",
           "tableFrom": "edges",
           "tableTo": "primitives",
-          "columnsFrom": ["target"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "target"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -392,8 +427,12 @@
           "name": "edges_flow_id_flows_id_fk",
           "tableFrom": "edges",
           "tableTo": "flows",
-          "columnsFrom": ["flow_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "flow_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -401,8 +440,12 @@
           "name": "edges_created_by_users_id_fk",
           "tableFrom": "edges",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -472,8 +515,12 @@
           "name": "flows_workspace_id_workspaces_id_fk",
           "tableFrom": "flows",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -481,8 +528,12 @@
           "name": "flows_created_by_users_id_fk",
           "tableFrom": "flows",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -504,7 +555,7 @@
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "description": {
           "name": "description",
@@ -572,8 +623,12 @@
           "name": "primitives_flow_id_flows_id_fk",
           "tableFrom": "primitives",
           "tableTo": "flows",
-          "columnsFrom": ["flow_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "flow_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -581,8 +636,12 @@
           "name": "primitives_created_by_users_id_fk",
           "tableFrom": "primitives",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -658,8 +717,12 @@
           "name": "resources_workspace_id_workspaces_id_fk",
           "tableFrom": "resources",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -667,14 +730,27 @@
           "name": "resources_created_by_users_id_fk",
           "tableFrom": "resources",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {
+        "resources_name_workspace_id_unique": {
+          "name": "resources_name_workspace_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name",
+            "workspace_id"
+          ]
+        }
+      }
     },
     "public.workspaces": {
       "name": "workspaces",
@@ -688,6 +764,12 @@
         },
         "name": {
           "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subdomain": {
+          "name": "subdomain",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -731,18 +813,24 @@
           "name": "workspaces_created_by_users_id_fk",
           "tableFrom": "workspaces",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "workspaces_name_unique": {
-          "name": "workspaces_name_unique",
+        "workspaces_subdomain_unique": {
+          "name": "workspaces_subdomain_unique",
           "nullsNotDistinct": false,
-          "columns": ["name"]
+          "columns": [
+            "subdomain"
+          ]
         }
       }
     }
@@ -751,7 +839,11 @@
     "public.flow_types": {
       "name": "flow_types",
       "schema": "public",
-      "values": ["component", "workflow", "route"]
+      "values": [
+        "component",
+        "workflow",
+        "route"
+      ]
     },
     "public.primitive_types": {
       "name": "primitive_types",
@@ -768,7 +860,10 @@
     "public.resource_providers": {
       "name": "resource_providers",
       "schema": "public",
-      "values": ["postgres", "mysql"]
+      "values": [
+        "postgres",
+        "mysql"
+      ]
     }
   },
   "schemas": {},

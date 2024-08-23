@@ -3,6 +3,7 @@
 import type { BaseFormState } from "@integramind/shared/types";
 import { formDataToStructuredObject } from "@integramind/shared/utils";
 import { insertFlowSchema } from "@integramind/shared/validators/flows";
+import { TRPCError } from "@trpc/server";
 import { revalidatePath } from "next/cache";
 
 import { api } from "~/lib/trpc/rsc";
@@ -79,7 +80,13 @@ export async function createFlow(
       errors,
     };
   } catch (error) {
-    console.log(error);
+    if (error instanceof TRPCError) {
+      return {
+        status: "error",
+        fields,
+        message: error.message,
+      };
+    }
     return { status: "error", fields };
   }
 }

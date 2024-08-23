@@ -3,8 +3,8 @@ import { resourceProvidersSchema } from "./resources";
 
 export const primitiveBaseSchema = z.object({
   id: z.string(),
-  name: z.string(),
-  description: z.string().trim().nullable(),
+  name: z.string().nullable(),
+  description: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
   createdBy: z.string(),
@@ -193,21 +193,6 @@ export const primitiveMetadataSchema = z.union([
 ]);
 
 export const insertPrimitiveSchema = z.object({
-  name: z
-    .string()
-    .min(1, {
-      message: "Name is required.",
-    })
-    .regex(/^[a-z0-9-]+$/, {
-      message: "Name must only contain lowercase letters, numbers, and hyphens",
-    })
-    .regex(/^[a-z0-9].*[a-z0-9]$/, {
-      message: "Name must not start or end with a hyphen",
-    })
-    .regex(/^(?!.*--).*$/, {
-      message: "Name contain consecutive hyphens",
-    })
-    .transform((name) => name.replace(/\s+/g, "-").toLowerCase().trim()),
   type: z.enum(["function", "iterator", "conditional-branch", "response"]),
   description: z.string().trim().optional(),
   positionX: z.number().optional(),
@@ -221,19 +206,17 @@ export const insertPrimitiveSchema = z.object({
 export const updatePrimitiveBaseSchema = z.object({
   name: z
     .string()
-    .min(1, {
-      message: "Name is required.",
-    })
-    .regex(/^[a-z0-9-]+$/, {
-      message: "Name must only contain lowercase letters, numbers, and hyphens",
+    .regex(/^[a-z0-9_]+$/, {
+      message:
+        "Name must only contain lowercase letters, numbers, and underscores",
     })
     .regex(/^[a-z0-9].*[a-z0-9]$/, {
-      message: "Name must not start or end with a hyphen",
+      message: "Name must not start or end with an underscore",
     })
-    .regex(/^(?!.*--).*$/, {
-      message: "Name contain consecutive hyphens",
+    .regex(/^(?!.*__).*$/, {
+      message: "Name must not contain consecutive underscores",
     })
-    .transform((name) => name.replace(/\s+/g, "-").toLowerCase().trim())
+    .transform((name) => name.replace(/\s+/g, "_").toLowerCase().trim())
     .optional(),
   description: z.string().trim().optional(),
   positionX: z.number().optional(),
@@ -281,7 +264,17 @@ export const updateFunctionSchema = updatePrimitiveBaseSchema.extend({
 
 export const updateRouteMetadataSchema = z.object({
   method: z.enum(["get", "post", "patch", "delete"]).optional(),
-  path: z.string().optional(),
+  path: z
+    .string()
+    .regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
+      message:
+        "Must start with '/' and contain only lowercase letters and hyphens.",
+    })
+    .transform((path) => {
+      if (path.startsWith("/")) return path.trim();
+      return `/${path.trim()}`;
+    })
+    .optional(),
   inputs: z
     .object({
       id: z.string(),
@@ -335,6 +328,7 @@ export const updateResponseSchema = updatePrimitiveBaseSchema.extend({
 export const updatePrimitiveSchema = z.object({
   where: z.object({
     id: z.string(),
+    flowId: z.string(),
   }),
   payload: z.discriminatedUnion("type", [
     updateFunctionSchema,

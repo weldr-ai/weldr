@@ -4,6 +4,8 @@ import { createId } from "@paralleldrive/cuid2";
 import type {
   ColorMode,
   Connection,
+  Edge,
+  Node,
   Node as ReactFlowNode,
 } from "@xyflow/react";
 import {
@@ -13,6 +15,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   addEdge,
+  getOutgoers,
   useEdgesState,
   useNodesState,
   useReactFlow,
@@ -34,6 +37,7 @@ import "~/styles/flow-builder.css";
 import { Button } from "@integramind/ui/button";
 
 import type { Primitive, PrimitiveType } from "@integramind/shared/types";
+import { toast } from "@integramind/ui/use-toast";
 import { useTheme } from "next-themes";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
@@ -74,7 +78,15 @@ export function _FlowBuilder({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  const createPrimitive = api.primitives.create.useMutation();
+  const createPrimitive = api.primitives.create.useMutation({
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
   const deletePrimitive = api.primitives.delete.useMutation();
   const updatePrimitive = api.primitives.update.useMutation();
 
@@ -112,13 +124,13 @@ export function _FlowBuilder({
       const getNewNodeName = (nodeType: PrimitiveType) => {
         switch (nodeType) {
           case "function":
-            return "new-function";
+            return "new_function";
           case "conditional-branch":
-            return "new-conditional-branch";
+            return "new_conditional_branch";
           case "iterator":
-            return "new-iterator";
+            return "new_iterator";
           case "response":
-            return "new-response";
+            return "new_response";
           case "route":
           case "workflow":
             throw new Error("Invalid node type");
@@ -143,7 +155,6 @@ export function _FlowBuilder({
 
       const newNode = await createPrimitive.mutateAsync({
         type: nodeType,
-        name: newNodeName,
         positionX: Math.floor(position.x),
         positionY: Math.floor(position.y),
         flowId,
@@ -157,7 +168,7 @@ export function _FlowBuilder({
           position: { x: newNode.positionX, y: newNode.positionY },
           data: {
             id: newNode.id,
-            name: newNode.name,
+            name: newNodeName,
             description: newNode.description,
             type: newNode.type,
             metadata: newNode.metadata,
@@ -181,6 +192,7 @@ export function _FlowBuilder({
       await updatePrimitive.mutateAsync({
         where: {
           id: node.id,
+          flowId,
         },
         payload: {
           type: node.type as PrimitiveType,
@@ -189,7 +201,7 @@ export function _FlowBuilder({
         },
       });
     },
-    [updatePrimitive],
+    [updatePrimitive, flowId],
   );
 
   const onNodesDelete = useCallback(
@@ -203,6 +215,30 @@ export function _FlowBuilder({
     [deletePrimitive],
   );
 
+  const isValidConnection = useCallback(
+    (connection: Connection | Edge) => {
+      const target = nodes.find((node) => node.id === connection.target);
+
+      const hasCycle = (node: Node, visited = new Set()) => {
+        if (visited.has(node.id)) return false;
+
+        visited.add(node.id);
+
+        for (const outgoer of getOutgoers(node, nodes, edges)) {
+          if (outgoer.id === connection.source) return true;
+          if (hasCycle(outgoer, visited)) return true;
+        }
+      };
+
+      if (!target) return false;
+
+      if (target?.id === connection.source) return false;
+
+      return !hasCycle(target);
+    },
+    [nodes, edges],
+  );
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -210,6 +246,7 @@ export function _FlowBuilder({
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
+      isValidConnection={isValidConnection}
       onDrop={onDrop}
       onNodeDragStop={onNodeDragStop}
       onDragOver={onDragOver}
@@ -222,7 +259,7 @@ export function _FlowBuilder({
       colorMode={resolvedTheme as ColorMode}
     >
       <Background
-        className="border rounded-xl bg-background"
+        className="rounded-xl bg-muted dark:bg-background"
         color="hsl(var(--background))"
       />
       <MiniMap

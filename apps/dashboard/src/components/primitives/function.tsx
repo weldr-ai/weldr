@@ -11,6 +11,7 @@ import {
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
+  CircleAlertIcon,
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
@@ -23,7 +24,7 @@ import {
 import Link from "next/link";
 import { memo, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import type { z } from "zod";
+import { z } from "zod";
 
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
@@ -54,6 +55,7 @@ import {
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
@@ -80,13 +82,8 @@ import type {
   Input as IInput,
   Primitive,
 } from "@integramind/shared/types";
-import {
-  updateFunctionSchema,
-  type updatePrimitiveSchema,
-} from "@integramind/shared/validators/primitives";
 import type { resourceProvidersSchema } from "@integramind/shared/validators/resources";
 import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
-import { Label } from "@integramind/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
@@ -120,6 +117,27 @@ async function executeFunction({
   return data;
 }
 
+const validationSchema = z.object({
+  name: z
+    .string()
+    .min(1, {
+      message: "Name is required",
+    })
+    .regex(/^[a-z0-9_]+$/, {
+      message:
+        "Name must only contain lowercase letters, numbers, and underscores",
+    })
+    .regex(/^[a-z0-9].*[a-z0-9]$/, {
+      message: "Name must not start or end with an underscore",
+    })
+    .regex(/^(?!.*__).*$/, {
+      message: "Name must not contain consecutive underscores",
+    }),
+  description: z.string().min(1, {
+    message: "Description is required",
+  }),
+});
+
 export const FunctionNode = memo(
   ({
     data: _data,
@@ -143,6 +161,20 @@ export const FunctionNode = memo(
     );
     const data = fetchedData as FunctionPrimitive;
 
+    const reactFlow = useReactFlow<FlowNode, FlowEdge>();
+    const nodes = useNodes<FlowNode>();
+    const edges = useEdges<FlowEdge>();
+    const form = useForm<z.infer<typeof validationSchema>>({
+      mode: "all",
+      criteriaMode: "all",
+      reValidateMode: "onChange",
+      resolver: zodResolver(validationSchema),
+      defaultValues: {
+        name: data.name ?? undefined,
+        description: data.description ?? undefined,
+      },
+    });
+
     const updateFunction = api.primitives.update.useMutation({
       onSuccess: async () => {
         await refetch();
@@ -150,19 +182,6 @@ export const FunctionNode = memo(
     });
 
     const deleteFunction = api.primitives.delete.useMutation();
-
-    const reactFlow = useReactFlow<FlowNode, FlowEdge>();
-    const nodes = useNodes<FlowNode>();
-    const edges = useEdges<FlowEdge>();
-    const form = useForm<z.infer<typeof updatePrimitiveSchema>>({
-      resolver: zodResolver(updateFunctionSchema),
-      defaultValues: {
-        payload: {
-          name: data.name,
-          description: data.description ?? undefined,
-        },
-      },
-    });
 
     const {
       data: executionResult,
@@ -200,7 +219,10 @@ export const FunctionNode = memo(
 
                 if (foundInput && foundInput.testValue !== input.testValue) {
                   updateFunction.mutate({
-                    where: { id: data.id },
+                    where: {
+                      id: data.id,
+                      flowId: data.flowId,
+                    },
                     payload: {
                       type: "function",
                       metadata: {
@@ -227,7 +249,7 @@ export const FunctionNode = memo(
             }
           }
         } else if (parent.type === "function") {
-          if (parent.metadata.outputs) {
+          if (parent.metadata.outputs && parent.name) {
             acc.push({
               id: parent.id,
               name: parent.name,
@@ -311,6 +333,7 @@ export const FunctionNode = memo(
         updateFunction.mutate({
           where: {
             id: data.id,
+            flowId: data.flowId,
           },
           payload: {
             type: "function",
@@ -359,11 +382,16 @@ export const FunctionNode = memo(
                     );
                   }}
                 >
-                  <div className="flex items-center gap-2 text-xs">
-                    <LambdaIcon className="size-4 text-primary" />
-                    <span className="text-muted-foreground">Function</span>
+                  <div className="flex w-full items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs">
+                      <LambdaIcon className="size-4 text-primary" />
+                      <span className="text-muted-foreground">Function</span>
+                    </div>
+                    {(!data.name || !data.description) && (
+                      <CircleAlertIcon className="size-4 text-destructive" />
+                    )}
                   </div>
-                  <span className="text-sm">{data.name}</span>
+                  <span className="text-sm">{data.name ?? "new_function"}</span>
                 </Card>
               </ContextMenuTrigger>
               <ContextMenuContent>
@@ -430,6 +458,7 @@ export const FunctionNode = memo(
                         updateFunction.mutate({
                           where: {
                             id: data.id,
+                            flowId: data.flowId,
                           },
                           payload: {
                             type: "function",
@@ -490,13 +519,13 @@ export const FunctionNode = memo(
                 </div>
               </ExpandableCardHeader>
               <div className="flex flex-col h-full gap-6">
-                <div className="px-4">
-                  <Form {...form}>
+                <Form {...form}>
+                  <div className="px-4">
                     <FormField
                       control={form.control}
-                      name="payload.name"
+                      name="name"
                       render={({ field }) => (
-                        <FormItem className="flex flex-col w-full">
+                        <FormItem>
                           <FormControl>
                             <Input
                               {...field}
@@ -507,6 +536,7 @@ export const FunctionNode = memo(
                                 updateFunction.mutate({
                                   where: {
                                     id: data.id,
+                                    flowId: data.flowId,
                                   },
                                   payload: {
                                     type: "function",
@@ -517,7 +547,7 @@ export const FunctionNode = memo(
                                     },
                                   },
                                 });
-                                form.setValue("payload.name", e.target.value);
+                                form.setValue("name", e.target.value);
                               }}
                             />
                           </FormControl>
@@ -525,131 +555,143 @@ export const FunctionNode = memo(
                         </FormItem>
                       )}
                     />
-                  </Form>
-                </div>
-                <ResizablePanelGroup
-                  direction="vertical"
-                  className="flex h-full"
-                >
-                  <ResizablePanel
-                    defaultSize={65}
-                    minSize={25}
-                    className="flex flex-col gap-2 px-4 pb-4"
+                  </div>
+                  <ResizablePanelGroup
+                    direction="vertical"
+                    className="flex h-full"
                   >
-                    <Label className="text-xs">Editor</Label>
-                    <Editor
-                      id={data.id}
-                      type="description"
-                      inputs={inputs}
-                      placeholder="Describe your function"
-                      rawDescription={data.metadata.rawDescription}
-                      onChange={onChange}
-                      onError={onError}
-                    />
-                  </ResizablePanel>
-                  <ResizableHandle className="border-b" withHandle />
-                  <ResizablePanel
-                    defaultSize={35}
-                    minSize={8}
-                    className="flex size-full rounded-b-xl p-4"
-                  >
-                    <Tabs
-                      defaultValue="result"
-                      className="flex w-full flex-col space-y-4"
+                    <ResizablePanel
+                      defaultSize={65}
+                      minSize={25}
+                      className="px-4 pb-4"
                     >
-                      <TabsList className="w-full justify-start bg-accent">
-                        <TabsTrigger className="w-full" value="result">
-                          Result
-                        </TabsTrigger>
-                        <TabsTrigger className="w-full" value="summary">
-                          Summary
-                        </TabsTrigger>
-                      </TabsList>
-                      <TabsContent
-                        value="result"
-                        className="size-full rounded-lg bg-background"
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={() => (
+                          <FormItem className="flex flex-col h-full">
+                            <FormLabel className="text-xs">Editor</FormLabel>
+                            <Editor
+                              id={data.id}
+                              type="description"
+                              inputs={inputs}
+                              placeholder="Describe your function"
+                              rawDescription={data.metadata.rawDescription}
+                              onChange={onChange}
+                              onError={onError}
+                            />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </ResizablePanel>
+                    <ResizableHandle className="border-b" withHandle />
+                    <ResizablePanel
+                      defaultSize={35}
+                      minSize={8}
+                      className="flex size-full rounded-b-xl p-4"
+                    >
+                      <Tabs
+                        defaultValue="result"
+                        className="flex w-full flex-col space-y-4"
                       >
-                        <div className="flex size-full items-center justify-center px-6">
-                          {!executionResult ? (
-                            <>
-                              {isLoadingExecutionResult ||
-                              isRefetchingExecutionResult ? (
-                                <div className="flex items-center justify-center">
-                                  <Loader2Icon className="size-6 animate-spin text-primary" />
-                                </div>
-                              ) : (
-                                <div className="text-sm text-muted-foreground">
-                                  Click run to execute the function
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              {isLoadingExecutionResult ||
-                              isRefetchingExecutionResult ? (
-                                <div className="flex items-center justify-center">
-                                  fuck
-                                  <Loader2Icon className="size-6 animate-spin text-primary" />
-                                </div>
-                              ) : (
-                                <ScrollArea className="size-full">
-                                  <Table className="flex w-full flex-col">
-                                    <TableHeader className="flex w-full">
-                                      <TableRow className="flex w-full">
-                                        {Object.keys(
-                                          executionResult.result[0] ?? {},
-                                        ).map((head, idx) => (
-                                          <TableHead
-                                            key={`${idx}-${head}`}
-                                            className="flex w-full items-center"
-                                          >
-                                            {head}
-                                          </TableHead>
-                                        ))}
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody className="flex w-full flex-col">
-                                      {executionResult.result.map(
-                                        (
-                                          row: Record<string, string | number>,
-                                          idx,
-                                        ) => (
-                                          <TableRow
-                                            key={`${idx}-${row.id}`}
-                                            className="flex w-full"
-                                          >
-                                            {Object.keys(row).map(
-                                              (key: string, idx) => (
-                                                <TableCell
-                                                  key={`${idx}-${key}`}
-                                                  className="flex w-full"
-                                                >
-                                                  {row[key]}
-                                                </TableCell>
-                                              ),
-                                            )}
-                                          </TableRow>
-                                        ),
-                                      )}
-                                    </TableBody>
-                                  </Table>
-                                </ScrollArea>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </TabsContent>
-                      <TabsContent
-                        value="summary"
-                        className="size-full rounded-lg bg-background"
-                      >
-                        <div className="flex size-full items-center justify-center px-6 text-muted-foreground">
-                          General info
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
+                        <TabsList className="w-full justify-start bg-accent">
+                          <TabsTrigger className="w-full" value="result">
+                            Result
+                          </TabsTrigger>
+                          <TabsTrigger className="w-full" value="summary">
+                            Summary
+                          </TabsTrigger>
+                        </TabsList>
+                        <TabsContent
+                          value="result"
+                          className="size-full rounded-lg bg-background"
+                        >
+                          <div className="flex size-full items-center justify-center px-6">
+                            {!executionResult ? (
+                              <>
+                                {isLoadingExecutionResult ||
+                                isRefetchingExecutionResult ? (
+                                  <div className="flex items-center justify-center">
+                                    <Loader2Icon className="size-6 animate-spin text-primary" />
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-muted-foreground">
+                                    Click run to execute the function
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {isLoadingExecutionResult ||
+                                isRefetchingExecutionResult ? (
+                                  <div className="flex items-center justify-center">
+                                    fuck
+                                    <Loader2Icon className="size-6 animate-spin text-primary" />
+                                  </div>
+                                ) : (
+                                  <ScrollArea className="size-full">
+                                    <Table className="flex w-full flex-col">
+                                      <TableHeader className="flex w-full">
+                                        <TableRow className="flex w-full">
+                                          {Object.keys(
+                                            executionResult.result[0] ?? {},
+                                          ).map((head, idx) => (
+                                            <TableHead
+                                              key={`${idx}-${head}`}
+                                              className="flex w-full items-center"
+                                            >
+                                              {head}
+                                            </TableHead>
+                                          ))}
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody className="flex w-full flex-col">
+                                        {executionResult.result.map(
+                                          (
+                                            row: Record<
+                                              string,
+                                              string | number
+                                            >,
+                                            idx,
+                                          ) => (
+                                            <TableRow
+                                              key={`${idx}-${row.id}`}
+                                              className="flex w-full"
+                                            >
+                                              {Object.keys(row).map(
+                                                (key: string, idx) => (
+                                                  <TableCell
+                                                    key={`${idx}-${key}`}
+                                                    className="flex w-full"
+                                                  >
+                                                    {row[key]}
+                                                  </TableCell>
+                                                ),
+                                              )}
+                                            </TableRow>
+                                          ),
+                                        )}
+                                      </TableBody>
+                                    </Table>
+                                  </ScrollArea>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </TabsContent>
+                        <TabsContent
+                          value="summary"
+                          className="size-full rounded-lg bg-background"
+                        >
+                          <div className="flex size-full items-center justify-center px-6 text-muted-foreground">
+                            General info
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                </Form>
               </div>
             </div>
           </ExpandableCardContent>

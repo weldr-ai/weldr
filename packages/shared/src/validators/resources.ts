@@ -43,16 +43,11 @@ export const baseInsertResourceSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .regex(/^[a-z0-9-]+$/, {
-      message: "Name must only contain lowercase letters, numbers, and hyphens",
+    .regex(/^[A-Z][a-zA-Z0-9]*$/, {
+      message:
+        "Name must start with a capital letter, followed by letters and numbers only",
     })
-    .regex(/^[a-z0-9].*[a-z0-9]$/, {
-      message: "Name must not start or end with a hyphen",
-    })
-    .regex(/^(?!.*--).*$/, {
-      message: "Name contain consecutive hyphens",
-    })
-    .transform((name) => name.replace(/\s+/g, "-").toLowerCase().trim()),
+    .transform((name) => name.trim()),
   description: z.string().trim().optional(),
   workspaceId: z.string().min(1, {
     message: "Workspace is required.",
@@ -63,12 +58,7 @@ export const insertDatabaseMetadataSchema = z.object({
   host: z.string().min(1, {
     message: "Host is required.",
   }),
-  port: z.preprocess(
-    (val) => Number.parseInt(z.string().parse(val)),
-    z.number().min(1, {
-      message: "Port is required.",
-    }),
-  ),
+  port: z.string().regex(/^\d+$/, { message: "Port must be a number" }),
   user: z.string().min(1, {
     message: "User is required.",
   }),

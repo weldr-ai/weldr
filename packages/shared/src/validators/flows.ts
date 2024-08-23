@@ -19,16 +19,17 @@ export const baseInsertFlowSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .regex(/^[a-z0-9-]+$/, {
-      message: "Name must only contain lowercase letters, numbers, and hyphens",
+    .regex(/^[a-z0-9_]+$/, {
+      message:
+        "Name must only contain lowercase letters, numbers, and underscores",
     })
     .regex(/^[a-z0-9].*[a-z0-9]$/, {
-      message: "Name must not start or end with a hyphen",
+      message: "Name must not start or end with an underscore",
     })
-    .regex(/^(?!.*--).*$/, {
-      message: "Name contain consecutive hyphens",
+    .regex(/^(?!.*__).*$/, {
+      message: "Name must not contain consecutive underscores",
     })
-    .transform((name) => name.replace(/\s+/g, "-").toLowerCase().trim()),
+    .transform((name) => name.replace(/\s+/g, "ـ").toLowerCase().trim()),
   description: z.string().trim().optional(),
   type: flowTypesSchema,
   workspaceId: z.string().min(1, {
@@ -48,7 +49,7 @@ export const insertRouteFlowSchema = baseInsertFlowSchema.extend({
       .string()
       .regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
         message:
-          "Invalid endpoint. Must start with '/' and contain only lowercase letters and hyphens.",
+          "Must start with '/' and contain only lowercase letters and hyphens.",
       })
       .transform((path) => {
         if (path.startsWith("/")) return path.trim();
@@ -76,16 +77,17 @@ export const updateRouteFlowSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .regex(/^[a-z0-9-]+$/, {
-      message: "Name must only contain lowercase letters, numbers, and hyphens",
+    .regex(/^[a-z0-9_]+$/, {
+      message:
+        "Name must only contain lowercase letters, numbers, and underscores",
     })
     .regex(/^[a-z0-9].*[a-z0-9]$/, {
-      message: "Name must not start or end with a hyphen",
+      message: "Name must not start or end with an underscore",
     })
-    .regex(/^(?!.*--).*$/, {
-      message: "Name contain consecutive hyphens",
+    .regex(/^(?!.*__).*$/, {
+      message: "Name must not contain consecutive underscores",
     })
-    .transform((name) => name.replace(/\s+/g, "-").toLowerCase().trim())
+    .transform((name) => name.replace(/\s+/g, "ـ").toLowerCase().trim())
     .optional(),
   description: z.string().optional(),
   method: z.enum(["get", "post", "patch", "delete"]).optional(),
@@ -93,7 +95,7 @@ export const updateRouteFlowSchema = z.object({
     .string()
     .regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
       message:
-        "Invalid endpoint. Must start with '/' and contain only lowercase letters and hyphens.",
+        "Must start with '/' and contain only lowercase letters and hyphens.",
     })
     .transform((path) => {
       if (path.startsWith("/")) return path.trim();
