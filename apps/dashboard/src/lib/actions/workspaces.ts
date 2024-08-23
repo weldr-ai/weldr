@@ -39,6 +39,8 @@ export async function createWorkspace(
     if (validation.success) {
       const result = await api.workspaces.create({
         name: validation.data.name,
+        subdomain: validation.data.subdomain,
+        description: validation.data.description,
       });
 
       if (result) {

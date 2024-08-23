@@ -19,8 +19,8 @@ export const flowsRouter = {
         input.type !== "component"
       ) {
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create flow",
+          code: "BAD_REQUEST",
+          message: "Invalid flow type",
         });
       }
 
@@ -59,7 +59,7 @@ export const flowsRouter = {
           if (!primitiveResult[0]) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create primitive",
+              message: "Failed to create flow",
             });
           }
         }

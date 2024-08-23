@@ -23,10 +23,7 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import type {
-  ResourceMetadata,
-  ResourceProvider,
-} from "@integramind/shared/types";
+import type { ResourceProvider } from "@integramind/shared/types";
 import { insertResourceSchema } from "@integramind/shared/validators/resources";
 import { addResource } from "~/lib/actions/resources";
 
@@ -41,13 +38,13 @@ export function AddResourceForm({
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [state, addResourceAction] = useFormState(addResource, undefined);
 
-  const getMetadataValues = (provider: ResourceProvider): ResourceMetadata => {
+  const getMetadataValues = (provider: ResourceProvider) => {
     switch (provider) {
       case "postgres":
       case "mysql":
         return {
           host: "",
-          port: 5432,
+          port: "5432",
           user: "",
           password: "",
           database: "",
@@ -99,7 +96,7 @@ export function AddResourceForm({
         } else {
           toast({
             title: "Error",
-            description: "Something went wrong.",
+            description: `${state.message ? state.message : "Something went wrong."}`,
             variant: "destructive",
             duration: 2000,
           });
@@ -122,7 +119,11 @@ export function AddResourceForm({
             <FormItem>
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter resource name" {...field} />
+                <Input
+                  {...field}
+                  autoComplete="off"
+                  placeholder="Enter resource name"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -137,7 +138,11 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">Host</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter host" />
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      placeholder="Enter host"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -152,12 +157,10 @@ export function AddResourceForm({
                   <FormControl>
                     <Input
                       {...field}
+                      autoComplete="off"
                       placeholder="Enter port"
                       onChange={(event) =>
-                        form.setValue(
-                          "metadata.port",
-                          Number(event.target.value),
-                        )
+                        form.setValue("metadata.port", event.target.value)
                       }
                     />
                   </FormControl>
@@ -172,7 +175,11 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">User</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter user" />
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      placeholder="Enter user"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -185,7 +192,11 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">Password</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter password" />
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      placeholder="Enter password"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -198,7 +209,11 @@ export function AddResourceForm({
                 <FormItem>
                   <FormLabel className="text-xs">Database</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter database" />
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      placeholder="Enter database"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

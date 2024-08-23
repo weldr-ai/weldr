@@ -35,6 +35,7 @@ export function CreateWorkspaceForm() {
     resolver: zodResolver(insertWorkspaceSchema),
     defaultValues: {
       name: "",
+      subdomain: "",
       description: "",
       ...(state &&
         (state.status === "error" || state.status === "validationError") &&
@@ -90,6 +91,24 @@ export function CreateWorkspaceForm() {
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
                 <Input placeholder="Enter workspace name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="subdomain"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs">Subdomain</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input placeholder="Enter subdomain" {...field} />
+                  <span className="absolute right-2.5 top-[9px] text-xs text-muted-foreground">
+                    .integramind.app
+                  </span>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

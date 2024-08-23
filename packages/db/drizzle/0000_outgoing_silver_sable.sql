@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS "flows" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "primitives" (
 	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
+	"name" text,
 	"description" text,
 	"type" "primitive_types" NOT NULL,
 	"position_x" integer DEFAULT 0 NOT NULL,
@@ -116,18 +116,20 @@ CREATE TABLE IF NOT EXISTS "resources" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"workspace_id" text NOT NULL,
-	"created_by" text NOT NULL
+	"created_by" text NOT NULL,
+	CONSTRAINT "resources_name_workspace_id_unique" UNIQUE("name","workspace_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "workspaces" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
+	"subdomain" text NOT NULL,
 	"description" text,
 	"executor_machine_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" text NOT NULL,
-	CONSTRAINT "workspaces_name_unique" UNIQUE("name")
+	CONSTRAINT "workspaces_subdomain_unique" UNIQUE("subdomain")
 );
 --> statement-breakpoint
 DO $$ BEGIN

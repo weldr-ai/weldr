@@ -3,6 +3,7 @@
 import type { BaseFormState } from "@integramind/shared/types";
 import { formDataToStructuredObject } from "@integramind/shared/utils";
 import { insertResourceSchema } from "@integramind/shared/validators/resources";
+import { TRPCError } from "@trpc/server";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 
@@ -40,7 +41,7 @@ export async function addResource(
         metadata: validation.data.metadata,
       });
 
-      revalidatePath("/workspaces/[id]", "layout");
+      revalidatePath("/workspaces", "layout");
       return { status: "success", payload: { id: result.id } };
     }
 
@@ -59,6 +60,13 @@ export async function addResource(
       errors,
     };
   } catch (error) {
+    if (error instanceof TRPCError) {
+      return {
+        status: "error",
+        fields,
+        message: error.message,
+      };
+    }
     return { status: "error", fields };
   }
 }

@@ -1,5 +1,5 @@
 {
-  "id": "12a65563-f809-4c43-b300-fccd500cb5ff",
+  "id": "071a4f70-de48-4d08-b3e4-4f2050245437",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -504,7 +504,7 @@
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "description": {
           "name": "description",
@@ -674,7 +674,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {
+        "resources_name_workspace_id_unique": {
+          "name": "resources_name_workspace_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["name", "workspace_id"]
+        }
+      }
     },
     "public.workspaces": {
       "name": "workspaces",
@@ -688,6 +694,12 @@
         },
         "name": {
           "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subdomain": {
+          "name": "subdomain",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -739,10 +751,10 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "workspaces_name_unique": {
-          "name": "workspaces_name_unique",
+        "workspaces_subdomain_unique": {
+          "name": "workspaces_subdomain_unique",
           "nullsNotDistinct": false,
-          "columns": ["name"]
+          "columns": ["subdomain"]
         }
       }
     }

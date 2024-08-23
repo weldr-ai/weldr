@@ -41,7 +41,7 @@ export default async function WorkflowPage({
 
     return (
       <div className="flex size-full flex-col gap-2 py-2 pr-2">
-        <div className="flex size-full">
+        <div className="flex size-full border rounded-xl">
           <FlowBuilder
             flowId={flow.id}
             initialNodes={initialNodes}

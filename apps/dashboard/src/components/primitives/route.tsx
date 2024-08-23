@@ -101,7 +101,7 @@ export const Route = memo(
     const form = useForm<z.infer<typeof updateRouteFlowSchema>>({
       resolver: zodResolver(updateRouteFlowSchema),
       defaultValues: {
-        name: data.name,
+        name: data.name ?? undefined,
         description: data.description ?? undefined,
         method: data.metadata.method,
         path: data.metadata.path,
@@ -136,6 +136,7 @@ export const Route = memo(
         updateRoute.mutate({
           where: {
             id: data.id,
+            flowId: data.flowId,
           },
           payload: {
             type: "route",
@@ -268,6 +269,7 @@ export const Route = memo(
                             await updateRoute.mutateAsync({
                               where: {
                                 id: data.id,
+                                flowId: data.flowId,
                               },
                               payload: {
                                 type: "route",
@@ -303,6 +305,7 @@ export const Route = memo(
                               await updateRoute.mutateAsync({
                                 where: {
                                   id: data.id,
+                                  flowId: data.flowId,
                                 },
                                 payload: {
                                   type: "route",
@@ -332,6 +335,7 @@ export const Route = memo(
                               await updateRoute.mutateAsync({
                                 where: {
                                   id: data.id,
+                                  flowId: data.flowId,
                                 },
                                 payload: {
                                   type: "route",
@@ -377,6 +381,7 @@ export const Route = memo(
                               await updateRoute.mutateAsync({
                                 where: {
                                   id: data.id,
+                                  flowId: data.flowId,
                                 },
                                 payload: {
                                   type: "route",
