@@ -91,24 +91,24 @@ const ExpandableCardContent = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
   const { open, onOpenChange } = useExpandableCardContext();
-  const contentRef = React.useRef<HTMLDivElement>(null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: More control is needed here
   React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!contentRef.current?.contains(event.target as Node)) {
+    const handleClickOnPane = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.classList.contains("react-flow__pane")) {
         onOpenChange(false);
       }
     };
-    document.addEventListener("click", handleClickOutside);
+    document.addEventListener("click", handleClickOnPane);
     return () => {
-      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener("click", handleClickOnPane);
     };
   }, [open, onOpenChange]);
 
   return (
     <div
-      ref={contentRef}
+      ref={ref}
       className={cn(
         "absolute -left-[128px] top-0 z-10 w-[600px] cursor-default rounded-xl border bg-card p-6 pt-0 text-card-foreground shadow",
         className,
