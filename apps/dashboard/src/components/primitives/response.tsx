@@ -199,14 +199,14 @@ export const Response = memo(
         <Handle
           className="border rounded-full bg-background p-1"
           type="target"
-          position={Position.Top}
+          position={Position.Left}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
         <Handle
           className="border rounded-full bg-background p-1"
           type="source"
-          position={Position.Bottom}
+          position={Position.Right}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />

@@ -96,7 +96,6 @@ const ExpandableCardContent = React.forwardRef<
   React.useEffect(() => {
     const handleClickOnPane = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      console.log(target.classList);
       if (target.classList.contains("react-flow__pane")) {
         onOpenChange(false);
       }

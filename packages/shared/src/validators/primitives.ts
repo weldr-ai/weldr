@@ -151,7 +151,21 @@ export const responsePrimitiveSchema = primitiveBaseSchema.extend({
   metadata: responsePrimitiveMetadataSchema,
 });
 
-export const iteratorPrimitiveMetadataSchema = z.object({});
+export const iteratorPrimitiveMetadataSchema = z.discriminatedUnion(
+  "iteratorType",
+  [
+    z.object({
+      iteratorType: z.literal("for-each"),
+    }),
+    z.object({
+      iteratorType: z.literal("map"),
+    }),
+    z.object({
+      iteratorType: z.literal("reduce"),
+      description: z.string(),
+    }),
+  ],
+);
 
 export const iteratorPrimitiveSchema = primitiveBaseSchema.extend({
   type: z.literal("iterator"),

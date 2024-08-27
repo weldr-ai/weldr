@@ -51,7 +51,7 @@ export function FlowList({
         </ScrollArea>
       ) : (
         <div className="flex h-[calc(100dvh-152px)] items-center justify-center">
-          <Loader2Icon className="size-8 animate-spin text-primary" />
+          <Loader2Icon className="size-6 animate-spin text-primary" />
         </div>
       )}
     </div>

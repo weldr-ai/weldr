@@ -12,6 +12,7 @@ import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
   CircleAlertIcon,
+  CircleMinus,
   ExternalLinkIcon,
   FileTextIcon,
   Loader2Icon,
@@ -137,6 +138,7 @@ export const FunctionNode = memo(
     selected,
     positionAbsoluteX,
     positionAbsoluteY,
+    parentId,
   }: FlowNodeProps) => {
     if (_data.type !== "function") {
       throw new Error("Invalid node type");
@@ -153,7 +155,10 @@ export const FunctionNode = memo(
     );
     const data = fetchedData as FunctionPrimitive;
 
-    const reactFlow = useReactFlow<FlowNode, FlowEdge>();
+    const { deleteElements, setNodes, fitBounds } = useReactFlow<
+      FlowNode,
+      FlowEdge
+    >();
     const nodes = useNodes<FlowNode>();
     const edges = useEdges<FlowEdge>();
     const form = useForm<z.infer<typeof validationSchema>>({
@@ -350,9 +355,9 @@ export const FunctionNode = memo(
     return (
       <div className="primitive">
         <ExpandableCard>
-          <ExpandableCardTrigger>
-            <ContextMenu>
-              <ContextMenuTrigger>
+          <ContextMenu>
+            <ContextMenuTrigger>
+              <ExpandableCardTrigger>
                 <Card
                   className={cn(
                     "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 px-5 py-4 dark:bg-muted",
@@ -361,7 +366,7 @@ export const FunctionNode = memo(
                     },
                   )}
                   onClick={() => {
-                    reactFlow.fitBounds(
+                    fitBounds(
                       {
                         x: positionAbsoluteX,
                         y: positionAbsoluteY,
@@ -385,38 +390,69 @@ export const FunctionNode = memo(
                   </div>
                   <span className="text-sm">{data.name ?? "new_function"}</span>
                 </Card>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <ContextMenuLabel className="text-xs">
-                  Function
-                </ContextMenuLabel>
-                <ContextMenuSeparator />
-                <ContextMenuItem className="text-xs">
-                  <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
-                  Run with previous primitives
-                </ContextMenuItem>
-                <ContextMenuItem className="flex items-center justify-between text-xs">
-                  <Link
-                    className="flex items-center"
-                    href="https://docs.integramind.ai/primitives/function"
-                    target="blank"
-                  >
-                    <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
-                    Docs
-                  </Link>
-                  <ExternalLinkIcon className="size-3 text-muted-foreground" />
-                </ContextMenuItem>
-                <ContextMenuSeparator />
+              </ExpandableCardTrigger>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
+              <ContextMenuSeparator />
+              {parentId && (
                 <ContextMenuItem
-                  className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-                  onClick={() => setDeleteAlertDialogOpen(true)}
+                  className="text-xs"
+                  onClick={() => {
+                    const parent = nodes.find((node) => node.id === parentId);
+                    if (parent) {
+                      setNodes(
+                        nodes.map((node) => {
+                          if (node.id === data.id) {
+                            return {
+                              ...node,
+                              parentId: undefined,
+                              extent: undefined,
+                              expandParent: undefined,
+                              position: {
+                                x:
+                                  parent.position.x +
+                                  (parent.measured?.width ?? 0) / 2 -
+                                  150,
+                                y: parent.position.y - 100,
+                              },
+                            };
+                          }
+                          return node;
+                        }),
+                      );
+                    }
+                  }}
                 >
-                  <TrashIcon className="mr-3 size-4" />
-                  Delete
+                  <CircleMinus className="mr-3 size-4 text-muted-foreground" />
+                  Detach
                 </ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
-          </ExpandableCardTrigger>
+              )}
+              <ContextMenuItem className="text-xs">
+                <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
+                Run with previous primitives
+              </ContextMenuItem>
+              <ContextMenuItem className="flex items-center justify-between text-xs">
+                <Link
+                  className="flex items-center"
+                  href="https://docs.integramind.ai/primitives/function"
+                  target="blank"
+                >
+                  <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
+                  Docs
+                </Link>
+                <ExternalLinkIcon className="size-3 text-muted-foreground" />
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem
+                className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                onClick={() => setDeleteAlertDialogOpen(true)}
+              >
+                <TrashIcon className="mr-3 size-4" />
+                Delete
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
           <ExpandableCardContent className="nowheel flex h-[600px] w-[800px] flex-col p-0">
             <div className="flex size-full flex-col">
               <ExpandableCardHeader className="flex flex-col items-start justify-start">
@@ -570,7 +606,7 @@ export const FunctionNode = memo(
                                 {isLoadingExecutionResult ||
                                 isRefetchingExecutionResult ? (
                                   <div className="flex items-center justify-center">
-                                    <Loader2Icon className="size-6 animate-spin text-primary" />
+                                    <Loader2Icon className="size-4 animate-spin text-primary" />
                                   </div>
                                 ) : (
                                   <div className="text-sm text-muted-foreground">
@@ -584,7 +620,7 @@ export const FunctionNode = memo(
                                 isRefetchingExecutionResult ? (
                                   <div className="flex items-center justify-center">
                                     fuck
-                                    <Loader2Icon className="size-6 animate-spin text-primary" />
+                                    <Loader2Icon className="size-4 animate-spin text-primary" />
                                   </div>
                                 ) : (
                                   <ScrollArea className="size-full">
@@ -657,13 +693,13 @@ export const FunctionNode = memo(
           className="border rounded-full bg-background p-1"
           type="target"
           onConnect={(params) => console.log("handle onConnect", params)}
-          position={Position.Top}
+          position={Position.Left}
           isConnectable={isConnectable}
         />
         <Handle
           className="border rounded-full bg-background p-1"
           type="source"
-          position={Position.Bottom}
+          position={Position.Right}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
@@ -671,7 +707,7 @@ export const FunctionNode = memo(
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
           onDelete={() => {
-            reactFlow.deleteElements({
+            deleteElements({
               nodes: [
                 {
                   id: data.id,
