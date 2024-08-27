@@ -41,9 +41,9 @@ import { toast } from "@integramind/ui/use-toast";
 import { useTheme } from "next-themes";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
-import { ConditionalBranch } from "~/components/primitives/conditional-branch";
 import { FunctionNode } from "~/components/primitives/function";
 import { Iterator } from "~/components/primitives/iterator";
+import { Matcher } from "~/components/primitives/matcher";
 import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
 import { Workflow } from "~/components/primitives/workflow";
@@ -54,7 +54,7 @@ const nodeTypes = {
   route: Route,
   workflow: Workflow,
   function: FunctionNode,
-  "conditional-branch": ConditionalBranch,
+  matcher: Matcher,
   iterator: Iterator,
   response: Response,
 };
@@ -125,8 +125,8 @@ export function _FlowBuilder({
         switch (nodeType) {
           case "function":
             return "new_function";
-          case "conditional-branch":
-            return "new_conditional_branch";
+          case "matcher":
+            return "new_matcher";
           case "iterator":
             return "new_iterator";
           case "response":
@@ -139,7 +139,7 @@ export function _FlowBuilder({
 
       const nodeType = event.dataTransfer.getData("application/reactflow") as
         | "function"
-        | "conditional-branch"
+        | "matcher"
         | "iterator"
         | "response";
 

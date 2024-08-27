@@ -43,7 +43,7 @@ export function PrimitivesMenu() {
           </div>
           <div className="grid w-full grid-cols-2 gap-2">
             <div
-              className="flex w-full items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
+              className="flex w-full min-w-36 items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
               onDragStart={(event) => onDragStart(event, "function")}
               draggable
             >
@@ -51,15 +51,15 @@ export function PrimitivesMenu() {
               <span className="w-full text-[10px]">Function</span>
             </div>
             <div
-              className="flex w-full items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
-              onDragStart={(event) => onDragStart(event, "conditional-branch")}
+              className="flex w-full min-w-36 items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
+              onDragStart={(event) => onDragStart(event, "matcher")}
               draggable
             >
               <SplitIcon className="size-4 text-primary" />
-              <span className="w-full text-[10px]">Conditional Branch</span>
+              <span className="w-full text-[10px]">Matcher</span>
             </div>
             <div
-              className="flex w-full items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
+              className="flex w-full min-w-36 items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
               onDragStart={(event) => onDragStart(event, "iterator")}
               draggable
             >
@@ -67,7 +67,7 @@ export function PrimitivesMenu() {
               <span className="w-full text-[10px]">Iterator</span>
             </div>
             <div
-              className="flex w-full items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
+              className="flex w-full min-w-36 items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
               onDragStart={(event) => onDragStart(event, "response")}
               draggable
             >

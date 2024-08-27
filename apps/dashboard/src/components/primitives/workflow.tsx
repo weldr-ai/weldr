@@ -45,7 +45,7 @@ export const Workflow = memo(
     const reactFlow = useReactFlow<FlowNode, FlowEdge>();
 
     return (
-      <>
+      <div className="primitive">
         <ExpandableCard>
           <ExpandableCardTrigger>
             <Card
@@ -137,11 +137,11 @@ export const Workflow = memo(
         <Handle
           type="target"
           className="border rounded-full bg-background p-1"
-          position={Position.Right}
+          position={Position.Bottom}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
-      </>
+      </div>
     );
   },
 );

@@ -1,5 +1,5 @@
 {
-  "id": "071a4f70-de48-4d08-b3e4-4f2050245437",
+  "id": "f6fbaa4f-f590-4b97-a8e6-1128a91fa1df",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -588,7 +588,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {
+        "primitives_flow_id_name_unique": {
+          "name": "primitives_flow_id_name_unique",
+          "nullsNotDistinct": false,
+          "columns": ["flow_id", "name"]
+        }
+      }
     },
     "public.resources": {
       "name": "resources",
@@ -772,7 +778,7 @@
         "route",
         "workflow",
         "function",
-        "conditional-branch",
+        "matcher",
         "iterator",
         "response"
       ]

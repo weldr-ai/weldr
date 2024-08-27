@@ -158,18 +158,18 @@ export const iteratorPrimitiveSchema = primitiveBaseSchema.extend({
   metadata: iteratorPrimitiveMetadataSchema,
 });
 
-export const conditionalBranchPrimitiveMetadataSchema = z.object({});
+export const matcherPrimitiveMetadataSchema = z.object({});
 
-export const conditionalBranchPrimitiveSchema = primitiveBaseSchema.extend({
-  type: z.literal("conditional-branch"),
-  metadata: conditionalBranchPrimitiveMetadataSchema,
+export const matcherPrimitiveSchema = primitiveBaseSchema.extend({
+  type: z.literal("matcher"),
+  metadata: matcherPrimitiveMetadataSchema,
 });
 
 export const primitiveTypesSchema = z.enum([
   "route",
   "workflow",
   "function",
-  "conditional-branch",
+  "matcher",
   "iterator",
   "response",
 ]);
@@ -180,7 +180,7 @@ export const primitiveSchema = z.discriminatedUnion("type", [
   functionPrimitiveSchema,
   responsePrimitiveSchema,
   iteratorPrimitiveSchema,
-  conditionalBranchPrimitiveSchema,
+  matcherPrimitiveSchema,
 ]);
 
 export const primitiveMetadataSchema = z.union([
@@ -189,11 +189,11 @@ export const primitiveMetadataSchema = z.union([
   functionPrimitiveMetadataSchema,
   responsePrimitiveMetadataSchema,
   iteratorPrimitiveMetadataSchema,
-  conditionalBranchPrimitiveMetadataSchema,
+  matcherPrimitiveMetadataSchema,
 ]);
 
 export const insertPrimitiveSchema = z.object({
-  type: z.enum(["function", "iterator", "conditional-branch", "response"]),
+  type: z.enum(["function", "iterator", "matcher", "response"]),
   description: z.string().trim().optional(),
   positionX: z.number().optional(),
   positionY: z.number().optional(),
@@ -304,11 +304,11 @@ export const updateWorkflowSchema = updatePrimitiveBaseSchema.extend({
   metadata: updateWorkflowMetadataSchema.optional(),
 });
 
-export const updateConditionalBranchMetadataSchema = z.object({});
+export const updateMatcherMetadataSchema = z.object({});
 
-export const updateConditionalBranchSchema = updatePrimitiveBaseSchema.extend({
-  type: z.literal("conditional-branch"),
-  metadata: updateConditionalBranchMetadataSchema.optional(),
+export const updateMatcherSchema = updatePrimitiveBaseSchema.extend({
+  type: z.literal("matcher"),
+  metadata: updateMatcherMetadataSchema.optional(),
 });
 
 export const updateIteratorMetadataSchema = z.object({});
@@ -334,7 +334,7 @@ export const updatePrimitiveSchema = z.object({
     updateFunctionSchema,
     updateRouteSchema,
     updateWorkflowSchema,
-    updateConditionalBranchSchema,
+    updateMatcherSchema,
     updateIteratorSchema,
     updateResponseSchema,
   ]),

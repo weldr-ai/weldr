@@ -12,7 +12,6 @@ import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
   CircleAlertIcon,
-  EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
   Loader2Icon,
@@ -36,14 +35,6 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@integramind/ui/context-menu";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@integramind/ui/dropdown-menu";
 import {
   ExpandableCard,
   ExpandableCardContent,
@@ -90,6 +81,7 @@ import Editor from "~/components/editor";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
+import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
 
 async function executeFunction({
   id,
@@ -356,7 +348,7 @@ export const FunctionNode = memo(
     }
 
     return (
-      <>
+      <div className="primitive">
         <ExpandableCard>
           <ExpandableCardTrigger>
             <ContextMenu>
@@ -475,46 +467,11 @@ export const FunctionNode = memo(
                         <UnlockIcon className="size-3.5" />
                       )}
                     </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button
-                          className="size-7 text-muted-foreground hover:text-muted-foreground"
-                          variant="ghost"
-                          size="icon"
-                        >
-                          <EllipsisVerticalIcon className="size-3.5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent side="right" align="start">
-                        <DropdownMenuLabel className="text-xs">
-                          Function
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-xs">
-                          <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
-                          Run with previous primitives
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center justify-between text-xs">
-                          <Link
-                            className="flex items-center"
-                            href="https://docs.integramind.ai/primitives/ai-processing"
-                            target="blank"
-                          >
-                            <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
-                            Docs
-                          </Link>
-                          <ExternalLinkIcon className="size-3 text-muted-foreground" />
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-                          onClick={() => setDeleteAlertDialogOpen(true)}
-                        >
-                          <TrashIcon className="mr-3 size-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <PrimitiveDropdownMenu
+                      setDeleteAlertDialogOpen={setDeleteAlertDialogOpen}
+                      label="Function"
+                      docsUrlPath="function"
+                    />
                   </div>
                 </div>
               </ExpandableCardHeader>
@@ -700,13 +657,13 @@ export const FunctionNode = memo(
           className="border rounded-full bg-background p-1"
           type="target"
           onConnect={(params) => console.log("handle onConnect", params)}
-          position={Position.Left}
+          position={Position.Top}
           isConnectable={isConnectable}
         />
         <Handle
           className="border rounded-full bg-background p-1"
           type="source"
-          position={Position.Right}
+          position={Position.Bottom}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
@@ -726,7 +683,7 @@ export const FunctionNode = memo(
             });
           }}
         />
-      </>
+      </div>
     );
   },
 );

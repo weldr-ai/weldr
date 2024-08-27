@@ -2,13 +2,13 @@ import type { z } from "zod";
 import type { edgeSchema } from "../validators/edges";
 import type { flowSchema, flowTypesSchema } from "../validators/flows";
 import type {
-  conditionalBranchPrimitiveMetadataSchema,
-  conditionalBranchPrimitiveSchema,
   functionPrimitiveMetadataSchema,
   functionPrimitiveSchema,
   functionRawDescriptionSchema,
   iteratorPrimitiveMetadataSchema,
   iteratorPrimitiveSchema,
+  matcherPrimitiveMetadataSchema,
+  matcherPrimitiveSchema,
   primitiveBaseSchema,
   primitiveMetadataSchema,
   primitiveSchema,
@@ -61,18 +61,14 @@ export type PrimitiveMetadata = z.infer<typeof primitiveMetadataSchema>;
 export type RouteMetadata = z.infer<typeof routePrimitiveMetadataSchema>;
 export type WorkflowMetadata = z.infer<typeof workflowPrimitiveMetadataSchema>;
 export type FunctionMetadata = z.infer<typeof functionPrimitiveMetadataSchema>;
-export type ConditionalBranchMetadata = z.infer<
-  typeof conditionalBranchPrimitiveMetadataSchema
->;
+export type matcherMetadata = z.infer<typeof matcherPrimitiveMetadataSchema>;
 export type IteratorMetadata = z.infer<typeof iteratorPrimitiveMetadataSchema>;
 export type ResponseMetadata = z.infer<typeof responsePrimitiveMetadataSchema>;
 
 export type RoutePrimitive = z.infer<typeof routePrimitiveSchema>;
 export type WorkflowPrimitive = z.infer<typeof workflowPrimitiveSchema>;
 export type FunctionPrimitive = z.infer<typeof functionPrimitiveSchema>;
-export type ConditionalBranchPrimitive = z.infer<
-  typeof conditionalBranchPrimitiveSchema
->;
+export type matcherPrimitive = z.infer<typeof matcherPrimitiveSchema>;
 export type IteratorPrimitive = z.infer<typeof iteratorPrimitiveSchema>;
 export type ResponsePrimitive = z.infer<typeof responsePrimitiveSchema>;
 

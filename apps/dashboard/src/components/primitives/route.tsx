@@ -167,7 +167,7 @@ export const Route = memo(
     }
 
     return (
-      <>
+      <div className="primitive">
         <ExpandableCard>
           <ExpandableCardTrigger>
             <Card
@@ -417,11 +417,11 @@ export const Route = memo(
         <Handle
           type="source"
           className="border rounded-full bg-background p-1"
-          position={Position.Right}
+          position={Position.Bottom}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
-      </>
+      </div>
     );
   },
 );

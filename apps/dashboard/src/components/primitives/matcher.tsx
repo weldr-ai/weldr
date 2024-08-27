@@ -1,6 +1,5 @@
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import {
-  EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
   PlayCircleIcon,
@@ -21,14 +20,6 @@ import {
   ContextMenuTrigger,
 } from "@integramind/ui/context-menu";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@integramind/ui/dropdown-menu";
-import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardHeader,
@@ -39,8 +30,9 @@ import { cn } from "@integramind/ui/utils";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
+import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
 
-export const ConditionalBranch = memo(
+export const Matcher = memo(
   ({
     data,
     isConnectable,
@@ -52,10 +44,10 @@ export const ConditionalBranch = memo(
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
-    const deleteConditionalBranch = api.primitives.delete.useMutation();
+    const deleteMatcher = api.primitives.delete.useMutation();
 
     return (
-      <>
+      <div className="primitive">
         <ExpandableCard>
           <ExpandableCardTrigger>
             <ContextMenu>
@@ -83,17 +75,13 @@ export const ConditionalBranch = memo(
                 >
                   <div className="flex items-center gap-2 text-xs">
                     <SplitIcon className="size-4 text-primary" />
-                    <span className="text-muted-foreground">
-                      Conditional Branch
-                    </span>
+                    <span className="text-muted-foreground">Matcher</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
                 </Card>
               </ContextMenuTrigger>
               <ContextMenuContent>
-                <ContextMenuLabel className="text-xs">
-                  Conditional Branch
-                </ContextMenuLabel>
+                <ContextMenuLabel className="text-xs">Matcher</ContextMenuLabel>
                 <ContextMenuSeparator />
                 <ContextMenuItem className="text-xs">
                   <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
@@ -102,7 +90,7 @@ export const ConditionalBranch = memo(
                 <ContextMenuItem className="flex items-center justify-between text-xs">
                   <Link
                     className="flex items-center"
-                    href="https://docs.integramind.ai/primitives/conditional-branch"
+                    href="https://docs.integramind.ai/primitives/matcher"
                     target="blank"
                   >
                     <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
@@ -126,9 +114,7 @@ export const ConditionalBranch = memo(
               <div className="flex w-full items-center justify-between">
                 <div className="flex items-center gap-2 text-xs">
                   <SplitIcon className="size-4 text-primary" />
-                  <span className="text-muted-foreground">
-                    Conditional Branch
-                  </span>
+                  <span className="text-muted-foreground">Matcher</span>
                 </div>
                 <div className="flex items-center">
                   <Button
@@ -138,46 +124,11 @@ export const ConditionalBranch = memo(
                   >
                     <PlayCircleIcon className="size-3.5" />
                   </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button
-                        className="size-7 text-muted-foreground hover:text-muted-foreground"
-                        variant="ghost"
-                        size="icon"
-                      >
-                        <EllipsisVerticalIcon className="size-3.5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side="right" align="start">
-                      <DropdownMenuLabel className="text-xs">
-                        Conditional Branch
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-xs">
-                        <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
-                        Run with previous primitives
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="flex items-center justify-between text-xs">
-                        <Link
-                          className="flex items-center"
-                          href="https://docs.integramind.ai/primitives/ai-processing"
-                          target="blank"
-                        >
-                          <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
-                          Docs
-                        </Link>
-                        <ExternalLinkIcon className="size-3 text-muted-foreground" />
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-                        onClick={() => setDeleteAlertDialogOpen(true)}
-                      >
-                        <TrashIcon className="mr-3 size-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <PrimitiveDropdownMenu
+                    setDeleteAlertDialogOpen={setDeleteAlertDialogOpen}
+                    label="Matcher"
+                    docsUrlPath="matcher"
+                  />
                 </div>
               </div>
               <span className="text-sm">{data.name}</span>
@@ -187,14 +138,14 @@ export const ConditionalBranch = memo(
         <Handle
           className="border rounded-full bg-background p-1"
           type="target"
-          position={Position.Right}
+          position={Position.Top}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
         <Handle
           className="border rounded-full bg-background p-1"
           type="source"
-          position={Position.Left}
+          position={Position.Bottom}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
@@ -209,14 +160,14 @@ export const ConditionalBranch = memo(
                 },
               ],
             });
-            deleteConditionalBranch.mutate({
+            deleteMatcher.mutate({
               id: data.id,
             });
           }}
         />
-      </>
+      </div>
     );
   },
 );
 
-ConditionalBranch.displayName = "ConditionalBranch";
+Matcher.displayName = "Matcher";

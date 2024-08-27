@@ -55,7 +55,7 @@ export const Response = memo(
     const deleteResponse = api.primitives.delete.useMutation();
 
     return (
-      <>
+      <div className="primitive">
         <ExpandableCard>
           <ExpandableCardTrigger>
             <ContextMenu>
@@ -199,18 +199,18 @@ export const Response = memo(
         <Handle
           className="border rounded-full bg-background p-1"
           type="target"
-          position={Position.Left}
+          position={Position.Top}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
         <Handle
           className="border rounded-full bg-background p-1"
           type="source"
-          position={Position.Right}
+          position={Position.Bottom}
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
-      </>
+      </div>
     );
   },
 );

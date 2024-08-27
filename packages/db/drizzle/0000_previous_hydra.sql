@@ -5,7 +5,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- CREATE TYPE "public"."primitive_types" AS ENUM('route', 'workflow', 'function', 'conditional-branch', 'iterator', 'response');
+ CREATE TYPE "public"."primitive_types" AS ENUM('route', 'workflow', 'function', 'matcher', 'iterator', 'response');
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -104,7 +104,8 @@ CREATE TABLE IF NOT EXISTS "primitives" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"flow_id" text NOT NULL,
-	"created_by" text NOT NULL
+	"created_by" text NOT NULL,
+	CONSTRAINT "primitives_flow_id_name_unique" UNIQUE("flow_id","name")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "resources" (
