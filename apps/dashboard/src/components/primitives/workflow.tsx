@@ -138,8 +138,6 @@ export const Workflow = memo(
           type="target"
           className="border rounded-full bg-background p-1"
           position={Position.Right}
-          onConnect={(params) => console.log("handle onConnect", params)}
-          isConnectable={isConnectable}
         />
       </div>
     );

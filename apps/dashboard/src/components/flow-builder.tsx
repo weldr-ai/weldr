@@ -94,10 +94,34 @@ export function _FlowBuilder({
       });
     },
   });
-  const deletePrimitive = api.primitives.delete.useMutation();
-  const updatePrimitive = api.primitives.update.useMutation();
+  const deletePrimitive = api.primitives.delete.useMutation({
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  const updatePrimitive = api.primitives.update.useMutation({
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
-  const createEdge = api.edges.create.useMutation();
+  const createEdge = api.edges.create.useMutation({
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const getIterator = useCallback(
     (nodes: Node[], intersectingNodes: string[]) =>
@@ -207,7 +231,7 @@ export function _FlowBuilder({
           className:
             intersections.includes(n.id) &&
             n.type === "iterator" &&
-            node.type === "function" &&
+            (node.type === "function" || node.type === "matcher") &&
             !node.parentId
               ? "rounded-xl shadow-[0_0_1px_#3E63DD,inset_0_0_1px_#3E63DD,0_0_1px_#3E63DD,0_0_5px_#3E63DD,0_0_10px_#3E63DD] transition-shadow duration-300"
               : "",
@@ -224,15 +248,12 @@ export function _FlowBuilder({
       _nodes: ReactFlowNode[],
     ) => {
       const intersectingNodes = getIntersectingNodes(node).map((n) => n.id);
-
       const parent = getIterator(nodes, intersectingNodes);
 
       if (
         parent &&
         !node.parentId &&
-        (node.type === "iterator" ||
-          node.type === "matcher" ||
-          node.type === "function")
+        (node.type === "matcher" || node.type === "function")
       ) {
         setNodes(
           nodes
@@ -258,19 +279,32 @@ export function _FlowBuilder({
                   : n,
             ) as FlowNode[],
         );
-      }
 
-      await updatePrimitive.mutateAsync({
-        where: {
-          id: node.id,
-          flowId,
-        },
-        payload: {
-          type: node.type as PrimitiveType,
-          positionX: Math.floor(node.position.x),
-          positionY: Math.floor(node.position.y),
-        },
-      });
+        await updatePrimitive.mutateAsync({
+          where: {
+            id: node.id,
+            flowId,
+          },
+          payload: {
+            type: node.type as PrimitiveType,
+            parentId: parent.id,
+            positionX: Math.floor(node.position.x - parent.position.x),
+            positionY: Math.floor(node.position.y - parent.position.y),
+          },
+        });
+      } else {
+        await updatePrimitive.mutateAsync({
+          where: {
+            id: node.id,
+            flowId,
+          },
+          payload: {
+            type: node.type as PrimitiveType,
+            positionX: Math.floor(node.position.x),
+            positionY: Math.floor(node.position.y),
+          },
+        });
+      }
     },
     [
       updatePrimitive,

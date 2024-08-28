@@ -119,6 +119,20 @@ export const primitivesRouter = {
         });
       }
 
+      if (
+        input.payload.parentId &&
+        !(
+          savedPrimitive.type === "function" ||
+          savedPrimitive.type === "matcher"
+        )
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Parent ID can only be set for `function` and `matcher` primitives",
+        });
+      }
+
       // TODO: use raw sql to update the metadata
       const updatedPrimitive = await ctx.db
         .update(primitives)
@@ -127,6 +141,7 @@ export const primitivesRouter = {
           description: input.payload.description,
           positionX: input.payload.positionX,
           positionY: input.payload.positionY,
+          parentId: input.payload.parentId,
           metadata: sql`${{
             ...savedPrimitive.metadata,
             ...input.payload.metadata,

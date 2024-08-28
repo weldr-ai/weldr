@@ -5,6 +5,7 @@ export const primitiveBaseSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
   description: z.string().nullable(),
+  parentId: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
   createdBy: z.string(),
@@ -220,6 +221,7 @@ export const updatePrimitiveBaseSchema = z.object({
     })
     .transform((name) => name.replace(/\s+/g, "_").toLowerCase().trim())
     .optional(),
+  parentId: z.string().optional(),
   description: z.string().trim().optional(),
   positionX: z.number().optional(),
   positionY: z.number().optional(),

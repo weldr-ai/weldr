@@ -398,7 +398,7 @@ export const FunctionNode = memo(
               {parentId && (
                 <ContextMenuItem
                   className="text-xs"
-                  onClick={() => {
+                  onClick={async () => {
                     const parent = nodes.find((node) => node.id === parentId);
                     if (parent) {
                       setNodes(
@@ -421,6 +421,16 @@ export const FunctionNode = memo(
                           return node;
                         }),
                       );
+                      await updateFunction.mutateAsync({
+                        where: {
+                          id: data.id,
+                          flowId: data.flowId,
+                        },
+                        payload: {
+                          type: "function",
+                          parentId: undefined,
+                        },
+                      });
                     }
                   }}
                 >
@@ -692,16 +702,12 @@ export const FunctionNode = memo(
         <Handle
           className="border rounded-full bg-background p-1"
           type="target"
-          onConnect={(params) => console.log("handle onConnect", params)}
           position={Position.Left}
-          isConnectable={isConnectable}
         />
         <Handle
           className="border rounded-full bg-background p-1"
           type="source"
           position={Position.Right}
-          onConnect={(params) => console.log("handle onConnect", params)}
-          isConnectable={isConnectable}
         />
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
