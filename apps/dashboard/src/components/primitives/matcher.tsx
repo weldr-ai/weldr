@@ -3,7 +3,7 @@ import {
   ExternalLinkIcon,
   FileTextIcon,
   PlayCircleIcon,
-  SplitIcon,
+  RegexIcon,
   TrashIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -74,7 +74,7 @@ export const Matcher = memo(
                   }}
                 >
                   <div className="flex items-center gap-2 text-xs">
-                    <SplitIcon className="size-4 text-primary" />
+                    <RegexIcon className="size-4 text-primary" />
                     <span className="text-muted-foreground">Matcher</span>
                   </div>
                   <span className="text-sm">{data.name}</span>
@@ -113,7 +113,7 @@ export const Matcher = memo(
             <ExpandableCardHeader className="flex flex-col items-start justify-start px-6 py-4">
               <div className="flex w-full items-center justify-between">
                 <div className="flex items-center gap-2 text-xs">
-                  <SplitIcon className="size-4 text-primary" />
+                  <RegexIcon className="size-4 text-primary" />
                   <span className="text-muted-foreground">Matcher</span>
                 </div>
                 <div className="flex items-center">

@@ -2,6 +2,7 @@ import type { PrimitiveMetadata } from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   integer,
   jsonb,
   pgEnum,
@@ -35,6 +36,9 @@ export const primitives = pgTable(
     positionY: integer("position_y").default(0).notNull(),
     metadata: jsonb("metadata").$type<PrimitiveMetadata>().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    parentId: text("parent_id").references((): AnyPgColumn => primitives.id, {
+      onDelete: "cascade",
+    }),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date())
@@ -59,5 +63,9 @@ export const primitivesRelations = relations(primitives, ({ one }) => ({
   user: one(users, {
     fields: [primitives.createdBy],
     references: [users.id],
+  }),
+  parent: one(primitives, {
+    fields: [primitives.parentId],
+    references: [primitives.id],
   }),
 }));

@@ -2,8 +2,8 @@ import {
   CornerDownLeftIcon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
+  RegexIcon,
   RepeatIcon,
-  SplitIcon,
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
@@ -55,7 +55,7 @@ export function PrimitivesMenu() {
               onDragStart={(event) => onDragStart(event, "matcher")}
               draggable
             >
-              <SplitIcon className="size-4 text-primary" />
+              <RegexIcon className="size-4 text-primary" />
               <span className="w-full text-[10px]">Matcher</span>
             </div>
             <div

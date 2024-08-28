@@ -7,6 +7,9 @@ import {
 } from "@xyflow/react";
 import { memo, useState } from "react";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { IteratorPrimitive } from "@integramind/shared/types";
+import { updateIteratorSchema } from "@integramind/shared/validators/primitives";
 import { Card } from "@integramind/ui/card";
 import {
   ContextMenu,
@@ -22,6 +25,22 @@ import {
   ExpandableCardHeader,
   ExpandableCardTrigger,
 } from "@integramind/ui/expandable-card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@integramind/ui/form";
+import { Input } from "@integramind/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@integramind/ui/select";
+import { Textarea } from "@integramind/ui/textarea";
 import { cn } from "@integramind/ui/utils";
 import {
   ChevronRightIcon,
@@ -33,13 +52,16 @@ import {
   TrashIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { debounce } from "perfect-debounce";
+import { useForm } from "react-hook-form";
+import type { z } from "zod";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Iterator = memo(
   ({
-    data,
+    data: _data,
     isConnectable,
     positionAbsoluteX,
     positionAbsoluteY,
@@ -50,12 +72,63 @@ export const Iterator = memo(
       FlowNode,
       FlowEdge
     >();
-    const nodes = useNodes<FlowNode>();
+    if (_data.type !== "iterator") {
+      return;
+    }
 
+    const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
+      {
+        id: _data.id,
+      },
+      {
+        refetchInterval: false,
+        initialData: _data,
+      },
+    );
+    const data = fetchedData as IteratorPrimitive;
+
+    const updateIterator = api.primitives.update.useMutation({
+      onSuccess: async () => {
+        await refetch();
+      },
+    });
+    const deleteIterator = api.primitives.delete.useMutation();
+
+    const debouncedUpdateIterator = debounce(
+      async (
+        key: keyof z.infer<typeof updateIteratorSchema>,
+        value: string,
+      ) => {
+        console.log("hello kitty");
+        await updateIterator.mutateAsync({
+          where: {
+            id: data.id,
+            flowId: data.flowId,
+          },
+          payload: {
+            type: "iterator",
+            [key]: value,
+          },
+        });
+      },
+      500,
+      { trailing: false },
+    );
+
+    const form = useForm<z.infer<typeof updateIteratorSchema>>({
+      resolver: zodResolver(updateIteratorSchema),
+      defaultValues: {
+        name: data.name ?? undefined,
+        description: data.description ?? undefined,
+        metadata: {
+          iteratorType: data.metadata?.iteratorType,
+        },
+      },
+    });
+
+    const nodes = useNodes<FlowNode>();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
-
-    const deleteIterator = api.primitives.delete.useMutation();
 
     return (
       <>
@@ -160,7 +233,7 @@ export const Iterator = memo(
                 </ContextMenuItem>
               </ContextMenuContent>
             </ContextMenu>
-            <ExpandableCardContent className="nowheel flex h-[600px] w-[800px] flex-col p-0">
+            <ExpandableCardContent className="nowheel flex flex-col p-0 w-[400px]">
               <div className="flex size-full flex-col">
                 <ExpandableCardHeader className="flex flex-col items-start justify-start">
                   <div className="flex w-full items-center justify-between">
@@ -170,6 +243,93 @@ export const Iterator = memo(
                     </div>
                   </div>
                 </ExpandableCardHeader>
+                <Form {...form}>
+                  <div className="flex flex-col gap-6 px-4 pb-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              autoComplete="off"
+                              className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
+                              placeholder="IteratorName"
+                              onChange={async (e) => {
+                                field.onChange(e.target.value);
+                                debouncedUpdateIterator("name", e.target.value);
+                              }}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="metadata.iteratorType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Iterator Type</FormLabel>
+                          <FormControl>
+                            <Select
+                              {...field}
+                              name={field.name}
+                              onValueChange={async (value) => {
+                                field.onChange(value);
+                                await updateIterator.mutateAsync({
+                                  where: {
+                                    id: data.id,
+                                    flowId: data.flowId,
+                                  },
+                                  payload: {
+                                    type: "iterator",
+                                    metadata: {
+                                      iteratorType:
+                                        value as IteratorPrimitive["metadata"]["iteratorType"],
+                                    },
+                                  },
+                                });
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select iterator type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="for-each">
+                                  For Each
+                                </SelectItem>
+                                <SelectItem value="map">Map</SelectItem>
+                                <SelectItem value="reduce">Reduce</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              onChange={async (e) => {
+                                field.onChange(e.target.value);
+                                debouncedUpdateIterator(
+                                  "description",
+                                  e.target.value,
+                                );
+                              }}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </Form>
               </div>
             </ExpandableCardContent>
           </ExpandableCard>

@@ -151,21 +151,9 @@ export const responsePrimitiveSchema = primitiveBaseSchema.extend({
   metadata: responsePrimitiveMetadataSchema,
 });
 
-export const iteratorPrimitiveMetadataSchema = z.discriminatedUnion(
-  "iteratorType",
-  [
-    z.object({
-      iteratorType: z.literal("for-each"),
-    }),
-    z.object({
-      iteratorType: z.literal("map"),
-    }),
-    z.object({
-      iteratorType: z.literal("reduce"),
-      description: z.string(),
-    }),
-  ],
-);
+export const iteratorPrimitiveMetadataSchema = z.object({
+  iteratorType: z.enum(["for-each", "map", "reduce"]),
+});
 
 export const iteratorPrimitiveSchema = primitiveBaseSchema.extend({
   type: z.literal("iterator"),
@@ -325,11 +313,13 @@ export const updateMatcherSchema = updatePrimitiveBaseSchema.extend({
   metadata: updateMatcherMetadataSchema.optional(),
 });
 
-export const updateIteratorMetadataSchema = z.object({});
-
 export const updateIteratorSchema = updatePrimitiveBaseSchema.extend({
   type: z.literal("iterator"),
-  metadata: updateIteratorMetadataSchema.optional(),
+  metadata: z
+    .object({
+      iteratorType: z.enum(["for-each", "map", "reduce"]),
+    })
+    .optional(),
 });
 
 export const updateResponseMetadataSchema = z.object({});
