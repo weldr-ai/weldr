@@ -41,9 +41,9 @@ import { toast } from "@integramind/ui/use-toast";
 import { useTheme } from "next-themes";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
-import { ConditionalBranch } from "~/components/primitives/conditional-branch";
 import { FunctionNode } from "~/components/primitives/function";
 import { Iterator } from "~/components/primitives/iterator";
+import { Matcher } from "~/components/primitives/matcher";
 import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
 import { Workflow } from "~/components/primitives/workflow";
@@ -54,7 +54,7 @@ const nodeTypes = {
   route: Route,
   workflow: Workflow,
   function: FunctionNode,
-  "conditional-branch": ConditionalBranch,
+  matcher: Matcher,
   iterator: Iterator,
   response: Response,
 };
@@ -72,7 +72,14 @@ export function _FlowBuilder({
   initialNodes: FlowNode[];
   initialEdges: FlowEdge[];
 }) {
-  const reactFlow = useReactFlow();
+  const {
+    getIntersectingNodes,
+    screenToFlowPosition,
+    zoomIn,
+    zoomOut,
+    fitView,
+    setViewport,
+  } = useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -87,10 +94,42 @@ export function _FlowBuilder({
       });
     },
   });
-  const deletePrimitive = api.primitives.delete.useMutation();
-  const updatePrimitive = api.primitives.update.useMutation();
+  const deletePrimitive = api.primitives.delete.useMutation({
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  const updatePrimitive = api.primitives.update.useMutation({
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
-  const createEdge = api.edges.create.useMutation();
+  const createEdge = api.edges.create.useMutation({
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const getIterator = useCallback(
+    (nodes: Node[], intersectingNodes: string[]) =>
+      nodes.find(
+        (n) => n.type === "iterator" && intersectingNodes.includes(n.id),
+      ),
+    [],
+  );
 
   const onConnect = useCallback(
     async (connection: Connection) => {
@@ -125,8 +164,8 @@ export function _FlowBuilder({
         switch (nodeType) {
           case "function":
             return "new_function";
-          case "conditional-branch":
-            return "new_conditional_branch";
+          case "matcher":
+            return "new_matcher";
           case "iterator":
             return "new_iterator";
           case "response":
@@ -139,14 +178,14 @@ export function _FlowBuilder({
 
       const nodeType = event.dataTransfer.getData("application/reactflow") as
         | "function"
-        | "conditional-branch"
+        | "matcher"
         | "iterator"
         | "response";
 
       // check if the dropped element is valid
       if (typeof nodeType === "undefined" || !nodeType) return;
 
-      const position = reactFlow.screenToFlowPosition({
+      const position = screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
@@ -180,7 +219,26 @@ export function _FlowBuilder({
         }),
       );
     },
-    [createPrimitive, flowId, reactFlow, setNodes],
+    [createPrimitive, flowId, setNodes, screenToFlowPosition],
+  );
+
+  const onNodeDrag = useCallback(
+    (event: React.MouseEvent, node: Node, _nodes: Node[]) => {
+      const intersections = getIntersectingNodes(node).map((n) => n.id);
+      setNodes((ns) =>
+        ns.map((n) => ({
+          ...n,
+          className:
+            intersections.includes(n.id) &&
+            n.type === "iterator" &&
+            (node.type === "function" || node.type === "matcher") &&
+            !node.parentId
+              ? "rounded-xl shadow-[0_0_1px_#3E63DD,inset_0_0_1px_#3E63DD,0_0_1px_#3E63DD,0_0_5px_#3E63DD,0_0_10px_#3E63DD] transition-shadow duration-300"
+              : "",
+        })),
+      );
+    },
+    [setNodes, getIntersectingNodes],
   );
 
   const onNodeDragStop = useCallback(
@@ -189,19 +247,73 @@ export function _FlowBuilder({
       node: ReactFlowNode,
       _nodes: ReactFlowNode[],
     ) => {
-      await updatePrimitive.mutateAsync({
-        where: {
-          id: node.id,
-          flowId,
-        },
-        payload: {
-          type: node.type as PrimitiveType,
-          positionX: Math.floor(node.position.x),
-          positionY: Math.floor(node.position.y),
-        },
-      });
+      const intersectingNodes = getIntersectingNodes(node).map((n) => n.id);
+      const parent = getIterator(nodes, intersectingNodes);
+
+      if (
+        parent &&
+        !node.parentId &&
+        (node.type === "matcher" || node.type === "function")
+      ) {
+        setNodes(
+          nodes
+            .sort((a, b) =>
+              a.type === "iterator" ? -1 : b.type === "iterator" ? 1 : 0,
+            )
+            .map((n) =>
+              n.id === node.id
+                ? {
+                    ...node,
+                    position: {
+                      x: node.position.x - parent.position.x,
+                      y: node.position.y - parent.position.y,
+                    },
+                    parentId: parent.id,
+                    extent: "parent",
+                  }
+                : n.type === "iterator"
+                  ? {
+                      ...n,
+                      className: "",
+                    }
+                  : n,
+            ) as FlowNode[],
+        );
+
+        await updatePrimitive.mutateAsync({
+          where: {
+            id: node.id,
+            flowId,
+          },
+          payload: {
+            type: node.type as PrimitiveType,
+            parentId: parent.id,
+            positionX: Math.floor(node.position.x - parent.position.x),
+            positionY: Math.floor(node.position.y - parent.position.y),
+          },
+        });
+      } else {
+        await updatePrimitive.mutateAsync({
+          where: {
+            id: node.id,
+            flowId,
+          },
+          payload: {
+            type: node.type as PrimitiveType,
+            positionX: Math.floor(node.position.x),
+            positionY: Math.floor(node.position.y),
+          },
+        });
+      }
     },
-    [updatePrimitive, flowId],
+    [
+      updatePrimitive,
+      flowId,
+      getIntersectingNodes,
+      getIterator,
+      nodes,
+      setNodes,
+    ],
   );
 
   const onNodesDelete = useCallback(
@@ -217,6 +329,7 @@ export function _FlowBuilder({
 
   const isValidConnection = useCallback(
     (connection: Connection | Edge) => {
+      const source = nodes.find((node) => node.id === connection.source);
       const target = nodes.find((node) => node.id === connection.target);
 
       const hasCycle = (node: Node, visited = new Set()) => {
@@ -231,6 +344,9 @@ export function _FlowBuilder({
       };
 
       if (!target) return false;
+      if (!source) return false;
+
+      if (source.parentId !== target.parentId) return false;
 
       if (target?.id === connection.source) return false;
 
@@ -248,6 +364,7 @@ export function _FlowBuilder({
       onConnect={onConnect}
       isValidConnection={isValidConnection}
       onDrop={onDrop}
+      onNodeDrag={onNodeDrag}
       onNodeDragStop={onNodeDragStop}
       onDragOver={onDragOver}
       onNodesDelete={onNodesDelete}
@@ -282,7 +399,7 @@ export function _FlowBuilder({
           variant="ghost"
           size="icon"
           onClick={() => {
-            reactFlow.zoomOut();
+            zoomOut();
           }}
         >
           <MinusIcon className="size-4" />
@@ -291,7 +408,7 @@ export function _FlowBuilder({
           className="w-16 rounded-none"
           variant="ghost"
           onClick={() => {
-            reactFlow.setViewport({
+            setViewport({
               x: viewPort.x,
               y: viewPort.y,
               zoom: 1,
@@ -305,7 +422,7 @@ export function _FlowBuilder({
           variant="ghost"
           size="icon"
           onClick={() => {
-            reactFlow.zoomIn();
+            zoomIn();
           }}
         >
           <PlusIcon className="size-4" />
@@ -315,7 +432,7 @@ export function _FlowBuilder({
           variant="ghost"
           size="icon"
           onClick={() => {
-            reactFlow.fitView();
+            fitView();
           }}
         >
           <ScanIcon className="size-4" />

@@ -100,7 +100,7 @@ export function Editor({ ...props }: EditorProps) {
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <div className="relative flex size-full">
+      <div className="flex size-full">
         {props.type === "inputs" && <InputsPlugin id={props.id} />}
         {props.type === "description" && (
           <ReferencesPlugin inputs={props.inputs} />

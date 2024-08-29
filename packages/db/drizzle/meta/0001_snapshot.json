@@ -1,6 +1,6 @@
 {
-  "id": "f6fbaa4f-f590-4b97-a8e6-1128a91fa1df",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "6d3fff8f-5831-4bd4-a4a2-600ccd9d984b",
+  "prevId": "f6fbaa4f-f590-4b97-a8e6-1128a91fa1df",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -546,6 +546,12 @@
           "notNull": true,
           "default": "now()"
         },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
@@ -568,6 +574,15 @@
       },
       "indexes": {},
       "foreignKeys": {
+        "primitives_parent_id_primitives_id_fk": {
+          "name": "primitives_parent_id_primitives_id_fk",
+          "tableFrom": "primitives",
+          "tableTo": "primitives",
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "primitives_flow_id_flows_id_fk": {
           "name": "primitives_flow_id_flows_id_fk",
           "tableFrom": "primitives",
