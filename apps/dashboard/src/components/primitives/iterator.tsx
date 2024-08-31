@@ -1,10 +1,4 @@
-import {
-  Handle,
-  NodeResizeControl,
-  Position,
-  useNodes,
-  useReactFlow,
-} from "@xyflow/react";
+import { NodeResizeControl, useNodes, useReactFlow } from "@xyflow/react";
 import { memo, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,7 +37,6 @@ import {
 import { Textarea } from "@integramind/ui/textarea";
 import { cn } from "@integramind/ui/utils";
 import {
-  ChevronRightIcon,
   CircleMinus,
   ExternalLinkIcon,
   FileTextIcon,
@@ -62,11 +55,11 @@ import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 export const Iterator = memo(
   ({
     data: _data,
-    isConnectable,
     positionAbsoluteX,
     positionAbsoluteY,
     selected,
     parentId,
+    width,
   }: FlowNodeProps) => {
     const { fitBounds, setNodes, deleteElements } = useReactFlow<
       FlowNode,
@@ -133,13 +126,16 @@ export const Iterator = memo(
     return (
       <>
         <div className="size-full relative">
-          <ExpandableCard className="absolute top-[-42px] left-[50px]">
+          <ExpandableCard
+            className="absolute top-[-28px]"
+            style={{ left: `${(width ?? 0) / 2 - 64}px` }}
+          >
             <ContextMenu>
               <ContextMenuTrigger>
                 <ExpandableCardTrigger>
                   <Card
                     className={cn(
-                      "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 px-5 py-4 dark:bg-muted",
+                      "drag-handle flex h-[56px] w-[128px] cursor-grab flex-col items-start gap-1.5 px-3 py-2 dark:bg-muted",
                       {
                         "border-primary": selected,
                       },
@@ -158,13 +154,13 @@ export const Iterator = memo(
                       );
                     }}
                   >
-                    <div className="flex w-full items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs">
+                    <div className="flex w-full items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
                         <RepeatIcon className="size-4 text-primary" />
                         <span className="text-muted-foreground">Iterator</span>
                       </div>
                     </div>
-                    <span className="text-sm">
+                    <span className="text-xs">
                       {data.name ?? "new_iterator"}
                     </span>
                   </Card>
@@ -333,9 +329,6 @@ export const Iterator = memo(
               </div>
             </ExpandableCardContent>
           </ExpandableCard>
-          <div className="absolute p-1 top-[-12px] left-[306px] bg-background">
-            <ChevronRightIcon className="text-primary size-4" />
-          </div>
           <div className="z-[-9999] size-full min-w-[600px] min-h-[400px] border rounded-xl" />
         </div>
         <NodeResizeControl
@@ -343,16 +336,6 @@ export const Iterator = memo(
           position="bottom-right"
           minWidth={600}
           minHeight={400}
-        />
-        <Handle
-          className="border rounded-full bg-background p-1"
-          type="target"
-          position={Position.Left}
-        />
-        <Handle
-          className="border rounded-full bg-background p-1"
-          type="source"
-          position={Position.Right}
         />
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
