@@ -100,15 +100,7 @@ export function _FlowBuilder({
       });
     },
   });
-  const deletePrimitive = api.primitives.delete.useMutation({
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+
   const updatePrimitive = api.primitives.update.useMutation({
     onError: (error) => {
       toast({
@@ -367,21 +359,12 @@ export function _FlowBuilder({
     ],
   );
 
-  const onNodesDelete = useCallback(
-    async (nodes: ReactFlowNode[]) => {
-      for (const node of nodes) {
-        await deletePrimitive.mutateAsync({
-          id: node.id,
-        });
-      }
-    },
-    [deletePrimitive],
-  );
-
   const isValidConnection = useCallback(
     (connection: Connection | Edge) => {
       const source = nodes.find((node) => node.id === connection.source);
       const target = nodes.find((node) => node.id === connection.target);
+
+      if (!source || !target) return false;
 
       const hasCycle = (node: Node, visited = new Set()) => {
         if (visited.has(node.id)) return false;
@@ -394,14 +377,17 @@ export function _FlowBuilder({
         }
       };
 
-      if (!target) return false;
-      if (!source) return false;
-
-      if (source.parentId !== target.parentId) return false;
-
       if (target?.id === connection.source) return false;
 
-      return !hasCycle(target);
+      if (hasCycle(target)) return false;
+
+      if (source.parentId !== target.parentId) {
+        if (source.type === "iterator-output" && !target.parentId) return true;
+        if (!source.parentId && target.type === "iterator-input") return true;
+        return false;
+      }
+
+      return true;
     },
     [nodes, edges],
   );
@@ -418,7 +404,7 @@ export function _FlowBuilder({
       onNodeDrag={onNodeDrag}
       onNodeDragStop={onNodeDragStop}
       onDragOver={onDragOver}
-      onNodesDelete={onNodesDelete}
+      deleteKeyCode={null}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       panOnScroll={true}

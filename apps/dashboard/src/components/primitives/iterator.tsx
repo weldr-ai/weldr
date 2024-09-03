@@ -1,10 +1,4 @@
-import {
-  Handle,
-  NodeResizeControl,
-  Position,
-  useNodes,
-  useReactFlow,
-} from "@xyflow/react";
+import { NodeResizeControl, useNodes, useReactFlow } from "@xyflow/react";
 import { memo, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -339,16 +333,6 @@ export const Iterator = memo(
           </ExpandableCard>
           <div className="z-[-9999] size-full min-w-[600px] min-h-[400px] border rounded-xl" />
         </div>
-        <Handle
-          type="target"
-          position={Position.Left}
-          className="border rounded-full bg-background p-1"
-        />
-        <Handle
-          type="source"
-          position={Position.Right}
-          className="border rounded-full bg-background p-1"
-        />
         <NodeResizeControl
           className="bg-primary border-none p-[2px] rounded-full"
           position="bottom-right"

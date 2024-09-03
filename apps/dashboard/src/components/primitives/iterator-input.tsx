@@ -11,6 +11,11 @@ export const IteratorInput = memo(
           <div className="text-xs">Input</div>
         </Card>
         <Handle
+          type="target"
+          position={Position.Left}
+          className="border rounded-full bg-background p-1"
+        />
+        <Handle
           type="source"
           position={Position.Right}
           className="border rounded-full bg-background p-1"
