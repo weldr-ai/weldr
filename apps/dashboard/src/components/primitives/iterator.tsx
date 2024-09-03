@@ -1,8 +1,14 @@
-import { NodeResizeControl, useNodes, useReactFlow } from "@xyflow/react";
+import {
+  Handle,
+  NodeResizeControl,
+  Position,
+  useNodes,
+  useReactFlow,
+} from "@xyflow/react";
 import { memo, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { IteratorPrimitive } from "@integramind/shared/types";
+import type { IteratorPrimitive, Primitive } from "@integramind/shared/types";
 import { updateIteratorSchema } from "@integramind/shared/validators/primitives";
 import { Card } from "@integramind/ui/card";
 import {
@@ -61,24 +67,29 @@ export const Iterator = memo(
     parentId,
     width,
   }: FlowNodeProps) => {
-    const { fitBounds, setNodes, deleteElements } = useReactFlow<
-      FlowNode,
-      FlowEdge
-    >();
     if (_data.type !== "iterator") {
       return;
     }
 
-    const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
-      {
-        id: _data.id,
-      },
-      {
-        refetchInterval: false,
-        initialData: _data,
-      },
-    );
-    const data = fetchedData as IteratorPrimitive;
+    const { fitBounds, setNodes, deleteElements } = useReactFlow<
+      FlowNode,
+      FlowEdge
+    >();
+
+    const { data: fetchedData, refetch } =
+      api.primitives.getIteratorById.useQuery(
+        {
+          id: _data.id,
+        },
+        {
+          refetchInterval: false,
+          initialData: {
+            ..._data,
+            children: [],
+          },
+        },
+      );
+    const data = fetchedData as IteratorPrimitive & { children: Primitive[] };
 
     const updateIterator = api.primitives.update.useMutation({
       onSuccess: async () => {
@@ -92,7 +103,6 @@ export const Iterator = memo(
         key: keyof z.infer<typeof updateIteratorSchema>,
         value: string,
       ) => {
-        console.log("hello kitty");
         await updateIterator.mutateAsync({
           where: {
             id: data.id,
@@ -154,11 +164,9 @@ export const Iterator = memo(
                       );
                     }}
                   >
-                    <div className="flex w-full items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        <RepeatIcon className="size-4 text-primary" />
-                        <span className="text-muted-foreground">Iterator</span>
-                      </div>
+                    <div className="flex text-xs gap-2">
+                      <RepeatIcon className="size-4 text-primary" />
+                      <span className="text-muted-foreground">Iterator</span>
                     </div>
                     <span className="text-xs">
                       {data.name ?? "new_iterator"}
@@ -331,6 +339,16 @@ export const Iterator = memo(
           </ExpandableCard>
           <div className="z-[-9999] size-full min-w-[600px] min-h-[400px] border rounded-xl" />
         </div>
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="border rounded-full bg-background p-1"
+        />
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="border rounded-full bg-background p-1"
+        />
         <NodeResizeControl
           className="bg-primary border-none p-[2px] rounded-full"
           position="bottom-right"
@@ -346,6 +364,9 @@ export const Iterator = memo(
                 {
                   id: data.id,
                 },
+                ...data.children.map((child) => ({
+                  id: child.id,
+                })),
               ],
             });
             deleteIterator.mutate({
