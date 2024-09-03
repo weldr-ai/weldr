@@ -168,6 +168,14 @@ export const matcherPrimitiveSchema = primitiveBaseSchema.extend({
   metadata: matcherPrimitiveMetadataSchema,
 });
 
+export const iteratorInputPrimitiveSchema = primitiveBaseSchema.extend({
+  type: z.literal("iterator-input"),
+});
+
+export const iteratorOutputPrimitiveSchema = primitiveBaseSchema.extend({
+  type: z.literal("iterator-output"),
+});
+
 export const primitiveTypesSchema = z.enum([
   "route",
   "workflow",
@@ -196,11 +204,20 @@ export const primitiveMetadataSchema = z.union([
 ]);
 
 export const insertPrimitiveSchema = z.object({
-  type: z.enum(["function", "iterator", "matcher", "response"]),
+  id: z.string(),
+  type: z.enum([
+    "function",
+    "iterator",
+    "matcher",
+    "response",
+    "iterator-input",
+    "iterator-output",
+  ]),
   description: z.string().trim().optional(),
   positionX: z.number().optional(),
   positionY: z.number().optional(),
   metadata: primitiveMetadataSchema,
+  parentId: z.string().optional(),
   flowId: z.string().min(1, {
     message: "Flow is required.",
   }),

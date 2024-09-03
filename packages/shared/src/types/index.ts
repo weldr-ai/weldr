@@ -12,7 +12,6 @@ import type {
   primitiveBaseSchema,
   primitiveMetadataSchema,
   primitiveSchema,
-  primitiveTypesSchema,
   responsePrimitiveMetadataSchema,
   responsePrimitiveSchema,
   routePrimitiveMetadataSchema,
@@ -53,7 +52,13 @@ export type Resource = z.infer<typeof resourceSchema>;
 export type ResourceMetadata = z.infer<typeof resourceMetadataSchema>;
 export type ResourceProvider = z.infer<typeof resourceProvidersSchema>;
 
-export type PrimitiveType = z.infer<typeof primitiveTypesSchema>;
+export type PrimitiveType =
+  | "function"
+  | "workflow"
+  | "route"
+  | "matcher"
+  | "iterator"
+  | "response";
 export type BasePrimitiveData = z.infer<typeof primitiveBaseSchema>;
 export type Primitive = z.infer<typeof primitiveSchema>;
 export type PrimitiveMetadata = z.infer<typeof primitiveMetadataSchema>;

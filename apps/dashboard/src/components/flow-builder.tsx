@@ -37,12 +37,16 @@ import "~/styles/flow-builder.css";
 import { Button } from "@integramind/ui/button";
 
 import type { Primitive, PrimitiveType } from "@integramind/shared/types";
+import type { insertPrimitiveSchema } from "@integramind/shared/validators/primitives";
 import { toast } from "@integramind/ui/use-toast";
 import { useTheme } from "next-themes";
+import type { z } from "zod";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
 import { FunctionNode } from "~/components/primitives/function";
 import { Iterator } from "~/components/primitives/iterator";
+import { IteratorInput } from "~/components/primitives/iterator-input";
+import { IteratorOutput } from "~/components/primitives/iterator-output";
 import { Matcher } from "~/components/primitives/matcher";
 import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
@@ -57,6 +61,8 @@ const nodeTypes = {
   matcher: Matcher,
   iterator: Iterator,
   response: Response,
+  "iterator-input": IteratorInput,
+  "iterator-output": IteratorOutput,
 };
 
 const edgeTypes = {
@@ -94,15 +100,7 @@ export function _FlowBuilder({
       });
     },
   });
-  const deletePrimitive = api.primitives.delete.useMutation({
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+
   const updatePrimitive = api.primitives.update.useMutation({
     onError: (error) => {
       toast({
@@ -160,22 +158,6 @@ export function _FlowBuilder({
     async (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      const getNewNodeName = (nodeType: PrimitiveType) => {
-        switch (nodeType) {
-          case "function":
-            return "new_function";
-          case "matcher":
-            return "new_matcher";
-          case "iterator":
-            return "new_iterator";
-          case "response":
-            return "new_response";
-          case "route":
-          case "workflow":
-            throw new Error("Invalid node type");
-        }
-      };
-
       const nodeType = event.dataTransfer.getData("application/reactflow") as
         | "function"
         | "matcher"
@@ -190,33 +172,94 @@ export function _FlowBuilder({
         y: event.clientY,
       });
 
-      const newNodeName = getNewNodeName(nodeType);
+      const newNodeId = createId();
 
-      const newNode = await createPrimitive.mutateAsync({
-        type: nodeType,
-        positionX: Math.floor(position.x),
-        positionY: Math.floor(position.y),
-        flowId,
-        metadata: {},
-      });
+      const nodesToCreate: z.infer<typeof insertPrimitiveSchema>[] = [
+        {
+          id: newNodeId,
+          type: nodeType,
+          positionX: Math.floor(position.x),
+          positionY: Math.floor(position.y),
+          flowId,
+          metadata: {},
+        },
+      ];
+
+      if (nodeType === "iterator") {
+        const newIteratorInputId = createId();
+        const newIteratorOutputId = createId();
+
+        nodesToCreate.push(
+          {
+            id: newIteratorInputId,
+            type: "iterator-input",
+            positionX: 50,
+            positionY: 184,
+            parentId: newNodeId,
+            flowId,
+            metadata: {},
+          },
+          {
+            id: newIteratorOutputId,
+            type: "iterator-output",
+            positionX: 486,
+            positionY: 184,
+            parentId: newNodeId,
+            flowId,
+            metadata: {},
+          },
+        );
+      }
+
+      const newNodes = await createPrimitive.mutateAsync(nodesToCreate);
 
       setNodes((nodes) =>
-        nodes.concat({
-          id: newNode.id,
-          type: newNode.type,
-          position: { x: newNode.positionX, y: newNode.positionY },
-          data: {
-            id: newNode.id,
-            name: newNodeName,
-            description: newNode.description,
-            type: newNode.type,
-            metadata: newNode.metadata,
-            createdAt: newNode.createdAt,
-            updatedAt: newNode.updatedAt,
-            createdBy: newNode.createdBy,
-            flowId: newNode.flowId,
-          } as Primitive,
-        }),
+        nodes.concat(
+          newNodes.reduce((acc, n) => {
+            acc.push({
+              id: n.id,
+              type: n.type,
+              position: { x: n.positionX, y: n.positionY },
+              parentId: n.parentId ?? undefined,
+              extent: "parent",
+              data: {
+                id: n.id,
+                name: n.name,
+                description: n.description,
+                type: n.type,
+                metadata: n.metadata,
+                createdAt: n.createdAt,
+                updatedAt: n.updatedAt,
+                createdBy: n.createdBy,
+                flowId: n.flowId,
+              } as Primitive,
+            });
+
+            if (n.type === "iterator-input") {
+              acc.push({
+                id: n.id,
+                type: n.type,
+                position: { x: n.positionX, y: n.positionY },
+                parentId: n.parentId ?? undefined,
+                extent: "parent",
+                data: {} as Primitive,
+              });
+            }
+
+            if (n.type === "iterator-output") {
+              acc.push({
+                id: n.id,
+                type: n.type,
+                position: { x: n.positionX, y: n.positionY },
+                parentId: n.parentId ?? undefined,
+                extent: "parent",
+                data: {} as Primitive,
+              });
+            }
+
+            return acc;
+          }, [] as FlowNode[]),
+        ),
       );
     },
     [createPrimitive, flowId, setNodes, screenToFlowPosition],
@@ -316,21 +359,12 @@ export function _FlowBuilder({
     ],
   );
 
-  const onNodesDelete = useCallback(
-    async (nodes: ReactFlowNode[]) => {
-      for (const node of nodes) {
-        await deletePrimitive.mutateAsync({
-          id: node.id,
-        });
-      }
-    },
-    [deletePrimitive],
-  );
-
   const isValidConnection = useCallback(
     (connection: Connection | Edge) => {
       const source = nodes.find((node) => node.id === connection.source);
       const target = nodes.find((node) => node.id === connection.target);
+
+      if (!source || !target) return false;
 
       const hasCycle = (node: Node, visited = new Set()) => {
         if (visited.has(node.id)) return false;
@@ -343,14 +377,17 @@ export function _FlowBuilder({
         }
       };
 
-      if (!target) return false;
-      if (!source) return false;
-
-      if (source.parentId !== target.parentId) return false;
-
       if (target?.id === connection.source) return false;
 
-      return !hasCycle(target);
+      if (hasCycle(target)) return false;
+
+      if (source.parentId !== target.parentId) {
+        if (source.type === "iterator-output" && !target.parentId) return true;
+        if (!source.parentId && target.type === "iterator-input") return true;
+        return false;
+      }
+
+      return true;
     },
     [nodes, edges],
   );
@@ -367,7 +404,7 @@ export function _FlowBuilder({
       onNodeDrag={onNodeDrag}
       onNodeDragStop={onNodeDragStop}
       onDragOver={onDragOver}
-      onNodesDelete={onNodesDelete}
+      deleteKeyCode={null}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       panOnScroll={true}

@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { primitives } from "@integramind/db/schema";
 import type {
   Input,
+  IteratorPrimitive,
   Primitive,
   RoutePrimitive,
 } from "@integramind/shared/types";
@@ -10,6 +11,7 @@ import type {
 import { type SQL, and, eq, notInArray, sql } from "@integramind/db";
 import {
   insertPrimitiveSchema,
+  iteratorPrimitiveSchema,
   primitiveSchema,
   updatePrimitiveSchema,
 } from "@integramind/shared/validators/primitives";
@@ -18,15 +20,17 @@ import { protectedProcedure } from "../trpc";
 
 export const primitivesRouter = {
   create: protectedProcedure
-    .input(insertPrimitiveSchema)
+    .input(insertPrimitiveSchema.array())
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.db
         .insert(primitives)
-        .values({
-          ...input,
-          metadata: sql`${input.metadata}::jsonb`,
-          createdBy: ctx.session.user.id,
-        })
+        .values(
+          input.map((p) => ({
+            ...p,
+            metadata: sql`${p.metadata}::jsonb`,
+            createdBy: ctx.session.user.id,
+          })),
+        )
         .returning({
           id: primitives.id,
           type: primitives.type,
@@ -39,16 +43,17 @@ export const primitivesRouter = {
           createdAt: primitives.createdAt,
           updatedAt: primitives.updatedAt,
           flowId: primitives.flowId,
+          parentId: primitives.parentId,
         });
 
-      if (!result[0]) {
+      if (result.length < 1) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create primitive",
         });
       }
 
-      return result[0];
+      return result;
     }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -69,6 +74,38 @@ export const primitivesRouter = {
       }
 
       return result as Primitive;
+    }),
+  getIteratorById: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .output(
+      iteratorPrimitiveSchema.extend({
+        children: primitiveSchema.array(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.primitives.findFirst({
+        where: and(
+          eq(primitives.id, input.id),
+          eq(primitives.createdBy, ctx.session.user.id),
+          eq(primitives.type, "iterator"),
+        ),
+      });
+
+      if (!result) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Primitive not found",
+        });
+      }
+
+      const children = await ctx.db.query.primitives.findMany({
+        where: eq(primitives.parentId, input.id),
+      });
+
+      return {
+        ...(result as IteratorPrimitive),
+        children: children as Primitive[],
+      } as IteratorPrimitive & { children: Primitive[] };
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))

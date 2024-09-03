@@ -20,6 +20,8 @@ export const primitiveTypes = pgEnum("primitive_types", [
   "function",
   "matcher",
   "iterator",
+  "iterator-input",
+  "iterator-output",
   "response",
 ]);
 

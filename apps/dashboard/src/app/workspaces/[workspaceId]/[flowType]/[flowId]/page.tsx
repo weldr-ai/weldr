@@ -17,26 +17,40 @@ export default async function WorkflowPage({
       .sort((a, b) =>
         a.type === "iterator" ? -1 : b.type === "iterator" ? 1 : 0,
       )
-      .map((primitive) => ({
-        id: primitive.id,
-        type: primitive.type,
-        dragHandle: ".drag-handle",
-        deletable: primitive.type !== "route" && primitive.type !== "workflow",
-        position: { x: primitive.positionX, y: primitive.positionY },
-        parentId: primitive.parentId ?? undefined,
-        extent: primitive.parentId ? "parent" : undefined,
-        data: {
-          id: primitive.id,
-          name: primitive.name,
-          description: primitive.description,
-          type: primitive.type,
-          metadata: primitive.metadata,
-          createdAt: primitive.createdAt,
-          updatedAt: primitive.updatedAt,
-          createdBy: primitive.createdBy,
-          flowId: primitive.flowId,
-        } as Primitive,
-      }));
+      .map(
+        (primitive) =>
+          ({
+            id: primitive.id,
+            type: primitive.type as FlowNode["type"],
+            dragHandle:
+              primitive.type !== "iterator-input" &&
+              primitive.type !== "iterator-output"
+                ? ".drag-handle"
+                : undefined,
+            draggable:
+              primitive.type !== "iterator-input" &&
+              primitive.type !== "iterator-output",
+            deletable:
+              primitive.type !== "route" &&
+              primitive.type !== "workflow" &&
+              primitive.type !== "iterator-input" &&
+              primitive.type !== "iterator-output",
+            position: { x: primitive.positionX, y: primitive.positionY },
+            parentId: primitive.parentId ?? undefined,
+            extent: primitive.parentId ? "parent" : undefined,
+            data: {
+              id: primitive.id,
+              name: primitive.name,
+              description: primitive.description,
+              type: primitive.type,
+              metadata: primitive.metadata,
+              createdAt: primitive.createdAt,
+              updatedAt: primitive.updatedAt,
+              createdBy: primitive.createdBy,
+              flowId: primitive.flowId,
+            } as Primitive,
+          }) as FlowNode,
+      );
 
     const initialEdges: FlowEdge[] = flow.edges.map((edge) => ({
       id: edge.id,
