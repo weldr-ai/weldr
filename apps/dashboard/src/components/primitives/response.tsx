@@ -41,13 +41,7 @@ import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Response = memo(
-  ({
-    data,
-    isConnectable,
-    positionAbsoluteX,
-    positionAbsoluteY,
-    selected,
-  }: FlowNodeProps) => {
+  ({ data, positionAbsoluteX, positionAbsoluteY, selected }: FlowNodeProps) => {
     const reactFlow = useReactFlow<FlowNode, FlowEdge>();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -62,7 +56,7 @@ export const Response = memo(
               <ContextMenuTrigger>
                 <Card
                   className={cn(
-                    "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 bg-background px-5  py-4 dark:bg-muted",
+                    "drag-handle flex h-[78px] w-[256px] cursor-grab flex-col items-start gap-2 bg-background px-5  py-4 dark:bg-muted",
                     {
                       "border-primary": selected,
                     },

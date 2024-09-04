@@ -394,6 +394,7 @@ export function _FlowBuilder({
 
   return (
     <ReactFlow
+      className="rounded-xl"
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}
@@ -413,7 +414,7 @@ export function _FlowBuilder({
       colorMode={resolvedTheme as ColorMode}
     >
       <Background
-        className="rounded-xl bg-muted dark:bg-background"
+        className="bg-muted dark:bg-background"
         color="hsl(var(--background))"
       />
       <MiniMap

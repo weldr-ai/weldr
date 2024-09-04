@@ -1,14 +1,3 @@
-import { Handle, Position, useReactFlow } from "@xyflow/react";
-import {
-  ExternalLinkIcon,
-  FileTextIcon,
-  PlayCircleIcon,
-  RegexIcon,
-  TrashIcon,
-} from "lucide-react";
-import Link from "next/link";
-import { memo, useState } from "react";
-
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 import {
@@ -20,41 +9,74 @@ import {
   ContextMenuTrigger,
 } from "@integramind/ui/context-menu";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@integramind/ui/dropdown-menu";
+import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardHeader,
   ExpandableCardTrigger,
 } from "@integramind/ui/expandable-card";
+import { Input } from "@integramind/ui/input";
+import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
+import { createId } from "@paralleldrive/cuid2";
+import { Handle, Position, useReactFlow } from "@xyflow/react";
+import {
+  EllipsisVerticalIcon,
+  ExternalLinkIcon,
+  FileTextIcon,
+  Link,
+  PlayCircleIcon,
+  PlusIcon,
+  RegexIcon,
+  TrashIcon,
+} from "lucide-react";
+import { memo, useState } from "react";
 
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
-import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
 
 export const Matcher = memo(
-  ({
-    data,
-    isConnectable,
-    positionAbsoluteX,
-    positionAbsoluteY,
-    selected,
-  }: FlowNodeProps) => {
+  ({ data, selected, positionAbsoluteX, positionAbsoluteY }: FlowNodeProps) => {
     const reactFlow = useReactFlow<FlowNode, FlowEdge>();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
     const deleteMatcher = api.primitives.delete.useMutation();
 
+    const [conditions, setConditions] = useState<
+      {
+        id: string;
+        condition: string | undefined;
+      }[]
+    >([]);
+
+    const addCondition = () => {
+      setConditions([
+        ...conditions,
+        {
+          id: createId(),
+          condition: undefined,
+        },
+      ]);
+    };
+
     return (
-      <div className="primitive">
+      <>
         <ExpandableCard>
           <ExpandableCardTrigger>
             <ContextMenu>
               <ContextMenuTrigger>
                 <Card
                   className={cn(
-                    "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 bg-muted px-5 py-4",
+                    "drag-handle flex min-h-[78px] w-[256px] cursor-grab flex-col items-start gap-2 bg-background px-5 py-4 dark:bg-muted",
                     {
                       "border-primary": selected,
                     },
@@ -73,11 +95,26 @@ export const Matcher = memo(
                     );
                   }}
                 >
-                  <div className="flex items-center gap-2 text-xs">
-                    <RegexIcon className="size-4 text-primary" />
-                    <span className="text-muted-foreground">Matcher</span>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-xs">
+                      <RegexIcon className="size-4 text-primary" />
+                      <span className="text-muted-foreground">Matcher</span>
+                    </div>
+                    <span className="text-sm">
+                      {data.name ?? "new_matcher"}
+                    </span>
                   </div>
-                  <span className="text-sm">{data.name}</span>
+                  {conditions.length > 0 && (
+                    <div className="w-full space-y-2">
+                      {conditions.map((condition) => (
+                        <MatcherCondition
+                          key={condition.id}
+                          id={condition.id}
+                          condition={condition.condition}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </Card>
               </ContextMenuTrigger>
               <ContextMenuContent>
@@ -116,7 +153,7 @@ export const Matcher = memo(
                   <RegexIcon className="size-4 text-primary" />
                   <span className="text-muted-foreground">Matcher</span>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center ">
                   <Button
                     className="size-7 text-success hover:text-success"
                     variant="ghost"
@@ -124,26 +161,82 @@ export const Matcher = memo(
                   >
                     <PlayCircleIcon className="size-3.5" />
                   </Button>
-                  <PrimitiveDropdownMenu
-                    setDeleteAlertDialogOpen={setDeleteAlertDialogOpen}
-                    label="Matcher"
-                    docsUrlPath="matcher"
-                  />
+                  <Button
+                    className="size-7 text-muted-foreground hover:text-muted-foreground"
+                    variant="ghost"
+                    size="icon"
+                    onClick={addCondition}
+                  >
+                    <PlusIcon className="size-3.5" />
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <Button
+                        className="size-7 text-muted-foreground hover:text-muted-foreground"
+                        variant="ghost"
+                        size="icon"
+                      >
+                        <EllipsisVerticalIcon className="size-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start">
+                      <DropdownMenuLabel className="text-xs">
+                        Response
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-xs">
+                        <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
+                        Run with previous primitives
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="flex items-center justify-between text-xs">
+                        <Link
+                          className="flex items-center"
+                          href="https://docs.integramind.ai/primitives/response"
+                          target="blank"
+                        >
+                          <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
+                          Docs
+                        </Link>
+                        <ExternalLinkIcon className="size-3 text-muted-foreground" />
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                        onClick={() => setDeleteAlertDialogOpen(true)}
+                      >
+                        <TrashIcon className="mr-3 size-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
               <span className="text-sm">{data.name}</span>
             </ExpandableCardHeader>
+            {conditions.length > 0 ? (
+              <ScrollArea className="mb-4">
+                <div className="flex flex-col gap-2 px-6">
+                  {conditions.map((condition) => (
+                    <MatcherConditionForm
+                      key={condition.id}
+                      id={condition.id}
+                      condition={condition.condition}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="flex flex-col gap-2 h-full items-center justify-center text-sm text-muted-foreground">
+                <span>No conditions</span>
+                <span>Click + to add a condition</span>
+              </div>
+            )}
           </ExpandableCardContent>
         </ExpandableCard>
         <Handle
-          className="border rounded-full bg-background p-1"
           type="target"
           position={Position.Left}
-        />
-        <Handle
           className="border rounded-full bg-background p-1"
-          type="source"
-          position={Position.Right}
         />
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
@@ -161,9 +254,44 @@ export const Matcher = memo(
             });
           }}
         />
-      </div>
+      </>
     );
   },
 );
 
 Matcher.displayName = "Matcher";
+
+const MatcherCondition = memo(
+  ({ id, condition }: { id: string; condition: string | undefined }) => {
+    return (
+      <div className="relative w-full">
+        <div className="text-sm text-muted-foreground border rounded-sm px-2 py-1 text-ellipsis truncate">
+          {condition ?? "Unimplemented condition Unimplemented condition"}
+        </div>
+        <Handle
+          id={id}
+          type="source"
+          position={Position.Right}
+          className="border rounded-full bg-background p-1"
+        />
+      </div>
+    );
+  },
+);
+
+const MatcherConditionForm = memo(
+  ({ id, condition }: { id: string; condition: string | undefined }) => {
+    return (
+      <div className="flex gap-2">
+        <Input value={condition} placeholder="Enter your condition" />
+        <Button
+          variant="outline"
+          size="icon"
+          className="hover:text-destructive"
+        >
+          <TrashIcon className="size-3" />
+        </Button>
+      </div>
+    );
+  },
+);
