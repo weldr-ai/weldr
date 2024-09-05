@@ -167,7 +167,7 @@ export const Route = memo(
     }
 
     return (
-      <div className="primitive">
+      <>
         <ExpandableCard>
           <ExpandableCardTrigger>
             <Card
@@ -419,7 +419,7 @@ export const Route = memo(
           className="border rounded-full bg-background p-1"
           position={Position.Right}
         />
-      </div>
+      </>
     );
   },
 );

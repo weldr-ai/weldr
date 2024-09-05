@@ -49,14 +49,14 @@ export const Response = memo(
     const deleteResponse = api.primitives.delete.useMutation();
 
     return (
-      <div className="primitive">
+      <>
         <ExpandableCard>
           <ExpandableCardTrigger>
             <ContextMenu>
               <ContextMenuTrigger>
                 <Card
                   className={cn(
-                    "drag-handle flex h-[78px] w-[256px] cursor-grab flex-col items-start gap-2 bg-background px-5  py-4 dark:bg-muted",
+                    "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 bg-background px-5  py-4 dark:bg-muted",
                     {
                       "border-primary": selected,
                     },
@@ -200,7 +200,7 @@ export const Response = memo(
           type="source"
           position={Position.Right}
         />
-      </div>
+      </>
     );
   },
 );

@@ -70,9 +70,9 @@ import { cn } from "@integramind/ui/utils";
 
 import type {
   FunctionPrimitive,
-  FunctionRawDescription,
   Input as IInput,
   Primitive,
+  RawDescription,
 } from "@integramind/shared/types";
 import type { resourceProvidersSchema } from "@integramind/shared/validators/resources";
 import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
@@ -134,7 +134,6 @@ const validationSchema = z.object({
 export const FunctionNode = memo(
   ({
     data: _data,
-    isConnectable,
     selected,
     positionAbsoluteX,
     positionAbsoluteY,
@@ -298,7 +297,7 @@ export const FunctionNode = memo(
             });
           }
           return acc;
-        }, [] as FunctionRawDescription[]);
+        }, [] as RawDescription[]);
         const inputs: IInput[] = [];
         let resource: {
           id: string;
@@ -353,14 +352,14 @@ export const FunctionNode = memo(
     }
 
     return (
-      <div className="primitive">
+      <>
         <ExpandableCard>
           <ContextMenu>
             <ContextMenuTrigger>
               <ExpandableCardTrigger>
                 <Card
                   className={cn(
-                    "drag-handle flex h-[78px] w-[256px] cursor-grab flex-col items-start gap-2 px-5 py-4 dark:bg-muted",
+                    "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start justify-center gap-2 px-5 py-4 dark:bg-muted",
                     {
                       "border-primary": selected,
                     },
@@ -534,8 +533,9 @@ export const FunctionNode = memo(
                               {...field}
                               autoComplete="off"
                               className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
-                              placeholder="Function name"
+                              placeholder="function_name"
                               onBlur={(e) => {
+                                form.setValue("name", e.target.value);
                                 updateFunction.mutate({
                                   where: {
                                     id: data.id,
@@ -550,7 +550,6 @@ export const FunctionNode = memo(
                                     },
                                   },
                                 });
-                                form.setValue("name", e.target.value);
                               }}
                             />
                           </FormControl>
@@ -725,7 +724,7 @@ export const FunctionNode = memo(
             });
           }}
         />
-      </div>
+      </>
     );
   },
 );

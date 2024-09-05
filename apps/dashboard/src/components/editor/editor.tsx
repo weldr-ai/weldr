@@ -12,7 +12,7 @@ import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
 import { cn } from "@integramind/ui/utils";
 
-import type { FunctionRawDescription, Input } from "@integramind/shared/types";
+import type { Input, RawDescription } from "@integramind/shared/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 import { $createInputNode, InputNode } from "./nodes/input-node";
 import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
@@ -30,7 +30,7 @@ interface EditorBaseProps {
 type EditorProps =
   | ({
       type: "description";
-      rawDescription?: FunctionRawDescription[];
+      rawDescription?: RawDescription[];
       inputs: Input[];
     } & EditorBaseProps)
   | ({

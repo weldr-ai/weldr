@@ -57,7 +57,6 @@ export const primitivesRouter = {
     }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
-    .output(primitiveSchema)
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.primitives.findFirst({
         where: and(

@@ -14,7 +14,7 @@ export const primitiveBaseSchema = z.object({
   flowId: z.string(),
 });
 
-export const functionRawDescriptionSchema = z.discriminatedUnion("type", [
+export const rawDescriptionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("text"),
     value: z.string(),
@@ -75,7 +75,7 @@ export const functionPrimitiveMetadataSchema = z.object({
     })
     .nullable()
     .optional(),
-  rawDescription: functionRawDescriptionSchema.array().optional(),
+  rawDescription: rawDescriptionSchema.array().optional(),
   generatedCode: z.string().nullable().optional(),
   isCodeUpdated: z.boolean().default(false).optional(),
   isLocked: z.boolean().default(false).optional(),
@@ -161,7 +161,15 @@ export const iteratorPrimitiveSchema = primitiveBaseSchema.extend({
   metadata: iteratorPrimitiveMetadataSchema,
 });
 
-export const matcherPrimitiveMetadataSchema = z.object({});
+export const matcherPrimitiveMetadataSchema = z.object({
+  conditions: z
+    .object({
+      id: z.string(),
+      description: z.string().nullable(),
+      rawDescription: rawDescriptionSchema.array().optional(),
+    })
+    .array(),
+});
 
 export const matcherPrimitiveSchema = primitiveBaseSchema.extend({
   type: z.literal("matcher"),
@@ -272,7 +280,7 @@ export const updateFunctionMetadataSchema = z.object({
     })
     .nullable()
     .optional(),
-  rawDescription: functionRawDescriptionSchema.array().optional(),
+  rawDescription: rawDescriptionSchema.array().optional(),
   generatedCode: z.string().nullable().optional(),
   isCodeUpdated: z.boolean().optional(),
   isLocked: z.boolean().default(false).optional(),
@@ -325,7 +333,15 @@ export const updateWorkflowSchema = updatePrimitiveBaseSchema.extend({
   metadata: updateWorkflowMetadataSchema.optional(),
 });
 
-export const updateMatcherMetadataSchema = z.object({});
+export const updateMatcherMetadataSchema = z.object({
+  conditions: z
+    .object({
+      description: z.string().trim().nullable(),
+      rawDescription: rawDescriptionSchema.array().optional(),
+    })
+    .array()
+    .optional(),
+});
 
 export const updateMatcherSchema = updatePrimitiveBaseSchema.extend({
   type: z.literal("matcher"),

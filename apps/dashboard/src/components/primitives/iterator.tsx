@@ -163,7 +163,7 @@ export const Iterator = memo(
                       <span className="text-muted-foreground">Iterator</span>
                     </div>
                     <span className="text-xs">
-                      {data.name ?? "new_iterator"}
+                      {data.name ?? "iterator_name"}
                     </span>
                   </Card>
                 </ExpandableCardTrigger>

@@ -22,7 +22,6 @@ import {
   ExpandableCardHeader,
   ExpandableCardTrigger,
 } from "@integramind/ui/expandable-card";
-import { Input } from "@integramind/ui/input";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 import { createId } from "@paralleldrive/cuid2";
@@ -31,41 +30,116 @@ import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
-  Link,
   PlayCircleIcon,
   PlusIcon,
   RegexIcon,
   TrashIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { memo, useState } from "react";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { MatcherPrimitive } from "@integramind/shared/types";
+import type { matcherPrimitiveMetadataSchema } from "@integramind/shared/validators/primitives";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@integramind/ui/form";
+import { Input } from "@integramind/ui/input";
+import { $getRoot, type EditorState } from "lexical";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
+import Editor from "../editor";
+
+const validationSchema = z.object({
+  name: z
+    .string()
+    .min(1, {
+      message: "Name is required",
+    })
+    .regex(/^[a-z0-9_]+$/, {
+      message:
+        "Name must only contain lowercase letters, numbers, and underscores",
+    })
+    .regex(/^[a-z0-9].*[a-z0-9]$/, {
+      message: "Name must not start or end with an underscore",
+    })
+    .regex(/^(?!.*__).*$/, {
+      message: "Name must not contain consecutive underscores",
+    }),
+});
 
 export const Matcher = memo(
-  ({ data, selected, positionAbsoluteX, positionAbsoluteY }: FlowNodeProps) => {
+  ({
+    data: _data,
+    selected,
+    positionAbsoluteX,
+    positionAbsoluteY,
+  }: FlowNodeProps) => {
     const reactFlow = useReactFlow<FlowNode, FlowEdge>();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
+    const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
+      {
+        id: _data.id,
+      },
+      {
+        refetchInterval: 5 * 60 * 1000,
+        initialData: _data,
+      },
+    );
+    const data = fetchedData as MatcherPrimitive;
+
     const deleteMatcher = api.primitives.delete.useMutation();
 
+    const updateMatcher = api.primitives.update.useMutation({
+      onSuccess: async () => {
+        await refetch();
+      },
+    });
+
+    const form = useForm<z.infer<typeof validationSchema>>({
+      mode: "all",
+      criteriaMode: "all",
+      reValidateMode: "onChange",
+      resolver: zodResolver(validationSchema),
+      defaultValues: {
+        name: data.name ?? undefined,
+      },
+    });
+
     const [conditions, setConditions] = useState<
-      {
-        id: string;
-        condition: string | undefined;
-      }[]
-    >([]);
+      z.infer<typeof matcherPrimitiveMetadataSchema>["conditions"]
+    >(data.metadata.conditions ?? []);
 
     const addCondition = () => {
-      setConditions([
-        ...conditions,
-        {
-          id: createId(),
-          condition: undefined,
+      const newCondition = {
+        id: createId(),
+        description: null,
+        rawDescription: [],
+      };
+
+      setConditions([...conditions, newCondition]);
+
+      updateMatcher.mutate({
+        where: {
+          id: data.id,
+          flowId: data.flowId,
         },
-      ]);
+        payload: {
+          type: "matcher",
+          metadata: {
+            conditions: [...conditions, newCondition],
+          },
+        },
+      });
     };
 
     return (
@@ -76,7 +150,7 @@ export const Matcher = memo(
               <ContextMenuTrigger>
                 <Card
                   className={cn(
-                    "drag-handle flex min-h-[78px] w-[256px] cursor-grab flex-col items-start gap-2 bg-background px-5 py-4 dark:bg-muted",
+                    "drag-handle flex min-h-[84px] w-[256px] cursor-grab flex-col items-start justify-center gap-2 bg-background px-5 py-4 dark:bg-muted",
                     {
                       "border-primary": selected,
                     },
@@ -100,7 +174,7 @@ export const Matcher = memo(
                       <RegexIcon className="size-4 text-primary" />
                       <span className="text-muted-foreground">Matcher</span>
                     </div>
-                    <span className="text-sm">
+                    <span className="text-start text-sm">
                       {data.name ?? "new_matcher"}
                     </span>
                   </div>
@@ -110,7 +184,7 @@ export const Matcher = memo(
                         <MatcherCondition
                           key={condition.id}
                           id={condition.id}
-                          condition={condition.condition}
+                          description={condition.description}
                         />
                       ))}
                     </div>
@@ -147,7 +221,7 @@ export const Matcher = memo(
             </ContextMenu>
           </ExpandableCardTrigger>
           <ExpandableCardContent className="nowheel flex h-[400px] flex-col p-0">
-            <ExpandableCardHeader className="flex flex-col items-start justify-start px-6 py-4">
+            <ExpandableCardHeader className="flex flex-col items-start justify-start px-6 pt-4">
               <div className="flex w-full items-center justify-between">
                 <div className="flex items-center gap-2 text-xs">
                   <RegexIcon className="size-4 text-primary" />
@@ -211,26 +285,109 @@ export const Matcher = memo(
                   </DropdownMenu>
                 </div>
               </div>
-              <span className="text-sm">{data.name}</span>
             </ExpandableCardHeader>
-            {conditions.length > 0 ? (
-              <ScrollArea className="mb-4">
-                <div className="flex flex-col gap-2 px-6">
-                  {conditions.map((condition) => (
-                    <MatcherConditionForm
-                      key={condition.id}
-                      id={condition.id}
-                      condition={condition.condition}
-                    />
-                  ))}
+            <div className="flex flex-col h-full gap-6">
+              <Form {...form}>
+                <div className="px-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            autoComplete="off"
+                            className="h-8 border-none shadow-none p-0 dark:bg-muted text-base focus-visible:ring-0"
+                            placeholder="matcher_name"
+                            onBlur={(e) => {
+                              field.onChange(e);
+                              const isValid =
+                                validationSchema.shape.name.safeParse(
+                                  e.target.value,
+                                ).success;
+                              if (isValid) {
+                                updateMatcher.mutate({
+                                  where: {
+                                    id: data.id,
+                                    flowId: data.flowId,
+                                  },
+                                  payload: {
+                                    type: "matcher",
+                                    name: e.target.value,
+                                  },
+                                });
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              </ScrollArea>
-            ) : (
-              <div className="flex flex-col gap-2 h-full items-center justify-center text-sm text-muted-foreground">
-                <span>No conditions</span>
-                <span>Click + to add a condition</span>
-              </div>
-            )}
+                {conditions.length > 0 ? (
+                  <ScrollArea className="mb-4">
+                    <div className="flex flex-col gap-2 px-6">
+                      {conditions.map((condition) => (
+                        <div key={condition.id} className="flex gap-2">
+                          <Editor
+                            id={condition.id}
+                            className="h-64"
+                            placeholder="Write a description for this condition"
+                            type="description"
+                            rawDescription={condition.rawDescription}
+                            onChange={(editorState: EditorState) => {
+                              editorState.read(async () => {
+                                const root = $getRoot();
+                                const description = root.getTextContent();
+                                await updateMatcher.mutateAsync({
+                                  where: {
+                                    id: data.id,
+                                    flowId: data.flowId,
+                                  },
+                                  payload: {
+                                    type: "matcher",
+                                    metadata: {
+                                      conditions: [
+                                        ...conditions.filter(
+                                          (c) => c.id !== condition.id,
+                                        ),
+                                        {
+                                          ...condition,
+                                          description,
+                                        },
+                                      ],
+                                    },
+                                  },
+                                });
+                              });
+                              refetch();
+                            }}
+                            onError={(error: Error) => {
+                              console.error(error);
+                            }}
+                            inputs={[]}
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="hover:text-destructive"
+                          >
+                            <TrashIcon className="size-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex flex-col gap-2 h-full items-center justify-center text-sm text-muted-foreground">
+                    <span>No conditions</span>
+                    <span>Click + to add a condition</span>
+                  </div>
+                )}
+              </Form>
+            </div>
           </ExpandableCardContent>
         </ExpandableCard>
         <Handle
@@ -262,11 +419,17 @@ export const Matcher = memo(
 Matcher.displayName = "Matcher";
 
 const MatcherCondition = memo(
-  ({ id, condition }: { id: string; condition: string | undefined }) => {
+  ({
+    id,
+    description,
+  }: {
+    id: string;
+    description: string | null;
+  }) => {
     return (
       <div className="relative w-full">
-        <div className="text-sm text-muted-foreground border rounded-sm px-2 py-1 text-ellipsis truncate">
-          {condition ?? "Unimplemented condition Unimplemented condition"}
+        <div className="text-sm text-muted-foreground border rounded-sm px-2 py-1 text-ellipsis truncate text-start">
+          {description ?? "Unimplemented condition Unimplemented condition"}
         </div>
         <Handle
           id={id}
@@ -274,23 +437,6 @@ const MatcherCondition = memo(
           position={Position.Right}
           className="border rounded-full bg-background p-1"
         />
-      </div>
-    );
-  },
-);
-
-const MatcherConditionForm = memo(
-  ({ id, condition }: { id: string; condition: string | undefined }) => {
-    return (
-      <div className="flex gap-2">
-        <Input value={condition} placeholder="Enter your condition" />
-        <Button
-          variant="outline"
-          size="icon"
-          className="hover:text-destructive"
-        >
-          <TrashIcon className="size-3" />
-        </Button>
       </div>
     );
   },
