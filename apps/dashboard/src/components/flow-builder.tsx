@@ -37,10 +37,8 @@ import "~/styles/flow-builder.css";
 import { Button } from "@integramind/ui/button";
 
 import type { Primitive, PrimitiveType } from "@integramind/shared/types";
-import type { insertPrimitiveSchema } from "@integramind/shared/validators/primitives";
 import { toast } from "@integramind/ui/use-toast";
 import { useTheme } from "next-themes";
-import type { z } from "zod";
 import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
 import { FunctionNode } from "~/components/primitives/function";
@@ -174,93 +172,28 @@ export function _FlowBuilder({
 
       const newNodeId = createId();
 
-      const nodesToCreate: z.infer<typeof insertPrimitiveSchema>[] = [
-        {
+      setNodes((nodes) =>
+        nodes.concat({
           id: newNodeId,
           type: nodeType,
-          positionX: Math.floor(position.x),
-          positionY: Math.floor(position.y),
-          flowId,
-          metadata: {},
-        },
-      ];
-
-      if (nodeType === "iterator") {
-        const newIteratorInputId = createId();
-        const newIteratorOutputId = createId();
-
-        nodesToCreate.push(
-          {
-            id: newIteratorInputId,
-            type: "iterator-input",
-            positionX: 50,
-            positionY: 184,
-            parentId: newNodeId,
-            flowId,
+          position: { x: Math.floor(position.x), y: Math.floor(position.y) },
+          data: {
+            id: newNodeId,
+            type: nodeType,
             metadata: {},
-          },
-          {
-            id: newIteratorOutputId,
-            type: "iterator-output",
-            positionX: 486,
-            positionY: 184,
-            parentId: newNodeId,
             flowId,
-            metadata: {},
-          },
-        );
-      }
-
-      const newNodes = await createPrimitive.mutateAsync(nodesToCreate);
-
-      setNodes((nodes) =>
-        nodes.concat(
-          newNodes.reduce((acc, n) => {
-            acc.push({
-              id: n.id,
-              type: n.type,
-              position: { x: n.positionX, y: n.positionY },
-              parentId: n.parentId ?? undefined,
-              extent: "parent",
-              data: {
-                id: n.id,
-                name: n.name,
-                description: n.description,
-                type: n.type,
-                metadata: n.metadata,
-                createdAt: n.createdAt,
-                updatedAt: n.updatedAt,
-                createdBy: n.createdBy,
-                flowId: n.flowId,
-              } as Primitive,
-            });
-
-            if (n.type === "iterator-input") {
-              acc.push({
-                id: n.id,
-                type: n.type,
-                position: { x: n.positionX, y: n.positionY },
-                parentId: n.parentId ?? undefined,
-                extent: "parent",
-                data: {} as Primitive,
-              });
-            }
-
-            if (n.type === "iterator-output") {
-              acc.push({
-                id: n.id,
-                type: n.type,
-                position: { x: n.positionX, y: n.positionY },
-                parentId: n.parentId ?? undefined,
-                extent: "parent",
-                data: {} as Primitive,
-              });
-            }
-
-            return acc;
-          }, [] as FlowNode[]),
-        ),
+          } as Primitive,
+        }),
       );
+
+      await createPrimitive.mutateAsync({
+        id: newNodeId,
+        type: nodeType,
+        positionX: Math.floor(position.x),
+        positionY: Math.floor(position.y),
+        flowId,
+        metadata: {},
+      });
     },
     [createPrimitive, flowId, setNodes, screenToFlowPosition],
   );

@@ -20,17 +20,15 @@ import { protectedProcedure } from "../trpc";
 
 export const primitivesRouter = {
   create: protectedProcedure
-    .input(insertPrimitiveSchema.array())
+    .input(insertPrimitiveSchema)
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.db
         .insert(primitives)
-        .values(
-          input.map((p) => ({
-            ...p,
-            metadata: sql`${p.metadata}::jsonb`,
-            createdBy: ctx.session.user.id,
-          })),
-        )
+        .values({
+          ...input,
+          metadata: sql`${input.metadata}::jsonb`,
+          createdBy: ctx.session.user.id,
+        })
         .returning({
           id: primitives.id,
           type: primitives.type,
@@ -46,14 +44,14 @@ export const primitivesRouter = {
           parentId: primitives.parentId,
         });
 
-      if (result.length < 1) {
+      if (!result[0]) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create primitive",
         });
       }
 
-      return result;
+      return result[0];
     }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))

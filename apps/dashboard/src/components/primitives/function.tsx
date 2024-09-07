@@ -139,9 +139,12 @@ export const FunctionNode = memo(
     positionAbsoluteY,
     parentId,
   }: FlowNodeProps) => {
-    if (_data.type !== "function") {
-      throw new Error("Invalid node type");
-    }
+    const { deleteElements, setNodes, fitBounds } = useReactFlow<
+      FlowNode,
+      FlowEdge
+    >();
+    const nodes = useNodes<FlowNode>();
+    const edges = useEdges<FlowEdge>();
 
     const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
       {
@@ -154,12 +157,6 @@ export const FunctionNode = memo(
     );
     const data = fetchedData as FunctionPrimitive;
 
-    const { deleteElements, setNodes, fitBounds } = useReactFlow<
-      FlowNode,
-      FlowEdge
-    >();
-    const nodes = useNodes<FlowNode>();
-    const edges = useEdges<FlowEdge>();
     const form = useForm<z.infer<typeof validationSchema>>({
       mode: "all",
       criteriaMode: "all",
@@ -535,21 +532,27 @@ export const FunctionNode = memo(
                               className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
                               placeholder="function_name"
                               onBlur={(e) => {
-                                form.setValue("name", e.target.value);
-                                updateFunction.mutate({
-                                  where: {
-                                    id: data.id,
-                                    flowId: data.flowId,
-                                  },
-                                  payload: {
-                                    type: "function",
-                                    name: e.target.value,
-                                    metadata: {
-                                      isCodeUpdated:
-                                        e.target.value === data.name,
+                                field.onChange(e);
+                                const isValid =
+                                  validationSchema.shape.name.safeParse(
+                                    e.target.value,
+                                  ).success;
+                                if (isValid) {
+                                  updateFunction.mutate({
+                                    where: {
+                                      id: data.id,
+                                      flowId: data.flowId,
                                     },
-                                  },
-                                });
+                                    payload: {
+                                      type: "function",
+                                      name: e.target.value,
+                                      metadata: {
+                                        isCodeUpdated:
+                                          e.target.value === data.name,
+                                      },
+                                    },
+                                  });
+                                }
                               }}
                             />
                           </FormControl>

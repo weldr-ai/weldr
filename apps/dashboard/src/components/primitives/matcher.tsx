@@ -120,8 +120,10 @@ export const Matcher = memo(
     >(data.metadata.conditions ?? []);
 
     const addCondition = () => {
+      const newConditionId = createId();
+
       const newCondition = {
-        id: createId(),
+        id: newConditionId,
         description: null,
         rawDescription: [],
       };
@@ -142,12 +144,29 @@ export const Matcher = memo(
       });
     };
 
+    const deleteCondition = (id: string) => {
+      setConditions(conditions.filter((condition) => condition.id !== id));
+
+      updateMatcher.mutate({
+        where: {
+          id: data.id,
+          flowId: data.flowId,
+        },
+        payload: {
+          type: "matcher",
+          metadata: {
+            conditions: conditions.filter((condition) => condition.id !== id),
+          },
+        },
+      });
+    };
+
     return (
       <>
         <ExpandableCard>
-          <ExpandableCardTrigger>
-            <ContextMenu>
-              <ContextMenuTrigger>
+          <ContextMenu>
+            <ContextMenuTrigger>
+              <ExpandableCardTrigger>
                 <Card
                   className={cn(
                     "drag-handle flex min-h-[84px] w-[256px] cursor-grab flex-col items-start justify-center gap-2 bg-background px-5 py-4 dark:bg-muted",
@@ -190,7 +209,7 @@ export const Matcher = memo(
                     </div>
                   )}
                 </Card>
-              </ContextMenuTrigger>
+              </ExpandableCardTrigger>
               <ContextMenuContent>
                 <ContextMenuLabel className="text-xs">Matcher</ContextMenuLabel>
                 <ContextMenuSeparator />
@@ -218,8 +237,8 @@ export const Matcher = memo(
                   Delete
                 </ContextMenuItem>
               </ContextMenuContent>
-            </ContextMenu>
-          </ExpandableCardTrigger>
+            </ContextMenuTrigger>
+          </ContextMenu>
           <ExpandableCardContent className="nowheel flex h-[400px] flex-col p-0">
             <ExpandableCardHeader className="flex flex-col items-start justify-start px-6 pt-4">
               <div className="flex w-full items-center justify-between">
@@ -301,7 +320,6 @@ export const Matcher = memo(
                             className="h-8 border-none shadow-none p-0 dark:bg-muted text-base focus-visible:ring-0"
                             placeholder="matcher_name"
                             onBlur={(e) => {
-                              field.onChange(e);
                               const isValid =
                                 validationSchema.shape.name.safeParse(
                                   e.target.value,
@@ -330,10 +348,10 @@ export const Matcher = memo(
                   <ScrollArea className="mb-4">
                     <div className="flex flex-col gap-2 px-6">
                       {conditions.map((condition) => (
-                        <div key={condition.id} className="flex gap-2">
+                        <div key={condition.id} className="relative flex gap-2">
                           <Editor
                             id={condition.id}
-                            className="h-64"
+                            className="h-32"
                             placeholder="Write a description for this condition"
                             type="description"
                             rawDescription={condition.rawDescription}
@@ -362,7 +380,6 @@ export const Matcher = memo(
                                   },
                                 });
                               });
-                              refetch();
                             }}
                             onError={(error: Error) => {
                               console.error(error);
@@ -370,9 +387,10 @@ export const Matcher = memo(
                             inputs={[]}
                           />
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon"
-                            className="hover:text-destructive"
+                            className="hover:text-destructive absolute right-1 top-1 size-6"
+                            onClick={() => deleteCondition(condition.id)}
                           >
                             <TrashIcon className="size-3" />
                           </Button>
