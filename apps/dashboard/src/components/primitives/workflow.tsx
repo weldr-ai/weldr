@@ -31,13 +31,7 @@ import { cn } from "@integramind/ui/utils";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Workflow = memo(
-  ({
-    data,
-    isConnectable,
-    positionAbsoluteX,
-    positionAbsoluteY,
-    selected,
-  }: FlowNodeProps) => {
+  ({ data, positionAbsoluteX, positionAbsoluteY, selected }: FlowNodeProps) => {
     if (data.type !== "workflow") {
       throw new Error("Invalid node type");
     }
@@ -45,7 +39,7 @@ export const Workflow = memo(
     const reactFlow = useReactFlow<FlowNode, FlowEdge>();
 
     return (
-      <div className="primitive">
+      <>
         <ExpandableCard>
           <ExpandableCardTrigger>
             <Card
@@ -139,7 +133,7 @@ export const Workflow = memo(
           className="border rounded-full bg-background p-1"
           position={Position.Right}
         />
-      </div>
+      </>
     );
   },
 );

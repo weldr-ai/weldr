@@ -167,7 +167,7 @@ export const Route = memo(
     }
 
     return (
-      <div className="primitive">
+      <>
         <ExpandableCard>
           <ExpandableCardTrigger>
             <Card
@@ -266,16 +266,22 @@ export const Route = memo(
                           className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
                           placeholder="Route name"
                           onBlur={async (e) => {
-                            await updateRoute.mutateAsync({
-                              where: {
-                                id: data.id,
-                                flowId: data.flowId,
-                              },
-                              payload: {
-                                type: "route",
-                                name: e.target.value,
-                              },
-                            });
+                            const isValid =
+                              updateRouteFlowSchema.shape.name.safeParse(
+                                e.target.value,
+                              ).success;
+                            if (isValid) {
+                              await updateRoute.mutateAsync({
+                                where: {
+                                  id: data.id,
+                                  flowId: data.flowId,
+                                },
+                                payload: {
+                                  type: "route",
+                                  name: e.target.value,
+                                },
+                              });
+                            }
                           }}
                         />
                       </FormControl>
@@ -302,16 +308,22 @@ export const Route = memo(
                             placeholder="Enter route description"
                             value={field.value}
                             onBlur={async (e) => {
-                              await updateRoute.mutateAsync({
-                                where: {
-                                  id: data.id,
-                                  flowId: data.flowId,
-                                },
-                                payload: {
-                                  type: "route",
-                                  description: e.target.value,
-                                },
-                              });
+                              const isValid =
+                                updateRouteFlowSchema.shape.description.safeParse(
+                                  e.target.value,
+                                ).success;
+                              if (isValid) {
+                                await updateRoute.mutateAsync({
+                                  where: {
+                                    id: data.id,
+                                    flowId: data.flowId,
+                                  },
+                                  payload: {
+                                    type: "route",
+                                    description: e.target.value,
+                                  },
+                                });
+                              }
                             }}
                           />
                         </FormControl>
@@ -332,19 +344,25 @@ export const Route = memo(
                             name={field.name}
                             onValueChange={async (value) => {
                               field.onChange(value);
-                              await updateRoute.mutateAsync({
-                                where: {
-                                  id: data.id,
-                                  flowId: data.flowId,
-                                },
-                                payload: {
-                                  type: "route",
-                                  metadata: {
-                                    method:
-                                      value as RoutePrimitive["metadata"]["method"],
+                              const isValid =
+                                updateRouteFlowSchema.shape.method.safeParse(
+                                  value,
+                                ).success;
+                              if (isValid) {
+                                await updateRoute.mutateAsync({
+                                  where: {
+                                    id: data.id,
+                                    flowId: data.flowId,
                                   },
-                                },
-                              });
+                                  payload: {
+                                    type: "route",
+                                    metadata: {
+                                      method:
+                                        value as RoutePrimitive["metadata"]["method"],
+                                    },
+                                  },
+                                });
+                              }
                             }}
                           >
                             <SelectTrigger className="bg-background">
@@ -378,18 +396,24 @@ export const Route = memo(
                             placeholder="Enter action URL path"
                             value={field.value}
                             onBlur={async (e) => {
-                              await updateRoute.mutateAsync({
-                                where: {
-                                  id: data.id,
-                                  flowId: data.flowId,
-                                },
-                                payload: {
-                                  type: "route",
-                                  metadata: {
-                                    path: e.target.value,
+                              const isValid =
+                                updateRouteFlowSchema.shape.path.safeParse(
+                                  e.target.value,
+                                ).success;
+                              if (isValid) {
+                                await updateRoute.mutateAsync({
+                                  where: {
+                                    id: data.id,
+                                    flowId: data.flowId,
                                   },
-                                },
-                              });
+                                  payload: {
+                                    type: "route",
+                                    metadata: {
+                                      path: e.target.value,
+                                    },
+                                  },
+                                });
+                              }
                             }}
                           />
                         </FormControl>
@@ -419,7 +443,7 @@ export const Route = memo(
           className="border rounded-full bg-background p-1"
           position={Position.Right}
         />
-      </div>
+      </>
     );
   },
 );

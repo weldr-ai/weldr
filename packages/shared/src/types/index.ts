@@ -4,7 +4,6 @@ import type { flowSchema, flowTypesSchema } from "../validators/flows";
 import type {
   functionPrimitiveMetadataSchema,
   functionPrimitiveSchema,
-  functionRawDescriptionSchema,
   iteratorPrimitiveMetadataSchema,
   iteratorPrimitiveSchema,
   matcherPrimitiveMetadataSchema,
@@ -12,6 +11,7 @@ import type {
   primitiveBaseSchema,
   primitiveMetadataSchema,
   primitiveSchema,
+  rawDescriptionSchema,
   responsePrimitiveMetadataSchema,
   responsePrimitiveSchema,
   routePrimitiveMetadataSchema,
@@ -73,13 +73,11 @@ export type ResponseMetadata = z.infer<typeof responsePrimitiveMetadataSchema>;
 export type RoutePrimitive = z.infer<typeof routePrimitiveSchema>;
 export type WorkflowPrimitive = z.infer<typeof workflowPrimitiveSchema>;
 export type FunctionPrimitive = z.infer<typeof functionPrimitiveSchema>;
-export type matcherPrimitive = z.infer<typeof matcherPrimitiveSchema>;
+export type MatcherPrimitive = z.infer<typeof matcherPrimitiveSchema>;
 export type IteratorPrimitive = z.infer<typeof iteratorPrimitiveSchema>;
 export type ResponsePrimitive = z.infer<typeof responsePrimitiveSchema>;
 
-export type FunctionRawDescription = z.infer<
-  typeof functionRawDescriptionSchema
->;
+export type RawDescription = z.infer<typeof rawDescriptionSchema>;
 
 export type BaseFormState<
   FormFields = Record<string, string>,

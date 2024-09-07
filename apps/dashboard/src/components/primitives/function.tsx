@@ -70,9 +70,9 @@ import { cn } from "@integramind/ui/utils";
 
 import type {
   FunctionPrimitive,
-  FunctionRawDescription,
   Input as IInput,
   Primitive,
+  RawDescription,
 } from "@integramind/shared/types";
 import type { resourceProvidersSchema } from "@integramind/shared/validators/resources";
 import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
@@ -134,15 +134,17 @@ const validationSchema = z.object({
 export const FunctionNode = memo(
   ({
     data: _data,
-    isConnectable,
     selected,
     positionAbsoluteX,
     positionAbsoluteY,
     parentId,
   }: FlowNodeProps) => {
-    if (_data.type !== "function") {
-      throw new Error("Invalid node type");
-    }
+    const { deleteElements, setNodes, fitBounds } = useReactFlow<
+      FlowNode,
+      FlowEdge
+    >();
+    const nodes = useNodes<FlowNode>();
+    const edges = useEdges<FlowEdge>();
 
     const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
       {
@@ -155,12 +157,6 @@ export const FunctionNode = memo(
     );
     const data = fetchedData as FunctionPrimitive;
 
-    const { deleteElements, setNodes, fitBounds } = useReactFlow<
-      FlowNode,
-      FlowEdge
-    >();
-    const nodes = useNodes<FlowNode>();
-    const edges = useEdges<FlowEdge>();
     const form = useForm<z.infer<typeof validationSchema>>({
       mode: "all",
       criteriaMode: "all",
@@ -298,7 +294,7 @@ export const FunctionNode = memo(
             });
           }
           return acc;
-        }, [] as FunctionRawDescription[]);
+        }, [] as RawDescription[]);
         const inputs: IInput[] = [];
         let resource: {
           id: string;
@@ -353,14 +349,14 @@ export const FunctionNode = memo(
     }
 
     return (
-      <div className="primitive">
+      <>
         <ExpandableCard>
           <ContextMenu>
             <ContextMenuTrigger>
               <ExpandableCardTrigger>
                 <Card
                   className={cn(
-                    "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 px-5 py-4 dark:bg-muted",
+                    "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start justify-center gap-2 px-5 py-4 dark:bg-muted",
                     {
                       "border-primary": selected,
                     },
@@ -534,23 +530,29 @@ export const FunctionNode = memo(
                               {...field}
                               autoComplete="off"
                               className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
-                              placeholder="Function name"
+                              placeholder="function_name"
                               onBlur={(e) => {
-                                updateFunction.mutate({
-                                  where: {
-                                    id: data.id,
-                                    flowId: data.flowId,
-                                  },
-                                  payload: {
-                                    type: "function",
-                                    name: e.target.value,
-                                    metadata: {
-                                      isCodeUpdated:
-                                        e.target.value === data.name,
+                                field.onChange(e);
+                                const isValid =
+                                  validationSchema.shape.name.safeParse(
+                                    e.target.value,
+                                  ).success;
+                                if (isValid) {
+                                  updateFunction.mutate({
+                                    where: {
+                                      id: data.id,
+                                      flowId: data.flowId,
                                     },
-                                  },
-                                });
-                                form.setValue("name", e.target.value);
+                                    payload: {
+                                      type: "function",
+                                      name: e.target.value,
+                                      metadata: {
+                                        isCodeUpdated:
+                                          e.target.value === data.name,
+                                      },
+                                    },
+                                  });
+                                }
                               }}
                             />
                           </FormControl>
@@ -725,7 +727,7 @@ export const FunctionNode = memo(
             });
           }}
         />
-      </div>
+      </>
     );
   },
 );

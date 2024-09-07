@@ -41,13 +41,7 @@ import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Response = memo(
-  ({
-    data,
-    isConnectable,
-    positionAbsoluteX,
-    positionAbsoluteY,
-    selected,
-  }: FlowNodeProps) => {
+  ({ data, positionAbsoluteX, positionAbsoluteY, selected }: FlowNodeProps) => {
     const reactFlow = useReactFlow<FlowNode, FlowEdge>();
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -55,7 +49,7 @@ export const Response = memo(
     const deleteResponse = api.primitives.delete.useMutation();
 
     return (
-      <div className="primitive">
+      <>
         <ExpandableCard>
           <ExpandableCardTrigger>
             <ContextMenu>
@@ -206,7 +200,7 @@ export const Response = memo(
           type="source"
           position={Position.Right}
         />
-      </div>
+      </>
     );
   },
 );

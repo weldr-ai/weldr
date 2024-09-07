@@ -61,10 +61,6 @@ export const Iterator = memo(
     parentId,
     width,
   }: FlowNodeProps) => {
-    if (_data.type !== "iterator") {
-      return;
-    }
-
     const { fitBounds, setNodes, deleteElements } = useReactFlow<
       FlowNode,
       FlowEdge
@@ -78,7 +74,7 @@ export const Iterator = memo(
         {
           refetchInterval: false,
           initialData: {
-            ..._data,
+            ...(_data as IteratorPrimitive),
             children: [],
           },
         },
@@ -163,7 +159,7 @@ export const Iterator = memo(
                       <span className="text-muted-foreground">Iterator</span>
                     </div>
                     <span className="text-xs">
-                      {data.name ?? "new_iterator"}
+                      {data.name ?? "iterator_name"}
                     </span>
                   </Card>
                 </ExpandableCardTrigger>
