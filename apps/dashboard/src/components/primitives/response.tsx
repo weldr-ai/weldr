@@ -51,9 +51,9 @@ export const Response = memo(
     return (
       <>
         <ExpandableCard>
-          <ExpandableCardTrigger>
-            <ContextMenu>
-              <ContextMenuTrigger>
+          <ContextMenu>
+            <ContextMenuTrigger>
+              <ExpandableCardTrigger>
                 <Card
                   className={cn(
                     "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start gap-2 bg-background px-5  py-4 dark:bg-muted",
@@ -81,38 +81,36 @@ export const Response = memo(
                   </div>
                   <span className="text-sm">{data.name}</span>
                 </Card>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <ContextMenuLabel className="text-xs">
-                  Response
-                </ContextMenuLabel>
-                <ContextMenuSeparator />
-                <ContextMenuItem className="text-xs">
-                  <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
-                  Run with previous primitives
-                </ContextMenuItem>
-                <ContextMenuItem className="flex items-center justify-between text-xs">
-                  <Link
-                    className="flex items-center"
-                    href="https://docs.integramind.ai/primitives/iterator"
-                    target="blank"
-                  >
-                    <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
-                    Docs
-                  </Link>
-                  <ExternalLinkIcon className="size-3 text-muted-foreground" />
-                </ContextMenuItem>
-                <ContextMenuSeparator />
-                <ContextMenuItem
-                  className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
-                  onClick={() => setDeleteAlertDialogOpen(true)}
+              </ExpandableCardTrigger>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuLabel className="text-xs">Response</ContextMenuLabel>
+              <ContextMenuSeparator />
+              <ContextMenuItem className="text-xs">
+                <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
+                Run with previous primitives
+              </ContextMenuItem>
+              <ContextMenuItem className="flex items-center justify-between text-xs">
+                <Link
+                  className="flex items-center"
+                  href="https://docs.integramind.ai/primitives/iterator"
+                  target="blank"
                 >
-                  <TrashIcon className="mr-3 size-4" />
-                  Delete
-                </ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
-          </ExpandableCardTrigger>
+                  <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
+                  Docs
+                </Link>
+                <ExternalLinkIcon className="size-3 text-muted-foreground" />
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem
+                className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                onClick={() => setDeleteAlertDialogOpen(true)}
+              >
+                <TrashIcon className="mr-3 size-4" />
+                Delete
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
           <ExpandableCardContent className="nowheel flex h-[400px] flex-col p-0">
             <ExpandableCardHeader className="flex flex-col items-start justify-start px-6 py-4">
               <div className="flex w-full items-center justify-between">
