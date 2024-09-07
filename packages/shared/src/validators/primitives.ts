@@ -145,6 +145,7 @@ export const responsePrimitiveMetadataSchema = z.object({
     })
     .array()
     .optional(),
+  rawDescription: rawDescriptionSchema.array().optional(),
 });
 
 export const responsePrimitiveSchema = primitiveBaseSchema.extend({
@@ -357,7 +358,9 @@ export const updateIteratorSchema = updatePrimitiveBaseSchema.extend({
     .optional(),
 });
 
-export const updateResponseMetadataSchema = z.object({});
+export const updateResponseMetadataSchema = z.object({
+  rawDescription: rawDescriptionSchema.array().optional(),
+});
 
 export const updateResponseSchema = updatePrimitiveBaseSchema.extend({
   type: z.literal("response"),
