@@ -43,8 +43,6 @@ import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
 import { FunctionNode } from "~/components/primitives/function";
 import { Iterator } from "~/components/primitives/iterator";
-import { IteratorInput } from "~/components/primitives/iterator-input";
-import { IteratorOutput } from "~/components/primitives/iterator-output";
 import { Matcher } from "~/components/primitives/matcher";
 import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
@@ -59,8 +57,6 @@ const nodeTypes = {
   matcher: Matcher,
   iterator: Iterator,
   response: Response,
-  "iterator-input": IteratorInput,
-  "iterator-output": IteratorOutput,
 };
 
 const edgeTypes = {
@@ -297,7 +293,9 @@ export function _FlowBuilder({
       const source = nodes.find((node) => node.id === connection.source);
       const target = nodes.find((node) => node.id === connection.target);
 
-      if (!source || !target) return false;
+      if (!target || !source) return false;
+      if (source.parentId !== target.parentId) return false;
+      if (target.id === connection.source) return false;
 
       const hasCycle = (node: Node, visited = new Set()) => {
         if (visited.has(node.id)) return false;
@@ -310,17 +308,7 @@ export function _FlowBuilder({
         }
       };
 
-      if (target?.id === connection.source) return false;
-
-      if (hasCycle(target)) return false;
-
-      if (source.parentId !== target.parentId) {
-        if (source.type === "iterator-output" && !target.parentId) return true;
-        if (!source.parentId && target.type === "iterator-input") return true;
-        return false;
-      }
-
-      return true;
+      return !hasCycle(target);
     },
     [nodes, edges],
   );
