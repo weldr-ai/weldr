@@ -37,7 +37,10 @@ import {
 import { cn } from "@integramind/ui/utils";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { ResponsePrimitive } from "@integramind/shared/types";
+import type {
+  RawDescription,
+  ResponsePrimitive,
+} from "@integramind/shared/types";
 import {
   Form,
   FormControl,
@@ -47,13 +50,14 @@ import {
   FormMessage,
 } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
-import { $getRoot, type EditorState } from "lexical";
+import { $getRoot, type EditorState, type ParagraphNode } from "lexical";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
+import Editor from "~/components/editor";
+import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
-import Editor from "../editor";
 
 export const validationSchema = z.object({
   name: z
@@ -116,6 +120,49 @@ export const Response = memo(
         description: data.description ?? undefined,
       },
     });
+
+    function onChange(editorState: EditorState) {
+      editorState.read(async () => {
+        const root = $getRoot();
+        const children = (root.getChildren()[0] as ParagraphNode).getChildren();
+
+        const description = root.getTextContent();
+        const rawDescription = children.reduce((acc, child) => {
+          if (child.__type === "text") {
+            acc.push({
+              type: "text",
+              value: child.getTextContent(),
+            });
+          } else if (child.__type === "reference") {
+            const referenceNode = child as ReferenceNode;
+            acc.push({
+              type: "reference",
+              id: referenceNode.__id,
+              referenceType: referenceNode.__referenceType,
+              name: referenceNode.__name,
+              icon: referenceNode.__icon,
+              dataType: referenceNode.__dataType,
+              testValue: referenceNode.__testValue ?? null,
+            });
+          }
+          return acc;
+        }, [] as RawDescription[]);
+
+        updateResponse.mutate({
+          where: {
+            id: data.id,
+            flowId: data.flowId,
+          },
+          payload: {
+            type: "response",
+            description,
+            metadata: {
+              rawDescription,
+            },
+          },
+        });
+      });
+    }
 
     return (
       <>
@@ -295,23 +342,7 @@ export const Response = memo(
                           inputs={data.metadata.inputs ?? []}
                           placeholder="Describe your response"
                           rawDescription={data.metadata.rawDescription}
-                          onChange={(editorState: EditorState) => {
-                            editorState.read(async () => {
-                              const root = $getRoot();
-                              const description = root.getTextContent();
-                              console.log(description);
-                              await updateResponse.mutateAsync({
-                                where: {
-                                  id: data.id,
-                                  flowId: data.flowId,
-                                },
-                                payload: {
-                                  type: "response",
-                                  description,
-                                },
-                              });
-                            });
-                          }}
+                          onChange={onChange}
                           onError={(error: Error) => {
                             console.error(error);
                           }}

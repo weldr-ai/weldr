@@ -39,7 +39,10 @@ import Link from "next/link";
 import { memo, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { MatcherPrimitive } from "@integramind/shared/types";
+import type {
+  MatcherPrimitive,
+  RawDescription,
+} from "@integramind/shared/types";
 import type { matcherPrimitiveMetadataSchema } from "@integramind/shared/validators/primitives";
 import {
   Form,
@@ -49,13 +52,14 @@ import {
   FormMessage,
 } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
-import { $getRoot, type EditorState } from "lexical";
+import { $getRoot, type EditorState, type ParagraphNode } from "lexical";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
+import Editor from "~/components/editor";
+import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
-import Editor from "../editor";
 
 const validationSchema = z.object({
   name: z
@@ -358,7 +362,38 @@ export const Matcher = memo(
                             onChange={(editorState: EditorState) => {
                               editorState.read(async () => {
                                 const root = $getRoot();
+                                const children = (
+                                  root.getChildren()[0] as ParagraphNode
+                                ).getChildren();
+
                                 const description = root.getTextContent();
+                                const rawDescription = children.reduce(
+                                  (acc, child) => {
+                                    if (child.__type === "text") {
+                                      acc.push({
+                                        type: "text",
+                                        value: child.getTextContent(),
+                                      });
+                                    } else if (child.__type === "reference") {
+                                      const referenceNode =
+                                        child as ReferenceNode;
+                                      acc.push({
+                                        type: "reference",
+                                        id: referenceNode.__id,
+                                        referenceType:
+                                          referenceNode.__referenceType,
+                                        name: referenceNode.__name,
+                                        icon: referenceNode.__icon,
+                                        dataType: referenceNode.__dataType,
+                                        testValue:
+                                          referenceNode.__testValue ?? null,
+                                      });
+                                    }
+                                    return acc;
+                                  },
+                                  [] as RawDescription[],
+                                );
+
                                 await updateMatcher.mutateAsync({
                                   where: {
                                     id: data.id,
@@ -374,6 +409,7 @@ export const Matcher = memo(
                                         {
                                           ...condition,
                                           description,
+                                          rawDescription,
                                         },
                                       ],
                                     },
