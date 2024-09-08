@@ -2,6 +2,7 @@ import {
   Handle,
   NodeResizeControl,
   Position,
+  type ResizeParams,
   useNodes,
   useReactFlow,
   useUpdateNodeInternals,
@@ -93,6 +94,11 @@ export const Iterator = memo(
       );
     const data = fetchedData as IteratorPrimitive & { children: Primitive[] };
 
+    const [size, setSize] = useState({
+      width: data.metadata?.width ?? 600,
+      height: data.metadata?.height ?? 400,
+    });
+
     const updateIterator = api.primitives.update.useMutation({
       onSuccess: async () => {
         await refetch();
@@ -137,7 +143,15 @@ export const Iterator = memo(
 
     return (
       <>
-        <div className="relative size-full min-w-[600px] min-h-[400px] border rounded-xl">
+        <div
+          className="relative border rounded-xl"
+          style={{
+            width: size.width,
+            height: size.height,
+            minWidth: "600px",
+            minHeight: "400px",
+          }}
+        >
           <ExpandableCard
             className="absolute top-[-28px]"
             style={{ left: `${(width ?? 0) / 2 - 64}px` }}
@@ -384,12 +398,33 @@ export const Iterator = memo(
             />
           </Card>
         </div>
-
         <NodeResizeControl
           className="bg-primary border-none p-[2px] rounded-full"
           position="bottom-right"
           minWidth={600}
           minHeight={400}
+          onResize={async (_, params: ResizeParams) => {
+            setSize({
+              width: params.width,
+              height: params.height,
+            });
+          }}
+          onResizeEnd={async (_, params: ResizeParams) => {
+            await updateIterator.mutateAsync({
+              where: {
+                id: data.id,
+                flowId: data.flowId,
+              },
+              payload: {
+                type: "iterator",
+                metadata: {
+                  ...data.metadata,
+                  width: params.width,
+                  height: params.height,
+                },
+              },
+            });
+          }}
         />
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}

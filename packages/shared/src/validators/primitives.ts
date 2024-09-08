@@ -155,6 +155,8 @@ export const responsePrimitiveSchema = primitiveBaseSchema.extend({
 
 export const iteratorPrimitiveMetadataSchema = z.object({
   iteratorType: z.enum(["for-each", "map", "reduce"]).optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
 });
 
 export const iteratorPrimitiveSchema = primitiveBaseSchema.extend({
@@ -339,7 +341,9 @@ export const updateIteratorSchema = updatePrimitiveBaseSchema.extend({
   type: z.literal("iterator"),
   metadata: z
     .object({
-      iteratorType: z.enum(["for-each", "map", "reduce"]),
+      iteratorType: z.enum(["for-each", "map", "reduce"]).optional(),
+      width: z.number().optional(),
+      height: z.number().optional(),
     })
     .optional(),
 });
