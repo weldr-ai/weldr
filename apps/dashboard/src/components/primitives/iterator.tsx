@@ -162,6 +162,7 @@ export const Iterator = memo(
                   <Card
                     className={cn(
                       "drag-handle flex h-[56px] w-[128px] cursor-grab flex-col items-start gap-1.5 px-3 py-2 dark:bg-muted",
+                      "hover:shadow-lg hover:shadow-black",
                       {
                         "border-primary": selected,
                       },
