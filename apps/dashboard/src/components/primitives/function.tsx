@@ -396,6 +396,7 @@ export const FunctionNode = memo(
                   className="text-xs"
                   onClick={async () => {
                     const parent = nodes.find((node) => node.id === parentId);
+                    console.log(parent);
                     if (parent) {
                       setNodes(
                         nodes.map((node) => {
@@ -424,7 +425,7 @@ export const FunctionNode = memo(
                         },
                         payload: {
                           type: "function",
-                          parentId: undefined,
+                          parentId: null,
                         },
                       });
                     }

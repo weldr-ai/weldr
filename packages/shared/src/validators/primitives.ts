@@ -232,7 +232,7 @@ export const updatePrimitiveBaseSchema = z.object({
     })
     .transform((name) => name.replace(/\s+/g, "_").toLowerCase().trim())
     .optional(),
-  parentId: z.string().optional(),
+  parentId: z.string().nullable().optional(),
   description: z.string().trim().optional(),
   positionX: z.number().optional(),
   positionY: z.number().optional(),

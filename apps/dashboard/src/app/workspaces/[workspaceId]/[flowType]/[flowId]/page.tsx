@@ -41,7 +41,9 @@ export default async function WorkflowPage({
     const initialEdges: FlowEdge[] = flow.edges.map((edge) => ({
       id: edge.id,
       source: edge.source,
+      sourceHandle: edge.sourceHandle,
       target: edge.target,
+      targetHandle: edge.targetHandle,
       type: "deletable-edge",
     }));
 

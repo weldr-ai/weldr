@@ -135,7 +135,9 @@ export function _FlowBuilder({
         await createEdge.mutateAsync({
           id: newEdgeId,
           source: connection.source,
+          sourceHandle: connection.sourceHandle,
           target: connection.target,
+          targetHandle: connection.targetHandle,
           flowId,
         });
       }
@@ -294,8 +296,25 @@ export function _FlowBuilder({
       const target = nodes.find((node) => node.id === connection.target);
 
       if (!target || !source) return false;
+      if (source.id === target.id) return false;
+
+      // Check for iterator input source handle connection
+      if (
+        source.type === "iterator" &&
+        connection.sourceHandle === `${source.id}-iterator-input-source`
+      ) {
+        return target.parentId === source.id;
+      }
+
+      // Check for iterator output target handle connection
+      if (
+        target.type === "iterator" &&
+        connection.targetHandle === `${target.id}-iterator-output-target`
+      ) {
+        return source.parentId === target.id;
+      }
+
       if (source.parentId !== target.parentId) return false;
-      if (target.id === connection.source) return false;
 
       const hasCycle = (node: Node, visited = new Set()) => {
         if (visited.has(node.id)) return false;
@@ -303,7 +322,7 @@ export function _FlowBuilder({
         visited.add(node.id);
 
         for (const outgoer of getOutgoers(node, nodes, edges)) {
-          if (outgoer.id === connection.source) return true;
+          if (outgoer.id === source.id) return true;
           if (hasCycle(outgoer, visited)) return true;
         }
       };

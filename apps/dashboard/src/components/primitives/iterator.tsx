@@ -137,7 +137,7 @@ export const Iterator = memo(
 
     return (
       <>
-        <div className="relative -z-[9999] size-full min-w-[600px] min-h-[400px] border rounded-xl">
+        <div className="relative size-full min-w-[600px] min-h-[400px] border rounded-xl">
           <ExpandableCard
             className="absolute top-[-28px]"
             style={{ left: `${(width ?? 0) / 2 - 64}px` }}
@@ -349,14 +349,14 @@ export const Iterator = memo(
             }}
           >
             <Handle
-              id={`${data.id}-input-target`}
+              id={`${data.id}-iterator-input-target`}
               type="target"
               position={Position.Left}
               className="border rounded-full bg-background p-1"
             />
             <span className="text-xs">Input</span>
             <Handle
-              id={`${data.id}-input-source`}
+              id={`${data.id}-iterator-input-source`}
               type="source"
               position={Position.Right}
               className="border rounded-full bg-background p-1"
@@ -370,14 +370,14 @@ export const Iterator = memo(
             }}
           >
             <Handle
-              id={`${data.id}-output-target`}
+              id={`${data.id}-iterator-output-target`}
               type="target"
               position={Position.Left}
               className="border rounded-full bg-background p-1"
             />
             <span className="text-xs">Output</span>
             <Handle
-              id={`${data.id}-output-source`}
+              id={`${data.id}-iterator-output-source`}
               type="source"
               position={Position.Right}
               className="border rounded-full bg-background p-1"
