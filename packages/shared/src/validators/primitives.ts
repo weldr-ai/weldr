@@ -154,7 +154,7 @@ export const responsePrimitiveSchema = primitiveBaseSchema.extend({
 });
 
 export const iteratorPrimitiveMetadataSchema = z.object({
-  iteratorType: z.enum(["for-each", "map", "reduce"]),
+  iteratorType: z.enum(["for-each", "map", "reduce"]).optional(),
 });
 
 export const iteratorPrimitiveSchema = primitiveBaseSchema.extend({
@@ -322,6 +322,7 @@ export const updateWorkflowSchema = updatePrimitiveBaseSchema.extend({
 export const updateMatcherMetadataSchema = z.object({
   conditions: z
     .object({
+      id: z.string(),
       description: z.string().trim().nullable(),
       rawDescription: rawDescriptionSchema.array().optional(),
     })

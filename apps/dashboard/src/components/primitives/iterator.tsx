@@ -1,5 +1,12 @@
-import { NodeResizeControl, useNodes, useReactFlow } from "@xyflow/react";
-import { memo, useState } from "react";
+import {
+  Handle,
+  NodeResizeControl,
+  Position,
+  useNodes,
+  useReactFlow,
+  useUpdateNodeInternals,
+} from "@xyflow/react";
+import { memo, useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { IteratorPrimitive, Primitive } from "@integramind/shared/types";
@@ -60,11 +67,16 @@ export const Iterator = memo(
     selected,
     parentId,
     width,
+    height,
   }: FlowNodeProps) => {
     const { fitBounds, setNodes, deleteElements } = useReactFlow<
       FlowNode,
       FlowEdge
     >();
+    const nodes = useNodes<FlowNode>();
+    const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
+      useState<boolean>(false);
+    const updateNodeInternals = useUpdateNodeInternals();
 
     const { data: fetchedData, refetch } =
       api.primitives.getIteratorById.useQuery(
@@ -119,13 +131,13 @@ export const Iterator = memo(
       },
     });
 
-    const nodes = useNodes<FlowNode>();
-    const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
-      useState<boolean>(false);
+    useEffect(() => {
+      updateNodeInternals(data.id);
+    }, [data.id, updateNodeInternals]);
 
     return (
       <>
-        <div className="size-full relative">
+        <div className="relative -z-[9999] size-full min-w-[600px] min-h-[400px] border rounded-xl">
           <ExpandableCard
             className="absolute top-[-28px]"
             style={{ left: `${(width ?? 0) / 2 - 64}px` }}
@@ -279,8 +291,10 @@ export const Iterator = memo(
                                   payload: {
                                     type: "iterator",
                                     metadata: {
-                                      iteratorType:
-                                        value as IteratorPrimitive["metadata"]["iteratorType"],
+                                      iteratorType: value as
+                                        | "map"
+                                        | "reduce"
+                                        | "for-each",
                                     },
                                   },
                                 });
@@ -327,8 +341,50 @@ export const Iterator = memo(
               </div>
             </ExpandableCardContent>
           </ExpandableCard>
-          <div className="z-[-9999] size-full min-w-[600px] min-h-[400px] border rounded-xl" />
+          <Card
+            className="flex absolute h-[32px] w-[64px] items-center justify-center dark:bg-muted rounded-md"
+            style={{
+              bottom: `${(height ?? 400) / 2}px`,
+              left: "-32px",
+            }}
+          >
+            <Handle
+              id={`${data.id}-input-target`}
+              type="target"
+              position={Position.Left}
+              className="border rounded-full bg-background p-1"
+            />
+            <span className="text-xs">Input</span>
+            <Handle
+              id={`${data.id}-input-source`}
+              type="source"
+              position={Position.Right}
+              className="border rounded-full bg-background p-1"
+            />
+          </Card>
+          <Card
+            className="flex absolute h-[32px] w-[64px] items-center justify-center dark:bg-muted rounded-md"
+            style={{
+              bottom: `${(height ?? 400) / 2}px`,
+              right: "-32px",
+            }}
+          >
+            <Handle
+              id={`${data.id}-output-target`}
+              type="target"
+              position={Position.Left}
+              className="border rounded-full bg-background p-1"
+            />
+            <span className="text-xs">Output</span>
+            <Handle
+              id={`${data.id}-output-source`}
+              type="source"
+              position={Position.Right}
+              className="border rounded-full bg-background p-1"
+            />
+          </Card>
         </div>
+
         <NodeResizeControl
           className="bg-primary border-none p-[2px] rounded-full"
           position="bottom-right"
