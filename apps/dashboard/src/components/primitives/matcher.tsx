@@ -178,6 +178,7 @@ export const Matcher = memo(
                 <Card
                   className={cn(
                     "drag-handle flex min-h-[84px] w-[256px] cursor-grab flex-col items-start justify-center gap-2 bg-background px-5 py-4 dark:bg-muted",
+                    "hover:shadow-lg hover:shadow-black",
                     {
                       "border-primary": selected,
                     },

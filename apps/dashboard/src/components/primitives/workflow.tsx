@@ -45,6 +45,7 @@ export const Workflow = memo(
             <Card
               className={cn(
                 "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col gap-2 px-5 py-4",
+                "hover:shadow-lg hover:shadow-black",
                 {
                   "border-primary": selected,
                 },
