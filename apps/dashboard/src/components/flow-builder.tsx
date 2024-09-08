@@ -43,8 +43,6 @@ import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
 import { FunctionNode } from "~/components/primitives/function";
 import { Iterator } from "~/components/primitives/iterator";
-import { IteratorInput } from "~/components/primitives/iterator-input";
-import { IteratorOutput } from "~/components/primitives/iterator-output";
 import { Matcher } from "~/components/primitives/matcher";
 import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
@@ -59,8 +57,6 @@ const nodeTypes = {
   matcher: Matcher,
   iterator: Iterator,
   response: Response,
-  "iterator-input": IteratorInput,
-  "iterator-output": IteratorOutput,
 };
 
 const edgeTypes = {
@@ -139,7 +135,9 @@ export function _FlowBuilder({
         await createEdge.mutateAsync({
           id: newEdgeId,
           source: connection.source,
+          sourceHandle: connection.sourceHandle,
           target: connection.target,
+          targetHandle: connection.targetHandle,
           flowId,
         });
       }
@@ -297,7 +295,26 @@ export function _FlowBuilder({
       const source = nodes.find((node) => node.id === connection.source);
       const target = nodes.find((node) => node.id === connection.target);
 
-      if (!source || !target) return false;
+      if (!target || !source) return false;
+      if (source.id === target.id) return false;
+
+      // Check for iterator input source handle connection
+      if (
+        source.type === "iterator" &&
+        connection.sourceHandle === `${source.id}-iterator-input-source`
+      ) {
+        return target.parentId === source.id;
+      }
+
+      // Check for iterator output target handle connection
+      if (
+        target.type === "iterator" &&
+        connection.targetHandle === `${target.id}-iterator-output-target`
+      ) {
+        return source.parentId === target.id;
+      }
+
+      if (source.parentId !== target.parentId) return false;
 
       const hasCycle = (node: Node, visited = new Set()) => {
         if (visited.has(node.id)) return false;
@@ -305,22 +322,12 @@ export function _FlowBuilder({
         visited.add(node.id);
 
         for (const outgoer of getOutgoers(node, nodes, edges)) {
-          if (outgoer.id === connection.source) return true;
+          if (outgoer.id === source.id) return true;
           if (hasCycle(outgoer, visited)) return true;
         }
       };
 
-      if (target?.id === connection.source) return false;
-
-      if (hasCycle(target)) return false;
-
-      if (source.parentId !== target.parentId) {
-        if (source.type === "iterator-output" && !target.parentId) return true;
-        if (!source.parentId && target.type === "iterator-input") return true;
-        return false;
-      }
-
-      return true;
+      return !hasCycle(target);
     },
     [nodes, edges],
   );

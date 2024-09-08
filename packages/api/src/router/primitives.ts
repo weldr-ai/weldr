@@ -171,11 +171,7 @@ export const primitivesRouter = {
       const updatedPrimitive = await ctx.db
         .update(primitives)
         .set({
-          name: input.payload.name,
-          description: input.payload.description,
-          positionX: input.payload.positionX,
-          positionY: input.payload.positionY,
-          parentId: input.payload.parentId,
+          ...input.payload,
           metadata: sql`${{
             ...savedPrimitive.metadata,
             ...input.payload.metadata,
@@ -195,6 +191,8 @@ export const primitivesRouter = {
           message: "Failed to update primitive",
         });
       }
+
+      console.log(updatedPrimitive[0]);
 
       return updatedPrimitive[0];
     }),

@@ -134,6 +134,8 @@ export const Matcher = memo(
 
       setConditions([...conditions, newCondition]);
 
+      console.log("new conditions", newCondition);
+
       updateMatcher.mutate({
         where: {
           id: data.id,
@@ -146,6 +148,8 @@ export const Matcher = memo(
           },
         },
       });
+
+      console.log([...conditions, newCondition]);
     };
 
     const deleteCondition = (id: string) => {

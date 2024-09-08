@@ -3,11 +3,9 @@
 }
 
 .react-flow__edge-path {
-  @apply stroke-border;
-  @apply stroke-2;
+  @apply stroke-border stroke-2 z-[9999];
 }
 
 .react-flow__connection-path {
-  @apply stroke-border;
-  @apply stroke-2;
+  @apply stroke-border stroke-2 z-[9999];
 }

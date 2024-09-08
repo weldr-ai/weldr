@@ -154,7 +154,9 @@ export const responsePrimitiveSchema = primitiveBaseSchema.extend({
 });
 
 export const iteratorPrimitiveMetadataSchema = z.object({
-  iteratorType: z.enum(["for-each", "map", "reduce"]),
+  iteratorType: z.enum(["for-each", "map", "reduce"]).optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
 });
 
 export const iteratorPrimitiveSchema = primitiveBaseSchema.extend({
@@ -175,14 +177,6 @@ export const matcherPrimitiveMetadataSchema = z.object({
 export const matcherPrimitiveSchema = primitiveBaseSchema.extend({
   type: z.literal("matcher"),
   metadata: matcherPrimitiveMetadataSchema,
-});
-
-export const iteratorInputPrimitiveSchema = primitiveBaseSchema.extend({
-  type: z.literal("iterator-input"),
-});
-
-export const iteratorOutputPrimitiveSchema = primitiveBaseSchema.extend({
-  type: z.literal("iterator-output"),
 });
 
 export const primitiveTypesSchema = z.enum([
@@ -214,14 +208,7 @@ export const primitiveMetadataSchema = z.union([
 
 export const insertPrimitiveSchema = z.object({
   id: z.string(),
-  type: z.enum([
-    "function",
-    "iterator",
-    "matcher",
-    "response",
-    "iterator-input",
-    "iterator-output",
-  ]),
+  type: z.enum(["function", "iterator", "matcher", "response"]),
   description: z.string().trim().optional(),
   positionX: z.number().optional(),
   positionY: z.number().optional(),
@@ -247,7 +234,7 @@ export const updatePrimitiveBaseSchema = z.object({
     })
     .transform((name) => name.replace(/\s+/g, "_").toLowerCase().trim())
     .optional(),
-  parentId: z.string().optional(),
+  parentId: z.string().nullable().optional(),
   description: z.string().trim().optional(),
   positionX: z.number().optional(),
   positionY: z.number().optional(),
@@ -337,6 +324,7 @@ export const updateWorkflowSchema = updatePrimitiveBaseSchema.extend({
 export const updateMatcherMetadataSchema = z.object({
   conditions: z
     .object({
+      id: z.string(),
       description: z.string().trim().nullable(),
       rawDescription: rawDescriptionSchema.array().optional(),
     })
@@ -353,7 +341,9 @@ export const updateIteratorSchema = updatePrimitiveBaseSchema.extend({
   type: z.literal("iterator"),
   metadata: z
     .object({
-      iteratorType: z.enum(["for-each", "map", "reduce"]),
+      iteratorType: z.enum(["for-each", "map", "reduce"]).optional(),
+      width: z.number().optional(),
+      height: z.number().optional(),
     })
     .optional(),
 });

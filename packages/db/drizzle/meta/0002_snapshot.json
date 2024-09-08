@@ -1,5 +1,5 @@
 {
-  "id": "3a6ea75f-7d6f-49bc-959a-1460061d7a82",
+  "id": "0ca84a82-fd46-4db9-8c9e-542dfec9d33b",
   "prevId": "6d3fff8f-5831-4bd4-a4a2-600ccd9d984b",
   "version": "7",
   "dialect": "postgresql",
@@ -349,11 +349,23 @@
           "primaryKey": false,
           "notNull": true
         },
+        "source_handle": {
+          "name": "source_handle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "target": {
           "name": "target",
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "target_handle": {
+          "name": "target_handle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "flow_id": {
           "name": "flow_id",
@@ -795,8 +807,6 @@
         "function",
         "matcher",
         "iterator",
-        "iterator-input",
-        "iterator-output",
         "response"
       ]
     },
