@@ -110,7 +110,7 @@ const ExpandableCardContent = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "absolute -left-[128px] top-0 z-10 w-[600px] cursor-default rounded-xl border bg-card p-6 pt-0 text-card-foreground shadow",
+        "absolute -left-[128px] top-0 z-10 w-[600px] cursor-default rounded-lg border bg-card p-6 pt-0 text-card-foreground shadow",
         className,
         {
           hidden: !open,

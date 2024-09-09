@@ -144,7 +144,7 @@ export const Iterator = memo(
     return (
       <>
         <div
-          className="relative border rounded-xl"
+          className="relative border rounded-lg"
           style={{
             width: size.width,
             height: size.height,

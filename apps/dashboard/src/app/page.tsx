@@ -28,7 +28,7 @@ export default async function Home(): Promise<JSX.Element> {
         {workspaces.length > 0 ? (
           <WorkspacesDialog workspaces={workspaces} />
         ) : (
-          <Card className="fixed left-1/2 top-1/2 z-50 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border duration-200">
+          <Card className="fixed left-1/2 top-1/2 z-50 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border duration-200">
             <CardHeader>
               <CardTitle>Create new workspace</CardTitle>
               <CardDescription>

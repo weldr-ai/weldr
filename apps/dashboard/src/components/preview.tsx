@@ -74,7 +74,7 @@ export function Preview() {
         </div>
       </div>
       <main className="flex min-h-full w-full py-2 pr-2">
-        <div className="flex size-full flex-col items-center justify-center gap-2 rounded-xl border bg-background">
+        <div className="flex size-full flex-col items-center justify-center gap-2 rounded-lg border bg-background">
           <h1 className="text-2xl font-medium">IntegraMind</h1>
           <span className="text-muted-foreground">
             Build • Automate • Accelerate

@@ -21,13 +21,7 @@ import {
   useReactFlow,
   useViewport,
 } from "@xyflow/react";
-import {
-  MinusIcon,
-  PlayCircleIcon,
-  PlusIcon,
-  ScanIcon,
-  ShareIcon,
-} from "lucide-react";
+import { MinusIcon, PlayIcon, PlusIcon, ShareIcon } from "lucide-react";
 import type React from "react";
 import { useCallback } from "react";
 
@@ -37,10 +31,15 @@ import "~/styles/flow-builder.css";
 import { Button } from "@integramind/ui/button";
 
 import type { Primitive, PrimitiveType } from "@integramind/shared/types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@integramind/ui/tooltip";
 import { toast } from "@integramind/ui/use-toast";
 import { useTheme } from "next-themes";
 import DeletableEdge from "~/components/deletable-edge";
-import { PrimitivesMenu } from "~/components/primitives-menu";
 import { FunctionNode } from "~/components/primitives/function";
 import { Iterator } from "~/components/primitives/iterator";
 import { Matcher } from "~/components/primitives/matcher";
@@ -49,6 +48,7 @@ import { Route } from "~/components/primitives/route";
 import { Workflow } from "~/components/primitives/workflow";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode } from "~/types";
+import { PrimitivesMenu } from "./primitives-menu";
 
 const nodeTypes = {
   route: Route,
@@ -78,7 +78,6 @@ export function _FlowBuilder({
     zoomIn,
     zoomOut,
     fitView,
-    setViewport,
   } = useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();
@@ -207,7 +206,7 @@ export function _FlowBuilder({
             n.type === "iterator" &&
             (node.type === "function" || node.type === "matcher") &&
             !node.parentId
-              ? "rounded-xl shadow-[0_0_1px_#3E63DD,inset_0_0_1px_#3E63DD,0_0_1px_#3E63DD,0_0_5px_#3E63DD,0_0_10px_#3E63DD] transition-shadow duration-300"
+              ? "rounded-lg shadow-[0_0_1px_#3E63DD,inset_0_0_1px_#3E63DD,0_0_1px_#3E63DD,0_0_5px_#3E63DD,0_0_10px_#3E63DD] transition-shadow duration-300"
               : "",
         })),
       );
@@ -334,7 +333,7 @@ export function _FlowBuilder({
 
   return (
     <ReactFlow
-      className="rounded-xl"
+      className="rounded-lg"
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}
@@ -358,22 +357,22 @@ export function _FlowBuilder({
         color="hsl(var(--background))"
       />
       <MiniMap
-        className="bottom-11"
+        className="bottom-12"
         bgColor="hsl(var(--background))"
         nodeColor="hsl(var(--accent))"
         maskColor="hsl(var(--accent))"
-        position="bottom-left"
+        position="bottom-right"
         style={{
-          height: 110,
-          width: 172,
+          height: 100,
+          width: 150,
         }}
       />
       <Panel
-        position="bottom-left"
-        className="flex bg-background flex-row rounded-xl border"
+        position="bottom-right"
+        className="flex flex-row rounded-full border bg-muted p-0.5"
       >
         <Button
-          className="rounded-xl rounded-r-none"
+          className="w-11 rounded-full"
           variant="ghost"
           size="icon"
           onClick={() => {
@@ -383,20 +382,16 @@ export function _FlowBuilder({
           <MinusIcon className="size-4" />
         </Button>
         <Button
-          className="w-16 rounded-none"
+          className="w-14 rounded-full text-xs"
           variant="ghost"
           onClick={() => {
-            setViewport({
-              x: viewPort.x,
-              y: viewPort.y,
-              zoom: 1,
-            });
+            fitView();
           }}
         >
           {`${Math.floor(viewPort.zoom * 100)}%`}
         </Button>
         <Button
-          className="rounded-none"
+          className="w-11 rounded-full"
           variant="ghost"
           size="icon"
           onClick={() => {
@@ -405,38 +400,48 @@ export function _FlowBuilder({
         >
           <PlusIcon className="size-4" />
         </Button>
-        <Button
-          className="rounded-xl rounded-l-none"
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            fitView();
-          }}
-        >
-          <ScanIcon className="size-4" />
-        </Button>
       </Panel>
-      <Panel position="top-right">
+      <Panel
+        position="bottom-center"
+        className="flex flex-row items-center bg-muted rounded-full p-0.5 gap-1 border"
+      >
         <PrimitivesMenu />
-      </Panel>
-      <Panel position="bottom-right">
-        <div className="flex w-full flex-row items-center justify-end gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex min-w-24 max-w-min flex-row items-center justify-center gap-1 bg-background text-success hover:bg-success/10 hover:text-success"
-          >
-            <PlayCircleIcon className="size-3.5" />
-            Run
-          </Button>
-          <Button
-            size="sm"
-            className="flex min-w-24 max-w-min flex-row items-center justify-center gap-1"
-          >
-            <ShareIcon className="size-3.5" />
-            Deploy
-          </Button>
-        </div>
+
+        <div className="h-9 border-l" />
+
+        <TooltipProvider delayDuration={100}>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                className="w-11 rounded-full hover:bg-success/20 text-success"
+                variant="ghost"
+                size="icon"
+              >
+                <PlayIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="bg-muted text-success">
+              <p>Run</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider delayDuration={100}>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                className="w-11 rounded-full hover:bg-primary/20 text-primary"
+                variant="ghost"
+                size="icon"
+              >
+                <ShareIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="bg-muted text-primary">
+              <p>Share</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </Panel>
     </ReactFlow>
   );
