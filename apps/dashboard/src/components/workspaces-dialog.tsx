@@ -26,7 +26,7 @@ export function WorkspacesDialog({ workspaces }: { workspaces: Workspace[] }) {
 
   return (
     <>
-      <Command className="fixed left-1/2 top-1/2 z-50 h-[350px] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border duration-200 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5">
+      <Command className="fixed left-1/2 top-1/2 z-50 h-[350px] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border duration-200 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5">
         <CommandInput
           className="border-none ring-0"
           placeholder="Search workspaces..."
@@ -53,7 +53,7 @@ export function WorkspacesDialog({ workspaces }: { workspaces: Workspace[] }) {
                 <CommandItem
                   key={workspace.id}
                   value={workspace.name}
-                  className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-xl text-center"
+                  className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-lg text-center"
                   onSelect={() => {
                     setCommandCenterOpen(false);
                     router.replace(`/workspaces/${workspace.id}`);

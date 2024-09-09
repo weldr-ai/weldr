@@ -1,18 +1,15 @@
-import {
-  CornerDownLeftIcon,
-  PanelRightCloseIcon,
-  PanelRightOpenIcon,
-  RegexIcon,
-  RepeatIcon,
-} from "lucide-react";
+import { CornerDownLeftIcon, RegexIcon, RepeatIcon } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
-
-import { Button } from "@integramind/ui/button";
-import { Card } from "@integramind/ui/card";
 
 import type { PrimitiveType } from "@integramind/shared/types";
 import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@integramind/ui/tooltip";
 
 export function PrimitivesMenu() {
   const onDragStart = (
@@ -22,71 +19,76 @@ export function PrimitivesMenu() {
     event.dataTransfer.setData("application/reactflow", primitiveTypes);
     event.dataTransfer.effectAllowed = "move";
   };
-  const [isVisible, setIsVisible] = useState<boolean>(true);
 
   return (
     <>
-      {isVisible ? (
-        <Card className="flex flex-col space-y-2 bg-background px-6 py-4 shadow-sm dark:bg-muted">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-foreground dark:text-muted-foreground">
-              Primitives
-            </span>
-            <Button
-              className="size-6 rounded-sm dark:bg-muted"
-              variant="outline"
-              size="icon"
-              onClick={() => setIsVisible(false)}
-            >
-              <PanelRightCloseIcon className="size-3 text-muted-foreground" />
-            </Button>
-          </div>
-          <div className="grid w-full grid-cols-2 gap-2">
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger>
             <div
-              className="flex w-full min-w-36 items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
+              className="inline-flex items-center justify-center h-9 w-11 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
               onDragStart={(event) => onDragStart(event, "function")}
               draggable
             >
-              <LambdaIcon className="size-4 stroke-primary" />
-              <span className="w-full text-[10px]">Function</span>
+              <LambdaIcon className="size-4" />
             </div>
+          </TooltipTrigger>
+          <TooltipContent className="bg-muted">
+            <p>Function</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger>
             <div
-              className="flex w-full min-w-36 items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
-              onDragStart={(event) => onDragStart(event, "matcher")}
-              draggable
-            >
-              <RegexIcon className="size-4 text-primary" />
-              <span className="w-full text-[10px]">Matcher</span>
-            </div>
-            <div
-              className="flex w-full min-w-36 items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
+              className="inline-flex items-center justify-center h-9 w-11 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
               onDragStart={(event) => onDragStart(event, "iterator")}
               draggable
             >
-              <RepeatIcon className="size-4 text-primary" />
-              <span className="w-full text-[10px]">Iterator</span>
+              <RepeatIcon className="size-4" />
             </div>
+          </TooltipTrigger>
+          <TooltipContent className="bg-muted">
+            <p>Iterator</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger>
             <div
-              className="flex w-full min-w-36 items-center justify-center gap-2 rounded-lg border p-2 text-accent-foreground hover:cursor-grab dark:bg-accent"
+              className="inline-flex items-center justify-center h-9 w-11 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              onDragStart={(event) => onDragStart(event, "matcher")}
+              draggable
+            >
+              <RegexIcon className="size-4" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="bg-muted">
+            <p>Matcher</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger>
+            <div
+              className="inline-flex items-center justify-center h-9 w-11 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
               onDragStart={(event) => onDragStart(event, "response")}
               draggable
             >
-              <CornerDownLeftIcon className="size-4 text-primary" />
-              <span className="w-full text-[10px]">Response</span>
+              <CornerDownLeftIcon className="size-4" />
             </div>
-          </div>
-        </Card>
-      ) : (
-        <Button
-          className="bg-background hover:bg-accent dark:bg-muted"
-          variant="outline"
-          size="sm"
-          onClick={() => setIsVisible(true)}
-        >
-          <PanelRightOpenIcon className="mr-2 size-3.5 text-muted-foreground" />
-          Show primitives menu
-        </Button>
-      )}
+          </TooltipTrigger>
+          <TooltipContent className="bg-muted">
+            <p>Response</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </>
   );
 }

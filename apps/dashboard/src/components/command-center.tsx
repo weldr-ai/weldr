@@ -48,28 +48,28 @@ export function CommandCenter({ workspaces }: { workspaces: Workspace[] }) {
           placeholder="Search workspaces..."
         />
         <CommandList className="h-96 w-[500px]">
+          <div className="flex items-center justify-between pt-2 px-3">
+            <span className="text-xs text-muted-foreground">Workspaces</span>
+            <Button
+              className="size-6 rounded-sm bg-muted"
+              onClick={() => {
+                setCommandCenterOpen(false);
+                setCreateWorkspaceDialogOpen(true);
+              }}
+              variant="outline"
+              size="icon"
+            >
+              <PlusIcon className="size-3 text-muted-foreground" />
+            </Button>
+          </div>
           <CommandEmpty>No workspaces found.</CommandEmpty>
-          <CommandGroup className="py-2">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Workspaces</span>
-              <Button
-                className="size-6 rounded-sm bg-muted"
-                onClick={() => {
-                  setCommandCenterOpen(false);
-                  setCreateWorkspaceDialogOpen(true);
-                }}
-                variant="outline"
-                size="icon"
-              >
-                <PlusIcon className="size-3 text-muted-foreground" />
-              </Button>
-            </div>
+          <CommandGroup>
             <div className="grid w-full grid-cols-3 gap-2">
               {workspaces.map((workspace) => (
                 <CommandItem
                   key={workspace.id}
                   value={workspace.name}
-                  className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-xl text-center"
+                  className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-lg text-center"
                   onSelect={() => {
                     setCommandCenterOpen(false);
                     router.replace(`/workspaces/${workspace.id}`);
