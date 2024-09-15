@@ -93,7 +93,7 @@ export const Route = memo(
       },
     });
 
-    const reactFlow = useReactFlow<FlowNode, FlowEdge>();
+    const { updateNodeData, fitBounds } = useReactFlow<FlowNode, FlowEdge>();
 
     const form = useForm<z.infer<typeof updateRouteFlowSchema>>({
       resolver: zodResolver(updateRouteFlowSchema),
@@ -142,20 +142,14 @@ export const Route = memo(
             },
           },
         });
-        reactFlow.setNodes((nodes) =>
-          nodes.map((node) => {
-            if (node.id === data.id) {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  inputs,
-                },
-              };
-            }
-            return node;
-          }),
-        );
+
+        updateNodeData(data.id, {
+          ...data,
+          metadata: {
+            ...data.metadata,
+            inputs,
+          },
+        });
       });
     }
 
@@ -176,7 +170,7 @@ export const Route = memo(
                 },
               )}
               onClick={() => {
-                reactFlow.fitBounds(
+                fitBounds(
                   {
                     x: positionAbsoluteX,
                     y: positionAbsoluteY,
