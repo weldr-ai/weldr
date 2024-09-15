@@ -4,8 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Handle,
   Position,
-  useEdges,
+  useHandleConnections,
   useNodes,
+  useNodesData,
   useReactFlow,
 } from "@xyflow/react";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
@@ -71,7 +72,6 @@ import { cn } from "@specly/ui/utils";
 import type {
   FunctionPrimitive,
   Input as IInput,
-  Primitive,
   RawDescription,
 } from "@specly/shared/types";
 import type { resourceProvidersSchema } from "@specly/shared/validators/resources";
@@ -144,7 +144,10 @@ export const FunctionNode = memo(
       FlowEdge
     >();
     const nodes = useNodes<FlowNode>();
-    const edges = useEdges<FlowEdge>();
+    const parents = useHandleConnections({ type: "target" });
+    const parentsData = useNodesData<FlowNode>(
+      parents.map((parent) => parent.source),
+    );
 
     const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
       {
@@ -192,20 +195,10 @@ export const FunctionNode = memo(
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     const inputs = useMemo(() => {
-      const parents = edges.reduce((acc: Primitive[], edge) => {
-        if (edge.target === data.id) {
-          const parent = nodes.find((node) => node.id === edge.source);
-          if (parent) {
-            acc.push(parent.data);
-          }
-        }
-        return acc;
-      }, []);
-
-      const inputs = parents.reduce((acc, parent) => {
+      const inputs = parentsData.reduce((acc, parent) => {
         if (parent.type === "route" || parent.type === "workflow") {
-          if (parent.metadata.inputs) {
-            for (const input of parent.metadata.inputs) {
+          if (parent.data.metadata.inputs) {
+            for (const input of parent.data.metadata.inputs) {
               if (data.metadata.inputs) {
                 const foundInput = data.metadata.inputs.find(
                   (item) => item.id === input.id,
@@ -243,17 +236,20 @@ export const FunctionNode = memo(
             }
           }
         } else if (parent.type === "function") {
-          if (parent.metadata.outputs && parent.name) {
+          const functionParent = parent.data as FunctionPrimitive;
+
+          if (functionParent.metadata.outputs && parent.data.name) {
             acc.push({
               id: parent.id,
-              name: parent.name,
+              name: parent.data.name,
               type: "text",
               testValue: null,
             });
-            for (const output of parent.metadata.outputs) {
+
+            for (const output of functionParent.metadata.outputs) {
               acc.push({
                 id: output.id,
-                name: `${parent.name}.${output.name}`,
+                name: `${parent.data.name}.${output.name}`,
                 type: output.type,
                 testValue: null,
               });
@@ -264,7 +260,7 @@ export const FunctionNode = memo(
       }, [] as IInput[]);
 
       return inputs;
-    }, [data, edges, nodes]);
+    }, [data, parentsData]);
 
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
