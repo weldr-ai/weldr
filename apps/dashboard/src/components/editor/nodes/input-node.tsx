@@ -34,7 +34,7 @@ function InputNodeComponent({
   inputType: "text" | "number";
   testValue?: string | number | null;
 }) {
-  const { updateNodeData, setNodes, getNode } = useReactFlow<FlowNode>();
+  const { updateNodeData, getNode } = useReactFlow<FlowNode>();
   const node = getNode(id);
 
   const form = useForm({
