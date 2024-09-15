@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem } from "@specly/ui/form";
 import { Input } from "@specly/ui/input";
 
-import { toCamelCase } from "@specly/shared/utils";
+import { toSnakeCase } from "@specly/shared/utils";
 import { api } from "~/lib/trpc/react";
 import type { FlowNode } from "~/types";
 
@@ -34,7 +34,9 @@ function InputNodeComponent({
   inputType: "text" | "number";
   testValue?: string | number | null;
 }) {
-  const reactFlow = useReactFlow<FlowNode>();
+  const { updateNodeData, setNodes, getNode } = useReactFlow<FlowNode>();
+  const node = getNode(id);
+
   const form = useForm({
     mode: "onChange",
     defaultValues: {
@@ -68,70 +70,31 @@ function InputNodeComponent({
                     className="h-5 border-none bg-muted px-2 py-1 text-xs"
                     placeholder="Enter input name"
                     onBlur={(e) => {
-                      const newValue = toCamelCase(e.target.value.trim());
+                      const newValue = toSnakeCase(e.target.value.trim());
                       form.setValue("name", newValue);
-                      const inputs = updateInput.mutate({
+
+                      updateInput.mutate({
                         id,
                         inputId,
                         name: newValue,
                       });
-                      reactFlow.setNodes((nodes) =>
-                        nodes.map((node) => {
-                          if (node.id === id) {
-                            return {
-                              ...node,
-                              data: {
-                                ...node.data,
-                                inputs,
-                              },
-                            };
-                          }
-                          return node;
-                        }),
-                      );
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="testValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Input
-                    {...field}
-                    autoComplete="off"
-                    value={field.value ?? undefined}
-                    className="h-5 w-20 border-none bg-muted px-2 py-1 text-xs"
-                    placeholder="Enter test value"
-                    onBlur={(e) => {
-                      const inputs = updateInput.mutate({
-                        id,
-                        inputId,
-                        testValue:
-                          inputType === "text"
-                            ? e.target.value
-                            : inputType === "number"
-                              ? Number(e.target.value)
-                              : null,
+
+                      updateNodeData(id, {
+                        ...node?.data,
+                        // @ts-expect-error
+                        metadata: {
+                          ...node?.data?.metadata,
+                          inputs: [
+                            ...(node?.data?.metadata?.inputs || []),
+                            {
+                              id: inputId,
+                              name: newValue,
+                              testValue: null,
+                              type: inputType,
+                            },
+                          ],
+                        },
                       });
-                      reactFlow.setNodes((nodes) =>
-                        nodes.map((node) => {
-                          if (node.id === id) {
-                            return {
-                              ...node,
-                              data: {
-                                ...node.data,
-                                inputs,
-                              },
-                            };
-                          }
-                          return node;
-                        }),
-                      );
                     }}
                   />
                 </FormControl>

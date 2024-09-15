@@ -47,3 +47,10 @@ export function toCamelCase(str: string): string {
 function isCamelCase(str: string): boolean {
   return /^[a-z][a-zA-Z]*$/.test(str);
 }
+
+export function toSnakeCase(str: string): string {
+  return str
+    .replace(/([a-z])([A-Z])/g, "$1_$2")
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+}

@@ -26,8 +26,6 @@ To run an action you write its name (the function name) and you pass its inputs 
 
 Guidelines:
 Function and variable names must be in camelCase.
-Sometimes you will get data from resources that are not in camelCase. In this case you will have to convert it to camelCase.
-For example the column name in a table can be in snake_case and you will have to convert it to camelCase in the query.
 All function inputs must be created as an object.
 Do not write any explanations or comments.
 Do not write code that is not syntactically correct.
