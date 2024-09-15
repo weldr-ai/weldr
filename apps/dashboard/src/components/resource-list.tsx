@@ -1,7 +1,7 @@
 import { Loader2Icon } from "lucide-react";
 
-import { Button } from "@integramind/ui/button";
-import { ScrollArea } from "@integramind/ui/scroll-area";
+import { Button } from "@specly/ui/button";
+import { ScrollArea } from "@specly/ui/scroll-area";
 
 import { api } from "~/lib/trpc/react";
 import { AddResourceDialog } from "./add-resource-dialog";

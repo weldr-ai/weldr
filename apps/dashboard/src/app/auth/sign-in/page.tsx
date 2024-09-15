@@ -9,31 +9,34 @@ import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { signInWithMagicLinkSchema } from "@integramind/auth/validators";
-import { Button } from "@integramind/ui/button";
+import { signInWithMagicLinkSchema } from "@specly/auth/validators";
+import { Button } from "@specly/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@integramind/ui/card";
+} from "@specly/ui/card";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
-import { toast } from "@integramind/ui/use-toast";
+} from "@specly/ui/form";
+import { Input } from "@specly/ui/input";
+import { toast } from "@specly/ui/use-toast";
 
-import { GoogleIcon } from "@integramind/ui/icons/google-icon";
-import { IntegraMindIcon } from "@integramind/ui/icons/integramind-icon";
-import { MicrosoftIcon } from "@integramind/ui/icons/microsoft-icon";
+import { GoogleIcon } from "@specly/ui/icons/google-icon";
+import { MicrosoftIcon } from "@specly/ui/icons/microsoft-icon";
+import { SpeclyIcon } from "@specly/ui/icons/specly-icon";
+import { useTheme } from "next-themes";
 import { signInWithMagicLink } from "~/lib/auth/actions";
 
 export default function SignIn() {
+  const { resolvedTheme } = useTheme();
+
   const [state, signInWithMagicLinkAction] = useFormState(
     signInWithMagicLink,
     undefined,
@@ -82,8 +85,11 @@ export default function SignIn() {
       <Card className="mx-auto w-full max-w-md border-hidden bg-transparent p-8 shadow-none md:border-solid md:bg-card md:shadow-sm">
         <CardHeader className="flex flex-col items-start justify-start">
           <CardTitle className="flex flex-col gap-4">
-            <IntegraMindIcon className="size-8" />
-            <span className="text-xl">Sign in to IntegraMind</span>
+            <SpeclyIcon
+              className="size-10"
+              theme={resolvedTheme as "light" | "dark"}
+            />
+            <span className="text-xl">Sign in to specly</span>
           </CardTitle>
           <CardDescription className="text-center">
             Welcome back! Please sign in to continue
@@ -137,7 +143,10 @@ export default function SignIn() {
           <div className="flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground md:flex-row md:gap-0">
             <div>
               No account?{" "}
-              <Link href="/sign-up" className="text-primary hover:underline">
+              <Link
+                href="/auth/sign-up"
+                className="text-primary hover:underline"
+              >
                 Sign up
               </Link>
             </div>

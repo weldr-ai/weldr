@@ -1,10 +1,10 @@
 {
-  "extends": "@integramind/tsconfig/internal-package.json",
+  "extends": "@specly/tsconfig/internal-package.json",
   "compilerOptions": {
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
-      "@integramind/integrations-postgres": [
+      "@specly/integrations-postgres": [
         "../../packages/integrations/postgres/src"
       ]
     },

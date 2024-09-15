@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/marketing",
+  "name": "@specly/marketing",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -11,8 +11,8 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@integramind/db": "workspace:*",
-    "@integramind/ui": "workspace:*",
+    "@specly/db": "workspace:*",
+    "@specly/ui": "workspace:*",
     "@vercel/analytics": "^1.2.2",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.363.0",
@@ -24,8 +24,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@integramind/tailwind-config": "workspace:*",
-    "@integramind/tsconfig": "workspace:*",
+    "@specly/tailwind-config": "workspace:*",
+    "@specly/tsconfig": "workspace:*",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",

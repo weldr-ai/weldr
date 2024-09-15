@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/integrations-postgres",
+  "name": "@specly/integrations-postgres",
   "version": "0.0.1",
   "private": false,
   "publishConfig": {
@@ -26,7 +26,7 @@
     "pg": "^8.12.0"
   },
   "devDependencies": {
-    "@integramind/tsconfig": "workspace:*",
+    "@specly/tsconfig": "workspace:*",
     "tsup": "^8.1.0"
   }
 }

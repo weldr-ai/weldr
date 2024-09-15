@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@specly/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,8 +22,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@integramind/ui/dropdown-menu";
-import { cn } from "@integramind/ui/utils";
+} from "@specly/ui/dropdown-menu";
+import { cn } from "@specly/ui/utils";
 
 import { signOut } from "~/lib/auth/actions";
 import { usePrimarySidebarStore } from "~/lib/store";

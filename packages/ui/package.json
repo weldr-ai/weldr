@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/ui",
+  "name": "@specly/ui",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -65,8 +65,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@integramind/tailwind-config": "workspace:*",
-    "@integramind/tsconfig": "workspace:*",
+    "@specly/tailwind-config": "workspace:*",
+    "@specly/tsconfig": "workspace:*",
     "@types/eslint": "^8.56.6",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",

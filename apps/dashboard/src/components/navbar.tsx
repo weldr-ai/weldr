@@ -4,17 +4,17 @@ import { BoxesIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@specly/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@integramind/ui/dropdown-menu";
+} from "@specly/ui/dropdown-menu";
 
-import type { Workspace } from "@integramind/shared/types";
-import { IntegraMind2Icon } from "@integramind/ui/icons/integramind2-icon";
+import type { Workspace } from "@specly/shared/types";
+import { SpeclyIcon } from "@specly/ui/icons/specly-icon";
 import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { useCommandCenterStore } from "~/lib/store";
@@ -34,11 +34,11 @@ export function Navbar({ workspace }: { workspace: Workspace }): JSX.Element {
           <div className="flex size-14 items-center justify-center border-r p-2">
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="size-full">
-                <IntegraMind2Icon
+                <SpeclyIcon
                   className="size-6"
                   theme={resolvedTheme === "light" ? "light" : "dark"}
                 />
-                <span className="sr-only">IntegraMind</span>
+                <span className="sr-only">specly</span>
               </Button>
             </DropdownMenuTrigger>
           </div>

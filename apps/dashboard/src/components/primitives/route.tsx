@@ -20,9 +20,9 @@ import { memo } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { Badge } from "@integramind/ui/badge";
-import { Button } from "@integramind/ui/button";
-import { Card } from "@integramind/ui/card";
+import { Badge } from "@specly/ui/badge";
+import { Button } from "@specly/ui/button";
+import { Card } from "@specly/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,13 +30,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@integramind/ui/dropdown-menu";
+} from "@specly/ui/dropdown-menu";
 import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardHeader,
   ExpandableCardTrigger,
-} from "@integramind/ui/expandable-card";
+} from "@specly/ui/expandable-card";
 import {
   Form,
   FormControl,
@@ -44,24 +44,21 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
+} from "@specly/ui/form";
+import { Input } from "@specly/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@integramind/ui/select";
-import { Textarea } from "@integramind/ui/textarea";
-import { cn } from "@integramind/ui/utils";
+} from "@specly/ui/select";
+import { Textarea } from "@specly/ui/textarea";
+import { cn } from "@specly/ui/utils";
 
-import type {
-  RoutePrimitive,
-  Input as TInput,
-} from "@integramind/shared/types";
-import { updateRouteFlowSchema } from "@integramind/shared/validators/flows";
-import { Label } from "@integramind/ui/label";
+import type { RoutePrimitive, Input as TInput } from "@specly/shared/types";
+import { updateRouteFlowSchema } from "@specly/shared/validators/flows";
+import { Label } from "@specly/ui/label";
 import Editor from "~/components/editor";
 import type { SerializedInputNode } from "~/components/editor/nodes/input-node";
 import { api } from "~/lib/trpc/react";
@@ -240,7 +237,7 @@ export const Route = memo(
                       <DropdownMenuItem className="flex items-center justify-between text-xs">
                         <Link
                           className="flex items-center"
-                          href="https://docs.integramind.ai/primitives/route"
+                          href="https://docs.specly.ai/primitives/route"
                           target="blank"
                         >
                           <FileTextIcon className="mr-3 size-4 text-muted-foreground" />

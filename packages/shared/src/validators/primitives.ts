@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { resourceProvidersSchema } from "./resources";
 
 export const primitiveBaseSchema = z.object({
   id: z.string(),
@@ -37,48 +36,39 @@ export const rawDescriptionSchema = z.discriminatedUnion("type", [
       "database-column-icon",
       "database-table-icon",
     ]),
-    dataType: z.enum(["text", "number", "functionResponse"]).optional(),
-    testValue: z
-      .union([z.string(), z.number()])
-      .nullable()
-      .optional()
-      .default(null),
+    dataType: z.enum(["text", "number"]).optional(),
   }),
 ]);
 
-export const functionPrimitiveMetadataSchema = z.object({
-  inputs: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      type: z.enum(["number", "text"]),
-      testValue: z
-        .union([z.string(), z.number()])
-        .nullable()
-        .optional()
-        .default(null),
-    })
-    .array()
-    .optional(),
-  outputs: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      type: z.enum(["number", "text"]),
-    })
-    .array()
-    .optional(),
-  resource: z
-    .object({
-      id: z.string(),
-      provider: resourceProvidersSchema,
-    })
+export const valueTypeSchema = z.enum(["number", "text"]);
+
+export const inputSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: valueTypeSchema,
+  testValue: z
+    .union([z.string(), z.number()])
     .nullable()
-    .optional(),
-  rawDescription: rawDescriptionSchema.array().optional(),
+    .optional()
+    .default(null),
+});
+
+export const outputSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: valueTypeSchema,
+});
+
+const baseMetadataSchema = z.object({
+  inputs: inputSchema.array().optional(),
+  outputs: outputSchema.array().optional(),
   generatedCode: z.string().nullable().optional(),
   isCodeUpdated: z.boolean().default(false).optional(),
   isLocked: z.boolean().default(false).optional(),
+});
+
+export const functionPrimitiveMetadataSchema = baseMetadataSchema.extend({
+  rawDescription: rawDescriptionSchema.array().optional(),
 });
 
 export const functionPrimitiveSchema = primitiveBaseSchema.extend({
@@ -89,19 +79,7 @@ export const functionPrimitiveSchema = primitiveBaseSchema.extend({
 export const routePrimitiveMetadataSchema = z.object({
   method: z.enum(["get", "post", "patch", "delete"]),
   path: z.string(),
-  inputs: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      testValue: z
-        .union([z.string(), z.number()])
-        .nullable()
-        .optional()
-        .default(null),
-      type: z.enum(["number", "text"]),
-    })
-    .array()
-    .optional(),
+  inputs: inputSchema.array().optional(),
 });
 
 export const routePrimitiveSchema = primitiveBaseSchema.extend({
@@ -111,19 +89,7 @@ export const routePrimitiveSchema = primitiveBaseSchema.extend({
 
 export const workflowPrimitiveMetadataSchema = z.object({
   triggerType: z.enum(["webhook", "schedule"]),
-  inputs: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      testValue: z
-        .union([z.string(), z.number()])
-        .nullable()
-        .optional()
-        .default(null),
-      type: z.enum(["number", "text"]),
-    })
-    .array()
-    .optional(),
+  inputs: inputSchema.array().optional(),
 });
 
 export const workflowPrimitiveSchema = primitiveBaseSchema.extend({
@@ -131,20 +97,7 @@ export const workflowPrimitiveSchema = primitiveBaseSchema.extend({
   metadata: workflowPrimitiveMetadataSchema,
 });
 
-export const responsePrimitiveMetadataSchema = z.object({
-  inputs: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      testValue: z
-        .union([z.string(), z.number()])
-        .nullable()
-        .optional()
-        .default(null),
-      type: z.enum(["number", "text"]),
-    })
-    .array()
-    .optional(),
+export const responsePrimitiveMetadataSchema = baseMetadataSchema.extend({
   rawDescription: rawDescriptionSchema.array().optional(),
 });
 
@@ -153,10 +106,11 @@ export const responsePrimitiveSchema = primitiveBaseSchema.extend({
   metadata: responsePrimitiveMetadataSchema,
 });
 
-export const iteratorPrimitiveMetadataSchema = z.object({
+export const iteratorPrimitiveMetadataSchema = baseMetadataSchema.extend({
   iteratorType: z.enum(["for-each", "map", "reduce"]).optional(),
   width: z.number().optional(),
   height: z.number().optional(),
+  rawDescription: rawDescriptionSchema.array().optional(),
 });
 
 export const iteratorPrimitiveSchema = primitiveBaseSchema.extend({
@@ -164,7 +118,7 @@ export const iteratorPrimitiveSchema = primitiveBaseSchema.extend({
   metadata: iteratorPrimitiveMetadataSchema,
 });
 
-export const matcherPrimitiveMetadataSchema = z.object({
+export const matcherPrimitiveMetadataSchema = baseMetadataSchema.extend({
   conditions: z
     .object({
       id: z.string(),
@@ -240,46 +194,14 @@ export const updatePrimitiveBaseSchema = z.object({
   positionY: z.number().optional(),
 });
 
-export const updateFunctionMetadataSchema = z.object({
-  inputs: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      testValue: z
-        .union([z.string(), z.number()])
-        .nullable()
-        .optional()
-        .default(null),
-      type: z.enum(["number", "text", "functionResponse"]),
-    })
-    .array()
-    .optional(),
-  outputs: z
-    .object({
-      name: z.string(),
-      type: z.enum(["number", "text", "functionResponse"]),
-    })
-    .array()
-    .optional(),
-  resource: z
-    .object({
-      id: z.string(),
-      provider: resourceProvidersSchema,
-    })
-    .nullable()
-    .optional(),
-  rawDescription: rawDescriptionSchema.array().optional(),
-  generatedCode: z.string().nullable().optional(),
-  isCodeUpdated: z.boolean().optional(),
-  isLocked: z.boolean().default(false).optional(),
-});
+export const updateFunctionMetadataSchema = functionPrimitiveMetadataSchema;
 
 export const updateFunctionSchema = updatePrimitiveBaseSchema.extend({
   type: z.literal("function"),
   metadata: updateFunctionMetadataSchema.optional(),
 });
 
-export const updateRouteMetadataSchema = z.object({
+export const updateRouteMetadataSchema = baseMetadataSchema.extend({
   method: z.enum(["get", "post", "patch", "delete"]).optional(),
   path: z
     .string()
@@ -292,19 +214,6 @@ export const updateRouteMetadataSchema = z.object({
       return `/${path.trim()}`;
     })
     .optional(),
-  inputs: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      testValue: z
-        .union([z.string(), z.number()])
-        .nullable()
-        .optional()
-        .default(null),
-      type: z.enum(["number", "text", "functionResponse"]),
-    })
-    .array()
-    .optional(),
 });
 
 export const updateRouteSchema = updatePrimitiveBaseSchema.extend({
@@ -312,7 +221,7 @@ export const updateRouteSchema = updatePrimitiveBaseSchema.extend({
   metadata: updateRouteMetadataSchema.optional(),
 });
 
-export const updateWorkflowMetadataSchema = z.object({
+export const updateWorkflowMetadataSchema = baseMetadataSchema.extend({
   triggerType: z.enum(["webhook", "schedule"]).optional(),
 });
 
@@ -321,36 +230,20 @@ export const updateWorkflowSchema = updatePrimitiveBaseSchema.extend({
   metadata: updateWorkflowMetadataSchema.optional(),
 });
 
-export const updateMatcherMetadataSchema = z.object({
-  conditions: z
-    .object({
-      id: z.string(),
-      description: z.string().trim().nullable(),
-      rawDescription: rawDescriptionSchema.array().optional(),
-    })
-    .array()
-    .optional(),
-});
-
 export const updateMatcherSchema = updatePrimitiveBaseSchema.extend({
   type: z.literal("matcher"),
-  metadata: updateMatcherMetadataSchema.optional(),
+  metadata: matcherPrimitiveMetadataSchema.optional(),
 });
 
 export const updateIteratorSchema = updatePrimitiveBaseSchema.extend({
   type: z.literal("iterator"),
-  metadata: z
-    .object({
-      iteratorType: z.enum(["for-each", "map", "reduce"]).optional(),
-      width: z.number().optional(),
-      height: z.number().optional(),
-    })
-    .optional(),
+  metadata: iteratorPrimitiveMetadataSchema.optional(),
 });
 
-export const updateResponseMetadataSchema = z.object({
-  rawDescription: rawDescriptionSchema.array().optional(),
-});
+export const updateResponseMetadataSchema =
+  responsePrimitiveMetadataSchema.extend({
+    rawDescription: rawDescriptionSchema.array().optional(),
+  });
 
 export const updateResponseSchema = updatePrimitiveBaseSchema.extend({
   type: z.literal("response"),

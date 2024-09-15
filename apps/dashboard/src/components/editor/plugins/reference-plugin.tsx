@@ -17,11 +17,11 @@ import {
 import { useParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
-import { ScrollArea } from "@integramind/ui/scroll-area";
-import { cn } from "@integramind/ui/utils";
+import { ScrollArea } from "@specly/ui/scroll-area";
+import { cn } from "@specly/ui/utils";
 
-import type { Input } from "@integramind/shared/types";
-import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
+import type { Input, VarType } from "@specly/shared/types";
+import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
 import { api } from "~/lib/trpc/react";
@@ -34,7 +34,7 @@ export class ReferenceOption extends MenuOption {
   // Reference type
   referenceType: "input" | "database" | "database-table" | "database-column";
   // Data type
-  dataType?: "text" | "number" | "functionResponse";
+  dataType?: VarType;
   // Test value
   testValue?: string | number | null;
   // Icon for display
@@ -65,7 +65,7 @@ export class ReferenceOption extends MenuOption {
       keywords?: string[];
       onSelect: (queryString: string) => void;
     },
-    dataType?: "text" | "number" | "functionResponse",
+    dataType?: VarType,
     testValue?: string | number | null,
   ) {
     super(name);
@@ -125,7 +125,6 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
             selectedOption.referenceType,
             selectedOption.icon,
             selectedOption.dataType,
-            selectedOption.testValue,
           );
         } else {
           referenceNode = $createReferenceNode(

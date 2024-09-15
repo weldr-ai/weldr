@@ -16,8 +16,9 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { toCamelCase } from "@integramind/shared/utils";
-import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
+import type { VarType } from "@specly/shared/types";
+import { toCamelCase } from "@specly/shared/utils";
+import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
 
 export type SerializedReferenceNode = Spread<
   {
@@ -31,7 +32,7 @@ export type SerializedReferenceNode = Spread<
       | "value-icon"
       | "database-column-icon"
       | "database-table-icon";
-    dataType?: "text" | "number" | "functionResponse";
+    dataType?: VarType;
     testValue?: string | number | null;
   },
   SerializedLexicalNode
@@ -76,7 +77,7 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   __id: string;
   __name: string;
   __referenceType: "input" | "database" | "database-table" | "database-column";
-  __dataType?: "text" | "number" | "functionResponse";
+  __dataType?: VarType;
   __testValue?: string | number | null;
   __icon:
     | "database-icon"
@@ -97,7 +98,7 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
       | "value-icon"
       | "database-column-icon"
       | "database-table-icon",
-    dataType?: "text" | "number" | "functionResponse",
+    dataType?: VarType,
     testValue?: string | number | null,
   ) {
     super();
@@ -195,7 +196,7 @@ export function $createReferenceNode(
     | "value-icon"
     | "database-column-icon"
     | "database-table-icon",
-  dataType?: "text" | "number" | "functionResponse",
+  dataType?: VarType,
   testValue?: string | number | null,
 ): ReferenceNode {
   return new ReferenceNode(id, name, referenceType, icon, dataType, testValue);

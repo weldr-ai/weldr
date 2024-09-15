@@ -10,7 +10,7 @@ import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@specly/ui/button";
 import {
   Form,
   FormControl,
@@ -18,13 +18,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
-import { Textarea } from "@integramind/ui/textarea";
-import { toast } from "@integramind/ui/use-toast";
+} from "@specly/ui/form";
+import { Input } from "@specly/ui/input";
+import { Textarea } from "@specly/ui/textarea";
+import { toast } from "@specly/ui/use-toast";
 
-import type { ResourceProvider } from "@integramind/shared/types";
-import { insertResourceSchema } from "@integramind/shared/validators/resources";
+import type { ResourceProvider } from "@specly/shared/types";
+import { insertResourceSchema } from "@specly/shared/validators/resources";
 import { addResource } from "~/lib/actions/resources";
 
 export function AddResourceForm({

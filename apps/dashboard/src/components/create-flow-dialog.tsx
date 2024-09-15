@@ -3,7 +3,7 @@
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@specly/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,9 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@integramind/ui/dialog";
+} from "@specly/ui/dialog";
 
-import type { FlowType } from "@integramind/shared/types";
+import type { FlowType } from "@specly/shared/types";
 import { CreateFlowForm } from "~/components/create-flow-form";
 
 export function CreateFlowDialog({ type }: { type: FlowType }) {

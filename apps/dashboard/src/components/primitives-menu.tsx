@@ -1,15 +1,15 @@
 import { CornerDownLeftIcon, RegexIcon, RepeatIcon } from "lucide-react";
 import type React from "react";
 
-import type { PrimitiveType } from "@integramind/shared/types";
-import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
+import type { PrimitiveType } from "@specly/shared/types";
+import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
 
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@integramind/ui/tooltip";
+} from "@specly/ui/tooltip";
 
 export function PrimitivesMenu() {
   const onDragStart = (

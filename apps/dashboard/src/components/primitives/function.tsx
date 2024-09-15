@@ -26,8 +26,8 @@ import { memo, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Button } from "@integramind/ui/button";
-import { Card } from "@integramind/ui/card";
+import { Button } from "@specly/ui/button";
+import { Card } from "@specly/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -35,13 +35,13 @@ import {
   ContextMenuLabel,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@integramind/ui/context-menu";
+} from "@specly/ui/context-menu";
 import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardHeader,
   ExpandableCardTrigger,
-} from "@integramind/ui/expandable-card";
+} from "@specly/ui/expandable-card";
 import {
   Form,
   FormControl,
@@ -49,14 +49,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
+} from "@specly/ui/form";
+import { Input } from "@specly/ui/input";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@integramind/ui/resizable";
-import { ScrollArea } from "@integramind/ui/scroll-area";
+} from "@specly/ui/resizable";
+import { ScrollArea } from "@specly/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -64,18 +64,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@integramind/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
-import { cn } from "@integramind/ui/utils";
+} from "@specly/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@specly/ui/tabs";
+import { cn } from "@specly/ui/utils";
 
 import type {
   FunctionPrimitive,
   Input as IInput,
   Primitive,
   RawDescription,
-} from "@integramind/shared/types";
-import type { resourceProvidersSchema } from "@integramind/shared/validators/resources";
-import { LambdaIcon } from "@integramind/ui/icons/lambda-icon";
+} from "@specly/shared/types";
+import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
 import { useQuery } from "@tanstack/react-query";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
@@ -246,7 +245,7 @@ export const FunctionNode = memo(
             acc.push({
               id: parent.id,
               name: parent.name,
-              type: "functionResponse",
+              type: "text",
               testValue: null,
             });
             for (const output of parent.metadata.outputs) {
@@ -275,6 +274,7 @@ export const FunctionNode = memo(
         const children = (root.getChildren()[0] as ParagraphNode).getChildren();
 
         const description = root.getTextContent();
+
         const rawDescription = children.reduce((acc, child) => {
           if (child.__type === "text") {
             acc.push({
@@ -290,16 +290,17 @@ export const FunctionNode = memo(
               name: referenceNode.__name,
               icon: referenceNode.__icon,
               dataType: referenceNode.__dataType,
-              testValue: referenceNode.__testValue ?? null,
             });
           }
           return acc;
         }, [] as RawDescription[]);
+
         const inputs: IInput[] = [];
-        let resource: {
-          id: string;
-          provider: z.infer<typeof resourceProvidersSchema>;
-        } | null = null;
+
+        // let resource: {
+        //   id: string;
+        //   provider: z.infer<typeof resourceProvidersSchema>;
+        // } | null = null;
 
         for (const child of children) {
           if (child.__type === "reference") {
@@ -315,10 +316,10 @@ export const FunctionNode = memo(
                 testValue: referenceNode.__testValue ?? null,
               });
             } else if (referenceNode.__referenceType === "database") {
-              resource = {
-                id: referenceNode.__id,
-                provider: "postgres",
-              };
+              // resource = {
+              //   id: referenceNode.__id,
+              //   provider: "postgres",
+              // };
             }
           }
         }
@@ -333,7 +334,7 @@ export const FunctionNode = memo(
             description,
             metadata: {
               inputs,
-              resource,
+              // resource,
               rawDescription,
               isCodeUpdated:
                 data.description?.trim().toLowerCase() ===
@@ -443,7 +444,7 @@ export const FunctionNode = memo(
               <ContextMenuItem className="flex items-center justify-between text-xs">
                 <Link
                   className="flex items-center"
-                  href="https://docs.integramind.ai/primitives/function"
+                  href="https://docs.specly.ai/primitives/function"
                   target="blank"
                 >
                   <FileTextIcon className="mr-3 size-4 text-muted-foreground" />

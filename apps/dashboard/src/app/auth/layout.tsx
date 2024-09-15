@@ -1,6 +1,5 @@
+import { auth } from "@specly/auth";
 import { redirect } from "next/navigation";
-
-import { auth } from "@integramind/auth";
 
 export default async function AuthLayout({
   children,

@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { Resend } from "resend";
 import type { z } from "zod";
 
-import { db, eq } from "@integramind/db";
-import { insertWaitlistSchema, waitlist } from "@integramind/db/schema";
+import { db, eq } from "@specly/db";
+import { insertWaitlistSchema, waitlist } from "@specly/db/schema";
 
 import { WaitlistConfirmationEmailTemplate } from "~/components/waitlist-confirmation-email-template";
 
@@ -65,7 +65,7 @@ export async function joinWaitlist(
 
     if (result) {
       await resend.emails.send({
-        from: "IntegraMind <noreploy@integramind.ai>",
+        from: "specly <noreploy@specly.ai>",
         to: [validation.data.email],
         subject: "Thank you for your interest!",
         react: WaitlistConfirmationEmailTemplate(),

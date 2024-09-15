@@ -10,9 +10,9 @@ import {
 import { memo, useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { IteratorPrimitive, Primitive } from "@integramind/shared/types";
-import { updateIteratorSchema } from "@integramind/shared/validators/primitives";
-import { Card } from "@integramind/ui/card";
+import type { IteratorPrimitive, Primitive } from "@specly/shared/types";
+import { updateIteratorSchema } from "@specly/shared/validators/primitives";
+import { Card } from "@specly/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -20,30 +20,30 @@ import {
   ContextMenuLabel,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@integramind/ui/context-menu";
+} from "@specly/ui/context-menu";
 import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardHeader,
   ExpandableCardTrigger,
-} from "@integramind/ui/expandable-card";
+} from "@specly/ui/expandable-card";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
+} from "@specly/ui/form";
+import { Input } from "@specly/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@integramind/ui/select";
-import { Textarea } from "@integramind/ui/textarea";
-import { cn } from "@integramind/ui/utils";
+} from "@specly/ui/select";
+import { Textarea } from "@specly/ui/textarea";
+import { cn } from "@specly/ui/utils";
 import {
   CircleMinus,
   ExternalLinkIcon,
@@ -236,7 +236,7 @@ export const Iterator = memo(
                 <ContextMenuItem className="flex items-center justify-between text-xs">
                   <Link
                     className="flex items-center"
-                    href="https://docs.integramind.ai/primitives/function"
+                    href="https://docs.specly.ai/primitives/function"
                     target="blank"
                   >
                     <FileTextIcon className="mr-3 size-4 text-muted-foreground" />

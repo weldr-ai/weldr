@@ -1,10 +1,10 @@
-import { and, eq, sql } from "@integramind/db";
-import { flows, primitives } from "@integramind/db/schema";
-import type { RouteMetadata } from "@integramind/shared/types";
+import { and, eq, sql } from "@specly/db";
+import { flows, primitives } from "@specly/db/schema";
+import type { RouteMetadata } from "@specly/shared/types";
 import {
   flowTypesSchema,
   insertFlowSchema,
-} from "@integramind/shared/validators/flows";
+} from "@specly/shared/validators/flows";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";

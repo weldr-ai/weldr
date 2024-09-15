@@ -1,8 +1,8 @@
 "use server";
 
-import type { BaseFormState } from "@integramind/shared/types";
-import { formDataToStructuredObject } from "@integramind/shared/utils";
-import { insertFlowSchema } from "@integramind/shared/validators/flows";
+import type { BaseFormState } from "@specly/shared/types";
+import { formDataToStructuredObject } from "@specly/shared/utils";
+import { insertFlowSchema } from "@specly/shared/validators/flows";
 import { TRPCError } from "@trpc/server";
 import { revalidatePath } from "next/cache";
 

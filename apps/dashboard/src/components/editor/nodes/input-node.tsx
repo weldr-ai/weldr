@@ -14,10 +14,10 @@ import { HashIcon, TextIcon } from "lucide-react";
 import { Suspense } from "react";
 import { useForm } from "react-hook-form";
 
-import { Form, FormControl, FormField, FormItem } from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
+import { Form, FormControl, FormField, FormItem } from "@specly/ui/form";
+import { Input } from "@specly/ui/input";
 
-import { toCamelCase } from "@integramind/shared/utils";
+import { toCamelCase } from "@specly/shared/utils";
 import { api } from "~/lib/trpc/react";
 import type { FlowNode } from "~/types";
 

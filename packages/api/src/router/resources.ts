@@ -1,7 +1,7 @@
-import { and, eq } from "@integramind/db";
-import { resources } from "@integramind/db/schema";
-import { type Table, getInfo } from "@integramind/integrations-postgres";
-import { insertResourceSchema as _insertResourceSchema } from "@integramind/shared/validators/resources";
+import { and, eq } from "@specly/db";
+import { resources } from "@specly/db/schema";
+import { type Table, getInfo } from "@specly/integrations-postgres";
+import { insertResourceSchema as _insertResourceSchema } from "@specly/shared/validators/resources";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";

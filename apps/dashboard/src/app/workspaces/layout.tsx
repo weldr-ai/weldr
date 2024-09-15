@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { auth } from "@integramind/auth";
+import { auth } from "@specly/auth";
 
 export default async function WorkspacesLayout({
   children,

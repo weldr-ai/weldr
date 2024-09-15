@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 
-import { cn } from "@integramind/ui/utils";
+import { cn } from "@specly/ui/utils";
 
 import { usePrimarySidebarStore } from "~/lib/store";
 import { FlowList } from "./flow-list";

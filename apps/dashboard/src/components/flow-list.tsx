@@ -2,11 +2,11 @@ import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-import { buttonVariants } from "@integramind/ui/button";
-import { ScrollArea } from "@integramind/ui/scroll-area";
-import { cn } from "@integramind/ui/utils";
+import { buttonVariants } from "@specly/ui/button";
+import { ScrollArea } from "@specly/ui/scroll-area";
+import { cn } from "@specly/ui/utils";
 
-import type { FlowType } from "@integramind/shared/types";
+import type { FlowType } from "@specly/shared/types";
 import { api } from "~/lib/trpc/react";
 import { CreateFlowDialog } from "./create-flow-dialog";
 

@@ -1,11 +1,11 @@
-import { auth } from "@integramind/auth";
+import { auth } from "@specly/auth";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@integramind/ui/card";
+} from "@specly/ui/card";
 import { redirect } from "next/navigation";
 
 import { CreateWorkspaceForm } from "~/components/create-workspace-form";

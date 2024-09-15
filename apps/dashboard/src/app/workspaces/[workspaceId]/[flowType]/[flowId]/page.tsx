@@ -1,4 +1,4 @@
-import type { Primitive } from "@integramind/shared/types";
+import type { Primitive } from "@specly/shared/types";
 import { notFound } from "next/navigation";
 
 import { FlowBuilder } from "~/components/flow-builder";

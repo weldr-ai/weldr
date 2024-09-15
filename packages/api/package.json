@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/api",
+  "name": "@specly/api",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -11,16 +11,16 @@
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@integramind/ai": "workspace:*",
-    "@integramind/auth": "workspace:*",
-    "@integramind/db": "workspace:*",
-    "@integramind/shared": "workspace:*",
-    "@integramind/integrations-postgres": "workspace:*",
+    "@specly/ai": "workspace:*",
+    "@specly/auth": "workspace:*",
+    "@specly/db": "workspace:*",
+    "@specly/shared": "workspace:*",
+    "@specly/integrations-postgres": "workspace:*",
     "@trpc/server": "11.0.0-rc.441",
     "superjson": "^2.2.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@integramind/tsconfig": "workspace:*"
+    "@specly/tsconfig": "workspace:*"
   }
 }

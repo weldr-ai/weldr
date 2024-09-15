@@ -1,5 +1,6 @@
-import { Button } from "@integramind/ui/button";
-import { Card } from "@integramind/ui/card";
+import { createId } from "@paralleldrive/cuid2";
+import { Button } from "@specly/ui/button";
+import { Card } from "@specly/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -7,7 +8,7 @@ import {
   ContextMenuLabel,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@integramind/ui/context-menu";
+} from "@specly/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,16 +16,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@integramind/ui/dropdown-menu";
+} from "@specly/ui/dropdown-menu";
 import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardHeader,
   ExpandableCardTrigger,
-} from "@integramind/ui/expandable-card";
-import { ScrollArea } from "@integramind/ui/scroll-area";
-import { cn } from "@integramind/ui/utils";
-import { createId } from "@paralleldrive/cuid2";
+} from "@specly/ui/expandable-card";
+import { ScrollArea } from "@specly/ui/scroll-area";
+import { cn } from "@specly/ui/utils";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import {
   EllipsisVerticalIcon,
@@ -39,19 +39,16 @@ import Link from "next/link";
 import { memo, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type {
-  MatcherPrimitive,
-  RawDescription,
-} from "@integramind/shared/types";
-import type { matcherPrimitiveMetadataSchema } from "@integramind/shared/validators/primitives";
+import type { MatcherPrimitive, RawDescription } from "@specly/shared/types";
+import type { matcherPrimitiveMetadataSchema } from "@specly/shared/validators/primitives";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
+} from "@specly/ui/form";
+import { Input } from "@specly/ui/input";
 import { $getRoot, type EditorState, type ParagraphNode } from "lexical";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -229,7 +226,7 @@ export const Matcher = memo(
                 <ContextMenuItem className="flex items-center justify-between text-xs">
                   <Link
                     className="flex items-center"
-                    href="https://docs.integramind.ai/primitives/matcher"
+                    href="https://docs.specly.ai/primitives/matcher"
                     target="blank"
                   >
                     <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
@@ -293,7 +290,7 @@ export const Matcher = memo(
                       <DropdownMenuItem className="flex items-center justify-between text-xs">
                         <Link
                           className="flex items-center"
-                          href="https://docs.integramind.ai/primitives/response"
+                          href="https://docs.specly.ai/primitives/response"
                           target="blank"
                         >
                           <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
@@ -390,8 +387,6 @@ export const Matcher = memo(
                                         name: referenceNode.__name,
                                         icon: referenceNode.__icon,
                                         dataType: referenceNode.__dataType,
-                                        testValue:
-                                          referenceNode.__testValue ?? null,
                                       });
                                     }
                                     return acc;

@@ -1,4 +1,4 @@
-import { Button } from "@integramind/ui/button";
+import { Button } from "@specly/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,7 +6,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@integramind/ui/dropdown-menu";
+} from "@specly/ui/dropdown-menu";
 import {
   EllipsisVerticalIcon,
   ExternalLinkIcon,
@@ -46,7 +46,7 @@ export function PrimitiveDropdownMenu({
         <DropdownMenuItem className="flex items-center justify-between text-xs">
           <Link
             className="flex items-center"
-            href={`https://docs.integramind.ai/primitives/${docsUrlPath}`}
+            href={`https://docs.specly.ai/primitives/${docsUrlPath}`}
             target="blank"
           >
             <FileTextIcon className="mr-3 size-4 text-muted-foreground" />

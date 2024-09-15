@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/shared",
+  "name": "@specly/shared",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -17,6 +17,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@integramind/tsconfig": "workspace:*"
+    "@specly/tsconfig": "workspace:*"
   }
 }

@@ -10,8 +10,8 @@ import {
 import Link from "next/link";
 import { memo, useState } from "react";
 
-import { Button } from "@integramind/ui/button";
-import { Card } from "@integramind/ui/card";
+import { Button } from "@specly/ui/button";
+import { Card } from "@specly/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -19,7 +19,7 @@ import {
   ContextMenuLabel,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@integramind/ui/context-menu";
+} from "@specly/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,20 +27,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@integramind/ui/dropdown-menu";
+} from "@specly/ui/dropdown-menu";
 import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardHeader,
   ExpandableCardTrigger,
-} from "@integramind/ui/expandable-card";
-import { cn } from "@integramind/ui/utils";
+} from "@specly/ui/expandable-card";
+import { cn } from "@specly/ui/utils";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type {
-  RawDescription,
-  ResponsePrimitive,
-} from "@integramind/shared/types";
+import type { RawDescription, ResponsePrimitive } from "@specly/shared/types";
 import {
   Form,
   FormControl,
@@ -48,8 +45,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
+} from "@specly/ui/form";
+import { Input } from "@specly/ui/input";
 import { $getRoot, type EditorState, type ParagraphNode } from "lexical";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -142,7 +139,6 @@ export const Response = memo(
               name: referenceNode.__name,
               icon: referenceNode.__icon,
               dataType: referenceNode.__dataType,
-              testValue: referenceNode.__testValue ?? null,
             });
           }
           return acc;
@@ -212,7 +208,7 @@ export const Response = memo(
               <ContextMenuItem className="flex items-center justify-between text-xs">
                 <Link
                   className="flex items-center"
-                  href="https://docs.integramind.ai/primitives/iterator"
+                  href="https://docs.specly.ai/primitives/iterator"
                   target="blank"
                 >
                   <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
@@ -267,7 +263,7 @@ export const Response = memo(
                       <DropdownMenuItem className="flex items-center justify-between text-xs">
                         <Link
                           className="flex items-center"
-                          href="https://docs.integramind.ai/primitives/response"
+                          href="https://docs.specly.ai/primitives/response"
                           target="blank"
                         >
                           <FileTextIcon className="mr-3 size-4 text-muted-foreground" />

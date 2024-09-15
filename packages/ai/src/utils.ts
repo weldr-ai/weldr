@@ -1,4 +1,4 @@
-import { toCamelCase } from "@integramind/shared/utils";
+import { toCamelCase } from "@specly/shared/utils";
 
 export function getSystemMessage(withResource: boolean): string {
   return `

@@ -1,5 +1,5 @@
 {
-  "extends": "@integramind/tsconfig/base.json",
+  "extends": "@specly/tsconfig/base.json",
   "compilerOptions": {
     "traceResolution": true,
     "lib": ["es2022", "dom", "dom.iterable"],
@@ -7,7 +7,7 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"],
-      "@integramind/integrations-postgres": [
+      "@specly/integrations-postgres": [
         "../../packages/integrations/postgres/src"
       ]
     },
