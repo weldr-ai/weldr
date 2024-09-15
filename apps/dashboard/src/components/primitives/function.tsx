@@ -74,13 +74,14 @@ import type {
   Primitive,
   RawDescription,
 } from "@specly/shared/types";
+import type { resourceProvidersSchema } from "@specly/shared/validators/resources";
 import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
 import { useQuery } from "@tanstack/react-query";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
-import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
+import type { ReferenceNode } from "../editor/nodes/reference-node";
 import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
 
 async function executeFunction({
@@ -189,6 +190,7 @@ export const FunctionNode = memo(
       enabled: false,
     });
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     const inputs = useMemo(() => {
       const parents = edges.reduce((acc: Primitive[], edge) => {
         if (edge.target === data.id) {
@@ -262,8 +264,7 @@ export const FunctionNode = memo(
       }, [] as IInput[]);
 
       return inputs;
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data, edges, nodes, updateFunction]);
+    }, [data, edges, nodes]);
 
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
@@ -297,10 +298,10 @@ export const FunctionNode = memo(
 
         const inputs: IInput[] = [];
 
-        // let resource: {
-        //   id: string;
-        //   provider: z.infer<typeof resourceProvidersSchema>;
-        // } | null = null;
+        const resources: {
+          id: string;
+          provider: z.infer<typeof resourceProvidersSchema>;
+        }[] = [];
 
         for (const child of children) {
           if (child.__type === "reference") {
@@ -316,10 +317,10 @@ export const FunctionNode = memo(
                 testValue: referenceNode.__testValue ?? null,
               });
             } else if (referenceNode.__referenceType === "database") {
-              // resource = {
-              //   id: referenceNode.__id,
-              //   provider: "postgres",
-              // };
+              resources.push({
+                id: referenceNode.__id,
+                provider: "postgres",
+              });
             }
           }
         }
@@ -334,7 +335,7 @@ export const FunctionNode = memo(
             description,
             metadata: {
               inputs,
-              // resource,
+              resources,
               rawDescription,
               isCodeUpdated:
                 data.description?.trim().toLowerCase() ===
@@ -581,6 +582,7 @@ export const FunctionNode = memo(
                             <FormLabel className="text-xs">Editor</FormLabel>
                             <Editor
                               id={data.id}
+                              primitive={data}
                               type="description"
                               inputs={inputs}
                               placeholder="Describe your function"

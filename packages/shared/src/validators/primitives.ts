@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resourceProvidersSchema } from "./resources";
 
 export const primitiveBaseSchema = z.object({
   id: z.string(),
@@ -65,6 +66,13 @@ const baseMetadataSchema = z.object({
   generatedCode: z.string().nullable().optional(),
   isCodeUpdated: z.boolean().default(false).optional(),
   isLocked: z.boolean().default(false).optional(),
+  resources: z
+    .object({
+      id: z.string(),
+      provider: resourceProvidersSchema,
+    })
+    .array()
+    .optional(),
 });
 
 export const functionPrimitiveMetadataSchema = baseMetadataSchema.extend({

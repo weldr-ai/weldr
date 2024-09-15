@@ -61,12 +61,41 @@ export const resourcesRouter = {
   getAll: protectedProcedure
     .input(z.object({ workspaceId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query.resources.findMany({
+      const rows = await ctx.db.query.resources.findMany({
         where: and(
           eq(resources.workspaceId, input.workspaceId),
           eq(resources.createdBy, ctx.session.user.id),
         ),
       });
+
+      const result = await Promise.all(
+        rows.map(async (row) => {
+          let tables: Table[] | undefined;
+
+          if (row.provider === "postgres" || row.provider === "mysql") {
+            const auth = row.metadata;
+
+            tables = await getInfo({
+              auth: {
+                host: auth.host,
+                port: Number(auth.port),
+                user: auth.user,
+                password: auth.password,
+                database: auth.database,
+              },
+            });
+          }
+
+          return {
+            ...row,
+            metadata: {
+              ...row.metadata,
+              tables: tables ?? [],
+            },
+          };
+        }),
+      );
+
       return result;
     }),
   getById: protectedProcedure

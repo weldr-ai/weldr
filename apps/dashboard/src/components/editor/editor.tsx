@@ -12,7 +12,14 @@ import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
 import { cn } from "@specly/ui/utils";
 
-import type { Input, RawDescription } from "@specly/shared/types";
+import type {
+  FunctionPrimitive,
+  Input,
+  IteratorPrimitive,
+  MatcherPrimitive,
+  RawDescription,
+  ResponsePrimitive,
+} from "@specly/shared/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 import { $createInputNode, InputNode } from "./nodes/input-node";
 import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
@@ -20,6 +27,11 @@ import { InputsPlugin } from "./plugins/input-plugin";
 
 interface EditorBaseProps {
   id: string;
+  primitive?:
+    | FunctionPrimitive
+    | IteratorPrimitive
+    | MatcherPrimitive
+    | ResponsePrimitive;
   type: "description" | "inputs";
   onChange: (editorState: EditorState) => void;
   onError: (error: Error, editor: LexicalEditor) => void;
@@ -102,7 +114,14 @@ export function Editor({ ...props }: EditorProps) {
       <div className="flex size-full">
         {props.type === "inputs" && <InputsPlugin id={props.id} />}
         {props.type === "description" && (
-          <ReferencesPlugin inputs={props.inputs} />
+          <ReferencesPlugin
+            inputs={props.inputs}
+            primitiveResources={
+              props.primitive?.metadata.resources?.map(
+                (resource) => resource.id,
+              ) ?? []
+            }
+          />
         )}
         <RichTextPlugin
           contentEditable={

@@ -335,6 +335,7 @@ export const Response = memo(
                         <FormLabel className="text-xs">Editor</FormLabel>
                         <Editor
                           id={data.id}
+                          primitive={data}
                           type="description"
                           inputs={data.metadata.inputs ?? []}
                           placeholder="Describe your response"
