@@ -7,9 +7,5 @@
   "access": "restricted",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [
-    "@integramind/dashboard",
-    "@integramind/engine",
-    "@integramind/marketing"
-  ]
+  "ignore": ["@specly/dashboard", "@specly/engine", "@specly/marketing"]
 }

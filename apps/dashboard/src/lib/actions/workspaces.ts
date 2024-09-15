@@ -1,7 +1,7 @@
 "use server";
 
-import type { BaseFormState } from "@integramind/shared/types";
-import { insertWorkspaceSchema } from "@integramind/shared/validators/workspaces";
+import type { BaseFormState } from "@specly/shared/types";
+import { insertWorkspaceSchema } from "@specly/shared/validators/workspaces";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 

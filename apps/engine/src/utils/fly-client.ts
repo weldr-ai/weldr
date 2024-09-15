@@ -81,7 +81,7 @@ export async function deleteFlyApp(workspaceId: string, force = false) {
 export async function createExecutorDockerImage(workspaceId: string) {
   try {
     await exec(
-      `docker tag integramind/executor:latest registry.fly.io/${workspaceId}:executor`,
+      `docker tag specly/executor:latest registry.fly.io/${workspaceId}:executor`,
     );
     await exec(`docker push registry.fly.io/${workspaceId}:executor`);
   } catch (error) {

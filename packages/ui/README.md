@@ -1,1 +1,1 @@
-# `@integramind/ui`
+# `@specly/ui`

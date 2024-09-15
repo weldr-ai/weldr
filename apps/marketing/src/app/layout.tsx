@@ -1,11 +1,11 @@
-import "@integramind/ui/globals.css";
+import "@specly/ui/globals.css";
 
 import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
 import { Poppins as FontSans } from "next/font/google";
 
-import { Toaster } from "@integramind/ui/toaster";
-import { cn } from "@integramind/ui/utils";
+import { Toaster } from "@specly/ui/toaster";
+import { cn } from "@specly/ui/utils";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -14,7 +14,7 @@ const fontSans = FontSans({
 });
 
 export const metadata: Metadata = {
-  title: "IntegraMind",
+  title: "Specly",
   description:
     "Create backend APIs, automation workflows, and integrations using only plain English, no coding required!",
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? ""),

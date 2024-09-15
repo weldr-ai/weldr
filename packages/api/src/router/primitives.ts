@@ -1,20 +1,20 @@
 import { TRPCError } from "@trpc/server";
 
-import { primitives } from "@integramind/db/schema";
+import { primitives } from "@specly/db/schema";
 import type {
   Input,
   IteratorPrimitive,
   Primitive,
   RoutePrimitive,
-} from "@integramind/shared/types";
+} from "@specly/shared/types";
 
-import { type SQL, and, eq, notInArray, sql } from "@integramind/db";
+import { type SQL, and, eq, notInArray, sql } from "@specly/db";
 import {
   insertPrimitiveSchema,
   iteratorPrimitiveSchema,
   primitiveSchema,
   updatePrimitiveSchema,
-} from "@integramind/shared/validators/primitives";
+} from "@specly/shared/validators/primitives";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 

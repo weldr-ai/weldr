@@ -8,11 +8,10 @@ import {
   WorkflowIcon,
 } from "lucide-react";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@specly/ui/button";
 
+import { SpeclyIcon } from "@specly/ui/icons/specly-icon";
 import { useTheme } from "next-themes";
-
-import { IntegraMind2Icon } from "@integramind/ui/icons/integramind2-icon";
 
 export function Preview() {
   const { resolvedTheme } = useTheme();
@@ -24,17 +23,17 @@ export function Preview() {
           <nav className="flex items-center text-sm">
             <div className="flex size-14 items-center justify-center border-r p-2">
               <Button variant="ghost" size="icon" className="size-full">
-                <IntegraMind2Icon
+                <SpeclyIcon
                   className="size-6"
                   theme={resolvedTheme === "light" ? "light" : "dark"}
                 />
-                <span className="sr-only">IntegraMind</span>
+                <span className="sr-only">specly</span>
               </Button>
             </div>
           </nav>
           <div className="flex w-64 items-center justify-center p-2">
             <Button variant="ghost" size="sm" className="w-full">
-              IntegraMind
+              specly
             </Button>
           </div>
         </header>
@@ -75,7 +74,7 @@ export function Preview() {
       </div>
       <main className="flex min-h-full w-full py-2 pr-2">
         <div className="flex size-full flex-col items-center justify-center gap-2 rounded-lg border bg-background">
-          <h1 className="text-2xl font-medium">IntegraMind</h1>
+          <h1 className="text-2xl font-medium">specly</h1>
           <span className="text-muted-foreground">
             Build • Automate • Accelerate
           </span>

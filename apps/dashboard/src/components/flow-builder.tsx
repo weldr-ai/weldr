@@ -28,16 +28,16 @@ import { useCallback } from "react";
 import "@xyflow/react/dist/base.css";
 import "~/styles/flow-builder.css";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@specly/ui/button";
 
-import type { Primitive, PrimitiveType } from "@integramind/shared/types";
+import type { Primitive, PrimitiveType } from "@specly/shared/types";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@integramind/ui/tooltip";
-import { toast } from "@integramind/ui/use-toast";
+} from "@specly/ui/tooltip";
+import { toast } from "@specly/ui/use-toast";
 import { useTheme } from "next-themes";
 import DeletableEdge from "~/components/deletable-edge";
 import { FunctionNode } from "~/components/primitives/function";

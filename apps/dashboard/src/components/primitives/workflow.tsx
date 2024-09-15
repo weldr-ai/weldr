@@ -10,9 +10,9 @@ import {
 import Link from "next/link";
 import { memo } from "react";
 
-import { Badge } from "@integramind/ui/badge";
-import { Button } from "@integramind/ui/button";
-import { Card } from "@integramind/ui/card";
+import { Badge } from "@specly/ui/badge";
+import { Button } from "@specly/ui/button";
+import { Card } from "@specly/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,14 +20,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@integramind/ui/dropdown-menu";
+} from "@specly/ui/dropdown-menu";
 import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardHeader,
   ExpandableCardTrigger,
-} from "@integramind/ui/expandable-card";
-import { cn } from "@integramind/ui/utils";
+} from "@specly/ui/expandable-card";
+import { cn } from "@specly/ui/utils";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Workflow = memo(
@@ -114,7 +114,7 @@ export const Workflow = memo(
                       <DropdownMenuItem className="flex items-center justify-between text-xs">
                         <Link
                           className="flex items-center"
-                          href="https://docs.integramind.ai/primitives/workflow"
+                          href="https://docs.specly.ai/primitives/workflow"
                           target="blank"
                         >
                           <FileTextIcon className="mr-3 size-4 text-muted-foreground" />

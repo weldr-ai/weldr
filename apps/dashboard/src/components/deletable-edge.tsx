@@ -8,7 +8,7 @@ import {
 import { XIcon } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@specly/ui/button";
 
 import { api } from "~/lib/trpc/react";
 

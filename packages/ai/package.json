@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/ai",
+  "name": "@specly/ai",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -11,12 +11,12 @@
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@integramind/shared": "workspace:*",
+    "@specly/shared": "workspace:*",
     "ofetch": "^1.3.4",
     "openai": "^4.52.0",
     "scule": "^1.3.0"
   },
   "devDependencies": {
-    "@integramind/tsconfig": "workspace:*"
+    "@specly/tsconfig": "workspace:*"
   }
 }

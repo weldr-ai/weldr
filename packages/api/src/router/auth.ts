@@ -1,6 +1,6 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
-import { invalidateSessionToken } from "@integramind/auth";
+import { invalidateSessionToken } from "@specly/auth";
 
 import { protectedProcedure, publicProcedure } from "../trpc";
 

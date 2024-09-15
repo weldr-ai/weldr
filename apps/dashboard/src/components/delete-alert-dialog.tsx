@@ -7,8 +7,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@integramind/ui/alert-dialog";
-import { buttonVariants } from "@integramind/ui/button";
+} from "@specly/ui/alert-dialog";
+import { buttonVariants } from "@specly/ui/button";
 
 export function DeleteAlertDialog({
   open,

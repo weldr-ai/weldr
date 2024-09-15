@@ -1,13 +1,13 @@
-import "@integramind/ui/globals.css";
+import "@specly/ui/globals.css";
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import { Poppins as FontSans } from "next/font/google";
 
-import { ThemeProvider } from "@integramind/ui/theme-provider";
-import { Toaster } from "@integramind/ui/toaster";
-import { cn } from "@integramind/ui/utils";
+import { ThemeProvider } from "@specly/ui/theme-provider";
+import { Toaster } from "@specly/ui/toaster";
+import { cn } from "@specly/ui/utils";
 
 import { QueryProvider } from "~/components/query-client-provider";
 import { TRPCReactProvider } from "~/lib/trpc/react";
@@ -19,7 +19,7 @@ const fontSans = FontSans({
 });
 
 export const metadata: Metadata = {
-  title: "IntegraMind",
+  title: "Specly",
   description:
     "Build LLM-powered AI agents in minutes for seamless workflow automation!",
 };

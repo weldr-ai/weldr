@@ -9,7 +9,7 @@ import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@specly/ui/button";
 import {
   Form,
   FormControl,
@@ -17,12 +17,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
-import { Textarea } from "@integramind/ui/textarea";
-import { toast } from "@integramind/ui/use-toast";
+} from "@specly/ui/form";
+import { Input } from "@specly/ui/input";
+import { Textarea } from "@specly/ui/textarea";
+import { toast } from "@specly/ui/use-toast";
 
-import { insertWorkspaceSchema } from "@integramind/shared/validators/workspaces";
+import { insertWorkspaceSchema } from "@specly/shared/validators/workspaces";
 import { createWorkspace } from "~/lib/actions/workspaces";
 
 export function CreateWorkspaceForm() {
@@ -106,7 +106,7 @@ export function CreateWorkspaceForm() {
                 <div className="relative">
                   <Input placeholder="Enter subdomain" {...field} />
                   <span className="absolute right-2.5 top-[9px] text-xs text-muted-foreground">
-                    .integramind.app
+                    .specly.app
                   </span>
                 </div>
               </FormControl>

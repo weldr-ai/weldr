@@ -4,10 +4,12 @@ import type { flowSchema, flowTypesSchema } from "../validators/flows";
 import type {
   functionPrimitiveMetadataSchema,
   functionPrimitiveSchema,
+  inputSchema,
   iteratorPrimitiveMetadataSchema,
   iteratorPrimitiveSchema,
   matcherPrimitiveMetadataSchema,
   matcherPrimitiveSchema,
+  outputSchema,
   primitiveBaseSchema,
   primitiveMetadataSchema,
   primitiveSchema,
@@ -16,6 +18,7 @@ import type {
   responsePrimitiveSchema,
   routePrimitiveMetadataSchema,
   routePrimitiveSchema,
+  valueTypeSchema,
   workflowPrimitiveMetadataSchema,
   workflowPrimitiveSchema,
 } from "../validators/primitives";
@@ -26,20 +29,11 @@ import type {
 } from "../validators/resources";
 import type { workspaceSchema } from "../validators/workspaces";
 
-export type VarType = "number" | "text" | "functionResponse";
+export type VarType = z.infer<typeof valueTypeSchema>;
 
-export interface Input {
-  id: string;
-  name: string;
-  type: VarType;
-  testValue?: string | number | null;
-}
+export type Input = z.infer<typeof inputSchema>;
 
-export interface Output {
-  id: string;
-  name: string;
-  type: VarType;
-}
+export type Output = z.infer<typeof outputSchema>;
 
 export type Workspace = z.infer<typeof workspaceSchema>;
 

@@ -1,1 +1,1 @@
-# `@integramind/db`
+# `@specly/db`

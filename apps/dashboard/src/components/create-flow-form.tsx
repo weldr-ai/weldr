@@ -9,7 +9,7 @@ import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@specly/ui/button";
 import {
   Form,
   FormControl,
@@ -17,20 +17,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
+} from "@specly/ui/form";
+import { Input } from "@specly/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@integramind/ui/select";
-import { Textarea } from "@integramind/ui/textarea";
-import { toast } from "@integramind/ui/use-toast";
+} from "@specly/ui/select";
+import { Textarea } from "@specly/ui/textarea";
+import { toast } from "@specly/ui/use-toast";
 
-import type { FlowType } from "@integramind/shared/types";
-import { insertFlowSchema } from "@integramind/shared/validators/flows";
+import type { FlowType } from "@specly/shared/types";
+import { insertFlowSchema } from "@specly/shared/validators/flows";
 import { createFlow } from "~/lib/actions/flows";
 
 export function CreateFlowForm({

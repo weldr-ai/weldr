@@ -1,6 +1,6 @@
-import { and, eq } from "@integramind/db";
-import { workspaces } from "@integramind/db/schema";
-import { insertWorkspaceSchema } from "@integramind/shared/validators/workspaces";
+import { and, eq } from "@specly/db";
+import { workspaces } from "@specly/db/schema";
+import { insertWorkspaceSchema } from "@specly/shared/validators/workspaces";
 import { TRPCError } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";

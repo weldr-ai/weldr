@@ -1,1 +1,1 @@
-# `@integramind/ai`
+# `@specly/ai`

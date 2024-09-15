@@ -10,9 +10,9 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, LexicalEditor } from "lexical";
 import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
-import { cn } from "@integramind/ui/utils";
+import { cn } from "@specly/ui/utils";
 
-import type { Input, RawDescription } from "@integramind/shared/types";
+import type { Input, RawDescription } from "@specly/shared/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 import { $createInputNode, InputNode } from "./nodes/input-node";
 import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
@@ -80,7 +80,6 @@ export function Editor({ ...props }: EditorProps) {
             item.referenceType,
             item.icon,
             item.dataType,
-            item.testValue,
           );
           paragraph.append(referenceNode);
         }

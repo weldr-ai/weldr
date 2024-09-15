@@ -9,7 +9,7 @@ import type { TextNode } from "lexical";
 import { HashIcon, TextIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
-import { cn } from "@integramind/ui/utils";
+import { cn } from "@specly/ui/utils";
 
 import { $createInputNode } from "~/components/editor/nodes/input-node";
 import { api } from "~/lib/trpc/react";

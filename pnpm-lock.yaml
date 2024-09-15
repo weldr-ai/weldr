@@ -26,7 +26,7 @@ importers:
       '@ianvs/prettier-plugin-sort-imports':
         specifier: ^4.2.1
         version: 4.3.1(prettier@3.3.2)
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:tooling/typescript
       '@turbo/gen':
@@ -62,27 +62,27 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.3.4
         version: 3.9.0(react-hook-form@7.52.1(react@18.3.1))
-      '@integramind/api':
-        specifier: workspace:*
-        version: link:../../packages/api
-      '@integramind/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@integramind/db':
-        specifier: workspace:*
-        version: link:../../packages/db
-      '@integramind/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@integramind/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@lexical/react':
         specifier: ^0.16.0
         version: 0.16.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(yjs@13.6.18)
       '@paralleldrive/cuid2':
         specifier: ^2.2.2
         version: 2.2.2
+      '@specly/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      '@specly/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@specly/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@specly/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@specly/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^5.40.0
         version: 5.51.1(react@18.3.1)
@@ -153,10 +153,10 @@ importers:
         specifier: ^4.5.2
         version: 4.5.4(@types/react@18.3.3)(react@18.3.1)
     devDependencies:
-      '@integramind/tailwind-config':
+      '@specly/tailwind-config':
         specifier: workspace:*
         version: link:../../tooling/tailwind
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       '@types/node':
@@ -199,7 +199,7 @@ importers:
         specifier: ^4.7.8
         version: 4.7.8
     devDependencies:
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       dotenv-cli:
@@ -211,10 +211,10 @@ importers:
 
   apps/marketing:
     dependencies:
-      '@integramind/db':
+      '@specly/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@integramind/ui':
+      '@specly/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@vercel/analytics':
@@ -245,10 +245,10 @@ importers:
         specifier: ^3.23.8
         version: 3.23.8
     devDependencies:
-      '@integramind/tailwind-config':
+      '@specly/tailwind-config':
         specifier: workspace:*
         version: link:../../tooling/tailwind
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       '@types/node':
@@ -281,7 +281,7 @@ importers:
 
   packages/ai:
     dependencies:
-      '@integramind/shared':
+      '@specly/shared':
         specifier: workspace:*
         version: link:../shared
       ofetch:
@@ -294,25 +294,25 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0
     devDependencies:
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
 
   packages/api:
     dependencies:
-      '@integramind/ai':
+      '@specly/ai':
         specifier: workspace:*
         version: link:../ai
-      '@integramind/auth':
+      '@specly/auth':
         specifier: workspace:*
         version: link:../auth
-      '@integramind/db':
+      '@specly/db':
         specifier: workspace:*
         version: link:../db
-      '@integramind/integrations-postgres':
+      '@specly/integrations-postgres':
         specifier: workspace:*
         version: link:../integrations/postgres
-      '@integramind/shared':
+      '@specly/shared':
         specifier: workspace:*
         version: link:../shared
       '@trpc/server':
@@ -325,7 +325,7 @@ importers:
         specifier: ^3.23.8
         version: 3.23.8
     devDependencies:
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
 
@@ -337,7 +337,7 @@ importers:
       '@auth/drizzle-adapter':
         specifier: ^1.4.2
         version: 1.4.2
-      '@integramind/db':
+      '@specly/db':
         specifier: workspace:*
         version: link:../db
       next:
@@ -356,18 +356,18 @@ importers:
         specifier: ^3.23.8
         version: 3.23.8
     devDependencies:
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
 
   packages/db:
     dependencies:
-      '@integramind/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@paralleldrive/cuid2':
         specifier: ^2.2.2
         version: 2.2.2
+      '@specly/shared':
+        specifier: workspace:*
+        version: link:../shared
       dashboard:
         specifier: ^0.0.1
         version: 0.0.1
@@ -387,7 +387,7 @@ importers:
         specifier: ^3.23.8
         version: 3.23.8
     devDependencies:
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       '@types/pg':
@@ -406,7 +406,7 @@ importers:
         specifier: ^8.12.0
         version: 8.12.0
     devDependencies:
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:../../../tooling/typescript
       tsup:
@@ -419,7 +419,7 @@ importers:
         specifier: ^3.23.8
         version: 3.23.8
     devDependencies:
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
 
@@ -567,10 +567,10 @@ importers:
         specifier: ^3.23.8
         version: 3.23.8
     devDependencies:
-      '@integramind/tailwind-config':
+      '@specly/tailwind-config':
         specifier: workspace:*
         version: link:../../tooling/tailwind
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       '@types/eslint':
@@ -624,7 +624,7 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.4(ts-node@10.9.2(@types/node@22.4.1)(typescript@5.5.3)))
     devDependencies:
-      '@integramind/tsconfig':
+      '@specly/tsconfig':
         specifier: workspace:*
         version: link:../typescript
       eslint:

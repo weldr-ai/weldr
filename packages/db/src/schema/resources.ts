@@ -9,7 +9,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 
-import type { ResourceMetadata } from "@integramind/shared/types";
+import type { ResourceMetadata } from "@specly/shared/types";
 import { users } from "./auth";
 import { workspaces } from "./workspaces";
 
