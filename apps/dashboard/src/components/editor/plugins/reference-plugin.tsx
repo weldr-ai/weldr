@@ -80,24 +80,22 @@ export class ReferenceOption extends MenuOption {
   }
 }
 
-export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
+export function ReferencesPlugin({
+  inputs,
+  primitiveResources,
+}: {
+  inputs: Input[];
+  primitiveResources: string[];
+}) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
-  const [resourceId, setResourceId] = useState<string | undefined>();
+  const [functionResources, setFunctionResources] =
+    useState<string[]>(primitiveResources);
 
-  const { data: resources } = api.resources.getAll.useQuery({
+  const { data: workspaceResources } = api.resources.getAll.useQuery({
     workspaceId,
   });
-
-  const { data: resource } = api.resources.getById.useQuery(
-    {
-      id: resourceId ?? "",
-    },
-    {
-      enabled: !!resourceId,
-    },
-  );
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch("/", {
     minLength: 0,
@@ -135,7 +133,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
           );
         }
         if (selectedOption.referenceType === "database") {
-          setResourceId(selectedOption.id);
+          setFunctionResources([...functionResources, selectedOption.id]);
         }
         if (nodeToReplace) {
           nodeToReplace.replace(referenceNode);
@@ -144,7 +142,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
         closeMenu();
       });
     },
-    [editor],
+    [editor, functionResources],
   );
 
   const inputOptions: ReferenceOption[] = useMemo(() => {
@@ -170,18 +168,22 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
   const options = useMemo(() => {
     const options: ReferenceOption[] = [...inputOptions];
 
-    if (resource) {
-      if (resource.provider === "postgres") {
-        options.push(
-          new ReferenceOption(resource.id, resource.name, "database", {
-            icon: "database-icon",
-            keywords: ["postgres", "resource", resource.name],
-            onSelect: (queryString) => {
-              console.log(queryString);
-            },
-          }),
-        );
+    for (const resource of workspaceResources ?? []) {
+      options.push(
+        new ReferenceOption(resource.id, resource.name, "database", {
+          icon: "database-icon",
+          keywords: ["resource", "database", resource.name],
+          onSelect: (queryString) => {
+            console.log(queryString);
+          },
+        }),
+      );
 
+      if (
+        (resource.provider === "postgres" || resource.provider === "mysql") &&
+        resource.metadata.tables &&
+        primitiveResources.includes(resource.id)
+      ) {
         for (const table of resource.metadata.tables) {
           for (const column of table.columns) {
             options.push(
@@ -211,18 +213,6 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
           );
         }
       }
-    } else if (resources && !resourceId) {
-      for (const resource of resources) {
-        options.push(
-          new ReferenceOption(resource.id, resource.name, "database", {
-            icon: "database-icon",
-            keywords: ["resource", "database", resource.name],
-            onSelect: (queryString) => {
-              console.log(queryString);
-            },
-          }),
-        );
-      }
     }
 
     if (!queryString) {
@@ -236,7 +226,7 @@ export function ReferencesPlugin({ inputs }: { inputs: Input[] }) {
         regex.test(option.name) ||
         option.keywords.some((keyword) => regex.test(keyword)),
     );
-  }, [resource, resourceId, resources, inputOptions, queryString]);
+  }, [inputOptions, queryString, primitiveResources, workspaceResources]);
 
   const getMenuPosition = useCallback(() => {
     return editor.getEditorState().read(() => {

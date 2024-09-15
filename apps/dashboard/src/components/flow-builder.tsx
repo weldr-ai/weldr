@@ -21,7 +21,7 @@ import {
   useReactFlow,
   useViewport,
 } from "@xyflow/react";
-import { MinusIcon, PlayIcon, PlusIcon, ShareIcon } from "lucide-react";
+import { MinusIcon, PlayIcon, PlusIcon, RocketIcon } from "lucide-react";
 import type React from "react";
 import { useCallback } from "react";
 
@@ -434,11 +434,11 @@ export function _FlowBuilder({
                 variant="ghost"
                 size="icon"
               >
-                <ShareIcon className="size-4" />
+                <RocketIcon className="size-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent className="bg-muted text-primary">
-              <p>Share</p>
+              <p>Ship</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

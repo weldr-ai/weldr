@@ -44,7 +44,7 @@ jobs:
         uses: ./tooling/github/setup
 
       - name: Build packages
-        run: pnpm build -F @integramind/integrations-postgres
+        run: pnpm build -F @specly/integrations-postgres
 
       - name: Check types
         run: pnpm check-types
