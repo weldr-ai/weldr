@@ -1,4 +1,4 @@
-import { CornerDownLeftIcon, RegexIcon, RepeatIcon } from "lucide-react";
+import { CornerDownLeftIcon } from "lucide-react";
 import type React from "react";
 
 import type { PrimitiveType } from "@specly/shared/types";
@@ -39,7 +39,7 @@ export function PrimitivesMenu() {
         </Tooltip>
       </TooltipProvider>
 
-      <TooltipProvider delayDuration={100}>
+      {/* <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger>
             <div
@@ -71,7 +71,7 @@ export function PrimitivesMenu() {
             <p>Matcher</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
+      </TooltipProvider> */}
 
       <TooltipProvider delayDuration={100}>
         <Tooltip>
