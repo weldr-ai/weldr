@@ -41,8 +41,6 @@ import { toast } from "@specly/ui/use-toast";
 import { useTheme } from "next-themes";
 import DeletableEdge from "~/components/deletable-edge";
 import { FunctionNode } from "~/components/primitives/function";
-import { Iterator } from "~/components/primitives/iterator";
-import { Matcher } from "~/components/primitives/matcher";
 import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
 import { Workflow } from "~/components/primitives/workflow";
@@ -54,8 +52,8 @@ const nodeTypes = {
   route: Route,
   workflow: Workflow,
   function: FunctionNode,
-  matcher: Matcher,
-  iterator: Iterator,
+  // matcher: Matcher,
+  // iterator: Iterator,
   response: Response,
 };
 
@@ -114,13 +112,13 @@ export function _FlowBuilder({
     },
   });
 
-  const getIterator = useCallback(
-    (nodes: Node[], intersectingNodes: string[]) =>
-      nodes.find(
-        (n) => n.type === "iterator" && intersectingNodes.includes(n.id),
-      ),
-    [],
-  );
+  // const getIterator = useCallback(
+  //   (nodes: Node[], intersectingNodes: string[]) =>
+  //     nodes.find(
+  //       (n) => n.type === "iterator" && intersectingNodes.includes(n.id),
+  //     ),
+  //   [],
+  // );
 
   const onConnect = useCallback(
     async (connection: Connection) => {
@@ -220,73 +218,78 @@ export function _FlowBuilder({
       node: ReactFlowNode,
       _nodes: ReactFlowNode[],
     ) => {
-      const intersectingNodes = getIntersectingNodes(node).map((n) => n.id);
-      const parent = getIterator(nodes, intersectingNodes);
+      await updatePrimitive.mutateAsync({
+        where: {
+          id: node.id,
+          flowId,
+        },
+        payload: {
+          type: node.type as PrimitiveType,
+          positionX: Math.floor(node.position.x),
+          positionY: Math.floor(node.position.y),
+        },
+      });
 
-      if (
-        parent &&
-        !node.parentId &&
-        (node.type === "matcher" || node.type === "function")
-      ) {
-        setNodes(
-          nodes
-            .sort((a, b) =>
-              a.type === "iterator" ? -1 : b.type === "iterator" ? 1 : 0,
-            )
-            .map((n) =>
-              n.id === node.id
-                ? {
-                    ...node,
-                    position: {
-                      x: node.position.x - parent.position.x,
-                      y: node.position.y - parent.position.y,
-                    },
-                    parentId: parent.id,
-                    extent: "parent",
-                  }
-                : n.type === "iterator"
-                  ? {
-                      ...n,
-                      className: "",
-                    }
-                  : n,
-            ) as FlowNode[],
-        );
+      // const intersectingNodes = getIntersectingNodes(node).map((n) => n.id);
+      // const parent = getIterator(nodes, intersectingNodes);
 
-        await updatePrimitive.mutateAsync({
-          where: {
-            id: node.id,
-            flowId,
-          },
-          payload: {
-            type: node.type as PrimitiveType,
-            parentId: parent.id,
-            positionX: Math.floor(node.position.x - parent.position.x),
-            positionY: Math.floor(node.position.y - parent.position.y),
-          },
-        });
-      } else {
-        await updatePrimitive.mutateAsync({
-          where: {
-            id: node.id,
-            flowId,
-          },
-          payload: {
-            type: node.type as PrimitiveType,
-            positionX: Math.floor(node.position.x),
-            positionY: Math.floor(node.position.y),
-          },
-        });
-      }
+      // if (
+      //   parent &&
+      //   !node.parentId &&
+      //   (node.type === "matcher" || node.type === "function")
+      // ) {
+      //   setNodes(
+      //     nodes
+      //       .sort((a, b) =>
+      //         a.type === "iterator" ? -1 : b.type === "iterator" ? 1 : 0,
+      //       )
+      //       .map((n) =>
+      //         n.id === node.id
+      //           ? {
+      //               ...node,
+      //               position: {
+      //                 x: node.position.x - parent.position.x,
+      //                 y: node.position.y - parent.position.y,
+      //               },
+      //               parentId: parent.id,
+      //               extent: "parent",
+      //             }
+      //           : n.type === "iterator"
+      //             ? {
+      //                 ...n,
+      //                 className: "",
+      //               }
+      //             : n,
+      //       ) as FlowNode[],
+      //   );
+
+      //   await updatePrimitive.mutateAsync({
+      //     where: {
+      //       id: node.id,
+      //       flowId,
+      //     },
+      //     payload: {
+      //       type: node.type as PrimitiveType,
+      //       parentId: parent.id,
+      //       positionX: Math.floor(node.position.x - parent.position.x),
+      //       positionY: Math.floor(node.position.y - parent.position.y),
+      //     },
+      //   });
+      // } else {
+      //   await updatePrimitive.mutateAsync({
+      //     where: {
+      //       id: node.id,
+      //       flowId,
+      //     },
+      //     payload: {
+      //       type: node.type as PrimitiveType,
+      //       positionX: Math.floor(node.position.x),
+      //       positionY: Math.floor(node.position.y),
+      //     },
+      //   });
+      // }
     },
-    [
-      updatePrimitive,
-      flowId,
-      getIntersectingNodes,
-      getIterator,
-      nodes,
-      setNodes,
-    ],
+    [updatePrimitive, flowId],
   );
 
   const isValidConnection = useCallback(
