@@ -6,7 +6,7 @@ import {
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
-import { $getSelection, $isRangeSelection, type TextNode } from "lexical";
+import type { TextNode } from "lexical";
 import {
   ColumnsIcon,
   HashIcon,
@@ -22,6 +22,7 @@ import { cn } from "@specly/ui/utils";
 
 import type { Input, VarType } from "@specly/shared/types";
 import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
+import * as ReactDOM from "react-dom";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
 import { api } from "~/lib/trpc/react";
@@ -90,8 +91,9 @@ export function ReferencesPlugin({
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
-  const [functionResources, setFunctionResources] =
-    useState<string[]>(primitiveResources);
+  const [currentResources, setCurrentResources] = useState<Set<string>>(
+    new Set(primitiveResources),
+  );
 
   const { data: workspaceResources } = api.resources.getAll.useQuery({
     workspaceId,
@@ -133,7 +135,7 @@ export function ReferencesPlugin({
           );
         }
         if (selectedOption.referenceType === "database") {
-          setFunctionResources([...functionResources, selectedOption.id]);
+          setCurrentResources((prev) => new Set([...prev, selectedOption.id]));
         }
         if (nodeToReplace) {
           nodeToReplace.replace(referenceNode);
@@ -142,7 +144,7 @@ export function ReferencesPlugin({
         closeMenu();
       });
     },
-    [editor, functionResources],
+    [editor],
   );
 
   const inputOptions: ReferenceOption[] = useMemo(() => {
@@ -182,7 +184,7 @@ export function ReferencesPlugin({
       if (
         (resource.provider === "postgres" || resource.provider === "mysql") &&
         resource.metadata.tables &&
-        primitiveResources.includes(resource.id)
+        currentResources.has(resource.id)
       ) {
         for (const table of resource.metadata.tables) {
           for (const column of table.columns) {
@@ -226,29 +228,7 @@ export function ReferencesPlugin({
         regex.test(option.name) ||
         option.keywords.some((keyword) => regex.test(keyword)),
     );
-  }, [inputOptions, queryString, primitiveResources, workspaceResources]);
-
-  const getMenuPosition = useCallback(() => {
-    return editor.getEditorState().read(() => {
-      const selection = $getSelection();
-      if (!$isRangeSelection(selection)) return null;
-
-      const domElement = editor.getRootElement();
-      if (!domElement) return null;
-
-      const nativeSelection = window.getSelection();
-      if (!nativeSelection || nativeSelection.rangeCount === 0) return null;
-
-      const domRange = nativeSelection.getRangeAt(0);
-      const rect = domRange.getBoundingClientRect();
-      const editorRect = domElement.getBoundingClientRect();
-
-      return {
-        x: rect.left - editorRect.left + 10,
-        y: rect.bottom - editorRect.top + 125,
-      };
-    });
-  }, [editor]);
+  }, [inputOptions, queryString, workspaceResources, currentResources]);
 
   return (
     <LexicalTypeaheadMenuPlugin<ReferenceOption>
@@ -259,80 +239,68 @@ export function ReferencesPlugin({
       menuRenderFn={(
         anchorElementRef,
         { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex },
-      ) => {
-        const menuPosition = getMenuPosition();
-        if (!menuPosition) return null;
-
-        return anchorElementRef?.current && options.length ? (
-          <div
-            className="absolute z-[9999]"
-            style={{
-              left: `${menuPosition.x}px`,
-              top: `${menuPosition.y}px`,
-            }}
-          >
-            <ScrollArea className="h-full w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-              <div className="max-h-40">
-                {options.map((option, i: number) => (
-                  <div
-                    id={`menu-item-${i}`}
-                    className={cn(
-                      "flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
-                      {
-                        "bg-accent": selectedIndex === i,
-                      },
-                    )}
-                    tabIndex={-1}
-                    role="option"
-                    aria-selected={selectedIndex === i}
-                    onClick={() => {
-                      setHighlightedIndex(i);
-                      selectOptionAndCleanUp(option);
-                    }}
-                    onKeyUp={() => {
-                      setHighlightedIndex(i);
-                    }}
-                    onKeyDown={() => {
-                      setHighlightedIndex(i);
-                    }}
-                    onMouseEnter={() => {
-                      setHighlightedIndex(i);
-                    }}
-                    key={option.key}
-                  >
-                    {option.icon === "database-icon" ? (
-                      <PostgresIcon className="size-3 text-primary" />
-                    ) : option.icon === "value-icon" ? (
-                      <VariableIcon className="size-3 text-primary" />
-                    ) : option.icon === "number-icon" ? (
-                      <HashIcon className="size-3 text-primary" />
-                    ) : option.icon === "text-icon" ? (
-                      <TextIcon className="size-3 text-primary" />
-                    ) : option.icon === "database-column-icon" ? (
-                      <ColumnsIcon className="size-3 text-primary" />
-                    ) : option.icon === "database-table-icon" ? (
-                      <TableIcon className="size-3 text-primary" />
-                    ) : (
-                      <></>
-                    )}
-                    <span className="text">{option.name}</span>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
+      ) =>
+        anchorElementRef?.current && options.length ? (
+          ReactDOM.createPortal(
+            <div className="absolute z-50">
+              <ScrollArea className="h-full w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+                <div className="max-h-40">
+                  {options.map((option, i: number) => (
+                    <div
+                      id={`menu-item-${i}`}
+                      className={cn(
+                        "flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
+                        {
+                          "bg-accent": selectedIndex === i,
+                        },
+                      )}
+                      tabIndex={-1}
+                      role="option"
+                      aria-selected={selectedIndex === i}
+                      onClick={() => {
+                        setHighlightedIndex(i);
+                        selectOptionAndCleanUp(option);
+                      }}
+                      onKeyUp={() => {
+                        setHighlightedIndex(i);
+                      }}
+                      onKeyDown={() => {
+                        setHighlightedIndex(i);
+                      }}
+                      onMouseEnter={() => {
+                        setHighlightedIndex(i);
+                      }}
+                      key={option.key}
+                    >
+                      {option.icon === "database-icon" ? (
+                        <PostgresIcon className="size-3 text-primary" />
+                      ) : option.icon === "value-icon" ? (
+                        <VariableIcon className="size-3 text-primary" />
+                      ) : option.icon === "number-icon" ? (
+                        <HashIcon className="size-3 text-primary" />
+                      ) : option.icon === "text-icon" ? (
+                        <TextIcon className="size-3 text-primary" />
+                      ) : option.icon === "database-column-icon" ? (
+                        <ColumnsIcon className="size-3 text-primary" />
+                      ) : option.icon === "database-table-icon" ? (
+                        <TableIcon className="size-3 text-primary" />
+                      ) : (
+                        <></>
+                      )}
+                      <span className="text">{option.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>,
+            anchorElementRef.current,
+          )
         ) : (
-          <div
-            className="absolute z-[9999] flex min-w-48 rounded-md border bg-muted p-2 text-xs"
-            style={{
-              left: `${menuPosition.x}px`,
-              top: `${menuPosition.y}px`,
-            }}
-          >
+          <div className="absolute left-3 top-8 flex min-w-48 rounded-md border bg-muted p-2 text-xs">
             No references found.
           </div>
-        );
-      }}
+        )
+      }
     />
   );
 }

@@ -336,7 +336,6 @@ export function _FlowBuilder({
 
   return (
     <ReactFlow
-      className="rounded-lg"
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}
@@ -405,25 +404,25 @@ export function _FlowBuilder({
         </Button>
       </Panel>
       <Panel
-        position="bottom-center"
-        className="flex flex-row items-center bg-muted rounded-full p-0.5 gap-1 border"
+        position="top-right"
+        className="flex flex-col items-center bg-muted rounded-full gap-0.5 p-0.5 border"
       >
         <PrimitivesMenu />
 
-        <div className="h-9 border-l" />
+        <div className="w-9 border-t" />
 
         <TooltipProvider delayDuration={100}>
           <Tooltip>
             <TooltipTrigger>
               <Button
-                className="w-11 rounded-full hover:bg-success/20 text-success"
+                className="rounded-full hover:bg-success/20 text-success"
                 variant="ghost"
                 size="icon"
               >
                 <PlayIcon className="size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="bg-muted text-success">
+            <TooltipContent side="right" className="bg-muted text-success">
               <p>Run</p>
             </TooltipContent>
           </Tooltip>
@@ -433,14 +432,14 @@ export function _FlowBuilder({
           <Tooltip>
             <TooltipTrigger>
               <Button
-                className="w-11 rounded-full hover:bg-primary/20 text-primary"
+                className="rounded-full hover:bg-primary/20 text-primary"
                 variant="ghost"
                 size="icon"
               >
                 <RocketIcon className="size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="bg-muted text-primary">
+            <TooltipContent side="right" className="bg-muted text-primary">
               <p>Ship</p>
             </TooltipContent>
           </Tooltip>

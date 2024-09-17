@@ -18,9 +18,9 @@ export default async function WorkspacesLayout({
     const workspaces = await api.workspaces.getAll();
 
     return (
-      <div className="relative">
+      <>
         <div className="flex size-full min-h-screen flex-row bg-background dark:bg-muted">
-          <div className="flex flex-col">
+          <div className="flex flex-col border-r">
             <Navbar workspace={workspace} />
             <div className="sticky flex h-[calc(100dvh-56px)]">
               <ActivityBar />
@@ -30,7 +30,7 @@ export default async function WorkspacesLayout({
           <main className="flex w-full">{children}</main>
         </div>
         <CommandCenter workspaces={workspaces} />
-      </div>
+      </>
     );
   } catch (error) {
     notFound();

@@ -357,11 +357,9 @@ export const Matcher = memo(
                         <div key={condition.id} className="relative flex gap-2">
                           <Editor
                             id={condition.id}
-                            primitive={data}
                             className="h-32"
                             placeholder="Write a description for this condition"
                             type="description"
-                            rawDescription={condition.rawDescription}
                             onChange={(editorState: EditorState) => {
                               editorState.read(async () => {
                                 const root = $getRoot();

@@ -12,6 +12,7 @@ import {
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
+  ArrowUpIcon,
   CircleAlertIcon,
   CircleMinus,
   ExternalLinkIcon,
@@ -76,14 +77,20 @@ import type {
 } from "@specly/shared/types";
 import type { resourceProvidersSchema } from "@specly/shared/validators/resources";
 import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@specly/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
+import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 import type { ReferenceNode } from "../editor/nodes/reference-node";
 import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
-
 async function executeFunction({
   id,
 }: {
@@ -265,86 +272,119 @@ export const FunctionNode = memo(
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
-    function onChange(editorState: EditorState) {
-      editorState.read(async () => {
-        const root = $getRoot();
-        const children = (root.getChildren()[0] as ParagraphNode).getChildren();
+    const [chat, setChat] = useState<string | null>(null);
 
-        const description = root.getTextContent();
+    const onDescriptionChange = debounce(
+      (editorState: EditorState) => {
+        editorState.read(async () => {
+          const root = $getRoot();
+          const children = (
+            root.getChildren()[0] as ParagraphNode
+          ).getChildren();
 
-        const rawDescription = children.reduce((acc, child) => {
-          if (child.__type === "text") {
-            acc.push({
-              type: "text",
-              value: child.getTextContent(),
-            });
-          } else if (child.__type === "reference") {
-            const referenceNode = child as ReferenceNode;
-            acc.push({
-              type: "reference",
-              id: referenceNode.__id,
-              referenceType: referenceNode.__referenceType,
-              name: referenceNode.__name,
-              icon: referenceNode.__icon,
-              dataType: referenceNode.__dataType,
-            });
-          }
-          return acc;
-        }, [] as RawDescription[]);
+          const description = root.getTextContent();
 
-        const inputs: IInput[] = [];
-
-        const resources: {
-          id: string;
-          provider: z.infer<typeof resourceProvidersSchema>;
-        }[] = [];
-
-        for (const child of children) {
-          if (child.__type === "reference") {
-            const referenceNode = child as ReferenceNode;
-            if (
-              referenceNode.__referenceType === "input" &&
-              referenceNode.__dataType
-            ) {
-              inputs.push({
-                id: referenceNode.__id,
-                name: referenceNode.__name,
-                type: referenceNode.__dataType,
-                testValue: referenceNode.__testValue ?? null,
+          const rawDescription = children.reduce((acc, child) => {
+            if (child.__type === "text") {
+              acc.push({
+                type: "text",
+                value: child.getTextContent(),
               });
-            } else if (referenceNode.__referenceType === "database") {
-              resources.push({
+            } else if (child.__type === "reference") {
+              const referenceNode = child as ReferenceNode;
+              acc.push({
+                type: "reference",
                 id: referenceNode.__id,
-                provider: "postgres",
+                referenceType: referenceNode.__referenceType,
+                name: referenceNode.__name,
+                icon: referenceNode.__icon,
+                dataType: referenceNode.__dataType,
               });
             }
-          }
-        }
+            return acc;
+          }, [] as RawDescription[]);
 
-        updateFunction.mutate({
-          where: {
-            id: data.id,
-            flowId: data.flowId,
-          },
-          payload: {
-            type: "function",
-            description,
-            metadata: {
-              inputs,
-              resources,
-              rawDescription,
-              isCodeUpdated:
-                data.description?.trim().toLowerCase() ===
-                description.trim().toLowerCase(),
+          const inputs: IInput[] = [];
+
+          const resources: {
+            id: string;
+            provider: z.infer<typeof resourceProvidersSchema>;
+          }[] = [];
+
+          for (const child of children) {
+            if (child.__type === "reference") {
+              const referenceNode = child as ReferenceNode;
+              if (
+                referenceNode.__referenceType === "input" &&
+                referenceNode.__dataType
+              ) {
+                inputs.push({
+                  id: referenceNode.__id,
+                  name: referenceNode.__name,
+                  type: referenceNode.__dataType,
+                  testValue: referenceNode.__testValue ?? null,
+                });
+              } else if (referenceNode.__referenceType === "database") {
+                resources.push({
+                  id: referenceNode.__id,
+                  provider: "postgres",
+                });
+              }
+            }
+          }
+
+          updateFunction.mutate({
+            where: {
+              id: data.id,
+              flowId: data.flowId,
             },
-          },
+            payload: {
+              type: "function",
+              description,
+              metadata: {
+                inputs,
+                resources,
+                rawDescription,
+                isCodeUpdated:
+                  data.description?.trim().toLowerCase() ===
+                  description.trim().toLowerCase(),
+              },
+            },
+          });
         });
+      },
+      500,
+      { trailing: false },
+    );
+
+    function onChatChange(editorState: EditorState) {
+      editorState.read(async () => {
+        const root = $getRoot();
+        const chat = root.getTextContent();
+        setChat(chat);
       });
     }
 
     function onError(error: Error, _editor: LexicalEditor) {
       console.error(error);
     }
+
+    const updateFunctionName = debounce(
+      async (value: string) => {
+        await updateFunction.mutateAsync({
+          where: {
+            id: data.id,
+            flowId: data.flowId,
+          },
+          payload: {
+            type: "function",
+            name: value,
+          },
+        });
+      },
+      500,
+      { trailing: false },
+    );
 
     return (
       <>
@@ -468,52 +508,83 @@ export const FunctionNode = memo(
                     <span className="text-muted-foreground">Function</span>
                   </div>
                   <div className="flex items-center">
-                    <Button
-                      className="size-7 text-success hover:text-success"
-                      variant="ghost"
-                      size="icon"
-                      aria-disabled={
-                        isLoadingExecutionResult || isRefetchingExecutionResult
-                      }
-                      disabled={
-                        isLoadingExecutionResult || isRefetchingExecutionResult
-                      }
-                      onClick={async () => {
-                        await refetchExecutionResult();
-                      }}
-                    >
-                      <PlayCircleIcon className="size-3.5" />
-                    </Button>
-                    <Button
-                      className="size-7 text-muted-foreground hover:text-muted-foreground"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        updateFunction.mutate({
-                          where: {
-                            id: data.id,
-                            flowId: data.flowId,
-                          },
-                          payload: {
-                            type: "function",
-                            metadata: {
-                              isLocked: !data.metadata.isLocked,
-                            },
-                          },
-                        });
-                      }}
-                    >
-                      {data.metadata.isLocked ? (
-                        <LockIcon className="size-3.5" />
-                      ) : (
-                        <UnlockIcon className="size-3.5" />
-                      )}
-                    </Button>
-                    <PrimitiveDropdownMenu
-                      setDeleteAlertDialogOpen={setDeleteAlertDialogOpen}
-                      label="Function"
-                      docsUrlPath="function"
-                    />
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button
+                            className="size-7 text-success hover:text-success"
+                            variant="ghost"
+                            size="icon"
+                            aria-disabled={
+                              isLoadingExecutionResult ||
+                              isRefetchingExecutionResult
+                            }
+                            disabled={
+                              isLoadingExecutionResult ||
+                              isRefetchingExecutionResult
+                            }
+                            onClick={async () => {
+                              await refetchExecutionResult();
+                            }}
+                          >
+                            <PlayCircleIcon className="size-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-muted border">
+                          <span className="text-success">Run</span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button
+                            className="size-7 text-muted-foreground hover:text-muted-foreground"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              updateFunction.mutate({
+                                where: {
+                                  id: data.id,
+                                  flowId: data.flowId,
+                                },
+                                payload: {
+                                  type: "function",
+                                  metadata: {
+                                    isLocked: !data.metadata.isLocked,
+                                  },
+                                },
+                              });
+                            }}
+                          >
+                            {data.metadata.isLocked ? (
+                              <LockIcon className="size-3.5" />
+                            ) : (
+                              <UnlockIcon className="size-3.5" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-muted border">
+                          <span>
+                            {data.metadata.isLocked ? "Unlock" : "Lock"}
+                          </span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <PrimitiveDropdownMenu
+                            setDeleteAlertDialogOpen={setDeleteAlertDialogOpen}
+                            label="Function"
+                            docsUrlPath="function"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-muted border">
+                          <span>More</span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
               </ExpandableCardHeader>
@@ -538,20 +609,7 @@ export const FunctionNode = memo(
                                     e.target.value,
                                   ).success;
                                 if (isValid) {
-                                  updateFunction.mutate({
-                                    where: {
-                                      id: data.id,
-                                      flowId: data.flowId,
-                                    },
-                                    payload: {
-                                      type: "function",
-                                      name: e.target.value,
-                                      metadata: {
-                                        isCodeUpdated:
-                                          e.target.value === data.name,
-                                      },
-                                    },
-                                  });
+                                  updateFunctionName(e.target.value);
                                 }
                               }}
                             />
@@ -575,15 +633,16 @@ export const FunctionNode = memo(
                         name="description"
                         render={() => (
                           <FormItem className="flex flex-col h-full">
-                            <FormLabel className="text-xs">Editor</FormLabel>
+                            <FormLabel className="text-xs">
+                              Description
+                            </FormLabel>
                             <Editor
                               id={data.id}
                               primitive={data}
                               type="description"
                               inputs={inputs}
                               placeholder="Describe your function"
-                              rawDescription={data.metadata.rawDescription}
-                              onChange={onChange}
+                              onChange={onDescriptionChange}
                               onError={onError}
                             />
                             <FormMessage />
@@ -598,10 +657,13 @@ export const FunctionNode = memo(
                       className="flex size-full rounded-b-xl p-4"
                     >
                       <Tabs
-                        defaultValue="result"
-                        className="flex w-full flex-col space-y-4"
+                        defaultValue="chat"
+                        className="flex w-full flex-col space-y-2"
                       >
                         <TabsList className="w-full justify-start bg-accent">
+                          <TabsTrigger className="w-full" value="chat">
+                            Chat
+                          </TabsTrigger>
                           <TabsTrigger className="w-full" value="result">
                             Result
                           </TabsTrigger>
@@ -609,6 +671,28 @@ export const FunctionNode = memo(
                             Summary
                           </TabsTrigger>
                         </TabsList>
+                        <TabsContent
+                          value="chat"
+                          className="size-full rounded-lg bg-background"
+                        >
+                          <div className="size-full relative">
+                            <Editor
+                              id={data.id}
+                              type="description"
+                              inputs={inputs}
+                              placeholder="Doesn't work as expected? Write extra context here..."
+                              onChange={onChatChange}
+                              onError={onError}
+                            />
+                            <Button
+                              className="size-8 absolute bottom-2 right-2"
+                              size="icon"
+                              disabled={!chat}
+                            >
+                              <ArrowUpIcon className="size-3.5" />
+                            </Button>
+                          </div>
+                        </TabsContent>
                         <TabsContent
                           value="result"
                           className="size-full rounded-lg bg-background"

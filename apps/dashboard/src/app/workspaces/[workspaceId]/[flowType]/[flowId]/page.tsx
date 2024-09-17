@@ -48,14 +48,12 @@ export default async function WorkflowPage({
     }));
 
     return (
-      <div className="flex size-full flex-col gap-2 py-2 pr-2">
-        <div className="flex size-full border rounded-lg">
-          <FlowBuilder
-            flowId={flow.id}
-            initialNodes={initialNodes}
-            initialEdges={initialEdges}
-          />
-        </div>
+      <div className="flex size-full">
+        <FlowBuilder
+          flowId={flow.id}
+          initialNodes={initialNodes}
+          initialEdges={initialEdges}
+        />
       </div>
     );
   } catch (error) {

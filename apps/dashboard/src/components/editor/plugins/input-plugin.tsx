@@ -11,6 +11,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import { cn } from "@specly/ui/utils";
 
+import * as ReactDOM from "react-dom";
 import { $createInputNode } from "~/components/editor/nodes/input-node";
 import { api } from "~/lib/trpc/react";
 
@@ -126,46 +127,49 @@ export function InputsPlugin({ id }: { id: string }) {
         anchorElement,
         { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex },
       ) =>
-        anchorElement && options.length ? (
-          <div className="absolute left-3 top-8 flex max-h-40 min-w-48 flex-col overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-            {options.map((option, i: number) => (
-              <div
-                id={`menu-item-${i}`}
-                className={cn(
-                  "flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
-                  {
-                    "bg-accent": selectedIndex === i,
-                  },
-                )}
-                tabIndex={-1}
-                role="option"
-                aria-selected={selectedIndex === i}
-                onClick={() => {
-                  setHighlightedIndex(i);
-                  selectOptionAndCleanUp(option);
-                }}
-                onKeyUp={() => {
-                  setHighlightedIndex(i - 1);
-                }}
-                onKeyDown={() => {
-                  setHighlightedIndex(i + 1);
-                }}
-                onMouseEnter={() => {
-                  setHighlightedIndex(i);
-                }}
-                key={option.key}
-              >
-                {option.icon === "text-icon" ? (
-                  <TextIcon className="size-3 text-primary" />
-                ) : option.icon === "number-icon" ? (
-                  <HashIcon className="size-3 text-primary" />
-                ) : (
-                  <></>
-                )}
-                <span className="text">{option.name}</span>
-              </div>
-            ))}
-          </div>
+        anchorElement?.current && options.length ? (
+          ReactDOM.createPortal(
+            <div className="left-3 top-8 flex max-h-40 min-w-48 flex-col overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+              {options.map((option, i: number) => (
+                <div
+                  id={`menu-item-${i}`}
+                  className={cn(
+                    "flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
+                    {
+                      "bg-accent": selectedIndex === i,
+                    },
+                  )}
+                  tabIndex={-1}
+                  role="option"
+                  aria-selected={selectedIndex === i}
+                  onClick={() => {
+                    setHighlightedIndex(i);
+                    selectOptionAndCleanUp(option);
+                  }}
+                  onKeyUp={() => {
+                    setHighlightedIndex(i - 1);
+                  }}
+                  onKeyDown={() => {
+                    setHighlightedIndex(i + 1);
+                  }}
+                  onMouseEnter={() => {
+                    setHighlightedIndex(i);
+                  }}
+                  key={option.key}
+                >
+                  {option.icon === "text-icon" ? (
+                    <TextIcon className="size-3 text-primary" />
+                  ) : option.icon === "number-icon" ? (
+                    <HashIcon className="size-3 text-primary" />
+                  ) : (
+                    <></>
+                  )}
+                  <span className="text">{option.name}</span>
+                </div>
+              ))}
+            </div>,
+            anchorElement.current,
+          )
         ) : (
           <div className="absolute left-3 top-8 flex min-w-48 rounded-md border bg-muted p-2 text-xs">
             No references found.

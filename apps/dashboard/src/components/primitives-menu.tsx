@@ -26,14 +26,14 @@ export function PrimitivesMenu() {
         <Tooltip>
           <TooltipTrigger>
             <div
-              className="inline-flex items-center justify-center h-9 w-11 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
               onDragStart={(event) => onDragStart(event, "function")}
               draggable
             >
               <LambdaIcon className="size-4" />
             </div>
           </TooltipTrigger>
-          <TooltipContent className="bg-muted">
+          <TooltipContent side="right" className="bg-muted">
             <p>Function</p>
           </TooltipContent>
         </Tooltip>
@@ -77,14 +77,14 @@ export function PrimitivesMenu() {
         <Tooltip>
           <TooltipTrigger>
             <div
-              className="inline-flex items-center justify-center h-9 w-11 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
               onDragStart={(event) => onDragStart(event, "response")}
               draggable
             >
               <CornerDownLeftIcon className="size-4" />
             </div>
           </TooltipTrigger>
-          <TooltipContent className="bg-muted">
+          <TooltipContent side="right" className="bg-muted">
             <p>Response</p>
           </TooltipContent>
         </Tooltip>
