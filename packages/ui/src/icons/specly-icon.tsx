@@ -1,13 +1,19 @@
+"use client";
+
+import { useTheme } from "next-themes";
+
 export function SpeclyIcon({
   className,
   theme,
 }: {
   className?: string;
-  theme: "light" | "dark";
+  theme?: "light" | "dark";
 }) {
+  const { resolvedTheme } = useTheme();
+
   return (
     <>
-      {theme === "light" ? (
+      {theme === "light" || resolvedTheme === "light" ? (
         <svg
           className={className}
           width="563"

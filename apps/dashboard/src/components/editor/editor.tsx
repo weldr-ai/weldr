@@ -15,9 +15,6 @@ import { cn } from "@specly/ui/utils";
 import type {
   FunctionPrimitive,
   Input,
-  IteratorPrimitive,
-  MatcherPrimitive,
-  RawDescription,
   ResponsePrimitive,
 } from "@specly/shared/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
@@ -27,23 +24,18 @@ import { InputsPlugin } from "./plugins/input-plugin";
 
 interface EditorBaseProps {
   id: string;
-  primitive?:
-    | FunctionPrimitive
-    | IteratorPrimitive
-    | MatcherPrimitive
-    | ResponsePrimitive;
   type: "description" | "inputs";
+  placeholder?: string;
   onChange: (editorState: EditorState) => void;
   onError: (error: Error, editor: LexicalEditor) => void;
   className?: string;
-  placeholder?: string;
 }
 
 type EditorProps =
   | ({
       type: "description";
-      rawDescription?: RawDescription[];
-      inputs: Input[];
+      primitive?: FunctionPrimitive | ResponsePrimitive;
+      inputs?: Input[];
     } & EditorBaseProps)
   | ({
       type: "inputs";
@@ -81,8 +73,11 @@ export function Editor({ ...props }: EditorProps) {
       }
     }
 
-    if (props.type === "description" && props.rawDescription) {
-      for (const item of props.rawDescription) {
+    if (
+      props.type === "description" &&
+      props.primitive?.metadata.rawDescription
+    ) {
+      for (const item of props.primitive.metadata.rawDescription) {
         if (item.type === "text") {
           paragraph.append($createTextNode(item.value));
         } else if (item.type === "reference") {
@@ -115,7 +110,7 @@ export function Editor({ ...props }: EditorProps) {
         {props.type === "inputs" && <InputsPlugin id={props.id} />}
         {props.type === "description" && (
           <ReferencesPlugin
-            inputs={props.inputs}
+            inputs={props.inputs ?? []}
             primitiveResources={
               props.primitive?.metadata.resources?.map(
                 (resource) => resource.id,
@@ -127,14 +122,14 @@ export function Editor({ ...props }: EditorProps) {
           contentEditable={
             <ContentEditable
               className={cn(
-                "size-full cursor-text flex-col overflow-y-auto rounded-lg border border-input bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                "size-full cursor-text min-h-[100px] h-full flex-col overflow-y-auto rounded-lg border border-input bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
                 props.className,
               )}
             />
           }
           placeholder={
             <div className="pointer-events-none absolute px-2.5 py-2 text-sm text-muted-foreground">
-              {props.placeholder}
+              {props.placeholder ?? "Start typing..."}
             </div>
           }
           ErrorBoundary={LexicalErrorBoundary}

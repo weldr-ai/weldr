@@ -33,9 +33,9 @@ export function Navbar({ workspace }: { workspace: Workspace }): JSX.Element {
         <DropdownMenu>
           <div className="flex size-14 items-center justify-center border-r p-2">
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-full">
+              <Button variant="ghost" size="icon">
                 <SpeclyIcon
-                  className="size-6"
+                  className="size-5"
                   theme={resolvedTheme === "light" ? "light" : "dark"}
                 />
                 <span className="sr-only">specly</span>

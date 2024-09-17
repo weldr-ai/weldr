@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import { extractCode } from "./utils";
 
 const openai = new OpenAI({
-  apiKey: "sk-proj-2lyaP9Ve35zcsaIIGasVT3BlbkFJHPRpe7pMWfh7sd3ZKXn9",
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function generateCode(

@@ -339,7 +339,6 @@ export const Response = memo(
                           type="description"
                           inputs={data.metadata.inputs ?? []}
                           placeholder="Describe your response"
-                          rawDescription={data.metadata.rawDescription}
                           onChange={onChange}
                           onError={(error: Error) => {
                             console.error(error);
