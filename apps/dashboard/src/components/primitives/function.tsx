@@ -49,7 +49,6 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@specly/ui/form";
 import { Input } from "@specly/ui/input";
@@ -76,7 +75,9 @@ import type {
   RawDescription,
 } from "@specly/shared/types";
 import type { resourceProvidersSchema } from "@specly/shared/validators/resources";
+import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
 import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
+import { Label } from "@specly/ui/label";
 import {
   Tooltip,
   TooltipContent,
@@ -91,6 +92,7 @@ import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 import type { ReferenceNode } from "../editor/nodes/reference-node";
 import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
+
 async function executeFunction({
   id,
 }: {
@@ -272,7 +274,8 @@ export const FunctionNode = memo(
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
-    const [chat, setChat] = useState<string | null>(null);
+    const [chatMessage, setChatMessage] = useState<string | null>(null);
+    const [rawChatMessage, setRawChatMessage] = useState<RawDescription[]>([]);
 
     const onDescriptionChange = debounce(
       (editorState: EditorState) => {
@@ -360,8 +363,19 @@ export const FunctionNode = memo(
     function onChatChange(editorState: EditorState) {
       editorState.read(async () => {
         const root = $getRoot();
+        const children = (root.getChildren()[0] as ParagraphNode).getChildren();
         const chat = root.getTextContent();
-        setChat(chat);
+        const rawDescription = children.reduce((acc, child) => {
+          if (child.__type === "text") {
+            acc.push({
+              type: "text",
+              value: child.getTextContent(),
+            });
+          }
+          return acc;
+        }, [] as RawDescription[]);
+        setChatMessage(chat);
+        setRawChatMessage(rawDescription);
       });
     }
 
@@ -405,8 +419,8 @@ export const FunctionNode = memo(
                       {
                         x: positionAbsoluteX,
                         y: positionAbsoluteY,
-                        width: 400,
-                        height: 400 + 300,
+                        width: 200,
+                        height: 700,
                       },
                       {
                         duration: 500,
@@ -499,125 +513,136 @@ export const FunctionNode = memo(
               </ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
-          <ExpandableCardContent className="nowheel flex h-[600px] w-[800px] flex-col p-0">
-            <div className="flex size-full flex-col">
-              <ExpandableCardHeader className="flex flex-col items-start justify-start">
-                <div className="flex w-full items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs">
-                    <LambdaIcon className="size-4 text-primary" />
-                    <span className="text-muted-foreground">Function</span>
-                  </div>
-                  <div className="flex items-center">
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Button
-                            className="size-7 text-success hover:text-success"
-                            variant="ghost"
-                            size="icon"
-                            aria-disabled={
-                              isLoadingExecutionResult ||
-                              isRefetchingExecutionResult
-                            }
-                            disabled={
-                              isLoadingExecutionResult ||
-                              isRefetchingExecutionResult
-                            }
-                            onClick={async () => {
-                              await refetchExecutionResult();
-                            }}
-                          >
-                            <PlayCircleIcon className="size-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-muted border">
-                          <span className="text-success">Run</span>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Button
-                            className="size-7 text-muted-foreground hover:text-muted-foreground"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              updateFunction.mutate({
-                                where: {
-                                  id: data.id,
-                                  flowId: data.flowId,
-                                },
-                                payload: {
-                                  type: "function",
-                                  metadata: {
-                                    isLocked: !data.metadata.isLocked,
-                                  },
-                                },
-                              });
-                            }}
-                          >
-                            {data.metadata.isLocked ? (
-                              <LockIcon className="size-3.5" />
-                            ) : (
-                              <UnlockIcon className="size-3.5" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-muted border">
-                          <span>
-                            {data.metadata.isLocked ? "Unlock" : "Lock"}
+          <ExpandableCardContent className="nowheel flex h-[600px] w-[60vw] flex-col p-0 -left-[calc(60vw-650px)]">
+            <ResizablePanelGroup
+              direction="horizontal"
+              className="flex size-full"
+            >
+              <ResizablePanel defaultSize={70} minSize={20}>
+                <div className="flex flex-col size-full gap-4">
+                  <div>
+                    <ExpandableCardHeader className="flex flex-col items-start justify-start">
+                      <div className="flex w-full items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs">
+                          <LambdaIcon className="size-4 text-primary" />
+                          <span className="text-muted-foreground">
+                            Function
                           </span>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <PrimitiveDropdownMenu
-                            setDeleteAlertDialogOpen={setDeleteAlertDialogOpen}
-                            label="Function"
-                            docsUrlPath="function"
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-muted border">
-                          <span>More</span>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </div>
-              </ExpandableCardHeader>
-              <div className="flex flex-col h-full gap-6">
-                <Form {...form}>
-                  <div className="px-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              autoComplete="off"
-                              className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
-                              placeholder="function_name"
-                              onBlur={(e) => {
-                                field.onChange(e);
-                                const isValid =
-                                  validationSchema.shape.name.safeParse(
-                                    e.target.value,
-                                  ).success;
-                                if (isValid) {
-                                  updateFunctionName(e.target.value);
-                                }
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </div>
+                        <div className="flex items-center">
+                          <TooltipProvider delayDuration={100}>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Button
+                                  className="size-7 text-success hover:text-success"
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-disabled={
+                                    isLoadingExecutionResult ||
+                                    isRefetchingExecutionResult
+                                  }
+                                  disabled={
+                                    isLoadingExecutionResult ||
+                                    isRefetchingExecutionResult
+                                  }
+                                  onClick={async () => {
+                                    await refetchExecutionResult();
+                                  }}
+                                >
+                                  <PlayCircleIcon className="size-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-muted border">
+                                <span className="text-success">Run</span>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider delayDuration={100}>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Button
+                                  className="size-7 text-muted-foreground hover:text-muted-foreground"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    updateFunction.mutate({
+                                      where: {
+                                        id: data.id,
+                                        flowId: data.flowId,
+                                      },
+                                      payload: {
+                                        type: "function",
+                                        metadata: {
+                                          isLocked: !data.metadata.isLocked,
+                                        },
+                                      },
+                                    });
+                                  }}
+                                >
+                                  {data.metadata.isLocked ? (
+                                    <LockIcon className="size-3.5" />
+                                  ) : (
+                                    <UnlockIcon className="size-3.5" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-muted border">
+                                <span>
+                                  {data.metadata.isLocked ? "Unlock" : "Lock"}
+                                </span>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider delayDuration={100}>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <PrimitiveDropdownMenu
+                                  setDeleteAlertDialogOpen={
+                                    setDeleteAlertDialogOpen
+                                  }
+                                  label="Function"
+                                  docsUrlPath="function"
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-muted border">
+                                <span>More</span>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+                    </ExpandableCardHeader>
+                    <Form {...form}>
+                      <div className="px-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  autoComplete="off"
+                                  className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
+                                  placeholder="function_name"
+                                  onBlur={(e) => {
+                                    field.onChange(e);
+                                    const isValid =
+                                      validationSchema.shape.name.safeParse(
+                                        e.target.value,
+                                      ).success;
+                                    if (isValid) {
+                                      updateFunctionName(e.target.value);
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </Form>
                   </div>
                   <ResizablePanelGroup
                     direction="vertical"
@@ -626,28 +651,17 @@ export const FunctionNode = memo(
                     <ResizablePanel
                       defaultSize={65}
                       minSize={25}
-                      className="px-4 pb-4"
+                      className="px-4 pb-10"
                     >
-                      <FormField
-                        control={form.control}
-                        name="description"
-                        render={() => (
-                          <FormItem className="flex flex-col h-full">
-                            <FormLabel className="text-xs">
-                              Description
-                            </FormLabel>
-                            <Editor
-                              id={data.id}
-                              primitive={data}
-                              type="description"
-                              inputs={inputs}
-                              placeholder="Describe your function"
-                              onChange={onDescriptionChange}
-                              onError={onError}
-                            />
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                      <Label className="text-xs">Description</Label>
+                      <Editor
+                        id={data.id}
+                        primitive={data}
+                        type="description"
+                        inputs={inputs}
+                        placeholder="Describe your function"
+                        onChange={onDescriptionChange}
+                        onError={onError}
                       />
                     </ResizablePanel>
                     <ResizableHandle className="border-b" withHandle />
@@ -657,13 +671,10 @@ export const FunctionNode = memo(
                       className="flex size-full rounded-b-xl p-4"
                     >
                       <Tabs
-                        defaultValue="chat"
-                        className="flex w-full flex-col space-y-2"
+                        defaultValue="result"
+                        className="flex w-full flex-col space-y-4"
                       >
                         <TabsList className="w-full justify-start bg-accent">
-                          <TabsTrigger className="w-full" value="chat">
-                            Chat
-                          </TabsTrigger>
                           <TabsTrigger className="w-full" value="result">
                             Result
                           </TabsTrigger>
@@ -671,28 +682,6 @@ export const FunctionNode = memo(
                             Summary
                           </TabsTrigger>
                         </TabsList>
-                        <TabsContent
-                          value="chat"
-                          className="size-full rounded-lg bg-background"
-                        >
-                          <div className="size-full relative">
-                            <Editor
-                              id={data.id}
-                              type="description"
-                              inputs={inputs}
-                              placeholder="Doesn't work as expected? Write extra context here..."
-                              onChange={onChatChange}
-                              onError={onError}
-                            />
-                            <Button
-                              className="size-8 absolute bottom-2 right-2"
-                              size="icon"
-                              disabled={!chat}
-                            >
-                              <ArrowUpIcon className="size-3.5" />
-                            </Button>
-                          </div>
-                        </TabsContent>
                         <TabsContent
                           value="result"
                           className="size-full rounded-lg bg-background"
@@ -781,9 +770,57 @@ export const FunctionNode = memo(
                       </Tabs>
                     </ResizablePanel>
                   </ResizablePanelGroup>
-                </Form>
-              </div>
-            </div>
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel
+                defaultSize={30}
+                minSize={20}
+                className="flex flex-col gap-4 p-4 justify-between"
+              >
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-start">
+                    <Avatar className="size-6 rounded-md">
+                      <AvatarImage src={undefined} alt="User" />
+                      <AvatarFallback>
+                        <div className="size-full bg-gradient-to-br from-rose-500 via-amber-600 to-blue-500" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <p className="text-sm ml-3">
+                      Hello, I need help with this function.
+                    </p>
+                  </div>
+                  <div className="flex items-start">
+                    <Avatar className="size-6 rounded-md">
+                      <AvatarImage src="/logo.svg" alt="User" />
+                      <AvatarFallback>
+                        <div className="size-full bg-gradient-to-br from-rose-500 via-amber-600 to-blue-500" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <p className="text-sm ml-3">
+                      Yes, no problem. How can I help you?
+                    </p>
+                  </div>
+                </div>
+                <div className="relative">
+                  <Editor
+                    id={data.id}
+                    type="chat"
+                    rawMessage={rawChatMessage}
+                    placeholder="Fix or refine your function with AI..."
+                    onChange={onChatChange}
+                    onError={onError}
+                  />
+                  <Button
+                    disabled={!chatMessage}
+                    size="icon"
+                    className="absolute bottom-2 right-2"
+                  >
+                    <ArrowUpIcon className="size-4" />
+                  </Button>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </ExpandableCardContent>
         </ExpandableCard>
         <Handle

@@ -15,6 +15,7 @@ import { cn } from "@specly/ui/utils";
 import type {
   FunctionPrimitive,
   Input,
+  RawDescription,
   ResponsePrimitive,
 } from "@specly/shared/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
@@ -24,7 +25,7 @@ import { InputsPlugin } from "./plugins/input-plugin";
 
 interface EditorBaseProps {
   id: string;
-  type: "description" | "inputs";
+  type: "description" | "inputs" | "chat";
   placeholder?: string;
   onChange: (editorState: EditorState) => void;
   onError: (error: Error, editor: LexicalEditor) => void;
@@ -34,12 +35,16 @@ interface EditorBaseProps {
 type EditorProps =
   | ({
       type: "description";
-      primitive?: FunctionPrimitive | ResponsePrimitive;
-      inputs?: Input[];
+      primitive: FunctionPrimitive | ResponsePrimitive;
+      inputs: Input[];
     } & EditorBaseProps)
   | ({
       type: "inputs";
       inputs: Input[];
+    } & EditorBaseProps)
+  | ({
+      type: "chat";
+      rawMessage: RawDescription[];
     } & EditorBaseProps);
 
 export function Editor({ ...props }: EditorProps) {
@@ -73,23 +78,25 @@ export function Editor({ ...props }: EditorProps) {
       }
     }
 
-    if (
-      props.type === "description" &&
-      props.primitive?.metadata.rawDescription
-    ) {
-      for (const item of props.primitive.metadata.rawDescription) {
-        if (item.type === "text") {
-          paragraph.append($createTextNode(item.value));
-        } else if (item.type === "reference") {
-          const referenceNode = $createReferenceNode(
-            item.id,
-            item.name,
-            item.referenceType,
-            item.icon,
-            item.dataType,
-          );
-          paragraph.append(referenceNode);
-        }
+    const rawDescription =
+      (props.type === "description"
+        ? props.primitive.metadata.rawDescription
+        : props.type === "chat"
+          ? props.rawMessage
+          : undefined) ?? [];
+
+    for (const item of rawDescription) {
+      if (item.type === "text") {
+        paragraph.append($createTextNode(item.value));
+      } else if (item.type === "reference") {
+        const referenceNode = $createReferenceNode(
+          item.id,
+          item.name,
+          item.referenceType,
+          item.icon,
+          item.dataType,
+        );
+        paragraph.append(referenceNode);
       }
     }
 

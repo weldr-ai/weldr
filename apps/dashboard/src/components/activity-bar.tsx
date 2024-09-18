@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  BlocksIcon,
-  CircleUserIcon,
-  UnplugIcon,
-  WorkflowIcon,
-} from "lucide-react";
+import { BlocksIcon, UnplugIcon, WorkflowIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@specly/ui/button";
@@ -25,6 +20,7 @@ import {
 } from "@specly/ui/dropdown-menu";
 import { cn } from "@specly/ui/utils";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
 import { signOut } from "~/lib/auth/actions";
 import { usePrimarySidebarStore } from "~/lib/store";
 
@@ -81,9 +77,13 @@ export function ActivityBar() {
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="icon" variant="ghost">
-            <CircleUserIcon className="size-5" />
-            <span className="sr-only">Toggle user menu</span>
+          <Button size="icon" variant="ghost" className="size-8">
+            <Avatar className="size-8 rounded-md">
+              <AvatarImage src={undefined} alt="User" />
+              <AvatarFallback>
+                <div className="size-full bg-gradient-to-br from-rose-500 via-amber-600 to-blue-500" />
+              </AvatarFallback>
+            </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-48" align="end" side="right">
