@@ -26,7 +26,7 @@ export function CreateFlowDialog({ type }: { type: FlowType }) {
       onOpenChange={setCreatePrimitiveDialogOpen}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" className="text-xs">
           <PlusIcon className="mr-1.5 size-3.5" />
           Create new {type}
         </Button>

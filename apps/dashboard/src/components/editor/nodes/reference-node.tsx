@@ -160,7 +160,7 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
       case "input":
         return `input '${toCamelCase(this.__name)}' of type '${this.__dataType}'`;
       case "database":
-        return `postgres database '${this.__name}'`;
+        return `postgres database '${this.__name}' - its id is '${this.__id}'`;
       case "database-table":
         return `table '${this.__name}'`;
       case "database-column":

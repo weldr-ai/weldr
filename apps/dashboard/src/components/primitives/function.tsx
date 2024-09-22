@@ -78,12 +78,7 @@ import type { resourceProvidersSchema } from "@specly/shared/validators/resource
 import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
 import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
 import { Label } from "@specly/ui/label";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@specly/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
@@ -190,7 +185,6 @@ export const FunctionNode = memo(
 
     const {
       data: executionResult,
-      refetch: refetchExecutionResult,
       isLoading: isLoadingExecutionResult,
       isRefetching: isRefetchingExecutionResult,
     } = useQuery({
@@ -311,6 +305,7 @@ export const FunctionNode = memo(
 
           const resources: {
             id: string;
+            name: string;
             provider: z.infer<typeof resourceProvidersSchema>;
           }[] = [];
 
@@ -330,6 +325,7 @@ export const FunctionNode = memo(
               } else if (referenceNode.__referenceType === "database") {
                 resources.push({
                   id: referenceNode.__id,
+                  name: referenceNode.__name,
                   provider: "postgres",
                 });
               }
@@ -530,85 +526,68 @@ export const FunctionNode = memo(
                           </span>
                         </div>
                         <div className="flex items-center">
-                          <TooltipProvider delayDuration={100}>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <Button
-                                  className="size-7 text-success hover:text-success"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-disabled={
-                                    isLoadingExecutionResult ||
-                                    isRefetchingExecutionResult
-                                  }
-                                  disabled={
-                                    isLoadingExecutionResult ||
-                                    isRefetchingExecutionResult
-                                  }
-                                  onClick={async () => {
-                                    await refetchExecutionResult();
-                                  }}
-                                >
-                                  <PlayCircleIcon className="size-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-muted border">
-                                <span className="text-success">Run</span>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <TooltipProvider delayDuration={100}>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <Button
-                                  className="size-7 text-muted-foreground hover:text-muted-foreground"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    updateFunction.mutate({
-                                      where: {
-                                        id: data.id,
-                                        flowId: data.flowId,
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Button
+                                className="size-7 text-success hover:text-success"
+                                variant="ghost"
+                                size="icon"
+                              >
+                                <PlayCircleIcon className="size-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-muted border">
+                              <span className="text-success">Run</span>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Button
+                                className="size-7 text-muted-foreground hover:text-muted-foreground"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  updateFunction.mutate({
+                                    where: {
+                                      id: data.id,
+                                      flowId: data.flowId,
+                                    },
+                                    payload: {
+                                      type: "function",
+                                      metadata: {
+                                        isLocked: !data.metadata.isLocked,
                                       },
-                                      payload: {
-                                        type: "function",
-                                        metadata: {
-                                          isLocked: !data.metadata.isLocked,
-                                        },
-                                      },
-                                    });
-                                  }}
-                                >
-                                  {data.metadata.isLocked ? (
-                                    <LockIcon className="size-3.5" />
-                                  ) : (
-                                    <UnlockIcon className="size-3.5" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-muted border">
-                                <span>
-                                  {data.metadata.isLocked ? "Unlock" : "Lock"}
-                                </span>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <TooltipProvider delayDuration={100}>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <PrimitiveDropdownMenu
-                                  setDeleteAlertDialogOpen={
-                                    setDeleteAlertDialogOpen
-                                  }
-                                  label="Function"
-                                  docsUrlPath="function"
-                                />
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-muted border">
-                                <span>More</span>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                                    },
+                                  });
+                                }}
+                              >
+                                {data.metadata.isLocked ? (
+                                  <LockIcon className="size-3.5" />
+                                ) : (
+                                  <UnlockIcon className="size-3.5" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-muted border">
+                              <span>
+                                {data.metadata.isLocked ? "Unlock" : "Lock"}
+                              </span>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <PrimitiveDropdownMenu
+                                setDeleteAlertDialogOpen={
+                                  setDeleteAlertDialogOpen
+                                }
+                                label="Function"
+                                docsUrlPath="function"
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-muted border">
+                              <span>More</span>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </div>
                     </ExpandableCardHeader>
@@ -806,6 +785,7 @@ export const FunctionNode = memo(
                   <Editor
                     id={data.id}
                     type="chat"
+                    inputs={inputs}
                     rawMessage={rawChatMessage}
                     placeholder="Fix or refine your function with AI..."
                     onChange={onChatChange}

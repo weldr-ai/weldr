@@ -31,27 +31,22 @@ import "~/styles/flow-builder.css";
 import { Button } from "@specly/ui/button";
 
 import type { Primitive, PrimitiveType } from "@specly/shared/types";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@specly/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { toast } from "@specly/ui/use-toast";
 import { useTheme } from "next-themes";
 import DeletableEdge from "~/components/deletable-edge";
-import { FunctionNode } from "~/components/primitives/function";
 import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
 import { Workflow } from "~/components/primitives/workflow";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode } from "~/types";
 import { PrimitivesMenu } from "./primitives-menu";
+import { FunctionNodeV2 } from "./primitives/function-v2";
 
 const nodeTypes = {
   route: Route,
   workflow: Workflow,
-  function: FunctionNode,
+  function: FunctionNodeV2,
   // matcher: Matcher,
   // iterator: Iterator,
   response: Response,
@@ -371,7 +366,7 @@ export function _FlowBuilder({
       />
       <Panel
         position="bottom-right"
-        className="flex flex-row rounded-full border bg-muted p-0.5"
+        className="flex flex-row rounded-full border bg-background dark:bg-muted p-0.5"
       >
         <Button
           className="w-11 rounded-full"
@@ -405,45 +400,41 @@ export function _FlowBuilder({
       </Panel>
       <Panel
         position="top-right"
-        className="flex flex-col items-center bg-muted rounded-full gap-0.5 p-0.5 border"
+        className="flex flex-col items-center bg-background dark:bg-muted rounded-full gap-0.5 p-0.5 border"
       >
         <PrimitivesMenu />
 
         <div className="w-9 border-t" />
 
-        <TooltipProvider delayDuration={100}>
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                className="rounded-full hover:bg-success/20 text-success"
-                variant="ghost"
-                size="icon"
-              >
-                <PlayIcon className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="bg-muted text-success">
-              <p>Run</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="rounded-full hover:bg-success/20 text-success"
+              variant="ghost"
+              size="icon"
+            >
+              <PlayIcon className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="bg-muted border text-success">
+            <p>Run</p>
+          </TooltipContent>
+        </Tooltip>
 
-        <TooltipProvider delayDuration={100}>
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                className="rounded-full hover:bg-primary/20 text-primary"
-                variant="ghost"
-                size="icon"
-              >
-                <RocketIcon className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="bg-muted text-primary">
-              <p>Ship</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="rounded-full hover:bg-primary/20 text-primary"
+              variant="ghost"
+              size="icon"
+            >
+              <RocketIcon className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="bg-muted border text-primary">
+            <p>Ship</p>
+          </TooltipContent>
+        </Tooltip>
       </Panel>
     </ReactFlow>
   );

@@ -83,16 +83,16 @@ export class ReferenceOption extends MenuOption {
 
 export function ReferencesPlugin({
   inputs,
-  primitiveResources,
+  initialResources,
 }: {
   inputs: Input[];
-  primitiveResources: string[];
+  initialResources: string[];
 }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
   const [currentResources, setCurrentResources] = useState<Set<string>>(
-    new Set(primitiveResources),
+    new Set(initialResources),
   );
 
   const { data: workspaceResources } = api.resources.getAll.useQuery({

@@ -39,7 +39,7 @@ import Link from "next/link";
 import { memo, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { MatcherPrimitive, RawDescription } from "@specly/shared/types";
+import type { MatcherPrimitive } from "@specly/shared/types";
 import type { matcherPrimitiveMetadataSchema } from "@specly/shared/validators/primitives";
 import {
   Form,
@@ -49,12 +49,9 @@ import {
   FormMessage,
 } from "@specly/ui/form";
 import { Input } from "@specly/ui/input";
-import { $getRoot, type EditorState, type ParagraphNode } from "lexical";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import Editor from "~/components/editor";
-import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
@@ -355,11 +352,10 @@ export const Matcher = memo(
                     <div className="flex flex-col gap-2 px-6">
                       {conditions.map((condition) => (
                         <div key={condition.id} className="relative flex gap-2">
-                          <Editor
+                          {/* <Editor
                             id={condition.id}
                             className="h-32"
                             placeholder="Write a description for this condition"
-                            type="description"
                             onChange={(editorState: EditorState) => {
                               editorState.read(async () => {
                                 const root = $getRoot();
@@ -419,8 +415,7 @@ export const Matcher = memo(
                             onError={(error: Error) => {
                               console.error(error);
                             }}
-                            inputs={[]}
-                          />
+                          /> */}
                           <Button
                             variant="ghost"
                             size="icon"

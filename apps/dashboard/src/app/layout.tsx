@@ -1,7 +1,5 @@
 import "@specly/ui/globals.css";
 
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import { Poppins as FontSans } from "next/font/google";
 
@@ -9,6 +7,7 @@ import { ThemeProvider } from "@specly/ui/theme-provider";
 import { Toaster } from "@specly/ui/toaster";
 import { cn } from "@specly/ui/utils";
 
+import { TooltipProvider } from "@specly/ui/tooltip";
 import { QueryProvider } from "~/components/query-client-provider";
 import { TRPCReactProvider } from "~/lib/trpc/react";
 
@@ -45,10 +44,10 @@ export default async function RootLayout({
         >
           <TRPCReactProvider>
             <QueryProvider>
-              {children}
-              <Toaster />
-              <Analytics />
-              <SpeedInsights />
+              <TooltipProvider delayDuration={200}>
+                {children}
+                <Toaster />
+              </TooltipProvider>
             </QueryProvider>
           </TRPCReactProvider>
         </ThemeProvider>

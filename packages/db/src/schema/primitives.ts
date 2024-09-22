@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import type { PrimitiveMetadata } from "@specly/shared/types";
+import type { PrimitiveMetadata, RawDescription } from "@specly/shared/types";
 import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
@@ -13,6 +13,42 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { flows } from "./flows";
+
+export const messageFrom = pgEnum("message_from", ["user", "ai"]);
+
+export const functionChatMessages = pgTable("function_chat_messages", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  messageFrom: messageFrom("message_from").notNull(),
+  message: text("message").notNull(),
+  rawMessage: jsonb("raw_message").$type<RawDescription[]>().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const functionPrimitive = pgTable("function_primitives", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  name: text("name").notNull(),
+  description: text("description"),
+  rawDescription: jsonb("raw_description").$type<RawDescription[]>().notNull(),
+  inputs: jsonb("inputs").$type<Record<string, string>>().notNull(),
+  outputs: jsonb("outputs").$type<Record<string, string>>().notNull(),
+  positionX: integer("position_x").default(0).notNull(),
+  positionY: integer("position_y").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+  flowId: text("flow_id")
+    .references(() => flows.id, { onDelete: "cascade" })
+    .notNull(),
+  createdBy: text("created_by")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+});
 
 export const primitiveTypes = pgEnum("primitive_types", [
   "route",
@@ -35,10 +71,10 @@ export const primitives = pgTable(
     positionX: integer("position_x").default(0).notNull(),
     positionY: integer("position_y").default(0).notNull(),
     metadata: jsonb("metadata").$type<PrimitiveMetadata>().notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
     parentId: text("parent_id").references((): AnyPgColumn => primitives.id, {
       onDelete: "cascade",
     }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date())

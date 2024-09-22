@@ -69,6 +69,7 @@ const baseMetadataSchema = z.object({
   resources: z
     .object({
       id: z.string(),
+      name: z.string(),
       provider: resourceProvidersSchema,
     })
     .array()

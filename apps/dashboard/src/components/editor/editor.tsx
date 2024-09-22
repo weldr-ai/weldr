@@ -3,6 +3,7 @@
 import type { InitialConfigType } from "@lexical/react/LexicalComposer";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
@@ -30,6 +31,7 @@ interface EditorBaseProps {
   onChange: (editorState: EditorState) => void;
   onError: (error: Error, editor: LexicalEditor) => void;
   className?: string;
+  editorRef?: { current: null | LexicalEditor };
 }
 
 type EditorProps =
@@ -45,6 +47,7 @@ type EditorProps =
   | ({
       type: "chat";
       rawMessage: RawDescription[];
+      inputs: Input[];
     } & EditorBaseProps);
 
 export function Editor({ ...props }: EditorProps) {
@@ -55,6 +58,7 @@ export function Editor({ ...props }: EditorProps) {
       nodes.push(InputNode);
       break;
     case "description":
+    case "chat":
       nodes.push(ReferenceNode);
       break;
   }
@@ -115,13 +119,15 @@ export function Editor({ ...props }: EditorProps) {
     <LexicalComposer initialConfig={initialConfig}>
       <div className="flex size-full">
         {props.type === "inputs" && <InputsPlugin id={props.id} />}
-        {props.type === "description" && (
+        {(props.type === "description" || props.type === "chat") && (
           <ReferencesPlugin
             inputs={props.inputs ?? []}
-            primitiveResources={
-              props.primitive?.metadata.resources?.map(
-                (resource) => resource.id,
-              ) ?? []
+            initialResources={
+              props.type === "description"
+                ? props.primitive?.metadata.resources?.map(
+                    (resource) => resource.id,
+                  ) ?? []
+                : []
             }
           />
         )}
@@ -144,6 +150,7 @@ export function Editor({ ...props }: EditorProps) {
       </div>
       <OnChangePlugin onChange={props.onChange} />
       <HistoryPlugin />
+      {props.editorRef && <EditorRefPlugin editorRef={props.editorRef} />}
     </LexicalComposer>
   );
 }
