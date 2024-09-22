@@ -1,9 +1,7 @@
-import { Button } from "@specly/ui/button";
 import { notFound } from "next/navigation";
 
-import { ActivityBar } from "~/components/activity-bar";
 import { CommandCenter } from "~/components/command-center";
-import { PrimarySidebar } from "~/components/primary-sidebar";
+import { Sidebar } from "~/components/sidebar";
 import { api } from "~/lib/trpc/rsc";
 
 export default async function WorkspacesLayout({
@@ -20,26 +18,14 @@ export default async function WorkspacesLayout({
     return (
       <>
         <div className="flex size-full min-h-screen flex-rows bg-background">
-          <div className="flex-grow border-r dark:bg-muted">
-            <ActivityBar />
+          <div className="sticky flex h-full dark:bg-muted z-50">
+            <Sidebar workspace={workspace} />
           </div>
-          <div className="flex flex-col size-full">
-            <div className="h-14 w-full border-b dark:bg-muted">
-              <div className="flex items-center justify-center h-full w-[256px] border-r px-3 py-2.5">
-                <Button className="w-full" variant="ghost">
-                  {workspace.name}
-                </Button>
-              </div>
+          <main className="flex w-full dark:bg-muted py-2.5 pr-2.5">
+            <div className="flex size-full rounded-md border shadow">
+              {children}
             </div>
-            <div className="flex size-full">
-              <div className="sticky flex h-[calc(100dvh-56px)] dark:bg-muted">
-                <div className="w-[256px] px-3 py-2.5 border-r">
-                  <PrimarySidebar />
-                </div>
-              </div>
-              <main className="flex w-full">{children}</main>
-            </div>
-          </div>
+          </main>
         </div>
         <CommandCenter workspaces={workspaces} />
       </>

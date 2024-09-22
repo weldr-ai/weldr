@@ -331,6 +331,7 @@ export function _FlowBuilder({
 
   return (
     <ReactFlow
+      className="rounded-md"
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}

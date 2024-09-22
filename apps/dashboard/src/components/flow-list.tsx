@@ -31,7 +31,7 @@ export function FlowList({
     <div className="flex flex-col size-full gap-2">
       <CreateFlowDialog type={type} />
       {!isLoading && !isRefetching ? (
-        <ScrollArea className="h-[calc(100dvh-116px)] w-full">
+        <ScrollArea className="h-[calc(100dvh-120px)] w-full">
           <div className="flex flex-col gap-1">
             {flows?.map((flow) => (
               <Link
@@ -47,7 +47,7 @@ export function FlowList({
           </div>
         </ScrollArea>
       ) : (
-        <div className="flex h-[calc(100dvh-116px)] items-center justify-center">
+        <div className="flex h-[calc(100dvh-120px)] items-center justify-center">
           <Loader2Icon className="size-6 animate-spin text-primary" />
         </div>
       )}
