@@ -15,7 +15,7 @@ export async function requirementsGatheringAgent({
   messages: CoreMessage[];
 }): Promise<StreamableValue> {
   const result = await streamText({
-    model: openai("gpt-4o-mini-2024-07-18"),
+    model: openai("gpt-4o-mini"),
     system,
     messages,
     onFinish: ({ usage }) => {
@@ -25,7 +25,6 @@ export async function requirementsGatheringAgent({
     },
   });
 
-  console.log(messages);
   const stream = createStreamableValue(result.textStream);
   return stream.value;
 }

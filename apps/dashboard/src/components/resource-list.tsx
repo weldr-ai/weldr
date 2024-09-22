@@ -19,7 +19,7 @@ export function ResourceList({ workspaceId }: { workspaceId: string }) {
     <div className="flex size-full flex-col gap-2">
       <AddResourceDialog />
       {!isLoading && !isRefetching ? (
-        <ScrollArea className="h-[calc(100dvh-116px)] w-full">
+        <ScrollArea className="h-[calc(100dvh-120px)] w-full">
           <div className="flex flex-col">
             {resources?.map((resource) => (
               <Button key={resource.id} variant="ghost" size="sm">
@@ -29,7 +29,7 @@ export function ResourceList({ workspaceId }: { workspaceId: string }) {
           </div>
         </ScrollArea>
       ) : (
-        <div className="flex h-[calc(100dvh-116px)] items-center justify-center">
+        <div className="flex h-[calc(100dvh-120px)] items-center justify-center">
           <Loader2Icon className="size-6 animate-spin text-primary" />
         </div>
       )}
