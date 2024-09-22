@@ -4,12 +4,7 @@ import type React from "react";
 import type { PrimitiveType } from "@specly/shared/types";
 import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@specly/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 
 export function PrimitivesMenu() {
   const onDragStart = (
@@ -22,25 +17,22 @@ export function PrimitivesMenu() {
 
   return (
     <>
-      <TooltipProvider delayDuration={100}>
-        <Tooltip>
-          <TooltipTrigger>
-            <div
-              className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
-              onDragStart={(event) => onDragStart(event, "function")}
-              draggable
-            >
-              <LambdaIcon className="size-4" />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="bg-muted">
-            <p>Function</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+          <div
+            className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+            onDragStart={(event) => onDragStart(event, "function")}
+            draggable
+          >
+            <LambdaIcon className="size-4" />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="bg-muted border">
+          <p>Function</p>
+        </TooltipContent>
+      </Tooltip>
 
-      {/* <TooltipProvider delayDuration={100}>
-        <Tooltip>
+      {/* <Tooltip>
           <TooltipTrigger>
             <div
               className="inline-flex items-center justify-center h-9 w-11 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
@@ -54,9 +46,7 @@ export function PrimitivesMenu() {
             <p>Iterator</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
 
-      <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger>
             <div
@@ -70,25 +60,22 @@ export function PrimitivesMenu() {
           <TooltipContent className="bg-muted">
             <p>Matcher</p>
           </TooltipContent>
-        </Tooltip>
-      </TooltipProvider> */}
+        </Tooltip> */}
 
-      <TooltipProvider delayDuration={100}>
-        <Tooltip>
-          <TooltipTrigger>
-            <div
-              className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
-              onDragStart={(event) => onDragStart(event, "response")}
-              draggable
-            >
-              <CornerDownLeftIcon className="size-4" />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="bg-muted">
-            <p>Response</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+          <div
+            className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+            onDragStart={(event) => onDragStart(event, "response")}
+            draggable
+          >
+            <CornerDownLeftIcon className="size-4" />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="bg-muted border">
+          <p>Response</p>
+        </TooltipContent>
+      </Tooltip>
     </>
   );
 }

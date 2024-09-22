@@ -56,46 +56,6 @@ export async function auth({ auth }: { auth: PostgresAuth }) {
   };
 }
 
-export async function getInfo({
-  auth,
-}: {
-  auth: PostgresAuth;
-}): Promise<Table[]> {
-  const client = await pgClient(auth);
-  return new Promise((resolve, reject) => {
-    client.query(
-      `SELECT
-        t.table_name AS name,
-        json_agg(json_build_object('name', c.column_name, 'type', c.data_type)) AS columns
-      FROM information_schema.tables t
-      LEFT JOIN information_schema.columns c
-      ON t.table_name = c.table_name
-      WHERE t.table_schema = 'public'
-      GROUP BY t.table_name;`,
-      [],
-      (
-        error: unknown,
-        results: {
-          rows: {
-            name: string;
-            columns: {
-              name: string;
-              type: string;
-            }[];
-          }[];
-        },
-      ) => {
-        if (error) {
-          void client.end();
-          return reject(error);
-        }
-        resolve(results.rows);
-        void client.end();
-      },
-    );
-  });
-}
-
 export async function executeQuery({
   auth,
   query,
@@ -136,6 +96,46 @@ export async function run(
   }
 }
 
+export async function getInfo({
+  auth,
+}: {
+  auth: PostgresAuth;
+}): Promise<Table[]> {
+  const client = await pgClient(auth);
+  return new Promise((resolve, reject) => {
+    client.query(
+      `SELECT
+        t.table_name AS name,
+        json_agg(json_build_object('name', c.column_name, 'type', c.data_type)) AS columns
+      FROM information_schema.tables t
+      LEFT JOIN information_schema.columns c
+      ON t.table_name = c.table_name
+      WHERE t.table_schema = 'public'
+      GROUP BY t.table_name;`,
+      [],
+      (
+        error: unknown,
+        results: {
+          rows: {
+            name: string;
+            columns: {
+              name: string;
+              type: string;
+            }[];
+          }[];
+        },
+      ) => {
+        if (error) {
+          void client.end();
+          return reject(error);
+        }
+        resolve(results.rows);
+        void client.end();
+      },
+    );
+  });
+}
+
 export const actions = [
   `function executeQuery({
     auth,
@@ -145,5 +145,7 @@ export const actions = [
     auth: PostgresAuth;
     query: string;
     values: unknown[];
-  }): Promise<unknown>`,
+  }): Promise<INSERT_RESULT_TYPE_HERE>`,
 ];
+
+export const type = "database";

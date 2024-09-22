@@ -1,6 +1,8 @@
-import { toCamelCase } from "@specly/shared/utils";
-
-export function getSystemMessage(withResource: boolean): string {
+export function getSystemMessage({
+  withResource,
+}: {
+  withResource: boolean;
+}): string {
   return `
 Objective:
 You are a professional Typescript software developer.
@@ -39,53 +41,84 @@ Return only the code.
 `;
 }
 
-export function getUserMessage({
-  resourceInfo,
-  functionsToImplement,
-  functionality,
-}: {
-  resourceInfo:
-    | {
-        name: string;
-        type: string;
-        actions: string[];
-        metadata: string | undefined;
-      }
-    | undefined;
-  functionsToImplement: string[];
-  functionality: string;
-}): string {
-  return `
-${
-  resourceInfo &&
-  `
-${resourceInfo.name} information
-Type: ${toCamelCase(resourceInfo.type.trim())}
-
-Metadata:
-${resourceInfo.metadata}
-
-Available actions for resource "${toCamelCase(resourceInfo.type.trim())}":
-${resourceInfo.actions.map((action) => `- ${action}`).join("\n")}
-
-Resource object name:
-${toCamelCase(resourceInfo.type.trim())}
-  `
+interface Table {
+  name: string;
+  columns: {
+    name: string;
+    type: string;
+  }[];
 }
 
-Functions to implement:
-${functionsToImplement.map((functionName) => `- ${functionName}`).join("\n")}
+async function getResourceInfo(
+  name: string,
+  provider: "postgres" | "mysql",
+  auth: unknown,
+): Promise<string> {
+  let resourceActions: string[] = [];
+  let resourceGetInfo: (auth: unknown) => Promise<Table[]> = async () => [];
 
-Functionality
+  if (provider === "postgres") {
+    // @ts-ignore
+    const { actions, getInfo } = await import("@specly/integrations-postgres");
+    resourceActions = actions;
+    // @ts-ignore
+    resourceGetInfo = getInfo;
+  }
+
+  return `## Resource \`${name}\`
+Provider: \`${provider}\`
+Metadata:
+${((await resourceGetInfo({ auth })) as Table[])
+  .map(
+    (table) => `Table: \`${table.name}\`
+Columns:
+${table.columns.map((column) => `\`${column.name}\` (${column.type})`).join("\n")}`,
+  )
+  .join("\n\n")}
+
+Available actions for provider \`${provider}\`:
+${(resourceActions as string[]).map((action) => `- ${action}`).join("\n")}
+
+Resource object name: \`${provider}\``;
+}
+
+export async function getUserMessage({
+  resources,
+  functionToImplement,
+  functionality,
+}: {
+  resources: {
+    name: string;
+    provider: "postgres" | "mysql";
+    auth: unknown;
+  }[];
+  functionToImplement: string;
+  functionality: string;
+}): Promise<string> {
+  const resourcesInfo: string[] = [];
+
+  for (const resource of resources) {
+    resourcesInfo.push(
+      await getResourceInfo(resource.name, resource.provider, resource.auth),
+    );
+  }
+
+  return `# Resources:
+${resourcesInfo.join("\n\n")}
+
+# Function to implement:
+${functionToImplement}
+
+# Functionality:
 ${functionality}
 `;
 }
 
 export function extractCode(
   code: string,
-  language: "typescript" | "javascript",
+  language: "typescript" | "python",
 ): string | null {
-  const regex = new RegExp(`\`\`\`${language}\\s+([\\s\\S]*?)\\s+\`\`\``);
+  const regex = new RegExp(`\`\`\`${language}\\s*([\\s\\S]*?)\\s*\`\`\``);
   const match = code.match(regex);
   if (match?.[1]) {
     return match[1].trim();

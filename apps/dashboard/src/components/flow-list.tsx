@@ -28,21 +28,18 @@ export function FlowList({
   });
 
   return (
-    <div className="flex size-full flex-col gap-2">
+    <div className="flex flex-col size-full gap-2">
       <CreateFlowDialog type={type} />
       {!isLoading && !isRefetching ? (
-        <ScrollArea className="h-[calc(100dvh-148px)] w-full">
+        <ScrollArea className="h-[calc(100dvh-116px)] w-full">
           <div className="flex flex-col gap-1">
             {flows?.map((flow) => (
               <Link
                 href={`/workspaces/${workspaceId}/${type}s/${flow.id}`}
                 key={flow.id}
-                className={cn(
-                  buttonVariants({ variant: "ghost", size: "sm" }),
-                  {
-                    "bg-accent": currentFlowId === flow.id,
-                  },
-                )}
+                className={cn(buttonVariants({ variant: "ghost" }), {
+                  "bg-accent": currentFlowId === flow.id,
+                })}
               >
                 {flow.name}
               </Link>
@@ -50,7 +47,7 @@ export function FlowList({
           </div>
         </ScrollArea>
       ) : (
-        <div className="flex h-[calc(100dvh-152px)] items-center justify-center">
+        <div className="flex h-[calc(100dvh-116px)] items-center justify-center">
           <Loader2Icon className="size-6 animate-spin text-primary" />
         </div>
       )}
