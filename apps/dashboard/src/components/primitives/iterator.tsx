@@ -114,7 +114,6 @@ export const Iterator = memo(
         await updateIterator.mutateAsync({
           where: {
             id: data.id,
-            flowId: data.flowId,
           },
           payload: {
             type: "iterator",
@@ -301,7 +300,6 @@ export const Iterator = memo(
                                 await updateIterator.mutateAsync({
                                   where: {
                                     id: data.id,
-                                    flowId: data.flowId,
                                   },
                                   payload: {
                                     type: "iterator",
@@ -414,7 +412,6 @@ export const Iterator = memo(
             await updateIterator.mutateAsync({
               where: {
                 id: data.id,
-                flowId: data.flowId,
               },
               payload: {
                 type: "iterator",

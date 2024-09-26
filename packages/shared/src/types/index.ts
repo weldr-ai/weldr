@@ -2,6 +2,7 @@ import type { z } from "zod";
 import type { edgeSchema } from "../validators/edges";
 import type { flowSchema, flowTypesSchema } from "../validators/flows";
 import type {
+  baseJsonSchema,
   functionPrimitiveMetadataSchema,
   functionPrimitiveSchema,
   inputSchema,
@@ -18,7 +19,7 @@ import type {
   responsePrimitiveSchema,
   routePrimitiveMetadataSchema,
   routePrimitiveSchema,
-  valueTypeSchema,
+  varTypeSchema,
   workflowPrimitiveMetadataSchema,
   workflowPrimitiveSchema,
 } from "../validators/primitives";
@@ -29,9 +30,14 @@ import type {
 } from "../validators/resources";
 import type { workspaceSchema } from "../validators/workspaces";
 
-export type VarType = z.infer<typeof valueTypeSchema>;
+export type VarType = z.infer<typeof varTypeSchema>;
 
 export type Input = z.infer<typeof inputSchema>;
+
+export type JsonSchema = z.infer<typeof baseJsonSchema> & {
+  properties?: Record<string, JsonSchema>;
+  items?: JsonSchema;
+};
 
 export type Output = z.infer<typeof outputSchema>;
 

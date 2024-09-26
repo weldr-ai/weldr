@@ -35,18 +35,18 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { toast } from "@specly/ui/use-toast";
 import { useTheme } from "next-themes";
 import DeletableEdge from "~/components/deletable-edge";
+import { PrimitivesMenu } from "~/components/primitives-menu";
+import { FunctionNode } from "~/components/primitives/function";
 import { Response } from "~/components/primitives/response";
 import { Route } from "~/components/primitives/route";
 import { Workflow } from "~/components/primitives/workflow";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode } from "~/types";
-import { PrimitivesMenu } from "./primitives-menu";
-import { FunctionNodeV2 } from "./primitives/function-v2";
 
 const nodeTypes = {
   route: Route,
   workflow: Workflow,
-  function: FunctionNodeV2,
+  function: FunctionNode,
   // matcher: Matcher,
   // iterator: Iterator,
   response: Response,
@@ -216,7 +216,6 @@ export function _FlowBuilder({
       await updatePrimitive.mutateAsync({
         where: {
           id: node.id,
-          flowId,
         },
         payload: {
           type: node.type as PrimitiveType,
@@ -284,7 +283,7 @@ export function _FlowBuilder({
       //   });
       // }
     },
-    [updatePrimitive, flowId],
+    [updatePrimitive],
   );
 
   const isValidConnection = useCallback(
@@ -408,7 +407,7 @@ export function _FlowBuilder({
         <div className="w-9 border-t" />
 
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger asChild>
             <Button
               className="rounded-full hover:bg-success/20 text-success"
               variant="ghost"
@@ -423,7 +422,7 @@ export function _FlowBuilder({
         </Tooltip>
 
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger asChild>
             <Button
               className="rounded-full hover:bg-primary/20 text-primary"
               variant="ghost"

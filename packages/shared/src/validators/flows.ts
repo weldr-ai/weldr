@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { inputSchema } from "./primitives";
 
 export const flowTypesSchema = z.enum(["component", "workflow", "route"]);
 
@@ -102,17 +103,5 @@ export const updateRouteFlowSchema = z.object({
       return `/${path.trim()}`;
     })
     .optional(),
-  inputs: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      testValue: z
-        .union([z.string(), z.number()])
-        .nullable()
-        .optional()
-        .default(null),
-      type: z.enum(["number", "text", "functionResponse"]),
-    })
-    .array()
-    .optional(),
+  inputs: inputSchema.array().optional(),
 });

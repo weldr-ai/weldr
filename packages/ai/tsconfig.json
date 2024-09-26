@@ -4,6 +4,6 @@
     "outDir": "dist",
     "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"
   },
-  "include": ["src"],
+  "include": ["src", "src/.ts", "../../apps/dashboard/src/lib/ai/prompts.ts"],
   "exclude": ["node_modules"]
 }

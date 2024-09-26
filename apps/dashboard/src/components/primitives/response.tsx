@@ -147,7 +147,6 @@ export const Response = memo(
         updateResponse.mutate({
           where: {
             id: data.id,
-            flowId: data.flowId,
           },
           payload: {
             type: "response",
@@ -164,7 +163,7 @@ export const Response = memo(
       <>
         <ExpandableCard>
           <ContextMenu>
-            <ContextMenuTrigger>
+            <ContextMenuTrigger asChild>
               <ExpandableCardTrigger>
                 <Card
                   className={cn(
@@ -308,7 +307,6 @@ export const Response = memo(
                                 updateResponse.mutate({
                                   where: {
                                     id: data.id,
-                                    flowId: data.flowId,
                                   },
                                   payload: {
                                     type: "function",
@@ -335,9 +333,6 @@ export const Response = memo(
                         <FormLabel className="text-xs">Editor</FormLabel>
                         <Editor
                           id={data.id}
-                          primitive={data}
-                          type="description"
-                          inputs={data.metadata.inputs ?? []}
                           placeholder="Describe your response"
                           onChange={onChange}
                           onError={(error: Error) => {

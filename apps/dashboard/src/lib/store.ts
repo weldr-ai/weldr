@@ -13,7 +13,7 @@ interface PrimarySidebarAction {
 export const usePrimarySidebarStore = create<
   PrimarySidebarState & PrimarySidebarAction
 >((set) => ({
-  activeSection: "components",
+  activeSection: null,
   updateActiveSection: (activeSection) =>
     set(() => ({
       activeSection,

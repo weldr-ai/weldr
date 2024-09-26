@@ -1,18 +1,16 @@
 import { z } from "zod";
+import type { JsonSchema } from "../types";
 import { resourceProvidersSchema } from "./resources";
 
-export const primitiveBaseSchema = z.object({
-  id: z.string(),
-  name: z.string().nullable(),
-  description: z.string().nullable(),
-  parentId: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  createdBy: z.string(),
-  positionX: z.number(),
-  positionY: z.number(),
-  flowId: z.string(),
-});
+export const varTypeSchema = z.enum([
+  "string",
+  "number",
+  "integer",
+  "boolean",
+  "array",
+  "object",
+  "null",
+]);
 
 export const rawDescriptionSchema = z.discriminatedUnion("type", [
   z.object({
@@ -37,32 +35,73 @@ export const rawDescriptionSchema = z.discriminatedUnion("type", [
       "database-column-icon",
       "database-table-icon",
     ]),
-    dataType: z.enum(["text", "number"]).optional(),
+    dataType: varTypeSchema.optional(),
   }),
 ]);
 
-export const valueTypeSchema = z.enum(["number", "text"]);
-
-export const inputSchema = z.object({
+export const chatMessageSchema = z.object({
   id: z.string(),
-  name: z.string(),
-  type: valueTypeSchema,
-  testValue: z
-    .union([z.string(), z.number()])
-    .nullable()
-    .optional()
-    .default(null),
+  role: z.enum(["user", "assistant"]),
+  message: z.string(),
+  rawMessage: rawDescriptionSchema.array().optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  primitiveId: z.string(),
 });
 
-export const outputSchema = z.object({
+export const primitiveBaseSchema = z.object({
   id: z.string(),
-  name: z.string(),
-  type: valueTypeSchema,
+  name: z.string().nullable(),
+  description: z.string().nullable(),
+  parentId: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  createdBy: z.string(),
+  positionX: z.number(),
+  positionY: z.number(),
+  flowId: z.string(),
+  chatMessages: chatMessageSchema.array().optional(),
 });
+
+export const baseJsonSchema = z.object({
+  type: varTypeSchema.optional(),
+  description: z.string().optional(),
+  required: z.string().array().optional(),
+  enum: z.any().array().optional(),
+});
+
+export const jsonSchema: z.ZodType<JsonSchema> = baseJsonSchema.and(
+  z.object({
+    type: z.literal("object"),
+    properties: z.record(z.lazy(() => jsonSchema)).optional(),
+    items: z.lazy(() => jsonSchema).optional(),
+  }),
+);
+
+export const inputSchema = jsonSchema.and(
+  z.object({
+    testValue: z
+      .union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.array(z.any()),
+        z.record(z.any()),
+        z.null(),
+      ])
+      .optional(),
+  }),
+);
+
+export const outputSchema = jsonSchema.and(
+  z.object({
+    id: z.string(),
+  }),
+);
 
 const baseMetadataSchema = z.object({
-  inputs: inputSchema.array().optional(),
-  outputs: outputSchema.array().optional(),
+  inputs: inputSchema.optional(),
+  outputs: outputSchema.optional(),
   generatedCode: z.string().nullable().optional(),
   isCodeUpdated: z.boolean().default(false).optional(),
   isLocked: z.boolean().default(false).optional(),
@@ -78,6 +117,18 @@ const baseMetadataSchema = z.object({
 
 export const functionPrimitiveMetadataSchema = baseMetadataSchema.extend({
   rawDescription: rawDescriptionSchema.array().optional(),
+  logicalSteps: z.string().optional(),
+  edgeCases: z.string().optional(),
+  errorHandling: z.string().optional(),
+  resources: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      provider: resourceProvidersSchema,
+      metadata: z.string(),
+    })
+    .array()
+    .optional(),
 });
 
 export const functionPrimitiveSchema = primitiveBaseSchema.extend({
@@ -88,7 +139,8 @@ export const functionPrimitiveSchema = primitiveBaseSchema.extend({
 export const routePrimitiveMetadataSchema = z.object({
   method: z.enum(["get", "post", "patch", "delete"]),
   path: z.string(),
-  inputs: inputSchema.array().optional(),
+  input: inputSchema.optional(),
+  validationSchema: z.string().optional(),
 });
 
 export const routePrimitiveSchema = primitiveBaseSchema.extend({
@@ -98,7 +150,8 @@ export const routePrimitiveSchema = primitiveBaseSchema.extend({
 
 export const workflowPrimitiveMetadataSchema = z.object({
   triggerType: z.enum(["webhook", "schedule"]),
-  inputs: inputSchema.array().optional(),
+  input: inputSchema.optional(),
+  validationSchema: z.string().optional(),
 });
 
 export const workflowPrimitiveSchema = primitiveBaseSchema.extend({
@@ -223,6 +276,8 @@ export const updateRouteMetadataSchema = baseMetadataSchema.extend({
       return `/${path.trim()}`;
     })
     .optional(),
+  input: inputSchema.optional(),
+  validationSchema: z.string().optional(),
 });
 
 export const updateRouteSchema = updatePrimitiveBaseSchema.extend({
@@ -262,7 +317,6 @@ export const updateResponseSchema = updatePrimitiveBaseSchema.extend({
 export const updatePrimitiveSchema = z.object({
   where: z.object({
     id: z.string(),
-    flowId: z.string(),
   }),
   payload: z.discriminatedUnion("type", [
     updateFunctionSchema,

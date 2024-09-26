@@ -133,7 +133,6 @@ export const Matcher = memo(
       updateMatcher.mutate({
         where: {
           id: data.id,
-          flowId: data.flowId,
         },
         payload: {
           type: "matcher",
@@ -152,7 +151,6 @@ export const Matcher = memo(
       updateMatcher.mutate({
         where: {
           id: data.id,
-          flowId: data.flowId,
         },
         payload: {
           type: "matcher",
@@ -167,7 +165,7 @@ export const Matcher = memo(
       <>
         <ExpandableCard>
           <ContextMenu>
-            <ContextMenuTrigger>
+            <ContextMenuTrigger asChild>
               <ExpandableCardTrigger>
                 <Card
                   className={cn(
@@ -331,7 +329,6 @@ export const Matcher = memo(
                                 updateMatcher.mutate({
                                   where: {
                                     id: data.id,
-                                    flowId: data.flowId,
                                   },
                                   payload: {
                                     type: "matcher",
@@ -392,7 +389,7 @@ export const Matcher = memo(
                                 await updateMatcher.mutateAsync({
                                   where: {
                                     id: data.id,
-                                    flowId: data.flowId,
+
                                   },
                                   payload: {
                                     type: "matcher",

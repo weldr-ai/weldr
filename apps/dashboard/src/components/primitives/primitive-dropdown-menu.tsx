@@ -27,7 +27,7 @@ export function PrimitiveDropdownMenu({
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild>
         <Button
           className="size-7 text-muted-foreground hover:text-muted-foreground"
           variant="ghost"
