@@ -1,18 +1,14 @@
 import { TRPCError } from "@trpc/server";
 
-import { primitives } from "@specly/db/schema";
-import type {
-  Input,
-  IteratorPrimitive,
-  Primitive,
-  RoutePrimitive,
-} from "@specly/shared/types";
+import { chatMessages, primitives } from "@specly/db/schema";
+import type { IteratorPrimitive, Primitive } from "@specly/shared/types";
 
 import { type SQL, and, eq, notInArray, sql } from "@specly/db";
 import {
   insertPrimitiveSchema,
   iteratorPrimitiveSchema,
   primitiveSchema,
+  rawDescriptionSchema,
   updatePrimitiveSchema,
 } from "@specly/shared/validators/primitives";
 import { z } from "zod";
@@ -61,6 +57,9 @@ export const primitivesRouter = {
           eq(primitives.id, input.id),
           eq(primitives.createdBy, ctx.session.user.id),
         ),
+        with: {
+          chatMessages: true,
+        },
       });
 
       if (!result) {
@@ -120,27 +119,37 @@ export const primitivesRouter = {
   update: protectedProcedure
     .input(updatePrimitiveSchema)
     .mutation(async ({ ctx, input }) => {
-      if (input.payload.name) {
-        const isUnique = await ctx.db.query.primitives.findFirst({
-          where: and(
-            eq(primitives.name, input.payload.name),
-            eq(primitives.flowId, input.where.flowId),
-            eq(primitives.createdBy, ctx.session.user.id),
-          ),
-        });
-
-        if (isUnique && isUnique.id !== input.where.id) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Primitive name already exists",
-          });
-        }
-      }
-
       const where: SQL[] = [
         eq(primitives.id, input.where.id),
         eq(primitives.createdBy, ctx.session.user.id),
       ];
+
+      const existingPrimitive = await ctx.db.query.primitives.findFirst({
+        where: and(...where),
+      });
+
+      if (!existingPrimitive) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Primitive not found",
+        });
+      }
+
+      if (input.payload.name) {
+        const isUnique = await ctx.db.query.primitives.findFirst({
+          where: and(
+            eq(primitives.name, input.payload.name),
+            eq(primitives.flowId, existingPrimitive.flowId),
+          ),
+        });
+
+        if (isUnique) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Primitive name already exists in this flow",
+          });
+        }
+      }
 
       const savedPrimitive = await ctx.db.query.primitives.findFirst({
         where: and(...where),
@@ -196,113 +205,33 @@ export const primitivesRouter = {
 
       return updatedPrimitive[0];
     }),
-  updateInput: protectedProcedure
+  addMessage: protectedProcedure
     .input(
       z.object({
-        id: z.string(),
-        inputId: z.string(),
-        name: z.string().optional(),
-        testValue: z.union([z.string(), z.number()]).nullable().optional(),
+        message: z.string(),
+        rawMessage: rawDescriptionSchema.array().optional(),
+        role: z.enum(["user", "assistant"]),
+        primitiveId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      function updateInputById(
-        inputs: Input[],
-        id: string,
-        name?: string,
-        testValue?: string | number | null,
-      ): Input[] {
-        return inputs.map((input) =>
-          input.id === id
-            ? {
-                ...input,
-                name: name ?? input.name,
-                testValue: testValue ?? input.testValue,
-              }
-            : input,
-        );
-      }
+      const result = await ctx.db
+        .insert(chatMessages)
+        .values({
+          message: input.message,
+          rawMessage: input.rawMessage,
+          role: input.role,
+          primitiveId: input.primitiveId,
+        })
+        .returning({ id: chatMessages.id });
 
-      const result = (await ctx.db.query.primitives.findFirst({
-        where: and(
-          eq(primitives.id, input.id),
-          eq(primitives.type, "route"),
-          eq(primitives.createdBy, ctx.session.user.id),
-        ),
-      })) as RoutePrimitive;
-
-      if (!result) {
+      if (!result[0]) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Primitive not found",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to add message",
         });
       }
 
-      const updatedInputs = updateInputById(
-        result.metadata.inputs ?? [],
-        input.inputId,
-        input.name,
-        input.testValue,
-      );
-
-      await ctx.db
-        .update(primitives)
-        .set({
-          metadata: sql`${{
-            ...result.metadata,
-            inputs: [...updatedInputs],
-          }}::jsonb`,
-        })
-        .where(
-          and(
-            eq(primitives.id, input.id),
-            eq(primitives.createdBy, ctx.session.user.id),
-          ),
-        );
-
-      return updatedInputs;
-    }),
-  addInput: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        inputId: z.string(),
-        name: z.string(),
-        type: z.enum(["text", "number"]),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const result = (await ctx.db.query.primitives.findFirst({
-        where: and(
-          eq(primitives.id, input.id),
-          eq(primitives.type, "route"),
-          eq(primitives.createdBy, ctx.session.user.id),
-        ),
-      })) as RoutePrimitive;
-
-      if (!result) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Primitive not found",
-        });
-      }
-
-      await ctx.db
-        .update(primitives)
-        .set({
-          metadata: sql`${{
-            ...result.metadata,
-            inputs: [
-              ...(result.metadata.inputs ? result.metadata.inputs : []),
-              { id: input.inputId, name: input.name, type: input.type },
-            ],
-          }}::jsonb`,
-        })
-        .where(
-          and(
-            eq(primitives.id, input.id),
-            eq(primitives.createdBy, ctx.session.user.id),
-          ),
-        );
+      return true;
     }),
 };

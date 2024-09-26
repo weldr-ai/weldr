@@ -18,7 +18,7 @@ export function PrimitivesMenu() {
   return (
     <>
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <div
             className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
             onDragStart={(event) => onDragStart(event, "function")}
@@ -33,7 +33,7 @@ export function PrimitivesMenu() {
       </Tooltip>
 
       {/* <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger asChild>
             <div
               className="inline-flex items-center justify-center h-9 w-11 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
               onDragStart={(event) => onDragStart(event, "iterator")}
@@ -48,7 +48,7 @@ export function PrimitivesMenu() {
         </Tooltip>
 
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger asChild>
             <div
               className="inline-flex items-center justify-center h-9 w-11 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
               onDragStart={(event) => onDragStart(event, "matcher")}
@@ -63,7 +63,7 @@ export function PrimitivesMenu() {
         </Tooltip> */}
 
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <div
             className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
             onDragStart={(event) => onDragStart(event, "response")}

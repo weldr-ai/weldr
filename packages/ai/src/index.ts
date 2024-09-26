@@ -1,4 +1,3 @@
-export * from "./agents";
-export * from "./generator";
-export * from "./prompts";
+export * from "../../../apps/dashboard/src/lib/ai/prompts";
+export * from "./";
 export * from "./utils";

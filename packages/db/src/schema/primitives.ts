@@ -14,41 +14,31 @@ import {
 import { users } from "./auth";
 import { flows } from "./flows";
 
-export const messageFrom = pgEnum("message_from", ["user", "ai"]);
+export const roles = pgEnum("roles", ["user", "assistant"]);
 
-export const functionChatMessages = pgTable("function_chat_messages", {
+export const chatMessages = pgTable("chat_messages", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
-  messageFrom: messageFrom("message_from").notNull(),
+  role: roles("message_from").notNull(),
   message: text("message").notNull(),
-  rawMessage: jsonb("raw_message").$type<RawDescription[]>().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const functionPrimitive = pgTable("function_primitives", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  name: text("name").notNull(),
-  description: text("description"),
-  rawDescription: jsonb("raw_description").$type<RawDescription[]>().notNull(),
-  inputs: jsonb("inputs").$type<Record<string, string>>().notNull(),
-  outputs: jsonb("outputs").$type<Record<string, string>>().notNull(),
-  positionX: integer("position_x").default(0).notNull(),
-  positionY: integer("position_y").default(0).notNull(),
+  rawMessage: jsonb("raw_message").$type<RawDescription[]>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-  flowId: text("flow_id")
-    .references(() => flows.id, { onDelete: "cascade" })
-    .notNull(),
-  createdBy: text("created_by")
-    .references(() => users.id, { onDelete: "cascade" })
+  primitiveId: text("primitive_id")
+    .references(() => primitives.id)
     .notNull(),
 });
+
+export const chatMessageRelations = relations(chatMessages, ({ one }) => ({
+  primitive: one(primitives, {
+    fields: [chatMessages.primitiveId],
+    references: [primitives.id],
+  }),
+}));
 
 export const primitiveTypes = pgEnum("primitive_types", [
   "route",
@@ -91,7 +81,7 @@ export const primitives = pgTable(
   }),
 );
 
-export const primitivesRelations = relations(primitives, ({ one }) => ({
+export const primitivesRelations = relations(primitives, ({ one, many }) => ({
   flow: one(flows, {
     fields: [primitives.flowId],
     references: [flows.id],
@@ -104,4 +94,5 @@ export const primitivesRelations = relations(primitives, ({ one }) => ({
     fields: [primitives.parentId],
     references: [primitives.id],
   }),
+  chatMessages: many(chatMessages),
 }));

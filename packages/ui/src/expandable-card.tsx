@@ -56,7 +56,7 @@ const ExpandableCardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 px-4 pt-4", className)}
+    className={cn("flex flex-col px-4 pt-4", className)}
     {...props}
   />
 ));

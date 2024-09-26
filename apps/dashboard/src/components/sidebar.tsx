@@ -54,7 +54,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
   const [createWorkspaceDialogOpen, setCreateWorkspaceDialogOpen] =
     useState<boolean>(false);
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   return (
     <div className="flex ">
@@ -124,7 +124,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
         >
           <div className="flex flex-col items-center space-y-2">
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   className={cn({
                     "bg-accent border": activeSection === "components",
@@ -145,7 +145,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
             </Tooltip>
 
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   className={cn({
                     "bg-accent border": activeSection === "routes",
@@ -166,7 +166,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
             </Tooltip>
 
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   className={cn({
                     "bg-accent border": activeSection === "workflows",
@@ -187,7 +187,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
             </Tooltip>
 
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   className={cn({
                     "bg-accent border": activeSection === "resources",
@@ -258,7 +258,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
               {workspace.name}
             </Button>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   className="text-muted-foreground hover:bg-transparent"
                   size="icon"

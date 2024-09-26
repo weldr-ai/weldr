@@ -13,83 +13,30 @@ import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
 import { cn } from "@specly/ui/utils";
 
-import type {
-  FunctionPrimitive,
-  Input,
-  RawDescription,
-  ResponsePrimitive,
-} from "@specly/shared/types";
+import type { Input, RawDescription } from "@specly/shared/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
-import { $createInputNode, InputNode } from "./nodes/input-node";
 import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
-import { InputsPlugin } from "./plugins/input-plugin";
 
-interface EditorBaseProps {
+interface EditorProps {
   id: string;
-  type: "description" | "inputs" | "chat";
   placeholder?: string;
   onChange: (editorState: EditorState) => void;
-  onError: (error: Error, editor: LexicalEditor) => void;
+  onError?: (error: Error, editor: LexicalEditor) => void;
   className?: string;
   editorRef?: { current: null | LexicalEditor };
+  rawMessage?: RawDescription[];
+  inputs?: Input[];
 }
-
-type EditorProps =
-  | ({
-      type: "description";
-      primitive: FunctionPrimitive | ResponsePrimitive;
-      inputs: Input[];
-    } & EditorBaseProps)
-  | ({
-      type: "inputs";
-      inputs: Input[];
-    } & EditorBaseProps)
-  | ({
-      type: "chat";
-      rawMessage: RawDescription[];
-      inputs: Input[];
-    } & EditorBaseProps);
 
 export function Editor({ ...props }: EditorProps) {
   const nodes = [];
-
-  switch (props.type) {
-    case "inputs":
-      nodes.push(InputNode);
-      break;
-    case "description":
-    case "chat":
-      nodes.push(ReferenceNode);
-      break;
-  }
+  nodes.push(ReferenceNode);
 
   function $getEditorState() {
     const root = $getRoot();
     const paragraph = $createParagraphNode();
 
-    if (props.type === "inputs") {
-      for (const input of props.inputs) {
-        paragraph.append(
-          $createInputNode(
-            props.id,
-            input.id,
-            input.name,
-            input.type as "text" | "number",
-            input.testValue,
-          ),
-        );
-        paragraph.append($createTextNode(" "));
-      }
-    }
-
-    const rawDescription =
-      (props.type === "description"
-        ? props.primitive.metadata.rawDescription
-        : props.type === "chat"
-          ? props.rawMessage
-          : undefined) ?? [];
-
-    for (const item of rawDescription) {
+    for (const item of props.rawMessage ?? []) {
       if (item.type === "text") {
         paragraph.append($createTextNode(item.value));
       } else if (item.type === "reference") {
@@ -110,7 +57,7 @@ export function Editor({ ...props }: EditorProps) {
   const initialConfig: InitialConfigType = {
     namespace: `editor-${props.id}`,
     editorState: $getEditorState,
-    onError: props.onError,
+    onError: props.onError ?? (() => {}),
     nodes,
     editable: true,
   };
@@ -118,19 +65,7 @@ export function Editor({ ...props }: EditorProps) {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <div className="flex size-full">
-        {props.type === "inputs" && <InputsPlugin id={props.id} />}
-        {(props.type === "description" || props.type === "chat") && (
-          <ReferencesPlugin
-            inputs={props.inputs ?? []}
-            initialResources={
-              props.type === "description"
-                ? props.primitive?.metadata.resources?.map(
-                    (resource) => resource.id,
-                  ) ?? []
-                : []
-            }
-          />
-        )}
+        <ReferencesPlugin inputs={props.inputs ?? []} />
         <RichTextPlugin
           contentEditable={
             <ContentEditable

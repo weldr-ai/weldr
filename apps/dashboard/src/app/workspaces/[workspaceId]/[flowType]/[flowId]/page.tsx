@@ -35,6 +35,7 @@ export default async function WorkflowPage({
           updatedAt: primitive.updatedAt,
           createdBy: primitive.createdBy,
           flowId: primitive.flowId,
+          chatMessages: primitive.chatMessages,
         } as Primitive,
       }));
 

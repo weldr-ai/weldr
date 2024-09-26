@@ -90,7 +90,11 @@ export const flowsRouter = {
           eq(flows.createdBy, ctx.session.user.id),
         ),
         with: {
-          primitives: true,
+          primitives: {
+            with: {
+              chatMessages: true,
+            },
+          },
           edges: true,
         },
       });
@@ -160,7 +164,7 @@ export const flowsRouter = {
         config: {
           method: (result[0].metadata as RouteMetadata).method,
           path: (result[0].metadata as RouteMetadata).path,
-          inputs: (result[0].metadata as RouteMetadata).inputs,
+          input: (result[0].metadata as RouteMetadata).input,
         },
       };
     }),

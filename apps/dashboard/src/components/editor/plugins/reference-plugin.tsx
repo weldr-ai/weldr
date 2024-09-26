@@ -20,6 +20,7 @@ import { useCallback, useMemo, useState } from "react";
 import { ScrollArea } from "@specly/ui/scroll-area";
 import { cn } from "@specly/ui/utils";
 
+import { createId } from "@paralleldrive/cuid2";
 import type { Input, VarType } from "@specly/shared/types";
 import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
 import * as ReactDOM from "react-dom";
@@ -83,16 +84,14 @@ export class ReferenceOption extends MenuOption {
 
 export function ReferencesPlugin({
   inputs,
-  initialResources,
 }: {
   inputs: Input[];
-  initialResources: string[];
 }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
   const [currentResources, setCurrentResources] = useState<Set<string>>(
-    new Set(initialResources),
+    new Set(),
   );
 
   const { data: workspaceResources } = api.resources.getAll.useQuery({
@@ -151,18 +150,19 @@ export function ReferencesPlugin({
     return inputs.map(
       (input) =>
         new ReferenceOption(
-          input.id,
-          input.name,
+          createId(),
+          // FIXME: input.name,
+          "",
           "input",
           {
             icon: input.type === "number" ? "number-icon" : "text-icon",
-            keywords: ["input", input.name],
+            // FIXME: keywords: ["input", input.name],
+            keywords: ["input", ""],
             onSelect: (queryString) => {
               console.log(queryString);
             },
           },
           input.type,
-          input.testValue,
         ),
     );
   }, [inputs]);
@@ -200,7 +200,7 @@ export function ReferencesPlugin({
                     console.log(queryString);
                   },
                 },
-                column.type === "text" ? "text" : "number",
+                column.type === "string" ? "string" : "number",
               ),
             );
           }

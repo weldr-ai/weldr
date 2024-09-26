@@ -1,7 +1,7 @@
 import "@specly/ui/globals.css";
 
 import type { Metadata } from "next";
-import { Poppins as FontSans } from "next/font/google";
+import { Poppins } from "next/font/google";
 
 import { ThemeProvider } from "@specly/ui/theme-provider";
 import { Toaster } from "@specly/ui/toaster";
@@ -11,7 +11,7 @@ import { TooltipProvider } from "@specly/ui/tooltip";
 import { QueryProvider } from "~/components/query-client-provider";
 import { TRPCReactProvider } from "~/lib/trpc/react";
 
-const fontSans = FontSans({
+const poppins = Poppins({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-sans",
@@ -33,7 +33,7 @@ export default async function RootLayout({
       <body
         className={cn(
           "flex min-h-screen w-full flex-col bg-background font-sans antialiased",
-          fontSans.variable,
+          poppins.variable,
         )}
       >
         <ThemeProvider
