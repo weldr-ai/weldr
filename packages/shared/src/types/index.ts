@@ -32,12 +32,20 @@ import type { workspaceSchema } from "../validators/workspaces";
 
 export type VarType = z.infer<typeof varTypeSchema>;
 
-export type Input = z.infer<typeof inputSchema>;
+export type InputSchema = z.infer<typeof inputSchema>;
 
 export type JsonSchema = z.infer<typeof baseJsonSchema> & {
   properties?: Record<string, JsonSchema>;
   items?: JsonSchema;
 };
+
+export interface FlatInputSchema {
+  path: string;
+  type: VarType;
+  itemsType?: VarType | { [key: string]: FlatInputSchema };
+  required: boolean;
+  description?: string;
+}
 
 export type Output = z.infer<typeof outputSchema>;
 

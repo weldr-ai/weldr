@@ -41,7 +41,12 @@ import {
 } from "@specly/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@specly/ui/tabs";
 import { cn } from "@specly/ui/utils";
-import { Handle, Position, useNodes, useReactFlow } from "@xyflow/react";
+import {
+  Handle,
+  Position,
+  useHandleConnections,
+  useReactFlow,
+} from "@xyflow/react";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
@@ -52,6 +57,7 @@ import {
   ExternalLinkIcon,
   FileTextIcon,
   HashIcon,
+  Loader2,
   Loader2Icon,
   LockIcon,
   PlayCircleIcon,
@@ -62,11 +68,16 @@ import {
   VariableIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import type { FunctionPrimitive, RawDescription } from "@specly/shared/types";
+import type {
+  FlatInputSchema,
+  FunctionPrimitive,
+  JsonSchema,
+  RawDescription,
+} from "@specly/shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
 import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
 import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
@@ -79,6 +90,7 @@ import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { gatherFunctionRequirements } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/react";
+import { flattenInputSchema } from "~/lib/utils";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 import type { ReferenceNode } from "../editor/nodes/reference-node";
 import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
@@ -125,9 +137,6 @@ const validationSchema = z.object({
     .regex(/^(?!.*__).*$/, {
       message: "Name must not contain consecutive underscores",
     }),
-  description: z.string().min(1, {
-    message: "Description is required",
-  }),
 });
 
 export const FunctionNode = memo(
@@ -139,11 +148,34 @@ export const FunctionNode = memo(
     parentId,
   }: FlowNodeProps) => {
     const editorRef = useRef<LexicalEditor>(null);
-    const { deleteElements, setNodes, fitBounds } = useReactFlow<
+    const { deleteElements, updateNodeData, fitBounds, getNode } = useReactFlow<
       FlowNode,
       FlowEdge
     >();
-    const nodes = useNodes<FlowNode>();
+
+    const connections = useHandleConnections({
+      type: "target",
+      nodeId: _data.id,
+    });
+
+    const ancestors = useMemo(() => {
+      return connections.reduce((acc, connection) => {
+        const ancestor = getNode(connection.source);
+        if (ancestor) {
+          acc.push(ancestor);
+        }
+        return acc;
+      }, [] as FlowNode[]);
+    }, [connections, getNode]);
+
+    const passedInputs = ancestors.reduce((acc, ancestor) => {
+      const flatInputSchema = flattenInputSchema(
+        ancestor.data.metadata.inputSchema as JsonSchema,
+      );
+      return acc.concat(flatInputSchema);
+    }, [] as FlatInputSchema[]);
+
+    console.log(passedInputs);
 
     const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
       {
@@ -163,7 +195,6 @@ export const FunctionNode = memo(
       resolver: zodResolver(validationSchema),
       defaultValues: {
         name: data.name ?? undefined,
-        description: data.description ?? undefined,
       },
     });
 
@@ -171,7 +202,6 @@ export const FunctionNode = memo(
       if (data.name) {
         return;
       }
-
       form.setError("name", {
         type: "required",
         message: "Name is required",
@@ -202,14 +232,15 @@ export const FunctionNode = memo(
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
+    const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
+
     const [messages, setMessages] = useState<CoreMessage[]>([
       {
         role: "assistant",
         content:
-          "Hello there! I'm Specly, your AI assistant. How can I help you today?",
+          "Hello there! I'm Specly, your AI builder. What can I build for you today?",
       },
     ]);
-
     const [rawMessages, setRawMessages] = useState<
       (
         | {
@@ -225,7 +256,7 @@ export const FunctionNode = memo(
       {
         role: "assistant",
         content:
-          "Hello there! I'm Specly, your AI assistant. How can I help you today?",
+          "Hello there! I'm Specly, your AI builder. What can I build for you today?",
       },
     ]);
     const [chatMessage, setChatMessage] = useState<string | null>(null);
@@ -266,16 +297,17 @@ export const FunctionNode = memo(
     }
 
     const scrollAreaRef = useRef<HTMLDivElement>(null);
-    const lastMessageRef = useRef<HTMLDivElement>(null);
+    const chatHistoryEndRef = useRef<HTMLDivElement>(null);
 
-    const scrollToBottom = () => {
-      if (lastMessageRef.current && scrollAreaRef.current) {
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+    const scrollToBottom = useCallback(() => {
+      if (chatHistoryEndRef.current && scrollAreaRef.current) {
         const scrollContainer = scrollAreaRef.current.querySelector(
           "[data-radix-scroll-area-viewport]",
         );
         if (scrollContainer) {
           const lastMessageRect =
-            lastMessageRef.current.getBoundingClientRect();
+            chatHistoryEndRef.current.getBoundingClientRect();
           const scrollContainerRect = scrollContainer.getBoundingClientRect();
           const offset =
             lastMessageRect.bottom - scrollContainerRect.bottom + 16;
@@ -285,10 +317,99 @@ export const FunctionNode = memo(
           }
         }
       }
+    }, [messages]);
+
+    useEffect(() => {
+      scrollToBottom();
+    }, [scrollToBottom]);
+
+    const handleOnDetach = async () => {
+      if (parentId) {
+        updateNodeData(data.id, {
+          parentId: null,
+        });
+        await updateFunction.mutateAsync({
+          where: {
+            id: data.id,
+          },
+          payload: {
+            type: "function",
+            parentId: null,
+          },
+        });
+      }
     };
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-    useEffect(scrollToBottom, [messages]);
+    const handleOnSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+
+      const editor = editorRef.current;
+
+      if (editor !== null) {
+        editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+        });
+      }
+
+      if (!chatMessage) {
+        return;
+      }
+
+      const newMessages: CoreMessage[] = [
+        ...messages,
+        {
+          role: "user",
+          content: chatMessage,
+        },
+      ];
+
+      const newRawMessages: (
+        | {
+            role: "user";
+            content: RawDescription[];
+          }
+        | {
+            role: "assistant";
+            content: string;
+          }
+      )[] = [
+        ...rawMessages,
+        {
+          role: "user",
+          content: rawChatMessage,
+        },
+      ];
+
+      setMessages(newMessages);
+      setRawMessages(newRawMessages);
+
+      const result = await gatherFunctionRequirements(newMessages);
+
+      for await (const content of readStreamableValue(result)) {
+        if ((content as string).trim().endsWith("END")) {
+          setIsGeneratingCode(true);
+          break;
+        }
+        setRawMessages([
+          ...newRawMessages,
+          {
+            role: "assistant",
+            content: content as string,
+          },
+        ]);
+        setMessages([
+          ...newMessages,
+          {
+            role: "assistant",
+            content: content as string,
+          },
+        ]);
+      }
+
+      setChatMessage(null);
+      setRawChatMessage([]);
+    };
 
     return (
       <>
@@ -335,43 +456,7 @@ export const FunctionNode = memo(
               <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
               <ContextMenuSeparator />
               {parentId && (
-                <ContextMenuItem
-                  className="text-xs"
-                  onClick={async () => {
-                    const parent = nodes.find((node) => node.id === parentId);
-                    if (parent) {
-                      setNodes(
-                        nodes.map((node) => {
-                          if (node.id === data.id) {
-                            return {
-                              ...node,
-                              parentId: undefined,
-                              extent: undefined,
-                              expandParent: undefined,
-                              position: {
-                                x:
-                                  parent.position.x +
-                                  (parent.measured?.width ?? 0) / 2 -
-                                  150,
-                                y: parent.position.y - 100,
-                              },
-                            };
-                          }
-                          return node;
-                        }),
-                      );
-                      await updateFunction.mutateAsync({
-                        where: {
-                          id: data.id,
-                        },
-                        payload: {
-                          type: "function",
-                          parentId: null,
-                        },
-                      });
-                    }
-                  }}
-                >
+                <ContextMenuItem className="text-xs" onClick={handleOnDetach}>
                   <CircleMinus className="mr-3 size-4 text-muted-foreground" />
                   Detach
                 </ContextMenuItem>
@@ -532,11 +617,6 @@ export const FunctionNode = memo(
                             <div
                               className="flex items-start"
                               key={JSON.stringify(rawMessage.content)}
-                              ref={
-                                idx === messages.length - 1
-                                  ? lastMessageRef
-                                  : null
-                              }
                             >
                               <Avatar className="size-6 rounded-md">
                                 <AvatarImage src={undefined} alt="User" />
@@ -579,11 +659,6 @@ export const FunctionNode = memo(
                             <div
                               className="flex items-start"
                               key={rawMessage.content as string}
-                              ref={
-                                idx === messages.length - 1
-                                  ? lastMessageRef
-                                  : null
-                              }
                             >
                               <Avatar className="size-6 rounded-md">
                                 <AvatarImage src="/logo.svg" alt="User" />
@@ -595,89 +670,20 @@ export const FunctionNode = memo(
                           )}
                         </>
                       ))}
+                      {isGeneratingCode && (
+                        <div className="flex items-center justify-center">
+                          <Loader2 className="size-4 animate-spin" />
+                        </div>
+                      )}
+                      <div ref={chatHistoryEndRef} />
                     </div>
                   </ScrollArea>
                   <div className="mt-auto">
-                    <form
-                      className="relative"
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-
-                        const editor = editorRef.current;
-
-                        if (editor !== null) {
-                          editor.update(() => {
-                            const root = $getRoot();
-                            root.clear();
-                          });
-                        }
-
-                        if (!chatMessage) {
-                          return;
-                        }
-
-                        const newMessages: CoreMessage[] = [
-                          ...messages,
-                          {
-                            role: "user",
-                            content: chatMessage,
-                          },
-                        ];
-
-                        const newRawMessages: (
-                          | {
-                              role: "user";
-                              content: RawDescription[];
-                            }
-                          | {
-                              role: "assistant";
-                              content: string;
-                            }
-                        )[] = [
-                          ...rawMessages,
-                          {
-                            role: "user",
-                            content: rawChatMessage,
-                          },
-                        ];
-
-                        setMessages(newMessages);
-                        setRawMessages(newRawMessages);
-
-                        const result =
-                          await gatherFunctionRequirements(newMessages);
-
-                        for await (const content of readStreamableValue(
-                          result,
-                        )) {
-                          if ((content as string).trim().endsWith("END")) {
-                            console.log("END");
-                            break;
-                          }
-                          setRawMessages([
-                            ...newRawMessages,
-                            {
-                              role: "assistant",
-                              content: content as string,
-                            },
-                          ]);
-                          setMessages([
-                            ...newMessages,
-                            {
-                              role: "assistant",
-                              content: content as string,
-                            },
-                          ]);
-                        }
-
-                        setChatMessage(null);
-                        setRawChatMessage([]);
-                      }}
-                    >
+                    <form className="relative" onSubmit={handleOnSubmit}>
                       <Editor
                         editorRef={editorRef}
                         id={data.id}
-                        inputs={[]}
+                        inputSchema={passedInputs}
                         rawMessage={rawChatMessage}
                         placeholder="Create, refine, or fix your function with AI..."
                         onChange={onChatChange}

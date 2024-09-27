@@ -164,7 +164,7 @@ export const flowsRouter = {
         config: {
           method: (result[0].metadata as RouteMetadata).method,
           path: (result[0].metadata as RouteMetadata).path,
-          input: (result[0].metadata as RouteMetadata).input,
+          inputSchema: (result[0].metadata as RouteMetadata).inputSchema,
         },
       };
     }),

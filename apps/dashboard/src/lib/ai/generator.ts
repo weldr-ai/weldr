@@ -1,7 +1,7 @@
 "use server";
 
 import { createOpenAI } from "@ai-sdk/openai";
-import type { Input } from "@specly/shared/types";
+import type { InputSchema } from "@specly/shared/types";
 import { type CoreMessage, streamText } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import OpenAI from "openai";
@@ -91,7 +91,7 @@ export async function generateInputsSchemas({
       payload: {
         type: "route",
         metadata: {
-          inputs: JSON.parse(message.parsed.jsonSchema) as Input,
+          inputSchema: JSON.parse(message.parsed.jsonSchema) as InputSchema,
           validationSchema: message.parsed.zodSchema,
         },
       },
