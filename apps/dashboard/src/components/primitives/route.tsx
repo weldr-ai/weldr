@@ -50,7 +50,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
 import { createId } from "@paralleldrive/cuid2";
-import type { Input as IInput, RoutePrimitive } from "@specly/shared/types";
+import type { InputSchema, RoutePrimitive } from "@specly/shared/types";
 import { updateRouteFlowSchema } from "@specly/shared/validators/flows";
 import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
 import {
@@ -69,7 +69,7 @@ import {
   generateInputsSchemas,
 } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/react";
-import { inputSchemaToTree } from "~/lib/utils";
+import { inputSchemaToTreeData } from "~/lib/utils";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 
 export const Route = memo(
@@ -119,7 +119,7 @@ export const Route = memo(
         id: createId(),
         role: "assistant",
         content:
-          "Hello there! I'm Specly, your AI assistant. How can I help you today?",
+          "Hello there! I'm Specly, your AI builder. What can I build for you today?",
       },
       ...(data.chatMessages?.map((message) => ({
         id: message.id,
@@ -195,7 +195,6 @@ export const Route = memo(
 
       if (shouldGenerateSchemas) {
         setIsGeneratingSchemas(true);
-        console.log("Generating schemas");
         const result = await generateInputsSchemas({
           prompt: assistantMessage,
           primitiveId: data.id,
@@ -204,9 +203,9 @@ export const Route = memo(
         let finalMessage = "";
 
         if (result) {
-          finalMessage = "Successfully generated schemas";
+          finalMessage = "Successfully generated input schema";
         } else {
-          finalMessage = "Failed to generate schemas";
+          finalMessage = "Failed to generate input schema";
         }
 
         setMessages([
@@ -228,20 +227,22 @@ export const Route = memo(
       }
     };
 
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
-    const lastMessageRef = useRef<HTMLDivElement>(null);
+    const inputTree = inputSchemaToTreeData(
+      data.metadata.inputSchema as InputSchema,
+    );
 
-    const inputTree = inputSchemaToTree((data.metadata.input as IInput) ?? {});
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const chatHistoryEndRef = useRef<HTMLDivElement>(null);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     const scrollToBottom = useCallback(() => {
-      if (lastMessageRef.current && scrollAreaRef.current) {
+      if (chatHistoryEndRef.current && scrollAreaRef.current) {
         const scrollContainer = scrollAreaRef.current.querySelector(
           "[data-radix-scroll-area-viewport]",
         );
         if (scrollContainer) {
           const lastMessageRect =
-            lastMessageRef.current.getBoundingClientRect();
+            chatHistoryEndRef.current.getBoundingClientRect();
           const scrollContainerRect = scrollContainer.getBoundingClientRect();
           const offset =
             lastMessageRect.bottom - scrollContainerRect.bottom + 16;
@@ -559,11 +560,6 @@ export const Route = memo(
                                     id={message.id}
                                     className="flex items-start"
                                     key={JSON.stringify(message.content)}
-                                    ref={
-                                      idx === messages.length - 1
-                                        ? lastMessageRef
-                                        : null
-                                    }
                                   >
                                     <Avatar className="size-6 rounded-md">
                                       <AvatarImage src={undefined} alt="User" />
@@ -580,16 +576,23 @@ export const Route = memo(
                                     id={message.id}
                                     className="flex items-start"
                                     key={message.content as string}
-                                    ref={
-                                      idx === messages.length - 1
-                                        ? lastMessageRef
-                                        : null
-                                    }
                                   >
                                     <Avatar className="size-6 rounded-md">
                                       <AvatarImage src="/logo.svg" alt="User" />
                                     </Avatar>
-                                    <p className="text-sm ml-3 select-text cursor-text">
+                                    <p
+                                      className={cn(
+                                        "text-sm ml-3 select-text cursor-text",
+                                        {
+                                          "text-success":
+                                            message.content ===
+                                            "Successfully generated input schema",
+                                          "text-destructive":
+                                            message.content ===
+                                            "Failed to generate input schema",
+                                        },
+                                      )}
+                                    >
                                       {message.content as string}
                                     </p>
                                   </div>
@@ -601,6 +604,7 @@ export const Route = memo(
                                 <Loader2 className="size-4 animate-spin" />
                               </div>
                             )}
+                            <div ref={chatHistoryEndRef} />
                           </div>
                         </ScrollArea>
                         <div className="mt-auto">
@@ -653,10 +657,10 @@ export const Route = memo(
                   <span className="text-sm">Input</span>
                   {inputTree.length === 0 ? (
                     <div className="flex size-full text-xs items-center justify-center text-muted-foreground">
-                      Chat with AI to define your route inputs
+                      Chat with Specly to define your route inputs
                     </div>
                   ) : (
-                    <TreeView data={inputTree} />
+                    <TreeView data={inputTree} expandAll={true} />
                   )}
                 </div>
               </ResizablePanel>

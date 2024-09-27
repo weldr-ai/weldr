@@ -13,7 +13,7 @@ import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
 import { cn } from "@specly/ui/utils";
 
-import type { Input, RawDescription } from "@specly/shared/types";
+import type { FlatInputSchema, RawDescription } from "@specly/shared/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
 
@@ -25,7 +25,7 @@ interface EditorProps {
   className?: string;
   editorRef?: { current: null | LexicalEditor };
   rawMessage?: RawDescription[];
-  inputs?: Input[];
+  inputSchema?: FlatInputSchema[];
 }
 
 export function Editor({ ...props }: EditorProps) {
@@ -65,7 +65,7 @@ export function Editor({ ...props }: EditorProps) {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <div className="flex size-full">
-        <ReferencesPlugin inputs={props.inputs ?? []} />
+        <ReferencesPlugin inputSchema={props.inputSchema ?? []} />
         <RichTextPlugin
           contentEditable={
             <ContentEditable

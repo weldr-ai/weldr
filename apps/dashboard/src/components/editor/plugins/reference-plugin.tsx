@@ -21,7 +21,7 @@ import { ScrollArea } from "@specly/ui/scroll-area";
 import { cn } from "@specly/ui/utils";
 
 import { createId } from "@paralleldrive/cuid2";
-import type { Input, VarType } from "@specly/shared/types";
+import type { FlatInputSchema, VarType } from "@specly/shared/types";
 import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
 import * as ReactDOM from "react-dom";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
@@ -83,9 +83,9 @@ export class ReferenceOption extends MenuOption {
 }
 
 export function ReferencesPlugin({
-  inputs,
+  inputSchema,
 }: {
-  inputs: Input[];
+  inputSchema: FlatInputSchema[];
 }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
@@ -147,17 +147,15 @@ export function ReferencesPlugin({
   );
 
   const inputOptions: ReferenceOption[] = useMemo(() => {
-    return inputs.map(
+    return inputSchema.map(
       (input) =>
         new ReferenceOption(
           createId(),
-          // FIXME: input.name,
-          "",
+          input.path,
           "input",
           {
             icon: input.type === "number" ? "number-icon" : "text-icon",
-            // FIXME: keywords: ["input", input.name],
-            keywords: ["input", ""],
+            keywords: ["input", input.path],
             onSelect: (queryString) => {
               console.log(queryString);
             },
@@ -165,7 +163,7 @@ export function ReferencesPlugin({
           input.type,
         ),
     );
-  }, [inputs]);
+  }, [inputSchema]);
 
   const options = useMemo(() => {
     const options: ReferenceOption[] = [...inputOptions];

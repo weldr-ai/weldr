@@ -15,7 +15,6 @@
     "@hookform/resolvers": "^3.3.4",
     "@lexical/react": "^0.16.0",
     "@paralleldrive/cuid2": "^2.2.2",
-    "@specly/ai": "workspace:*",
     "@specly/api": "workspace:*",
     "@specly/auth": "workspace:*",
     "@specly/db": "workspace:*",

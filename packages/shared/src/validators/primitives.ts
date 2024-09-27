@@ -64,7 +64,7 @@ export const primitiveBaseSchema = z.object({
 });
 
 export const baseJsonSchema = z.object({
-  type: varTypeSchema.optional(),
+  type: varTypeSchema,
   description: z.string().optional(),
   required: z.string().array().optional(),
   enum: z.any().array().optional(),
@@ -100,8 +100,8 @@ export const outputSchema = jsonSchema.and(
 );
 
 const baseMetadataSchema = z.object({
-  inputs: inputSchema.optional(),
-  outputs: outputSchema.optional(),
+  inputSchema: inputSchema.optional(),
+  outputSchema: outputSchema.optional(),
   generatedCode: z.string().nullable().optional(),
   isCodeUpdated: z.boolean().default(false).optional(),
   isLocked: z.boolean().default(false).optional(),
@@ -139,7 +139,7 @@ export const functionPrimitiveSchema = primitiveBaseSchema.extend({
 export const routePrimitiveMetadataSchema = z.object({
   method: z.enum(["get", "post", "patch", "delete"]),
   path: z.string(),
-  input: inputSchema.optional(),
+  inputSchema: inputSchema.optional(),
   validationSchema: z.string().optional(),
 });
 
@@ -150,7 +150,7 @@ export const routePrimitiveSchema = primitiveBaseSchema.extend({
 
 export const workflowPrimitiveMetadataSchema = z.object({
   triggerType: z.enum(["webhook", "schedule"]),
-  input: inputSchema.optional(),
+  inputSchema: inputSchema.optional(),
   validationSchema: z.string().optional(),
 });
 
@@ -276,7 +276,7 @@ export const updateRouteMetadataSchema = baseMetadataSchema.extend({
       return `/${path.trim()}`;
     })
     .optional(),
-  input: inputSchema.optional(),
+  inputSchema: inputSchema.optional(),
   validationSchema: z.string().optional(),
 });
 
