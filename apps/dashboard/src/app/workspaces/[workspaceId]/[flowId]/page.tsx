@@ -1,17 +1,20 @@
-import type { Primitive } from "@specly/shared/types";
-import { notFound } from "next/navigation";
+import type { Flow, Primitive } from "@specly/shared/types";
+import { TRPCError } from "@trpc/server";
+import { notFound, redirect } from "next/navigation";
 
 import { FlowBuilder } from "~/components/flow-builder";
 import { api } from "~/lib/trpc/rsc";
 import type { FlowEdge, FlowNode } from "~/types";
 
-export default async function WorkflowPage({
+export default async function FlowPage({
   params,
 }: {
-  params: { flowType: string; flowId: string };
-}): Promise<JSX.Element> {
+  params: { flowId: string };
+}): Promise<JSX.Element | undefined> {
   try {
-    const flow = await api.flows.getById({ id: params.flowId });
+    const flow = await api.flows.getByIdWithAssociatedData({
+      id: params.flowId,
+    });
 
     const initialNodes: FlowNode[] = flow.primitives
       .sort((a, b) =>
@@ -21,7 +24,7 @@ export default async function WorkflowPage({
         id: primitive.id,
         type: primitive.type,
         dragHandle: ".drag-handle",
-        deletable: primitive.type !== "route" && primitive.type !== "workflow",
+        deletable: primitive.type !== "response",
         position: { x: primitive.positionX, y: primitive.positionY },
         parentId: primitive.parentId ?? undefined,
         extent: primitive.parentId ? "parent" : undefined,
@@ -35,7 +38,6 @@ export default async function WorkflowPage({
           updatedAt: primitive.updatedAt,
           createdBy: primitive.createdBy,
           flowId: primitive.flowId,
-          chatMessages: primitive.chatMessages,
         } as Primitive,
       }));
 
@@ -51,13 +53,25 @@ export default async function WorkflowPage({
     return (
       <div className="flex size-full">
         <FlowBuilder
-          flowId={flow.id}
+          flow={flow as Flow}
           initialNodes={initialNodes}
           initialEdges={initialEdges}
         />
       </div>
     );
   } catch (error) {
-    notFound();
+    if (error instanceof TRPCError) {
+      switch (error.code) {
+        // biome-ignore lint/suspicious/noFallthroughSwitchClause: notFound function already returns
+        case "NOT_FOUND":
+          notFound();
+        case "UNAUTHORIZED":
+        // biome-ignore lint/suspicious/noFallthroughSwitchClause: redirect function already returns
+        case "FORBIDDEN":
+          redirect("/");
+        default:
+          console.error(error);
+      }
+    }
   }
 }

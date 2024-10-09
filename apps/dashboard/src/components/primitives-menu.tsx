@@ -1,4 +1,4 @@
-import { CornerDownLeftIcon } from "lucide-react";
+import { CornerDownLeftIcon, RegexIcon, RepeatIcon } from "lucide-react";
 import type React from "react";
 
 import type { PrimitiveType } from "@specly/shared/types";
@@ -27,40 +27,40 @@ export function PrimitivesMenu() {
             <LambdaIcon className="size-4" />
           </div>
         </TooltipTrigger>
-        <TooltipContent side="left" className="bg-muted border">
+        <TooltipContent side="top" className="bg-muted border">
           <p>Function</p>
         </TooltipContent>
       </Tooltip>
 
-      {/* <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className="inline-flex items-center justify-center h-9 w-11 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
-              onDragStart={(event) => onDragStart(event, "iterator")}
-              draggable
-            >
-              <RepeatIcon className="size-4" />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent className="bg-muted">
-            <p>Iterator</p>
-          </TooltipContent>
-        </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+            // onDragStart={(event) => onDragStart(event, "iterator")}
+            draggable
+          >
+            <RepeatIcon className="size-4" />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent className="bg-muted">
+          <p>Iterator</p>
+        </TooltipContent>
+      </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className="inline-flex items-center justify-center h-9 w-11 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
-              onDragStart={(event) => onDragStart(event, "matcher")}
-              draggable
-            >
-              <RegexIcon className="size-4" />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent className="bg-muted">
-            <p>Matcher</p>
-          </TooltipContent>
-        </Tooltip> */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+            // onDragStart={(event) => onDragStart(event, "matcher")}
+            draggable
+          >
+            <RegexIcon className="size-4" />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent className="bg-muted">
+          <p>Matcher</p>
+        </TooltipContent>
+      </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
@@ -72,7 +72,7 @@ export function PrimitivesMenu() {
             <CornerDownLeftIcon className="size-4" />
           </div>
         </TooltipTrigger>
-        <TooltipContent side="left" className="bg-muted border">
+        <TooltipContent side="top" className="bg-muted border">
           <p>Response</p>
         </TooltipContent>
       </Tooltip>

@@ -1,27 +1,35 @@
 import type { z } from "zod";
-import type { edgeSchema } from "../validators/edges";
-import type { flowSchema, flowTypesSchema } from "../validators/flows";
 import type {
   baseJsonSchema,
+  conversationMessageSchema,
+  conversationSchema,
+  inputSchema,
+  outputSchema,
+  rawDescriptionSchema,
+  varTypeSchema,
+} from "../validators/common";
+import type { edgeSchema } from "../validators/edges";
+import type {
+  componentFlowSchema,
+  endpointFlowMetadataSchema,
+  endpointFlowSchema,
+  flowSchema,
+  flowTypesSchema,
+  taskFlowMetadataSchema,
+  taskFlowSchema,
+} from "../validators/flows";
+import type {
   functionPrimitiveMetadataSchema,
   functionPrimitiveSchema,
-  inputSchema,
   iteratorPrimitiveMetadataSchema,
   iteratorPrimitiveSchema,
   matcherPrimitiveMetadataSchema,
   matcherPrimitiveSchema,
-  outputSchema,
   primitiveBaseSchema,
   primitiveMetadataSchema,
   primitiveSchema,
-  rawDescriptionSchema,
   responsePrimitiveMetadataSchema,
   responsePrimitiveSchema,
-  routePrimitiveMetadataSchema,
-  routePrimitiveSchema,
-  varTypeSchema,
-  workflowPrimitiveMetadataSchema,
-  workflowPrimitiveSchema,
 } from "../validators/primitives";
 import type {
   resourceMetadataSchema,
@@ -31,8 +39,6 @@ import type {
 import type { workspaceSchema } from "../validators/workspaces";
 
 export type VarType = z.infer<typeof varTypeSchema>;
-
-export type InputSchema = z.infer<typeof inputSchema>;
 
 export type JsonSchema = z.infer<typeof baseJsonSchema> & {
   properties?: Record<string, JsonSchema>;
@@ -47,39 +53,44 @@ export interface FlatInputSchema {
   description?: string;
 }
 
-export type Output = z.infer<typeof outputSchema>;
+export type InputSchema = z.infer<typeof inputSchema>;
+export type OutputSchema = z.infer<typeof outputSchema>;
 
 export type Workspace = z.infer<typeof workspaceSchema>;
 
+export type EndpointFlowMetadata = z.infer<typeof endpointFlowMetadataSchema>;
+export type TaskFlowMetadata = z.infer<typeof taskFlowMetadataSchema>;
+export type ComponentFlowMetadata = z.infer<typeof componentFlowSchema>;
+
+export type EndpointFlow = z.infer<typeof endpointFlowSchema>;
+export type TaskFlow = z.infer<typeof taskFlowSchema>;
+
 export type FlowType = z.infer<typeof flowTypesSchema>;
 export type Flow = z.infer<typeof flowSchema>;
+export type FlowMetadata =
+  | ComponentFlowMetadata
+  | EndpointFlowMetadata
+  | TaskFlowMetadata;
 
 export type Edge = z.infer<typeof edgeSchema>;
+
+export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
+export type Conversation = z.infer<typeof conversationSchema>;
 
 export type Resource = z.infer<typeof resourceSchema>;
 export type ResourceMetadata = z.infer<typeof resourceMetadataSchema>;
 export type ResourceProvider = z.infer<typeof resourceProvidersSchema>;
 
-export type PrimitiveType =
-  | "function"
-  | "workflow"
-  | "route"
-  | "matcher"
-  | "iterator"
-  | "response";
+export type PrimitiveType = "function" | "matcher" | "iterator" | "response";
 export type BasePrimitiveData = z.infer<typeof primitiveBaseSchema>;
 export type Primitive = z.infer<typeof primitiveSchema>;
 export type PrimitiveMetadata = z.infer<typeof primitiveMetadataSchema>;
 
-export type RouteMetadata = z.infer<typeof routePrimitiveMetadataSchema>;
-export type WorkflowMetadata = z.infer<typeof workflowPrimitiveMetadataSchema>;
 export type FunctionMetadata = z.infer<typeof functionPrimitiveMetadataSchema>;
 export type matcherMetadata = z.infer<typeof matcherPrimitiveMetadataSchema>;
 export type IteratorMetadata = z.infer<typeof iteratorPrimitiveMetadataSchema>;
 export type ResponseMetadata = z.infer<typeof responsePrimitiveMetadataSchema>;
 
-export type RoutePrimitive = z.infer<typeof routePrimitiveSchema>;
-export type WorkflowPrimitive = z.infer<typeof workflowPrimitiveSchema>;
 export type FunctionPrimitive = z.infer<typeof functionPrimitiveSchema>;
 export type MatcherPrimitive = z.infer<typeof matcherPrimitiveSchema>;
 export type IteratorPrimitive = z.infer<typeof iteratorPrimitiveSchema>;

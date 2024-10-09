@@ -57,7 +57,7 @@ export function CreateFlowForm({
           ...commonInitialValues,
           type,
         };
-      case "route":
+      case "endpoint":
         return {
           ...commonInitialValues,
           type,
@@ -66,7 +66,7 @@ export function CreateFlowForm({
             path: "",
           },
         };
-      case "workflow":
+      case "task":
         return {
           ...commonInitialValues,
           type,
@@ -101,9 +101,7 @@ export function CreateFlowForm({
           if (setCreatePrimitiveDialogOpen) {
             setCreatePrimitiveDialogOpen(false);
           }
-          router.replace(
-            `/workspaces/${workspaceId}/${type}s/${state.payload.id}`,
-          );
+          router.replace(`/workspaces/${workspaceId}/${state.payload.id}`);
         } else if (state.status === "validationError") {
           for (const key of Object.keys(state.errors) as Array<
             keyof typeof state.errors
@@ -154,7 +152,7 @@ export function CreateFlowForm({
             </FormItem>
           )}
         />
-        {type === "workflow" && (
+        {type === "task" && (
           <FormField
             control={form.control}
             name="metadata.triggerType"
@@ -181,7 +179,7 @@ export function CreateFlowForm({
             )}
           />
         )}
-        {type === "route" && (
+        {type === "endpoint" && (
           <>
             <FormField
               control={form.control}
@@ -241,7 +239,7 @@ export function CreateFlowForm({
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="Enter workflow description"
+                  placeholder="Enter task description"
                   value={field.value ?? ""}
                 />
               </FormControl>

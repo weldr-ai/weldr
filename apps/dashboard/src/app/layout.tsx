@@ -8,6 +8,7 @@ import { Toaster } from "@specly/ui/toaster";
 import { cn } from "@specly/ui/utils";
 
 import { TooltipProvider } from "@specly/ui/tooltip";
+import { ReactFlowProvider } from "@xyflow/react";
 import { QueryProvider } from "~/components/query-client-provider";
 import { TRPCReactProvider } from "~/lib/trpc/react";
 
@@ -42,14 +43,16 @@ export default async function RootLayout({
           disableTransitionOnChange
           enableSystem
         >
-          <TRPCReactProvider>
-            <QueryProvider>
-              <TooltipProvider delayDuration={200}>
-                {children}
-                <Toaster />
-              </TooltipProvider>
-            </QueryProvider>
-          </TRPCReactProvider>
+          <ReactFlowProvider>
+            <TRPCReactProvider>
+              <QueryProvider>
+                <TooltipProvider delayDuration={200}>
+                  {children}
+                  <Toaster />
+                </TooltipProvider>
+              </QueryProvider>
+            </TRPCReactProvider>
+          </ReactFlowProvider>
         </ThemeProvider>
       </body>
     </html>

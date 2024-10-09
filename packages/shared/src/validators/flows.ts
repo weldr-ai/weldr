@@ -1,18 +1,56 @@
 import { z } from "zod";
-import { inputSchema } from "./primitives";
+import { conversationSchema, inputSchema } from "./common";
 
-export const flowTypesSchema = z.enum(["component", "workflow", "route"]);
+export const flowTypesSchema = z.enum(["component", "task", "endpoint"]);
 
-export const flowSchema = z.object({
+export const endpointFlowMetadataSchema = z.object({
+  method: z.enum(["get", "post", "patch", "delete"]),
+  path: z.string().regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
+    message:
+      "Must start with '/' and contain only lowercase letters and hyphens.",
+  }),
+});
+
+export const taskFlowMetadataSchema = z.object({
+  triggerType: z.enum(["webhook", "schedule"]),
+});
+
+export const componentFlowMetadataSchema = z.object({});
+
+export const baseFlowSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().trim().optional(),
   type: flowTypesSchema,
+  inputSchema: inputSchema.optional().nullable(),
+  validationSchema: z.string().optional().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
   createdBy: z.string(),
   workspaceId: z.string(),
+  conversation: conversationSchema,
 });
+
+export const componentFlowSchema = baseFlowSchema.extend({
+  type: z.literal("component"),
+  metadata: componentFlowMetadataSchema,
+});
+
+export const endpointFlowSchema = baseFlowSchema.extend({
+  type: z.literal("endpoint"),
+  metadata: endpointFlowMetadataSchema,
+});
+
+export const taskFlowSchema = baseFlowSchema.extend({
+  type: z.literal("task"),
+  metadata: taskFlowMetadataSchema,
+});
+
+export const flowSchema = z.discriminatedUnion("type", [
+  componentFlowSchema,
+  endpointFlowSchema,
+  taskFlowSchema,
+]);
 
 export const baseInsertFlowSchema = z.object({
   name: z
@@ -42,8 +80,8 @@ export const insertComponentFlowSchema = baseInsertFlowSchema.extend({
   type: z.literal("component"),
 });
 
-export const insertRouteFlowSchema = baseInsertFlowSchema.extend({
-  type: z.literal("route"),
+export const insertEndpointFlowSchema = baseInsertFlowSchema.extend({
+  type: z.literal("endpoint"),
   metadata: z.object({
     method: z.enum(["get", "post", "patch", "delete"]),
     path: z
@@ -59,8 +97,8 @@ export const insertRouteFlowSchema = baseInsertFlowSchema.extend({
   }),
 });
 
-export const insertWorkflowFlowSchema = baseInsertFlowSchema.extend({
-  type: z.literal("workflow"),
+export const insertTaskFlowSchema = baseInsertFlowSchema.extend({
+  type: z.literal("task"),
   metadata: z.object({
     triggerType: z.enum(["webhook", "schedule"]),
   }),
@@ -68,11 +106,11 @@ export const insertWorkflowFlowSchema = baseInsertFlowSchema.extend({
 
 export const insertFlowSchema = z.discriminatedUnion("type", [
   insertComponentFlowSchema,
-  insertRouteFlowSchema,
-  insertWorkflowFlowSchema,
+  insertEndpointFlowSchema,
+  insertTaskFlowSchema,
 ]);
 
-export const updateRouteFlowSchema = z.object({
+export const baseUpdateFlowSchema = z.object({
   name: z
     .string()
     .min(1, {
@@ -91,17 +129,51 @@ export const updateRouteFlowSchema = z.object({
     .transform((name) => name.replace(/\s+/g, "ـ").toLowerCase().trim())
     .optional(),
   description: z.string().optional(),
-  method: z.enum(["get", "post", "patch", "delete"]).optional(),
-  path: z
-    .string()
-    .regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
-      message:
-        "Must start with '/' and contain only lowercase letters and hyphens.",
-    })
-    .transform((path) => {
-      if (path.startsWith("/")) return path.trim();
-      return `/${path.trim()}`;
+  inputSchema: inputSchema.optional(),
+  validationSchema: z.string().optional(),
+});
+
+export const updateEndpointFlowSchema = baseUpdateFlowSchema.extend({
+  type: z.literal("endpoint"),
+  metadata: z
+    .object({
+      method: z.enum(["get", "post", "patch", "delete"]).optional(),
+      path: z
+        .string()
+        .regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
+          message:
+            "Must start with '/' and contain only lowercase letters and hyphens.",
+        })
+        .transform((path) => {
+          if (path.startsWith("/")) return path.trim();
+          return `/${path.trim()}`;
+        })
+        .optional(),
     })
     .optional(),
-  inputs: inputSchema.array().optional(),
+});
+
+export const updateTaskFlowSchema = baseUpdateFlowSchema.extend({
+  type: z.literal("task"),
+  metadata: z
+    .object({
+      triggerType: z.enum(["webhook", "schedule"]).optional(),
+    })
+    .optional(),
+});
+
+export const updateComponentFlow = baseUpdateFlowSchema.extend({
+  type: z.literal("component"),
+  metadata: z.object({}).optional(),
+});
+
+export const updateFlowSchema = z.object({
+  where: z.object({
+    id: z.string(),
+  }),
+  payload: z.discriminatedUnion("type", [
+    updateComponentFlow,
+    updateEndpointFlowSchema,
+    updateTaskFlowSchema,
+  ]),
 });

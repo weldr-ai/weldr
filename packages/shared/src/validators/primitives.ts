@@ -1,53 +1,11 @@
 import { z } from "zod";
-import type { JsonSchema } from "../types";
+import {
+  conversationSchema,
+  inputSchema,
+  outputSchema,
+  rawDescriptionSchema,
+} from "./common";
 import { resourceProvidersSchema } from "./resources";
-
-export const varTypeSchema = z.enum([
-  "string",
-  "number",
-  "integer",
-  "boolean",
-  "array",
-  "object",
-  "null",
-]);
-
-export const rawDescriptionSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("text"),
-    value: z.string(),
-  }),
-  z.object({
-    type: z.literal("reference"),
-    id: z.string(),
-    referenceType: z.enum([
-      "input",
-      "database",
-      "database-table",
-      "database-column",
-    ]),
-    name: z.string(),
-    icon: z.enum([
-      "database-icon",
-      "number-icon",
-      "text-icon",
-      "value-icon",
-      "database-column-icon",
-      "database-table-icon",
-    ]),
-    dataType: varTypeSchema.optional(),
-  }),
-]);
-
-export const chatMessageSchema = z.object({
-  id: z.string(),
-  role: z.enum(["user", "assistant"]),
-  message: z.string(),
-  rawMessage: rawDescriptionSchema.array().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  primitiveId: z.string(),
-});
 
 export const primitiveBaseSchema = z.object({
   id: z.string(),
@@ -60,44 +18,8 @@ export const primitiveBaseSchema = z.object({
   positionX: z.number(),
   positionY: z.number(),
   flowId: z.string(),
-  chatMessages: chatMessageSchema.array().optional(),
+  conversation: conversationSchema,
 });
-
-export const baseJsonSchema = z.object({
-  type: varTypeSchema,
-  description: z.string().optional(),
-  required: z.string().array().optional(),
-  enum: z.any().array().optional(),
-});
-
-export const jsonSchema: z.ZodType<JsonSchema> = baseJsonSchema.and(
-  z.object({
-    type: z.literal("object"),
-    properties: z.record(z.lazy(() => jsonSchema)).optional(),
-    items: z.lazy(() => jsonSchema).optional(),
-  }),
-);
-
-export const inputSchema = jsonSchema.and(
-  z.object({
-    testValue: z
-      .union([
-        z.string(),
-        z.number(),
-        z.boolean(),
-        z.array(z.any()),
-        z.record(z.any()),
-        z.null(),
-      ])
-      .optional(),
-  }),
-);
-
-export const outputSchema = jsonSchema.and(
-  z.object({
-    id: z.string(),
-  }),
-);
 
 const baseMetadataSchema = z.object({
   inputSchema: inputSchema.optional(),
@@ -134,29 +56,6 @@ export const functionPrimitiveMetadataSchema = baseMetadataSchema.extend({
 export const functionPrimitiveSchema = primitiveBaseSchema.extend({
   type: z.literal("function"),
   metadata: functionPrimitiveMetadataSchema,
-});
-
-export const routePrimitiveMetadataSchema = z.object({
-  method: z.enum(["get", "post", "patch", "delete"]),
-  path: z.string(),
-  inputSchema: inputSchema.optional(),
-  validationSchema: z.string().optional(),
-});
-
-export const routePrimitiveSchema = primitiveBaseSchema.extend({
-  type: z.literal("route"),
-  metadata: routePrimitiveMetadataSchema,
-});
-
-export const workflowPrimitiveMetadataSchema = z.object({
-  triggerType: z.enum(["webhook", "schedule"]),
-  inputSchema: inputSchema.optional(),
-  validationSchema: z.string().optional(),
-});
-
-export const workflowPrimitiveSchema = primitiveBaseSchema.extend({
-  type: z.literal("workflow"),
-  metadata: workflowPrimitiveMetadataSchema,
 });
 
 export const responsePrimitiveMetadataSchema = baseMetadataSchema.extend({
@@ -196,8 +95,6 @@ export const matcherPrimitiveSchema = primitiveBaseSchema.extend({
 });
 
 export const primitiveTypesSchema = z.enum([
-  "route",
-  "workflow",
   "function",
   "matcher",
   "iterator",
@@ -205,8 +102,6 @@ export const primitiveTypesSchema = z.enum([
 ]);
 
 export const primitiveSchema = z.discriminatedUnion("type", [
-  routePrimitiveSchema,
-  workflowPrimitiveSchema,
   functionPrimitiveSchema,
   responsePrimitiveSchema,
   iteratorPrimitiveSchema,
@@ -214,8 +109,6 @@ export const primitiveSchema = z.discriminatedUnion("type", [
 ]);
 
 export const primitiveMetadataSchema = z.union([
-  routePrimitiveMetadataSchema,
-  workflowPrimitiveMetadataSchema,
   functionPrimitiveMetadataSchema,
   responsePrimitiveMetadataSchema,
   iteratorPrimitiveMetadataSchema,
@@ -263,37 +156,6 @@ export const updateFunctionSchema = updatePrimitiveBaseSchema.extend({
   metadata: updateFunctionMetadataSchema.optional(),
 });
 
-export const updateRouteMetadataSchema = baseMetadataSchema.extend({
-  method: z.enum(["get", "post", "patch", "delete"]).optional(),
-  path: z
-    .string()
-    .regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
-      message:
-        "Must start with '/' and contain only lowercase letters and hyphens.",
-    })
-    .transform((path) => {
-      if (path.startsWith("/")) return path.trim();
-      return `/${path.trim()}`;
-    })
-    .optional(),
-  inputSchema: inputSchema.optional(),
-  validationSchema: z.string().optional(),
-});
-
-export const updateRouteSchema = updatePrimitiveBaseSchema.extend({
-  type: z.literal("route"),
-  metadata: updateRouteMetadataSchema.optional(),
-});
-
-export const updateWorkflowMetadataSchema = baseMetadataSchema.extend({
-  triggerType: z.enum(["webhook", "schedule"]).optional(),
-});
-
-export const updateWorkflowSchema = updatePrimitiveBaseSchema.extend({
-  type: z.literal("workflow"),
-  metadata: updateWorkflowMetadataSchema.optional(),
-});
-
 export const updateMatcherSchema = updatePrimitiveBaseSchema.extend({
   type: z.literal("matcher"),
   metadata: matcherPrimitiveMetadataSchema.optional(),
@@ -320,8 +182,6 @@ export const updatePrimitiveSchema = z.object({
   }),
   payload: z.discriminatedUnion("type", [
     updateFunctionSchema,
-    updateRouteSchema,
-    updateWorkflowSchema,
     updateMatcherSchema,
     updateIteratorSchema,
     updateResponseSchema,

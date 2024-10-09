@@ -16,7 +16,7 @@
     "migrate": "pnpm with-env tsx src/migrate.ts --config src/config.ts",
     "migrate:drop": "pnpm with-env drizzle-kit drop --config src/config.ts",
     "pull": "pnpm with-env drizzle-kit introspect:pg --config src/config.ts",
-    "push": "pnpm with-env drizzle-kit push:pg --config src/config.ts",
+    "push": "pnpm with-env drizzle-kit push --config src/config.ts",
     "studio": "pnpm with-env drizzle-kit studio --config src/config.ts",
     "up": "pnpm with-env drizzle-kit up:pg --config src/config.ts",
     "check-types": "tsc --noEmit --emitDeclarationOnly false",
