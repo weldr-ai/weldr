@@ -1,11 +1,14 @@
 import { and, eq, sql } from "@specly/db";
-import { flows, primitives } from "@specly/db/schema";
-import type { RouteMetadata } from "@specly/shared/types";
+import { flows } from "@specly/db/schema";
+import type { Flow } from "@specly/shared/types";
 import {
+  flowSchema,
   flowTypesSchema,
   insertFlowSchema,
+  updateFlowSchema,
 } from "@specly/shared/validators/flows";
 import { TRPCError } from "@trpc/server";
+import { conversations } from "node_modules/@specly/db/src/schema/conversations";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
@@ -13,61 +16,74 @@ export const flowsRouter = {
   create: protectedProcedure
     .input(insertFlowSchema)
     .mutation(async ({ ctx, input }) => {
-      if (
-        input.type !== "route" &&
-        input.type !== "workflow" &&
-        input.type !== "component"
-      ) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Invalid flow type",
+      if (input.type === "endpoint") {
+        const flow = await ctx.db.query.flows.findFirst({
+          where: sql`metadata::jsonb->>'path' = ${input.metadata.path}`,
         });
+
+        if (flow) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Endpoint with this path already exists",
+          });
+        }
       }
 
-      const result = await ctx.db.transaction(async (tx) => {
-        const flowResult = await tx
-          .insert(flows)
-          .values({
+      try {
+        const result = await ctx.db.transaction(async (tx) => {
+          const conversation = (
+            await tx
+              .insert(conversations)
+              .values({
+                createdBy: ctx.session.user.id,
+              })
+              .returning({ id: conversations.id })
+          )[0];
+
+          if (!conversation) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create conversation",
+            });
+          }
+
+          const values = {
             name: input.name,
             description: input.description,
             type: input.type,
+            metadata: sql`${{}}::jsonb`,
             workspaceId: input.workspaceId,
             createdBy: ctx.session.user.id,
-          })
-          .returning({ id: flows.id });
+            conversationId: conversation.id,
+          };
 
-        if (!flowResult[0]) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to create flow",
-          });
-        }
+          if (input.type === "endpoint" || input.type === "task") {
+            values.metadata = sql`${input.metadata}::jsonb`;
+          }
 
-        if (input.type === "route" || input.type === "workflow") {
-          const primitiveResult = await tx
-            .insert(primitives)
-            .values({
-              name: input.name,
-              description: input.description,
-              type: input.type,
-              metadata: sql`${input.metadata}::jsonb`,
-              createdBy: ctx.session.user.id,
-              flowId: flowResult[0].id,
-            })
-            .returning({ id: primitives.id });
+          const result = await tx
+            .insert(flows)
+            .values(values)
+            .returning({ id: flows.id });
 
-          if (!primitiveResult[0]) {
+          if (!result[0]) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to create flow",
             });
           }
-        }
 
-        return flowResult[0];
-      });
+          return result[0];
+        });
 
-      return result;
+        return result;
+      } catch (error) {
+        console.error(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create flow",
+        });
+      }
     }),
   getAllByType: protectedProcedure
     .input(z.object({ workspaceId: z.string(), type: flowTypesSchema }))
@@ -83,6 +99,7 @@ export const flowsRouter = {
     }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
+    .output(flowSchema)
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.flows.findFirst({
         where: and(
@@ -90,12 +107,39 @@ export const flowsRouter = {
           eq(flows.createdBy, ctx.session.user.id),
         ),
         with: {
-          primitives: {
+          conversation: {
             with: {
-              chatMessages: true,
+              messages: true,
             },
           },
+        },
+      });
+
+      if (!result) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Flow not found",
+        });
+      }
+
+      return result as Flow;
+    }),
+  getByIdWithAssociatedData: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.flows.findFirst({
+        where: and(
+          eq(flows.id, input.id),
+          eq(flows.createdBy, ctx.session.user.id),
+        ),
+        with: {
+          primitives: true,
           edges: true,
+          conversation: {
+            with: {
+              messages: true,
+            },
+          },
         },
       });
 
@@ -117,35 +161,48 @@ export const flowsRouter = {
           and(eq(flows.id, input.id), eq(flows.createdBy, ctx.session.user.id)),
         );
     }),
-  getRouteFlowByPath: protectedProcedure
-    .input(
-      z.object({
-        path: z.string(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const result = await ctx.db
-        .select({
-          metadata: primitives.metadata,
-          flowId: primitives.flowId,
-        })
-        .from(primitives)
-        .where(
-          and(
-            eq(primitives.type, "route"),
-            sql`primitives.metadata::jsonb->>'path' = ${input.path}`,
-          ),
-        );
+  update: protectedProcedure
+    .input(updateFlowSchema)
+    .mutation(async ({ ctx, input }) => {
+      const savedPrimitive = await ctx.db.query.flows.findFirst({
+        where: and(
+          eq(flows.id, input.where.id),
+          eq(flows.createdBy, ctx.session.user.id),
+        ),
+      });
 
-      if (!result[0]) {
+      if (!savedPrimitive) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Flow not found",
         });
       }
 
+      await ctx.db
+        .update(flows)
+        .set({
+          ...input.payload,
+          metadata: sql`${{
+            ...savedPrimitive.metadata,
+            ...input.payload.metadata,
+          }}::jsonb`,
+        })
+        .where(
+          and(
+            eq(flows.id, input.where.id),
+            eq(flows.createdBy, ctx.session.user.id),
+          ),
+        );
+    }),
+  getEndpointFlowByPath: protectedProcedure
+    .input(
+      z.object({
+        path: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
       const flow = await ctx.db.query.flows.findFirst({
-        where: eq(flows.id, result[0].flowId),
+        where: sql`metadata::jsonb->>'path' = ${input.path}`,
         with: {
           primitives: true,
           edges: true,
@@ -159,13 +216,6 @@ export const flowsRouter = {
         });
       }
 
-      return {
-        flow,
-        config: {
-          method: (result[0].metadata as RouteMetadata).method,
-          path: (result[0].metadata as RouteMetadata).path,
-          inputSchema: (result[0].metadata as RouteMetadata).inputSchema,
-        },
-      };
+      return flow;
     }),
 };

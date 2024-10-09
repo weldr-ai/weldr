@@ -46,16 +46,16 @@ export async function createFlow(
         workspaceId: workspace.id,
       };
 
-      if (validation.data.type === "route") {
+      if (validation.data.type === "endpoint") {
         result = await api.flows.create({
           ...commonData,
-          type: "route",
+          type: "endpoint",
           metadata: validation.data.metadata,
         });
-      } else if (validation.data.type === "workflow") {
+      } else if (validation.data.type === "task") {
         result = await api.flows.create({
           ...commonData,
-          type: "workflow",
+          type: "task",
           metadata: validation.data.metadata,
         });
       } else {

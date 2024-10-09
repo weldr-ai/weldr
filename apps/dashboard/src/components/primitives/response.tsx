@@ -369,11 +369,6 @@ export const Response = memo(
           type="target"
           position={Position.Left}
         />
-        <Handle
-          className="border rounded-full bg-background p-1"
-          type="source"
-          position={Position.Right}
-        />
       </>
     );
   },

@@ -56,13 +56,9 @@ export async function gatherInputsRequirements(messages: CoreMessage[]) {
 
 export async function generateInputsSchemas({
   prompt,
-  primitiveId,
 }: {
   prompt: string;
-  primitiveId: string;
 }) {
-  console.log(prompt);
-
   const completion = await openaiClient.beta.chat.completions.parse({
     model: "gpt-4o-mini",
     messages: [
@@ -84,20 +80,40 @@ export async function generateInputsSchemas({
   const message = completion.choices[0]?.message;
 
   if (message?.parsed) {
-    await api.primitives.update({
-      where: {
-        id: primitiveId,
-      },
-      payload: {
-        type: "route",
-        metadata: {
-          inputSchema: JSON.parse(message.parsed.jsonSchema) as InputSchema,
-          validationSchema: message.parsed.zodSchema,
-        },
-      },
-    });
-    return true;
+    return {
+      inputSchema: JSON.parse(message.parsed.jsonSchema) as InputSchema,
+      validationSchema: message.parsed.zodSchema,
+    };
   }
 
-  return false;
+  return undefined;
+}
+
+export async function generateFlowInputsSchemas({
+  prompt,
+  flowId,
+  flowType,
+}: {
+  prompt: string;
+  flowId: string;
+  flowType: "task" | "endpoint" | "component";
+}) {
+  const result = await generateInputsSchemas({ prompt });
+
+  if (!result) {
+    return false;
+  }
+
+  await api.flows.update({
+    where: {
+      id: flowId,
+    },
+    payload: {
+      type: flowType,
+      inputSchema: result.inputSchema,
+      validationSchema: result.validationSchema,
+    },
+  });
+
+  return true;
 }

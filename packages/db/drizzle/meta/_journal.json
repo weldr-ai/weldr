@@ -5,29 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1724789451894,
-      "tag": "0000_previous_hydra",
+      "when": 1728509774128,
+      "tag": "0000_boring_bloodstorm",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1724860535621,
-      "tag": "0001_spotty_blur",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1725788642690,
-      "tag": "0002_low_champions",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1727330385175,
-      "tag": "0003_quiet_overlord",
+      "when": 1728515684921,
+      "tag": "0001_pink_grandmaster",
       "breakpoints": true
     }
   ]

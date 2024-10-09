@@ -54,7 +54,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
   const [createWorkspaceDialogOpen, setCreateWorkspaceDialogOpen] =
     useState<boolean>(false);
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 
   return (
     <div className="flex ">
@@ -148,11 +148,11 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
               <TooltipTrigger asChild>
                 <Button
                   className={cn({
-                    "bg-accent border": activeSection === "routes",
+                    "bg-accent border": activeSection === "endpoints",
                   })}
                   onClick={() => {
                     setIsSidebarOpen(true);
-                    updateActiveSection("routes");
+                    updateActiveSection("endpoints");
                   }}
                   size="icon"
                   variant="ghost"
@@ -161,7 +161,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right" className="bg-muted border">
-                <p>Routes</p>
+                <p>Endpoints</p>
               </TooltipContent>
             </Tooltip>
 
@@ -169,11 +169,11 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
               <TooltipTrigger asChild>
                 <Button
                   className={cn({
-                    "bg-accent border": activeSection === "workflows",
+                    "bg-accent border": activeSection === "tasks",
                   })}
                   onClick={() => {
                     setIsSidebarOpen(true);
-                    updateActiveSection("workflows");
+                    updateActiveSection("tasks");
                   }}
                   size="icon"
                   variant="ghost"
@@ -182,7 +182,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right" className="bg-muted border">
-                <p>Workflows</p>
+                <p>Tasks</p>
               </TooltipContent>
             </Tooltip>
 
@@ -286,21 +286,21 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                 >
                   <FlowList workspaceId={workspace.id} type="component" />
                 </div>
-              ) : activeSection === "routes" ? (
+              ) : activeSection === "endpoints" ? (
                 <div
                   className={cn("w-full", {
-                    hidden: activeSection !== "routes",
+                    hidden: activeSection !== "endpoints",
                   })}
                 >
-                  <FlowList workspaceId={workspace.id} type="route" />
+                  <FlowList workspaceId={workspace.id} type="endpoint" />
                 </div>
-              ) : activeSection === "workflows" ? (
+              ) : activeSection === "tasks" ? (
                 <div
                   className={cn("w-full", {
-                    hidden: activeSection !== "workflows",
+                    hidden: activeSection !== "tasks",
                   })}
                 >
-                  <FlowList workspaceId={workspace.id} type="workflow" />
+                  <FlowList workspaceId={workspace.id} type="task" />
                 </div>
               ) : (
                 <div

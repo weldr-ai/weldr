@@ -1,6 +1,6 @@
 {
-  "id": "6d3fff8f-5831-4bd4-a4a2-600ccd9d984b",
-  "prevId": "f6fbaa4f-f590-4b97-a8e6-1128a91fa1df",
+  "id": "2d223921-0b11-4600-99ed-834ad3586472",
+  "prevId": "942cfa70-999d-458b-a4d2-85807463daf2",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -333,6 +333,132 @@
         }
       }
     },
+    "public.conversation_messages": {
+      "name": "conversation_messages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "roles",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "raw_content": {
+          "name": "raw_content",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "conversation_messages_conversation_id_conversations_id_fk": {
+          "name": "conversation_messages_conversation_id_conversations_id_fk",
+          "tableFrom": "conversation_messages",
+          "tableTo": "conversations",
+          "columnsFrom": ["conversation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "conversation_messages_created_by_users_id_fk": {
+          "name": "conversation_messages_created_by_users_id_fk",
+          "tableFrom": "conversation_messages",
+          "tableTo": "users",
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.conversations": {
+      "name": "conversations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "conversations_created_by_users_id_fk": {
+          "name": "conversations_created_by_users_id_fk",
+          "tableFrom": "conversations",
+          "tableTo": "users",
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
     "public.edges": {
       "name": "edges",
       "schema": "",
@@ -349,11 +475,23 @@
           "primaryKey": false,
           "notNull": true
         },
+        "source_handle": {
+          "name": "source_handle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "target": {
           "name": "target",
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "target_handle": {
+          "name": "target_handle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "flow_id": {
           "name": "flow_id",
@@ -439,6 +577,24 @@
           "primaryKey": false,
           "notNull": true
         },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "input_schema": {
+          "name": "input_schema",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "validation_schema": {
+          "name": "validation_schema",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -464,6 +620,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -482,6 +644,15 @@
           "tableFrom": "flows",
           "tableTo": "users",
           "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "flows_conversation_id_conversations_id_fk": {
+          "name": "flows_conversation_id_conversations_id_fk",
+          "tableFrom": "flows",
+          "tableTo": "conversations",
+          "columnsFrom": ["conversation_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -539,18 +710,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "parent_id": {
-          "name": "parent_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "updated_at": {
           "name": "updated_at",
@@ -561,6 +732,12 @@
         },
         "flow_id": {
           "name": "flow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -588,6 +765,15 @@
           "tableFrom": "primitives",
           "tableTo": "flows",
           "columnsFrom": ["flow_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "primitives_conversation_id_conversations_id_fk": {
+          "name": "primitives_conversation_id_conversations_id_fk",
+          "tableFrom": "primitives",
+          "tableTo": "conversations",
+          "columnsFrom": ["conversation_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -781,22 +967,20 @@
     }
   },
   "enums": {
+    "public.roles": {
+      "name": "roles",
+      "schema": "public",
+      "values": ["user", "assistant"]
+    },
     "public.flow_types": {
       "name": "flow_types",
       "schema": "public",
-      "values": ["component", "workflow", "route"]
+      "values": ["component", "task", "endpoint"]
     },
     "public.primitive_types": {
       "name": "primitive_types",
       "schema": "public",
-      "values": [
-        "route",
-        "workflow",
-        "function",
-        "matcher",
-        "iterator",
-        "response"
-      ]
+      "values": ["function", "matcher", "iterator", "response"]
     },
     "public.resource_providers": {
       "name": "resource_providers",

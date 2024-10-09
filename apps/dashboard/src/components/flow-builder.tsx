@@ -13,7 +13,6 @@ import {
   MiniMap,
   Panel,
   ReactFlow,
-  ReactFlowProvider,
   addEdge,
   getOutgoers,
   useEdgesState,
@@ -21,7 +20,13 @@ import {
   useReactFlow,
   useViewport,
 } from "@xyflow/react";
-import { MinusIcon, PlayIcon, PlusIcon, RocketIcon } from "lucide-react";
+import {
+  MinusIcon,
+  PlayIcon,
+  PlusIcon,
+  RocketIcon,
+  SparklesIcon,
+} from "lucide-react";
 import type React from "react";
 import { useCallback } from "react";
 
@@ -30,7 +35,7 @@ import "~/styles/flow-builder.css";
 
 import { Button } from "@specly/ui/button";
 
-import type { Primitive, PrimitiveType } from "@specly/shared/types";
+import type { Flow, Primitive, PrimitiveType } from "@specly/shared/types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { toast } from "@specly/ui/use-toast";
 import { useTheme } from "next-themes";
@@ -38,17 +43,12 @@ import DeletableEdge from "~/components/deletable-edge";
 import { PrimitivesMenu } from "~/components/primitives-menu";
 import { FunctionNode } from "~/components/primitives/function";
 import { Response } from "~/components/primitives/response";
-import { Route } from "~/components/primitives/route";
-import { Workflow } from "~/components/primitives/workflow";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode } from "~/types";
+import { FlowDialog } from "./flow-dialog";
 
 const nodeTypes = {
-  route: Route,
-  workflow: Workflow,
   function: FunctionNode,
-  // matcher: Matcher,
-  // iterator: Iterator,
   response: Response,
 };
 
@@ -56,12 +56,12 @@ const edgeTypes = {
   "deletable-edge": DeletableEdge,
 };
 
-export function _FlowBuilder({
-  flowId,
+export function FlowBuilder({
+  flow,
   initialNodes,
   initialEdges,
 }: {
-  flowId: string;
+  flow: Flow;
   initialNodes: FlowNode[];
   initialEdges: FlowEdge[];
 }) {
@@ -130,11 +130,11 @@ export function _FlowBuilder({
           sourceHandle: connection.sourceHandle,
           target: connection.target,
           targetHandle: connection.targetHandle,
-          flowId,
+          flowId: flow.id,
         });
       }
     },
-    [flowId, setEdges, createEdge],
+    [flow.id, setEdges, createEdge],
   );
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -171,7 +171,7 @@ export function _FlowBuilder({
             id: newNodeId,
             type: nodeType,
             metadata: {},
-            flowId,
+            flowId: flow.id,
           } as Primitive,
         }),
       );
@@ -181,11 +181,11 @@ export function _FlowBuilder({
         type: nodeType,
         positionX: Math.floor(position.x),
         positionY: Math.floor(position.y),
-        flowId,
+        flowId: flow.id,
         metadata: {},
       });
     },
-    [createPrimitive, flowId, setNodes, screenToFlowPosition],
+    [createPrimitive, flow.id, setNodes, screenToFlowPosition],
   );
 
   const onNodeDrag = useCallback(
@@ -399,63 +399,60 @@ export function _FlowBuilder({
         </Button>
       </Panel>
       <Panel
-        position="top-right"
-        className="flex flex-col items-center bg-background dark:bg-muted rounded-full gap-0.5 p-0.5 border"
+        position="bottom-center"
+        className="flex items-center bg-background dark:bg-muted rounded-full gap-1 p-1 border"
       >
-        <PrimitivesMenu />
+        <FlowDialog initialData={flow} />
 
-        <div className="w-9 border-t" />
+        <div className="h-9 border-l" />
 
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="rounded-full hover:bg-success/20 text-success"
+              className="rounded-full hover:bg-success/20 text-success hover:text-success"
               variant="ghost"
               size="icon"
             >
               <PlayIcon className="size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left" className="bg-muted border text-success">
+          <TooltipContent side="top" className="bg-muted border text-success">
             <p>Run</p>
           </TooltipContent>
         </Tooltip>
-
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="rounded-full hover:bg-primary/20 text-primary"
+              className="rounded-full hover:bg-primary/20 text-primary hover:text-primary"
               variant="ghost"
               size="icon"
             >
               <RocketIcon className="size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left" className="bg-muted border text-primary">
+          <TooltipContent side="top" className="bg-muted border text-primary">
             <p>Ship</p>
           </TooltipContent>
         </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className="rounded-full hover:bg-pink-400/20 text-pink-400 hover:text-pink-400"
+              variant="ghost"
+              size="icon"
+            >
+              <SparklesIcon className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-muted border text-pink-400">
+            <p>Generate</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <div className="h-9 border-l" />
+
+        <PrimitivesMenu />
       </Panel>
     </ReactFlow>
-  );
-}
-
-export function FlowBuilder({
-  flowId,
-  initialNodes,
-  initialEdges,
-}: {
-  flowId: string;
-  initialNodes: FlowNode[];
-  initialEdges: FlowEdge[];
-}) {
-  return (
-    <ReactFlowProvider>
-      <_FlowBuilder
-        flowId={flowId}
-        initialNodes={initialNodes}
-        initialEdges={initialEdges}
-      />
-    </ReactFlowProvider>
   );
 }

@@ -35,7 +35,7 @@ export function FlowList({
           <div className="flex flex-col gap-1">
             {flows?.map((flow) => (
               <Link
-                href={`/workspaces/${workspaceId}/${type}s/${flow.id}`}
+                href={`/workspaces/${workspaceId}/${flow.id}`}
                 key={flow.id}
                 className={cn(buttonVariants({ variant: "ghost" }), {
                   "bg-accent": currentFlowId === flow.id,

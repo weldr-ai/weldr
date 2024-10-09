@@ -1,19 +1,19 @@
 import { create } from "zustand";
 
 interface PrimarySidebarState {
-  activeSection: "components" | "routes" | "workflows" | "resources" | null;
+  activeSection: "components" | "endpoints" | "tasks" | "resources" | null;
 }
 
 interface PrimarySidebarAction {
   updateActiveSection: (
-    activeSection: "components" | "routes" | "workflows" | "resources" | null,
+    activeSection: "components" | "endpoints" | "tasks" | "resources" | null,
   ) => void;
 }
 
 export const usePrimarySidebarStore = create<
   PrimarySidebarState & PrimarySidebarAction
 >((set) => ({
-  activeSection: null,
+  activeSection: "components",
   updateActiveSection: (activeSection) =>
     set(() => ({
       activeSection,

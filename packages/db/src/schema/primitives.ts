@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import type { PrimitiveMetadata, RawDescription } from "@specly/shared/types";
+import type { PrimitiveMetadata } from "@specly/shared/types";
 import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
@@ -12,37 +12,10 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
+import { conversations } from "./conversations";
 import { flows } from "./flows";
 
-export const roles = pgEnum("roles", ["user", "assistant"]);
-
-export const chatMessages = pgTable("chat_messages", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  role: roles("message_from").notNull(),
-  message: text("message").notNull(),
-  rawMessage: jsonb("raw_message").$type<RawDescription[]>(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-  primitiveId: text("primitive_id")
-    .references(() => primitives.id)
-    .notNull(),
-});
-
-export const chatMessageRelations = relations(chatMessages, ({ one }) => ({
-  primitive: one(primitives, {
-    fields: [chatMessages.primitiveId],
-    references: [primitives.id],
-  }),
-}));
-
 export const primitiveTypes = pgEnum("primitive_types", [
-  "route",
-  "workflow",
   "function",
   "matcher",
   "iterator",
@@ -72,6 +45,9 @@ export const primitives = pgTable(
     flowId: text("flow_id")
       .references(() => flows.id, { onDelete: "cascade" })
       .notNull(),
+    conversationId: text("conversation_id")
+      .references(() => conversations.id, { onDelete: "cascade" })
+      .notNull(),
     createdBy: text("created_by")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
@@ -94,5 +70,8 @@ export const primitivesRelations = relations(primitives, ({ one, many }) => ({
     fields: [primitives.parentId],
     references: [primitives.id],
   }),
-  chatMessages: many(chatMessages),
+  conversation: one(conversations, {
+    fields: [primitives.conversationId],
+    references: [conversations.id],
+  }),
 }));
