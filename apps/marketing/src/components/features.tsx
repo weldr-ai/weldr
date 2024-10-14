@@ -63,7 +63,7 @@ export function Features() {
               No Code, Just English!
             </h3>
             <p className="max-w-lg text-sm">
-              No coding necessary, just English! specly lets you automate your
+              No coding necessary, just English! Specly lets you automate your
               workflows and build custom solutions quickly.
             </p>
           </div>
@@ -79,10 +79,10 @@ export function Features() {
             </div>
           </div>
           <div className="space-y-2 lg:h-28 lg:space-y-4 xl:h-36">
-            <h3 className="text-xl font-semibold lg:text-3xl">Explainable</h3>
+            <h3 className="text-xl font-semibold lg:text-3xl">Maintainable</h3>
             <p className="max-w-lg text-sm">
-              specly&apos;s programming paradigm is designed to be explainable,
-              so users can easily build and maintain their custom flows.
+              Specly&apos;s programming paradigm is designed to be maintainable,
+              so users can easily build and modify their flows.
             </p>
           </div>
         </div>
@@ -121,7 +121,7 @@ export function Features() {
           <div className="space-y-2 md:space-y-4 lg:h-28 xl:h-36">
             <h3 className="text-xl font-semibold lg:text-3xl">Customizable</h3>
             <p className="max-w-lg text-sm">
-              specly provides few primitives that you can compose to build
+              Specly provides few primitives that you can compose to build
               anything you want.
             </p>
           </div>
@@ -135,7 +135,7 @@ export function Features() {
           <div className="space-y-2 lg:h-28 lg:space-y-4 xl:h-36">
             <h3 className="text-xl font-semibold lg:text-3xl">Intuitive</h3>
             <p className="max-w-lg text-sm">
-              No learning curve, no complicated interface. specly is built with
+              No learning curve, no complicated interface. Specly is built with
               emphasis on simplicity and ease of use.
             </p>
           </div>

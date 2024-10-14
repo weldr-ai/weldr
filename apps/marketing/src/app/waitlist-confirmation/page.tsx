@@ -9,7 +9,7 @@ export default function WaitlistConfirmationPage() {
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4">
       <Image
         className="size-20"
-        alt="specly"
+        alt="Specly"
         height={500}
         priority
         src="/logo-solid.png"
