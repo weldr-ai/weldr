@@ -9,7 +9,7 @@ import { XIcon } from "@specly/ui/icons/x-icon";
 export function Footer() {
   return (
     <div className="flex w-full items-center justify-between border-t p-4">
-      <span>© {new Date().getFullYear()} specly</span>
+      <span>© {new Date().getFullYear()} Specly</span>
       <div>
         <Link
           href="https://twitter.com/specly"

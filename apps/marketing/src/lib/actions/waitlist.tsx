@@ -65,7 +65,7 @@ export async function joinWaitlist(
 
     if (result) {
       await resend.emails.send({
-        from: "specly <noreploy@specly.ai>",
+        from: "Specly <noreploy@specly.ai>",
         to: [validation.data.email],
         subject: "Thank you for your interest!",
         react: WaitlistConfirmationEmailTemplate(),

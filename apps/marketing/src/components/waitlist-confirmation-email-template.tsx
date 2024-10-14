@@ -11,7 +11,7 @@ export async function WaitlistConfirmationEmailTemplate() {
         <a href="mailto:hey@specly.ai">hey@specly.ai</a>.
       </p>
       <p>
-        Best regards, <br /> specly Team
+        Best regards, <br /> Specly Team
       </p>
     </div>
   );

@@ -21,24 +21,16 @@ export function FAQs() {
         </h2>
       </div>
       <Accordion type="single" collapsible className="w-full space-y-2">
-        <AccordionItem value="faq-1" className="rounded-xl border px-4">
-          <AccordionTrigger className="text-start">
-            When will you launch the product?
-          </AccordionTrigger>
-          <AccordionContent>
-            We aim to launch the product for early adopters by October 2024.
-          </AccordionContent>
-        </AccordionItem>
         <AccordionItem value="faq-3" className="rounded-xl border px-4">
           <AccordionTrigger className="text-start">
-            How specly is different from other no/low-code platforms?
+            How Specly is different from other no/low-code platforms?
           </AccordionTrigger>
           <AccordionContent>
             Usually, no/low-code platforms are designed to be intuitive but
             often lack sufficient customizability. Additionally, they typically
             come with too many conventions and a complex UI that requires a
-            learning curve. Unlike other platforms, specly doesn&apos;t limit
-            you. The novel programming paradigm provided by specly is designed
+            learning curve. Unlike other platforms, Specly doesn&apos;t limit
+            you. The novel programming paradigm provided by Specly is designed
             to enable the creation of any custom solution you envision. We offer
             a few primitives that you can compose to build anything you want,
             all using English.
@@ -49,7 +41,7 @@ export function FAQs() {
             Is this a replacement for software engineers?
           </AccordionTrigger>
           <AccordionContent>
-            No, specly is not a replacement for software engineers. Our main
+            No, Specly is not a replacement for software engineers. Our main
             goal isn&apos;t to replace software engineers but to make
             programming as accessible as possible for everyone.
           </AccordionContent>

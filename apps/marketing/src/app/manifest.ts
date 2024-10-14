@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "specly",
-    short_name: "specly",
+    name: "Specly",
+    short_name: "Specly",
     description:
       "Create backend APIs, automation workflows, and integrations using only plain English, no coding required!",
     start_url: "/",
