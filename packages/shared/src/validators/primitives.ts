@@ -5,7 +5,6 @@ import {
   outputSchema,
   rawDescriptionSchema,
 } from "./common";
-import { resourceProvidersSchema } from "./resources";
 
 export const primitiveBaseSchema = z.object({
   id: z.string(),
@@ -27,14 +26,6 @@ const baseMetadataSchema = z.object({
   generatedCode: z.string().nullable().optional(),
   isCodeUpdated: z.boolean().default(false).optional(),
   isLocked: z.boolean().default(false).optional(),
-  resources: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      provider: resourceProvidersSchema,
-    })
-    .array()
-    .optional(),
 });
 
 export const functionPrimitiveMetadataSchema = baseMetadataSchema.extend({
@@ -42,15 +33,7 @@ export const functionPrimitiveMetadataSchema = baseMetadataSchema.extend({
   logicalSteps: z.string().optional(),
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
-  resources: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      provider: resourceProvidersSchema,
-      metadata: z.string(),
-    })
-    .array()
-    .optional(),
+  resources: z.string().array().optional(),
 });
 
 export const functionPrimitiveSchema = primitiveBaseSchema.extend({

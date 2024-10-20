@@ -3,38 +3,10 @@ import type {
   FlatInputSchema,
   InputSchema,
   JsonSchema,
-  VarType,
+  RawDescription,
 } from "@specly/shared/types";
+import { getDataTypeIcon } from "@specly/shared/utils";
 import type { TreeDataItem } from "@specly/ui/tree-view";
-import {
-  BanIcon,
-  BinaryIcon,
-  BracesIcon,
-  BracketsIcon,
-  HashIcon,
-  TextIcon,
-} from "lucide-react";
-
-export function getVarTypeIcon(type: VarType) {
-  switch (type) {
-    case "string":
-      return TextIcon;
-    case "number":
-      return HashIcon;
-    case "integer":
-      return HashIcon;
-    case "boolean":
-      return BinaryIcon;
-    case "array":
-      return BracketsIcon;
-    case "object":
-      return BracesIcon;
-    case "null":
-      return BanIcon;
-    default:
-      return HashIcon;
-  }
-}
 
 export function inputSchemaToTreeData(
   inputSchema: InputSchema | undefined,
@@ -51,7 +23,7 @@ export function inputSchemaToTreeData(
       id: createId(),
       name,
       type: inputSchema.type ?? "null",
-      icon: getVarTypeIcon(inputSchema.type ?? "null"),
+      icon: getDataTypeIcon(inputSchema.type ?? "null"),
     };
 
     if (inputSchema.type === "object" && inputSchema.properties) {
@@ -75,7 +47,33 @@ export function flattenInputSchema(
 ): FlatInputSchema[] {
   const result: FlatInputSchema[] = [];
 
-  if (path === "") {
+  if (schema.type === "object" && schema.properties) {
+    const requiredProperties = schema.required || [];
+    for (const [key, value] of Object.entries(schema.properties)) {
+      const isRequired = requiredProperties.includes(key);
+      const newPath = path ? `${path}.${key}` : key;
+      result.push({
+        path: newPath,
+        type: value.type,
+        required: isRequired,
+        description: value.description,
+      });
+      if (value.type === "object" || value.type === "array") {
+        result.push(...flattenInputSchema(value, newPath, isRequired));
+      }
+    }
+  } else if (schema.type === "array" && schema.items) {
+    const itemsPath = `${path}[]`;
+    result.push({
+      path: itemsPath,
+      type: schema.items.type,
+      required: false,
+      description: schema.items.description,
+    });
+    if (schema.items.type === "object" || schema.items.type === "array") {
+      result.push(...flattenInputSchema(schema.items, itemsPath, false));
+    }
+  } else {
     result.push({
       path,
       type: schema.type,
@@ -84,28 +82,30 @@ export function flattenInputSchema(
     });
   }
 
-  switch (schema.type) {
-    case "object":
-      if (schema.properties) {
-        const requiredProperties = schema.required || [];
-        for (const [key, value] of Object.entries(schema.properties)) {
-          const isRequired = requiredProperties.includes(key);
-          const newPath = path ? `${path}.${key}` : key;
-          result.push(...flattenInputSchema(value, newPath, isRequired));
+  return result;
+}
+
+export function fromRawDescriptionToText(
+  rawDescription: RawDescription[],
+): string {
+  return rawDescription
+    .map((element) => {
+      if (element.type === "text") {
+        return element.value;
+      }
+
+      if (element.type === "reference") {
+        switch (element.referenceType) {
+          case "database-table":
+            return `table '${element.name}'`;
+          case "database":
+            return `postgres database '${element.name}' - its id is '${element.id}'`;
+          case "database-column":
+            return `column '${element.name}' of type '${element.dataType}'`;
+          case "input":
+            return `input '${element.name}' of type '${element.dataType}'`;
         }
       }
-      break;
-
-    case "array":
-      if (schema.items) {
-        const itemsPath = `${path}[]`;
-        result.push(...flattenInputSchema(schema.items, itemsPath, false));
-      }
-      break;
-
-    default:
-      break;
-  }
-
-  return result;
+    })
+    .join("");
 }

@@ -35,7 +35,12 @@ import "~/styles/flow-builder.css";
 
 import { Button } from "@specly/ui/button";
 
-import type { Flow, Primitive, PrimitiveType } from "@specly/shared/types";
+import type {
+  Flow,
+  InputSchema,
+  Primitive,
+  PrimitiveType,
+} from "@specly/shared/types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { toast } from "@specly/ui/use-toast";
 import { useTheme } from "next-themes";
@@ -172,7 +177,10 @@ export function FlowBuilder({
             type: nodeType,
             metadata: {},
             flowId: flow.id,
-          } as Primitive,
+            flow: {
+              inputSchema: undefined,
+            },
+          } as Primitive & { flow: { inputSchema: InputSchema | undefined } },
         }),
       );
 
@@ -403,9 +411,13 @@ export function FlowBuilder({
         className="flex items-center bg-background dark:bg-muted rounded-full gap-1 p-1 border"
       >
         <FlowDialog initialData={flow} />
-
         <div className="h-9 border-l" />
-
+        <PrimitivesMenu />
+      </Panel>
+      <Panel
+        position="top-right"
+        className="flex flex-col items-center bg-background dark:bg-muted rounded-full gap-1 p-1 border"
+      >
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -416,7 +428,7 @@ export function FlowBuilder({
               <PlayIcon className="size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border text-success">
+          <TooltipContent side="left" className="bg-muted border text-success">
             <p>Run</p>
           </TooltipContent>
         </Tooltip>
@@ -430,7 +442,7 @@ export function FlowBuilder({
               <RocketIcon className="size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border text-primary">
+          <TooltipContent side="left" className="bg-muted border text-primary">
             <p>Ship</p>
           </TooltipContent>
         </Tooltip>
@@ -444,14 +456,10 @@ export function FlowBuilder({
               <SparklesIcon className="size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border text-pink-400">
+          <TooltipContent side="left" className="bg-muted border text-pink-400">
             <p>Generate</p>
           </TooltipContent>
         </Tooltip>
-
-        <div className="h-9 border-l" />
-
-        <PrimitivesMenu />
       </Panel>
     </ReactFlow>
   );
