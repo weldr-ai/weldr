@@ -3,10 +3,10 @@ import type {
   baseJsonSchema,
   conversationMessageSchema,
   conversationSchema,
+  dataTypeSchema,
   inputSchema,
   outputSchema,
   rawDescriptionSchema,
-  varTypeSchema,
 } from "../validators/common";
 import type { edgeSchema } from "../validators/edges";
 import type {
@@ -38,7 +38,7 @@ import type {
 } from "../validators/resources";
 import type { workspaceSchema } from "../validators/workspaces";
 
-export type VarType = z.infer<typeof varTypeSchema>;
+export type DataType = z.infer<typeof dataTypeSchema>;
 
 export type JsonSchema = z.infer<typeof baseJsonSchema> & {
   properties?: Record<string, JsonSchema>;
@@ -47,8 +47,8 @@ export type JsonSchema = z.infer<typeof baseJsonSchema> & {
 
 export interface FlatInputSchema {
   path: string;
-  type: VarType;
-  itemsType?: VarType | { [key: string]: FlatInputSchema };
+  type: DataType;
+  itemsType?: DataType | { [key: string]: FlatInputSchema };
   required: boolean;
   description?: string;
 }

@@ -1,5 +1,6 @@
 import { and, eq, sql } from "@specly/db";
 import { flows } from "@specly/db/schema";
+import { mergeJson } from "@specly/db/utils";
 import type { Flow } from "@specly/shared/types";
 import {
   flowSchema,
@@ -133,7 +134,15 @@ export const flowsRouter = {
           eq(flows.createdBy, ctx.session.user.id),
         ),
         with: {
-          primitives: true,
+          primitives: {
+            with: {
+              conversation: {
+                with: {
+                  messages: true,
+                },
+              },
+            },
+          },
           edges: true,
           conversation: {
             with: {
@@ -182,10 +191,9 @@ export const flowsRouter = {
         .update(flows)
         .set({
           ...input.payload,
-          metadata: sql`${{
-            ...savedPrimitive.metadata,
-            ...input.payload.metadata,
-          }}::jsonb`,
+          metadata: input.payload.metadata
+            ? mergeJson(flows.metadata, input.payload.metadata)
+            : undefined,
         })
         .where(
           and(

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { JsonSchema } from "../types";
 
-export const varTypeSchema = z.enum([
+export const dataTypeSchema = z.enum([
   "string",
   "number",
   "integer",
@@ -12,7 +12,7 @@ export const varTypeSchema = z.enum([
 ]);
 
 export const baseJsonSchema = z.object({
-  type: varTypeSchema,
+  type: dataTypeSchema,
   description: z.string().optional(),
   required: z.string().array().optional(),
   enum: z.any().array().optional(),
@@ -20,7 +20,7 @@ export const baseJsonSchema = z.object({
 
 export const jsonSchema: z.ZodType<JsonSchema> = baseJsonSchema.and(
   z.object({
-    type: varTypeSchema,
+    type: dataTypeSchema,
     properties: z.record(z.lazy(() => jsonSchema)).optional(),
     items: z.lazy(() => jsonSchema).optional(),
   }),
@@ -32,28 +32,38 @@ export const outputSchema = jsonSchema;
 export const rawDescriptionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("text"),
-    value: z.string(),
+    value: z
+      .string()
+      .describe(
+        "The text part of a message or description. Cannot be used to mention a reference in a message or description.",
+      ),
   }),
-  z.object({
-    type: z.literal("reference"),
-    id: z.string(),
-    referenceType: z.enum([
-      "input",
-      "database",
-      "database-table",
-      "database-column",
-    ]),
-    name: z.string(),
-    icon: z.enum([
-      "database-icon",
-      "number-icon",
-      "text-icon",
-      "value-icon",
-      "database-column-icon",
-      "database-table-icon",
-    ]),
-    dataType: varTypeSchema.optional(),
-  }),
+  z
+    .object({
+      type: z.literal("reference"),
+      id: z
+        .string()
+        .optional()
+        .describe(
+          "ID of the reference as stated in the user messages. Only applicable for references of type `database`.",
+        ),
+      referenceType: z
+        .enum(["input", "database", "database-table", "database-column"])
+        .describe("Type of the reference"),
+      name: z
+        .string()
+        .describe(
+          "Name of the reference. When referencing a database-column the name must following the following naming pattern [TABLE_NAME].[COLUMN_NAME].",
+        ),
+      dataType: dataTypeSchema
+        .optional()
+        .describe(
+          "Data type of the reference. Only applicable for input and output references.",
+        ),
+    })
+    .describe(
+      "The reference part of a message or description. Must be used when mentioning a reference in a message or description.",
+    ),
 ]);
 
 export const conversationMessageSchema = z.object({

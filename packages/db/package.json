@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./types": "./src/types/index.d.ts",
     "./schema": "./src/schema/index.ts",
+    "./utils": "./src/utils.ts",
     "./queries/*": "./src/queries/*.ts"
   },
   "scripts": {

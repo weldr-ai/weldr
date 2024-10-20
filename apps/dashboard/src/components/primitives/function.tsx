@@ -53,34 +53,29 @@ import {
   ArrowUpIcon,
   CircleAlertIcon,
   CircleMinus,
-  ColumnsIcon,
   ExternalLinkIcon,
   FileTextIcon,
-  HashIcon,
   Loader2,
   Loader2Icon,
   LockIcon,
   PlayCircleIcon,
-  TableIcon,
-  TextIcon,
   TrashIcon,
   UnlockIcon,
-  VariableIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { createId } from "@paralleldrive/cuid2";
 import type {
   FlatInputSchema,
   FunctionPrimitive,
-  JsonSchema,
+  InputSchema,
   RawDescription,
 } from "@specly/shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
 import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
-import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import type { CoreMessage } from "ai";
@@ -90,10 +85,110 @@ import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { gatherFunctionRequirements } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/react";
-import { flattenInputSchema } from "~/lib/utils";
+import { flattenInputSchema, fromRawDescriptionToText } from "~/lib/utils";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 import type { ReferenceNode } from "../editor/nodes/reference-node";
+import { ReferenceBadge } from "../editor/reference-badge";
 import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
+
+interface RawMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: RawDescription[];
+}
+
+const initialRawMessages: RawDescription[] = [
+  {
+    type: "text",
+    value: "Get all from ",
+  },
+  {
+    type: "reference",
+    id: "customers",
+    referenceType: "database-table",
+    name: "customers",
+  },
+  {
+    type: "text",
+    value: " in ",
+  },
+  {
+    type: "reference",
+    id: "wd2v4lcxuqun9huk3q2jsvnw",
+    referenceType: "database",
+    name: "CRM",
+  },
+  {
+    type: "text",
+    value: " and optionally filter by the ",
+  },
+  {
+    type: "reference",
+    id: "customers.email",
+    referenceType: "database-column",
+    name: "customers.email",
+    dataType: "string",
+  },
+  {
+    type: "text",
+    value: ", ",
+  },
+  {
+    type: "reference",
+    id: "customers.first_name",
+    referenceType: "database-column",
+    name: "customers.first_name",
+    dataType: "string",
+  },
+  {
+    type: "text",
+    value: ", and ",
+  },
+  {
+    type: "reference",
+    id: "customers.last_name",
+    referenceType: "database-column",
+    name: "customers.last_name",
+    dataType: "string",
+  },
+  {
+    type: "text",
+    value: " using the inptus ",
+  },
+  {
+    type: "reference",
+    id: "vlqv8vx4jefonxgkw4b42ua1",
+    referenceType: "input",
+    name: "email",
+    dataType: "string",
+  },
+  {
+    type: "text",
+    value: ", ",
+  },
+  {
+    type: "reference",
+    id: "gku2e6k1ks5zb92yls092ggf",
+    referenceType: "input",
+    name: "firstName",
+    dataType: "string",
+  },
+  {
+    type: "text",
+    value: ", and ",
+  },
+  {
+    type: "reference",
+    id: "yw2oehy8xpafodqf7sgrwm5c",
+    referenceType: "input",
+    name: "lastName",
+    dataType: "string",
+  },
+  {
+    type: "text",
+    value: ", respectively.",
+  },
+];
 
 async function executeFunction({
   id,
@@ -158,6 +253,20 @@ export const FunctionNode = memo(
       nodeId: _data.id,
     });
 
+    const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
+      {
+        id: _data.id,
+      },
+      {
+        refetchInterval: 5 * 60 * 1000,
+        initialData: _data,
+      },
+    );
+
+    const data = fetchedData as FunctionPrimitive & {
+      flow: { inputSchema: InputSchema | undefined };
+    };
+
     const ancestors = useMemo(() => {
       return connections.reduce((acc, connection) => {
         const ancestor = getNode(connection.source);
@@ -169,24 +278,20 @@ export const FunctionNode = memo(
     }, [connections, getNode]);
 
     const passedInputs = ancestors.reduce((acc, ancestor) => {
+      if (!ancestor.data.metadata.inputSchema) {
+        return acc;
+      }
+
       const flatInputSchema = flattenInputSchema(
-        ancestor.data.metadata.inputSchema as JsonSchema,
+        ancestor.data.metadata.inputSchema,
       );
+
       return acc.concat(flatInputSchema);
     }, [] as FlatInputSchema[]);
 
-    console.log(passedInputs);
-
-    const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
-      {
-        id: _data.id,
-      },
-      {
-        refetchInterval: 5 * 60 * 1000,
-        initialData: _data,
-      },
-    );
-    const data = fetchedData as FunctionPrimitive;
+    const inputs = data.flow?.inputSchema
+      ? [...passedInputs].concat(flattenInputSchema(data.flow.inputSchema))
+      : [...passedInputs];
 
     const form = useForm<z.infer<typeof validationSchema>>({
       mode: "all",
@@ -229,38 +334,49 @@ export const FunctionNode = memo(
       enabled: false,
     });
 
+    const addMessage = api.conversations.addMessage.useMutation();
+
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
-    const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
+    const [isGeneratingCode, _setIsGeneratingCode] = useState<boolean>(false);
 
-    const [messages, setMessages] = useState<CoreMessage[]>([
+    const [messages, setMessages] = useState<(CoreMessage & { id: string })[]>([
       {
+        id: createId(),
         role: "assistant",
         content:
           "Hello there! I'm Specly, your AI builder. What can I build for you today?",
       },
+      ...data.conversation.messages.map((message) => ({
+        id: message.id,
+        role: message.role as "user" | "assistant",
+        content: message.content,
+      })),
     ]);
-    const [rawMessages, setRawMessages] = useState<
-      (
-        | {
-            role: "user";
-            content: RawDescription[];
-          }
-        | {
-            role: "assistant";
-            content: string;
-          }
-      )[]
-    >([
+
+    const [rawMessages, setRawMessages] = useState<RawMessage[]>([
       {
+        id: createId(),
         role: "assistant",
-        content:
-          "Hello there! I'm Specly, your AI builder. What can I build for you today?",
+        content: [
+          {
+            type: "text",
+            value:
+              "Hello there! I'm Specly, your AI builder. What can I build for you today?",
+          },
+        ],
       },
+      ...data.conversation.messages.map((message) => ({
+        id: message.id,
+        role: message.role as "user" | "assistant",
+        content: message.rawContent as RawDescription[],
+      })),
     ]);
+
     const [chatMessage, setChatMessage] = useState<string | null>(null);
-    const [rawChatMessage, setRawChatMessage] = useState<RawDescription[]>([]);
+    const [rawChatMessage, setRawChatMessage] =
+      useState<RawDescription[]>(initialRawMessages);
 
     function onChatChange(editorState: EditorState) {
       editorState.read(async () => {
@@ -284,13 +400,16 @@ export const FunctionNode = memo(
               id: referenceNode.__id,
               referenceType: referenceNode.__referenceType,
               name: referenceNode.__name,
-              icon: referenceNode.__icon,
               dataType: referenceNode.__dataType,
             });
           }
 
           return acc;
         }, [] as RawDescription[]);
+
+        console.log(rawDescription);
+        console.log(chat);
+
         setChatMessage(chat);
         setRawChatMessage(rawDescription);
       });
@@ -356,26 +475,19 @@ export const FunctionNode = memo(
         return;
       }
 
-      const newMessages: CoreMessage[] = [
+      const newMessages: (CoreMessage & { id: string })[] = [
         ...messages,
         {
+          id: createId(),
           role: "user",
           content: chatMessage,
         },
       ];
 
-      const newRawMessages: (
-        | {
-            role: "user";
-            content: RawDescription[];
-          }
-        | {
-            role: "assistant";
-            content: string;
-          }
-      )[] = [
+      const newRawMessages: RawMessage[] = [
         ...rawMessages,
         {
+          id: createId(),
           role: "user",
           content: rawChatMessage,
         },
@@ -384,27 +496,50 @@ export const FunctionNode = memo(
       setMessages(newMessages);
       setRawMessages(newRawMessages);
 
-      const result = await gatherFunctionRequirements(newMessages);
+      await addMessage.mutateAsync({
+        conversationId: data.conversation.id,
+        rawContent: rawChatMessage,
+        content: chatMessage,
+        role: "user",
+      });
+
+      const result = await gatherFunctionRequirements({
+        functionId: data.id,
+        conversationId: data.conversation.id,
+        messages: newMessages.map((message) => ({
+          role: message.role as "user" | "assistant",
+          content: message.content as string,
+        })),
+      });
 
       for await (const content of readStreamableValue(result)) {
-        if ((content as string).trim().endsWith("END")) {
-          setIsGeneratingCode(true);
-          break;
+        if (content?.message?.content) {
+          setMessages([
+            ...newMessages,
+            {
+              id: createId(),
+              role: "assistant",
+              content:
+                content.message.type === "message"
+                  ? fromRawDescriptionToText(content.message.content)
+                  : fromRawDescriptionToText(
+                      content.message.content.description ?? [],
+                    ),
+            },
+          ]);
+
+          setRawMessages([
+            ...newRawMessages,
+            {
+              id: createId(),
+              role: "assistant",
+              content:
+                content.message.type === "message"
+                  ? content.message.content
+                  : content.message.content.description,
+            },
+          ]);
         }
-        setRawMessages([
-          ...newRawMessages,
-          {
-            role: "assistant",
-            content: content as string,
-          },
-        ]);
-        setMessages([
-          ...newMessages,
-          {
-            role: "assistant",
-            content: content as string,
-          },
-        ]);
       }
 
       setChatMessage(null);
@@ -611,64 +746,36 @@ export const FunctionNode = memo(
                 <div className="flex flex-col h-[calc(100dvh-492px)] p-4">
                   <ScrollArea className="flex-grow mb-2" ref={scrollAreaRef}>
                     <div className="flex flex-col gap-4">
-                      {rawMessages.map((rawMessage, idx) => (
-                        <>
-                          {rawMessage.role === "user" ? (
-                            <div
-                              className="flex items-start"
-                              key={JSON.stringify(rawMessage.content)}
-                            >
-                              <Avatar className="size-6 rounded-md">
+                      {rawMessages.map((rawMessage) => (
+                        <div className="flex items-start" key={rawMessage.id}>
+                          <Avatar className="size-6 rounded-md">
+                            {rawMessage.role === "user" ? (
+                              <>
                                 <AvatarImage src={undefined} alt="User" />
                                 <AvatarFallback>
                                   <div className="size-full bg-gradient-to-br from-rose-500 via-amber-600 to-blue-500" />
                                 </AvatarFallback>
-                              </Avatar>
-                              <p className="text-sm ml-3 select-text cursor-text">
-                                {rawMessage.content.map((item, idx) => (
-                                  <span key={`${idx}-${item.type}`}>
-                                    {item.type === "text" ? (
-                                      item.value
-                                    ) : (
-                                      <div className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-xs text-accent-foreground">
-                                        {item.icon === "database-icon" ? (
-                                          <PostgresIcon className="mr-1 size-3 text-primary" />
-                                        ) : item.icon === "number-icon" ? (
-                                          <HashIcon className="mr-1 size-3 text-primary" />
-                                        ) : item.icon === "text-icon" ? (
-                                          <TextIcon className="mr-1 size-3 text-primary" />
-                                        ) : item.icon === "value-icon" ? (
-                                          <VariableIcon className="mr-1 size-3 text-primary" />
-                                        ) : item.icon ===
-                                          "database-column-icon" ? (
-                                          <ColumnsIcon className="mr-1 size-3 text-primary" />
-                                        ) : item.icon ===
-                                          "database-table-icon" ? (
-                                          <TableIcon className="mr-1 size-3 text-primary" />
-                                        ) : (
-                                          <></>
-                                        )}
-                                        {item.name}
-                                      </div>
-                                    )}
-                                  </span>
-                                ))}
-                              </p>
-                            </div>
-                          ) : (
-                            <div
-                              className="flex items-start"
-                              key={rawMessage.content as string}
-                            >
-                              <Avatar className="size-6 rounded-md">
-                                <AvatarImage src="/logo.svg" alt="User" />
-                              </Avatar>
-                              <p className="text-sm ml-3 select-text cursor-text">
-                                {rawMessage.content as string}
-                              </p>
-                            </div>
-                          )}
-                        </>
+                              </>
+                            ) : (
+                              <AvatarImage src="/logo.svg" alt="Specly" />
+                            )}
+                          </Avatar>
+                          <p className="text-sm ml-3 select-text cursor-text">
+                            {rawMessage.content?.map((item, idx) => (
+                              <span key={`${idx}-${item.type}`}>
+                                {item.type === "text" ? (
+                                  item.value
+                                ) : (
+                                  <ReferenceBadge
+                                    referenceType={item.referenceType}
+                                    dataType={item.dataType ?? "null"}
+                                    name={item.name}
+                                  />
+                                )}
+                              </span>
+                            ))}
+                          </p>
+                        </div>
                       ))}
                       {isGeneratingCode && (
                         <div className="flex items-center justify-center">
@@ -683,7 +790,7 @@ export const FunctionNode = memo(
                       <Editor
                         editorRef={editorRef}
                         id={data.id}
-                        inputSchema={passedInputs}
+                        inputSchema={inputs}
                         rawMessage={rawChatMessage}
                         placeholder="Create, refine, or fix your function with AI..."
                         onChange={onChatChange}

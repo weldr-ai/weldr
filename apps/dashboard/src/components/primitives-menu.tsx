@@ -42,7 +42,7 @@ export function PrimitivesMenu() {
             <RepeatIcon className="size-4" />
           </div>
         </TooltipTrigger>
-        <TooltipContent className="bg-muted">
+        <TooltipContent className="bg-muted border">
           <p>Iterator</p>
         </TooltipContent>
       </Tooltip>
@@ -57,7 +57,7 @@ export function PrimitivesMenu() {
             <RegexIcon className="size-4" />
           </div>
         </TooltipTrigger>
-        <TooltipContent className="bg-muted">
+        <TooltipContent className="bg-muted border">
           <p>Matcher</p>
         </TooltipContent>
       </Tooltip>

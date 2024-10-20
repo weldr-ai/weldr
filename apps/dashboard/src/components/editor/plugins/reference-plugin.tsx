@@ -7,13 +7,6 @@ import {
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
 import type { TextNode } from "lexical";
-import {
-  ColumnsIcon,
-  HashIcon,
-  TableIcon,
-  TextIcon,
-  VariableIcon,
-} from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
@@ -21,12 +14,13 @@ import { ScrollArea } from "@specly/ui/scroll-area";
 import { cn } from "@specly/ui/utils";
 
 import { createId } from "@paralleldrive/cuid2";
-import type { FlatInputSchema, VarType } from "@specly/shared/types";
-import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
+import type { DataType, FlatInputSchema } from "@specly/shared/types";
+import { pgTypeToJsonSchemaType } from "@specly/shared/utils";
 import * as ReactDOM from "react-dom";
 import type { ReferenceNode } from "~/components/editor/nodes/reference-node";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
 import { api } from "~/lib/trpc/react";
+import { ReferenceBadge } from "../reference-badge";
 
 export class ReferenceOption extends MenuOption {
   // The id of the reference
@@ -36,17 +30,9 @@ export class ReferenceOption extends MenuOption {
   // Reference type
   referenceType: "input" | "database" | "database-table" | "database-column";
   // Data type
-  dataType?: VarType;
+  dataType?: DataType;
   // Test value
   testValue?: string | number | null;
-  // Icon for display
-  icon:
-    | "database-icon"
-    | "number-icon"
-    | "text-icon"
-    | "value-icon"
-    | "database-column-icon"
-    | "database-table-icon";
   // For extra searching.
   keywords: string[];
   // What happens when you select this option?
@@ -57,17 +43,10 @@ export class ReferenceOption extends MenuOption {
     name: string,
     referenceType: "input" | "database" | "database-table" | "database-column",
     options: {
-      icon:
-        | "database-icon"
-        | "number-icon"
-        | "text-icon"
-        | "value-icon"
-        | "database-column-icon"
-        | "database-table-icon";
       keywords?: string[];
       onSelect: (queryString: string) => void;
     },
-    dataType?: VarType,
+    dataType?: DataType,
     testValue?: string | number | null,
   ) {
     super(name);
@@ -76,7 +55,6 @@ export class ReferenceOption extends MenuOption {
     this.referenceType = referenceType;
     this.dataType = dataType;
     this.testValue = testValue;
-    this.icon = options.icon;
     this.keywords = options.keywords ?? [];
     this.onSelect = options.onSelect.bind(this);
   }
@@ -90,9 +68,6 @@ export function ReferencesPlugin({
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
-  const [currentResources, setCurrentResources] = useState<Set<string>>(
-    new Set(),
-  );
 
   const { data: workspaceResources } = api.resources.getAll.useQuery({
     workspaceId,
@@ -122,7 +97,6 @@ export function ReferencesPlugin({
             selectedOption.id,
             selectedOption.name,
             selectedOption.referenceType,
-            selectedOption.icon,
             selectedOption.dataType,
           );
         } else {
@@ -130,11 +104,7 @@ export function ReferencesPlugin({
             selectedOption.id,
             selectedOption.name,
             selectedOption.referenceType,
-            selectedOption.icon,
           );
-        }
-        if (selectedOption.referenceType === "database") {
-          setCurrentResources((prev) => new Set([...prev, selectedOption.id]));
         }
         if (nodeToReplace) {
           nodeToReplace.replace(referenceNode);
@@ -147,14 +117,13 @@ export function ReferencesPlugin({
   );
 
   const inputOptions: ReferenceOption[] = useMemo(() => {
-    return inputSchema.map(
+    const options: ReferenceOption[] = inputSchema.map(
       (input) =>
         new ReferenceOption(
           createId(),
           input.path,
           "input",
           {
-            icon: input.type === "number" ? "number-icon" : "text-icon",
             keywords: ["input", input.path],
             onSelect: (queryString) => {
               console.log(queryString);
@@ -163,15 +132,10 @@ export function ReferencesPlugin({
           input.type,
         ),
     );
-  }, [inputSchema]);
-
-  const options = useMemo(() => {
-    const options: ReferenceOption[] = [...inputOptions];
 
     for (const resource of workspaceResources ?? []) {
       options.push(
         new ReferenceOption(resource.id, resource.name, "database", {
-          icon: "database-icon",
           keywords: ["resource", "database", resource.name],
           onSelect: (queryString) => {
             console.log(queryString);
@@ -181,8 +145,7 @@ export function ReferencesPlugin({
 
       if (
         (resource.provider === "postgres" || resource.provider === "mysql") &&
-        resource.metadata.tables &&
-        currentResources.has(resource.id)
+        resource.metadata.tables
       ) {
         for (const table of resource.metadata.tables) {
           for (const column of table.columns) {
@@ -192,19 +155,17 @@ export function ReferencesPlugin({
                 `${table.name}.${column.name}`,
                 "database-column",
                 {
-                  icon: "database-column-icon",
                   keywords: ["column", resource.name, column.name],
                   onSelect: (queryString) => {
                     console.log(queryString);
                   },
                 },
-                column.type === "string" ? "string" : "number",
+                pgTypeToJsonSchemaType(column.type),
               ),
             );
           }
           options.push(
             new ReferenceOption(table.name, table.name, "database-table", {
-              icon: "database-table-icon",
               keywords: ["table", resource.name, table.name],
               onSelect: (queryString) => {
                 console.log(queryString);
@@ -215,18 +176,22 @@ export function ReferencesPlugin({
       }
     }
 
+    return options;
+  }, [inputSchema, workspaceResources]);
+
+  const options = useMemo(() => {
     if (!queryString) {
-      return options;
+      return inputOptions;
     }
 
     const regex = new RegExp(queryString, "i");
 
-    return options.filter(
+    return inputOptions.filter(
       (option) =>
         regex.test(option.name) ||
         option.keywords.some((keyword) => regex.test(keyword)),
     );
-  }, [inputOptions, queryString, workspaceResources, currentResources]);
+  }, [inputOptions, queryString]);
 
   return (
     <LexicalTypeaheadMenuPlugin<ReferenceOption>
@@ -270,22 +235,12 @@ export function ReferencesPlugin({
                       }}
                       key={option.key}
                     >
-                      {option.icon === "database-icon" ? (
-                        <PostgresIcon className="size-3 text-primary" />
-                      ) : option.icon === "value-icon" ? (
-                        <VariableIcon className="size-3 text-primary" />
-                      ) : option.icon === "number-icon" ? (
-                        <HashIcon className="size-3 text-primary" />
-                      ) : option.icon === "text-icon" ? (
-                        <TextIcon className="size-3 text-primary" />
-                      ) : option.icon === "database-column-icon" ? (
-                        <ColumnsIcon className="size-3 text-primary" />
-                      ) : option.icon === "database-table-icon" ? (
-                        <TableIcon className="size-3 text-primary" />
-                      ) : (
-                        <></>
-                      )}
-                      <span className="text">{option.name}</span>
+                      <ReferenceBadge
+                        name={option.name}
+                        dataType={option.dataType ?? "null"}
+                        referenceType={option.referenceType}
+                        className="border-none p-0 bg-transparent"
+                      />
                     </div>
                   ))}
                 </div>

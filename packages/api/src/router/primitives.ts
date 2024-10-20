@@ -3,7 +3,12 @@ import { TRPCError } from "@trpc/server";
 import { primitives } from "@specly/db/schema";
 
 import { type SQL, and, eq, sql } from "@specly/db";
-import type { IteratorPrimitive, Primitive } from "@specly/shared/types";
+import { mergeJson } from "@specly/db/utils";
+import type {
+  InputSchema,
+  IteratorPrimitive,
+  Primitive,
+} from "@specly/shared/types";
 import {
   insertPrimitiveSchema,
   iteratorPrimitiveSchema,
@@ -80,7 +85,6 @@ export const primitivesRouter = {
     }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
-    .output(primitiveSchema)
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.primitives.findFirst({
         where: and(
@@ -88,6 +92,12 @@ export const primitivesRouter = {
           eq(primitives.createdBy, ctx.session.user.id),
         ),
         with: {
+          flow: {
+            columns: {
+              id: true,
+              inputSchema: true,
+            },
+          },
           conversation: {
             with: {
               messages: true,
@@ -103,7 +113,9 @@ export const primitivesRouter = {
         });
       }
 
-      return result as Primitive;
+      return result as Primitive & {
+        flow: { inputSchema: InputSchema | undefined };
+      };
     }),
   getIteratorById: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -215,15 +227,13 @@ export const primitivesRouter = {
         });
       }
 
-      // TODO: use raw sql to update the metadata
       const updatedPrimitive = await ctx.db
         .update(primitives)
         .set({
           ...input.payload,
-          metadata: sql`${{
-            ...savedPrimitive.metadata,
-            ...input.payload.metadata,
-          }}::jsonb`,
+          metadata: input.payload.metadata
+            ? mergeJson(primitives.metadata, input.payload.metadata)
+            : undefined,
         })
         .where(
           and(

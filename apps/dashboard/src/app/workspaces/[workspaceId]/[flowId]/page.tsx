@@ -1,10 +1,10 @@
-import type { Flow, Primitive } from "@specly/shared/types";
+import type { Conversation, Flow } from "@specly/shared/types";
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { FlowBuilder } from "~/components/flow-builder";
 import { api } from "~/lib/trpc/rsc";
-import type { FlowEdge, FlowNode } from "~/types";
+import type { FlowEdge, FlowNode, FlowNodeData } from "~/types";
 
 export default async function FlowPage({
   params,
@@ -38,7 +38,11 @@ export default async function FlowPage({
           updatedAt: primitive.updatedAt,
           createdBy: primitive.createdBy,
           flowId: primitive.flowId,
-        } as Primitive,
+          conversation: primitive.conversation as Conversation,
+          flow: {
+            inputSchema: flow.inputSchema,
+          },
+        } as FlowNodeData,
       }));
 
     const initialEdges: FlowEdge[] = flow.edges.map((edge) => ({

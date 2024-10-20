@@ -137,7 +137,6 @@ export const Response = memo(
               id: referenceNode.__id,
               referenceType: referenceNode.__referenceType,
               name: referenceNode.__name,
-              icon: referenceNode.__icon,
               dataType: referenceNode.__dataType,
             });
           }
