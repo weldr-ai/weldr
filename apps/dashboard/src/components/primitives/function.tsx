@@ -69,16 +69,18 @@ import { z } from "zod";
 
 import { createId } from "@paralleldrive/cuid2";
 import type {
+  ConversationMessage,
   FlatInputSchema,
   FunctionPrimitive,
+  FunctionRequirementsMessage,
   InputSchema,
   RawDescription,
 } from "@specly/shared/types";
+import { rawDescriptionReferenceSchema } from "@specly/shared/validators/common";
 import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
 import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
-import type { CoreMessage } from "ai";
 import { readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
@@ -90,105 +92,6 @@ import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 import type { ReferenceNode } from "../editor/nodes/reference-node";
 import { ReferenceBadge } from "../editor/reference-badge";
 import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
-
-interface RawMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: RawDescription[];
-}
-
-const initialRawMessages: RawDescription[] = [
-  {
-    type: "text",
-    value: "Get all from ",
-  },
-  {
-    type: "reference",
-    id: "customers",
-    referenceType: "database-table",
-    name: "customers",
-  },
-  {
-    type: "text",
-    value: " in ",
-  },
-  {
-    type: "reference",
-    id: "wd2v4lcxuqun9huk3q2jsvnw",
-    referenceType: "database",
-    name: "CRM",
-  },
-  {
-    type: "text",
-    value: " and optionally filter by the ",
-  },
-  {
-    type: "reference",
-    id: "customers.email",
-    referenceType: "database-column",
-    name: "customers.email",
-    dataType: "string",
-  },
-  {
-    type: "text",
-    value: ", ",
-  },
-  {
-    type: "reference",
-    id: "customers.first_name",
-    referenceType: "database-column",
-    name: "customers.first_name",
-    dataType: "string",
-  },
-  {
-    type: "text",
-    value: ", and ",
-  },
-  {
-    type: "reference",
-    id: "customers.last_name",
-    referenceType: "database-column",
-    name: "customers.last_name",
-    dataType: "string",
-  },
-  {
-    type: "text",
-    value: " using the inptus ",
-  },
-  {
-    type: "reference",
-    id: "vlqv8vx4jefonxgkw4b42ua1",
-    referenceType: "input",
-    name: "email",
-    dataType: "string",
-  },
-  {
-    type: "text",
-    value: ", ",
-  },
-  {
-    type: "reference",
-    id: "gku2e6k1ks5zb92yls092ggf",
-    referenceType: "input",
-    name: "firstName",
-    dataType: "string",
-  },
-  {
-    type: "text",
-    value: ", and ",
-  },
-  {
-    type: "reference",
-    id: "yw2oehy8xpafodqf7sgrwm5c",
-    referenceType: "input",
-    name: "lastName",
-    dataType: "string",
-  },
-  {
-    type: "text",
-    value: ", respectively.",
-  },
-];
 
 async function executeFunction({
   id,
@@ -242,7 +145,44 @@ export const FunctionNode = memo(
     positionAbsoluteY,
     parentId,
   }: FlowNodeProps) => {
+    const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
+      {
+        id: _data.id,
+      },
+      {
+        initialData: _data,
+      },
+    );
+
+    const data = fetchedData as FunctionPrimitive & {
+      flow: { inputSchema: InputSchema | undefined };
+    };
+
+    const updateFunction = api.primitives.update.useMutation({
+      onSuccess: async () => {
+        await refetch();
+      },
+    });
+
+    const deleteFunction = api.primitives.delete.useMutation();
+
+    const {
+      data: executionResult,
+      isLoading: isLoadingExecutionResult,
+      isRefetching: isRefetchingExecutionResult,
+    } = useQuery({
+      queryKey: [`execution-result-${data.id}`],
+      queryFn: () => executeFunction({ id: data.id }),
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      enabled: false,
+    });
+
+    const addMessage = api.conversations.addMessage.useMutation();
+
     const editorRef = useRef<LexicalEditor>(null);
+
     const { deleteElements, updateNodeData, fitBounds, getNode } = useReactFlow<
       FlowNode,
       FlowEdge
@@ -252,20 +192,6 @@ export const FunctionNode = memo(
       type: "target",
       nodeId: _data.id,
     });
-
-    const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
-      {
-        id: _data.id,
-      },
-      {
-        refetchInterval: 5 * 60 * 1000,
-        initialData: _data,
-      },
-    );
-
-    const data = fetchedData as FunctionPrimitive & {
-      flow: { inputSchema: InputSchema | undefined };
-    };
 
     const ancestors = useMemo(() => {
       return connections.reduce((acc, connection) => {
@@ -313,70 +239,30 @@ export const FunctionNode = memo(
       });
     }, [form.setError, data.name]);
 
-    const updateFunction = api.primitives.update.useMutation({
-      onSuccess: async () => {
-        await refetch();
-      },
-    });
-
-    const deleteFunction = api.primitives.delete.useMutation();
-
-    const {
-      data: executionResult,
-      isLoading: isLoadingExecutionResult,
-      isRefetching: isRefetchingExecutionResult,
-    } = useQuery({
-      queryKey: [`execution-result-${data.id}`],
-      queryFn: () => executeFunction({ id: data.id }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      enabled: false,
-    });
-
-    const addMessage = api.conversations.addMessage.useMutation();
-
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
-    const [isGeneratingCode, _setIsGeneratingCode] = useState<boolean>(false);
-
-    const [messages, setMessages] = useState<(CoreMessage & { id: string })[]>([
+    const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
+    const [messages, setMessages] = useState<ConversationMessage[]>([
       {
-        id: createId(),
         role: "assistant",
         content:
-          "Hello there! I'm Specly, your AI builder. What can I build for you today?",
-      },
-      ...data.conversation.messages.map((message) => ({
-        id: message.id,
-        role: message.role as "user" | "assistant",
-        content: message.content,
-      })),
-    ]);
-
-    const [rawMessages, setRawMessages] = useState<RawMessage[]>([
-      {
-        id: createId(),
-        role: "assistant",
-        content: [
+          "Hi there! I'm Specly, your AI assistant. What does your function do?",
+        rawContent: [
           {
             type: "text",
             value:
-              "Hello there! I'm Specly, your AI builder. What can I build for you today?",
+              "Hi there! I'm Specly, your AI assistant. What does your function do?",
           },
         ],
+        conversationId: data.conversation.id,
       },
-      ...data.conversation.messages.map((message) => ({
-        id: message.id,
-        role: message.role as "user" | "assistant",
-        content: message.rawContent as RawDescription[],
-      })),
+      ...(data.conversation.messages.sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+      ) as ConversationMessage[]),
     ]);
-
     const [chatMessage, setChatMessage] = useState<string | null>(null);
-    const [rawChatMessage, setRawChatMessage] =
-      useState<RawDescription[]>(initialRawMessages);
+    const [rawChatMessage, setRawChatMessage] = useState<RawDescription[]>([]);
 
     function onChatChange(editorState: EditorState) {
       editorState.read(async () => {
@@ -395,20 +281,15 @@ export const FunctionNode = memo(
 
           if (child.__type === "reference") {
             const referenceNode = child as ReferenceNode;
-            acc.push({
-              type: "reference",
-              id: referenceNode.__id,
-              referenceType: referenceNode.__referenceType,
-              name: referenceNode.__name,
-              dataType: referenceNode.__dataType,
-            });
+            acc.push(
+              rawDescriptionReferenceSchema.parse(referenceNode.__reference),
+            );
           }
 
           return acc;
         }, [] as RawDescription[]);
 
         console.log(rawDescription);
-        console.log(chat);
 
         setChatMessage(chat);
         setRawChatMessage(rawDescription);
@@ -475,33 +356,18 @@ export const FunctionNode = memo(
         return;
       }
 
-      const newMessages: (CoreMessage & { id: string })[] = [
-        ...messages,
-        {
-          id: createId(),
-          role: "user",
-          content: chatMessage,
-        },
-      ];
+      const newMessageUser: ConversationMessage = {
+        role: "user",
+        content: chatMessage,
+        rawContent: rawChatMessage,
+        conversationId: data.conversation.id,
+      };
 
-      const newRawMessages: RawMessage[] = [
-        ...rawMessages,
-        {
-          id: createId(),
-          role: "user",
-          content: rawChatMessage,
-        },
-      ];
+      const newMessages = [...messages, newMessageUser];
 
       setMessages(newMessages);
-      setRawMessages(newRawMessages);
 
-      await addMessage.mutateAsync({
-        conversationId: data.conversation.id,
-        rawContent: rawChatMessage,
-        content: chatMessage,
-        role: "user",
-      });
+      await addMessage.mutateAsync(newMessageUser);
 
       const result = await gatherFunctionRequirements({
         functionId: data.id,
@@ -512,34 +378,73 @@ export const FunctionNode = memo(
         })),
       });
 
-      for await (const content of readStreamableValue(result)) {
-        if (content?.message?.content) {
-          setMessages([
-            ...newMessages,
-            {
-              id: createId(),
-              role: "assistant",
-              content:
-                content.message.type === "message"
-                  ? fromRawDescriptionToText(content.message.content)
-                  : fromRawDescriptionToText(
-                      content.message.content.description ?? [],
-                    ),
-            },
-          ]);
+      let functionRequirementsMessage = "";
+      let newMessageAssistant: ConversationMessage | null = null;
 
-          setRawMessages([
-            ...newRawMessages,
-            {
-              id: createId(),
-              role: "assistant",
-              content:
-                content.message.type === "message"
-                  ? content.message.content
-                  : content.message.content.description,
-            },
-          ]);
+      for await (const content of readStreamableValue(result)) {
+        newMessageAssistant = {
+          role: "assistant",
+          content: "",
+          rawContent: [],
+          conversationId: data.conversation.id,
+        };
+
+        if (content?.message?.content && content.message.type === "message") {
+          newMessageAssistant.content = fromRawDescriptionToText(
+            content.message.content,
+          );
+          newMessageAssistant.rawContent = content.message.content;
         }
+
+        // if end message, start generating code
+        if (
+          content?.message?.type === "end" &&
+          content?.message?.content?.description
+        ) {
+          const description: RawDescription[] = [
+            {
+              type: "text",
+              value: "Generating the following function: ",
+            },
+            ...content.message.content.description,
+          ];
+          newMessageAssistant.content = fromRawDescriptionToText(description);
+          newMessageAssistant.rawContent = description;
+        }
+
+        if (newMessageAssistant) {
+          setMessages([...newMessages, newMessageAssistant]);
+        }
+        functionRequirementsMessage = JSON.stringify(content);
+      }
+
+      // add the last message to the new messages temporary list
+      if (newMessageAssistant) {
+        newMessages.push(newMessageAssistant);
+      }
+
+      const functionRequirementsMessageObject = JSON.parse(
+        functionRequirementsMessage,
+      ) as FunctionRequirementsMessage;
+
+      // if code generation is set, disable it and refetch the updated function metadata
+      if (functionRequirementsMessageObject.message.type === "end") {
+        setIsGeneratingCode(true);
+
+        const functionBuiltSuccessfullyMessage: ConversationMessage = {
+          role: "assistant",
+          rawContent: [
+            {
+              type: "text",
+              value: "Your function has been built successfully!",
+            },
+          ],
+          content: "Your function has been built successfully!",
+          conversationId: data.conversation.id,
+        };
+
+        setIsGeneratingCode(false);
+        setMessages([...newMessages, functionBuiltSuccessfullyMessage]);
       }
 
       setChatMessage(null);
@@ -746,10 +651,13 @@ export const FunctionNode = memo(
                 <div className="flex flex-col h-[calc(100dvh-492px)] p-4">
                   <ScrollArea className="flex-grow mb-2" ref={scrollAreaRef}>
                     <div className="flex flex-col gap-4">
-                      {rawMessages.map((rawMessage) => (
-                        <div className="flex items-start" key={rawMessage.id}>
+                      {messages.map((messages) => (
+                        <div
+                          className="flex items-start"
+                          key={messages.id ?? createId()}
+                        >
                           <Avatar className="size-6 rounded-md">
-                            {rawMessage.role === "user" ? (
+                            {messages.role === "user" ? (
                               <>
                                 <AvatarImage src={undefined} alt="User" />
                                 <AvatarFallback>
@@ -761,16 +669,20 @@ export const FunctionNode = memo(
                             )}
                           </Avatar>
                           <p className="text-sm ml-3 select-text cursor-text">
-                            {rawMessage.content?.map((item, idx) => (
-                              <span key={`${idx}-${item.type}`}>
+                            {messages.rawContent?.map((item, idx) => (
+                              <span
+                                key={`${idx}-${item.type}`}
+                                className={cn({
+                                  "text-success":
+                                    item.type === "text" &&
+                                    item.value ===
+                                      "Your function has been built successfully!",
+                                })}
+                              >
                                 {item.type === "text" ? (
                                   item.value
                                 ) : (
-                                  <ReferenceBadge
-                                    referenceType={item.referenceType}
-                                    dataType={item.dataType ?? "null"}
-                                    name={item.name}
-                                  />
+                                  <ReferenceBadge reference={item} />
                                 )}
                               </span>
                             ))}

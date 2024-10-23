@@ -86,7 +86,7 @@ export function flattenInputSchema(
 }
 
 export function fromRawDescriptionToText(
-  rawDescription: RawDescription[],
+  rawDescription: RawDescription[] = [],
 ): string {
   return rawDescription
     .map((element) => {

@@ -1,9 +1,9 @@
 import type { z } from "zod";
 import type {
   baseJsonSchema,
-  conversationMessageSchema,
   conversationSchema,
   dataTypeSchema,
+  functionRequirementsMessageSchema,
   inputSchema,
   outputSchema,
   rawDescriptionSchema,
@@ -74,7 +74,15 @@ export type FlowMetadata =
 
 export type Edge = z.infer<typeof edgeSchema>;
 
-export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
+export interface ConversationMessage {
+  id?: string;
+  role: "user" | "assistant";
+  content: string;
+  rawContent?: RawDescription[];
+  createdAt?: Date;
+  updatedAt?: Date;
+  conversationId: string;
+}
 export type Conversation = z.infer<typeof conversationSchema>;
 
 export type Resource = z.infer<typeof resourceSchema>;
@@ -97,6 +105,9 @@ export type IteratorPrimitive = z.infer<typeof iteratorPrimitiveSchema>;
 export type ResponsePrimitive = z.infer<typeof responsePrimitiveSchema>;
 
 export type RawDescription = z.infer<typeof rawDescriptionSchema>;
+export type FunctionRequirementsMessage = z.infer<
+  typeof functionRequirementsMessageSchema
+>;
 
 export type BaseFormState<
   FormFields = Record<string, string>,

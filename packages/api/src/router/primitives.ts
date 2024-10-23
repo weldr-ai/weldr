@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { primitives } from "@specly/db/schema";
 
 import { type SQL, and, eq, sql } from "@specly/db";
+import { conversations } from "@specly/db/schema";
 import { mergeJson } from "@specly/db/utils";
 import type {
   InputSchema,
@@ -15,7 +16,6 @@ import {
   primitiveSchema,
   updatePrimitiveSchema,
 } from "@specly/shared/validators/primitives";
-import { conversations } from "node_modules/@specly/db/src/schema/conversations";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
@@ -49,20 +49,7 @@ export const primitivesRouter = {
               conversationId: conversation.id,
               createdBy: ctx.session.user.id,
             })
-            .returning({
-              id: primitives.id,
-              type: primitives.type,
-              name: primitives.name,
-              description: primitives.description,
-              positionX: primitives.positionX,
-              positionY: primitives.positionY,
-              metadata: primitives.metadata,
-              createdBy: primitives.createdBy,
-              createdAt: primitives.createdAt,
-              updatedAt: primitives.updatedAt,
-              flowId: primitives.flowId,
-              parentId: primitives.parentId,
-            });
+            .returning();
 
           if (!result[0]) {
             throw new TRPCError({

@@ -5,6 +5,7 @@ import {
   outputSchema,
   rawDescriptionSchema,
 } from "./common";
+import { resourceProvidersSchema } from "./resources";
 
 export const primitiveBaseSchema = z.object({
   id: z.string(),
@@ -33,7 +34,14 @@ export const functionPrimitiveMetadataSchema = baseMetadataSchema.extend({
   logicalSteps: z.string().optional(),
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
-  resources: z.string().array().optional(),
+  resources: z
+    .object({
+      id: z.string(),
+      provider: resourceProvidersSchema,
+    })
+    .array()
+    .optional(),
+  npmDependencies: z.string().array().optional(),
 });
 
 export const functionPrimitiveSchema = primitiveBaseSchema.extend({

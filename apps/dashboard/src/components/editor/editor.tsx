@@ -13,7 +13,6 @@ import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
 import { cn } from "@specly/ui/utils";
 
-import { createId } from "@paralleldrive/cuid2";
 import type { FlatInputSchema, RawDescription } from "@specly/shared/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
@@ -41,12 +40,7 @@ export function Editor({ ...props }: EditorProps) {
       if (item.type === "text") {
         paragraph.append($createTextNode(item.value));
       } else if (item.type === "reference") {
-        const referenceNode = $createReferenceNode(
-          item.id ?? createId(),
-          item.name,
-          item.referenceType,
-          item.dataType ?? "null",
-        );
+        const referenceNode = $createReferenceNode(item);
         paragraph.append(referenceNode);
       }
     }
