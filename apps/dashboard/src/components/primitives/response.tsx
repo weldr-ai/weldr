@@ -38,6 +38,7 @@ import { cn } from "@specly/ui/utils";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { RawDescription, ResponsePrimitive } from "@specly/shared/types";
+import { rawDescriptionReferenceSchema } from "@specly/shared/validators/common";
 import {
   Form,
   FormControl,
@@ -132,13 +133,9 @@ export const Response = memo(
             });
           } else if (child.__type === "reference") {
             const referenceNode = child as ReferenceNode;
-            acc.push({
-              type: "reference",
-              id: referenceNode.__id,
-              referenceType: referenceNode.__referenceType,
-              name: referenceNode.__name,
-              dataType: referenceNode.__dataType,
-            });
+            acc.push(
+              rawDescriptionReferenceSchema.parse(referenceNode.__reference),
+            );
           }
           return acc;
         }, [] as RawDescription[]);

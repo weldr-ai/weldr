@@ -11,6 +11,7 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^0.0.51",
     "@ai-sdk/openai": "^0.0.60",
     "@hookform/resolvers": "^3.3.4",
     "@lexical/react": "^0.16.0",
@@ -29,7 +30,7 @@
     "@vercel/analytics": "^1.2.2",
     "@vercel/speed-insights": "^1.0.10",
     "@xyflow/react": "^12.1.1",
-    "ai": "^3.3.43",
+    "ai": "^3.4.18",
     "lexical": "^0.16.0",
     "lucide-react": "^0.363.0",
     "next": "^14.2.13",

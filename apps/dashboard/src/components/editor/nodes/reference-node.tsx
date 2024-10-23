@@ -9,41 +9,22 @@ import type {
 import { DecoratorNode } from "lexical";
 import type { ReactNode } from "react";
 
-import type { DataType } from "@specly/shared/types";
 import { toCamelCase } from "@specly/shared/utils";
+import type { rawDescriptionReferenceSchema } from "@specly/shared/validators/common";
+import type { z } from "zod";
 import { ReferenceBadge } from "~/components/editor/reference-badge";
 
 export type SerializedReferenceNode = Spread<
-  {
-    id: string;
-    name: string;
-    referenceType: "input" | "database" | "database-table" | "database-column";
-    dataType?: DataType;
-    testValue?: string | number | null;
-  },
+  z.infer<typeof rawDescriptionReferenceSchema>,
   SerializedLexicalNode
 >;
 
 export class ReferenceNode extends DecoratorNode<ReactNode> {
-  __id: string;
-  __name: string;
-  __referenceType: "input" | "database" | "database-table" | "database-column";
-  __dataType?: DataType;
-  __testValue?: string | number | null;
+  __reference: z.infer<typeof rawDescriptionReferenceSchema>;
 
-  constructor(
-    id: string,
-    name: string,
-    referenceType: "input" | "database" | "database-table" | "database-column",
-    dataType?: DataType,
-    testValue?: string | number | null,
-  ) {
+  constructor(reference: z.infer<typeof rawDescriptionReferenceSchema>) {
     super();
-    this.__id = id;
-    this.__name = name;
-    this.__referenceType = referenceType;
-    this.__dataType = dataType;
-    this.__testValue = testValue;
+    this.__reference = reference;
   }
 
   static getType(): string {
@@ -51,35 +32,22 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   }
 
   static clone(node: ReferenceNode): ReferenceNode {
-    return new ReferenceNode(
-      node.__id,
-      node.__name,
-      node.__referenceType,
-      node.__dataType,
-      node.__testValue,
-    );
+    return new ReferenceNode(node.exportJSON());
   }
 
   static importJSON(serializedNode: SerializedReferenceNode): ReferenceNode {
-    const node = $createReferenceNode(
-      serializedNode.id,
-      serializedNode.name,
-      serializedNode.referenceType,
-      serializedNode.dataType,
-      serializedNode.testValue,
-    );
+    const node = $createReferenceNode(serializedNode);
     return node;
   }
 
   exportJSON(): SerializedReferenceNode {
     return {
-      id: this.__id,
-      name: this.__name,
-      type: "reference",
-      referenceType: this.__referenceType,
-      dataType: this.__dataType,
+      type: "reference" as const,
       version: 1,
-    };
+      ...Object.fromEntries(
+        Object.entries(this.__reference).filter(([key]) => key !== "type"),
+      ),
+    } as SerializedReferenceNode;
   }
 
   exportDOM(): DOMExportOutput {
@@ -89,15 +57,15 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   }
 
   getTextContent(): string {
-    switch (this.__referenceType) {
+    switch (this.__reference.referenceType) {
       case "input":
-        return `input '${toCamelCase(this.__name)}' of type '${this.__dataType}'`;
+        return `input '${toCamelCase(this.__reference.name)}' of type '${this.__reference.dataType}'`;
       case "database":
-        return `postgres database '${this.__name}' - its id is '${this.__id}'`;
+        return `postgres database '${this.__reference.name}' - its id is '${this.__reference.id}'`;
       case "database-table":
-        return `table '${this.__name}'`;
+        return `table '${this.__reference.name}' and its columns are ${(this.__reference.columns as { name: string; dataType: string }[] | null)?.map((column) => `${column.name} of type (${column.dataType})`).join(", ")}`;
       case "database-column":
-        return `column '${this.__name}' of type '${this.__dataType}'`;
+        return `column '${this.__reference.name}' of type '${this.__reference.dataType}'`;
       default:
         return "";
     }
@@ -114,24 +82,14 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   }
 
   decorate(): JSX.Element {
-    return (
-      <ReferenceBadge
-        name={this.__name}
-        referenceType={this.__referenceType}
-        dataType={this.__dataType ?? "null"}
-      />
-    );
+    return <ReferenceBadge reference={this.__reference} />;
   }
 }
 
 export function $createReferenceNode(
-  id: string,
-  name: string,
-  referenceType: "input" | "database" | "database-table" | "database-column",
-  dataType?: DataType,
-  testValue?: string | number | null,
+  referenceNode: z.infer<typeof rawDescriptionReferenceSchema>,
 ): ReferenceNode {
-  return new ReferenceNode(id, name, referenceType, dataType, testValue);
+  return new ReferenceNode(referenceNode);
 }
 
 export function $isReferenceNode(

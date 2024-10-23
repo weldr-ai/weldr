@@ -39,7 +39,11 @@ import Link from "next/link";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createId } from "@paralleldrive/cuid2";
-import type { Flow, InputSchema } from "@specly/shared/types";
+import type {
+  ConversationMessage,
+  Flow,
+  InputSchema,
+} from "@specly/shared/types";
 import {
   baseUpdateFlowSchema,
   updateEndpointFlowSchema,
@@ -87,7 +91,13 @@ export function FlowDialog({ initialData }: { initialData: Flow }) {
 
   const updateFlow = api.flows.update.useMutation({
     onSuccess: async () => {
-      refetch();
+      await refetch();
+    },
+  });
+
+  const addMessage = api.conversations.addMessage.useMutation({
+    onSuccess: async () => {
+      await refetch();
     },
   });
 
@@ -135,29 +145,27 @@ export function FlowDialog({ initialData }: { initialData: Flow }) {
 
   const [isGeneratingSchemas, setIsGeneratingSchemas] = useState(false);
 
-  const savedMessages = data.conversation.messages.map((message) => ({
-    id: message.id,
-    role: message.role,
-    content: message.content,
-  }));
-
-  const [messages, setMessages] = useState<(CoreMessage & { id: string })[]>([
+  const [messages, setMessages] = useState<ConversationMessage[]>([
     {
       id: createId(),
       role: "assistant",
       content:
-        "Hello there! I'm Specly, your AI builder. What can I build for you today?",
+        "Hi there! I'm Specly, your AI assistant. What are your flow's inputs?",
+      rawContent: [
+        {
+          type: "text",
+          value:
+            "Hi there! I'm Specly, your AI assistant. What are your flow's inputs?",
+        },
+      ],
+      conversationId: data.conversation.id,
     },
-    ...savedMessages,
+    ...(data.conversation.messages.sort(
+      (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+    ) as ConversationMessage[]),
   ]);
 
   const [chatMessage, setChatMessage] = useState<string | null>(null);
-
-  const addMessage = api.conversations.addMessage.useMutation({
-    onSuccess: async () => {
-      await refetch();
-    },
-  });
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -166,23 +174,18 @@ export function FlowDialog({ initialData }: { initialData: Flow }) {
       return;
     }
 
-    const newMessages: (CoreMessage & { id: string })[] = [
-      ...messages,
-      {
-        id: createId(),
-        role: "user",
-        content: chatMessage,
-      },
-    ];
+    const newMessageUser: ConversationMessage = {
+      role: "user",
+      content: chatMessage,
+      conversationId: data.conversation.id,
+    };
+
+    const newMessages: ConversationMessage[] = [...messages, newMessageUser];
 
     setMessages(newMessages);
     setChatMessage(null);
 
-    await addMessage.mutateAsync({
-      content: chatMessage,
-      role: "user",
-      conversationId: data.conversation.id,
-    });
+    await addMessage.mutateAsync(newMessageUser);
 
     const result = await gatherInputsRequirements(
       newMessages.map((message) => ({
@@ -204,18 +207,12 @@ export function FlowDialog({ initialData }: { initialData: Flow }) {
       setMessages([
         ...newMessages,
         {
-          id: createId(),
           role: "assistant",
           content: assistantMessage,
+          conversationId: data.conversation.id,
         },
       ]);
     }
-
-    await addMessage.mutateAsync({
-      content: assistantMessage,
-      role: "assistant",
-      conversationId: data.conversation.id,
-    });
 
     if (shouldGenerateSchemas) {
       setIsGeneratingSchemas(true);
@@ -225,27 +222,24 @@ export function FlowDialog({ initialData }: { initialData: Flow }) {
         flowType: data.type,
       });
 
-      let finalMessage = "";
+      const finalMessage: ConversationMessage = {
+        role: "assistant",
+        content: "",
+        rawContent: [],
+        conversationId: data.conversation.id,
+      };
 
       if (result) {
-        finalMessage = "Successfully generated input schema";
+        finalMessage.content = "Successfully built your input schema!";
       } else {
-        finalMessage = "Failed to generate input schema";
+        finalMessage.content = "Failed to build your input schema!";
       }
 
-      setMessages([
-        ...newMessages,
-        {
-          id: createId(),
-          role: "assistant",
-          content: finalMessage,
-        },
-      ]);
+      setMessages([...newMessages, finalMessage]);
 
       await addMessage.mutateAsync({
-        content: finalMessage,
-        role: "assistant",
-        conversationId: data.conversation.id,
+        ...finalMessage,
+        rawContent: finalMessage.rawContent ?? undefined,
       });
 
       setIsGeneratingSchemas(false);
@@ -577,7 +571,7 @@ export function FlowDialog({ initialData }: { initialData: Flow }) {
                           <>
                             {message.role === "user" ? (
                               <div
-                                key={message.id}
+                                key={message.id ?? createId()}
                                 className="flex items-start"
                               >
                                 <Avatar className="size-6 rounded-md">
@@ -592,7 +586,7 @@ export function FlowDialog({ initialData }: { initialData: Flow }) {
                               </div>
                             ) : (
                               <div
-                                key={message.id}
+                                key={message.id ?? createId()}
                                 className="flex items-start"
                               >
                                 <Avatar className="size-6 rounded-md">
@@ -604,10 +598,10 @@ export function FlowDialog({ initialData }: { initialData: Flow }) {
                                     {
                                       "text-success":
                                         message.content ===
-                                        "Successfully generated input schema",
+                                        "Successfully built your input schema!",
                                       "text-destructive":
                                         message.content ===
-                                        "Failed to generate input schema",
+                                        "Failed to build your input schema!",
                                     },
                                   )}
                                 >

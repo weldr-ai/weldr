@@ -1,8 +1,12 @@
 "use server";
 
 import { createOpenAI } from "@ai-sdk/openai";
-import type { InputSchema } from "@specly/shared/types";
-import { rawDescriptionSchema } from "@specly/shared/validators/common";
+import type {
+  FunctionRequirementsMessage,
+  InputSchema,
+  RawDescription,
+} from "@specly/shared/types";
+import { functionRequirementsMessageSchema } from "@specly/shared/validators/common";
 import { type CoreMessage, streamObject, streamText } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import OpenAI from "openai";
@@ -16,6 +20,10 @@ import {
 import { api } from "../trpc/rsc";
 import { fromRawDescriptionToText } from "../utils";
 
+// const anthropic = createAnthropic({
+//   apiKey: process.env.ANTHROPIC_API_KEY,
+// });
+
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   compatibility: "strict",
@@ -23,50 +31,6 @@ const openai = createOpenAI({
 
 const openaiClient = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});
-
-const functionRequirementsMessageSchema = z.object({
-  message: z.discriminatedUnion("type", [
-    z
-      .object({
-        type: z.literal("message"),
-        content: rawDescriptionSchema
-          .array()
-          .describe(
-            "The content of the message as a list of text and reference parts",
-          ),
-      })
-      .describe("Message of the function requirements gathering"),
-    z
-      .object({
-        type: z.literal("end"),
-        content: z.object({
-          inputs: z
-            .string()
-            .describe("JSON schema for the inputs of the function"),
-          outputs: z
-            .string()
-            .describe("JSON schema for the outputs of the function"),
-          description: rawDescriptionSchema
-            .array()
-            .describe(
-              "The description of the function as a list of text and reference parts similar to messages. You should never use text only. You must mention all references using the schema provided.",
-            ),
-          resources: z
-            .string()
-            .array()
-            .describe("The IDs for all the used resources"),
-          logicalSteps: z.string().describe("Logical steps for the function"),
-          edgeCases: z.string().describe("Edge cases for the function"),
-          errorHandling: z
-            .string()
-            .describe(
-              "Error handling for the function. Assume that inputs are always valid.",
-            ),
-        }),
-      })
-      .describe("Last message of the function requirements gathering"),
-  ]),
 });
 
 export async function gatherFunctionRequirements({
@@ -78,8 +42,7 @@ export async function gatherFunctionRequirements({
   conversationId: string;
   messages: CoreMessage[];
 }) {
-  const stream =
-    createStreamableValue<z.infer<typeof functionRequirementsMessageSchema>>();
+  const stream = createStreamableValue<FunctionRequirementsMessage>();
 
   (async () => {
     const { partialObjectStream } = await streamObject({
@@ -95,26 +58,35 @@ export async function gatherFunctionRequirements({
         if (object?.message?.type === "message") {
           api.conversations.addMessage({
             role: "assistant",
-            conversationId,
-            rawContent: object.message.content,
             content: fromRawDescriptionToText(object.message.content),
+            rawContent: object.message.content,
+            conversationId,
           });
         }
 
         if (object?.message?.type === "end") {
+          const description: RawDescription[] = [
+            {
+              type: "text",
+              value: "Generating the following function: ",
+            },
+            ...object.message.content.description,
+          ];
+
           api.conversations.addMessage({
-            conversationId,
-            rawContent: object.message.content.description,
-            content: fromRawDescriptionToText(
-              object.message.content.description,
-            ),
             role: "assistant",
+            content: fromRawDescriptionToText(description),
+            rawContent: description,
+            conversationId,
           });
 
           api.primitives.update({
             where: { id: functionId },
             payload: {
               type: "function",
+              description: fromRawDescriptionToText(
+                object.message.content.description,
+              ),
               metadata: {
                 inputSchema: JSON.parse(object.message.content.inputs),
                 outputSchema: JSON.parse(object.message.content.outputs),
@@ -123,6 +95,7 @@ export async function gatherFunctionRequirements({
                 edgeCases: object.message.content.edgeCases,
                 errorHandling: object.message.content.errorHandling,
                 logicalSteps: object.message.content.logicalSteps,
+                npmDependencies: object.message.content.npmDependencies,
               },
             },
           });
@@ -131,9 +104,7 @@ export async function gatherFunctionRequirements({
     });
 
     for await (const partialObject of partialObjectStream) {
-      stream.update(
-        partialObject as z.infer<typeof functionRequirementsMessageSchema>,
-      );
+      stream.update(partialObject as FunctionRequirementsMessage);
     }
 
     stream.done();
@@ -144,7 +115,7 @@ export async function gatherFunctionRequirements({
 
 export async function gatherInputsRequirements(messages: CoreMessage[]) {
   const result = await streamText({
-    model: openai("gpt-4o-mini"),
+    model: openai("gpt-4o"),
     system: INPUTS_REQUIREMENTS_AGENT_PROMPT,
     messages,
     onFinish: ({ usage, text }) => {
@@ -164,7 +135,7 @@ export async function generateInputsSchemas({
   prompt: string;
 }) {
   const completion = await openaiClient.beta.chat.completions.parse({
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
     messages: [
       {
         role: "system",

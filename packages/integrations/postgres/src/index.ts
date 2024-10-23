@@ -14,7 +14,7 @@ export interface Table {
   name: string;
   columns: {
     name: string;
-    type: string;
+    dataType: string;
   }[];
 }
 
@@ -106,7 +106,7 @@ export async function getInfo({
     client.query(
       `SELECT
         t.table_name AS name,
-        json_agg(json_build_object('name', c.column_name, 'type', c.data_type)) AS columns
+        json_agg(json_build_object('name', c.column_name, 'dataType', c.data_type)) AS columns
       FROM information_schema.tables t
       LEFT JOIN information_schema.columns c
       ON t.table_name = c.table_name
@@ -120,7 +120,7 @@ export async function getInfo({
             name: string;
             columns: {
               name: string;
-              type: string;
+              dataType: string;
             }[];
           }[];
         },
