@@ -61,7 +61,7 @@ export async function createFlow(
       } else {
         result = await api.flows.create({
           ...commonData,
-          type: "component",
+          type: "utilities",
         });
       }
 

@@ -10,7 +10,7 @@ import { primitives } from "./primitives";
 import { workspaces } from "./workspaces";
 
 export const flowTypes = pgEnum("flow_types", [
-  "component",
+  "utilities",
   "task",
   "endpoint",
 ]);
@@ -36,9 +36,6 @@ export const flows = pgTable("flows", {
   createdBy: text("created_by")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
-  conversationId: text("conversation_id")
-    .references(() => conversations.id, { onDelete: "cascade" })
-    .notNull(),
 });
 
 export const flowsRelations = relations(flows, ({ many, one }) => ({
@@ -48,8 +45,5 @@ export const flowsRelations = relations(flows, ({ many, one }) => ({
     fields: [flows.createdBy],
     references: [users.id],
   }),
-  conversation: one(conversations, {
-    fields: [flows.conversationId],
-    references: [conversations.id],
-  }),
+  conversation: one(conversations),
 }));

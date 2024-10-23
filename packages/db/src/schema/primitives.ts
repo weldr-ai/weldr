@@ -1,8 +1,12 @@
 import { createId } from "@paralleldrive/cuid2";
-import type { PrimitiveMetadata } from "@specly/shared/types";
+import type {
+  FunctionMetadata,
+  InputSchema,
+  OutputSchema,
+  RawDescription,
+} from "@specly/shared/types";
 import { relations } from "drizzle-orm";
 import {
-  type AnyPgColumn,
   integer,
   jsonb,
   pgEnum,
@@ -17,8 +21,6 @@ import { flows } from "./flows";
 
 export const primitiveTypes = pgEnum("primitive_types", [
   "function",
-  "matcher",
-  "iterator",
   "response",
 ]);
 
@@ -28,15 +30,16 @@ export const primitives = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => createId()),
-    name: text("name"),
-    description: text("description"),
     type: primitiveTypes("type").notNull(),
+    name: text("name"),
+    inputSchema: jsonb("input_schema").$type<InputSchema>(),
+    outputSchema: jsonb("output_schema").$type<OutputSchema>(),
+    description: text("description"),
+    rawDescription: jsonb("raw_description").$type<RawDescription[]>(),
+    generatedCode: text("generated_code"),
+    metadata: jsonb("metadata").$type<FunctionMetadata>(),
     positionX: integer("position_x").default(0).notNull(),
     positionY: integer("position_y").default(0).notNull(),
-    metadata: jsonb("metadata").$type<PrimitiveMetadata>().notNull(),
-    parentId: text("parent_id").references((): AnyPgColumn => primitives.id, {
-      onDelete: "cascade",
-    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -44,9 +47,6 @@ export const primitives = pgTable(
       .notNull(),
     flowId: text("flow_id")
       .references(() => flows.id, { onDelete: "cascade" })
-      .notNull(),
-    conversationId: text("conversation_id")
-      .references(() => conversations.id, { onDelete: "cascade" })
       .notNull(),
     createdBy: text("created_by")
       .references(() => users.id, { onDelete: "cascade" })
@@ -66,12 +66,5 @@ export const primitivesRelations = relations(primitives, ({ one, many }) => ({
     fields: [primitives.createdBy],
     references: [users.id],
   }),
-  parent: one(primitives, {
-    fields: [primitives.parentId],
-    references: [primitives.id],
-  }),
-  conversation: one(conversations, {
-    fields: [primitives.conversationId],
-    references: [conversations.id],
-  }),
+  conversation: one(conversations),
 }));

@@ -52,7 +52,7 @@ export function CreateFlowForm({
     };
 
     switch (type) {
-      case "component":
+      case "utilities":
         return {
           ...commonInitialValues,
           type,

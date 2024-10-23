@@ -147,9 +147,7 @@ export const Response = memo(
           payload: {
             type: "response",
             description,
-            metadata: {
-              rawDescription,
-            },
+            rawDescription,
           },
         });
       });
@@ -305,12 +303,8 @@ export const Response = memo(
                                     id: data.id,
                                   },
                                   payload: {
-                                    type: "function",
+                                    type: "response",
                                     name: e.target.value,
-                                    metadata: {
-                                      isCodeUpdated:
-                                        e.target.value === data.name,
-                                    },
                                   },
                                 });
                               }

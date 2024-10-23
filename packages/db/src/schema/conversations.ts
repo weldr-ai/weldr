@@ -20,14 +20,24 @@ export const conversations = pgTable("conversations", {
   createdBy: text("created_by")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
+  primitiveId: text("primitive_id").references(() => primitives.id, {
+    onDelete: "cascade",
+  }),
+  flowId: text("flow_id").references(() => flows.id, { onDelete: "cascade" }),
 });
 
 export const conversationRelations = relations(
   conversations,
-  ({ many, one }) => ({
+  ({ one, many }) => ({
     messages: many(conversationMessages),
-    primitive: one(primitives),
-    flow: one(flows),
+    primitive: one(primitives, {
+      fields: [conversations.primitiveId],
+      references: [primitives.id],
+    }),
+    flow: one(flows, {
+      fields: [conversations.flowId],
+      references: [flows.id],
+    }),
   }),
 );
 

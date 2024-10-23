@@ -15,6 +15,13 @@
       "when": 1728515684921,
       "tag": "0001_pink_grandmaster",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1729699518853,
+      "tag": "0002_overrated_bloodstrike",
+      "breakpoints": true
     }
   ]
 }

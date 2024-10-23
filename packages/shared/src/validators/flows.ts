@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { conversationSchema, inputSchema } from "./common";
 
-export const flowTypesSchema = z.enum(["component", "task", "endpoint"]);
+export const flowTypesSchema = z.enum(["task", "endpoint", "utilities"]);
 
 export const endpointFlowMetadataSchema = z.object({
   method: z.enum(["get", "post", "patch", "delete"]),
@@ -15,15 +15,15 @@ export const taskFlowMetadataSchema = z.object({
   triggerType: z.enum(["webhook", "schedule"]),
 });
 
-export const componentFlowMetadataSchema = z.object({});
+export const utilitiesFlowMetadataSchema = z.object({});
 
 export const baseFlowSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().trim().optional(),
   type: flowTypesSchema,
-  inputSchema: inputSchema.optional().nullable(),
-  validationSchema: z.string().optional().nullable(),
+  inputSchema: inputSchema.nullable().optional(),
+  validationSchema: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   createdBy: z.string(),
@@ -32,8 +32,8 @@ export const baseFlowSchema = z.object({
 });
 
 export const componentFlowSchema = baseFlowSchema.extend({
-  type: z.literal("component"),
-  metadata: componentFlowMetadataSchema,
+  type: z.literal("utilities"),
+  metadata: utilitiesFlowMetadataSchema,
 });
 
 export const endpointFlowSchema = baseFlowSchema.extend({
@@ -76,8 +76,8 @@ export const baseInsertFlowSchema = z.object({
   }),
 });
 
-export const insertComponentFlowSchema = baseInsertFlowSchema.extend({
-  type: z.literal("component"),
+export const insertUtilitiesFlowSchema = baseInsertFlowSchema.extend({
+  type: z.literal("utilities"),
 });
 
 export const insertEndpointFlowSchema = baseInsertFlowSchema.extend({
@@ -105,7 +105,7 @@ export const insertTaskFlowSchema = baseInsertFlowSchema.extend({
 });
 
 export const insertFlowSchema = z.discriminatedUnion("type", [
-  insertComponentFlowSchema,
+  insertUtilitiesFlowSchema,
   insertEndpointFlowSchema,
   insertTaskFlowSchema,
 ]);
@@ -162,8 +162,8 @@ export const updateTaskFlowSchema = baseUpdateFlowSchema.extend({
     .optional(),
 });
 
-export const updateComponentFlow = baseUpdateFlowSchema.extend({
-  type: z.literal("component"),
+export const updateUtilitiesFlow = baseUpdateFlowSchema.extend({
+  type: z.literal("utilities"),
   metadata: z.object({}).optional(),
 });
 
@@ -172,7 +172,7 @@ export const updateFlowSchema = z.object({
     id: z.string(),
   }),
   payload: z.discriminatedUnion("type", [
-    updateComponentFlow,
+    updateUtilitiesFlow,
     updateEndpointFlowSchema,
     updateTaskFlowSchema,
   ]),

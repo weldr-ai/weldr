@@ -21,14 +21,8 @@ import type {
 import type {
   functionPrimitiveMetadataSchema,
   functionPrimitiveSchema,
-  iteratorPrimitiveMetadataSchema,
-  iteratorPrimitiveSchema,
-  matcherPrimitiveMetadataSchema,
-  matcherPrimitiveSchema,
-  primitiveBaseSchema,
   primitiveMetadataSchema,
   primitiveSchema,
-  responsePrimitiveMetadataSchema,
   responsePrimitiveSchema,
 } from "../validators/primitives";
 import type {
@@ -89,19 +83,13 @@ export type Resource = z.infer<typeof resourceSchema>;
 export type ResourceMetadata = z.infer<typeof resourceMetadataSchema>;
 export type ResourceProvider = z.infer<typeof resourceProvidersSchema>;
 
-export type PrimitiveType = "function" | "matcher" | "iterator" | "response";
-export type BasePrimitiveData = z.infer<typeof primitiveBaseSchema>;
+export type PrimitiveType = "function" | "response";
 export type Primitive = z.infer<typeof primitiveSchema>;
-export type PrimitiveMetadata = z.infer<typeof primitiveMetadataSchema>;
 
+export type PrimitiveMetadata = z.infer<typeof primitiveMetadataSchema>;
 export type FunctionMetadata = z.infer<typeof functionPrimitiveMetadataSchema>;
-export type matcherMetadata = z.infer<typeof matcherPrimitiveMetadataSchema>;
-export type IteratorMetadata = z.infer<typeof iteratorPrimitiveMetadataSchema>;
-export type ResponseMetadata = z.infer<typeof responsePrimitiveMetadataSchema>;
 
 export type FunctionPrimitive = z.infer<typeof functionPrimitiveSchema>;
-export type MatcherPrimitive = z.infer<typeof matcherPrimitiveSchema>;
-export type IteratorPrimitive = z.infer<typeof iteratorPrimitiveSchema>;
 export type ResponsePrimitive = z.infer<typeof responsePrimitiveSchema>;
 
 export type RawDescription = z.infer<typeof rawDescriptionSchema>;
