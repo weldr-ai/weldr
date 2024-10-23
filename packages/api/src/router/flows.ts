@@ -32,22 +32,6 @@ export const flowsRouter = {
 
       try {
         const result = await ctx.db.transaction(async (tx) => {
-          const conversation = (
-            await tx
-              .insert(conversations)
-              .values({
-                createdBy: ctx.session.user.id,
-              })
-              .returning({ id: conversations.id })
-          )[0];
-
-          if (!conversation) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create conversation",
-            });
-          }
-
           const values = {
             name: input.name,
             description: input.description,
@@ -55,7 +39,6 @@ export const flowsRouter = {
             metadata: sql`${{}}::jsonb`,
             workspaceId: input.workspaceId,
             createdBy: ctx.session.user.id,
-            conversationId: conversation.id,
           };
 
           if (input.type === "endpoint" || input.type === "task") {
@@ -71,6 +54,23 @@ export const flowsRouter = {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to create flow",
+            });
+          }
+
+          const conversation = (
+            await tx
+              .insert(conversations)
+              .values({
+                flowId: result[0].id,
+                createdBy: ctx.session.user.id,
+              })
+              .returning({ id: conversations.id })
+          )[0];
+
+          if (!conversation) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create conversation",
             });
           }
 

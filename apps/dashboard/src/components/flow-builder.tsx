@@ -35,12 +35,7 @@ import "~/styles/flow-builder.css";
 
 import { Button } from "@specly/ui/button";
 
-import type {
-  Flow,
-  InputSchema,
-  Primitive,
-  PrimitiveType,
-} from "@specly/shared/types";
+import type { Flow, PrimitiveType } from "@specly/shared/types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { toast } from "@specly/ui/use-toast";
 import { useTheme } from "next-themes";
@@ -49,7 +44,7 @@ import { PrimitivesMenu } from "~/components/primitives-menu";
 import { FunctionNode } from "~/components/primitives/function";
 import { Response } from "~/components/primitives/response";
 import { api } from "~/lib/trpc/react";
-import type { FlowEdge, FlowNode } from "~/types";
+import type { FlowEdge, FlowNode, FlowNodeData } from "~/types";
 import { FlowDialog } from "./flow-dialog";
 
 const nodeTypes = {
@@ -70,13 +65,7 @@ export function FlowBuilder({
   initialNodes: FlowNode[];
   initialEdges: FlowEdge[];
 }) {
-  const {
-    getIntersectingNodes,
-    screenToFlowPosition,
-    zoomIn,
-    zoomOut,
-    fitView,
-  } = useReactFlow();
+  const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -112,14 +101,6 @@ export function FlowBuilder({
     },
   });
 
-  // const getIterator = useCallback(
-  //   (nodes: Node[], intersectingNodes: string[]) =>
-  //     nodes.find(
-  //       (n) => n.type === "iterator" && intersectingNodes.includes(n.id),
-  //     ),
-  //   [],
-  // );
-
   const onConnect = useCallback(
     async (connection: Connection) => {
       const newEdgeId = createId();
@@ -153,8 +134,6 @@ export function FlowBuilder({
 
       const nodeType = event.dataTransfer.getData("application/reactflow") as
         | "function"
-        | "matcher"
-        | "iterator"
         | "response";
 
       // check if the dropped element is valid
@@ -175,12 +154,8 @@ export function FlowBuilder({
           data: {
             id: newNodeId,
             type: nodeType,
-            metadata: {},
             flowId: flow.id,
-            flow: {
-              inputSchema: undefined,
-            },
-          } as Primitive & { flow: { inputSchema: InputSchema | undefined } },
+          } as FlowNodeData,
         }),
       );
 
@@ -190,29 +165,9 @@ export function FlowBuilder({
         positionX: Math.floor(position.x),
         positionY: Math.floor(position.y),
         flowId: flow.id,
-        metadata: {},
       });
     },
     [createPrimitive, flow.id, setNodes, screenToFlowPosition],
-  );
-
-  const onNodeDrag = useCallback(
-    (event: React.MouseEvent, node: Node, _nodes: Node[]) => {
-      const intersections = getIntersectingNodes(node).map((n) => n.id);
-      setNodes((ns) =>
-        ns.map((n) => ({
-          ...n,
-          className:
-            intersections.includes(n.id) &&
-            n.type === "iterator" &&
-            (node.type === "function" || node.type === "matcher") &&
-            !node.parentId
-              ? "rounded-lg shadow-[0_0_1px_#3E63DD,inset_0_0_1px_#3E63DD,0_0_1px_#3E63DD,0_0_5px_#3E63DD,0_0_10px_#3E63DD] transition-shadow duration-300"
-              : "",
-        })),
-      );
-    },
-    [setNodes, getIntersectingNodes],
   );
 
   const onNodeDragStop = useCallback(
@@ -231,65 +186,6 @@ export function FlowBuilder({
           positionY: Math.floor(node.position.y),
         },
       });
-
-      // const intersectingNodes = getIntersectingNodes(node).map((n) => n.id);
-      // const parent = getIterator(nodes, intersectingNodes);
-
-      // if (
-      //   parent &&
-      //   !node.parentId &&
-      //   (node.type === "matcher" || node.type === "function")
-      // ) {
-      //   setNodes(
-      //     nodes
-      //       .sort((a, b) =>
-      //         a.type === "iterator" ? -1 : b.type === "iterator" ? 1 : 0,
-      //       )
-      //       .map((n) =>
-      //         n.id === node.id
-      //           ? {
-      //               ...node,
-      //               position: {
-      //                 x: node.position.x - parent.position.x,
-      //                 y: node.position.y - parent.position.y,
-      //               },
-      //               parentId: parent.id,
-      //               extent: "parent",
-      //             }
-      //           : n.type === "iterator"
-      //             ? {
-      //                 ...n,
-      //                 className: "",
-      //               }
-      //             : n,
-      //       ) as FlowNode[],
-      //   );
-
-      //   await updatePrimitive.mutateAsync({
-      //     where: {
-      //       id: node.id,
-      //       flowId,
-      //     },
-      //     payload: {
-      //       type: node.type as PrimitiveType,
-      //       parentId: parent.id,
-      //       positionX: Math.floor(node.position.x - parent.position.x),
-      //       positionY: Math.floor(node.position.y - parent.position.y),
-      //     },
-      //   });
-      // } else {
-      //   await updatePrimitive.mutateAsync({
-      //     where: {
-      //       id: node.id,
-      //       flowId,
-      //     },
-      //     payload: {
-      //       type: node.type as PrimitiveType,
-      //       positionX: Math.floor(node.position.x),
-      //       positionY: Math.floor(node.position.y),
-      //     },
-      //   });
-      // }
     },
     [updatePrimitive],
   );
@@ -301,24 +197,6 @@ export function FlowBuilder({
 
       if (!target || !source) return false;
       if (source.id === target.id) return false;
-
-      // Check for iterator input source handle connection
-      if (
-        source.type === "iterator" &&
-        connection.sourceHandle === `${source.id}-iterator-input-source`
-      ) {
-        return target.parentId === source.id;
-      }
-
-      // Check for iterator output target handle connection
-      if (
-        target.type === "iterator" &&
-        connection.targetHandle === `${target.id}-iterator-output-target`
-      ) {
-        return source.parentId === target.id;
-      }
-
-      if (source.parentId !== target.parentId) return false;
 
       const hasCycle = (node: Node, visited = new Set()) => {
         if (visited.has(node.id)) return false;
@@ -346,7 +224,6 @@ export function FlowBuilder({
       onConnect={onConnect}
       isValidConnection={isValidConnection}
       onDrop={onDrop}
-      onNodeDrag={onNodeDrag}
       onNodeDragStop={onNodeDragStop}
       onDragOver={onDragOver}
       deleteKeyCode={null}
@@ -411,13 +288,9 @@ export function FlowBuilder({
         className="flex items-center bg-background dark:bg-muted rounded-full gap-1 p-1 border"
       >
         <FlowDialog initialData={flow} />
+
         <div className="h-9 border-l" />
-        <PrimitivesMenu />
-      </Panel>
-      <Panel
-        position="top-right"
-        className="flex flex-col items-center bg-background dark:bg-muted rounded-full gap-1 p-1 border"
-      >
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -428,7 +301,7 @@ export function FlowBuilder({
               <PlayIcon className="size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left" className="bg-muted border text-success">
+          <TooltipContent side="top" className="bg-muted border text-success">
             <p>Run</p>
           </TooltipContent>
         </Tooltip>
@@ -442,8 +315,8 @@ export function FlowBuilder({
               <RocketIcon className="size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left" className="bg-muted border text-primary">
-            <p>Ship</p>
+          <TooltipContent side="top" className="bg-muted border text-primary">
+            <p>Deploy</p>
           </TooltipContent>
         </Tooltip>
         <Tooltip>
@@ -456,10 +329,14 @@ export function FlowBuilder({
               <SparklesIcon className="size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left" className="bg-muted border text-pink-400">
-            <p>Generate</p>
+          <TooltipContent side="top" className="bg-muted border text-pink-400">
+            <p>Specly</p>
           </TooltipContent>
         </Tooltip>
+
+        <div className="h-9 border-l" />
+
+        <PrimitivesMenu />
       </Panel>
     </ReactFlow>
   );

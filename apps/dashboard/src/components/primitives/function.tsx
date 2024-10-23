@@ -52,15 +52,12 @@ import { $getRoot } from "lexical";
 import {
   ArrowUpIcon,
   CircleAlertIcon,
-  CircleMinus,
   ExternalLinkIcon,
   FileTextIcon,
   Loader2,
   Loader2Icon,
-  LockIcon,
   PlayCircleIcon,
   TrashIcon,
-  UnlockIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -143,7 +140,6 @@ export const FunctionNode = memo(
     selected,
     positionAbsoluteX,
     positionAbsoluteY,
-    parentId,
   }: FlowNodeProps) => {
     const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
       {
@@ -183,7 +179,7 @@ export const FunctionNode = memo(
 
     const editorRef = useRef<LexicalEditor>(null);
 
-    const { deleteElements, updateNodeData, fitBounds, getNode } = useReactFlow<
+    const { deleteElements, fitBounds, getNode } = useReactFlow<
       FlowNode,
       FlowEdge
     >();
@@ -204,13 +200,11 @@ export const FunctionNode = memo(
     }, [connections, getNode]);
 
     const passedInputs = ancestors.reduce((acc, ancestor) => {
-      if (!ancestor.data.metadata.inputSchema) {
+      if (!ancestor.data.inputSchema) {
         return acc;
       }
 
-      const flatInputSchema = flattenInputSchema(
-        ancestor.data.metadata.inputSchema,
-      );
+      const flatInputSchema = flattenInputSchema(ancestor.data.inputSchema);
 
       return acc.concat(flatInputSchema);
     }, [] as FlatInputSchema[]);
@@ -255,9 +249,9 @@ export const FunctionNode = memo(
               "Hi there! I'm Specly, your AI assistant. What does your function do?",
           },
         ],
-        conversationId: data.conversation.id,
+        conversationId: data?.conversation?.id ?? undefined,
       },
-      ...(data.conversation.messages.sort(
+      ...((data?.conversation?.messages ?? []).sort(
         (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
       ) as ConversationMessage[]),
     ]);
@@ -322,23 +316,6 @@ export const FunctionNode = memo(
     useEffect(() => {
       scrollToBottom();
     }, [scrollToBottom]);
-
-    const handleOnDetach = async () => {
-      if (parentId) {
-        updateNodeData(data.id, {
-          parentId: null,
-        });
-        await updateFunction.mutateAsync({
-          where: {
-            id: data.id,
-          },
-          payload: {
-            type: "function",
-            parentId: null,
-          },
-        });
-      }
-    };
 
     const handleOnSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -495,12 +472,6 @@ export const FunctionNode = memo(
             <ContextMenuContent>
               <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
               <ContextMenuSeparator />
-              {parentId && (
-                <ContextMenuItem className="text-xs" onClick={handleOnDetach}>
-                  <CircleMinus className="mr-3 size-4 text-muted-foreground" />
-                  Detach
-                </ContextMenuItem>
-              )}
               <ContextMenuItem className="text-xs">
                 <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
                 Run with previous primitives
@@ -555,39 +526,6 @@ export const FunctionNode = memo(
                         </TooltipTrigger>
                         <TooltipContent className="bg-muted border">
                           <span className="text-success">Run</span>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            className="size-7 text-muted-foreground hover:text-muted-foreground"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              updateFunction.mutate({
-                                where: {
-                                  id: data.id,
-                                },
-                                payload: {
-                                  type: "function",
-                                  metadata: {
-                                    isLocked: !data.metadata.isLocked,
-                                  },
-                                },
-                              });
-                            }}
-                          >
-                            {data.metadata.isLocked ? (
-                              <LockIcon className="size-3.5" />
-                            ) : (
-                              <UnlockIcon className="size-3.5" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-muted border">
-                          <span>
-                            {data.metadata.isLocked ? "Unlock" : "Lock"}
-                          </span>
                         </TooltipContent>
                       </Tooltip>
                       <Tooltip>

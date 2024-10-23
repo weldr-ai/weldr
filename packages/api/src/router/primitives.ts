@@ -2,18 +2,12 @@ import { TRPCError } from "@trpc/server";
 
 import { primitives } from "@specly/db/schema";
 
-import { type SQL, and, eq, sql } from "@specly/db";
+import { type SQL, and, eq } from "@specly/db";
 import { conversations } from "@specly/db/schema";
 import { mergeJson } from "@specly/db/utils";
-import type {
-  InputSchema,
-  IteratorPrimitive,
-  Primitive,
-} from "@specly/shared/types";
+import type { InputSchema, Primitive } from "@specly/shared/types";
 import {
   insertPrimitiveSchema,
-  iteratorPrimitiveSchema,
-  primitiveSchema,
   updatePrimitiveSchema,
 } from "@specly/shared/validators/primitives";
 import { z } from "zod";
@@ -25,10 +19,26 @@ export const primitivesRouter = {
     .mutation(async ({ ctx, input }) => {
       try {
         const result = await ctx.db.transaction(async (tx) => {
+          const result = await tx
+            .insert(primitives)
+            .values({
+              ...input,
+              createdBy: ctx.session.user.id,
+            })
+            .returning();
+
+          if (!result[0]) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create primitive",
+            });
+          }
+
           const conversation = (
             await tx
               .insert(conversations)
               .values({
+                primitiveId: result[0].id,
                 createdBy: ctx.session.user.id,
               })
               .returning({ id: conversations.id })
@@ -38,23 +48,6 @@ export const primitivesRouter = {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to create conversation",
-            });
-          }
-
-          const result = await tx
-            .insert(primitives)
-            .values({
-              ...input,
-              metadata: sql`${input.metadata}::jsonb`,
-              conversationId: conversation.id,
-              createdBy: ctx.session.user.id,
-            })
-            .returning();
-
-          if (!result[0]) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create primitive",
             });
           }
 
@@ -104,44 +97,6 @@ export const primitivesRouter = {
         flow: { inputSchema: InputSchema | undefined };
       };
     }),
-  getIteratorById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .output(
-      iteratorPrimitiveSchema.extend({
-        children: primitiveSchema.array(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query.primitives.findFirst({
-        where: and(
-          eq(primitives.id, input.id),
-          eq(primitives.createdBy, ctx.session.user.id),
-          eq(primitives.type, "iterator"),
-        ),
-        with: {
-          conversation: true,
-        },
-      });
-
-      if (!result) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Primitive not found",
-        });
-      }
-
-      const children = await ctx.db.query.primitives.findMany({
-        where: eq(primitives.parentId, input.id),
-        with: {
-          conversation: true,
-        },
-      });
-
-      return {
-        ...result,
-        children,
-      } as unknown as IteratorPrimitive & { children: Primitive[] };
-    }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -189,31 +144,6 @@ export const primitivesRouter = {
         }
       }
 
-      const savedPrimitive = await ctx.db.query.primitives.findFirst({
-        where: and(...where),
-      });
-
-      if (!savedPrimitive) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Primitive not found",
-        });
-      }
-
-      if (
-        input.payload.parentId &&
-        !(
-          savedPrimitive.type === "function" ||
-          savedPrimitive.type === "matcher"
-        )
-      ) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "Parent ID can only be set for `function` and `matcher` primitives",
-        });
-      }
-
       const updatedPrimitive = await ctx.db
         .update(primitives)
         .set({
@@ -224,7 +154,7 @@ export const primitivesRouter = {
         })
         .where(
           and(
-            eq(primitives.id, savedPrimitive.id),
+            eq(primitives.id, existingPrimitive.id),
             eq(primitives.createdBy, ctx.session.user.id),
           ),
         )

@@ -2,6 +2,7 @@
 
 import { createOpenAI } from "@ai-sdk/openai";
 import type {
+  FlowType,
   FunctionRequirementsMessage,
   InputSchema,
   RawDescription,
@@ -84,13 +85,13 @@ export async function gatherFunctionRequirements({
             where: { id: functionId },
             payload: {
               type: "function",
+              inputSchema: JSON.parse(object.message.content.inputs),
+              outputSchema: JSON.parse(object.message.content.outputs),
+              rawDescription: object.message.content.description,
               description: fromRawDescriptionToText(
                 object.message.content.description,
               ),
               metadata: {
-                inputSchema: JSON.parse(object.message.content.inputs),
-                outputSchema: JSON.parse(object.message.content.outputs),
-                rawDescription: object.message.content.description,
                 resources: object.message.content.resources,
                 edgeCases: object.message.content.edgeCases,
                 errorHandling: object.message.content.errorHandling,
@@ -171,7 +172,7 @@ export async function generateFlowInputsSchemas({
 }: {
   prompt: string;
   flowId: string;
-  flowType: "task" | "endpoint" | "component";
+  flowType: FlowType;
 }) {
   const result = await generateInputsSchemas({ prompt });
 

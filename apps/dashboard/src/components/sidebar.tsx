@@ -127,27 +127,6 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
               <TooltipTrigger asChild>
                 <Button
                   className={cn({
-                    "bg-accent border": activeSection === "components",
-                  })}
-                  onClick={() => {
-                    setIsSidebarOpen(true);
-                    updateActiveSection("components");
-                  }}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <BlocksIcon className="size-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="bg-muted border">
-                <p>Components</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className={cn({
                     "bg-accent border": activeSection === "endpoints",
                   })}
                   onClick={() => {
@@ -183,6 +162,27 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
               </TooltipTrigger>
               <TooltipContent side="right" className="bg-muted border">
                 <p>Tasks</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className={cn({
+                    "bg-accent border": activeSection === "utilities",
+                  })}
+                  onClick={() => {
+                    setIsSidebarOpen(true);
+                    updateActiveSection("utilities");
+                  }}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <BlocksIcon className="size-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-muted border">
+                <p>Utilities</p>
               </TooltipContent>
             </Tooltip>
 
@@ -278,15 +278,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
           </div>
           {activeSection && (
             <div className="p-2.5">
-              {activeSection === "components" ? (
-                <div
-                  className={cn("w-full", {
-                    hidden: activeSection !== "components",
-                  })}
-                >
-                  <FlowList workspaceId={workspace.id} type="component" />
-                </div>
-              ) : activeSection === "endpoints" ? (
+              {activeSection === "endpoints" ? (
                 <div
                   className={cn("w-full", {
                     hidden: activeSection !== "endpoints",
@@ -301,6 +293,14 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                   })}
                 >
                   <FlowList workspaceId={workspace.id} type="task" />
+                </div>
+              ) : activeSection === "utilities" ? (
+                <div
+                  className={cn("w-full", {
+                    hidden: activeSection !== "utilities",
+                  })}
+                >
+                  <FlowList workspaceId={workspace.id} type="utilities" />
                 </div>
               ) : (
                 <div
