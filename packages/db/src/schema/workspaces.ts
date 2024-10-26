@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
@@ -20,8 +20,10 @@ export const workspaces = pgTable("workspaces", {
     .$onUpdate(() => new Date())
     .notNull(),
   createdBy: text("created_by")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
+    .references(() => users.id, {
+      onDelete: "set null",
+    })
+    .default(sql`NULL`),
 });
 
 export const workspacesRelations = relations(workspaces, ({ many, one }) => ({

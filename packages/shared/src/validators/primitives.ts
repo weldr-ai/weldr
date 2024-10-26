@@ -19,7 +19,7 @@ export const primitiveBaseSchema = z.object({
   generatedCode: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  createdBy: z.string(),
+  createdBy: z.string().nullable(),
   positionX: z.number(),
   positionY: z.number(),
   flowId: z.string(),

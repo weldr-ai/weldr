@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import type { FlowMetadata, InputSchema } from "@specly/shared/types";
@@ -34,8 +34,10 @@ export const flows = pgTable("flows", {
     .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
   createdBy: text("created_by")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
+    .references(() => users.id, {
+      onDelete: "set null",
+    })
+    .default(sql`NULL`),
 });
 
 export const flowsRelations = relations(flows, ({ many, one }) => ({

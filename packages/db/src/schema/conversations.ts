@@ -1,6 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import type { RawDescription } from "@specly/shared/types";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { flows } from "./flows";
@@ -18,8 +18,10 @@ export const conversations = pgTable("conversations", {
     .$onUpdate(() => new Date())
     .notNull(),
   createdBy: text("created_by")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
+    .references(() => users.id, {
+      onDelete: "set null",
+    })
+    .default(sql`NULL`),
   primitiveId: text("primitive_id").references(() => primitives.id, {
     onDelete: "cascade",
   }),
@@ -57,8 +59,10 @@ export const conversationMessages = pgTable("conversation_messages", {
     .references(() => conversations.id, { onDelete: "cascade" })
     .notNull(),
   createdBy: text("created_by")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
+    .references(() => users.id, {
+      onDelete: "set null",
+    })
+    .default(sql`NULL`),
 });
 
 export const conversationMessageRelations = relations(
