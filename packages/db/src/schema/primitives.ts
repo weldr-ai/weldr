@@ -5,7 +5,7 @@ import type {
   OutputSchema,
   RawDescription,
 } from "@specly/shared/types";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   integer,
   jsonb,
@@ -49,11 +49,13 @@ export const primitives = pgTable(
       .references(() => flows.id, { onDelete: "cascade" })
       .notNull(),
     createdBy: text("created_by")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
+      .references(() => users.id, {
+        onDelete: "set null",
+      })
+      .default(sql`NULL`),
   },
   (t) => ({
-    uniqueName: unique().on(t.flowId, t.name),
+    uniqueNameInFlow: unique().on(t.name, t.flowId),
   }),
 );
 

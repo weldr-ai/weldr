@@ -26,7 +26,7 @@ export const baseFlowSchema = z.object({
   validationSchema: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  createdBy: z.string(),
+  createdBy: z.string().nullable(),
   workspaceId: z.string(),
   conversation: conversationSchema,
 });

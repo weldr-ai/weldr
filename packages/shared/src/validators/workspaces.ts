@@ -6,7 +6,7 @@ export const workspaceSchema = z.object({
   description: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  createdBy: z.string(),
+  createdBy: z.string().nullable(),
 });
 
 export const insertWorkspaceSchema = z.object({

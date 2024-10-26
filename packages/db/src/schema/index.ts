@@ -4,4 +4,5 @@ export * from "./edges";
 export * from "./flows";
 export * from "./primitives";
 export * from "./resources";
+export * from "./vault";
 export * from "./workspaces";

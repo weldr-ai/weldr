@@ -7,7 +7,7 @@ export const edgeSchema = z.object({
   target: z.string(),
   targetHandle: z.string().nullable().optional(),
   flowId: z.string(),
-  createdBy: z.string(),
+  createdBy: z.string().nullable(),
 });
 
 export const insertEdgeSchema = z.object({
