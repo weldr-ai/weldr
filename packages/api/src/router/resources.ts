@@ -1,5 +1,13 @@
 import { and, eq } from "@specly/db";
-import { resources } from "@specly/db/schema";
+import {
+  environmentVariables,
+  integrations,
+  resourceEnvironmentVariables,
+  resources,
+  secrets,
+  workspaces,
+} from "@specly/db/schema";
+import { testConnection } from "@specly/shared/integrations/postgres/helpers";
 import { insertResourceSchema } from "@specly/shared/validators/resources";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
@@ -9,6 +17,42 @@ export const resourcesRouter = {
   create: protectedProcedure
     .input(insertResourceSchema)
     .mutation(async ({ ctx, input }) => {
+      const workspace = await ctx.db.query.workspaces.findFirst({
+        where: eq(workspaces.id, input.workspaceId),
+      });
+
+      if (!workspace) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Workspace not found",
+        });
+      }
+
+      const integration = await ctx.db.query.integrations.findFirst({
+        where: eq(integrations.id, input.integrationId),
+      });
+
+      switch (integration?.type) {
+        case "postgres": {
+          const connectionTest = await testConnection({
+            host: input.environmentVariables?.POSTGRES_HOST ?? "",
+            port: Number.parseInt(
+              input.environmentVariables?.POSTGRES_PORT ?? "5432",
+            ),
+            database: input.environmentVariables?.POSTGRES_DB ?? "",
+            user: input.environmentVariables?.POSTGRES_USER ?? "",
+            password: input.environmentVariables?.POSTGRES_PASSWORD ?? "",
+          });
+
+          if (!connectionTest) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Failed to connect to the database",
+            });
+          }
+        }
+      }
+
       const doesExist = await ctx.db.query.resources.findFirst({
         where: and(
           eq(resources.name, input.name),
@@ -23,25 +67,85 @@ export const resourcesRouter = {
         });
       }
 
-      const result = await ctx.db
-        .insert(resources)
-        .values({
-          name: input.name,
-          description: input.description,
-          workspaceId: input.workspaceId,
-          createdBy: ctx.session.user.id,
-          integrationId: input.integrationId,
-        })
-        .returning({ id: resources.id });
+      const result = await ctx.db.transaction(async (tx) => {
+        try {
+          const resource = await tx
+            .insert(resources)
+            .values({
+              name: input.name,
+              description: input.description,
+              workspaceId: input.workspaceId,
+              createdBy: ctx.session.user.id,
+              integrationId: input.integrationId,
+            })
+            .returning({ id: resources.id });
 
-      if (!result[0]) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create resource",
-        });
-      }
+          if (!resource[0]) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create resource",
+            });
+          }
 
-      return result[0];
+          for (const key in input.environmentVariables ?? {}) {
+            const secret = await tx
+              .insert(secrets)
+              .values({
+                name: key,
+                secret: input.environmentVariables?.[key] ?? "",
+              })
+              .returning({ id: secrets.id });
+
+            if (!secret[0]) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Failed to create secret",
+              });
+            }
+
+            const environmentVariable = await tx
+              .insert(environmentVariables)
+              .values({
+                secretId: secret[0].id,
+                workspaceId: input.workspaceId,
+                createdBy: ctx.session.user.id,
+              })
+              .returning({ id: environmentVariables.id });
+
+            if (!environmentVariable[0]) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Failed to create environment variable",
+              });
+            }
+
+            const resourceEnvironmentVariable = await tx
+              .insert(resourceEnvironmentVariables)
+              .values({
+                resourceId: resource[0].id,
+                environmentVariableId: environmentVariable[0].id,
+              })
+              .returning();
+
+            if (!resourceEnvironmentVariable[0]) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Failed to create resource environment variable",
+              });
+            }
+          }
+
+          return resource[0];
+        } catch (error) {
+          console.log(error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create resource",
+          });
+        }
+      });
+
+      return result;
     }),
   getAll: protectedProcedure
     .input(z.object({ workspaceId: z.string() }))

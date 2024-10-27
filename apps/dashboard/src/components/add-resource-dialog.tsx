@@ -21,7 +21,9 @@ import { AddResourceForm } from "~/components/add-resource-form";
 export function AddResourceDialog({
   integrations,
 }: { integrations: Omit<Integration, "dependencies">[] }) {
-  const [integrationId, setIntegrationId] = useState<string | undefined>();
+  const [integration, setIntegration] = useState<
+    Omit<Integration, "dependencies"> | undefined
+  >();
   const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
 
   return (
@@ -37,17 +39,18 @@ export function AddResourceDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add new resource</DialogTitle>
+          <DialogTitle>
+            {integration ? integration.name : "Add new resource"}
+          </DialogTitle>
           <DialogDescription>
-            {integrationId
-              ? "Enter your resource details then press add."
+            {integration
+              ? `Enter your ${integration.name} then press add.`
               : "Select an integration to add a resource."}
           </DialogDescription>
         </DialogHeader>
-        {integrationId ? (
+        {integration ? (
           <AddResourceForm
-            // biome-ignore lint/style/noNonNullAssertion: <explanation>
-            integration={integrations.find((i) => i.id === integrationId)!}
+            integration={integration}
             setAddResourceDialogOpen={setAddResourceDialogOpen}
           />
         ) : (
@@ -57,7 +60,7 @@ export function AddResourceDialog({
                 <Button
                   key={integration.id}
                   variant="outline"
-                  onClick={() => setIntegrationId(integration.id)}
+                  onClick={() => setIntegration(integration)}
                   className="flex h-24 w-full flex-col items-center justify-center gap-2"
                 >
                   {integration.type === "postgres" ? (

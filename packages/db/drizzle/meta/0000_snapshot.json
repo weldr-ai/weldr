@@ -1,5 +1,5 @@
 {
-  "id": "08ce6f53-2e09-47c6-a4db-06cb75bc351e",
+  "id": "0816cd6d-7f4c-4b0a-9324-c621dc6a8438",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -93,7 +93,8 @@
           "columns": ["provider", "provider_account_id"]
         }
       },
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.authenticators": {
       "name": "authenticators",
@@ -172,7 +173,8 @@
           "nullsNotDistinct": false,
           "columns": ["credential_id"]
         }
-      }
+      },
+      "checkConstraints": {}
     },
     "public.sessions": {
       "name": "sessions",
@@ -210,7 +212,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.users": {
       "name": "users",
@@ -256,7 +259,8 @@
           "nullsNotDistinct": false,
           "columns": ["email"]
         }
-      }
+      },
+      "checkConstraints": {}
     },
     "public.verification_tokens": {
       "name": "verification_tokens",
@@ -289,7 +293,8 @@
           "columns": ["identifier", "token"]
         }
       },
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.waitlist": {
       "name": "waitlist",
@@ -331,7 +336,8 @@
           "nullsNotDistinct": false,
           "columns": ["email"]
         }
-      }
+      },
+      "checkConstraints": {}
     },
     "public.conversation_messages": {
       "name": "conversation_messages",
@@ -412,7 +418,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.conversations": {
       "name": "conversations",
@@ -489,7 +496,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.edges": {
       "name": "edges",
@@ -579,7 +587,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.flows": {
       "name": "flows",
@@ -678,7 +687,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.integration_utils": {
       "name": "integration_utils",
@@ -728,7 +738,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.integrations": {
       "name": "integrations",
@@ -782,7 +793,8 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.primitives": {
       "name": "primitives",
@@ -913,7 +925,8 @@
           "nullsNotDistinct": false,
           "columns": ["name", "flow_id"]
         }
-      }
+      },
+      "checkConstraints": {}
     },
     "public.resource_environment_variables": {
       "name": "resource_environment_variables",
@@ -965,7 +978,8 @@
           "nullsNotDistinct": false,
           "columns": ["resource_id", "environment_variable_id"]
         }
-      }
+      },
+      "checkConstraints": {}
     },
     "public.resources": {
       "name": "resources",
@@ -1059,7 +1073,8 @@
           "nullsNotDistinct": false,
           "columns": ["name", "workspace_id"]
         }
-      }
+      },
+      "checkConstraints": {}
     },
     "public.workspaces": {
       "name": "workspaces",
@@ -1136,7 +1151,8 @@
           "nullsNotDistinct": false,
           "columns": ["subdomain"]
         }
-      }
+      },
+      "checkConstraints": {}
     },
     "public.environment_variables": {
       "name": "environment_variables",
@@ -1148,14 +1164,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "key": {
-          "name": "key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "value": {
-          "name": "value",
+        "secret_id": {
+          "name": "secret_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -1189,12 +1199,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "environment_variables_value_secrets_id_fk": {
-          "name": "environment_variables_value_secrets_id_fk",
+        "environment_variables_secret_id_secrets_id_fk": {
+          "name": "environment_variables_secret_id_secrets_id_fk",
           "tableFrom": "environment_variables",
           "tableTo": "secrets",
           "schemaTo": "vault",
-          "columnsFrom": ["value"],
+          "columnsFrom": ["secret_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1219,7 +1229,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     }
   },
   "enums": {
@@ -1246,6 +1257,7 @@
   },
   "schemas": {},
   "sequences": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

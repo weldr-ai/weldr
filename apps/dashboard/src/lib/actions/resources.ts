@@ -8,7 +8,6 @@ import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 
 import { api } from "~/lib/trpc/rsc";
-
 type FormState = BaseFormState;
 
 export async function addResource(
@@ -29,17 +28,13 @@ export async function addResource(
 
   try {
     if (validation.success) {
-      const workspace = await api.workspaces.getById({
-        id: validation.data.workspaceId,
-      });
-
       const result = await api.resources.create({
         name: validation.data.name,
         description: validation.data.description,
-        workspaceId: workspace.id,
+        workspaceId: validation.data.workspaceId,
         integrationId: validation.data.integrationId,
+        environmentVariables: validation.data.environmentVariables,
       });
-
       revalidatePath("/workspaces", "layout");
       return { status: "success", payload: { id: result.id } };
     }

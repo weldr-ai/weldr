@@ -29,4 +29,5 @@ export const insertResourceSchema = z.object({
   integrationId: z.string().min(1, {
     message: "Integration is required.",
   }),
+  environmentVariables: z.record(z.string(), z.string()).optional(),
 });

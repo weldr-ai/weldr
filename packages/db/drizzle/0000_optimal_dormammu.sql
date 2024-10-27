@@ -1,27 +1,7 @@
-DO $$ BEGIN
- CREATE TYPE "public"."roles" AS ENUM('user', 'assistant');
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- CREATE TYPE "public"."flow_types" AS ENUM('utilities', 'task', 'endpoint');
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- CREATE TYPE "public"."primitive_types" AS ENUM('function', 'response');
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
+CREATE TYPE "public"."roles" AS ENUM('user', 'assistant');--> statement-breakpoint
+CREATE TYPE "public"."flow_types" AS ENUM('utilities', 'task', 'endpoint');--> statement-breakpoint
+CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');--> statement-breakpoint
+CREATE TYPE "public"."primitive_types" AS ENUM('function', 'response');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "accounts" (
 	"user_id" text NOT NULL,
 	"type" text NOT NULL,
@@ -194,8 +174,7 @@ CREATE TABLE IF NOT EXISTS "workspaces" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "environment_variables" (
 	"id" text PRIMARY KEY NOT NULL,
-	"key" text NOT NULL,
-	"value" uuid NOT NULL,
+	"secret_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"workspace_id" text NOT NULL,
@@ -341,7 +320,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_value_secrets_id_fk" FOREIGN KEY ("value") REFERENCES "vault"."secrets"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_secret_id_secrets_id_fk" FOREIGN KEY ("secret_id") REFERENCES "vault"."secrets"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
