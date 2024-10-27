@@ -45,6 +45,8 @@ export function AddResourceForm({
       name: "",
       description: undefined,
       workspaceId,
+      integrationId: integration.id,
+      environmentVariables: {},
     },
   });
 
@@ -111,8 +113,96 @@ export function AddResourceForm({
           )}
         />
         {integration.type === "postgres" && (
-          <div className="flex flex-col gap-2" />
+          <>
+            <FormField
+              control={form.control}
+              name="environmentVariables.POSTGRES_USER"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Database User</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      placeholder="Enter database user"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="environmentVariables.POSTGRES_PASSWORD"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Database Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      type="password"
+                      placeholder="Enter database password"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="environmentVariables.POSTGRES_HOST"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Database Host</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      placeholder="Enter database host"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="environmentVariables.POSTGRES_PORT"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Database Port</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      placeholder="Enter database port"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="environmentVariables.POSTGRES_DB"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Database Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      placeholder="Enter database name"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
         )}
+
         <FormField
           control={form.control}
           name="description"

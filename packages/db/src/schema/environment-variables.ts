@@ -9,8 +9,7 @@ export const environmentVariables = pgTable("environment_variables", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
-  key: text("key").notNull(),
-  value: uuid("value")
+  secretId: uuid("secret_id")
     .references(() => secrets.id, { onDelete: "cascade" })
     .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
