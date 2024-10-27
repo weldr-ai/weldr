@@ -1,14 +1,14 @@
 import { Button } from "@specly/ui/button";
 import { ScrollArea } from "@specly/ui/scroll-area";
 
-import type { BaseIntegration, Resource } from "@specly/shared/types";
+import type { Integration, Resource } from "@specly/shared/types";
 import { AddResourceDialog } from "./add-resource-dialog";
 
 export function ResourceList({
   integrations,
   resources,
 }: {
-  integrations: BaseIntegration[];
+  integrations: Omit<Integration, "dependencies">[];
   resources: Resource[];
 }) {
   return (

@@ -23,7 +23,7 @@ import { Input } from "@specly/ui/input";
 import { Textarea } from "@specly/ui/textarea";
 import { toast } from "@specly/ui/use-toast";
 
-import type { BaseIntegration } from "@specly/shared/types";
+import type { Integration } from "@specly/shared/types";
 import { insertResourceSchema } from "@specly/shared/validators/resources";
 import { addResource } from "~/lib/actions/resources";
 
@@ -31,7 +31,7 @@ export function AddResourceForm({
   integration,
   setAddResourceDialogOpen,
 }: {
-  integration: BaseIntegration;
+  integration: Omit<Integration, "dependencies">;
   setAddResourceDialogOpen?: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();

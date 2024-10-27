@@ -5,13 +5,13 @@ import { buttonVariants } from "@specly/ui/button";
 import { ScrollArea } from "@specly/ui/scroll-area";
 import { cn } from "@specly/ui/utils";
 
-import type { BaseFlow, FlowType } from "@specly/shared/types";
+import type { Flow, FlowType } from "@specly/shared/types";
 import { CreateFlowDialog } from "./create-flow-dialog";
 
 export function FlowList({
   flows,
   type,
-}: { flows: BaseFlow[]; type: FlowType }) {
+}: { flows: Omit<Flow, "conversation">[]; type: FlowType }) {
   const { flowId: currentFlowId } = useParams<{ flowId: string }>();
 
   return (

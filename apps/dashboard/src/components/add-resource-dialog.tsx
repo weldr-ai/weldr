@@ -14,13 +14,13 @@ import {
 } from "@specly/ui/dialog";
 import { ScrollArea } from "@specly/ui/scroll-area";
 
-import type { BaseIntegration } from "@specly/shared/types";
+import type { Integration } from "@specly/shared/types";
 import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
 import { AddResourceForm } from "~/components/add-resource-form";
 
 export function AddResourceDialog({
   integrations,
-}: { integrations: BaseIntegration[] }) {
+}: { integrations: Omit<Integration, "dependencies">[] }) {
   const [integrationId, setIntegrationId] = useState<string | undefined>();
   const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
 
