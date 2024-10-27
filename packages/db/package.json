@@ -12,31 +12,30 @@
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
-    "check": "pnpm with-env drizzle-kit check:pg --config src/config.ts",
+    "check": "pnpm with-env drizzle-kit check --config src/config.ts",
     "generate": "pnpm with-env drizzle-kit generate --config src/config.ts",
-    "migrate": "pnpm with-env tsx src/migrate.ts --config src/config.ts",
+    "migrate": "pnpm with-env drizzle-kit migrate --config src/config.ts",
     "migrate:drop": "pnpm with-env drizzle-kit drop --config src/config.ts",
-    "pull": "pnpm with-env drizzle-kit introspect:pg --config src/config.ts",
+    "pull": "pnpm with-env drizzle-kit introspect --config src/config.ts",
     "push": "pnpm with-env drizzle-kit push --config src/config.ts",
     "studio": "pnpm with-env drizzle-kit studio --config src/config.ts",
-    "up": "pnpm with-env drizzle-kit up:pg --config src/config.ts",
+    "up": "pnpm with-env drizzle-kit up --config src/config.ts",
     "check-types": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@specly/shared": "workspace:*",
     "@paralleldrive/cuid2": "^2.2.2",
-    "dashboard": "^0.0.1",
-    "drizzle-orm": "^0.33.0",
+    "@specly/shared": "workspace:*",
+    "drizzle-orm": "^0.35.3",
     "drizzle-zod": "^0.5.1",
-    "pg": "^8.12.0",
+    "pg": "^8.13.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@specly/tsconfig": "workspace:*",
-    "@types/pg": "^8.11.6",
-    "drizzle-kit": "^0.24.0",
-    "postgres": "^3.4.4"
+    "@types/pg": "^8.11.10",
+    "dotenv-cli": "^7.4.2",
+    "drizzle-kit": "^0.26.2"
   },
   "peerDependencies": {
     "next-auth": "5.0.0-beta.20"

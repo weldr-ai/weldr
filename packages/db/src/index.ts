@@ -15,4 +15,7 @@ const pool = new Pool({
 
 void pool.connect();
 
-export const db = drizzle(pool, { schema });
+export const db = drizzle({
+  client: pool,
+  schema,
+});

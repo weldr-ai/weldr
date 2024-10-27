@@ -43,7 +43,7 @@ export const authConfig: NextAuthConfig = {
   secret: process.env.AUTH_SECRET,
   providers: [
     Resend({
-      from: "specly <noreply@specly.ai>",
+      from: "Specly <noreply@specly.ai>",
       apiKey: process.env.RESEND_API_KEY,
     }),
   ],
