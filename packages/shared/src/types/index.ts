@@ -10,7 +10,6 @@ import type {
 } from "../validators/common";
 import type { edgeSchema } from "../validators/edges";
 import type {
-  baseFlowSchema,
   componentFlowSchema,
   endpointFlowMetadataSchema,
   endpointFlowSchema,
@@ -20,7 +19,6 @@ import type {
   taskFlowSchema,
 } from "../validators/flows";
 import type {
-  baseIntegrationSchema,
   integrationSchema,
   integrationTypeSchema,
   integrationUtilsSchema,
@@ -63,7 +61,6 @@ export type EndpointFlow = z.infer<typeof endpointFlowSchema>;
 export type TaskFlow = z.infer<typeof taskFlowSchema>;
 
 export type FlowType = z.infer<typeof flowTypesSchema>;
-export type BaseFlow = z.infer<typeof baseFlowSchema>;
 export type Flow = z.infer<typeof flowSchema>;
 export type FlowMetadata =
   | ComponentFlowMetadata
@@ -85,7 +82,6 @@ export type Conversation = z.infer<typeof conversationSchema>;
 
 export type Resource = z.infer<typeof resourceSchema>;
 
-export type BaseIntegration = z.infer<typeof baseIntegrationSchema>;
 export type Integration = z.infer<typeof integrationSchema>;
 export type IntegrationType = z.infer<typeof integrationTypeSchema>;
 export type IntegrationUtils = z.infer<typeof integrationUtilsSchema>;

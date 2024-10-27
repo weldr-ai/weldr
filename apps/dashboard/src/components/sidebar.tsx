@@ -29,8 +29,8 @@ import {
 import { cn } from "@specly/ui/utils";
 
 import type {
-  BaseFlow,
-  BaseIntegration,
+  Flow,
+  Integration,
   Resource,
   Workspace,
 } from "@specly/shared/types";
@@ -52,9 +52,9 @@ export function Sidebar({
   flows,
 }: {
   workspace: Workspace;
-  integrations: BaseIntegration[];
+  integrations: Omit<Integration, "dependencies">[];
   resources: Resource[];
-  flows: BaseFlow[];
+  flows: Omit<Flow, "conversation">[];
 }) {
   const { theme, setTheme, resolvedTheme } = useTheme();
 

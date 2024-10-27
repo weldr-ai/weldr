@@ -17,7 +17,7 @@ export const taskFlowMetadataSchema = z.object({
 
 export const utilitiesFlowMetadataSchema = z.object({});
 
-export const baseFlowSchema = z.object({
+const baseFlowSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional().nullable(),
@@ -28,23 +28,20 @@ export const baseFlowSchema = z.object({
   updatedAt: z.date(),
   createdBy: z.string().nullable(),
   workspaceId: z.string(),
-});
-
-export const baseFlowWithConversationSchema = baseFlowSchema.extend({
   conversation: conversationSchema,
 });
 
-export const componentFlowSchema = baseFlowWithConversationSchema.extend({
+export const componentFlowSchema = baseFlowSchema.extend({
   type: z.literal("utilities"),
   metadata: utilitiesFlowMetadataSchema,
 });
 
-export const endpointFlowSchema = baseFlowWithConversationSchema.extend({
+export const endpointFlowSchema = baseFlowSchema.extend({
   type: z.literal("endpoint"),
   metadata: endpointFlowMetadataSchema,
 });
 
-export const taskFlowSchema = baseFlowWithConversationSchema.extend({
+export const taskFlowSchema = baseFlowSchema.extend({
   type: z.literal("task"),
   metadata: taskFlowMetadataSchema,
 });
