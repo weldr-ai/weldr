@@ -1,4 +1,4 @@
-import { TRPCError } from "@trpc/server";
+import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
 import { primitives } from "@specly/db/schema";
 
@@ -169,4 +169,4 @@ export const primitivesRouter = {
 
       return updatedPrimitive[0];
     }),
-};
+} satisfies TRPCRouterRecord;

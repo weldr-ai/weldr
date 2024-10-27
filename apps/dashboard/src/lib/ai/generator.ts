@@ -96,7 +96,7 @@ export async function gatherFunctionRequirements({
                 edgeCases: object.message.content.edgeCases,
                 errorHandling: object.message.content.errorHandling,
                 logicalSteps: object.message.content.logicalSteps,
-                npmDependencies: object.message.content.npmDependencies,
+                dependencies: object.message.content.dependencies,
               },
             },
           });

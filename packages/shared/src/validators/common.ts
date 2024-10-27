@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { JsonSchema } from "../types";
-import { resourceProvidersSchema } from "./resources";
 
 export const dataTypeSchema = z.enum([
   "string",
@@ -140,12 +139,9 @@ export const functionRequirementsMessageSchema = z.object({
                 - Must use the \`text\` type for any text in the description that is not a reference.`,
           ),
           resources: z
-            .object({
-              id: z.string(),
-              provider: resourceProvidersSchema,
-            })
+            .string()
             .array()
-            .describe("The list of resources used in the function."),
+            .describe("The list of IDs of resources used in the function."),
           logicalSteps: z
             .string()
             .describe("The logical steps of the function"),
@@ -155,7 +151,7 @@ export const functionRequirementsMessageSchema = z.object({
             .describe(
               "The error handling of the function. Assume that inputs are always valid.",
             ),
-          npmDependencies: z
+          dependencies: z
             .string()
             .array()
             .optional()

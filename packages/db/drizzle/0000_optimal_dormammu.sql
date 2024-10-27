@@ -5,19 +5,19 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- CREATE TYPE "public"."flow_types" AS ENUM('component', 'task', 'endpoint');
+ CREATE TYPE "public"."flow_types" AS ENUM('utilities', 'task', 'endpoint');
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- CREATE TYPE "public"."primitive_types" AS ENUM('function', 'matcher', 'iterator', 'response');
+ CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- CREATE TYPE "public"."resource_providers" AS ENUM('postgres', 'mysql');
+ CREATE TYPE "public"."primitive_types" AS ENUM('function', 'response');
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -83,29 +83,31 @@ CREATE TABLE IF NOT EXISTS "waitlist" (
 CREATE TABLE IF NOT EXISTS "conversation_messages" (
 	"id" text PRIMARY KEY NOT NULL,
 	"role" "roles" NOT NULL,
-	"message" text NOT NULL,
-	"raw_message" jsonb,
+	"content" text NOT NULL,
+	"raw_content" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"conversation_id" text NOT NULL,
-	"created_by" text NOT NULL
+	"created_by" text DEFAULT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "conversations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"created_by" text NOT NULL
+	"created_by" text DEFAULT NULL,
+	"primitive_id" text,
+	"flow_id" text
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "edges" (
 	"id" text PRIMARY KEY NOT NULL,
 	"source" text NOT NULL,
-	"source_handle" text,
 	"target" text NOT NULL,
+	"source_handle" text,
 	"target_handle" text,
 	"flow_id" text NOT NULL,
-	"created_by" text NOT NULL
+	"created_by" text DEFAULT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "flows" (
@@ -119,36 +121,61 @@ CREATE TABLE IF NOT EXISTS "flows" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"workspace_id" text NOT NULL,
-	"created_by" text NOT NULL,
-	"conversation_id" text NOT NULL
+	"created_by" text DEFAULT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "integration_utils" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"description" text NOT NULL,
+	"implementation" text NOT NULL,
+	"integration_id" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "integrations" (
+	"id" text PRIMARY KEY NOT NULL,
+	"type" "integration_type" NOT NULL,
+	"version" text NOT NULL,
+	"name" text NOT NULL,
+	"description" text NOT NULL,
+	"environment_variables" text[] DEFAULT NULL,
+	"dependencies" jsonb NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "primitives" (
 	"id" text PRIMARY KEY NOT NULL,
-	"name" text,
-	"description" text,
 	"type" "primitive_types" NOT NULL,
+	"name" text,
+	"input_schema" jsonb,
+	"output_schema" jsonb,
+	"description" text,
+	"raw_description" jsonb,
+	"generated_code" text,
+	"metadata" jsonb,
 	"position_x" integer DEFAULT 0 NOT NULL,
 	"position_y" integer DEFAULT 0 NOT NULL,
-	"metadata" jsonb NOT NULL,
-	"parent_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"flow_id" text NOT NULL,
-	"conversation_id" text NOT NULL,
-	"created_by" text NOT NULL,
-	CONSTRAINT "primitives_flow_id_name_unique" UNIQUE("flow_id","name")
+	"created_by" text DEFAULT NULL,
+	CONSTRAINT "primitives_name_flow_id_unique" UNIQUE("name","flow_id")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "resource_environment_variables" (
+	"resource_id" text NOT NULL,
+	"environment_variable_id" text NOT NULL,
+	CONSTRAINT "resource_environment_variables_resource_id_environment_variable_id_pk" PRIMARY KEY("resource_id","environment_variable_id"),
+	CONSTRAINT "resource_environment_variables_resource_id_environment_variable_id_unique" UNIQUE("resource_id","environment_variable_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "resources" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
-	"provider" "resource_providers" NOT NULL,
-	"metadata" jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"workspace_id" text NOT NULL,
+	"integration_id" text NOT NULL,
 	"created_by" text NOT NULL,
 	CONSTRAINT "resources_name_workspace_id_unique" UNIQUE("name","workspace_id")
 );
@@ -161,8 +188,18 @@ CREATE TABLE IF NOT EXISTS "workspaces" (
 	"executor_machine_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"created_by" text NOT NULL,
+	"created_by" text DEFAULT NULL,
 	CONSTRAINT "workspaces_subdomain_unique" UNIQUE("subdomain")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "environment_variables" (
+	"id" text PRIMARY KEY NOT NULL,
+	"key" text NOT NULL,
+	"value" uuid NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"workspace_id" text NOT NULL,
+	"created_by" text
 );
 --> statement-breakpoint
 DO $$ BEGIN
@@ -190,13 +227,25 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "conversation_messages" ADD CONSTRAINT "conversation_messages_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "conversation_messages" ADD CONSTRAINT "conversation_messages_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "conversations" ADD CONSTRAINT "conversations_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "conversations" ADD CONSTRAINT "conversations_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "conversations" ADD CONSTRAINT "conversations_primitive_id_primitives_id_fk" FOREIGN KEY ("primitive_id") REFERENCES "public"."primitives"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "conversations" ADD CONSTRAINT "conversations_flow_id_flows_id_fk" FOREIGN KEY ("flow_id") REFERENCES "public"."flows"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -220,7 +269,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "edges" ADD CONSTRAINT "edges_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "edges" ADD CONSTRAINT "edges_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -232,19 +281,13 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "flows" ADD CONSTRAINT "flows_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "flows" ADD CONSTRAINT "flows_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "flows" ADD CONSTRAINT "flows_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "primitives" ADD CONSTRAINT "primitives_parent_id_primitives_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."primitives"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "integration_utils" ADD CONSTRAINT "integration_utils_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -256,13 +299,19 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "primitives" ADD CONSTRAINT "primitives_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "primitives" ADD CONSTRAINT "primitives_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "primitives" ADD CONSTRAINT "primitives_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "resource_environment_variables" ADD CONSTRAINT "resource_environment_variables_resource_id_resources_id_fk" FOREIGN KEY ("resource_id") REFERENCES "public"."resources"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "resource_environment_variables" ADD CONSTRAINT "resource_environment_variables_environment_variable_id_environment_variables_id_fk" FOREIGN KEY ("environment_variable_id") REFERENCES "public"."environment_variables"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -274,13 +323,37 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "resources" ADD CONSTRAINT "resources_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "resources" ADD CONSTRAINT "resources_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "workspaces" ADD CONSTRAINT "workspaces_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "workspaces" ADD CONSTRAINT "workspaces_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_value_secrets_id_fk" FOREIGN KEY ("value") REFERENCES "vault"."secrets"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

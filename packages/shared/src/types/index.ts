@@ -10,6 +10,7 @@ import type {
 } from "../validators/common";
 import type { edgeSchema } from "../validators/edges";
 import type {
+  baseFlowSchema,
   componentFlowSchema,
   endpointFlowMetadataSchema,
   endpointFlowSchema,
@@ -19,17 +20,19 @@ import type {
   taskFlowSchema,
 } from "../validators/flows";
 import type {
+  baseIntegrationSchema,
+  integrationSchema,
+  integrationTypeSchema,
+  integrationUtilsSchema,
+} from "../validators/integrations";
+import type {
   functionPrimitiveMetadataSchema,
   functionPrimitiveSchema,
   primitiveMetadataSchema,
   primitiveSchema,
   responsePrimitiveSchema,
 } from "../validators/primitives";
-import type {
-  resourceMetadataSchema,
-  resourceProvidersSchema,
-  resourceSchema,
-} from "../validators/resources";
+import type { resourceSchema } from "../validators/resources";
 import type { workspaceSchema } from "../validators/workspaces";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
@@ -60,6 +63,7 @@ export type EndpointFlow = z.infer<typeof endpointFlowSchema>;
 export type TaskFlow = z.infer<typeof taskFlowSchema>;
 
 export type FlowType = z.infer<typeof flowTypesSchema>;
+export type BaseFlow = z.infer<typeof baseFlowSchema>;
 export type Flow = z.infer<typeof flowSchema>;
 export type FlowMetadata =
   | ComponentFlowMetadata
@@ -80,8 +84,11 @@ export interface ConversationMessage {
 export type Conversation = z.infer<typeof conversationSchema>;
 
 export type Resource = z.infer<typeof resourceSchema>;
-export type ResourceMetadata = z.infer<typeof resourceMetadataSchema>;
-export type ResourceProvider = z.infer<typeof resourceProvidersSchema>;
+
+export type BaseIntegration = z.infer<typeof baseIntegrationSchema>;
+export type Integration = z.infer<typeof integrationSchema>;
+export type IntegrationType = z.infer<typeof integrationTypeSchema>;
+export type IntegrationUtils = z.infer<typeof integrationUtilsSchema>;
 
 export type PrimitiveType = "function" | "response";
 export type Primitive = z.infer<typeof primitiveSchema>;

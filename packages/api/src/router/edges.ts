@@ -1,6 +1,7 @@
 import { and, eq } from "@specly/db";
 import { edges } from "@specly/db/schema";
 import { insertEdgeSchema } from "@specly/shared/validators/edges";
+import type { TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
@@ -22,4 +23,4 @@ export const edgesRouter = {
           and(eq(edges.id, input.id), eq(edges.createdBy, ctx.session.user.id)),
         );
     }),
-};
+} satisfies TRPCRouterRecord;

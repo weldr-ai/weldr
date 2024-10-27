@@ -8,7 +8,7 @@ import {
   insertFlowSchema,
   updateFlowSchema,
 } from "@specly/shared/validators/flows";
-import { TRPCError } from "@trpc/server";
+import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { conversations } from "node_modules/@specly/db/src/schema/conversations";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
@@ -85,6 +85,16 @@ export const flowsRouter = {
           message: "Failed to create flow",
         });
       }
+    }),
+  getAll: protectedProcedure
+    .input(z.object({ workspaceId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.query.flows.findMany({
+        where: and(
+          eq(flows.workspaceId, input.workspaceId),
+          eq(flows.createdBy, ctx.session.user.id),
+        ),
+      });
     }),
   getAllByType: protectedProcedure
     .input(z.object({ workspaceId: z.string(), type: flowTypesSchema }))
@@ -226,4 +236,4 @@ export const flowsRouter = {
 
       return flow;
     }),
-};
+} satisfies TRPCRouterRecord;
