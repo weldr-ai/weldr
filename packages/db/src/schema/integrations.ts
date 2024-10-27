@@ -1,47 +1,45 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
-import { pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { jsonb, pgEnum, pgTable, text } from "drizzle-orm/pg-core";
+import { resources } from "./resources";
+
+export const integrationTypes = pgEnum("integration_type", [
+  "postgres",
+  "mysql",
+]);
 
 export const integrations = pgTable("integrations", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
-  name: text("name").notNull(),
+  type: integrationTypes("type").notNull(),
   version: text("version").notNull(),
+  name: text("name").notNull(),
   description: text("description").notNull(),
-  dependencies: text("dependencies").array().default(sql`ARRAY[]::text[]`),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
+  environmentVariables: text("environment_variables")
+    .array()
+    .default(sql`NULL`),
+  dependencies: jsonb("dependencies")
+    .$type<{ name: string; version?: string }[]>()
     .notNull(),
 });
 
 export const integrationsRelations = relations(integrations, ({ many }) => ({
+  resources: many(resources),
   utils: many(integrationUtils),
-  env: many(integrationEnv),
 }));
 
-export const integrationUtils = pgTable(
-  "integration_utils",
-  {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => createId()),
-    name: text("name").unique().notNull(),
-    implementation: text("implementation").notNull(),
-    docs: text("docs").notNull(),
-    integrationId: text("integration_id")
-      .references(() => integrations.id, { onDelete: "cascade" })
-      .notNull(),
-  },
-  (t) => ({
-    uniqueNameInIntegration: uniqueIndex("integration_utils_name_idx").on(
-      t.name,
-      t.integrationId,
-    ),
-  }),
-);
+export const integrationUtils = pgTable("integration_utils", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  implementation: text("implementation").notNull(),
+  integrationId: text("integration_id")
+    .references(() => integrations.id, { onDelete: "cascade" })
+    .notNull(),
+});
 
 export const integrationUtilsRelations = relations(
   integrationUtils,
@@ -52,30 +50,3 @@ export const integrationUtilsRelations = relations(
     }),
   }),
 );
-
-export const integrationEnv = pgTable(
-  "integration_env",
-  {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => createId()),
-    name: text("name").notNull(),
-    description: text("description").notNull(),
-    integrationId: text("integration_id")
-      .references(() => integrations.id, { onDelete: "cascade" })
-      .notNull(),
-  },
-  (t) => ({
-    uniqueNameInIntegration: uniqueIndex("integration_env_name_idx").on(
-      t.name,
-      t.integrationId,
-    ),
-  }),
-);
-
-export const integrationEnvRelations = relations(integrationEnv, ({ one }) => ({
-  integration: one(integrations, {
-    fields: [integrationEnv.integrationId],
-    references: [integrations.id],
-  }),
-}));

@@ -3,6 +3,7 @@ import { relations, sql } from "drizzle-orm";
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
+import { environmentVariables } from "./environment-variables";
 import { flows } from "./flows";
 import { resources } from "./resources";
 
@@ -29,6 +30,7 @@ export const workspaces = pgTable("workspaces", {
 export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   resources: many(resources),
   flows: many(flows),
+  environmentVariables: many(environmentVariables),
   user: one(users, {
     fields: [workspaces.createdBy],
     references: [users.id],

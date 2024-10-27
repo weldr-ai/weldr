@@ -23,34 +23,20 @@ import { Input } from "@specly/ui/input";
 import { Textarea } from "@specly/ui/textarea";
 import { toast } from "@specly/ui/use-toast";
 
-import type { ResourceProvider } from "@specly/shared/types";
+import type { BaseIntegration } from "@specly/shared/types";
 import { insertResourceSchema } from "@specly/shared/validators/resources";
 import { addResource } from "~/lib/actions/resources";
 
 export function AddResourceForm({
-  provider,
+  integration,
   setAddResourceDialogOpen,
 }: {
-  provider: ResourceProvider;
+  integration: BaseIntegration;
   setAddResourceDialogOpen?: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [state, addResourceAction] = useFormState(addResource, undefined);
-
-  const getMetadataValues = (provider: ResourceProvider) => {
-    switch (provider) {
-      case "postgres":
-      case "mysql":
-        return {
-          host: "",
-          port: "5432",
-          user: "",
-          password: "",
-          database: "",
-        };
-    }
-  };
 
   const form = useForm<z.infer<typeof insertResourceSchema>>({
     mode: "onChange",
@@ -59,11 +45,6 @@ export function AddResourceForm({
       name: "",
       description: undefined,
       workspaceId,
-      provider,
-      metadata: getMetadataValues(provider),
-      ...(state &&
-        (state.status === "error" || state.status === "validationError") &&
-        state.fields),
     },
   });
 
@@ -74,7 +55,7 @@ export function AddResourceForm({
           form.reset();
           toast({
             title: "Success",
-            description: `${provider.charAt(0).toUpperCase()}${provider.slice(1)} added successfully.`,
+            description: "Resource added successfully.",
             duration: 2000,
           });
           await queryClient.invalidateQueries({ queryKey: ["resources"] });
@@ -104,7 +85,7 @@ export function AddResourceForm({
       }
     }
     void handleStateUpdate();
-  }, [form, queryClient, setAddResourceDialogOpen, state, provider]);
+  }, [form, queryClient, setAddResourceDialogOpen, state]);
 
   return (
     <Form {...form}>
@@ -129,97 +110,8 @@ export function AddResourceForm({
             </FormItem>
           )}
         />
-        {provider === "postgres" && (
-          <>
-            <FormField
-              control={form.control}
-              name="metadata.host"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Host</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      autoComplete="off"
-                      placeholder="Enter host"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="metadata.port"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Port</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      autoComplete="off"
-                      placeholder="Enter port"
-                      onChange={(event) =>
-                        form.setValue("metadata.port", event.target.value)
-                      }
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="metadata.user"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">User</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      autoComplete="off"
-                      placeholder="Enter user"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="metadata.password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      autoComplete="off"
-                      placeholder="Enter password"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="metadata.database"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Database</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      autoComplete="off"
-                      placeholder="Enter database"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
+        {integration.type === "postgres" && (
+          <div className="flex flex-col gap-2" />
         )}
         <FormField
           control={form.control}
@@ -248,7 +140,7 @@ export function AddResourceForm({
         />
         <FormField
           control={form.control}
-          name="provider"
+          name="integrationId"
           render={({ field }) => <Input {...field} className="hidden" />}
         />
         <div className="flex w-full justify-end">

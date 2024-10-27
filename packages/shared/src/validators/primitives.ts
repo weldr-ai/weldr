@@ -5,7 +5,6 @@ import {
   outputSchema,
   rawDescriptionSchema,
 } from "./common";
-import { resourceProvidersSchema } from "./resources";
 
 export const primitiveTypesSchema = z.enum(["function", "response"]);
 
@@ -30,14 +29,8 @@ export const functionPrimitiveMetadataSchema = z.object({
   logicalSteps: z.string().optional(),
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
-  resources: z
-    .object({
-      id: z.string(),
-      provider: resourceProvidersSchema,
-    })
-    .array()
-    .optional(),
-  npmDependencies: z.string().array().optional(),
+  resources: z.string().array().optional(),
+  dependencies: z.string().array().optional(),
 });
 
 export const primitiveMetadataSchema = z.union([

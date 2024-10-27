@@ -28,7 +28,12 @@ import {
 } from "@specly/ui/dropdown-menu";
 import { cn } from "@specly/ui/utils";
 
-import type { Workspace } from "@specly/shared/types";
+import type {
+  BaseFlow,
+  BaseIntegration,
+  Resource,
+  Workspace,
+} from "@specly/shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
 import { SpeclyIcon } from "@specly/ui/icons/specly-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
@@ -40,7 +45,17 @@ import { DeleteAlertDialog } from "./delete-alert-dialog";
 import { FlowList } from "./flow-list";
 import { ResourceList } from "./resource-list";
 
-export function Sidebar({ workspace }: { workspace: Workspace }) {
+export function Sidebar({
+  workspace,
+  integrations,
+  resources,
+  flows,
+}: {
+  workspace: Workspace;
+  integrations: BaseIntegration[];
+  resources: Resource[];
+  flows: BaseFlow[];
+}) {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const activeSection = usePrimarySidebarStore((state) => state.activeSection);
@@ -55,6 +70,10 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
     useState<boolean>(false);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+
+  const endpoints = flows.filter((flow) => flow.type === "endpoint");
+  const tasks = flows.filter((flow) => flow.type === "task");
+  const utilities = flows.filter((flow) => flow.type === "utilities");
 
   return (
     <div className="flex ">
@@ -284,7 +303,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                     hidden: activeSection !== "endpoints",
                   })}
                 >
-                  <FlowList workspaceId={workspace.id} type="endpoint" />
+                  <FlowList flows={endpoints} type="endpoint" />
                 </div>
               ) : activeSection === "tasks" ? (
                 <div
@@ -292,7 +311,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                     hidden: activeSection !== "tasks",
                   })}
                 >
-                  <FlowList workspaceId={workspace.id} type="task" />
+                  <FlowList flows={tasks} type="task" />
                 </div>
               ) : activeSection === "utilities" ? (
                 <div
@@ -300,7 +319,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                     hidden: activeSection !== "utilities",
                   })}
                 >
-                  <FlowList workspaceId={workspace.id} type="utilities" />
+                  <FlowList flows={utilities} type="utilities" />
                 </div>
               ) : (
                 <div
@@ -308,7 +327,10 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                     hidden: activeSection !== "resources",
                   })}
                 >
-                  <ResourceList workspaceId={workspace.id} />
+                  <ResourceList
+                    integrations={integrations}
+                    resources={resources}
+                  />
                 </div>
               )}
             </div>

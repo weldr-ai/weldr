@@ -14,12 +14,14 @@ import {
 } from "@specly/ui/dialog";
 import { ScrollArea } from "@specly/ui/scroll-area";
 
-import type { ResourceProvider } from "@specly/shared/types";
+import type { BaseIntegration } from "@specly/shared/types";
 import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
 import { AddResourceForm } from "~/components/add-resource-form";
 
-export function AddResourceDialog() {
-  const [provider, setProvider] = useState<ResourceProvider | undefined>();
+export function AddResourceDialog({
+  integrations,
+}: { integrations: BaseIntegration[] }) {
+  const [integrationId, setIntegrationId] = useState<string | undefined>();
   const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
 
   return (
@@ -37,27 +39,33 @@ export function AddResourceDialog() {
         <DialogHeader>
           <DialogTitle>Add new resource</DialogTitle>
           <DialogDescription>
-            {provider
-              ? `Enter your ${provider} details then press add.`
-              : "Select a resource provider to add."}
+            {integrationId
+              ? "Enter your resource details then press add."
+              : "Select an integration to add a resource."}
           </DialogDescription>
         </DialogHeader>
-        {provider ? (
+        {integrationId ? (
           <AddResourceForm
-            provider={provider}
+            // biome-ignore lint/style/noNonNullAssertion: <explanation>
+            integration={integrations.find((i) => i.id === integrationId)!}
             setAddResourceDialogOpen={setAddResourceDialogOpen}
           />
         ) : (
           <ScrollArea className="h-[300px] w-full">
             <div className="grid size-full grid-cols-3 gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setProvider("postgres")}
-                className="flex h-24 w-full flex-col items-center justify-center gap-2"
-              >
-                <PostgresIcon className="size-6" />
-                Postgres
-              </Button>
+              {integrations.map((integration) => (
+                <Button
+                  key={integration.id}
+                  variant="outline"
+                  onClick={() => setIntegrationId(integration.id)}
+                  className="flex h-24 w-full flex-col items-center justify-center gap-2"
+                >
+                  {integration.type === "postgres" ? (
+                    <PostgresIcon className="size-6" />
+                  ) : null}
+                  {integration.name}
+                </Button>
+              ))}
             </div>
           </ScrollArea>
         )}

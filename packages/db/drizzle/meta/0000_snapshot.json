@@ -1,5 +1,5 @@
 {
-  "id": "942cfa70-999d-458b-a4d2-85807463daf2",
+  "id": "08ce6f53-2e09-47c6-a4db-06cb75bc351e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -350,14 +350,14 @@
           "primaryKey": false,
           "notNull": true
         },
-        "message": {
-          "name": "message",
+        "content": {
+          "name": "content",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "raw_message": {
-          "name": "raw_message",
+        "raw_content": {
+          "name": "raw_content",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -386,7 +386,8 @@
           "name": "created_by",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "NULL"
         }
       },
       "indexes": {},
@@ -406,7 +407,7 @@
           "tableTo": "users",
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
-          "onDelete": "cascade",
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -441,7 +442,20 @@
           "name": "created_by",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "NULL"
+        },
+        "primitive_id": {
+          "name": "primitive_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "flow_id": {
+          "name": "flow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -451,6 +465,24 @@
           "tableFrom": "conversations",
           "tableTo": "users",
           "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "conversations_primitive_id_primitives_id_fk": {
+          "name": "conversations_primitive_id_primitives_id_fk",
+          "tableFrom": "conversations",
+          "tableTo": "primitives",
+          "columnsFrom": ["primitive_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "conversations_flow_id_flows_id_fk": {
+          "name": "conversations_flow_id_flows_id_fk",
+          "tableFrom": "conversations",
+          "tableTo": "flows",
+          "columnsFrom": ["flow_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -475,17 +507,17 @@
           "primaryKey": false,
           "notNull": true
         },
-        "source_handle": {
-          "name": "source_handle",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "target": {
           "name": "target",
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "source_handle": {
+          "name": "source_handle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "target_handle": {
           "name": "target_handle",
@@ -503,7 +535,8 @@
           "name": "created_by",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "NULL"
         }
       },
       "indexes": {},
@@ -541,7 +574,7 @@
           "tableTo": "users",
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
-          "onDelete": "cascade",
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -619,13 +652,8 @@
           "name": "created_by",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
-        },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "NULL"
         }
       },
       "indexes": {},
@@ -645,19 +673,114 @@
           "tableTo": "users",
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
-          "onDelete": "cascade",
+          "onDelete": "set null",
           "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.integration_utils": {
+      "name": "integration_utils",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
         },
-        "flows_conversation_id_conversations_id_fk": {
-          "name": "flows_conversation_id_conversations_id_fk",
-          "tableFrom": "flows",
-          "tableTo": "conversations",
-          "columnsFrom": ["conversation_id"],
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "implementation": {
+          "name": "implementation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "integration_id": {
+          "name": "integration_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "integration_utils_integration_id_integrations_id_fk": {
+          "name": "integration_utils_integration_id_integrations_id_fk",
+          "tableFrom": "integration_utils",
+          "tableTo": "integrations",
+          "columnsFrom": ["integration_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.integrations": {
+      "name": "integrations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "integration_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "environment_variables": {
+          "name": "environment_variables",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "NULL"
+        },
+        "dependencies": {
+          "name": "dependencies",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -671,9 +794,28 @@
           "primaryKey": true,
           "notNull": true
         },
+        "type": {
+          "name": "type",
+          "type": "primitive_types",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
         "name": {
           "name": "name",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "input_schema": {
+          "name": "input_schema",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "output_schema": {
+          "name": "output_schema",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -683,12 +825,23 @@
           "primaryKey": false,
           "notNull": false
         },
-        "type": {
-          "name": "type",
-          "type": "primitive_types",
-          "typeSchema": "public",
+        "raw_description": {
+          "name": "raw_description",
+          "type": "jsonb",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "generated_code": {
+          "name": "generated_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "position_x": {
           "name": "position_x",
@@ -703,18 +856,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "parent_id": {
-          "name": "parent_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -736,44 +877,21 @@
           "primaryKey": false,
           "notNull": true
         },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "created_by": {
           "name": "created_by",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "NULL"
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "primitives_parent_id_primitives_id_fk": {
-          "name": "primitives_parent_id_primitives_id_fk",
-          "tableFrom": "primitives",
-          "tableTo": "primitives",
-          "columnsFrom": ["parent_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "primitives_flow_id_flows_id_fk": {
           "name": "primitives_flow_id_flows_id_fk",
           "tableFrom": "primitives",
           "tableTo": "flows",
           "columnsFrom": ["flow_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "primitives_conversation_id_conversations_id_fk": {
-          "name": "primitives_conversation_id_conversations_id_fk",
-          "tableFrom": "primitives",
-          "tableTo": "conversations",
-          "columnsFrom": ["conversation_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -784,16 +902,68 @@
           "tableTo": "users",
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
-          "onDelete": "cascade",
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "primitives_flow_id_name_unique": {
-          "name": "primitives_flow_id_name_unique",
+        "primitives_name_flow_id_unique": {
+          "name": "primitives_name_flow_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["flow_id", "name"]
+          "columns": ["name", "flow_id"]
+        }
+      }
+    },
+    "public.resource_environment_variables": {
+      "name": "resource_environment_variables",
+      "schema": "",
+      "columns": {
+        "resource_id": {
+          "name": "resource_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "environment_variable_id": {
+          "name": "environment_variable_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "resource_environment_variables_resource_id_resources_id_fk": {
+          "name": "resource_environment_variables_resource_id_resources_id_fk",
+          "tableFrom": "resource_environment_variables",
+          "tableTo": "resources",
+          "columnsFrom": ["resource_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "resource_environment_variables_environment_variable_id_environment_variables_id_fk": {
+          "name": "resource_environment_variables_environment_variable_id_environment_variables_id_fk",
+          "tableFrom": "resource_environment_variables",
+          "tableTo": "environment_variables",
+          "columnsFrom": ["environment_variable_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "resource_environment_variables_resource_id_environment_variable_id_pk": {
+          "name": "resource_environment_variables_resource_id_environment_variable_id_pk",
+          "columns": ["resource_id", "environment_variable_id"]
+        }
+      },
+      "uniqueConstraints": {
+        "resource_environment_variables_resource_id_environment_variable_id_unique": {
+          "name": "resource_environment_variables_resource_id_environment_variable_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["resource_id", "environment_variable_id"]
         }
       }
     },
@@ -819,19 +989,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "provider": {
-          "name": "provider",
-          "type": "resource_providers",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -852,6 +1009,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "integration_id": {
+          "name": "integration_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "created_by": {
           "name": "created_by",
           "type": "text",
@@ -866,6 +1029,15 @@
           "tableFrom": "resources",
           "tableTo": "workspaces",
           "columnsFrom": ["workspace_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "resources_integration_id_integrations_id_fk": {
+          "name": "resources_integration_id_integrations_id_fk",
+          "tableFrom": "resources",
+          "tableTo": "integrations",
+          "columnsFrom": ["integration_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -941,7 +1113,8 @@
           "name": "created_by",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "NULL"
         }
       },
       "indexes": {},
@@ -952,7 +1125,7 @@
           "tableTo": "users",
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
-          "onDelete": "cascade",
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -964,6 +1137,89 @@
           "columns": ["subdomain"]
         }
       }
+    },
+    "public.environment_variables": {
+      "name": "environment_variables",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "environment_variables_value_secrets_id_fk": {
+          "name": "environment_variables_value_secrets_id_fk",
+          "tableFrom": "environment_variables",
+          "tableTo": "secrets",
+          "schemaTo": "vault",
+          "columnsFrom": ["value"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "environment_variables_workspace_id_workspaces_id_fk": {
+          "name": "environment_variables_workspace_id_workspaces_id_fk",
+          "tableFrom": "environment_variables",
+          "tableTo": "workspaces",
+          "columnsFrom": ["workspace_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "environment_variables_created_by_users_id_fk": {
+          "name": "environment_variables_created_by_users_id_fk",
+          "tableFrom": "environment_variables",
+          "tableTo": "users",
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
     }
   },
   "enums": {
@@ -975,17 +1231,17 @@
     "public.flow_types": {
       "name": "flow_types",
       "schema": "public",
-      "values": ["component", "task", "endpoint"]
+      "values": ["utilities", "task", "endpoint"]
+    },
+    "public.integration_type": {
+      "name": "integration_type",
+      "schema": "public",
+      "values": ["postgres", "mysql"]
     },
     "public.primitive_types": {
       "name": "primitive_types",
       "schema": "public",
-      "values": ["function", "matcher", "iterator", "response"]
-    },
-    "public.resource_providers": {
-      "name": "resource_providers",
-      "schema": "public",
-      "values": ["postgres", "mysql"]
+      "values": ["function", "response"]
     }
   },
   "schemas": {},

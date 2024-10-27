@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { publicProcedure } from "../trpc";
 
 export const helloRouter = {
@@ -6,4 +7,4 @@ export const helloRouter = {
       message: "Hello, world from tRPC!",
     };
   }),
-};
+} satisfies TRPCRouterRecord;

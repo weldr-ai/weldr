@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { conversationMessages } from "@specly/db/schema";
 import { rawDescriptionSchema } from "@specly/shared/validators/common";
+import type { TRPCRouterRecord } from "@trpc/server";
 import { protectedProcedure } from "../trpc";
 
 export const conversationsRouter = {
@@ -29,4 +30,4 @@ export const conversationsRouter = {
         conversationId: input.conversationId,
       });
     }),
-};
+} satisfies TRPCRouterRecord;

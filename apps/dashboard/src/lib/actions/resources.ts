@@ -37,8 +37,7 @@ export async function addResource(
         name: validation.data.name,
         description: validation.data.description,
         workspaceId: workspace.id,
-        provider: validation.data.provider,
-        metadata: validation.data.metadata,
+        integrationId: validation.data.integrationId,
       });
 
       revalidatePath("/workspaces", "layout");

@@ -12,6 +12,7 @@ export default {
     "./src/schema/primitives.ts",
     "./src/schema/resources.ts",
     "./src/schema/workspaces.ts",
+    "./src/schema/environment-variables.ts",
   ],
   out: "./drizzle",
   dialect: "postgresql",
