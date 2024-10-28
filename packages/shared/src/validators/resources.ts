@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { integrationSchema } from "./integrations";
 
 export const resourceSchema = z.object({
   id: z.string(),
@@ -9,6 +10,10 @@ export const resourceSchema = z.object({
   createdBy: z.string(),
   workspaceId: z.string(),
   integrationId: z.string(),
+  integration: integrationSchema.omit({
+    environmentVariables: true,
+    dependencies: true,
+  }),
 });
 
 export const insertResourceSchema = z.object({

@@ -12,11 +12,13 @@ import { useCallback, useMemo, useState } from "react";
 import { ScrollArea } from "@specly/ui/scroll-area";
 import { cn } from "@specly/ui/utils";
 
-import type { FlatInputSchema } from "@specly/shared/types";
+import type { DatabaseStructure } from "@specly/shared/integrations/postgres/index";
+import type { DataType, FlatInputSchema } from "@specly/shared/types";
 import type { rawDescriptionReferenceSchema } from "@specly/shared/validators/common";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
+import { useResources } from "~/lib/context/resources";
 import { ReferenceBadge } from "../reference-badge";
 
 export class ReferenceOption extends MenuOption {
@@ -48,13 +50,9 @@ export function ReferencesPlugin({
 }: {
   inputSchema: FlatInputSchema[];
 }) {
-  // const { workspaceId } = useParams<{ workspaceId: string }>();
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
-
-  // const { data: workspaceResources } = api.resources.getAll.useQuery({
-  //   workspaceId,
-  // });
+  const resources = useResources();
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch("/", {
     minLength: 0,
@@ -102,79 +100,81 @@ export function ReferencesPlugin({
         }),
     );
 
-    // for (const resource of workspaceResources ?? []) {
-    //   options.push(
-    //     new ReferenceOption({
-    //       reference: {
-    //         id: resource.id,
-    //         type: "reference",
-    //         name: resource.name,
-    //         referenceType: "resource",
-    //       },
-    //       options: {
-    //         keywords: ["resource", "database", resource.name],
-    //         onSelect: (queryString) => {
-    //           console.log(queryString);
-    //         },
-    //       },
-    //     }),
-    //   );
+    for (const resource of resources ?? []) {
+      options.push(
+        new ReferenceOption({
+          reference: {
+            id: resource.id,
+            type: "reference",
+            name: resource.name,
+            referenceType: "database",
+          },
+          options: {
+            keywords: ["resource", "database", resource.name],
+            onSelect: (queryString) => {
+              console.log(queryString);
+            },
+          },
+        }),
+      );
 
-    //   if (
-    //     (resource.provider === "postgres" || resource.provider === "mysql") &&
-    //     resource.metadata.tables
-    //   ) {
-    //     for (const table of resource.metadata.tables) {
-    //       for (const column of table.columns) {
-    //         options.push(
-    //           new ReferenceOption({
-    //             reference: {
-    //               type: "reference",
-    //               name: `${table.name}.${column.name}`,
-    //               referenceType: "database-column",
-    //               dataType: pgTypeToJsonSchemaType(column.dataType),
-    //               database: {
-    //                 id: resource.id,
-    //                 name: resource.name,
-    //               },
-    //               table: table.name,
-    //             },
-    //             options: {
-    //               keywords: ["column", resource.name, column.name],
-    //               onSelect: (queryString) => {
-    //                 console.log(queryString);
-    //               },
-    //             },
-    //           }),
-    //         );
-    //       }
+      if (
+        resource.integration.type === "postgres" ||
+        resource.integration.type === "mysql"
+      ) {
+        const databaseStructure = resource.metadata as DatabaseStructure;
 
-    //       options.push(
-    //         new ReferenceOption({
-    //           reference: {
-    //             type: "reference",
-    //             name: `${table.name}`,
-    //             referenceType: "database-table",
-    //             database: {
-    //               id: resource.id,
-    //               name: resource.name,
-    //             },
-    //             columns: table.columns,
-    //           },
-    //           options: {
-    //             keywords: ["table", resource.name, table.name],
-    //             onSelect: (queryString) => {
-    //               console.log(queryString);
-    //             },
-    //           },
-    //         }),
-    //       );
-    //     }
-    //   }
-    // }
+        for (const table of databaseStructure) {
+          for (const column of table.columns) {
+            options.push(
+              new ReferenceOption({
+                reference: {
+                  type: "reference",
+                  name: `${table.name}.${column.name}`,
+                  referenceType: "database-column",
+                  dataType: column.dataType as DataType,
+                  database: {
+                    id: resource.id,
+                    name: resource.name,
+                  },
+                  table: table.name,
+                },
+                options: {
+                  keywords: ["column", resource.name, column.name],
+                  onSelect: (queryString) => {
+                    console.log(queryString);
+                  },
+                },
+              }),
+            );
+          }
+
+          options.push(
+            new ReferenceOption({
+              reference: {
+                type: "reference",
+                name: `${table.name}`,
+                referenceType: "database-table",
+                database: {
+                  id: resource.id,
+                  name: resource.name,
+                },
+                columns: table.columns,
+              },
+              options: {
+                keywords: ["table", resource.name, table.name],
+                onSelect: (queryString) => {
+                  console.log(queryString);
+                },
+              },
+            }),
+          );
+        }
+      }
+    }
 
     return options;
-  }, [inputSchema]);
+  }, [inputSchema, resources]);
 
   const options = useMemo(() => {
     if (!queryString) {

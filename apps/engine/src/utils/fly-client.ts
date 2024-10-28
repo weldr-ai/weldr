@@ -1,6 +1,6 @@
-import axios from "axios";
 import { exec as _exec } from "node:child_process";
 import { promisify } from "node:util";
+import axios from "axios";
 
 const exec = promisify(_exec);
 

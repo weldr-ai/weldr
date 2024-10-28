@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { TRPCError } from "@trpc/server";
+import { notFound, redirect } from "next/navigation";
 import { api } from "~/lib/trpc/rsc";
 
 export default async function WorkspacePage({
@@ -19,6 +20,20 @@ export default async function WorkspacePage({
       </div>
     );
   } catch (error) {
-    notFound();
+    console.error(error);
+    if (error instanceof TRPCError) {
+      switch (error.code) {
+        // biome-ignore lint/suspicious/noFallthroughSwitchClause: notFound function already returns
+        case "NOT_FOUND":
+          notFound();
+        case "UNAUTHORIZED":
+        // biome-ignore lint/suspicious/noFallthroughSwitchClause: redirect function already returns
+        case "FORBIDDEN":
+          redirect("/auth/sign-in");
+        default:
+          return <div>Error</div>;
+      }
+    }
+    return <div>Error</div>;
   }
 }
