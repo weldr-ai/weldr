@@ -29,6 +29,7 @@ import {
 import { Textarea } from "@specly/ui/textarea";
 import { cn } from "@specly/ui/utils";
 import {
+  AlertCircleIcon,
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
@@ -276,6 +277,9 @@ export function FlowDialog({ initialData }: { initialData: Flow }) {
     <Dialog>
       <DialogTrigger asChild>
         <Button className="rounded-full gap-2 text-xs" variant="ghost">
+          {!(data.inputSchema || data.validationSchema) && (
+            <AlertCircleIcon className="size-4 text-destructive" />
+          )}
           {data.type === "endpoint" ? (
             <span className="p-0.5 px-3 rounded-full border border-primary bg-primary/20 text-primary">
               {data.metadata.method.toUpperCase()}

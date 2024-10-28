@@ -2,6 +2,7 @@ import { authRouter } from "./router/auth";
 import { conversationsRouter } from "./router/conversations";
 import { deployerRouter } from "./router/deployer";
 import { edgesRouter } from "./router/edges";
+import { environmentVariablesRouter } from "./router/environment-variables";
 import { flowsRouter } from "./router/flows";
 import { helloRouter } from "./router/hello";
 import { integrationsRouter } from "./router/integrations";
@@ -21,6 +22,7 @@ export const appRouter = createTRPCRouter({
   deployer: deployerRouter,
   conversations: conversationsRouter,
   integrations: integrationsRouter,
+  environmentVariables: environmentVariablesRouter,
 });
 
 // export type definition of API

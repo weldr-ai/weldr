@@ -8,7 +8,8 @@
     "./utils": "./src/utils.tsx",
     "./validators/*": "./src/validators/*.ts",
     "./types": "./src/types/index.ts",
-    "./integrations/*": "./src/integrations/*.ts"
+    "./integrations/*": "./src/integrations/*.ts",
+    "./integrations/postgres": "./src/integrations/postgres/index.ts"
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
@@ -18,6 +19,7 @@
     "@paralleldrive/cuid2": "^2.2.2",
     "lucide-react": "^0.363.0",
     "pg": "^8.13.1",
+    "server-only": "^0.0.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {

@@ -62,6 +62,7 @@ export default async function FlowPage({
       </div>
     );
   } catch (error) {
+    console.error(error);
     if (error instanceof TRPCError) {
       switch (error.code) {
         // biome-ignore lint/suspicious/noFallthroughSwitchClause: notFound function already returns
@@ -70,10 +71,11 @@ export default async function FlowPage({
         case "UNAUTHORIZED":
         // biome-ignore lint/suspicious/noFallthroughSwitchClause: redirect function already returns
         case "FORBIDDEN":
-          redirect("/");
+          redirect("/auth/sign-in");
         default:
-          console.error(error);
+          return <div>Error</div>;
       }
     }
+    return <div>Error</div>;
   }
 }

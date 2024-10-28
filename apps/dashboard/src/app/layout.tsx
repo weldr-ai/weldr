@@ -11,7 +11,6 @@ import { TooltipProvider } from "@specly/ui/tooltip";
 import { ReactFlowProvider } from "@xyflow/react";
 import { QueryProvider } from "~/components/query-client-provider";
 import { TRPCReactProvider } from "~/lib/trpc/react";
-
 const poppins = Poppins({
   subsets: ["latin"],
   weight: "400",
