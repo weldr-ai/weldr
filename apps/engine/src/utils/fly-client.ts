@@ -1,6 +1,6 @@
+import axios from "axios";
 import { exec as _exec } from "node:child_process";
 import { promisify } from "node:util";
-import axios from "axios";
 
 const exec = promisify(_exec);
 
@@ -24,7 +24,7 @@ export async function createFlyApp(workspaceId: string): Promise<FlyApp> {
     },
     {
       headers: {
-        Authorization: `Bearer ${process.env.FLY_API_TOKEN}`,
+        Authorization: `Bearer ${process.env.FLY_API_KEY}`,
         "Content-Type": "application/json",
       },
     },
@@ -47,7 +47,7 @@ export async function getFlyApp(workspaceId: string) {
     `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceId}`,
     {
       headers: {
-        Authorization: `Bearer ${process.env.FLY_API_TOKEN}`,
+        Authorization: `Bearer ${process.env.FLY_API_KEY}`,
         "Content-Type": "application/json",
       },
     },
@@ -65,7 +65,7 @@ export async function deleteFlyApp(workspaceId: string, force = false) {
     `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceId}?force=${force}`,
     {
       headers: {
-        Authorization: `Bearer ${process.env.FLY_API_TOKEN}`,
+        Authorization: `Bearer ${process.env.FLY_API_KEY}`,
         "Content-Type": "application/json",
       },
     },
@@ -102,7 +102,7 @@ export async function createFlyMachine(
 ): Promise<{ id: string } | undefined> {
   const headers = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${process.env.FLY_API_TOKEN}`,
+    Authorization: `Bearer ${process.env.FLY_API_KEY}`,
   };
 
   const data = {
