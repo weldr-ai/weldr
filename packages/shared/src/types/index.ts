@@ -3,6 +3,7 @@ import type {
   baseJsonSchema,
   conversationSchema,
   dataTypeSchema,
+  flowInputsSchemaMessageSchema,
   functionRequirementsMessageSchema,
   inputSchema,
   outputSchema,
@@ -98,6 +99,9 @@ export type ResponsePrimitive = z.infer<typeof responsePrimitiveSchema>;
 export type RawDescription = z.infer<typeof rawDescriptionSchema>;
 export type FunctionRequirementsMessage = z.infer<
   typeof functionRequirementsMessageSchema
+>;
+export type FlowInputsSchemaMessage = z.infer<
+  typeof flowInputsSchemaMessageSchema
 >;
 
 export type BaseFormState<

@@ -50,11 +50,9 @@ import {
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
-  ArrowUpIcon,
   CircleAlertIcon,
   ExternalLinkIcon,
   FileTextIcon,
-  Loader2,
   Loader2Icon,
   PlayCircleIcon,
   TrashIcon,
@@ -64,7 +62,6 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { createId } from "@paralleldrive/cuid2";
 import type {
   ConversationMessage,
   FlatInputSchema,
@@ -74,7 +71,6 @@ import type {
   RawDescription,
 } from "@specly/shared/types";
 import { rawDescriptionReferenceSchema } from "@specly/shared/validators/common";
-import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
 import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
@@ -87,7 +83,7 @@ import { api } from "~/lib/trpc/react";
 import { flattenInputSchema, fromRawDescriptionToText } from "~/lib/utils";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 import type { ReferenceNode } from "../editor/nodes/reference-node";
-import { ReferenceBadge } from "../editor/reference-badge";
+import MessageList from "../message-list";
 import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
 
 async function executeFunction({
@@ -236,6 +232,7 @@ export const FunctionNode = memo(
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
+    const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
     const [messages, setMessages] = useState<ConversationMessage[]>([
       {
@@ -254,6 +251,21 @@ export const FunctionNode = memo(
       ...((data?.conversation?.messages ?? []).sort(
         (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
       ) as ConversationMessage[]),
+      ...((data.rawDescription
+        ? [
+            {
+              role: "assistant",
+              content: "Your function has been built successfully!",
+              rawContent: [
+                {
+                  type: "text",
+                  value: "Your function has been built successfully!",
+                },
+              ],
+              conversationId: data.conversation.id,
+            },
+          ]
+        : []) as ConversationMessage[]),
     ]);
     const [chatMessage, setChatMessage] = useState<string | null>(null);
     const [rawChatMessage, setRawChatMessage] = useState<RawDescription[]>([]);
@@ -282,8 +294,6 @@ export const FunctionNode = memo(
 
           return acc;
         }, [] as RawDescription[]);
-
-        console.log(rawDescription);
 
         setChatMessage(chat);
         setRawChatMessage(rawDescription);
@@ -320,6 +330,8 @@ export const FunctionNode = memo(
     const handleOnSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
+      setIsGenerating(true);
+
       const editor = editorRef.current;
 
       if (editor !== null) {
@@ -350,16 +362,16 @@ export const FunctionNode = memo(
         functionId: data.id,
         conversationId: data.conversation.id,
         messages: newMessages.map((message) => ({
-          role: message.role as "user" | "assistant",
-          content: message.content as string,
+          role: message.role,
+          content: message.content,
         })),
       });
 
-      let functionRequirementsMessage = "";
-      let newMessageAssistant: ConversationMessage | null = null;
+      let newAssistantMessageStr = "";
+      let newAssistantMessage: ConversationMessage | null = null;
 
       for await (const content of readStreamableValue(result)) {
-        newMessageAssistant = {
+        newAssistantMessage = {
           role: "assistant",
           content: "",
           rawContent: [],
@@ -367,10 +379,10 @@ export const FunctionNode = memo(
         };
 
         if (content?.message?.content && content.message.type === "message") {
-          newMessageAssistant.content = fromRawDescriptionToText(
+          newAssistantMessage.content = fromRawDescriptionToText(
             content.message.content,
           );
-          newMessageAssistant.rawContent = content.message.content;
+          newAssistantMessage.rawContent = content.message.content;
         }
 
         // if end message, start generating code
@@ -385,23 +397,25 @@ export const FunctionNode = memo(
             },
             ...content.message.content.description,
           ];
-          newMessageAssistant.content = fromRawDescriptionToText(description);
-          newMessageAssistant.rawContent = description;
+          newAssistantMessage.content = fromRawDescriptionToText(description);
+          newAssistantMessage.rawContent = description;
+
+          await refetch();
         }
 
-        if (newMessageAssistant) {
-          setMessages([...newMessages, newMessageAssistant]);
+        if (newAssistantMessage) {
+          setMessages([...newMessages, newAssistantMessage]);
         }
-        functionRequirementsMessage = JSON.stringify(content);
+        newAssistantMessageStr = JSON.stringify(content);
       }
 
       // add the last message to the new messages temporary list
-      if (newMessageAssistant) {
-        newMessages.push(newMessageAssistant);
+      if (newAssistantMessage) {
+        newMessages.push(newAssistantMessage);
       }
 
       const functionRequirementsMessageObject = JSON.parse(
-        functionRequirementsMessage,
+        newAssistantMessageStr,
       ) as FunctionRequirementsMessage;
 
       // if code generation is set, disable it and refetch the updated function metadata
@@ -426,6 +440,7 @@ export const FunctionNode = memo(
 
       setChatMessage(null);
       setRawChatMessage([]);
+      setIsGenerating(false);
     };
 
     return (
@@ -588,52 +603,11 @@ export const FunctionNode = memo(
                 </ExpandableCardHeader>
                 <div className="flex flex-col h-[calc(100dvh-492px)] p-4">
                   <ScrollArea className="flex-grow mb-2" ref={scrollAreaRef}>
-                    <div className="flex flex-col gap-4">
-                      {messages.map((messages) => (
-                        <div
-                          className="flex items-start"
-                          key={messages.id ?? createId()}
-                        >
-                          <Avatar className="size-6 rounded-md">
-                            {messages.role === "user" ? (
-                              <>
-                                <AvatarImage src={undefined} alt="User" />
-                                <AvatarFallback>
-                                  <div className="size-full bg-gradient-to-br from-rose-500 via-amber-600 to-blue-500" />
-                                </AvatarFallback>
-                              </>
-                            ) : (
-                              <AvatarImage src="/logo.svg" alt="Specly" />
-                            )}
-                          </Avatar>
-                          <p className="text-sm ml-3 select-text cursor-text">
-                            {messages.rawContent?.map((item, idx) => (
-                              <span
-                                key={`${idx}-${item.type}`}
-                                className={cn({
-                                  "text-success":
-                                    item.type === "text" &&
-                                    item.value ===
-                                      "Your function has been built successfully!",
-                                })}
-                              >
-                                {item.type === "text" ? (
-                                  item.value
-                                ) : (
-                                  <ReferenceBadge reference={item} />
-                                )}
-                              </span>
-                            ))}
-                          </p>
-                        </div>
-                      ))}
-                      {isGeneratingCode && (
-                        <div className="flex items-center justify-center">
-                          <Loader2 className="size-4 animate-spin" />
-                        </div>
-                      )}
-                      <div ref={chatHistoryEndRef} />
-                    </div>
+                    <MessageList
+                      messages={messages}
+                      isGenerating={isGeneratingCode}
+                      chatHistoryEndRef={chatHistoryEndRef}
+                    />
                   </ScrollArea>
                   <div className="mt-auto">
                     <form className="relative" onSubmit={handleOnSubmit}>
@@ -647,11 +621,22 @@ export const FunctionNode = memo(
                       />
                       <Button
                         type="submit"
-                        disabled={!chatMessage}
-                        size="icon"
-                        className="absolute bottom-2 right-2"
+                        disabled={!chatMessage || isGenerating}
+                        size="sm"
+                        className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
                       >
-                        <ArrowUpIcon className="size-4" />
+                        Send
+                        <span className="ml-1">
+                          <span className="px-1 py-0.5 bg-white/20 rounded-sm disabled:text-muted-foreground">
+                            {typeof window !== "undefined" &&
+                            window.navigator?.userAgent
+                              .toLowerCase()
+                              .includes("mac")
+                              ? "⌘"
+                              : "Ctrl"}
+                            ⏎
+                          </span>
+                        </span>
                       </Button>
                     </form>
                   </div>
