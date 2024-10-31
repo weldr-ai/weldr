@@ -47,8 +47,10 @@ export class ReferenceOption extends MenuOption {
 
 export function ReferencesPlugin({
   inputSchema,
+  position = "top",
 }: {
   inputSchema: FlatInputSchema[];
+  position?: "bottom" | "top";
 }) {
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
@@ -202,7 +204,17 @@ export function ReferencesPlugin({
       ) =>
         anchorElementRef?.current && options.length ? (
           ReactDOM.createPortal(
-            <div className="absolute z-50">
+            <div
+              className="absolute z-50"
+              style={
+                position === "bottom"
+                  ? {
+                      bottom: "100%",
+                      marginBottom: "24px",
+                    }
+                  : {}
+              }
+            >
               <ScrollArea className="h-full w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
                 <div className="max-h-40">
                   {options.map((option, i: number) => (
@@ -244,7 +256,7 @@ export function ReferencesPlugin({
             anchorElementRef.current,
           )
         ) : (
-          <div className="absolute left-3 top-8 flex min-w-48 rounded-md border bg-muted p-2 text-xs">
+          <div className="absolute left-3 bottom-full mb-2 flex min-w-48 rounded-md border bg-muted p-2 text-xs">
             No references found.
           </div>
         )

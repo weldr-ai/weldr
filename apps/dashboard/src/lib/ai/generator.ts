@@ -2,21 +2,19 @@
 
 import { createOpenAI } from "@ai-sdk/openai";
 import type {
-  FlowType,
+  FlowInputsSchemaMessage,
   FunctionRequirementsMessage,
-  InputSchema,
   RawDescription,
 } from "@specly/shared/types";
-import { functionRequirementsMessageSchema } from "@specly/shared/validators/common";
-import { type CoreMessage, streamObject, streamText } from "ai";
-import { createStreamableValue } from "ai/rsc";
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
-import { z } from "zod";
 import {
+  flowInputsSchemaMessageSchema,
+  functionRequirementsMessageSchema,
+} from "@specly/shared/validators/common";
+import { type CoreMessage, streamObject } from "ai";
+import { createStreamableValue } from "ai/rsc";
+import {
+  FLOW_INPUT_SCHEMA_AGENT_PROMPT,
   FUNCTION_REQUIREMENTS_AGENT_PROMPT,
-  INPUTS_REQUIREMENTS_AGENT_PROMPT,
-  INPUTS_SCHEMA_GENERATION_AGENT_PROMPT,
 } from "~/lib/ai/prompts";
 import { api } from "../trpc/rsc";
 import { fromRawDescriptionToText } from "../utils";
@@ -28,10 +26,6 @@ import { fromRawDescriptionToText } from "../utils";
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   compatibility: "strict",
-});
-
-const openaiClient = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function gatherFunctionRequirements({
@@ -114,82 +108,72 @@ export async function gatherFunctionRequirements({
   return stream.value;
 }
 
-export async function gatherInputsRequirements(messages: CoreMessage[]) {
-  const result = await streamText({
-    model: openai("gpt-4o"),
-    system: INPUTS_REQUIREMENTS_AGENT_PROMPT,
-    messages,
-    onFinish: ({ usage, text }) => {
-      console.log(text);
-      console.log(
-        `[usage]: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
-      );
-    },
-  });
-  const stream = createStreamableValue(result.textStream);
-  return stream.value;
-}
-
-export async function generateInputsSchemas({
-  prompt,
-}: {
-  prompt: string;
-}) {
-  const completion = await openaiClient.beta.chat.completions.parse({
-    model: "gpt-4o",
-    messages: [
-      {
-        role: "system",
-        content: INPUTS_SCHEMA_GENERATION_AGENT_PROMPT,
-      },
-      { role: "user", content: prompt },
-    ],
-    response_format: zodResponseFormat(
-      z.object({
-        jsonSchema: z.string().describe("JSON schema"),
-        zodSchema: z.string().describe("Zod schema"),
-      }),
-      "validationSchemas",
-    ),
-  });
-
-  const message = completion.choices[0]?.message;
-
-  if (message?.parsed) {
-    return {
-      inputSchema: JSON.parse(message.parsed.jsonSchema) as InputSchema,
-      validationSchema: message.parsed.zodSchema,
-    };
-  }
-
-  return undefined;
-}
-
 export async function generateFlowInputsSchemas({
-  prompt,
   flowId,
-  flowType,
+  conversationId,
+  messages,
 }: {
-  prompt: string;
   flowId: string;
-  flowType: FlowType;
+  conversationId: string;
+  messages: CoreMessage[];
 }) {
-  const result = await generateInputsSchemas({ prompt });
+  const stream = createStreamableValue<FlowInputsSchemaMessage>();
 
-  if (!result) {
-    return false;
-  }
+  (async () => {
+    const { partialObjectStream } = await streamObject({
+      model: openai("gpt-4o"),
+      system: FLOW_INPUT_SCHEMA_AGENT_PROMPT,
+      messages,
+      schema: flowInputsSchemaMessageSchema,
+      onFinish: ({ usage, object }) => {
+        console.log(object);
+        console.log(
+          `[usage]: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
+        );
 
-  await api.flows.update({
-    where: {
-      id: flowId,
-    },
-    payload: {
-      type: flowType,
-      inputSchema: result.inputSchema,
-      validationSchema: result.validationSchema,
-    },
-  });
+        if (object?.message?.type === "message") {
+          api.conversations.addMessage({
+            role: "assistant",
+            content: fromRawDescriptionToText(object.message.content),
+            rawContent: object.message.content,
+            conversationId,
+          });
+        }
 
-  return true;
+        if (object?.message?.type === "end") {
+          const description: RawDescription[] = [
+            {
+              type: "text",
+              value: "Generating the following inputs schema: ",
+            },
+            ...object.message.content.description,
+          ];
+
+          api.conversations.addMessage({
+            role: "assistant",
+            content: fromRawDescriptionToText(description),
+            rawContent: description,
+            conversationId,
+          });
+
+          api.flows.update({
+            where: { id: flowId },
+            payload: {
+              type: "endpoint",
+              inputSchema: JSON.parse(object.message.content.inputSchema),
+              validationSchema: object.message.content.zodSchema,
+            },
+          });
+        }
+      },
+    });
+
+    for await (const partialObject of partialObjectStream) {
+      stream.update(partialObject as FlowInputsSchemaMessage);
+    }
+
+    stream.done();
+  })();
+
+  return stream.value;
 }

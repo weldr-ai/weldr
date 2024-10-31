@@ -26,6 +26,7 @@ interface EditorProps {
   editorRef?: { current: null | LexicalEditor };
   rawMessage?: RawDescription[];
   inputSchema?: FlatInputSchema[];
+  typeaheadPosition?: "bottom" | "top";
 }
 
 export function Editor({ ...props }: EditorProps) {
@@ -59,7 +60,10 @@ export function Editor({ ...props }: EditorProps) {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <div className="flex size-full">
-        <ReferencesPlugin inputSchema={props.inputSchema ?? []} />
+        <ReferencesPlugin
+          inputSchema={props.inputSchema ?? []}
+          position={props.typeaheadPosition}
+        />
         <RichTextPlugin
           contentEditable={
             <ContentEditable

@@ -110,6 +110,37 @@ export const rawDescriptionSchema = z
     "The content of a message or description as a list of text and reference parts",
   );
 
+export const flowInputsSchemaMessageSchema = z.object({
+  message: z.discriminatedUnion("type", [
+    z
+      .object({
+        type: z.literal("message"),
+        content: rawDescriptionSchema.array(),
+      })
+      .describe("The message of the inputs requirements gathering"),
+    z.object({
+      type: z.literal("end"),
+      content: z.object({
+        description: rawDescriptionSchema
+          .array()
+          .describe(
+            "The description of the inputs schema. Must consist of text and reference parts. The reference parts must be used when mentioning a reference in the description.",
+          ),
+        inputSchema: z
+          .string()
+          .describe(
+            "The JSON schema for the inputs of the route. The names of the properties must be in camelCase.",
+          ),
+        zodSchema: z
+          .string()
+          .describe(
+            "The Zod schema for validating the inputs. The schema must be a raw Zod object schema without variable declarations.",
+          ),
+      }),
+    }),
+  ]),
+});
+
 export const functionRequirementsMessageSchema = z.object({
   message: z.discriminatedUnion("type", [
     z

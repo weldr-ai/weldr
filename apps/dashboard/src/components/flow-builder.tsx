@@ -20,13 +20,7 @@ import {
   useReactFlow,
   useViewport,
 } from "@xyflow/react";
-import {
-  MinusIcon,
-  PlayIcon,
-  PlusIcon,
-  RocketIcon,
-  SparklesIcon,
-} from "lucide-react";
+import { MinusIcon, PlusIcon } from "lucide-react";
 import type React from "react";
 import { useCallback } from "react";
 
@@ -36,7 +30,6 @@ import "~/styles/flow-builder.css";
 import { Button } from "@specly/ui/button";
 
 import type { Flow, PrimitiveType } from "@specly/shared/types";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { toast } from "@specly/ui/use-toast";
 import { useTheme } from "next-themes";
 import DeletableEdge from "~/components/deletable-edge";
@@ -45,7 +38,7 @@ import { FunctionNode } from "~/components/primitives/function";
 import { Response } from "~/components/primitives/response";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeData } from "~/types";
-import { FlowDialog } from "./flow-dialog";
+import { FlowSheet } from "./flow-sheet";
 
 const nodeTypes = {
   function: FunctionNode,
@@ -287,52 +280,7 @@ export function FlowBuilder({
         position="bottom-center"
         className="flex items-center bg-background dark:bg-muted rounded-full gap-1 p-1 border"
       >
-        <FlowDialog initialData={flow} />
-
-        <div className="h-9 border-l" />
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              className="rounded-full hover:bg-success/20 text-success hover:text-success"
-              variant="ghost"
-              size="icon"
-            >
-              <PlayIcon className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border text-success">
-            <p>Run</p>
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              className="rounded-full hover:bg-primary/20 text-primary hover:text-primary"
-              variant="ghost"
-              size="icon"
-            >
-              <RocketIcon className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border text-primary">
-            <p>Deploy</p>
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              className="rounded-full hover:bg-pink-400/20 text-pink-400 hover:text-pink-400"
-              variant="ghost"
-              size="icon"
-            >
-              <SparklesIcon className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border text-pink-400">
-            <p>Specly</p>
-          </TooltipContent>
-        </Tooltip>
+        <FlowSheet initialData={flow} />
 
         <div className="h-9 border-l" />
 
