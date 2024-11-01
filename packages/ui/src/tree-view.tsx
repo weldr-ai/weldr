@@ -7,12 +7,10 @@ import React from "react";
 import { cn } from "./utils";
 
 const treeVariants = cva(
-  "group hover:before:opacity-100 before:absolute before:rounded-lg before:left-0 before:w-full before:opacity-0 before:bg-accent/70 before:h-[2rem] before:-z-10",
+  "group hover:before:opacity-100 before:absolute before:rounded-lg before:left-0 before:w-full before:opacity-0 before:h-[2rem] before:-z-10",
 );
 
-const selectedTreeVariants = cva(
-  "before:opacity-100 before:bg-accent/70 text-accent-foreground",
-);
+const selectedTreeVariants = cva("before:opacity-100 text-accent-foreground");
 
 interface TreeDataItem {
   id: string;
@@ -63,7 +61,7 @@ const TreeView = React.forwardRef<HTMLDivElement, TreeProps>(
       data,
       initialSelectedItemId,
       onSelectChange,
-      expandAll,
+      expandAll = true,
       defaultLeafIcon,
       defaultNodeIcon,
       className,
@@ -291,7 +289,7 @@ const TreeLeaf = React.forwardRef<
         ref={ref}
         className={cn(
           isFlat ? "ml-0" : "ml-5",
-          "flex text-left items-center py-2 cursor-pointer before:right-1",
+          "flex text-left items-center py-0.5 cursor-pointer before:right-1",
           treeVariants(),
           className,
           selectedItemId === item.id && selectedTreeVariants(),

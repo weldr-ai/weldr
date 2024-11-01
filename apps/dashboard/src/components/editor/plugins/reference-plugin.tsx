@@ -135,10 +135,6 @@ export function ReferencesPlugin({
                   name: `${table.name}.${column.name}`,
                   referenceType: "database-column",
                   dataType: column.dataType as DataType,
-                  database: {
-                    id: resource.id,
-                    name: resource.name,
-                  },
                   table: table.name,
                 },
                 options: {
@@ -157,10 +153,7 @@ export function ReferencesPlugin({
                 type: "reference",
                 name: `${table.name}`,
                 referenceType: "database-table",
-                database: {
-                  id: resource.id,
-                  name: resource.name,
-                },
+                databaseId: resource.id,
                 columns: table.columns,
               },
               options: {
