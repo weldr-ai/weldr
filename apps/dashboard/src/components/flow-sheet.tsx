@@ -32,7 +32,7 @@ import type {
   ConversationMessage,
   Flow,
   FlowInputsSchemaMessage,
-  InputSchema,
+  JsonSchema,
   RawDescription,
 } from "@specly/shared/types";
 import { rawDescriptionReferenceSchema } from "@specly/shared/validators/common";
@@ -62,7 +62,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { generateFlowInputsSchemas } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/react";
-import { fromRawDescriptionToText, inputSchemaToTreeData } from "~/lib/utils";
+import { fromRawDescriptionToText, jsonSchemaToTreeData } from "~/lib/utils";
 import Editor from "./editor";
 import type { ReferenceNode } from "./editor/nodes/reference-node";
 import MessageList from "./message-list";
@@ -133,7 +133,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
     },
   });
 
-  const inputTree = inputSchemaToTreeData(data.inputSchema as InputSchema);
+  const inputTree = jsonSchemaToTreeData(data.inputSchema as JsonSchema);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingSchemas, setIsGeneratingSchemas] = useState(false);

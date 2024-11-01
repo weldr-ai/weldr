@@ -1,10 +1,9 @@
 import { createId } from "@paralleldrive/cuid2";
 import type { ConversationMessage } from "@specly/shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
-import { cn } from "@specly/ui/utils";
 import { Loader2 } from "lucide-react";
 import type { RefObject } from "react";
-import { ReferenceBadge } from "./editor/reference-badge";
+import { RawDescriptionViewer } from "./raw-description-viewer";
 
 export default function MessageList({
   messages,
@@ -31,24 +30,9 @@ export default function MessageList({
               <AvatarImage src="/logo.svg" alt="Specly" />
             )}
           </Avatar>
-          <p className="text-sm ml-3 select-text cursor-text">
-            {messages.rawContent?.map((item, idx) => (
-              <span
-                key={`${idx}-${item.type}`}
-                className={cn({
-                  "text-success":
-                    item.type === "text" &&
-                    (item.value ?? "").toLowerCase().includes("successfully"),
-                })}
-              >
-                {item.type === "text" ? (
-                  item.value
-                ) : (
-                  <ReferenceBadge reference={item} />
-                )}
-              </span>
-            ))}
-          </p>
+          <div className="ml-3">
+            <RawDescriptionViewer rawDescription={messages.rawContent ?? []} />
+          </div>
         </div>
       ))}
       {isGenerating && (

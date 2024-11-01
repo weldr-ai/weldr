@@ -1,43 +1,39 @@
 import { createId } from "@paralleldrive/cuid2";
 import type {
   FlatInputSchema,
-  InputSchema,
   JsonSchema,
   RawDescription,
 } from "@specly/shared/types";
 import { getDataTypeIcon } from "@specly/shared/utils";
 import type { TreeDataItem } from "@specly/ui/tree-view";
 
-export function inputSchemaToTreeData(
-  inputSchema: InputSchema | undefined,
+export function jsonSchemaToTreeData(
+  schema: JsonSchema | undefined,
 ): TreeDataItem[] {
-  if (!inputSchema) {
+  if (!schema) {
     return [];
   }
 
-  function inputSchemaToTree(
-    inputSchema: InputSchema,
-    name = "root",
-  ): TreeDataItem {
+  function jsonSchemaToTree(schema: JsonSchema, name = "root"): TreeDataItem {
     const treeItem: TreeDataItem = {
       id: createId(),
       name,
-      type: inputSchema.type ?? "null",
-      icon: getDataTypeIcon(inputSchema.type ?? "null"),
+      type: schema.type ?? "null",
+      icon: getDataTypeIcon(schema.type ?? "null"),
     };
 
-    if (inputSchema.type === "object" && inputSchema.properties) {
-      treeItem.children = Object.entries(inputSchema.properties).map(
-        ([key, value]) => inputSchemaToTree(value, key),
+    if (schema.type === "object" && schema.properties) {
+      treeItem.children = Object.entries(schema.properties).map(
+        ([key, value]) => jsonSchemaToTree(value, key),
       );
-    } else if (inputSchema.type === "array" && inputSchema.items) {
-      treeItem.children = [inputSchemaToTree(inputSchema.items, "items")];
+    } else if (schema.type === "array" && schema.items) {
+      treeItem.children = [jsonSchemaToTree(schema.items, "items")];
     }
 
     return treeItem;
   }
 
-  return inputSchemaToTree(inputSchema).children ?? [];
+  return jsonSchemaToTree(schema).children ?? [];
 }
 
 export function flattenInputSchema(

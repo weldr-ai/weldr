@@ -16,6 +16,23 @@ export const baseJsonSchema = z.object({
   description: z.string().optional(),
   required: z.string().array().optional(),
   enum: z.any().array().optional(),
+  source: z
+    .object({
+      functionName: z
+        .string()
+        .describe(
+          "The name of the function where this will be passed as an input",
+        ),
+      propertyPath: z
+        .string()
+        .describe(
+          "Path to the property within the source function's schema (e.g. 'response.data.user.id')",
+        ),
+    })
+    .optional()
+    .describe(
+      "Information about where this property originated from. Must be used when passing a property as an input to a function.",
+    ),
 });
 
 export const jsonSchema: z.ZodType<JsonSchema> = baseJsonSchema.and(
@@ -50,10 +67,7 @@ const rawDescriptionDatabaseReferenceSchema =
 const rawDescriptionDatabaseTableReferenceSchema =
   rawDescriptionBaseReferenceSchema.extend({
     referenceType: z.literal("database-table"),
-    database: z.object({
-      id: z.string().describe("The ID of the source database"),
-      name: z.string().describe("The name of the source database"),
-    }),
+    databaseId: z.string().describe("The ID of the source database"),
     columns: z
       .object({
         name: z.string().describe("The name of the column"),
@@ -63,16 +77,17 @@ const rawDescriptionDatabaseTableReferenceSchema =
       .describe("The columns of the table"),
   });
 
-const rawDescriptionDatabaseColumnReferenceSchema =
-  rawDescriptionBaseReferenceSchema.extend({
-    referenceType: z.literal("database-column"),
-    dataType: dataTypeSchema.describe("The data type of the column"),
-    database: z.object({
-      id: z.string().describe("The ID of the source database"),
-      name: z.string().describe("The name of the source database"),
-    }),
-    table: z.string().describe("The name of the source table"),
-  });
+const rawDescriptionDatabaseColumnReferenceSchema = z.object({
+  type: z.literal("reference"),
+  referenceType: z.literal("database-column"),
+  name: z
+    .string()
+    .describe(
+      "When referencing a database-column the name must following the following naming pattern [TABLE_NAME].[COLUMN_NAME].",
+    ),
+  dataType: dataTypeSchema.describe("The data type of the column"),
+  table: z.string().describe("The name of the source table"),
+});
 
 const rawDescriptionTextSchema = z.object({
   type: z.literal("text"),

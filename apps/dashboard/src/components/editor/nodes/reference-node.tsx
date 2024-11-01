@@ -56,16 +56,24 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
     return { element };
   }
 
+  formatColumns(columns: { name: string; dataType: string }[]): string {
+    return columns
+      .map((column) => `${column.name} (${column.dataType})`)
+      .join(", ");
+  }
+
   getTextContent(): string {
     switch (this.__reference.referenceType) {
       case "input":
-        return `input '${toCamelCase(this.__reference.name)}' of type '${this.__reference.dataType}'`;
+        return `input '${toCamelCase(this.__reference.name)}' (${this.__reference.dataType}), sourced from '${this.__reference.source}'`;
       case "database":
-        return `postgres database '${this.__reference.name}' - its id is '${this.__reference.id}'`;
+        return `database '${this.__reference.name}' (ID: '${this.__reference.id}')`;
       case "database-table":
-        return `table '${this.__reference.name}' and its columns are ${(this.__reference.columns as { name: string; dataType: string }[] | null)?.map((column) => `${column.name} of type (${column.dataType})`).join(", ")}`;
+        return `table '${this.__reference.name}' in database '${this.__reference.databaseId}', with columns: ${this.formatColumns(
+          this.__reference.columns,
+        )}`;
       case "database-column":
-        return `column '${this.__reference.name}' of type '${this.__reference.dataType}'`;
+        return `column '${this.__reference.name}' (${this.__reference.dataType}) in table '${this.__reference.table}'`;
       default:
         return "";
     }

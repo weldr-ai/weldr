@@ -31,15 +31,6 @@ import {
   ResizablePanelGroup,
 } from "@specly/ui/resizable";
 import { ScrollArea } from "@specly/ui/scroll-area";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@specly/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@specly/ui/tabs";
 import { cn } from "@specly/ui/utils";
 import {
   Handle,
@@ -53,7 +44,6 @@ import {
   CircleAlertIcon,
   ExternalLinkIcon,
   FileTextIcon,
-  Loader2Icon,
   PlayCircleIcon,
   TrashIcon,
 } from "lucide-react";
@@ -68,49 +58,29 @@ import type {
   FunctionPrimitive,
   FunctionRequirementsMessage,
   InputSchema,
+  JsonSchema,
   RawDescription,
 } from "@specly/shared/types";
 import { rawDescriptionReferenceSchema } from "@specly/shared/validators/common";
 import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
-import { useQuery } from "@tanstack/react-query";
+import { TreeView } from "@specly/ui/tree-view";
 import { readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { gatherFunctionRequirements } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/react";
-import { flattenInputSchema, fromRawDescriptionToText } from "~/lib/utils";
+import {
+  flattenInputSchema,
+  fromRawDescriptionToText,
+  jsonSchemaToTreeData,
+} from "~/lib/utils";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 import type { ReferenceNode } from "../editor/nodes/reference-node";
 import MessageList from "../message-list";
+import { RawDescriptionViewer } from "../raw-description-viewer";
 import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
-
-async function executeFunction({
-  id,
-}: {
-  id: string;
-}): Promise<{ result: Record<string, string | number>[] }> {
-  const response = await fetch(
-    `http://localhost:3002/api/execute/primitives/${id}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    },
-  );
-
-  if (response.status !== 200) {
-    throw new Error("Failed to execute function");
-  }
-
-  const data = (await response.json()) as {
-    result: Record<string, string | number>[];
-  };
-
-  return data;
-}
 
 const validationSchema = z.object({
   name: z
@@ -157,19 +127,6 @@ export const FunctionNode = memo(
     });
 
     const deleteFunction = api.primitives.delete.useMutation();
-
-    const {
-      data: executionResult,
-      isLoading: isLoadingExecutionResult,
-      isRefetching: isRefetchingExecutionResult,
-    } = useQuery({
-      queryKey: [`execution-result-${data.id}`],
-      queryFn: () => executeFunction({ id: data.id }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      enabled: false,
-    });
 
     const addMessage = api.conversations.addMessage.useMutation();
 
@@ -616,7 +573,7 @@ export const FunctionNode = memo(
                         id={data.id}
                         inputSchema={inputs}
                         rawMessage={rawChatMessage}
-                        placeholder="Create, refine, or fix your function with AI..."
+                        placeholder="Create, refine, or fix your function with Specly..."
                         onChange={onChatChange}
                       />
                       <Button
@@ -644,100 +601,71 @@ export const FunctionNode = memo(
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={35} minSize={20} className="p-4">
-                <Tabs
-                  defaultValue="summary"
-                  className="flex size-full flex-col space-y-4"
-                >
-                  <TabsList className="w-full justify-start bg-accent">
-                    <TabsTrigger className="w-full" value="summary">
-                      Summary
-                    </TabsTrigger>
-                    <TabsTrigger className="w-full" value="result">
-                      Result
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent
-                    value="summary"
-                    className="size-full rounded-md bg-background"
-                  >
-                    <div className="flex size-full items-center justify-center px-6 text-muted-foreground">
-                      Summary
-                    </div>
-                  </TabsContent>
-                  <TabsContent
-                    value="result"
-                    className="size-full rounded-md bg-background"
-                  >
-                    <div className="flex size-full items-center justify-center px-6">
-                      {!executionResult ? (
-                        <>
-                          {isLoadingExecutionResult ||
-                          isRefetchingExecutionResult ? (
-                            <div className="flex items-center justify-center">
-                              <Loader2Icon className="size-4 animate-spin text-primary" />
-                            </div>
-                          ) : (
-                            <div className="text-sm text-muted-foreground">
-                              Click run to execute the function
-                            </div>
+                {data.rawDescription ? (
+                  <ScrollArea className="size-full">
+                    <div className="max-h-[500px] space-y-2">
+                      <div className="space-y-1">
+                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                          Description:
+                        </span>
+                        <RawDescriptionViewer
+                          rawDescription={data.rawDescription ?? []}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                          Input:
+                        </span>
+                        <TreeView
+                          data={jsonSchemaToTreeData(
+                            data.inputSchema as JsonSchema,
                           )}
-                        </>
-                      ) : (
-                        <>
-                          {isLoadingExecutionResult ||
-                          isRefetchingExecutionResult ? (
-                            <div className="flex items-center justify-center">
-                              <Loader2Icon className="size-4 animate-spin text-primary" />
-                            </div>
-                          ) : (
-                            <ScrollArea className="size-full">
-                              <Table className="flex w-full flex-col">
-                                <TableHeader className="flex w-full">
-                                  <TableRow className="flex w-full">
-                                    {Object.keys(
-                                      executionResult.result[0] ?? {},
-                                    ).map((head, idx) => (
-                                      <TableHead
-                                        key={`${idx}-${head}`}
-                                        className="flex w-full items-center"
-                                      >
-                                        {head}
-                                      </TableHead>
-                                    ))}
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody className="flex w-full flex-col">
-                                  {executionResult.result.map(
-                                    (
-                                      row: Record<string, string | number>,
-                                      idx,
-                                    ) => (
-                                      <TableRow
-                                        key={`${idx}-${row.id}`}
-                                        className="flex w-full"
-                                      >
-                                        {Object.keys(row).map(
-                                          (key: string, idx) => (
-                                            <TableCell
-                                              key={`${idx}-${key}`}
-                                              className="flex w-full"
-                                            >
-                                              {row[key]}
-                                            </TableCell>
-                                          ),
-                                        )}
-                                      </TableRow>
-                                    ),
-                                  )}
-                                </TableBody>
-                              </Table>
-                            </ScrollArea>
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                          Output:
+                        </span>
+                        <TreeView
+                          data={jsonSchemaToTreeData(
+                            data.outputSchema as JsonSchema,
                           )}
-                        </>
-                      )}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                          Logical Steps:
+                        </span>
+                        <p className="text-sm select-text cursor-text">
+                          {data.metadata?.logicalSteps}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                          Edge Cases:
+                        </span>
+                        <p className="text-sm select-text cursor-text">
+                          {data.metadata?.edgeCases}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                          Error Handling:
+                        </span>
+                        <p className="text-sm select-text cursor-text">
+                          {data.metadata?.errorHandling}
+                        </p>
+                      </div>
                     </div>
-                  </TabsContent>
-                </Tabs>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <span className="text-sm text-muted-foreground">
+                      Function is not implemented yet. Chat with Specly to build
+                      it.
+                    </span>
+                  </div>
+                )}
               </ResizablePanel>
             </ResizablePanelGroup>
           </ExpandableCardContent>
