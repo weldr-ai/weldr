@@ -1,7 +1,7 @@
 import { and, eq, sql } from "@specly/db";
-import { flows } from "@specly/db/schema";
+import { flows, primitives } from "@specly/db/schema";
 import { mergeJson } from "@specly/db/utils";
-import type { Flow } from "@specly/shared/types";
+import type { Flow, StopPrimitive } from "@specly/shared/types";
 import {
   flowTypesSchema,
   insertFlowSchema,
@@ -56,22 +56,16 @@ export const flowsRouter = {
             });
           }
 
-          const conversation = (
-            await tx
-              .insert(conversations)
-              .values({
-                flowId: result[0].id,
-                createdBy: ctx.session.user.id,
-              })
-              .returning({ id: conversations.id })
-          )[0];
+          await tx.insert(primitives).values({
+            type: "stop",
+            flowId: result[0].id,
+            createdBy: ctx.session.user.id,
+          });
 
-          if (!conversation) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create conversation",
-            });
-          }
+          await tx.insert(conversations).values({
+            flowId: result[0].id,
+            createdBy: ctx.session.user.id,
+          });
 
           return result[0];
         });
@@ -116,6 +110,9 @@ export const flowsRouter = {
           eq(flows.createdBy, ctx.session.user.id),
         ),
         with: {
+          primitives: {
+            where: eq(primitives.type, "stop"),
+          },
           conversation: {
             with: {
               messages: true,
@@ -131,7 +128,10 @@ export const flowsRouter = {
         });
       }
 
-      return result as Flow;
+      return {
+        ...result,
+        stopNode: result.primitives[0] as StopPrimitive,
+      } as Flow;
     }),
   getByIdWithAssociatedData: protectedProcedure
     .input(z.object({ id: z.string() }))

@@ -11,17 +11,17 @@ export const workspacesRouter = {
     .input(insertWorkspaceSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.transaction(async (tx) => {
-        const result = await tx
-          .insert(workspaces)
-          .values({
-            name: input.name,
-            subdomain: input.subdomain,
-            description: input.description,
-            createdBy: ctx.session.user.id,
-          })
-          .returning({ id: workspaces.id });
-
-        const workspace = result[0];
+        const workspace = (
+          await tx
+            .insert(workspaces)
+            .values({
+              name: input.name,
+              subdomain: input.subdomain,
+              description: input.description,
+              createdBy: ctx.session.user.id,
+            })
+            .returning({ id: workspaces.id })
+        )[0];
 
         if (!workspace) {
           throw new TRPCError({

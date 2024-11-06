@@ -8,16 +8,11 @@ import {
 } from "./common";
 import { conversationSchema } from "./conversations";
 
-export const primitiveTypesSchema = z.enum(["function", "response"]);
+export const primitiveTypesSchema = z.enum(["function", "stop"]);
 
 export const primitiveBaseSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
-  inputSchema: inputSchema.nullable().optional(),
-  outputSchema: outputSchema.nullable().optional(),
-  description: z.string().nullable(),
-  rawDescription: rawContentSchema.nullable().optional(),
-  generatedCode: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   createdBy: z.string().nullable(),
@@ -28,6 +23,11 @@ export const primitiveBaseSchema = z.object({
 });
 
 export const functionPrimitiveMetadataSchema = z.object({
+  inputSchema: inputSchema.optional(),
+  outputSchema: outputSchema.optional(),
+  description: z.string().optional(),
+  rawDescription: rawContentSchema.optional(),
+  generatedCode: z.string().optional(),
   logicalSteps: rawContentSchema.optional(),
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
@@ -58,14 +58,14 @@ export const functionPrimitiveSchema = primitiveBaseSchema.extend({
   metadata: functionPrimitiveMetadataSchema.nullable().optional(),
 });
 
-export const responsePrimitiveSchema = primitiveBaseSchema.extend({
-  type: z.literal("response"),
+export const stopPrimitiveSchema = primitiveBaseSchema.extend({
+  type: z.literal("stop"),
   metadata: z.null().optional(),
 });
 
 export const primitiveSchema = z.discriminatedUnion("type", [
   functionPrimitiveSchema,
-  responsePrimitiveSchema,
+  stopPrimitiveSchema,
 ]);
 
 export const insertPrimitiveSchema = z.object({
@@ -91,11 +91,6 @@ export const updatePrimitiveBaseSchema = z.object({
     })
     .nullable()
     .optional(),
-  inputSchema: inputSchema.nullable().optional(),
-  outputSchema: outputSchema.nullable().optional(),
-  description: z.string().trim().nullable().optional(),
-  rawDescription: rawContentSchema.nullable().optional(),
-  generatedCode: z.string().nullable().optional(),
   positionX: z.number().optional(),
   positionY: z.number().optional(),
 });
@@ -105,8 +100,8 @@ export const updateFunctionSchema = updatePrimitiveBaseSchema.extend({
   metadata: functionPrimitiveMetadataSchema.nullable().optional(),
 });
 
-export const updateResponseSchema = updatePrimitiveBaseSchema.extend({
-  type: z.literal("response"),
+export const updateStopSchema = updatePrimitiveBaseSchema.extend({
+  type: z.literal("stop"),
   metadata: z.null().optional(),
 });
 
@@ -116,6 +111,6 @@ export const updatePrimitiveSchema = z.object({
   }),
   payload: z.discriminatedUnion("type", [
     updateFunctionSchema,
-    updateResponseSchema,
+    updateStopSchema,
   ]),
 });

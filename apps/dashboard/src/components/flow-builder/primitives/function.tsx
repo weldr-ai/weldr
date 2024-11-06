@@ -44,6 +44,7 @@ import {
   CircleAlertIcon,
   ExternalLinkIcon,
   FileTextIcon,
+  FunctionSquareIcon,
   PlayCircleIcon,
   TrashIcon,
 } from "lucide-react";
@@ -63,7 +64,6 @@ import type {
   UserMessageRawContent,
 } from "@specly/shared/types";
 import { userMessageRawContentReferenceElementSchema } from "@specly/shared/validators/conversations";
-import { LambdaIcon } from "@specly/ui/icons/lambda-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { TreeView } from "@specly/ui/tree-view";
 import { readStreamableValue } from "ai/rsc";
@@ -78,9 +78,9 @@ import {
   rawMessageContentToText,
 } from "~/lib/utils";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
-import type { ReferenceNode } from "../editor/nodes/reference-node";
-import MessageList from "../message-list";
-import { RawContentViewer } from "../raw-content-viewer";
+import type { ReferenceNode } from "../../editor/nodes/reference-node";
+import MessageList from "../../message-list";
+import { RawContentViewer } from "../../raw-content-viewer";
 import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
 
 const validationSchema = z.object({
@@ -154,11 +154,13 @@ export const FunctionNode = memo(
     }, [connections, getNode]);
 
     const passedInputs = ancestors.reduce((acc, ancestor) => {
-      if (!ancestor.data.inputSchema) {
+      if (!ancestor.data.metadata?.inputSchema) {
         return acc;
       }
 
-      const flatInputSchema = flattenInputSchema(ancestor.data.inputSchema);
+      const flatInputSchema = flattenInputSchema(
+        ancestor.data.metadata?.inputSchema,
+      );
 
       return acc.concat(flatInputSchema);
     }, [] as FlatInputSchema[]);
@@ -209,7 +211,7 @@ export const FunctionNode = memo(
       ...((data?.conversation?.messages ?? []).sort(
         (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
       ) as ConversationMessage[]),
-      ...((data.rawDescription
+      ...((data.metadata?.rawDescription
         ? [
             {
               role: "assistant",
@@ -436,10 +438,10 @@ export const FunctionNode = memo(
                 >
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2 text-xs">
-                      <LambdaIcon className="size-4 text-primary" />
+                      <FunctionSquareIcon className="size-4 text-primary" />
                       <span className="text-muted-foreground">Function</span>
                     </div>
-                    {(!data.name || !data.description) && (
+                    {(!data.name || !data.metadata?.description) && (
                       <CircleAlertIcon className="size-4 text-destructive" />
                     )}
                   </div>
@@ -488,7 +490,7 @@ export const FunctionNode = memo(
                 <ExpandableCardHeader className="flex flex-col items-start justify-start p-4 border-b">
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2 text-xs">
-                      <LambdaIcon className="size-4 text-primary" />
+                      <FunctionSquareIcon className="size-4 text-primary" />
                       <span className="text-muted-foreground">Function</span>
                     </div>
                     <div className="flex items-center">
@@ -607,7 +609,7 @@ export const FunctionNode = memo(
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={35} minSize={20} className="p-4">
-                {data.rawDescription ? (
+                {data.metadata?.rawDescription ? (
                   <ScrollArea className="size-full">
                     <div className="max-h-[500px] space-y-2">
                       <div className="space-y-1">
@@ -615,7 +617,7 @@ export const FunctionNode = memo(
                           Description:
                         </span>
                         <RawContentViewer
-                          rawContent={data.rawDescription ?? []}
+                          rawContent={data.metadata?.rawDescription ?? []}
                         />
                       </div>
                       <div className="space-y-1">
@@ -624,7 +626,7 @@ export const FunctionNode = memo(
                         </span>
                         <TreeView
                           data={jsonSchemaToTreeData(
-                            data.inputSchema as JsonSchema,
+                            data.metadata?.inputSchema as JsonSchema,
                           )}
                         />
                       </div>
@@ -634,7 +636,7 @@ export const FunctionNode = memo(
                         </span>
                         <TreeView
                           data={jsonSchemaToTreeData(
-                            data.outputSchema as JsonSchema,
+                            data.metadata?.outputSchema as JsonSchema,
                           )}
                         />
                       </div>

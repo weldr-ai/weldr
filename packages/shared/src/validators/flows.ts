@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { inputSchema } from "./common";
+import { inputSchema, outputSchema } from "./common";
 import { conversationSchema } from "./conversations";
+import { stopPrimitiveSchema } from "./primitives";
 
 export const flowTypesSchema = z.enum(["task", "endpoint", "utilities"]);
 
@@ -25,11 +26,13 @@ const baseFlowSchema = z.object({
   type: flowTypesSchema,
   inputSchema: inputSchema.nullable().optional(),
   validationSchema: z.string().nullable().optional(),
+  outputSchema: outputSchema.nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   createdBy: z.string().nullable(),
   workspaceId: z.string(),
   conversation: conversationSchema,
+  stopNode: stopPrimitiveSchema,
 });
 
 export const componentFlowSchema = baseFlowSchema.extend({

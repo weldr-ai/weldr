@@ -92,13 +92,13 @@ export async function gatherFunctionRequirements({
             where: { id: functionId },
             payload: {
               type: "function",
-              inputSchema: JSON.parse(object.message.content.inputs),
-              outputSchema: JSON.parse(object.message.content.outputs),
-              rawDescription: object.message.content.description,
-              description: rawMessageContentToText(
-                object.message.content.description,
-              ),
               metadata: {
+                inputSchema: JSON.parse(object.message.content.inputs),
+                outputSchema: JSON.parse(object.message.content.outputs),
+                rawDescription: object.message.content.description,
+                description: rawMessageContentToText(
+                  object.message.content.description,
+                ),
                 resources: object.message.content.resources,
                 edgeCases: object.message.content.edgeCases,
                 errorHandling: object.message.content.errorHandling,

@@ -35,7 +35,7 @@ import type {
   functionPrimitiveSchema,
   primitiveMetadataSchema,
   primitiveSchema,
-  responsePrimitiveSchema,
+  stopPrimitiveSchema,
 } from "../validators/primitives";
 import type { resourceSchema } from "../validators/resources";
 import type { workspaceSchema } from "../validators/workspaces";
@@ -92,14 +92,14 @@ export type IntegrationType = z.infer<typeof integrationTypeSchema>;
 export type IntegrationUtils = z.infer<typeof integrationUtilsSchema>;
 
 export type RawContent = z.infer<typeof rawContentSchema>;
-export type PrimitiveType = "function" | "response";
+export type PrimitiveType = "function" | "stop";
 export type Primitive = z.infer<typeof primitiveSchema>;
 
 export type PrimitiveMetadata = z.infer<typeof primitiveMetadataSchema>;
 export type FunctionMetadata = z.infer<typeof functionPrimitiveMetadataSchema>;
 
 export type FunctionPrimitive = z.infer<typeof functionPrimitiveSchema>;
-export type ResponsePrimitive = z.infer<typeof responsePrimitiveSchema>;
+export type StopPrimitive = z.infer<typeof stopPrimitiveSchema>;
 
 export type FunctionRequirementsMessage = z.infer<
   typeof functionRequirementsMessageSchema
