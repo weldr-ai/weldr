@@ -12,32 +12,17 @@ export const dataTypeSchema = z.enum([
 ]);
 
 export const baseJsonSchema = z.object({
-  type: dataTypeSchema,
+  $id: z.string().optional(),
+  $ref: z.string().optional(),
+  title: z.string().optional(),
+  type: dataTypeSchema.optional(),
   description: z.string().optional(),
   required: z.string().array().optional(),
   enum: z.any().array().optional(),
-  source: z
-    .object({
-      functionName: z
-        .string()
-        .describe(
-          "The name of the function where this will be passed as an input",
-        ),
-      propertyPath: z
-        .string()
-        .describe(
-          "Path to the property within the source function's schema (e.g. 'response.data.user.id')",
-        ),
-    })
-    .optional()
-    .describe(
-      "Information about where this property originated from. Must be used when passing a property as an input to a function.",
-    ),
 });
 
 export const jsonSchema: z.ZodType<JsonSchema> = baseJsonSchema.and(
   z.object({
-    type: dataTypeSchema,
     properties: z.record(z.lazy(() => jsonSchema)).optional(),
     items: z.lazy(() => jsonSchema).optional(),
   }),
@@ -46,111 +31,173 @@ export const jsonSchema: z.ZodType<JsonSchema> = baseJsonSchema.and(
 export const inputSchema = jsonSchema;
 export const outputSchema = jsonSchema;
 
-const rawDescriptionBaseReferenceSchema = z.object({
-  type: z.literal("reference"),
-  name: z.string().describe("The name of the reference"),
+export const inputReferenceSchema = z.object({
+  name: z.string().describe("The name of the input. Must be in camelCase."),
+  dataType: dataTypeSchema.describe("The data type of the input"),
+  refUri: z.string().describe("The URI of the input reference"),
+  required: z.boolean().describe("Whether the input is required"),
 });
 
-const rawDescriptionInputReferenceSchema =
-  rawDescriptionBaseReferenceSchema.extend({
-    referenceType: z.literal("input"),
-    dataType: dataTypeSchema.describe("The data type of the reference"),
-    source: z.string().describe("The name of the source for this input"),
-  });
+export const databaseReferenceSchema = z.object({
+  id: z.string().describe("The ID of the database"),
+  name: z.string().describe("The name of the database"),
+  utils: z
+    .object({
+      id: z.string().describe("The ID of the utility"),
+      name: z.string().describe("The name of the utility"),
+      description: z.string().describe("The description of the utility"),
+    })
+    .array()
+    .describe("The utilities of the database"),
+});
 
-const rawDescriptionDatabaseReferenceSchema =
-  rawDescriptionBaseReferenceSchema.extend({
-    referenceType: z.literal("database"),
-    id: z.string().describe("The ID of the reference"),
-  });
+export const databaseTableReferenceSchema = z.object({
+  name: z.string().describe("The name of the table"),
+  database: databaseReferenceSchema.describe("The database of the table"),
+  columns: z
+    .object({
+      name: z.string().describe("The name of the column"),
+      dataType: z.string().describe("The SQL data type of the column"),
+    })
+    .array()
+    .describe("The columns of the table"),
+  relationships: z
+    .object({
+      columnName: z.string().describe("The name of the column"),
+      referencedTable: z.string().describe("The name of the referenced table"),
+      referencedColumn: z
+        .string()
+        .describe("The name of the referenced column"),
+    })
+    .array(),
+});
 
-const rawDescriptionDatabaseTableReferenceSchema =
-  rawDescriptionBaseReferenceSchema.extend({
-    referenceType: z.literal("database-table"),
-    databaseId: z.string().describe("The ID of the source database"),
-    columns: z
-      .object({
-        name: z.string().describe("The name of the column"),
-        dataType: z.string().describe("The data type of the column"),
-      })
-      .array()
-      .describe("The columns of the table"),
-  });
-
-const rawDescriptionDatabaseColumnReferenceSchema = z.object({
-  type: z.literal("reference"),
-  referenceType: z.literal("database-column"),
+export const databaseColumnReferenceSchema = z.object({
   name: z
     .string()
     .describe(
-      "When referencing a database-column the name must following the following naming pattern [TABLE_NAME].[COLUMN_NAME].",
+      "When referencing a database column, the name must follow the pattern '[TABLE_NAME].[COLUMN_NAME]' (e.g. 'users.email', 'orders.status').",
     ),
-  dataType: dataTypeSchema.describe("The data type of the column"),
-  table: z.string().describe("The name of the source table"),
+  dataType: z.string().describe("The SQL data type of the column"),
+  database: databaseReferenceSchema.describe("The database of the column"),
+  table: databaseTableReferenceSchema
+    .omit({ database: true, columns: true, relationships: true })
+    .describe("The table of the column"),
 });
 
-const rawDescriptionTextSchema = z.object({
+export const utilityFunctionReferenceSchema = z.object({
+  id: z.string().describe("The ID of the utility function"),
+  name: z.string().describe("The name of the utility function"),
+  description: z.string().describe("The description of the utility function"),
+  docs: z.string().describe("The documentation of the utility function"),
+});
+
+export const rawContentTextElementSchema = z.object({
   type: z.literal("text"),
   value: z.string().describe("The value of the text"),
 });
 
-export const rawDescriptionReferenceSchema = z.discriminatedUnion(
+export const rawContentInputReferenceSchema = z.object({
+  type: z.literal("reference"),
+  referenceType: z.literal("input"),
+  ...inputReferenceSchema.omit({ refUri: true }).shape,
+});
+
+export const rawContentDatabaseReferenceSchema = z.object({
+  type: z.literal("reference"),
+  referenceType: z.literal("database"),
+  ...databaseReferenceSchema.omit({ utils: true }).shape,
+});
+
+export const rawContentDatabaseTableReferenceSchema = z.object({
+  type: z.literal("reference"),
+  referenceType: z.literal("database-table"),
+  ...databaseTableReferenceSchema.omit({
+    database: true,
+    columns: true,
+    relationships: true,
+  }).shape,
+});
+
+export const rawContentDatabaseColumnReferenceSchema = z.object({
+  type: z.literal("reference"),
+  referenceType: z.literal("database-column"),
+  ...databaseColumnReferenceSchema.omit({ database: true, table: true }).shape,
+});
+
+export const rawContentUtilityFunctionReferenceSchema = z.object({
+  type: z.literal("reference"),
+  referenceType: z.literal("utility-function"),
+  ...utilityFunctionReferenceSchema.omit({
+    description: true,
+    id: true,
+    docs: true,
+  }).shape,
+});
+
+export const rawContentReferenceElementSchema = z.discriminatedUnion(
   "referenceType",
   [
-    rawDescriptionInputReferenceSchema.describe(
-      "The input reference part of a message or description. Must be used when mentioning an input reference in a message or description.",
+    rawContentInputReferenceSchema.describe(
+      "The input reference part of a message or description. Must be used when mentioning an input in a message or description.",
     ),
-    rawDescriptionDatabaseReferenceSchema.describe(
-      "The database reference part of a message or description. Must be used when mentioning a database reference in a message or description.",
+    rawContentDatabaseReferenceSchema.describe(
+      "The database reference part of a message or description. Must be used when mentioning a database in a message or description.",
     ),
-    rawDescriptionDatabaseTableReferenceSchema.describe(
-      "The database-table reference part of a message or description. Must be used when mentioning a database-table reference in a message or description.",
+    rawContentDatabaseTableReferenceSchema.describe(
+      "The database-table reference part of a message or description. Must be used when mentioning a database table in a message or description.",
     ),
-    rawDescriptionDatabaseColumnReferenceSchema.describe(
-      "The database-column reference part of a message or description. Must be used when mentioning a database-column reference in a message or description.",
+    rawContentDatabaseColumnReferenceSchema.describe(
+      "The database-column reference part of a message or description. Must be used when mentioning a database column in a message or description.",
+    ),
+    rawContentUtilityFunctionReferenceSchema.describe(
+      "The utility function reference part of a message or description. Must be used when mentioning a utility function in a message or description.",
     ),
   ],
 );
 
-export const rawDescriptionSchema = z
+export const rawContentSchema = z
+  .union([rawContentTextElementSchema, rawContentReferenceElementSchema])
+  .array();
+
+const inputRawContentSchema = z
   .union([
-    rawDescriptionTextSchema.describe(
-      "The text part of a message or description. Must be used when mentioning a text in a message or description.",
-    ),
-    rawDescriptionReferenceSchema.describe(
-      "The reference part of a message or description. Must be used when mentioning a reference in a message or description.",
-    ),
+    rawContentTextElementSchema,
+    rawContentInputReferenceSchema,
+    rawContentDatabaseReferenceSchema,
+    rawContentDatabaseTableReferenceSchema,
+    rawContentDatabaseColumnReferenceSchema,
   ])
-  .describe(
-    "The content of a message or description as a list of text and reference parts",
-  );
+  .array();
 
 export const flowInputsSchemaMessageSchema = z.object({
   message: z.discriminatedUnion("type", [
     z
       .object({
         type: z.literal("message"),
-        content: rawDescriptionSchema.array(),
+        content: inputRawContentSchema,
       })
       .describe("The message of the inputs requirements gathering"),
     z.object({
       type: z.literal("end"),
       content: z.object({
-        description: rawDescriptionSchema
-          .array()
-          .describe(
-            "The description of the inputs schema. Must consist of text and reference parts. The reference parts must be used when mentioning a reference in the description.",
-          ),
-        inputSchema: z
-          .string()
-          .describe(
-            "The JSON schema for the inputs of the route. The names of the properties must be in camelCase.",
-          ),
-        zodSchema: z
-          .string()
-          .describe(
-            "The Zod schema for validating the inputs. The schema must be a raw Zod object schema without variable declarations.",
-          ),
+        description: inputRawContentSchema.describe(
+          "The description of the inputs schema. Must consist of text and reference parts. The reference parts must be used when mentioning a reference in the description.",
+        ),
+        inputSchema: z.string().describe(
+          `The JSON schema for the inputs of the flow. Must follow these rules:
+            - Property names must be in camelCase.
+            - Schema must have \`$id\` property that follows the naming pattern \`/schemas/[FLOW_ID]/input\`.
+            - Schema should be valid according to JSON Schema specification.
+            - Properties should have clear, descriptive names that indicate their purpose.`,
+        ),
+        zodSchema: z.string().describe(
+          `The Zod schema for validating the inputs. Must follow these rules:
+            - The schema must be a raw Zod object schema without variable declarations.
+            - The schema should be valid according to Zod specification.
+            - Property names must be in camelCase.
+            - Properties should have clear, descriptive names that indicate their purpose.`,
+        ),
       }),
     }),
   ]),
@@ -161,42 +208,102 @@ export const functionRequirementsMessageSchema = z.object({
     z
       .object({
         type: z.literal("message"),
-        content: rawDescriptionSchema.array(),
+        content: rawContentSchema,
       })
       .describe("The message of the function requirements gathering"),
     z
       .object({
         type: z.literal("end"),
         content: z.object({
-          inputs: z
-            .string()
-            .describe(
-              "The JSON schema for the inputs of the function. The names of the properties must be in camelCase.",
-            ),
-          outputs: z
-            .string()
-            .describe(
-              "The JSON schema for the outputs of the function. The names of the properties must be in camelCase.",
-            ),
-          description: rawDescriptionSchema.array().describe(
-            `The description of the function. Must consist of text and reference parts. The reference parts must be used when mentioning a reference in the description.
-              # Guidelines:
-                - Must use the \`reference\` type for input references, database references, database-column references, and database-table references.
-                - Must use the \`text\` type for any text in the description that is not a reference.`,
+          inputs: z.string().describe(
+            `The JSON schema for the inputs of the function. Must follow these rules:
+              - Schema must have \`$id\` property that follows the naming pattern \`/schemas/[FUNCTION_ID]/input\`.
+              - Must include $ref to specify input sources.
+              - Property names must be in camelCase.
+              - Schema should be valid according to JSON Schema specification.
+              - Properties should have clear, descriptive names that indicate their purpose.`,
+          ),
+          outputs: z.string().describe(
+            `The JSON schema for the outputs of the function. Must follow these rules:
+              - Schema must have \`$id\` property that follows the naming pattern \`/schemas/[FUNCTION_ID]/output\`.
+              - Schema must have \`title\` property. It should be a descriptive noun like 'Customer' or 'Order' that represents the data and it is like a TypeScript type name. If no descriptive title applies, use \`undefined\` as the title value.
+              - Property names must be in camelCase.
+              - Schema should be valid according to JSON Schema specification.
+              - Properties should have clear, descriptive names that indicate their purpose.`,
           ),
           resources: z
-            .string()
+            .object({
+              id: z.string().describe("The ID of the resource"),
+              name: z.string().describe("The name of the resource"),
+              metadata: z.discriminatedUnion("type", [
+                z.object({
+                  type: z.literal("database"),
+                  tables: z
+                    .object({
+                      name: z.string().describe("The name of the table"),
+                      columns: z
+                        .object({
+                          name: z.string().describe("The name of the column"),
+                          dataType: z
+                            .string()
+                            .describe("The SQL data type of the column"),
+                        })
+                        .array()
+                        .describe("The columns of the table"),
+                      relationships: z
+                        .object({
+                          columnName: z
+                            .string()
+                            .describe("The name of the column"),
+                          referencedTable: z
+                            .string()
+                            .describe("The name of the referenced table"),
+                          referencedColumn: z
+                            .string()
+                            .describe("The name of the referenced column"),
+                        })
+                        .array(),
+                    })
+                    .array()
+                    .describe("The tables of the database"),
+                }),
+              ]),
+              utilities: utilityFunctionReferenceSchema
+                .omit({ docs: true })
+                .array()
+                .describe(
+                  "The list of utilities that the resource provides and can be used to implement the function",
+                ),
+            })
             .array()
-            .describe("The list of IDs of resources used in the function."),
-          logicalSteps: z
-            .string()
-            .describe("The logical steps of the function"),
-          edgeCases: z.string().describe("The edge cases of the function"),
-          errorHandling: z
-            .string()
-            .describe(
-              "The error handling of the function. Assume that inputs are always valid.",
-            ),
+            .describe("The list of resources used in the function."),
+          description: rawContentSchema.describe(
+            "The description of the function.",
+          ),
+          logicalSteps: rawContentSchema.describe(
+            `The logical steps of the function. Must be a clear, step-by-step description of what the function does. Each step should be concise but complete, focusing on one specific operation. Include:
+                - Data transformations and calculations.
+                - Database operations (queries, updates, etc.).
+                - Specify the utilities that are used.
+                - External service calls.
+                - Business logic and conditional flows.
+                - Return value preparation.`,
+          ),
+          edgeCases: z.string().describe(
+            `The edge cases of the function. Must include:
+              - Business logic edge cases (e.g. special conditions that require different handling).
+              - Resource-related edge cases (e.g. missing or invalid resources).
+              - Any other scenarios that require special handling.`,
+          ),
+          errorHandling: z.string().describe(
+            `The error handling of the function. Must include:
+              - How to handle database errors (e.g. connection issues, query failures).
+              - How to handle external service errors (e.g. API timeouts, failed requests).
+              - How to handle unexpected runtime errors.
+              - What error messages to return to the user.
+              - Whether to retry operations and how many times.
+              - Input validation errors can be ignored as inputs are validated separately.`,
+          ),
           dependencies: z
             .string()
             .array()
@@ -222,21 +329,4 @@ export const functionRequirementsMessageSchema = z.object({
       })
       .describe("The last message of the function requirements gathering"),
   ]),
-});
-
-export const conversationMessageSchema = z.object({
-  id: z.string(),
-  role: z.enum(["user", "assistant"]),
-  content: z.string(),
-  rawContent: rawDescriptionSchema.array().optional().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  conversationId: z.string(),
-});
-
-export const conversationSchema = z.object({
-  id: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  messages: conversationMessageSchema.array(),
 });

@@ -13,7 +13,10 @@ import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
 import { cn } from "@specly/ui/utils";
 
-import type { FlatInputSchema, RawDescription } from "@specly/shared/types";
+import type {
+  FlatInputSchema,
+  UserMessageRawContent,
+} from "@specly/shared/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
 
@@ -24,7 +27,7 @@ interface EditorProps {
   onError?: (error: Error, editor: LexicalEditor) => void;
   className?: string;
   editorRef?: { current: null | LexicalEditor };
-  rawMessage?: RawDescription[];
+  rawMessage?: UserMessageRawContent;
   inputSchema?: FlatInputSchema[];
   typeaheadPosition?: "bottom" | "top";
 }

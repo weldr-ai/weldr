@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { conversationSchema, inputSchema } from "./common";
+import { inputSchema } from "./common";
+import { conversationSchema } from "./conversations";
 
 export const flowTypesSchema = z.enum(["task", "endpoint", "utilities"]);
 
@@ -67,8 +68,7 @@ export const baseInsertFlowSchema = z.object({
     })
     .regex(/^(?!.*__).*$/, {
       message: "Name must not contain consecutive underscores",
-    })
-    .transform((name) => name.replace(/\s+/g, "ـ").toLowerCase().trim()),
+    }),
   description: z.string().trim().optional(),
   type: flowTypesSchema,
   workspaceId: z.string().min(1, {
@@ -126,7 +126,6 @@ export const baseUpdateFlowSchema = z.object({
     .regex(/^(?!.*__).*$/, {
       message: "Name must not contain consecutive underscores",
     })
-    .transform((name) => name.replace(/\s+/g, "ـ").toLowerCase().trim())
     .optional(),
   description: z.string().optional(),
   inputSchema: inputSchema.optional(),

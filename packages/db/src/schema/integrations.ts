@@ -35,6 +35,7 @@ export const integrationUtils = pgTable("integration_utils", {
     .$defaultFn(() => createId()),
   name: text("name").notNull(),
   description: text("description").notNull(),
+  documentation: text("documentation").notNull(),
   implementation: text("implementation").notNull(),
   integrationId: text("integration_id")
     .references(() => integrations.id, { onDelete: "cascade" })

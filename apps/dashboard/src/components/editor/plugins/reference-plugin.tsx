@@ -13,8 +13,8 @@ import { ScrollArea } from "@specly/ui/scroll-area";
 import { cn } from "@specly/ui/utils";
 
 import type { DatabaseStructure } from "@specly/shared/integrations/postgres/index";
-import type { DataType, FlatInputSchema } from "@specly/shared/types";
-import type { rawDescriptionReferenceSchema } from "@specly/shared/validators/common";
+import type { FlatInputSchema } from "@specly/shared/types";
+import type { userMessageRawContentReferenceElementSchema } from "@specly/shared/validators/conversations";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
@@ -22,7 +22,7 @@ import { useResources } from "~/lib/context/resources";
 import { ReferenceBadge } from "../reference-badge";
 
 export class ReferenceOption extends MenuOption {
-  reference: z.infer<typeof rawDescriptionReferenceSchema>;
+  reference: z.infer<typeof userMessageRawContentReferenceElementSchema>;
   // For extra searching.
   keywords: string[];
   // What happens when you select this option?
@@ -32,7 +32,7 @@ export class ReferenceOption extends MenuOption {
     reference,
     options,
   }: {
-    reference: z.infer<typeof rawDescriptionReferenceSchema>;
+    reference: z.infer<typeof userMessageRawContentReferenceElementSchema>;
     options: {
       keywords?: string[];
       onSelect: (queryString: string) => void;
@@ -91,7 +91,8 @@ export function ReferencesPlugin({
             name: `${input.path}`,
             referenceType: "input",
             dataType: input.type,
-            source: "root",
+            refUri: input.refUri,
+            required: input.required,
           },
           options: {
             keywords: ["input", input.path],
@@ -110,6 +111,12 @@ export function ReferencesPlugin({
             type: "reference",
             name: resource.name,
             referenceType: "database",
+            utils:
+              resource.integration.utils?.map((util) => ({
+                id: util.id,
+                name: util.name,
+                description: util.description,
+              })) ?? [],
           },
           options: {
             keywords: ["resource", "database", resource.name],
@@ -134,8 +141,20 @@ export function ReferencesPlugin({
                   type: "reference",
                   name: `${table.name}.${column.name}`,
                   referenceType: "database-column",
-                  dataType: column.dataType as DataType,
-                  table: table.name,
+                  dataType: column.dataType,
+                  database: {
+                    id: resource.id,
+                    name: resource.name,
+                    utils:
+                      resource.integration.utils?.map((util) => ({
+                        id: util.id,
+                        name: util.name,
+                        description: util.description,
+                      })) ?? [],
+                  },
+                  table: {
+                    name: table.name,
+                  },
                 },
                 options: {
                   keywords: ["column", resource.name, column.name],
@@ -153,8 +172,18 @@ export function ReferencesPlugin({
                 type: "reference",
                 name: `${table.name}`,
                 referenceType: "database-table",
-                databaseId: resource.id,
+                database: {
+                  id: resource.id,
+                  name: resource.name,
+                  utils:
+                    resource.integration.utils?.map((util) => ({
+                      id: util.id,
+                      name: util.name,
+                      description: util.description,
+                    })) ?? [],
+                },
                 columns: table.columns,
+                relationships: table.relationships,
               },
               options: {
                 keywords: ["table", resource.name, table.name],

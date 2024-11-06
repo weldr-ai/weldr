@@ -156,7 +156,11 @@ export const resourcesRouter = {
           eq(resources.createdBy, ctx.session.user.id),
         ),
         with: {
-          integration: true,
+          integration: {
+            with: {
+              utils: true,
+            },
+          },
         },
       });
     }),

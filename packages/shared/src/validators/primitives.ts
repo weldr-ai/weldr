@@ -1,10 +1,12 @@
 import { z } from "zod";
+import { databaseTableSchema } from "../integrations/postgres";
 import {
-  conversationSchema,
   inputSchema,
   outputSchema,
-  rawDescriptionSchema,
+  rawContentSchema,
+  utilityFunctionReferenceSchema,
 } from "./common";
+import { conversationSchema } from "./conversations";
 
 export const primitiveTypesSchema = z.enum(["function", "response"]);
 
@@ -14,7 +16,7 @@ export const primitiveBaseSchema = z.object({
   inputSchema: inputSchema.nullable().optional(),
   outputSchema: outputSchema.nullable().optional(),
   description: z.string().nullable(),
-  rawDescription: rawDescriptionSchema.array().nullable().optional(),
+  rawDescription: rawContentSchema.nullable().optional(),
   generatedCode: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -26,10 +28,23 @@ export const primitiveBaseSchema = z.object({
 });
 
 export const functionPrimitiveMetadataSchema = z.object({
-  logicalSteps: z.string().optional(),
+  logicalSteps: rawContentSchema.optional(),
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
-  resources: z.string().array().optional(),
+  resources: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      metadata: z.discriminatedUnion("type", [
+        z.object({
+          type: z.literal("database"),
+          tables: databaseTableSchema.array(),
+        }),
+      ]),
+      utilities: utilityFunctionReferenceSchema.omit({ docs: true }).array(),
+    })
+    .array()
+    .optional(),
   dependencies: z.string().array().optional(),
 });
 
@@ -74,13 +89,12 @@ export const updatePrimitiveBaseSchema = z.object({
     .regex(/^(?!.*__).*$/, {
       message: "Name must not contain consecutive underscores",
     })
-    .transform((name) => name.replace(/\s+/g, "_").toLowerCase().trim())
     .nullable()
     .optional(),
   inputSchema: inputSchema.nullable().optional(),
   outputSchema: outputSchema.nullable().optional(),
   description: z.string().trim().nullable().optional(),
-  rawDescription: rawDescriptionSchema.array().nullable().optional(),
+  rawDescription: rawContentSchema.nullable().optional(),
   generatedCode: z.string().nullable().optional(),
   positionX: z.number().optional(),
   positionY: z.number().optional(),

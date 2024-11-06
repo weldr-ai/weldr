@@ -1,12 +1,12 @@
 import { renderDataTypeIcon } from "@specly/shared/utils";
-import type { rawDescriptionReferenceSchema } from "@specly/shared/validators/common";
+import type { rawContentReferenceElementSchema } from "@specly/shared/validators/common";
 import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
 import { cn } from "@specly/ui/utils";
-import { ColumnsIcon, TableIcon } from "lucide-react";
+import { ColumnsIcon, FunctionSquareIcon, TableIcon } from "lucide-react";
 import type { z } from "zod";
 
 interface ReferenceBadgeProps {
-  reference: z.infer<typeof rawDescriptionReferenceSchema>;
+  reference: z.infer<typeof rawContentReferenceElementSchema>;
   className?: string;
 }
 
@@ -26,6 +26,8 @@ export function ReferenceBadge({ reference, className }: ReferenceBadgeProps) {
         <ColumnsIcon className="mr-1 size-3 text-primary" />
       ) : reference.referenceType === "database-table" ? (
         <TableIcon className="mr-1 size-3 text-primary" />
+      ) : reference.referenceType === "utility-function" ? (
+        <FunctionSquareIcon className="mr-1 size-3 text-primary" />
       ) : (
         <></>
       )}

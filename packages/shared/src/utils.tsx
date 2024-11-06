@@ -39,6 +39,10 @@ export function formDataToStructuredObject(
 }
 
 export function toCamelCase(str: string): string {
+  if (!str) {
+    return "";
+  }
+
   const trimmedStr = str.trim();
 
   if (isCamelCase(trimmedStr)) {

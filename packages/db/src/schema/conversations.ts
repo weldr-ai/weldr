@@ -1,5 +1,8 @@
 import { createId } from "@paralleldrive/cuid2";
-import type { RawDescription } from "@specly/shared/types";
+import type {
+  AssistantMessageRawContent,
+  UserMessageRawContent,
+} from "@specly/shared/types";
 import { relations, sql } from "drizzle-orm";
 import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./auth";
@@ -49,7 +52,9 @@ export const conversationMessages = pgTable("conversation_messages", {
     .$defaultFn(() => createId()),
   role: roles("role").notNull(),
   content: text("content").notNull(),
-  rawContent: jsonb("raw_content").$type<RawDescription[]>(),
+  rawContent: jsonb("raw_content")
+    .$type<UserMessageRawContent | AssistantMessageRawContent>()
+    .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

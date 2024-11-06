@@ -2,9 +2,9 @@ import { createId } from "@paralleldrive/cuid2";
 import type {
   FlatInputSchema,
   JsonSchema,
-  RawDescription,
+  MessageRawContent,
 } from "@specly/shared/types";
-import { getDataTypeIcon } from "@specly/shared/utils";
+import { getDataTypeIcon, toCamelCase } from "@specly/shared/utils";
 import type { TreeDataItem } from "@specly/ui/tree-view";
 
 export function jsonSchemaToTreeData(
@@ -27,7 +27,14 @@ export function jsonSchemaToTreeData(
         ([key, value]) => jsonSchemaToTree(value, key),
       );
     } else if (schema.type === "array" && schema.items) {
-      treeItem.children = [jsonSchemaToTree(schema.items, "items")];
+      const arrayItem: TreeDataItem = {
+        id: createId(),
+        name: schema.title ?? "items",
+        type: "array",
+        icon: getDataTypeIcon("array"),
+        children: [jsonSchemaToTree(schema.items, schema.title ?? "item")],
+      };
+      treeItem.children = [arrayItem];
     }
 
     return treeItem;
@@ -40,51 +47,86 @@ export function flattenInputSchema(
   schema: JsonSchema,
   path = "",
   required = false,
+  refPath = "",
 ): FlatInputSchema[] {
+  let tempPath = path;
   const result: FlatInputSchema[] = [];
+
+  // Add the schema itself as an input if it has a title
+  if (schema.title) {
+    result.push({
+      path: schema.title,
+      type: schema.type ?? "null",
+      required,
+      description: schema.description,
+      refUri: refPath,
+    });
+    // Update path to include the title for nested properties
+    tempPath = schema.title;
+  }
 
   if (schema.type === "object" && schema.properties) {
     const requiredProperties = schema.required || [];
     for (const [key, value] of Object.entries(schema.properties)) {
       const isRequired = requiredProperties.includes(key);
-      const newPath = path ? `${path}.${key}` : key;
+      const newPath = tempPath ? `${tempPath}.${key}` : key;
+      const newRefPath = refPath
+        ? `${refPath}/properties/${key}`
+        : `${schema.$id ?? ""}/properties/${key}`;
       result.push({
         path: newPath,
-        type: value.type,
+        type: value.type ?? "null",
         required: isRequired,
         description: value.description,
+        refUri: newRefPath,
       });
       if (value.type === "object" || value.type === "array") {
-        result.push(...flattenInputSchema(value, newPath, isRequired));
+        result.push(
+          ...flattenInputSchema(value, newPath, isRequired, newRefPath),
+        );
       }
     }
   } else if (schema.type === "array" && schema.items) {
-    const itemsPath = `${path}[]`;
+    const itemsPath = `${tempPath}${schema.items.title ? schema.items.title : "items"}[]`;
+    const itemsRefPath = `${refPath}/items`;
     result.push({
       path: itemsPath,
-      type: schema.items.type,
+      type: schema.items.type ?? "null",
       required: false,
       description: schema.items.description,
+      refUri: itemsRefPath,
     });
     if (schema.items.type === "object" || schema.items.type === "array") {
-      result.push(...flattenInputSchema(schema.items, itemsPath, false));
+      result.push(
+        ...flattenInputSchema(schema.items, itemsPath, false, itemsRefPath),
+      );
     }
-  } else {
+  } else if (!schema.title) {
+    // Only add non-titled primitive schemas here since titled ones are added above
     result.push({
-      path,
-      type: schema.type,
+      path: tempPath,
+      type: schema.type ?? "null",
       required,
       description: schema.description,
+      refUri: refPath,
     });
   }
 
   return result;
 }
 
-export function fromRawDescriptionToText(
-  rawDescription: RawDescription[] = [],
+export function rawMessageContentToText(
+  rawMessageContent: MessageRawContent = [],
 ): string {
-  return rawDescription
+  function formatColumns(
+    columns: { name: string; dataType: string }[],
+  ): string {
+    return columns
+      .map((column) => `${column.name} (${column.dataType})`)
+      .join(", ");
+  }
+
+  return rawMessageContent
     .map((element) => {
       if (element.type === "text") {
         return element.value;
@@ -92,14 +134,64 @@ export function fromRawDescriptionToText(
 
       if (element.type === "reference") {
         switch (element.referenceType) {
-          case "database-table":
-            return `table '${element.name}'`;
-          case "database":
-            return `postgres database '${element.name}' - its id is '${element.id}'`;
-          case "database-column":
-            return `column '${element.name}' of type '${element.dataType}'`;
           case "input":
-            return `input '${element.name}' of type '${element.dataType}'`;
+            return `input ${toCamelCase(element.name)} (${element.dataType})${
+              "refUri" in element && element.refUri
+                ? `, $ref: ${element.refUri}`
+                : ""
+            }`;
+          case "database":
+            return `database ${element.name} (ID: ${element.id})${
+              "utils" in element && element.utils
+                ? `, with utilities: ${element.utils
+                    .map(
+                      (util) =>
+                        `name: ${util.name} (ID: ${util.id}), description: ${util.description}`,
+                    )
+                    .join(", ")}`
+                : ""
+            }`;
+          case "database-table":
+            return `table ${element.name}${
+              "columns" in element && element?.columns
+                ? `, with columns: ${formatColumns(element.columns ?? [])}`
+                : ""
+            }${
+              "relationships" in element && element?.relationships
+                ? `, with relationships: ${element?.relationships
+                    ?.map(
+                      (relationship) =>
+                        `column: ${relationship.columnName} -> table: ${relationship.referencedTable}, column: ${relationship.referencedColumn}`,
+                    )
+                    .join(", ")}`
+                : ""
+            }${
+              "database" in element && element?.database
+                ? ` in database ${element?.database.name} (ID: ${element?.database.id}), with utilities: ${element?.database?.utils
+                    .map(
+                      (util) =>
+                        `name: ${util.name} (ID: ${util.id}), description: ${util.description}`,
+                    )
+                    .join(", ")}`
+                : ""
+            }`;
+          case "database-column":
+            return `column ${element.name} (${element.dataType})${
+              "table" in element && element?.table
+                ? ` in table ${element?.table.name}`
+                : ""
+            }${
+              "database" in element && element?.database
+                ? ` in database ${element?.database.name} (ID: ${element?.database.id}), with utilities: ${element?.database?.utils
+                    .map(
+                      (util) =>
+                        `name: ${util.name} (ID: ${util.id}), description: ${util.description}`,
+                    )
+                    .join(", ")}`
+                : ""
+            }`;
+          default:
+            return "";
         }
       }
     })

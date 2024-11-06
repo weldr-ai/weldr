@@ -1,14 +1,20 @@
 import type { z } from "zod";
 import type {
   baseJsonSchema,
-  conversationSchema,
   dataTypeSchema,
   flowInputsSchemaMessageSchema,
   functionRequirementsMessageSchema,
   inputSchema,
   outputSchema,
-  rawDescriptionSchema,
+  rawContentSchema,
 } from "../validators/common";
+import type {
+  assistantMessageRawContentSchema,
+  conversationMessageSchema,
+  conversationSchema,
+  messageRawContentSchema,
+  userMessageRawContentSchema,
+} from "../validators/conversations";
 import type { edgeSchema } from "../validators/edges";
 import type {
   componentFlowSchema,
@@ -47,6 +53,7 @@ export interface FlatInputSchema {
   itemsType?: DataType | { [key: string]: FlatInputSchema };
   required: boolean;
   description?: string;
+  refUri: string;
 }
 
 export type InputSchema = z.infer<typeof inputSchema>;
@@ -70,15 +77,12 @@ export type FlowMetadata =
 
 export type Edge = z.infer<typeof edgeSchema>;
 
-export interface ConversationMessage {
-  id?: string;
-  role: "user" | "assistant";
-  content: string;
-  rawContent?: RawDescription[];
-  createdAt?: Date;
-  updatedAt?: Date;
-  conversationId: string;
-}
+export type UserMessageRawContent = z.infer<typeof userMessageRawContentSchema>;
+export type AssistantMessageRawContent = z.infer<
+  typeof assistantMessageRawContentSchema
+>;
+export type MessageRawContent = z.infer<typeof messageRawContentSchema>;
+export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
 export type Conversation = z.infer<typeof conversationSchema>;
 
 export type Resource = z.infer<typeof resourceSchema>;
@@ -87,6 +91,7 @@ export type Integration = z.infer<typeof integrationSchema>;
 export type IntegrationType = z.infer<typeof integrationTypeSchema>;
 export type IntegrationUtils = z.infer<typeof integrationUtilsSchema>;
 
+export type RawContent = z.infer<typeof rawContentSchema>;
 export type PrimitiveType = "function" | "response";
 export type Primitive = z.infer<typeof primitiveSchema>;
 
@@ -96,7 +101,6 @@ export type FunctionMetadata = z.infer<typeof functionPrimitiveMetadataSchema>;
 export type FunctionPrimitive = z.infer<typeof functionPrimitiveSchema>;
 export type ResponsePrimitive = z.infer<typeof responsePrimitiveSchema>;
 
-export type RawDescription = z.infer<typeof rawDescriptionSchema>;
 export type FunctionRequirementsMessage = z.infer<
   typeof functionRequirementsMessageSchema
 >;

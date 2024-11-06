@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS "integration_utils" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text NOT NULL,
+	"documentation" text NOT NULL,
 	"implementation" text NOT NULL,
 	"integration_id" text NOT NULL
 );

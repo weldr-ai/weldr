@@ -2,9 +2,9 @@
 
 import { createOpenAI } from "@ai-sdk/openai";
 import type {
+  AssistantMessageRawContent,
   FlowInputsSchemaMessage,
   FunctionRequirementsMessage,
-  RawDescription,
 } from "@specly/shared/types";
 import {
   flowInputsSchemaMessageSchema,
@@ -17,7 +17,7 @@ import {
   FUNCTION_REQUIREMENTS_AGENT_PROMPT,
 } from "~/lib/ai/prompts";
 import { api } from "../trpc/rsc";
-import { fromRawDescriptionToText } from "../utils";
+import { rawMessageContentToText } from "../utils";
 
 // const anthropic = createAnthropic({
 //   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -37,30 +37,40 @@ export async function gatherFunctionRequirements({
   conversationId: string;
   messages: CoreMessage[];
 }) {
+  console.log(
+    `[gatherFunctionRequirements] Starting for function ${functionId}`,
+  );
   const stream = createStreamableValue<FunctionRequirementsMessage>();
 
   (async () => {
+    console.log("[gatherFunctionRequirements] Streaming response from OpenAI");
     const { partialObjectStream } = await streamObject({
       model: openai("gpt-4o"),
-      system: FUNCTION_REQUIREMENTS_AGENT_PROMPT,
+      system: FUNCTION_REQUIREMENTS_AGENT_PROMPT(functionId),
       messages,
       schema: functionRequirementsMessageSchema,
       onFinish: ({ usage, object }) => {
         console.log(
-          `[usage]: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
+          `[gatherFunctionRequirements] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
         );
 
         if (object?.message?.type === "message") {
+          console.log(
+            "[gatherFunctionRequirements] Adding message to conversation",
+          );
           api.conversations.addMessage({
             role: "assistant",
-            content: fromRawDescriptionToText(object.message.content),
+            content: rawMessageContentToText(object.message.content),
             rawContent: object.message.content,
             conversationId,
           });
         }
 
         if (object?.message?.type === "end") {
-          const description: RawDescription[] = [
+          console.log(
+            "[gatherFunctionRequirements] Processing final requirements",
+          );
+          const description: AssistantMessageRawContent = [
             {
               type: "text",
               value: "Generating the following function: ",
@@ -70,11 +80,14 @@ export async function gatherFunctionRequirements({
 
           api.conversations.addMessage({
             role: "assistant",
-            content: fromRawDescriptionToText(description),
+            content: rawMessageContentToText(description),
             rawContent: description,
             conversationId,
           });
 
+          console.log(
+            `[gatherFunctionRequirements] Updating function ${functionId} with gathered requirements`,
+          );
           api.primitives.update({
             where: { id: functionId },
             payload: {
@@ -82,7 +95,7 @@ export async function gatherFunctionRequirements({
               inputSchema: JSON.parse(object.message.content.inputs),
               outputSchema: JSON.parse(object.message.content.outputs),
               rawDescription: object.message.content.description,
-              description: fromRawDescriptionToText(
+              description: rawMessageContentToText(
                 object.message.content.description,
               ),
               metadata: {
@@ -102,6 +115,9 @@ export async function gatherFunctionRequirements({
       stream.update(partialObject as FunctionRequirementsMessage);
     }
 
+    console.log(
+      `[gatherFunctionRequirements] Stream completed for function ${functionId}`,
+    );
     stream.done();
   })();
 
@@ -117,31 +133,36 @@ export async function generateFlowInputsSchemas({
   conversationId: string;
   messages: CoreMessage[];
 }) {
+  console.log(`[generateFlowInputsSchemas] Starting for flow ${flowId}`);
   const stream = createStreamableValue<FlowInputsSchemaMessage>();
 
   (async () => {
+    console.log("[generateFlowInputsSchemas] Streaming response from OpenAI");
     const { partialObjectStream } = await streamObject({
       model: openai("gpt-4o"),
-      system: FLOW_INPUT_SCHEMA_AGENT_PROMPT,
+      system: FLOW_INPUT_SCHEMA_AGENT_PROMPT(flowId),
       messages,
       schema: flowInputsSchemaMessageSchema,
       onFinish: ({ usage, object }) => {
-        console.log(object);
         console.log(
-          `[usage]: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
+          `[generateFlowInputsSchemas] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
         );
 
         if (object?.message?.type === "message") {
+          console.log(
+            "[generateFlowInputsSchemas] Adding message to conversation",
+          );
           api.conversations.addMessage({
             role: "assistant",
-            content: fromRawDescriptionToText(object.message.content),
+            content: rawMessageContentToText(object.message.content),
             rawContent: object.message.content,
             conversationId,
           });
         }
 
         if (object?.message?.type === "end") {
-          const description: RawDescription[] = [
+          console.log("[generateFlowInputsSchemas] Processing final schema");
+          const description: AssistantMessageRawContent = [
             {
               type: "text",
               value: "Generating the following inputs schema: ",
@@ -151,11 +172,14 @@ export async function generateFlowInputsSchemas({
 
           api.conversations.addMessage({
             role: "assistant",
-            content: fromRawDescriptionToText(description),
+            content: rawMessageContentToText(description),
             rawContent: description,
             conversationId,
           });
 
+          console.log(
+            `[generateFlowInputsSchemas] Updating flow ${flowId} with generated schemas`,
+          );
           api.flows.update({
             where: { id: flowId },
             payload: {
@@ -172,6 +196,9 @@ export async function generateFlowInputsSchemas({
       stream.update(partialObject as FlowInputsSchemaMessage);
     }
 
+    console.log(
+      `[generateFlowInputsSchemas] Stream completed for flow ${flowId}`,
+    );
     stream.done();
   })();
 
