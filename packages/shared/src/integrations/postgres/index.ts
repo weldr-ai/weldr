@@ -1,28 +1,31 @@
-export interface DbConfig {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-}
+import { z } from "zod";
 
-export type DatabaseStructure = Table[];
+export const dbConfigSchema = z.object({
+  host: z.string(),
+  port: z.number(),
+  database: z.string(),
+  user: z.string(),
+  password: z.string(),
+});
 
-export interface Table {
-  name: string;
-  columns: Column[];
-  relationships: Relationship[];
-}
+export const databaseTableColumnSchema = z.object({
+  name: z.string(),
+  dataType: z.string(),
+});
 
-export interface Column {
-  name: string;
-  dataType: string;
-  isNullable: boolean;
-  isPrimaryKey: boolean;
-}
+export const databaseRelationshipSchema = z.object({
+  columnName: z.string(),
+  referencedTable: z.string(),
+  referencedColumn: z.string(),
+});
 
-export interface Relationship {
-  columnName: string;
-  referencedTable: string;
-  referencedColumn: string;
-}
+export const databaseTableSchema = z.object({
+  name: z.string(),
+  columns: z.array(databaseTableColumnSchema),
+  relationships: z.array(databaseRelationshipSchema),
+});
+
+export type DbConfig = z.infer<typeof dbConfigSchema>;
+export type DatabaseStructure = z.infer<typeof databaseTableSchema>[];
+export type DatabaseTable = z.infer<typeof databaseTableSchema>;
+export type DatabaseRelationship = z.infer<typeof databaseRelationshipSchema>;

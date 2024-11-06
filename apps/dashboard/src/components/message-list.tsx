@@ -3,7 +3,7 @@ import type { ConversationMessage } from "@specly/shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
 import { Loader2 } from "lucide-react";
 import type { RefObject } from "react";
-import { RawDescriptionViewer } from "./raw-description-viewer";
+import { RawContentViewer } from "./raw-content-viewer";
 
 export default function MessageList({
   messages,
@@ -31,7 +31,7 @@ export default function MessageList({
             )}
           </Avatar>
           <div className="ml-3">
-            <RawDescriptionViewer rawDescription={messages.rawContent ?? []} />
+            <RawContentViewer rawContent={messages.rawContent ?? []} />
           </div>
         </div>
       ))}

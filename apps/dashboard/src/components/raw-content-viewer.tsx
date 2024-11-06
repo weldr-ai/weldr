@@ -1,15 +1,17 @@
-import type { RawDescription } from "@specly/shared/types";
+import { createId } from "@paralleldrive/cuid2";
+import type { RawContent } from "@specly/shared/types";
 import { cn } from "@specly/ui/utils";
+import React from "react";
 import { ReferenceBadge } from "./editor/reference-badge";
 
-export function RawDescriptionViewer({
-  rawDescription,
+export function RawContentViewer({
+  rawContent,
 }: {
-  rawDescription: RawDescription[];
+  rawContent: RawContent;
 }) {
   return (
     <p className="text-sm select-text cursor-text">
-      {rawDescription.map((item, idx) => (
+      {rawContent.map((item, idx) => (
         <span
           key={`${idx}-${item.type}`}
           className={cn({
@@ -19,7 +21,12 @@ export function RawDescriptionViewer({
           })}
         >
           {item.type === "text" ? (
-            item.value
+            item.value?.split("\n").map((line, i) => (
+              <React.Fragment key={createId()}>
+                {line}
+                {i < (item.value?.split("\n").length ?? 0) - 1 && <br />}
+              </React.Fragment>
+            ))
           ) : (
             <ReferenceBadge reference={item} />
           )}

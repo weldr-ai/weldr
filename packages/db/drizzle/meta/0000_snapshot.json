@@ -712,6 +712,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "documentation": {
+          "name": "documentation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "implementation": {
           "name": "implementation",
           "type": "text",

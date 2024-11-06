@@ -3,7 +3,7 @@ import type {
   FunctionMetadata,
   InputSchema,
   OutputSchema,
-  RawDescription,
+  RawContent,
 } from "@specly/shared/types";
 import { relations, sql } from "drizzle-orm";
 import {
@@ -35,7 +35,7 @@ export const primitives = pgTable(
     inputSchema: jsonb("input_schema").$type<InputSchema>(),
     outputSchema: jsonb("output_schema").$type<OutputSchema>(),
     description: text("description"),
-    rawDescription: jsonb("raw_description").$type<RawDescription[]>(),
+    rawDescription: jsonb("raw_description").$type<RawContent>(),
     generatedCode: text("generated_code"),
     metadata: jsonb("metadata").$type<FunctionMetadata>(),
     positionX: integer("position_x").default(0).notNull(),

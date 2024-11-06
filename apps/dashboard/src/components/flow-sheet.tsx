@@ -29,13 +29,14 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createId } from "@paralleldrive/cuid2";
 import type {
+  AssistantMessageRawContent,
   ConversationMessage,
   Flow,
   FlowInputsSchemaMessage,
   JsonSchema,
-  RawDescription,
+  UserMessageRawContent,
 } from "@specly/shared/types";
-import { rawDescriptionReferenceSchema } from "@specly/shared/validators/common";
+import { userMessageRawContentReferenceElementSchema } from "@specly/shared/validators/conversations";
 import {
   baseUpdateFlowSchema,
   updateEndpointFlowSchema,
@@ -62,7 +63,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { generateFlowInputsSchemas } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/react";
-import { fromRawDescriptionToText, jsonSchemaToTreeData } from "~/lib/utils";
+import { jsonSchemaToTreeData, rawMessageContentToText } from "~/lib/utils";
 import Editor from "./editor";
 import type { ReferenceNode } from "./editor/nodes/reference-node";
 import MessageList from "./message-list";
@@ -154,7 +155,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       conversationId: data.conversation.id,
     },
     ...(data.conversation.messages.sort(
-      (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+      (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
     ) as ConversationMessage[]),
     ...((data.inputSchema && data.validationSchema
       ? [
@@ -174,8 +175,11 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       : []) as ConversationMessage[]),
   ]);
 
-  const [chatMessage, setChatMessage] = useState<string | null>(null);
-  const [rawChatMessage, setRawChatMessage] = useState<RawDescription[]>([]);
+  const [userMessageContent, setUserMessageContent] = useState<string | null>(
+    null,
+  );
+  const [userMessageRawContent, setUserMessageRawContent] =
+    useState<UserMessageRawContent>([]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -190,14 +194,14 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       });
     }
 
-    if (!chatMessage) {
+    if (!userMessageContent) {
       return;
     }
 
     const newMessageUser: ConversationMessage = {
       role: "user",
-      content: chatMessage,
-      rawContent: rawChatMessage,
+      content: userMessageContent,
+      rawContent: userMessageRawContent,
       conversationId: data.conversation.id,
     };
 
@@ -228,7 +232,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       };
 
       if (content?.message?.content && content.message.type === "message") {
-        newAssistantMessage.content = fromRawDescriptionToText(
+        newAssistantMessage.content = rawMessageContentToText(
           content.message.content,
         );
         newAssistantMessage.rawContent = content.message.content;
@@ -239,7 +243,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
         content?.message?.type === "end" &&
         content?.message?.content?.description
       ) {
-        const description: RawDescription[] = [
+        const rawContent: AssistantMessageRawContent = [
           {
             type: "text",
             value: "Generating the following inputs schema: ",
@@ -247,8 +251,8 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
           ...content.message.content.description,
         ];
 
-        newAssistantMessage.content = fromRawDescriptionToText(description);
-        newAssistantMessage.rawContent = description;
+        newAssistantMessage.content = rawMessageContentToText(rawContent);
+        newAssistantMessage.rawContent = rawContent;
       }
 
       if (newAssistantMessage) {
@@ -287,8 +291,8 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       await refetch();
     }
 
-    setChatMessage(null);
-    setRawChatMessage([]);
+    setUserMessageContent(null);
+    setUserMessageRawContent([]);
     setIsGenerating(false);
   };
 
@@ -297,7 +301,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       const root = $getRoot();
       const children = (root.getChildren()[0] as ParagraphNode)?.getChildren();
       const chat = root.getTextContent();
-      const rawDescription = children?.reduce((acc, child) => {
+      const userMessageRawContent = children?.reduce((acc, child) => {
         if (child.__type === "text") {
           acc.push({
             type: "text",
@@ -308,15 +312,17 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
         if (child.__type === "reference") {
           const referenceNode = child as ReferenceNode;
           acc.push(
-            rawDescriptionReferenceSchema.parse(referenceNode.__reference),
+            userMessageRawContentReferenceElementSchema.parse(
+              referenceNode.__reference,
+            ),
           );
         }
 
         return acc;
-      }, [] as RawDescription[]);
+      }, [] as UserMessageRawContent);
 
-      setChatMessage(chat);
-      setRawChatMessage(rawDescription);
+      setUserMessageContent(chat);
+      setUserMessageRawContent(userMessageRawContent);
     });
   }
 
@@ -661,13 +667,13 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                       editorRef={editorRef}
                       id={createId()}
                       onChange={onChatChange}
-                      rawMessage={rawChatMessage}
+                      rawMessage={userMessageRawContent}
                       placeholder={`Define your ${data.type} inputs with AI...`}
                       typeaheadPosition="bottom"
                     />
                     <Button
                       type="submit"
-                      disabled={!chatMessage || isGenerating}
+                      disabled={!userMessageContent || isGenerating}
                       size="sm"
                       className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
                     >

@@ -37,8 +37,11 @@ import {
 import { cn } from "@specly/ui/utils";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { RawDescription, ResponsePrimitive } from "@specly/shared/types";
-import { rawDescriptionReferenceSchema } from "@specly/shared/validators/common";
+import type {
+  ResponsePrimitive,
+  UserMessageRawContent,
+} from "@specly/shared/types";
+import { userMessageRawContentReferenceElementSchema } from "@specly/shared/validators/conversations";
 import {
   Form,
   FormControl,
@@ -124,8 +127,10 @@ export const Response = memo(
         const root = $getRoot();
         const children = (root.getChildren()[0] as ParagraphNode).getChildren();
 
+        // @ts-ignore
         const description = root.getTextContent();
-        const rawDescription = children.reduce((acc, child) => {
+        // @ts-ignore
+        const userMessageRawContent = children.reduce((acc, child) => {
           if (child.__type === "text") {
             acc.push({
               type: "text",
@@ -134,22 +139,13 @@ export const Response = memo(
           } else if (child.__type === "reference") {
             const referenceNode = child as ReferenceNode;
             acc.push(
-              rawDescriptionReferenceSchema.parse(referenceNode.__reference),
+              userMessageRawContentReferenceElementSchema.parse(
+                referenceNode.__reference,
+              ),
             );
           }
           return acc;
-        }, [] as RawDescription[]);
-
-        updateResponse.mutate({
-          where: {
-            id: data.id,
-          },
-          payload: {
-            type: "response",
-            description,
-            rawDescription,
-          },
-        });
+        }, [] as UserMessageRawContent);
       });
     }
 

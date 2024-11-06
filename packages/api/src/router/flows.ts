@@ -3,7 +3,6 @@ import { flows } from "@specly/db/schema";
 import { mergeJson } from "@specly/db/utils";
 import type { Flow } from "@specly/shared/types";
 import {
-  flowSchema,
   flowTypesSchema,
   insertFlowSchema,
   updateFlowSchema,
@@ -110,7 +109,6 @@ export const flowsRouter = {
     }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
-    .output(flowSchema)
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.flows.findFirst({
         where: and(

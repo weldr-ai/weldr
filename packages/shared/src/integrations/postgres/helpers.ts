@@ -2,8 +2,9 @@ import "server-only";
 
 import { Pool } from "pg";
 import type { DataType } from "../../types";
-import type { DatabaseStructure, DbConfig, Table } from "./index";
+import type { DatabaseStructure, DatabaseTable, DbConfig } from "./index";
 
+// @ts-ignore
 function pgTypeToJsonSchemaType(pgType: string): DataType {
   let normalizedPgType = pgType.trim().toLowerCase();
 
@@ -94,7 +95,7 @@ export async function getDatabaseStructure(
     connectionTimeoutMillis: 5000,
   });
 
-  const tables: Table[] = [];
+  const tables: DatabaseTable[] = [];
 
   try {
     await pool.connect();
@@ -155,7 +156,7 @@ export async function getDatabaseStructure(
         name: tableRow.table_name,
         columns: columns.rows.map((col) => ({
           name: col.column_name,
-          dataType: pgTypeToJsonSchemaType(col.data_type),
+          dataType: col.data_type,
           isNullable: col.is_nullable,
           isPrimaryKey: col.is_primary_key,
         })),
