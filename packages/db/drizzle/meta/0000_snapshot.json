@@ -1,5 +1,5 @@
 {
-  "id": "0816cd6d-7f4c-4b0a-9324-c621dc6a8438",
+  "id": "4e26abd4-10a9-48bd-a653-32a985a88436",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -366,7 +366,7 @@
           "name": "raw_content",
           "type": "jsonb",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -631,6 +631,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "output_schema": {
+          "name": "output_schema",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "validation_schema": {
           "name": "validation_schema",
           "type": "text",
@@ -821,36 +827,6 @@
         },
         "name": {
           "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "input_schema": {
-          "name": "input_schema",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "output_schema": {
-          "name": "output_schema",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "raw_description": {
-          "name": "raw_description",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "generated_code": {
-          "name": "generated_code",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1258,7 +1234,7 @@
     "public.primitive_types": {
       "name": "primitive_types",
       "schema": "public",
-      "values": ["function", "response"]
+      "values": ["function", "stop"]
     }
   },
   "schemas": {},

@@ -17,6 +17,13 @@ export const primitivesRouter = {
   create: protectedProcedure
     .input(insertPrimitiveSchema)
     .mutation(async ({ ctx, input }) => {
+      if (input.type === "stop") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Stop primitive cannot be created",
+        });
+      }
+
       try {
         const result = await ctx.db.transaction(async (tx) => {
           const result = await tx
@@ -34,22 +41,10 @@ export const primitivesRouter = {
             });
           }
 
-          const conversation = (
-            await tx
-              .insert(conversations)
-              .values({
-                primitiveId: result[0].id,
-                createdBy: ctx.session.user.id,
-              })
-              .returning({ id: conversations.id })
-          )[0];
-
-          if (!conversation) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create conversation",
-            });
-          }
+          await tx.insert(conversations).values({
+            primitiveId: result[0].id,
+            createdBy: ctx.session.user.id,
+          });
 
           return result[0];
         });

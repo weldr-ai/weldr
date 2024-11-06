@@ -1,10 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import type {
-  FunctionMetadata,
-  InputSchema,
-  OutputSchema,
-  RawContent,
-} from "@specly/shared/types";
+import type { PrimitiveMetadata } from "@specly/shared/types";
 import { relations, sql } from "drizzle-orm";
 import {
   integer,
@@ -19,10 +14,7 @@ import { users } from "./auth";
 import { conversations } from "./conversations";
 import { flows } from "./flows";
 
-export const primitiveTypes = pgEnum("primitive_types", [
-  "function",
-  "response",
-]);
+export const primitiveTypes = pgEnum("primitive_types", ["function", "stop"]);
 
 export const primitives = pgTable(
   "primitives",
@@ -32,12 +24,7 @@ export const primitives = pgTable(
       .$defaultFn(() => createId()),
     type: primitiveTypes("type").notNull(),
     name: text("name"),
-    inputSchema: jsonb("input_schema").$type<InputSchema>(),
-    outputSchema: jsonb("output_schema").$type<OutputSchema>(),
-    description: text("description"),
-    rawDescription: jsonb("raw_description").$type<RawContent>(),
-    generatedCode: text("generated_code"),
-    metadata: jsonb("metadata").$type<FunctionMetadata>(),
+    metadata: jsonb("metadata").$type<PrimitiveMetadata>(),
     positionX: integer("position_x").default(0).notNull(),
     positionY: integer("position_y").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

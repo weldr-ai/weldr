@@ -54,7 +54,7 @@ export function Sidebar({
   workspace: Workspace;
   integrations: Omit<Integration, "dependencies">[];
   resources: Resource[];
-  flows: Omit<Flow, "conversation">[];
+  flows: Omit<Flow, "conversation" | "stopNode">[];
 }) {
   const { theme, setTheme, resolvedTheme } = useTheme();
 

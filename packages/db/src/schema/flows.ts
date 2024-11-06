@@ -2,7 +2,11 @@ import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-import type { FlowMetadata, InputSchema } from "@specly/shared/types";
+import type {
+  FlowMetadata,
+  InputSchema,
+  OutputSchema,
+} from "@specly/shared/types";
 import { users } from "./auth";
 import { conversations } from "./conversations";
 import { edges } from "./edges";
@@ -24,6 +28,7 @@ export const flows = pgTable("flows", {
   type: flowTypes("type").notNull(),
   metadata: jsonb("metadata").$type<FlowMetadata>().notNull(),
   inputSchema: jsonb("input_schema").$type<InputSchema>(),
+  outputSchema: jsonb("output_schema").$type<OutputSchema>(),
   validationSchema: text("validation_schema"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")

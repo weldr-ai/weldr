@@ -69,18 +69,20 @@ export const resourcesRouter = {
 
       const result = await ctx.db.transaction(async (tx) => {
         try {
-          const resource = await tx
-            .insert(resources)
-            .values({
-              name: input.name,
-              description: input.description,
-              workspaceId: input.workspaceId,
-              createdBy: ctx.session.user.id,
-              integrationId: input.integrationId,
-            })
-            .returning({ id: resources.id });
+          const resource = (
+            await tx
+              .insert(resources)
+              .values({
+                name: input.name,
+                description: input.description,
+                workspaceId: input.workspaceId,
+                createdBy: ctx.session.user.id,
+                integrationId: input.integrationId,
+              })
+              .returning({ id: resources.id })
+          )[0];
 
-          if (!resource[0]) {
+          if (!resource) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to create resource",
@@ -88,46 +90,52 @@ export const resourcesRouter = {
           }
 
           for (const key in input.environmentVariables ?? {}) {
-            const secret = await tx
-              .insert(secrets)
-              .values({
-                name: key,
-                secret: input.environmentVariables?.[key] ?? "",
-              })
-              .returning({ id: secrets.id });
+            const secret = (
+              await tx
+                .insert(secrets)
+                .values({
+                  name: key,
+                  secret: input.environmentVariables?.[key] ?? "",
+                })
+                .returning({ id: secrets.id })
+            )[0];
 
-            if (!secret[0]) {
+            if (!secret) {
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
                 message: "Failed to create secret",
               });
             }
 
-            const environmentVariable = await tx
-              .insert(environmentVariables)
-              .values({
-                secretId: secret[0].id,
-                workspaceId: input.workspaceId,
-                createdBy: ctx.session.user.id,
-              })
-              .returning({ id: environmentVariables.id });
+            const environmentVariable = (
+              await tx
+                .insert(environmentVariables)
+                .values({
+                  secretId: secret.id,
+                  workspaceId: input.workspaceId,
+                  createdBy: ctx.session.user.id,
+                })
+                .returning({ id: environmentVariables.id })
+            )[0];
 
-            if (!environmentVariable[0]) {
+            if (!environmentVariable) {
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
                 message: "Failed to create environment variable",
               });
             }
 
-            const resourceEnvironmentVariable = await tx
-              .insert(resourceEnvironmentVariables)
-              .values({
-                resourceId: resource[0].id,
-                environmentVariableId: environmentVariable[0].id,
-              })
-              .returning();
+            const resourceEnvironmentVariable = (
+              await tx
+                .insert(resourceEnvironmentVariables)
+                .values({
+                  resourceId: resource.id,
+                  environmentVariableId: environmentVariable.id,
+                })
+                .returning()
+            )[0];
 
-            if (!resourceEnvironmentVariable[0]) {
+            if (!resourceEnvironmentVariable) {
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
                 message: "Failed to create resource environment variable",
@@ -135,7 +143,7 @@ export const resourcesRouter = {
             }
           }
 
-          return resource[0];
+          return resource;
         } catch (error) {
           console.log(error);
           throw new TRPCError({

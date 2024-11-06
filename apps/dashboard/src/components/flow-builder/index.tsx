@@ -33,16 +33,16 @@ import type { Flow, PrimitiveType } from "@specly/shared/types";
 import { toast } from "@specly/ui/use-toast";
 import { useTheme } from "next-themes";
 import DeletableEdge from "~/components/deletable-edge";
+import { FunctionNode } from "~/components/flow-builder/primitives/function";
+import { Stop } from "~/components/flow-builder/primitives/stop";
+import { FlowSheet } from "~/components/flow-sheet";
 import { PrimitivesMenu } from "~/components/primitives-menu";
-import { FunctionNode } from "~/components/primitives/function";
-import { Response } from "~/components/primitives/response";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeData } from "~/types";
-import { FlowSheet } from "./flow-sheet";
 
 const nodeTypes = {
   function: FunctionNode,
-  response: Response,
+  stop: Stop,
 };
 
 const edgeTypes = {
@@ -125,9 +125,9 @@ export function FlowBuilder({
     async (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      const nodeType = event.dataTransfer.getData("application/reactflow") as
-        | "function"
-        | "response";
+      const nodeType = event.dataTransfer.getData(
+        "application/reactflow",
+      ) as "function";
 
       // check if the dropped element is valid
       if (typeof nodeType === "undefined" || !nodeType) return;

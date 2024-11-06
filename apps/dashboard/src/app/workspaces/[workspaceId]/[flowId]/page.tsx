@@ -20,17 +20,12 @@ export default async function FlowPage({
       id: primitive.id,
       type: primitive.type,
       dragHandle: ".drag-handle",
-      deletable: primitive.type !== "response",
+      deletable: primitive.type !== "stop",
       position: { x: primitive.positionX, y: primitive.positionY },
       data: {
         id: primitive.id,
         type: primitive.type,
         name: primitive.name,
-        description: primitive.description,
-        rawDescription: primitive.rawDescription,
-        inputSchema: primitive.inputSchema,
-        outputSchema: primitive.outputSchema,
-        generatedCode: primitive.generatedCode,
         metadata: primitive.metadata,
         createdAt: primitive.createdAt,
         updatedAt: primitive.updatedAt,
@@ -55,7 +50,12 @@ export default async function FlowPage({
     return (
       <div className="flex size-full">
         <FlowBuilder
-          flow={flow as Flow}
+          flow={
+            {
+              ...flow,
+              stopNode: flow.primitives.find((p) => p.type === "stop"),
+            } as Flow
+          }
           initialNodes={initialNodes}
           initialEdges={initialEdges}
         />

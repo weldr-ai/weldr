@@ -356,9 +356,11 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
     <Sheet open={isOpen} onOpenChange={setIsOpen} modal={false}>
       <SheetTrigger asChild>
         <Button className="rounded-full gap-2 text-xs" variant="ghost">
-          {!(data.inputSchema && data.validationSchema) && (
-            <AlertCircleIcon className="size-4 text-destructive" />
-          )}
+          {!(
+            data.inputSchema &&
+            data.validationSchema &&
+            data.outputSchema
+          ) && <AlertCircleIcon className="size-4 text-destructive" />}
           {data.type === "endpoint" ? (
             <span className="p-0.5 px-3 rounded-full border border-primary bg-primary/20 text-primary">
               {data.metadata.method.toUpperCase()}
@@ -373,7 +375,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
           <span>{data.name}</span>
         </Button>
       </SheetTrigger>
-      <SheetContent className="p-0 bg-muted border rounded-lg top-2 right-2 h-[calc(100vh-16px)] min-w-[500px]">
+      <SheetContent className="p-0 bg-muted border rounded-lg top-2 right-2 h-[calc(100vh-16px)] min-w-[700px]">
         <Form {...form}>
           <SheetHeader>
             <SheetTitle className="flex flex-col items-start justify-start border-b p-4">

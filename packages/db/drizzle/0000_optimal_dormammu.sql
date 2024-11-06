@@ -1,7 +1,7 @@
 CREATE TYPE "public"."roles" AS ENUM('user', 'assistant');--> statement-breakpoint
 CREATE TYPE "public"."flow_types" AS ENUM('utilities', 'task', 'endpoint');--> statement-breakpoint
 CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');--> statement-breakpoint
-CREATE TYPE "public"."primitive_types" AS ENUM('function', 'response');--> statement-breakpoint
+CREATE TYPE "public"."primitive_types" AS ENUM('function', 'stop');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "accounts" (
 	"user_id" text NOT NULL,
 	"type" text NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS "conversation_messages" (
 	"id" text PRIMARY KEY NOT NULL,
 	"role" "roles" NOT NULL,
 	"content" text NOT NULL,
-	"raw_content" jsonb,
+	"raw_content" jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"conversation_id" text NOT NULL,
@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS "flows" (
 	"type" "flow_types" NOT NULL,
 	"metadata" jsonb NOT NULL,
 	"input_schema" jsonb,
+	"output_schema" jsonb,
 	"validation_schema" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
@@ -127,11 +128,6 @@ CREATE TABLE IF NOT EXISTS "primitives" (
 	"id" text PRIMARY KEY NOT NULL,
 	"type" "primitive_types" NOT NULL,
 	"name" text,
-	"input_schema" jsonb,
-	"output_schema" jsonb,
-	"description" text,
-	"raw_description" jsonb,
-	"generated_code" text,
 	"metadata" jsonb,
 	"position_x" integer DEFAULT 0 NOT NULL,
 	"position_y" integer DEFAULT 0 NOT NULL,
