@@ -28,6 +28,7 @@ interface EditorProps {
   className?: string;
   editorRef?: { current: null | LexicalEditor };
   rawMessage?: UserMessageRawContent;
+  includeReferences?: boolean;
   inputSchema?: FlatInputSchema[];
   typeaheadPosition?: "bottom" | "top";
 }
@@ -66,6 +67,7 @@ export function Editor({ ...props }: EditorProps) {
         <ReferencesPlugin
           inputSchema={props.inputSchema ?? []}
           position={props.typeaheadPosition}
+          includeReferences={props.includeReferences}
         />
         <RichTextPlugin
           contentEditable={

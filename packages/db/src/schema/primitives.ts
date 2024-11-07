@@ -40,6 +40,9 @@ export const primitives = pgTable(
         onDelete: "set null",
       })
       .default(sql`NULL`),
+    conversationId: text("conversation_id")
+      .references(() => conversations.id, { onDelete: "cascade" })
+      .default(sql`NULL`),
   },
   (t) => ({
     uniqueNameInFlow: unique().on(t.name, t.flowId),
@@ -55,5 +58,8 @@ export const primitivesRelations = relations(primitives, ({ one, many }) => ({
     fields: [primitives.createdBy],
     references: [users.id],
   }),
-  conversation: one(conversations),
+  conversation: one(conversations, {
+    fields: [primitives.conversationId],
+    references: [conversations.id],
+  }),
 }));

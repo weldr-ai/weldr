@@ -170,7 +170,11 @@ const inputRawContentSchema = z
   ])
   .array();
 
-export const flowInputsSchemaMessageSchema = z.object({
+const outputRawContentSchema = z
+  .union([rawContentTextElementSchema, rawContentInputReferenceSchema])
+  .array();
+
+export const flowInputSchemaMessageSchema = z.object({
   message: z.discriminatedUnion("type", [
     z
       .object({
@@ -203,6 +207,31 @@ export const flowInputsSchemaMessageSchema = z.object({
   ]),
 });
 
+export const flowOutputSchemaMessageSchema = z.object({
+  message: z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("message"),
+      content: outputRawContentSchema,
+    }),
+    z.object({
+      type: z.literal("end"),
+      content: z.object({
+        description: outputRawContentSchema.describe(
+          "The description of the output schema. Must consist of text and reference parts. The reference parts must be used when mentioning a reference in the description.",
+        ),
+        outputSchema: z.string().describe(
+          `The JSON schema for the output of the flow. Must follow these rules:
+          - Schema must have \`$id\` property that follows the naming pattern \`/schemas/[FLOW_ID]/output\`.
+          - Schema must have \`title\` property. It should be a descriptive noun like 'Customer' or 'Order' that represents the data and it is like a TypeScript type name. If no descriptive title applies, use \`undefined\` as the title value.
+          - Property names must be in camelCase.
+          - Schema should be valid according to JSON Schema specification.
+            - Properties should have clear, descriptive names that indicate their purpose.`,
+        ),
+      }),
+    }),
+  ]),
+});
+
 export const functionRequirementsMessageSchema = z.object({
   message: z.discriminatedUnion("type", [
     z
@@ -215,16 +244,16 @@ export const functionRequirementsMessageSchema = z.object({
       .object({
         type: z.literal("end"),
         content: z.object({
-          inputs: z.string().describe(
-            `The JSON schema for the inputs of the function. Must follow these rules:
+          inputSchema: z.string().describe(
+            `The JSON schema for the input of the function. Must follow these rules:
               - Schema must have \`$id\` property that follows the naming pattern \`/schemas/[FUNCTION_ID]/input\`.
               - Must include $ref to specify input sources.
               - Property names must be in camelCase.
               - Schema should be valid according to JSON Schema specification.
               - Properties should have clear, descriptive names that indicate their purpose.`,
           ),
-          outputs: z.string().describe(
-            `The JSON schema for the outputs of the function. Must follow these rules:
+          outputSchema: z.string().describe(
+            `The JSON schema for the output of the function. Must follow these rules:
               - Schema must have \`$id\` property that follows the naming pattern \`/schemas/[FUNCTION_ID]/output\`.
               - Schema must have \`title\` property. It should be a descriptive noun like 'Customer' or 'Order' that represents the data and it is like a TypeScript type name. If no descriptive title applies, use \`undefined\` as the title value.
               - Property names must be in camelCase.

@@ -30,6 +30,12 @@ export const flows = pgTable("flows", {
   inputSchema: jsonb("input_schema").$type<InputSchema>(),
   outputSchema: jsonb("output_schema").$type<OutputSchema>(),
   validationSchema: text("validation_schema"),
+  inputConversationId: text("input_conversation_id")
+    .references(() => conversations.id, { onDelete: "cascade" })
+    .default(sql`NULL`),
+  outputConversationId: text("output_conversation_id")
+    .references(() => conversations.id, { onDelete: "cascade" })
+    .default(sql`NULL`),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -52,5 +58,12 @@ export const flowsRelations = relations(flows, ({ many, one }) => ({
     fields: [flows.createdBy],
     references: [users.id],
   }),
-  conversation: one(conversations),
+  inputConversation: one(conversations, {
+    fields: [flows.inputConversationId],
+    references: [conversations.id],
+  }),
+  outputConversation: one(conversations, {
+    fields: [flows.outputConversationId],
+    references: [conversations.id],
+  }),
 }));

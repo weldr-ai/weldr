@@ -165,7 +165,7 @@ export const FunctionNode = memo(
       return acc.concat(flatInputSchema);
     }, [] as FlatInputSchema[]);
 
-    const inputs = data.flow?.inputSchema
+    const inputSchema = data.flow?.inputSchema
       ? [...passedInputs].concat(flattenInputSchema(data.flow.inputSchema))
       : [...passedInputs];
 
@@ -206,9 +206,8 @@ export const FunctionNode = memo(
               "Hi there! I'm Specly, your AI assistant. What does your function do?",
           },
         ],
-        conversationId: data?.conversation?.id ?? undefined,
       },
-      ...((data?.conversation?.messages ?? []).sort(
+      ...((data.conversation?.messages ?? []).sort(
         (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
       ) as ConversationMessage[]),
       ...((data.metadata?.rawDescription
@@ -222,7 +221,6 @@ export const FunctionNode = memo(
                   value: "Your function has been built successfully!",
                 },
               ],
-              conversationId: data.conversation.id,
             },
           ]
         : []) as ConversationMessage[]),
@@ -310,7 +308,9 @@ export const FunctionNode = memo(
         return;
       }
 
-      const newMessageUser: ConversationMessage = {
+      const newMessageUser: ConversationMessage & {
+        conversationId: string;
+      } = {
         role: "user",
         content: userMessageContent,
         rawContent: userMessageRawContent,
@@ -340,7 +340,6 @@ export const FunctionNode = memo(
           role: "assistant",
           content: "",
           rawContent: [],
-          conversationId: data.conversation.id,
         };
 
         if (content?.message?.content && content.message.type === "message") {
@@ -396,7 +395,6 @@ export const FunctionNode = memo(
             },
           ],
           content: "Your function has been built successfully!",
-          conversationId: data.conversation.id,
         };
 
         setIsGeneratingCode(false);
@@ -579,7 +577,7 @@ export const FunctionNode = memo(
                       <Editor
                         editorRef={editorRef}
                         id={data.id}
-                        inputSchema={inputs}
+                        inputSchema={inputSchema}
                         rawMessage={userMessageRawContent}
                         placeholder="Create, refine, or fix your function with Specly..."
                         onChange={onChatChange}

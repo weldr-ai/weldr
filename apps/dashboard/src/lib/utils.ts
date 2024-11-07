@@ -8,7 +8,7 @@ import { getDataTypeIcon, toCamelCase } from "@specly/shared/utils";
 import type { TreeDataItem } from "@specly/ui/tree-view";
 
 export function jsonSchemaToTreeData(
-  schema: JsonSchema | undefined,
+  schema: JsonSchema | undefined = {},
 ): TreeDataItem[] {
   if (!schema) {
     return [];
