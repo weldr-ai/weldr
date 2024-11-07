@@ -1,8 +1,8 @@
 import type { EdgeProps } from "@xyflow/react";
 import {
-  BaseEdge,
   EdgeLabelRenderer,
   getBezierPath,
+  useInternalNode,
   useReactFlow,
 } from "@xyflow/react";
 import { XIcon } from "lucide-react";
@@ -14,6 +14,8 @@ import { api } from "~/lib/trpc/react";
 
 export default function DeletableEdge({
   id,
+  source,
+  target,
   sourceX,
   sourceY,
   targetX,
@@ -24,13 +26,20 @@ export default function DeletableEdge({
   markerEnd,
   selected,
 }: EdgeProps) {
+  const sourceNode = useInternalNode(source);
+  const targetNode = useInternalNode(target);
+
+  if (!sourceNode || !targetNode) {
+    return null;
+  }
+
   const { setEdges } = useReactFlow();
   const [isDeleteButtonVisible, setIsDeleteButtonVisible] = useState(false);
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
     sourcePosition,
-    targetX,
+    targetX: targetX + 5,
     targetY,
     targetPosition,
   });
@@ -50,7 +59,13 @@ export default function DeletableEdge({
         onMouseEnter={() => setIsDeleteButtonVisible(true)}
         onMouseLeave={() => setIsDeleteButtonVisible(false)}
       >
-        <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
+        <path
+          id={id}
+          className="react-flow__edge-path"
+          d={edgePath}
+          markerEnd={markerEnd}
+          style={style}
+        />
         {(isDeleteButtonVisible || selected) && (
           <EdgeLabelRenderer>
             <Button

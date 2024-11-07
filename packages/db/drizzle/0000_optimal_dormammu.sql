@@ -82,8 +82,6 @@ CREATE TABLE IF NOT EXISTS "edges" (
 	"id" text PRIMARY KEY NOT NULL,
 	"source" text NOT NULL,
 	"target" text NOT NULL,
-	"source_handle" text,
-	"target_handle" text,
 	"flow_id" text NOT NULL,
 	"created_by" text DEFAULT NULL
 );

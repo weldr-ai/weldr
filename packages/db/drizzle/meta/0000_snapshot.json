@@ -1,5 +1,5 @@
 {
-  "id": "be194415-3cbc-4807-a3b8-18c8e47e1114",
+  "id": "3c1c8d54-9a4b-4ac1-8f23-d17f3dbc4910",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -490,18 +490,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "source_handle": {
-          "name": "source_handle",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "target_handle": {
-          "name": "target_handle",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "flow_id": {
           "name": "flow_id",
