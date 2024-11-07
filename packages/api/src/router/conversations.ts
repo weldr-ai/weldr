@@ -1,11 +1,16 @@
 import { conversationMessages } from "@specly/db/schema";
 import { conversationMessageSchema } from "@specly/shared/validators/conversations";
 import type { TRPCRouterRecord } from "@trpc/server";
+import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
 export const conversationsRouter = {
   addMessage: protectedProcedure
-    .input(conversationMessageSchema)
+    .input(
+      conversationMessageSchema.extend({
+        conversationId: z.string(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       await ctx.db.insert(conversationMessages).values({
         id: input.id,

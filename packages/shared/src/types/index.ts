@@ -2,7 +2,8 @@ import type { z } from "zod";
 import type {
   baseJsonSchema,
   dataTypeSchema,
-  flowInputsSchemaMessageSchema,
+  flowInputSchemaMessageSchema,
+  flowOutputSchemaMessageSchema,
   functionRequirementsMessageSchema,
   inputSchema,
   outputSchema,
@@ -104,8 +105,11 @@ export type StopPrimitive = z.infer<typeof stopPrimitiveSchema>;
 export type FunctionRequirementsMessage = z.infer<
   typeof functionRequirementsMessageSchema
 >;
-export type FlowInputsSchemaMessage = z.infer<
-  typeof flowInputsSchemaMessageSchema
+export type FlowInputSchemaMessage = z.infer<
+  typeof flowInputSchemaMessageSchema
+>;
+export type FlowOutputSchemaMessage = z.infer<
+  typeof flowOutputSchemaMessageSchema
 >;
 
 export type BaseFormState<

@@ -31,7 +31,8 @@ const baseFlowSchema = z.object({
   updatedAt: z.date(),
   createdBy: z.string().nullable(),
   workspaceId: z.string(),
-  conversation: conversationSchema,
+  inputConversation: conversationSchema,
+  outputConversation: conversationSchema,
   stopNode: stopPrimitiveSchema,
 });
 
@@ -133,6 +134,7 @@ export const baseUpdateFlowSchema = z.object({
   description: z.string().optional(),
   inputSchema: inputSchema.optional(),
   validationSchema: z.string().optional(),
+  outputSchema: outputSchema.optional(),
 });
 
 export const updateEndpointFlowSchema = baseUpdateFlowSchema.extend({

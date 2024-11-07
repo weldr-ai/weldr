@@ -73,7 +73,6 @@ export const conversationMessageSchema = z.object({
   rawContent: messageRawContentSchema,
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
-  conversationId: z.string(),
 });
 
 export const conversationSchema = z.object({

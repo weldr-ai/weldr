@@ -48,9 +48,11 @@ export class ReferenceOption extends MenuOption {
 export function ReferencesPlugin({
   inputSchema,
   position = "top",
+  includeReferences = true,
 }: {
   inputSchema: FlatInputSchema[];
   position?: "bottom" | "top";
+  includeReferences?: boolean;
 }) {
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
@@ -103,45 +105,76 @@ export function ReferencesPlugin({
         }),
     );
 
-    for (const resource of resources ?? []) {
-      options.push(
-        new ReferenceOption({
-          reference: {
-            id: resource.id,
-            type: "reference",
-            name: resource.name,
-            referenceType: "database",
-            utils:
-              resource.integration.utils?.map((util) => ({
-                id: util.id,
-                name: util.name,
-                description: util.description,
-              })) ?? [],
-          },
-          options: {
-            keywords: ["resource", "database", resource.name],
-            onSelect: (queryString) => {
-              console.log(queryString);
+    if (includeReferences) {
+      for (const resource of resources ?? []) {
+        options.push(
+          new ReferenceOption({
+            reference: {
+              id: resource.id,
+              type: "reference",
+              name: resource.name,
+              referenceType: "database",
+              utils:
+                resource.integration.utils?.map((util) => ({
+                  id: util.id,
+                  name: util.name,
+                  description: util.description,
+                })) ?? [],
             },
-          },
-        }),
-      );
+            options: {
+              keywords: ["resource", "database", resource.name],
+              onSelect: (queryString) => {
+                console.log(queryString);
+              },
+            },
+          }),
+        );
 
-      if (
-        resource.integration.type === "postgres" ||
-        resource.integration.type === "mysql"
-      ) {
-        const databaseStructure = resource.metadata as DatabaseStructure;
+        if (
+          resource.integration.type === "postgres" ||
+          resource.integration.type === "mysql"
+        ) {
+          const databaseStructure = resource.metadata as DatabaseStructure;
 
-        for (const table of databaseStructure) {
-          for (const column of table.columns) {
+          for (const table of databaseStructure) {
+            for (const column of table.columns) {
+              options.push(
+                new ReferenceOption({
+                  reference: {
+                    type: "reference",
+                    name: `${table.name}.${column.name}`,
+                    referenceType: "database-column",
+                    dataType: column.dataType,
+                    database: {
+                      id: resource.id,
+                      name: resource.name,
+                      utils:
+                        resource.integration.utils?.map((util) => ({
+                          id: util.id,
+                          name: util.name,
+                          description: util.description,
+                        })) ?? [],
+                    },
+                    table: {
+                      name: table.name,
+                    },
+                  },
+                  options: {
+                    keywords: ["column", resource.name, column.name],
+                    onSelect: (queryString) => {
+                      console.log(queryString);
+                    },
+                  },
+                }),
+              );
+            }
+
             options.push(
               new ReferenceOption({
                 reference: {
                   type: "reference",
-                  name: `${table.name}.${column.name}`,
-                  referenceType: "database-column",
-                  dataType: column.dataType,
+                  name: `${table.name}`,
+                  referenceType: "database-table",
                   database: {
                     id: resource.id,
                     name: resource.name,
@@ -152,12 +185,11 @@ export function ReferencesPlugin({
                         description: util.description,
                       })) ?? [],
                   },
-                  table: {
-                    name: table.name,
-                  },
+                  columns: table.columns,
+                  relationships: table.relationships,
                 },
                 options: {
-                  keywords: ["column", resource.name, column.name],
+                  keywords: ["table", resource.name, table.name],
                   onSelect: (queryString) => {
                     console.log(queryString);
                   },
@@ -165,40 +197,12 @@ export function ReferencesPlugin({
               }),
             );
           }
-
-          options.push(
-            new ReferenceOption({
-              reference: {
-                type: "reference",
-                name: `${table.name}`,
-                referenceType: "database-table",
-                database: {
-                  id: resource.id,
-                  name: resource.name,
-                  utils:
-                    resource.integration.utils?.map((util) => ({
-                      id: util.id,
-                      name: util.name,
-                      description: util.description,
-                    })) ?? [],
-                },
-                columns: table.columns,
-                relationships: table.relationships,
-              },
-              options: {
-                keywords: ["table", resource.name, table.name],
-                onSelect: (queryString) => {
-                  console.log(queryString);
-                },
-              },
-            }),
-          );
         }
       }
     }
 
     return options;
-  }, [inputSchema, resources]);
+  }, [inputSchema, resources, includeReferences]);
 
   const options = useMemo(() => {
     if (!queryString) {

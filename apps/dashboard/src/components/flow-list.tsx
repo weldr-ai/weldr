@@ -11,7 +11,10 @@ import { CreateFlowDialog } from "./create-flow-dialog";
 export function FlowList({
   flows,
   type,
-}: { flows: Omit<Flow, "conversation" | "stopNode">[]; type: FlowType }) {
+}: {
+  flows: Omit<Flow, "inputConversation" | "outputConversation" | "stopNode">[];
+  type: FlowType;
+}) {
   const { flowId: currentFlowId } = useParams<{ flowId: string }>();
 
   return (

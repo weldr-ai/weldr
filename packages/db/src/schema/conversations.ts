@@ -25,26 +25,13 @@ export const conversations = pgTable("conversations", {
       onDelete: "set null",
     })
     .default(sql`NULL`),
-  primitiveId: text("primitive_id").references(() => primitives.id, {
-    onDelete: "cascade",
-  }),
-  flowId: text("flow_id").references(() => flows.id, { onDelete: "cascade" }),
 });
 
-export const conversationRelations = relations(
-  conversations,
-  ({ one, many }) => ({
-    messages: many(conversationMessages),
-    primitive: one(primitives, {
-      fields: [conversations.primitiveId],
-      references: [primitives.id],
-    }),
-    flow: one(flows, {
-      fields: [conversations.flowId],
-      references: [flows.id],
-    }),
-  }),
-);
+export const conversationRelations = relations(conversations, ({ many }) => ({
+  messages: many(conversationMessages),
+  primitives: many(primitives),
+  flows: many(flows),
+}));
 
 export const conversationMessages = pgTable("conversation_messages", {
   id: text("id")

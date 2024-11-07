@@ -329,6 +329,11 @@ Begin by summarizing their intent and then ask questions about each input one at
 }
 \`\`\``;
 
+export const FLOW_OUTPUTS_SCHEMA_AGENT_PROMPT = (
+  flowId: string,
+) => `Help the user define the structure of outputs required for a flow (ID: ${flowId}) by asking simple, structured questions to gather detailed information. Conclude by generating a JSON Schema and a Zod schema for those outputs based on the gathered information.
+`;
+
 export const FLOW_INPUTS_SCHEMA_GENERATOR_PROMPT = (
   flowId: string,
 ) => `Create Zod and JSON validation schemas for flow (ID: ${flowId}) based on a user-provided input structure, returning a JSON object containing both schemas.

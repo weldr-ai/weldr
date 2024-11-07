@@ -19,7 +19,6 @@ export const primitiveBaseSchema = z.object({
   positionX: z.number(),
   positionY: z.number(),
   flowId: z.string(),
-  conversation: conversationSchema,
 });
 
 export const functionPrimitiveMetadataSchema = z.object({
@@ -55,6 +54,7 @@ export const primitiveMetadataSchema = z.union([
 
 export const functionPrimitiveSchema = primitiveBaseSchema.extend({
   type: z.literal("function"),
+  conversation: conversationSchema,
   metadata: functionPrimitiveMetadataSchema.nullable().optional(),
 });
 

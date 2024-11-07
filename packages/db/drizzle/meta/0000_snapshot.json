@@ -1,5 +1,5 @@
 {
-  "id": "4e26abd4-10a9-48bd-a653-32a985a88436",
+  "id": "be194415-3cbc-4807-a3b8-18c8e47e1114",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -451,18 +451,6 @@
           "primaryKey": false,
           "notNull": false,
           "default": "NULL"
-        },
-        "primitive_id": {
-          "name": "primitive_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "flow_id": {
-          "name": "flow_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -474,24 +462,6 @@
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
           "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "conversations_primitive_id_primitives_id_fk": {
-          "name": "conversations_primitive_id_primitives_id_fk",
-          "tableFrom": "conversations",
-          "tableTo": "primitives",
-          "columnsFrom": ["primitive_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "conversations_flow_id_flows_id_fk": {
-          "name": "conversations_flow_id_flows_id_fk",
-          "tableFrom": "conversations",
-          "tableTo": "flows",
-          "columnsFrom": ["flow_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -643,6 +613,20 @@
           "primaryKey": false,
           "notNull": false
         },
+        "input_conversation_id": {
+          "name": "input_conversation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "NULL"
+        },
+        "output_conversation_id": {
+          "name": "output_conversation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "NULL"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -673,6 +657,24 @@
       },
       "indexes": {},
       "foreignKeys": {
+        "flows_input_conversation_id_conversations_id_fk": {
+          "name": "flows_input_conversation_id_conversations_id_fk",
+          "tableFrom": "flows",
+          "tableTo": "conversations",
+          "columnsFrom": ["input_conversation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "flows_output_conversation_id_conversations_id_fk": {
+          "name": "flows_output_conversation_id_conversations_id_fk",
+          "tableFrom": "flows",
+          "tableTo": "conversations",
+          "columnsFrom": ["output_conversation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "flows_workspace_id_workspaces_id_fk": {
           "name": "flows_workspace_id_workspaces_id_fk",
           "tableFrom": "flows",
@@ -877,6 +879,13 @@
           "primaryKey": false,
           "notNull": false,
           "default": "NULL"
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "NULL"
         }
       },
       "indexes": {},
@@ -897,6 +906,15 @@
           "columnsFrom": ["created_by"],
           "columnsTo": ["id"],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "primitives_conversation_id_conversations_id_fk": {
+          "name": "primitives_conversation_id_conversations_id_fk",
+          "tableFrom": "primitives",
+          "tableTo": "conversations",
+          "columnsFrom": ["conversation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },

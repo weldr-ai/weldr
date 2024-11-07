@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@specly/ui/textarea";
 import {
   AlertCircleIcon,
+  ArrowLeftIcon,
   PanelRightCloseIcon,
   PlayCircleIcon,
   RocketIcon,
@@ -31,8 +32,10 @@ import { createId } from "@paralleldrive/cuid2";
 import type {
   AssistantMessageRawContent,
   ConversationMessage,
+  FlatInputSchema,
   Flow,
-  FlowInputsSchemaMessage,
+  FlowInputSchemaMessage,
+  FlowOutputSchemaMessage,
   JsonSchema,
   UserMessageRawContent,
 } from "@specly/shared/types";
@@ -54,21 +57,34 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@specly/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
 import { TreeView } from "@specly/ui/tree-view";
-import { readStreamableValue } from "ai/rsc";
+import { useHandleConnections, useNodesData } from "@xyflow/react";
+import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import { debounce } from "perfect-debounce";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { generateFlowInputsSchemas } from "~/lib/ai/generator";
+import {
+  generateFlowInputsSchemas,
+  generateFlowOutputsSchemas,
+} from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/react";
-import { jsonSchemaToTreeData, rawMessageContentToText } from "~/lib/utils";
+import {
+  flattenInputSchema,
+  jsonSchemaToTreeData,
+  rawMessageContentToText,
+} from "~/lib/utils";
+import type { FlowNode } from "~/types";
 import Editor from "./editor";
 import type { ReferenceNode } from "./editor/nodes/reference-node";
 import MessageList from "./message-list";
 
 export function FlowSheet({ initialData }: { initialData: Flow }) {
+  const [generateMode, setGenerateMode] = useState<"input" | "output" | null>(
+    null,
+  );
+
   const [isOpen, setIsOpen] = useState(false);
 
   const { data, refetch } = api.flows.getById.useQuery(
@@ -79,6 +95,23 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       initialData,
     },
   );
+
+  const stopNodeConnections = useHandleConnections({
+    type: "target",
+    nodeId: data.stopNode.id,
+  });
+
+  const nodesData = useNodesData<FlowNode>(
+    stopNodeConnections.map((connection) => connection.source),
+  );
+
+  const outputReferencesSchema = nodesData.reduce((acc, node) => {
+    if (node.data.metadata?.outputSchema) {
+      const schema = flattenInputSchema(node.data.metadata.outputSchema);
+      return acc.concat(schema);
+    }
+    return acc;
+  }, [] as FlatInputSchema[]);
 
   const updateFlow = api.flows.update.useMutation({
     onSuccess: async () => {
@@ -135,45 +168,86 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
   });
 
   const inputTree = jsonSchemaToTreeData(data.inputSchema as JsonSchema);
+  const outputTree = jsonSchemaToTreeData(data.outputSchema as JsonSchema);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingSchemas, setIsGeneratingSchemas] = useState(false);
 
-  const [messages, setMessages] = useState<ConversationMessage[]>([
-    {
-      id: createId(),
-      role: "assistant",
-      content:
-        "Hi there! I'm Specly, your AI assistant. What are your flow's inputs?",
-      rawContent: [
-        {
-          type: "text",
-          value:
-            "Hi there! I'm Specly, your AI assistant. What are your flow's inputs?",
-        },
-      ],
-      conversationId: data.conversation.id,
-    },
-    ...(data.conversation.messages.sort(
-      (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
-    ) as ConversationMessage[]),
-    ...((data.inputSchema && data.validationSchema
-      ? [
+  const inputConversation = useMemo(() => {
+    const messages: ConversationMessage[] = [
+      {
+        id: createId(),
+        role: "assistant",
+        content: `Hi there! I'm Specly, your AI assistant. What are your flow's input?`,
+        rawContent: [
           {
-            id: createId(),
-            role: "assistant",
-            content: "Your inputs schema has been built successfully!",
-            rawContent: [
-              {
-                type: "text",
-                value: "Your inputs schema has been built successfully!",
-              },
-            ],
-            conversationId: data.conversation.id,
+            type: "text",
+            value: `Hi there! I'm Specly, your AI assistant. What are your flow's input?`,
           },
-        ]
-      : []) as ConversationMessage[]),
+        ],
+      },
+      ...data.inputConversation.messages.sort(
+        (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
+      ),
+    ];
+
+    if (data.inputSchema && data.validationSchema) {
+      messages.push({
+        id: createId(),
+        role: "assistant",
+        content: "Your input schema has been built successfully!",
+        rawContent: [
+          {
+            type: "text",
+            value: "Your input schema has been built successfully!",
+          },
+        ],
+      });
+    }
+
+    return messages;
+  }, [
+    data.inputConversation.messages,
+    data.inputSchema,
+    data.validationSchema,
   ]);
+
+  const outputConversation = useMemo(() => {
+    const messages: ConversationMessage[] = [
+      {
+        id: createId(),
+        role: "assistant",
+        content: `Hi there! I'm Specly, your AI assistant. What are your flow's output?`,
+        rawContent: [
+          {
+            type: "text",
+            value: `Hi there! I'm Specly, your AI assistant. What are your flow's output?`,
+          },
+        ],
+      },
+      ...data.outputConversation.messages.sort(
+        (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
+      ),
+    ];
+
+    if (data.outputSchema) {
+      messages.push({
+        id: createId(),
+        role: "assistant",
+        content: "Your output schema has been built successfully!",
+        rawContent: [
+          {
+            type: "text",
+            value: "Your output schema has been built successfully!",
+          },
+        ],
+      });
+    }
+
+    return messages;
+  }, [data.outputSchema, data.outputConversation.messages]);
+
+  const [messages, setMessages] = useState<ConversationMessage[]>([]);
 
   const [userMessageContent, setUserMessageContent] = useState<string | null>(
     null,
@@ -198,11 +272,13 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       return;
     }
 
-    const newMessageUser: ConversationMessage = {
+    const newMessageUser: ConversationMessage & {
+      conversationId: string;
+    } = {
       role: "user",
       content: userMessageContent,
       rawContent: userMessageRawContent,
-      conversationId: data.conversation.id,
+      conversationId: data.inputConversation.id,
     };
 
     const newMessages: ConversationMessage[] = [...messages, newMessageUser];
@@ -211,14 +287,29 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
 
     await addMessage.mutateAsync(newMessageUser);
 
-    const result = await generateFlowInputsSchemas({
-      flowId: data.id,
-      conversationId: data.conversation.id,
-      messages: newMessages.map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
-    });
+    let result: StreamableValue<
+      FlowInputSchemaMessage | FlowOutputSchemaMessage
+    >;
+
+    if (generateMode === "input") {
+      result = await generateFlowInputsSchemas({
+        flowId: data.id,
+        conversationId: data.inputConversation.id,
+        messages: newMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+      });
+    } else {
+      result = await generateFlowOutputsSchemas({
+        flowId: data.id,
+        conversationId: data.outputConversation.id,
+        messages: newMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+      });
+    }
 
     let newAssistantMessageStr = "";
     let newAssistantMessage: ConversationMessage | null = null;
@@ -228,7 +319,6 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
         role: "assistant",
         content: "",
         rawContent: [],
-        conversationId: data.conversation.id,
       };
 
       if (content?.message?.content && content.message.type === "message") {
@@ -246,7 +336,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
         const rawContent: AssistantMessageRawContent = [
           {
             type: "text",
-            value: "Generating the following inputs schema: ",
+            value: `Generating the following ${generateMode === "input" ? "input" : "output"} schema: `,
           },
           ...content.message.content.description,
         ];
@@ -266,27 +356,26 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       newMessages.push(newAssistantMessage);
     }
 
-    const inputsSchemaMessageObject = JSON.parse(
-      newAssistantMessageStr,
-    ) as FlowInputsSchemaMessage;
+    const schemaMessageObject = JSON.parse(newAssistantMessageStr) as
+      | FlowInputSchemaMessage
+      | FlowOutputSchemaMessage;
 
-    if (inputsSchemaMessageObject.message.type === "end") {
+    if (schemaMessageObject.message.type === "end") {
       setIsGeneratingSchemas(true);
 
-      const inputsSchemaBuiltSuccessfullyMessage: ConversationMessage = {
+      const schemaBuiltSuccessfullyMessage: ConversationMessage = {
         role: "assistant",
         rawContent: [
           {
             type: "text",
-            value: "Your inputs schema has been built successfully!",
+            value: `Your ${generateMode === "input" ? "input" : "output"} schema has been built successfully!`,
           },
         ],
-        content: "Your inputs schema has been built successfully!",
-        conversationId: data.conversation.id,
+        content: `Your ${generateMode === "input" ? "input" : "output"} schema has been built successfully!`,
       };
 
       setIsGeneratingSchemas(false);
-      setMessages([...newMessages, inputsSchemaBuiltSuccessfullyMessage]);
+      setMessages([...newMessages, schemaBuiltSuccessfullyMessage]);
 
       await refetch();
     }
@@ -494,11 +583,8 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
               <TabsTrigger className="w-full" value="general">
                 General
               </TabsTrigger>
-              <TabsTrigger className="w-full" value="inputs">
-                Inputs
-              </TabsTrigger>
-              <TabsTrigger className="w-full" value="summary">
-                Summary
+              <TabsTrigger className="w-full" value="build">
+                Build
               </TabsTrigger>
             </TabsList>
             <TabsContent value="general" className="size-full">
@@ -652,61 +738,118 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                     </FormItem>
                   )}
                 />
-              </div>
-            </TabsContent>
-            <TabsContent value="inputs" className="size-full">
-              <div className="flex flex-col justify-between h-[calc(100vh-186px)]">
-                <ScrollArea className="grow mb-4" ref={scrollAreaRef}>
-                  <MessageList
-                    messages={messages}
-                    isGenerating={isGeneratingSchemas}
-                    chatHistoryEndRef={chatHistoryEndRef}
-                  />
-                </ScrollArea>
-                <div className="mt-auto">
-                  <form className="relative" onSubmit={onSubmit}>
-                    <Editor
-                      editorRef={editorRef}
-                      id={createId()}
-                      onChange={onChatChange}
-                      rawMessage={userMessageRawContent}
-                      placeholder={`Define your ${data.type} inputs with AI...`}
-                      typeaheadPosition="bottom"
-                    />
-                    <Button
-                      type="submit"
-                      disabled={!userMessageContent || isGenerating}
-                      size="sm"
-                      className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
-                    >
-                      Send
-                      <span className="ml-1">
-                        <span className="px-1 py-0.5 bg-white/20 rounded-sm disabled:text-muted-foreground">
-                          {typeof window !== "undefined" &&
-                          window.navigator?.userAgent
-                            .toLowerCase()
-                            .includes("mac")
-                            ? "⌘"
-                            : "Ctrl"}
-                          ⏎
-                        </span>
-                      </span>
-                    </Button>
-                  </form>
-                </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="summary" className="size-full">
-              <div className="flex flex-col size-full gap-2">
                 <span className="text-sm">Input</span>
                 {inputTree.length === 0 ? (
-                  <div className="flex size-full text-xs items-center justify-center text-muted-foreground">
-                    Chat with Specly to define your {data.type} inputs
+                  <div className="flex w-full text-xs items-center justify-center text-muted-foreground">
+                    Chat with Specly to define your {data.type} input
                   </div>
                 ) : (
                   <TreeView data={inputTree} expandAll={true} />
                 )}
+                <span className="text-sm">Output</span>
+                {outputTree.length === 0 ? (
+                  <div className="flex w-full text-xs items-center justify-center text-muted-foreground">
+                    Chat with Specly to define your {data.type} output
+                  </div>
+                ) : (
+                  <TreeView data={outputTree} expandAll={true} />
+                )}
               </div>
+            </TabsContent>
+            <TabsContent value="build" className="size-full">
+              {generateMode === null && (
+                <div className="flex flex-col w-full h-[calc(100vh-250px)] justify-center items-center gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    Choose Specly's mode
+                  </p>
+                  <Button
+                    className="w-48"
+                    variant="outline"
+                    onClick={() => {
+                      setGenerateMode("input");
+                      setMessages(inputConversation);
+                    }}
+                  >
+                    Define {data.type} input
+                  </Button>
+                  <Button
+                    className="w-48"
+                    variant="outline"
+                    onClick={() => {
+                      setGenerateMode("output");
+                      setMessages(outputConversation);
+                    }}
+                  >
+                    Define {data.type} output
+                  </Button>
+                </div>
+              )}
+              {generateMode !== null && (
+                <div className="flex flex-col justify-between h-[calc(100vh-186px)]">
+                  <div className="flex size-full flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        className="size-8"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setGenerateMode(null)}
+                      >
+                        <ArrowLeftIcon className="size-4" />
+                      </Button>
+                      <p className="text-sm text-muted-foreground">
+                        Define your {generateMode} with Specly
+                      </p>
+                    </div>
+                    <ScrollArea
+                      className="h-[calc(100vh-344px)] mb-4"
+                      ref={scrollAreaRef}
+                    >
+                      <MessageList
+                        messages={messages}
+                        isGenerating={isGeneratingSchemas}
+                        chatHistoryEndRef={chatHistoryEndRef}
+                      />
+                    </ScrollArea>
+                  </div>
+                  <div className="mt-auto">
+                    <form className="relative" onSubmit={onSubmit}>
+                      <Editor
+                        editorRef={editorRef}
+                        id={createId()}
+                        onChange={onChatChange}
+                        rawMessage={userMessageRawContent}
+                        placeholder={`Define your ${data.type} ${generateMode} with Specly...`}
+                        typeaheadPosition="bottom"
+                        inputSchema={
+                          generateMode === "output"
+                            ? outputReferencesSchema
+                            : undefined
+                        }
+                        includeReferences={generateMode === "input"}
+                      />
+                      <Button
+                        type="submit"
+                        disabled={!userMessageContent || isGenerating}
+                        size="sm"
+                        className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
+                      >
+                        Send
+                        <span className="ml-1">
+                          <span className="px-1 py-0.5 bg-white/20 rounded-sm disabled:text-muted-foreground">
+                            {typeof window !== "undefined" &&
+                            window.navigator?.userAgent
+                              .toLowerCase()
+                              .includes("mac")
+                              ? "⌘"
+                              : "Ctrl"}
+                            ⏎
+                          </span>
+                        </span>
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </Form>

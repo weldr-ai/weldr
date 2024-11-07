@@ -26,11 +26,24 @@ export const primitivesRouter = {
 
       try {
         const result = await ctx.db.transaction(async (tx) => {
+          let conversation: { id: string } | undefined;
+          if (input.type === "function") {
+            conversation = (
+              await tx
+                .insert(conversations)
+                .values({
+                  createdBy: ctx.session.user.id,
+                })
+                .returning({ id: conversations.id })
+            )[0];
+          }
+
           const result = await tx
             .insert(primitives)
             .values({
               ...input,
               createdBy: ctx.session.user.id,
+              conversationId: conversation?.id,
             })
             .returning();
 
@@ -40,11 +53,6 @@ export const primitivesRouter = {
               message: "Failed to create primitive",
             });
           }
-
-          await tx.insert(conversations).values({
-            primitiveId: result[0].id,
-            createdBy: ctx.session.user.id,
-          });
 
           return result[0];
         });

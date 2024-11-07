@@ -31,6 +31,31 @@ export const flowsRouter = {
 
       try {
         const result = await ctx.db.transaction(async (tx) => {
+          const inputConversation = (
+            await tx
+              .insert(conversations)
+              .values({
+                createdBy: ctx.session.user.id,
+              })
+              .returning({ id: conversations.id })
+          )[0];
+
+          const outputConversation = (
+            await tx
+              .insert(conversations)
+              .values({
+                createdBy: ctx.session.user.id,
+              })
+              .returning({ id: conversations.id })
+          )[0];
+
+          if (!inputConversation || !outputConversation) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create flow",
+            });
+          }
+
           const values = {
             name: input.name,
             description: input.description,
@@ -38,6 +63,8 @@ export const flowsRouter = {
             metadata: sql`${{}}::jsonb`,
             workspaceId: input.workspaceId,
             createdBy: ctx.session.user.id,
+            inputConversationId: inputConversation.id,
+            outputConversationId: outputConversation.id,
           };
 
           if (input.type === "endpoint" || input.type === "task") {
@@ -58,11 +85,6 @@ export const flowsRouter = {
 
           await tx.insert(primitives).values({
             type: "stop",
-            flowId: result[0].id,
-            createdBy: ctx.session.user.id,
-          });
-
-          await tx.insert(conversations).values({
             flowId: result[0].id,
             createdBy: ctx.session.user.id,
           });
@@ -113,7 +135,12 @@ export const flowsRouter = {
           primitives: {
             where: eq(primitives.type, "stop"),
           },
-          conversation: {
+          inputConversation: {
+            with: {
+              messages: true,
+            },
+          },
+          outputConversation: {
             with: {
               messages: true,
             },
@@ -152,7 +179,12 @@ export const flowsRouter = {
             },
           },
           edges: true,
-          conversation: {
+          inputConversation: {
+            with: {
+              messages: true,
+            },
+          },
+          outputConversation: {
             with: {
               messages: true,
             },
