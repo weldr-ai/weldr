@@ -8,7 +8,7 @@ import type {
 } from "@specly/shared/types";
 
 export type NodeType = PrimitiveType;
-export type FlowEdge = ReactFlowEdge<Record<string, unknown>, "deletable-edge">;
+export type FlowEdge = ReactFlowEdge<Record<string, unknown>, "floating">;
 export type FlowNodeData = Primitive & {
   flow: { inputSchema: InputSchema | undefined };
   conversation: Conversation;

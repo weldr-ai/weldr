@@ -16,8 +16,6 @@ export const edges = pgTable("edges", {
   target: text("target")
     .references(() => primitives.id, { onDelete: "cascade" })
     .notNull(),
-  sourceHandle: text("source_handle"),
-  targetHandle: text("target_handle"),
   flowId: text("flow_id")
     .references(() => flows.id, { onDelete: "cascade" })
     .notNull(),

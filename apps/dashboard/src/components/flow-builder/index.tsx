@@ -32,13 +32,13 @@ import { Button } from "@specly/ui/button";
 import type { Flow, PrimitiveType } from "@specly/shared/types";
 import { toast } from "@specly/ui/use-toast";
 import { useTheme } from "next-themes";
-import DeletableEdge from "~/components/deletable-edge";
 import { FunctionNode } from "~/components/flow-builder/primitives/function";
 import { Stop } from "~/components/flow-builder/primitives/stop";
 import { FlowSheet } from "~/components/flow-sheet";
 import { PrimitivesMenu } from "~/components/primitives-menu";
 import { api } from "~/lib/trpc/react";
 import type { FlowEdge, FlowNode, FlowNodeData } from "~/types";
+import FloatingEdge from "./floating-edge";
 
 const nodeTypes = {
   function: FunctionNode,
@@ -46,7 +46,7 @@ const nodeTypes = {
 };
 
 const edgeTypes = {
-  "deletable-edge": DeletableEdge,
+  floating: FloatingEdge,
 };
 
 export function FlowBuilder({
@@ -98,17 +98,13 @@ export function FlowBuilder({
     async (connection: Connection) => {
       const newEdgeId = createId();
 
-      setEdges((eds) =>
-        addEdge({ ...connection, type: "deletable-edge" }, eds),
-      );
+      setEdges((eds) => addEdge({ ...connection, type: "floating" }, eds));
 
       if (connection.source && connection.target) {
         await createEdge.mutateAsync({
           id: newEdgeId,
           source: connection.source,
-          sourceHandle: connection.sourceHandle,
           target: connection.target,
-          targetHandle: connection.targetHandle,
           flowId: flow.id,
         });
       }
