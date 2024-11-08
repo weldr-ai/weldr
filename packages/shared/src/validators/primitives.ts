@@ -21,29 +21,28 @@ export const primitiveBaseSchema = z.object({
   flowId: z.string(),
 });
 
+export const functionResourceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  metadata: z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("database"),
+      tables: databaseTableSchema.array(),
+    }),
+  ]),
+  utilities: utilityFunctionReferenceSchema.omit({ docs: true }).array(),
+});
+
 export const functionPrimitiveMetadataSchema = z.object({
   inputSchema: inputSchema.optional(),
   outputSchema: outputSchema.optional(),
   description: z.string().optional(),
   rawDescription: rawContentSchema.optional(),
-  generatedCode: z.string().optional(),
+  code: z.string().optional(),
   logicalSteps: rawContentSchema.optional(),
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
-  resources: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      metadata: z.discriminatedUnion("type", [
-        z.object({
-          type: z.literal("database"),
-          tables: databaseTableSchema.array(),
-        }),
-      ]),
-      utilities: utilityFunctionReferenceSchema.omit({ docs: true }).array(),
-    })
-    .array()
-    .optional(),
+  resources: functionResourceSchema.array().optional(),
   dependencies: z.string().array().optional(),
 });
 

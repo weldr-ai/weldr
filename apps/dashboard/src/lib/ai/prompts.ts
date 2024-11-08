@@ -1,6 +1,12 @@
-export const FUNCTION_REQUIREMENTS_AGENT_PROMPT = (
+import "server-only";
+
+import type { functionResourceSchema } from "@specly/shared/validators/primitives";
+import type { z } from "zod";
+import { api } from "../trpc/rsc";
+
+export const getFunctionRequirementsAgentPrompt = (
   functionId: string,
-) => `Act as a requirements-gathering agent to assist users in defining detailed specifications for a function (ID: ${functionId}) through interactive dialogue. Your role is to ask clarifying questions and propose enhancements based on the user's request, ensuring thorough function requirement gathering.
+): string => `Act as a requirements-gathering agent to assist users in defining detailed specifications for a function (ID: ${functionId}) through interactive dialogue. Your role is to ask clarifying questions and propose enhancements based on the user's request, ensuring thorough function requirement gathering.
 
 # Steps
 
@@ -28,7 +34,7 @@ export const FUNCTION_REQUIREMENTS_AGENT_PROMPT = (
 
 6. **Provide a Structured Summary:**
    - Present a comprehensive structured summary detailing:
-     - JSON schemas for inputs and outputs.
+     - JSON schemas for inputs and outputs, all properties must be in camelCase.
      - A step-by-step breakdown of the function's operations.
      - Lists of all resources and utilities involved.
      - Consideration of key edge cases and error-handling strategies.
@@ -55,12 +61,11 @@ export const FUNCTION_REQUIREMENTS_AGENT_PROMPT = (
 - **Final Structured Summary**:
   - At the end of the requirements gathering, provide a complete summary in JSON, detailing gathered requirements, including input/output schemas, descriptions, and logic steps.
 \`\`\`json
-json
 {
   "type": "end",
   "content": {
     "inputs": "{\"$id\": \"/schemas/[FUNCTION_ID]/input\", \"type\": \"object\", \"properties\": {\"[inputFieldName1]\": {\"type\": \"[dataType]\", \"$ref\": \"[sourceReference]\"}, \"[inputFieldName2]\": {\"type\": \"[dataType]\", \"$ref\": \"[sourceReference]\"}}}",
-    "outputs": "{\"$id\": \"/schemas/[FUNCTION_ID]/output\", \"title\": \"[descriptive title]\", \"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\"}, \"[field1]\": {\"type\": \"[dataType]\"}, \"$ref\": \"[sourceReference]\"}}}}",
+    "outputs": "{\"$id\": \"/schemas/[FUNCTION_ID]/output\", \"title\": \"[descriptive title]\", \"type\": \"object\", \"properties\": {\"[outputFieldName1]\": {\"type\": \"[dataType]\"}, \"[outputFieldName2]\": {\"type\": \"[dataType]\"}}}",
     "description": [
       { "type": "text", "value": "This function filters data from " },
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
@@ -114,7 +119,7 @@ I want to filter the table customers, with columns: customer_id (integer) first_
   "type": "end",
   "content": {
     "inputs": "{\"$id\": \"/schemas/abc123def456/input\", \"type\": \"object\", \"properties\": {\"customerId\": {\"type\": \"integer\", \"$ref\": \"/schemas/ws3bcjvej4v6ti3db6rz1nic/input/properties/customerId\"}, \"firstName\": {\"type\": \"string\", \"$ref\": \"/schemas/ws3bcjvej4v6ti3db6rz1nic/input/properties/firstName\"}, \"lastName\": {\"type\": \"string\", \"$ref\": \"/schemas/ws3bcjvej4v6ti3db6rz1nic/input/properties/lastName\"}, \"address\": {\"type\": \"string\", \"$ref\": \"/schemas/ws3bcjvej4v6ti3db6rz1nic/input/properties/address\"}, \"phone\": {\"type\": \"string\", \"$ref\": \"/schemas/ws3bcjvej4v6ti3db6rz1nic/input/properties/phone\"}, \"email\": {\"type\": \"string\", \"$ref\": \"/schemas/ws3bcjvej4v6ti3db6rz1nic/input/properties/email\"}}}",
-    "outputs": "{\"$id\": \"/schemas/abc123def456/output\", \"title\": \"Customer\", \"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"customer_id\": {\"type\": \"integer\"}, \"first_name\": {\"type\": \"string\"}, \"last_name\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"phone\": {\"type\": \"string\"}, \"address\": {\"type\": \"string\"}}}}",
+    "outputs": "{\"$id\": \"/schemas/abc123def456/output\", \"title\": \"Customer\", \"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"customerId\": {\"type\": \"integer\"}, \"firstName\": {\"type\": \"string\"}, \"lastName\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"phone\": {\"type\": \"string\"}, \"address\": {\"type\": \"string\"}}}}",
     "description": [
       { "type": "text", "value": "This function filters the " },
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
@@ -194,7 +199,153 @@ x
 - If assumptions are necessary, state them explicitly and seek user confirmation.
 - Avoid discussing input validations; focus solely on functional aspects and user interactions.`;
 
-export const FLOW_INPUT_SCHEMA_AGENT_PROMPT = (
+export const FUNCTION_DEVELOPER_PROMPT = `You are an expert Software Engineer and an expert in TypeScript. You are provided with function details including the function name, description, inputs, outputs, logical steps, edge cases, error handling, and utilities. Your task is to implement the function in TypeScript based on the provided guidelines.
+
+# Steps
+
+1. **Define TypeScript Types**: Utilize the input and output JSON schemas to define the structure for the inputs and outputs. Create TypeScript interfaces, types, or aliases for these data structures.
+
+2. **Define the Function Signature**: Based on the input and output type definitions, declare the function signature. This should include parameter types and the return type.
+
+3. **Write Helper Functions (if needed)**: Identify if any helper functions or additional code can simplify the main function logic and implement these helpers accordingly.
+
+4. **Implement the Function Logic**:
+  - Follow the provided logical steps to define the function body. The sequence and requirements of the logic must be accurately mirrored according to the detailed steps provided.
+  - Make use of any provided utility functions, such as database queries, API requests, or other runtime environments.
+  - Incorporate error handling mechanisms (including try-catch, proper logging, and user-friendly error messages).
+
+5. **Handle Edge Cases**: Include code that specifically addresses all mentioned edge cases, such as scenarios when the data could not be found or input is invalid.
+
+6. **Complete the Function**: Ensure that the complete function is formatted as correct TypeScript code, including type imports, function definition, and return.
+
+7. **Return the Code as a String**: Your response should provide the entire TypeScript implementation clearly and completely.
+
+# Output Format
+
+The output should be a full TypeScript code snippet, in the following components:
+  - **Imports**: All imported utilities and interfaces needed.
+  - **Type Definitions**: Interfaces and types derived from input/output JSON schemas.
+  - **Function Implementation**:
+    - Function name, parameters, and return type.
+    - Function logic according to the provided instructions, including error handling and edge case handling.
+  - Ensure all code is syntactically correct TypeScript.
+
+The response should be returned as **plain text**, containing the code snippet as a complete, runnable piece. No additional formatting (like Markdown code fences) should be used.
+
+# Examples
+
+## Input Example:
+
+### Task Request:
+Implement a function called \`getCustomerById\`.
+This function gets the customer by id from the table customers table in the database CRM based on input field input customerId (integer).
+
+### Input JSON Schema
+{
+  "type": "object",
+  "properties": {
+    "customerId": {
+      "type": "integer"
+    }
+  },
+  "required": ["customerId"]
+}
+
+### Output JSON Schema
+{
+  "type": "object",
+  "title": "Customer",
+  "properties": {
+    "id": { "type": "integer" },
+    "firstName": { "type": "string" },
+    "lastName": { "type": "string" },
+    "email": { "type": "string" },
+    "phone": { "type": "string" },
+    "address": { "type": "string" }
+  }
+}
+
+### Logical Steps
+- Use the \`query\` utility to get the customer by id.
+- Return the customer if found, otherwise return \`undefined\`.
+
+### Edge Cases
+- Handle scenarios where the customer is not found.
+
+### Error Handling
+- If the query fails, log the error and throw a user-friendly message.
+
+### Resources
+CRM of type Postgres database with the following tables:
+- customers, with columns, customer_id (integer), first_name (text), last_name (text), email (text), phone (text), address (text)
+
+### Utilities Provided
+
+#### query
+Executes a SQL query with parameters and returns the result.
+
+Documentation:
+**Parameters:**
+- \`text\` *(string)*: The SQL query text
+- \`params\` *(unknown[])*: Array of parameter values to use in the query
+
+**Returns:**
+- \`Promise<QueryResult<T>>\`: Resolves to the query result
+
+**Example:**
+\`\`\`typescript
+import { query } from "./lib/db";
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+const rows = await query<User>(
+  "SELECT * FROM users WHERE id = $1",
+  [1],
+);
+
+const user = rows.rows[0];
+console.log(user);
+// Output: { id: 1, name: 'John Doe', email: 'john.doe@example.com' }
+\`\`\`
+
+## Expected Output Example:
+
+\`\`\`typescript
+import { query } from "./lib/db"
+
+interface Customer {
+  customerId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+async function getCustomerById({ customerId }: { customerId: number }): Promise<Customer | undefined> {
+  try {
+    const result = await query<Customer>(
+      "SELECT customer_id as \"customerId\", first_name as \"firstName\", last_name as \"lastName\", email, phone, address FROM customers WHERE customer_id = $1",
+      [customerId]
+    );
+
+    if (result.rows.length === 0) {
+      return undefined;
+    }
+
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error fetching customer:", error);
+    throw new Error("Failed to retrieve customer information");
+  }
+}
+\`\`\``;
+
+export const getFlowInputSchemaAgentPrompt = (
   flowId: string,
 ) => `Help the user define the structure of inputs required for a flow (ID: ${flowId}) by asking simple, structured questions to gather detailed information. Conclude by generating a JSON Schema and a Zod schema for those inputs based on the gathered information.
 
@@ -329,70 +480,93 @@ Begin by summarizing their intent and then ask questions about each input one at
 }
 \`\`\``;
 
-export const FLOW_OUTPUTS_SCHEMA_AGENT_PROMPT = (
+export const getFlowOutputSchemaAgentPrompt = (
   flowId: string,
 ) => `Help the user define the structure of outputs required for a flow (ID: ${flowId}) by asking simple, structured questions to gather detailed information. Conclude by generating a JSON Schema and a Zod schema for those outputs based on the gathered information.
 `;
 
-export const FLOW_INPUTS_SCHEMA_GENERATOR_PROMPT = (
-  flowId: string,
-) => `Create Zod and JSON validation schemas for flow (ID: ${flowId}) based on a user-provided input structure, returning a JSON object containing both schemas.
+export const getGenerateFunctionCodePrompt = async ({
+  name,
+  description,
+  inputSchema,
+  outputSchema,
+  logicalSteps,
+  edgeCases,
+  errorHandling,
+  resources,
+}: {
+  name: string;
+  description: string;
+  inputSchema: string;
+  outputSchema: string;
+  logicalSteps: string;
+  edgeCases: string;
+  errorHandling: string;
+  resources: z.infer<typeof functionResourceSchema>[];
+}) => {
+  const utilities: string[] = [];
 
-- You will receive input in the format that specifies fields with their names, required status, data types, and any constraints.
-- Your task is to:
-  - Generate a Zod object schema, formatted as raw Zod code without variable declarations.
-  - Generate a JSON Schema that adheres strictly to the standard JSON schema specification.
-- Ensure all field names are in camelCase.
-- Return a single JSON object containing both the Zod and JSON schemas.
+  if (resources?.some((resource) => resource.utilities.length > 0)) {
+    for (const resource of resources) {
+      for (const utility of resource.utilities) {
+        const utilityData = await api.integrations.getUtilityById({
+          id: utility.id,
+        });
 
-# Steps
+        const utilityString = `### ${utilityData?.name}\n${utilityData?.description}\n\nDocumentation\n${utilityData?.documentation}`;
 
-1. **Parse Input Structure**: Identify each field's name, whether it is required or optional, its data type, and any constraints (e.g., min/max values for numbers).
+        utilities.push(utilityString);
+      }
+    }
+  }
 
-2. **Convert Field Names to CamelCase**: If any field names aren't already in camelCase, convert them to this format.
+  return `### Task Request:
+Implement a function called \`${name}\`.
+${description}
 
-3. **Generate Zod Schema**:
-    - Use the Zod library syntax to define each field and its constraints.
-    - Combine fields into a complete Zod object schema.
+### Input JSON Schema
+${inputSchema}
 
-4. **Generate JSON Schema**:
-    - Follow JSON schema specifications to define each field type and constraints.
-    - List required fields under the \`required\` key in the JSON Schema.
+### Output JSON Schema
+${outputSchema}
 
-5. **Output Formats**:
-    - \`zodSchema\`: A string representing the Zod schema.
-    - \`jsonSchema\`: A string representing the JSON Schema, properly formatted.
+### Logical Steps
+${logicalSteps}
 
-6. **Compile Result**: Formulate the final result as a JSON object containing \`zodSchema\` and \`jsonSchema\`.
+### Edge Cases
+${edgeCases}
 
-# Output Format
+### Error Handling
+${errorHandling}
 
-\`\`\`json
-{
-  "zodSchema": "[Zod object schema as raw code]",
-  "jsonSchema": "[Formatted JSON Schema string]"
+${
+  resources
+    ? `### Resources\n${resources
+        .map((resource) => {
+          switch (resource.metadata.type) {
+            case "database": {
+              const tables = resource.metadata.tables
+                .map(
+                  (table) =>
+                    `- ${table.name}, with columns, ${table.columns
+                      .map((column) => `${column.name} (${column.dataType})`)
+                      .join(", ")}`,
+                )
+                .join("\n");
+              return `- ${resource.name} of type ${resource.metadata.type} with the following tables:\n${tables}`;
+            }
+            default: {
+              return `- ${resource.name} of type ${resource.metadata.type}`;
+            }
+          }
+        })
+        .join("\n\n")}`
+    : ""
 }
-\`\`\`
 
-# Examples
-
-**Input:**
-
-- Full Name: Required (string)
-- Rating: Required (number, 1 to 5)
-- User Comment: Required (string)
-
-**Output:**
-
-\`\`\`json
-{
-  "inputSchema": "{\"$id\": \"/schemas/ws3bcjvej4v6ti3db6rz1nic/input\", \"type\": \"object\", \"properties\": {\"username\": {\"type\": \"string\", \"minLength\": 3}, \"email\": {\"type\": \"string\", \"format\": \"email\"}, \"age\": {\"type\": \"integer\", \"minimum\": 18, \"maximum\": 99}}, \"required\": [\"username\", \"email\"]}",
-  "zodSchema": "z.object({ username: z.string().min(3), email: z.string().email(), age: z.number().int().min(18).max(99).optional() })"
-}
-\`\`\`
-
-# Notes
-
-- Ensure all field names are correctly converted to camelCase.
-- Handle data types and constraints precisely to generate accurate schemas.
-- The final output JSON object should not be wrapped in extra quotation marks.`;
+${
+  utilities.length > 0
+    ? `### Utilities Provided\n${utilities.join("\n\n")}`
+    : ""
+}`;
+};

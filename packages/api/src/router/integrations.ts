@@ -1,5 +1,5 @@
 import { eq } from "@specly/db";
-import { integrations } from "@specly/db/schema";
+import { integrationUtils, integrations } from "@specly/db/schema";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
@@ -22,6 +22,22 @@ export const integrationsRouter = {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Integration not found",
+        });
+      }
+
+      return result;
+    }),
+  getUtilityById: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.integrationUtils.findFirst({
+        where: eq(integrationUtils.id, input.id),
+      });
+
+      if (!result) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Utility not found",
         });
       }
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { createOpenAI } from "@ai-sdk/openai";
+import { auth } from "@specly/auth";
 import type {
   AssistantMessageRawContent,
   FlowInputSchemaMessage,
@@ -14,24 +15,23 @@ import {
 } from "@specly/shared/validators/common";
 import { type CoreMessage, streamObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
+import { redirect } from "next/navigation";
 import {
-  FLOW_INPUT_SCHEMA_AGENT_PROMPT,
-  FLOW_OUTPUTS_SCHEMA_AGENT_PROMPT,
-  FUNCTION_REQUIREMENTS_AGENT_PROMPT,
+  getFlowInputSchemaAgentPrompt,
+  getFlowOutputSchemaAgentPrompt,
+  getFunctionRequirementsAgentPrompt,
+  getGenerateFunctionCodePrompt,
 } from "~/lib/ai/prompts";
 import { api } from "../trpc/rsc";
 import { rawMessageContentToText } from "../utils";
-
-// const anthropic = createAnthropic({
-//   apiKey: process.env.ANTHROPIC_API_KEY,
-// });
+import { generateFunctionCode } from "./helpers";
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   compatibility: "strict",
 });
 
-export async function gatherFunctionRequirements({
+export async function generateFunction({
   functionId,
   conversationId,
   messages,
@@ -40,19 +40,29 @@ export async function gatherFunctionRequirements({
   conversationId: string;
   messages: CoreMessage[];
 }) {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/auth/sign-in");
+  }
+
   console.log(
     `[gatherFunctionRequirements] Starting for function ${functionId}`,
   );
+  const functionData = await api.primitives.getById({
+    id: functionId,
+  });
+
   const stream = createStreamableValue<FunctionRequirementsMessage>();
 
   (async () => {
     console.log("[gatherFunctionRequirements] Streaming response from OpenAI");
     const { partialObjectStream } = await streamObject({
       model: openai("gpt-4o"),
-      system: FUNCTION_REQUIREMENTS_AGENT_PROMPT(functionId),
+      system: getFunctionRequirementsAgentPrompt(functionId),
       messages,
       schema: functionRequirementsMessageSchema,
-      onFinish: ({ usage, object }) => {
+      onFinish: async ({ usage, object }) => {
         console.log(
           `[gatherFunctionRequirements] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
         );
@@ -91,6 +101,28 @@ export async function gatherFunctionRequirements({
           console.log(
             `[gatherFunctionRequirements] Updating function ${functionId} with gathered requirements`,
           );
+
+          const generateFunctionCodePrompt =
+            await getGenerateFunctionCodePrompt({
+              name: functionData?.name ?? "",
+              description: rawMessageContentToText(
+                object.message.content.description,
+              ),
+              inputSchema: object.message.content.inputSchema,
+              outputSchema: object.message.content.outputSchema,
+              resources: object.message.content.resources,
+              logicalSteps: rawMessageContentToText(
+                object.message.content.logicalSteps,
+              ),
+              edgeCases: object.message.content.edgeCases,
+              errorHandling: object.message.content.errorHandling,
+            });
+
+          const code = await generateFunctionCode({
+            functionId,
+            prompt: generateFunctionCodePrompt,
+          });
+
           api.primitives.update({
             where: { id: functionId },
             payload: {
@@ -107,6 +139,7 @@ export async function gatherFunctionRequirements({
                 errorHandling: object.message.content.errorHandling,
                 logicalSteps: object.message.content.logicalSteps,
                 dependencies: object.message.content.dependencies,
+                code,
               },
             },
           });
@@ -136,6 +169,12 @@ export async function generateFlowInputsSchemas({
   conversationId: string;
   messages: CoreMessage[];
 }) {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/auth/sign-in");
+  }
+
   console.log(`[generateFlowInputsSchemas] Starting for flow ${flowId}`);
   const stream = createStreamableValue<FlowInputSchemaMessage>();
 
@@ -145,7 +184,7 @@ export async function generateFlowInputsSchemas({
     );
     const { partialObjectStream } = await streamObject({
       model: openai("gpt-4o"),
-      system: FLOW_INPUT_SCHEMA_AGENT_PROMPT(flowId),
+      system: getFlowInputSchemaAgentPrompt(flowId),
       messages,
       schema: flowInputSchemaMessageSchema,
       onFinish: ({ usage, object }) => {
@@ -223,6 +262,12 @@ export async function generateFlowOutputsSchemas({
   conversationId: string;
   messages: CoreMessage[];
 }) {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/auth/sign-in");
+  }
+
   console.log(`[generateFlowOutputsSchemas] Starting for flow ${flowId}`);
   const stream = createStreamableValue<FlowOutputSchemaMessage>();
 
@@ -232,7 +277,7 @@ export async function generateFlowOutputsSchemas({
     );
     const { partialObjectStream } = await streamObject({
       model: openai("gpt-4o"),
-      system: FLOW_OUTPUTS_SCHEMA_AGENT_PROMPT(flowId),
+      system: getFlowOutputSchemaAgentPrompt(flowId),
       messages,
       schema: flowOutputSchemaMessageSchema,
       onFinish: ({ usage, object }) => {
