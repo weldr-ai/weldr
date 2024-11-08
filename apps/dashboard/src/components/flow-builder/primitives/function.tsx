@@ -70,7 +70,7 @@ import { readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
-import { gatherFunctionRequirements } from "~/lib/ai/generator";
+import { generateFunction } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/react";
 import {
   flattenInputSchema,
@@ -323,7 +323,7 @@ export const FunctionNode = memo(
 
       await addMessage.mutateAsync(newMessageUser);
 
-      const result = await gatherFunctionRequirements({
+      const result = await generateFunction({
         functionId: data.id,
         conversationId: data.conversation.id,
         messages: newMessages.map((message) => ({
