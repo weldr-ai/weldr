@@ -5,21 +5,21 @@ import Link from "next/link";
 import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 
-import { Button, buttonVariants } from "@specly/ui/button";
+import { Button, buttonVariants } from "@integramind/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@specly/ui/card";
-import { Input } from "@specly/ui/input";
-import { Label } from "@specly/ui/label";
-import { cn } from "@specly/ui/utils";
+} from "@integramind/ui/card";
+import { Input } from "@integramind/ui/input";
+import { Label } from "@integramind/ui/label";
+import { cn } from "@integramind/ui/utils";
 
-import { GoogleIcon } from "@specly/ui/icons/google-icon";
-import { MicrosoftIcon } from "@specly/ui/icons/microsoft-icon";
-import { SpeclyIcon } from "@specly/ui/icons/specly-icon";
+import { GoogleIcon } from "@integramind/ui/icons/google-icon";
+import { LogoIcon } from "@integramind/ui/icons/logo-icon";
+import { MicrosoftIcon } from "@integramind/ui/icons/microsoft-icon";
 import { useTheme } from "next-themes";
 import { signInWithMagicLink } from "~/lib/auth/actions";
 
@@ -33,11 +33,11 @@ export default function SignIn() {
       <Card className="mx-auto w-full max-w-md border-hidden bg-transparent p-8 shadow-none md:border-solid md:bg-card md:shadow-sm">
         <CardHeader className="flex flex-col items-start justify-start">
           <CardTitle className="flex flex-col gap-4">
-            <SpeclyIcon
+            <LogoIcon
               className="size-10"
               theme={resolvedTheme === "dark" ? "dark" : "light"}
             />
-            <span className="text-xl">Sign up to specly</span>
+            <span className="text-xl">Sign up to integramind</span>
           </CardTitle>
           <CardDescription className="text-center">
             Welcome! Please fill in the details to get started.
@@ -147,19 +147,19 @@ export default function SignIn() {
             </div>
             <div className="flex items-center gap-3">
               <Link
-                href="https://specly.ai/contact-us"
+                href="https://integramind.ai/contact-us"
                 className="hover:underline"
               >
                 Help
               </Link>
               <Link
-                href="https://specly.ai/privacy-policy"
+                href="https://integramind.ai/privacy-policy"
                 className="hover:underline"
               >
                 Privacy
               </Link>
               <Link
-                href="https://specly.ai/terms-and-conditions"
+                href="https://integramind.ai/terms-and-conditions"
                 className="hover:underline"
               >
                 Terms

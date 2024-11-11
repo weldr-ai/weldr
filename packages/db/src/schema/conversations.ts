@@ -1,8 +1,8 @@
-import { createId } from "@paralleldrive/cuid2";
 import type {
   AssistantMessageRawContent,
   UserMessageRawContent,
-} from "@specly/shared/types";
+} from "@integramind/shared/types";
+import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./auth";

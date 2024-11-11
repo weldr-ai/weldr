@@ -3,7 +3,7 @@
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "@specly/ui/button";
+import { Button } from "@integramind/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@specly/ui/dialog";
-import { ScrollArea } from "@specly/ui/scroll-area";
+} from "@integramind/ui/dialog";
+import { ScrollArea } from "@integramind/ui/scroll-area";
 
-import type { Integration } from "@specly/shared/types";
-import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
+import type { Integration } from "@integramind/shared/types";
+import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
 import { AddResourceForm } from "~/components/add-resource-form";
 
 export function AddResourceDialog({

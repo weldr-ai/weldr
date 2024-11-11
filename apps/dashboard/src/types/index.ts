@@ -5,7 +5,7 @@ import type {
   InputSchema,
   Primitive,
   PrimitiveType,
-} from "@specly/shared/types";
+} from "@integramind/shared/types";
 
 export type NodeType = PrimitiveType;
 export type FlowEdge = ReactFlowEdge<Record<string, unknown>, "floating">;

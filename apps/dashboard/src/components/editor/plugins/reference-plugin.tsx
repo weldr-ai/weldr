@@ -9,12 +9,12 @@ import {
 import type { TextNode } from "lexical";
 import { useCallback, useMemo, useState } from "react";
 
-import { ScrollArea } from "@specly/ui/scroll-area";
-import { cn } from "@specly/ui/utils";
+import { ScrollArea } from "@integramind/ui/scroll-area";
+import { cn } from "@integramind/ui/utils";
 
-import type { DatabaseStructure } from "@specly/shared/integrations/postgres/index";
-import type { FlatInputSchema } from "@specly/shared/types";
-import type { userMessageRawContentReferenceElementSchema } from "@specly/shared/validators/conversations";
+import type { DatabaseStructure } from "@integramind/shared/integrations/postgres/index";
+import type { FlatInputSchema } from "@integramind/shared/types";
+import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";

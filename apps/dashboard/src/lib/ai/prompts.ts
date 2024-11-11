@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { functionResourceSchema } from "@specly/shared/validators/primitives";
+import type { functionResourceSchema } from "@integramind/shared/validators/primitives";
 import type { z } from "zod";
 import { api } from "../trpc/rsc";
 

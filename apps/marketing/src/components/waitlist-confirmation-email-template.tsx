@@ -8,10 +8,10 @@ export async function WaitlistConfirmationEmailTemplate() {
       </p>
       <p>
         If you have any questions, please feel free to reach out to us at{" "}
-        <a href="mailto:hey@specly.ai">hey@specly.ai</a>.
+        <a href="mailto:hey@integramind.ai">hey@integramind.ai</a>.
       </p>
       <p>
-        Best regards, <br /> Specly Team
+        Best regards, <br /> IntegraMind Team
       </p>
     </div>
   );

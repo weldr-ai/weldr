@@ -2,9 +2,9 @@ import { createHydrationHelpers } from "@trpc/react-query/rsc";
 import { headers } from "next/headers";
 import { cache } from "react";
 
-import type { AppRouter } from "@specly/api";
-import { createCaller, createTRPCContext } from "@specly/api";
-import { auth } from "@specly/auth";
+import type { AppRouter } from "@integramind/api";
+import { createCaller, createTRPCContext } from "@integramind/api";
+import { auth } from "@integramind/auth";
 
 import { createQueryClient } from "~/lib/trpc/react-query";
 

@@ -1,14 +1,14 @@
 "use client";
 
-import { Button } from "@specly/ui/button";
+import { Button } from "@integramind/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@specly/ui/dropdown-menu";
-import { SpeclyIcon } from "@specly/ui/icons/specly-icon";
+} from "@integramind/ui/dropdown-menu";
+import { LogoIcon } from "@integramind/ui/icons/logo-icon";
 import { BoxesIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
@@ -30,11 +30,11 @@ export function Navbar() {
         <div className="flex items-center justify-center size-14 border-r">
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
-              <SpeclyIcon
-                className="size-5"
+              <LogoIcon
+                className="size-10"
                 theme={resolvedTheme === "light" ? "light" : "dark"}
               />
-              <span className="sr-only">specly</span>
+              <span className="sr-only">integramind</span>
             </Button>
           </DropdownMenuTrigger>
         </div>

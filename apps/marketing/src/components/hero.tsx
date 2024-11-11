@@ -31,7 +31,7 @@ export function Hero() {
           <div className="rounded-[12px] border bg-foreground p-0.5">
             <Image
               className="rounded-xl"
-              alt="Specly Dashboard"
+              alt="IntegraMind Dashboard"
               height={1080}
               src="/dashboard.png"
               width={1920}

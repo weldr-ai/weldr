@@ -1,7 +1,7 @@
-import { renderDataTypeIcon } from "@specly/shared/utils";
-import type { rawContentReferenceElementSchema } from "@specly/shared/validators/common";
-import { PostgresIcon } from "@specly/ui/icons/postgres-icon";
-import { cn } from "@specly/ui/utils";
+import { renderDataTypeIcon } from "@integramind/shared/utils";
+import type { rawContentReferenceElementSchema } from "@integramind/shared/validators/common";
+import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
+import { cn } from "@integramind/ui/utils";
 import { ColumnsIcon, FunctionSquareIcon, TableIcon } from "lucide-react";
 import type { z } from "zod";
 

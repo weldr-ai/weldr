@@ -1,4 +1,4 @@
-import { cn } from "@specly/ui/utils";
+import { cn } from "@integramind/ui/utils";
 
 export function LambdaIcon({ className }: { className?: string }) {
   return (

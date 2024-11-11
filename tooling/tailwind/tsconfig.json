@@ -1,5 +1,5 @@
 {
-  "extends": "@specly/tsconfig/base.json",
+  "extends": "@integramind/tsconfig/base.json",
   "compilerOptions": {
     "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"
   },

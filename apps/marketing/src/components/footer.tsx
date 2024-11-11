@@ -1,18 +1,18 @@
 import Link from "next/link";
 
-import { buttonVariants } from "@specly/ui/button";
-import { cn } from "@specly/ui/utils";
+import { buttonVariants } from "@integramind/ui/button";
+import { cn } from "@integramind/ui/utils";
 
-import { LinkedInIcon } from "@specly/ui/icons/linkedin-icon";
-import { XIcon } from "@specly/ui/icons/x-icon";
+import { LinkedInIcon } from "@integramind/ui/icons/linkedin-icon";
+import { XIcon } from "@integramind/ui/icons/x-icon";
 
 export function Footer() {
   return (
     <div className="flex w-full items-center justify-between border-t p-4">
-      <span>© {new Date().getFullYear()} Specly</span>
+      <span>© {new Date().getFullYear()} IntegraMind</span>
       <div>
         <Link
-          href="https://twitter.com/specly"
+          href="https://twitter.com/integramind"
           target="_blank"
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon" }),
@@ -22,7 +22,7 @@ export function Footer() {
           <XIcon />
         </Link>
         <Link
-          href="https://linkedin.com/company/specly"
+          href="https://linkedin.com/company/integramind"
           target="_blank"
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon" }),

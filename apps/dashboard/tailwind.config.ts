@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-import baseConfig from "@specly/tailwind-config";
+import baseConfig from "@integramind/tailwind-config";
 
 const config: Pick<Config, "content" | "presets" | "theme" | "important"> = {
   important: true,

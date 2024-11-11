@@ -1,6 +1,6 @@
+import type { RawContent } from "@integramind/shared/types";
+import { cn } from "@integramind/ui/utils";
 import { createId } from "@paralleldrive/cuid2";
-import type { RawContent } from "@specly/shared/types";
-import { cn } from "@specly/ui/utils";
 import React from "react";
 import { ReferenceBadge } from "./editor/reference-badge";
 

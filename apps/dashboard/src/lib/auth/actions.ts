@@ -3,9 +3,9 @@
 import { redirect } from "next/navigation";
 import type { z } from "zod";
 
-import { signOut as nextAuthSignOut, signIn } from "@specly/auth";
-import { signInWithMagicLinkSchema } from "@specly/auth/validators";
-import type { BaseFormState } from "@specly/shared/types";
+import { signOut as nextAuthSignOut, signIn } from "@integramind/auth";
+import { signInWithMagicLinkSchema } from "@integramind/auth/validators";
+import type { BaseFormState } from "@integramind/shared/types";
 
 type FormFields = z.infer<typeof signInWithMagicLinkSchema>;
 

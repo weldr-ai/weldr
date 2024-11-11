@@ -1,4 +1,4 @@
-import { and, eq } from "@specly/db";
+import { and, eq } from "@integramind/db";
 import {
   environmentVariables,
   integrations,
@@ -6,9 +6,9 @@ import {
   resources,
   secrets,
   workspaces,
-} from "@specly/db/schema";
-import { testConnection } from "@specly/shared/integrations/postgres/helpers";
-import { insertResourceSchema } from "@specly/shared/validators/resources";
+} from "@integramind/db/schema";
+import { testConnection } from "@integramind/shared/integrations/postgres/helpers";
+import { insertResourceSchema } from "@integramind/shared/validators/resources";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";

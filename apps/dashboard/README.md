@@ -1,1 +1,1 @@
-# `@specly/dashboard`
+# `@integramind/dashboard`

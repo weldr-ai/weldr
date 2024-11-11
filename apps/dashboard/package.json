@@ -1,5 +1,5 @@
 {
-  "name": "@specly/dashboard",
+  "name": "@integramind/dashboard",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -16,11 +16,11 @@
     "@hookform/resolvers": "^3.3.4",
     "@lexical/react": "^0.16.0",
     "@paralleldrive/cuid2": "^2.2.2",
-    "@specly/api": "workspace:*",
-    "@specly/auth": "workspace:*",
-    "@specly/db": "workspace:*",
-    "@specly/shared": "workspace:*",
-    "@specly/ui": "workspace:*",
+    "@integramind/api": "workspace:*",
+    "@integramind/auth": "workspace:*",
+    "@integramind/db": "workspace:*",
+    "@integramind/shared": "workspace:*",
+    "@integramind/ui": "workspace:*",
     "@tanstack/react-query": "^5.40.0",
     "@tanstack/react-query-devtools": "^5.40.0",
     "@tanstack/react-query-next-experimental": "^5.40.0",
@@ -47,8 +47,8 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "@specly/tailwind-config": "workspace:*",
-    "@specly/tsconfig": "workspace:*",
+    "@integramind/tailwind-config": "workspace:*",
+    "@integramind/tsconfig": "workspace:*",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",

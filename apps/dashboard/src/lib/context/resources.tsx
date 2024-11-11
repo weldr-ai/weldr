@@ -1,6 +1,6 @@
 "use client";
 
-import type { Resource } from "@specly/shared/types";
+import type { Resource } from "@integramind/shared/types";
 import { createContext, useContext } from "react";
 
 export const ResourcesContext = createContext<

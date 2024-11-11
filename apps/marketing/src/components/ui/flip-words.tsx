@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 
-import { cn } from "@specly/ui/utils";
+import { cn } from "@integramind/ui/utils";
 
 export const FlipWords = ({
   words,

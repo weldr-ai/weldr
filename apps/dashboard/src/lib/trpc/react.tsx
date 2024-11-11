@@ -7,7 +7,7 @@ import { createTRPCReact } from "@trpc/react-query";
 import { useState } from "react";
 import SuperJSON from "superjson";
 
-import type { AppRouter } from "@specly/api";
+import type { AppRouter } from "@integramind/api";
 
 import { createQueryClient } from "~/lib/trpc/react-query";
 

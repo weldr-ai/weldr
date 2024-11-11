@@ -6,14 +6,14 @@ import type {
 } from "next-auth";
 import Resend from "next-auth/providers/resend";
 
-import { db } from "@specly/db";
+import { db } from "@integramind/db";
 import {
   accounts,
   authenticators,
   sessions,
   users,
   verificationTokens,
-} from "@specly/db/schema";
+} from "@integramind/db/schema";
 
 declare module "next-auth" {
   interface Session {
@@ -43,7 +43,7 @@ export const authConfig: NextAuthConfig = {
   secret: process.env.AUTH_SECRET,
   providers: [
     Resend({
-      from: "Specly <noreply@specly.ai>",
+      from: "IntegraMind <noreply@integramind.ai>",
       apiKey: process.env.RESEND_API_KEY,
     }),
   ],

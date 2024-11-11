@@ -1,6 +1,6 @@
-import type { DbConfig } from "@specly/shared/integrations/postgres";
-import { getDatabaseStructure } from "@specly/shared/integrations/postgres/helpers";
-import type { Resource } from "@specly/shared/types";
+import type { DbConfig } from "@integramind/shared/integrations/postgres";
+import { getDatabaseStructure } from "@integramind/shared/integrations/postgres/helpers";
+import type { Resource } from "@integramind/shared/types";
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 

@@ -1,4 +1,4 @@
-import { cn } from "@specly/ui/utils";
+import { cn } from "@integramind/ui/utils";
 import { Handle, Position, useConnection } from "@xyflow/react";
 import { CornerDownLeftIcon } from "lucide-react";
 import { memo } from "react";

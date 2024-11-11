@@ -1,6 +1,6 @@
-import { and, eq } from "@specly/db";
-import { edges } from "@specly/db/schema";
-import { insertEdgeSchema } from "@specly/shared/validators/edges";
+import { and, eq } from "@integramind/db";
+import { edges } from "@integramind/db/schema";
+import { insertEdgeSchema } from "@integramind/shared/validators/edges";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";

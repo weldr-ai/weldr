@@ -1,5 +1,5 @@
-import { eq } from "@specly/db";
-import { integrationUtils, integrations } from "@specly/db/schema";
+import { eq } from "@integramind/db";
+import { integrationUtils, integrations } from "@integramind/db/schema";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";

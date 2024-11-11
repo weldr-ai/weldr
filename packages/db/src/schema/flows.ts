@@ -6,7 +6,7 @@ import type {
   FlowMetadata,
   InputSchema,
   OutputSchema,
-} from "@specly/shared/types";
+} from "@integramind/shared/types";
 import { users } from "./auth";
 import { conversations } from "./conversations";
 import { edges } from "./edges";

@@ -11,12 +11,12 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, LexicalEditor } from "lexical";
 import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
-import { cn } from "@specly/ui/utils";
+import { cn } from "@integramind/ui/utils";
 
 import type {
   FlatInputSchema,
   UserMessageRawContent,
-} from "@specly/shared/types";
+} from "@integramind/shared/types";
 import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
 import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
 

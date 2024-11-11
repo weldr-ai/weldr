@@ -12,10 +12,10 @@ const config = {
 
   /** Enables hot reloading for local packages without a build step */
   transpilePackages: [
-    "@specly/api",
-    "@specly/auth",
-    "@specly/db",
-    "@specly/ui",
+    "@integramind/api",
+    "@integramind/auth",
+    "@integramind/db",
+    "@integramind/ui",
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */

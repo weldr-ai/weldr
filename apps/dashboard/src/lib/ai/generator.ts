@@ -1,18 +1,18 @@
 "use server";
 
 import { createOpenAI } from "@ai-sdk/openai";
-import { auth } from "@specly/auth";
+import { auth } from "@integramind/auth";
 import type {
   AssistantMessageRawContent,
   FlowInputSchemaMessage,
   FlowOutputSchemaMessage,
   FunctionRequirementsMessage,
-} from "@specly/shared/types";
+} from "@integramind/shared/types";
 import {
   flowInputSchemaMessageSchema,
   flowOutputSchemaMessageSchema,
   functionRequirementsMessageSchema,
-} from "@specly/shared/validators/common";
+} from "@integramind/shared/validators/common";
 import { type CoreMessage, streamObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import { redirect } from "next/navigation";

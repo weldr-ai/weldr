@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
-import { Button } from "@specly/ui/button";
+import { Button } from "@integramind/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,18 +25,22 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@specly/ui/dropdown-menu";
-import { cn } from "@specly/ui/utils";
+} from "@integramind/ui/dropdown-menu";
+import { cn } from "@integramind/ui/utils";
 
 import type {
   Flow,
   Integration,
   Resource,
   Workspace,
-} from "@specly/shared/types";
-import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
-import { SpeclyIcon } from "@specly/ui/icons/specly-icon";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
+} from "@integramind/shared/types";
+import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
+import { LogoIcon } from "@integramind/ui/icons/logo-icon";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@integramind/ui/tooltip";
 import { useState } from "react";
 import { signOut } from "~/lib/auth/actions";
 import { useCommandCenterStore, usePrimarySidebarStore } from "~/lib/store";
@@ -86,11 +90,11 @@ export function Sidebar({
           >
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
-                <SpeclyIcon
-                  className="size-5"
+                <LogoIcon
+                  className="size-10"
                   theme={resolvedTheme === "light" ? "light" : "dark"}
                 />
-                <span className="sr-only">specly</span>
+                <span className="sr-only">integramind</span>
               </Button>
             </DropdownMenuTrigger>
           </div>

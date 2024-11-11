@@ -1,6 +1,6 @@
+import type { ConversationMessage } from "@integramind/shared/types";
+import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
 import { createId } from "@paralleldrive/cuid2";
-import type { ConversationMessage } from "@specly/shared/types";
-import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
 import { Loader2 } from "lucide-react";
 import type { RefObject } from "react";
 import { RawContentViewer } from "./raw-content-viewer";

@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-import { Button } from "@specly/ui/button";
-import { cn } from "@specly/ui/utils";
+import { Button } from "@integramind/ui/button";
+import { cn } from "@integramind/ui/utils";
 
 export function Navbar(): JSX.Element {
   const [isTop, setIsTop] = useState<boolean>(true);
@@ -54,7 +54,7 @@ export function Navbar(): JSX.Element {
         className="hover:bg-transparent hover:underline"
         onClick={scrollToTop}
       >
-        <Image src="/logo.svg" alt="Specly" width={128} height={128} />
+        <Image src="/logo.svg" alt="IntegraMind" width={128} height={128} />
       </Button>
       <div className="flex items-center justify-center gap-10 text-sm">
         <button

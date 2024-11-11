@@ -1,6 +1,6 @@
 "use client";
 
-import { SpeclyIcon } from "@specly/ui/icons/specly-icon";
+import { LogoIcon } from "@integramind/ui/icons/logo-icon";
 import { useTheme } from "next-themes";
 import { useSearchParams } from "next/navigation";
 
@@ -12,7 +12,7 @@ export default function EmailSentConfirmation() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center px-4">
       <div className="flex w-full flex-col items-center justify-center gap-4">
-        <SpeclyIcon
+        <LogoIcon
           className="size-10"
           theme={resolvedTheme === "dark" ? "dark" : "light"}
         />

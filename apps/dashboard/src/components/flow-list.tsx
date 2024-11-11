@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-import { buttonVariants } from "@specly/ui/button";
-import { ScrollArea } from "@specly/ui/scroll-area";
-import { cn } from "@specly/ui/utils";
+import { buttonVariants } from "@integramind/ui/button";
+import { ScrollArea } from "@integramind/ui/scroll-area";
+import { cn } from "@integramind/ui/utils";
 
-import type { Flow, FlowType } from "@specly/shared/types";
+import type { Flow, FlowType } from "@integramind/shared/types";
 import { CreateFlowDialog } from "./create-flow-dialog";
 
 export function FlowList({

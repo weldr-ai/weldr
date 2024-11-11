@@ -10,9 +10,9 @@ import { TRPCError, initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-import type { Session } from "@specly/auth";
-import { auth, validateToken } from "@specly/auth";
-import { db } from "@specly/db";
+import type { Session } from "@integramind/auth";
+import { auth, validateToken } from "@integramind/auth";
+import { db } from "@integramind/db";
 
 /**
  * Isomorphic Session getter for API requests

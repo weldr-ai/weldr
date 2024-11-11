@@ -1,3 +1,3 @@
-import { handlers } from "@specly/auth";
+import { handlers } from "@integramind/auth";
 
 export const { GET, POST } = handlers;

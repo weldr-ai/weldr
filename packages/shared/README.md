@@ -1,1 +1,1 @@
-# `@specly/shared`
+# `@integramind/shared`

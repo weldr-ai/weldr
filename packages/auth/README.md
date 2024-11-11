@@ -1,1 +1,1 @@
-# `@specly/auth`
+# `@integramind/auth`

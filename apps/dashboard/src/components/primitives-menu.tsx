@@ -1,8 +1,12 @@
 import type React from "react";
 
-import type { PrimitiveType } from "@specly/shared/types";
+import type { PrimitiveType } from "@integramind/shared/types";
 
-import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@integramind/ui/tooltip";
 import { FunctionSquareIcon } from "lucide-react";
 
 export function PrimitivesMenu() {

@@ -1,7 +1,7 @@
 "use client";
 
-import { Badge } from "@specly/ui/badge";
-import { Button } from "@specly/ui/button";
+import { Badge } from "@integramind/ui/badge";
+import { Button } from "@integramind/ui/button";
 import {
   Form,
   FormControl,
@@ -9,16 +9,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@specly/ui/form";
-import { Input } from "@specly/ui/input";
+} from "@integramind/ui/form";
+import { Input } from "@integramind/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@specly/ui/select";
-import { Textarea } from "@specly/ui/textarea";
+} from "@integramind/ui/select";
+import { Textarea } from "@integramind/ui/textarea";
 import {
   AlertCircleIcon,
   ArrowLeftIcon,
@@ -28,7 +28,6 @@ import {
 } from "lucide-react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createId } from "@paralleldrive/cuid2";
 import type {
   AssistantMessageRawContent,
   ConversationMessage,
@@ -38,25 +37,30 @@ import type {
   FlowOutputSchemaMessage,
   JsonSchema,
   UserMessageRawContent,
-} from "@specly/shared/types";
-import { userMessageRawContentReferenceElementSchema } from "@specly/shared/validators/conversations";
+} from "@integramind/shared/types";
+import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import {
   baseUpdateFlowSchema,
   updateEndpointFlowSchema,
   updateFlowSchema,
   type updateTaskFlowSchema,
-} from "@specly/shared/validators/flows";
-import { ScrollArea } from "@specly/ui/scroll-area";
+} from "@integramind/shared/validators/flows";
+import { ScrollArea } from "@integramind/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@specly/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@specly/ui/tabs";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
-import { TreeView } from "@specly/ui/tree-view";
+} from "@integramind/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@integramind/ui/tooltip";
+import { TreeView } from "@integramind/ui/tree-view";
+import { createId } from "@paralleldrive/cuid2";
 import { useHandleConnections, useNodesData } from "@xyflow/react";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";

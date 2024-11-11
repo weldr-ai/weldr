@@ -1,5 +1,5 @@
 {
-  "extends": "@specly/tsconfig/internal-package.json",
+  "extends": "@integramind/tsconfig/internal-package.json",
   "compilerOptions": {
     "outDir": "dist",
     "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"

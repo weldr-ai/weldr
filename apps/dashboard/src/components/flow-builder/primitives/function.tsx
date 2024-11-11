@@ -1,8 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@specly/ui/button";
-import { Card } from "@specly/ui/card";
+import { Button } from "@integramind/ui/button";
+import { Card } from "@integramind/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -10,28 +10,28 @@ import {
   ContextMenuLabel,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@specly/ui/context-menu";
+} from "@integramind/ui/context-menu";
 import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardHeader,
   ExpandableCardTrigger,
-} from "@specly/ui/expandable-card";
+} from "@integramind/ui/expandable-card";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from "@specly/ui/form";
-import { Input } from "@specly/ui/input";
+} from "@integramind/ui/form";
+import { Input } from "@integramind/ui/input";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@specly/ui/resizable";
-import { ScrollArea } from "@specly/ui/scroll-area";
-import { cn } from "@specly/ui/utils";
+} from "@integramind/ui/resizable";
+import { ScrollArea } from "@integramind/ui/scroll-area";
+import { cn } from "@integramind/ui/utils";
 import {
   Handle,
   Position,
@@ -62,10 +62,14 @@ import type {
   InputSchema,
   JsonSchema,
   UserMessageRawContent,
-} from "@specly/shared/types";
-import { userMessageRawContentReferenceElementSchema } from "@specly/shared/validators/conversations";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@specly/ui/tooltip";
-import { TreeView } from "@specly/ui/tree-view";
+} from "@integramind/shared/types";
+import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@integramind/ui/tooltip";
+import { TreeView } from "@integramind/ui/tree-view";
 import { readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
@@ -457,7 +461,7 @@ export const FunctionNode = memo(
               <ContextMenuItem className="flex items-center justify-between text-xs">
                 <Link
                   className="flex items-center"
-                  href="https://docs.specly.ai/primitives/function"
+                  href="https://docs.integramind.ai/primitives/function"
                   target="blank"
                 >
                   <FileTextIcon className="mr-3 size-4 text-muted-foreground" />

@@ -4,7 +4,7 @@ import { BoxesIcon, PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { Button } from "@specly/ui/button";
+import { Button } from "@integramind/ui/button";
 import {
   CommandDialog,
   CommandEmpty,
@@ -12,9 +12,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@specly/ui/command";
+} from "@integramind/ui/command";
 
-import type { Workspace } from "@specly/shared/types";
+import type { Workspace } from "@integramind/shared/types";
 import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { useCommandCenterStore } from "~/lib/store";
 

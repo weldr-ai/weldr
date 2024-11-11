@@ -1,1 +1,1 @@
-# `@specly/marketing`
+# `@integramind/marketing`

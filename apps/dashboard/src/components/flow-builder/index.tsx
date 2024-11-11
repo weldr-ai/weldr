@@ -27,10 +27,10 @@ import { useCallback } from "react";
 import "@xyflow/react/dist/base.css";
 import "~/styles/flow-builder.css";
 
-import { Button } from "@specly/ui/button";
+import { Button } from "@integramind/ui/button";
 
-import type { Flow, PrimitiveType } from "@specly/shared/types";
-import { toast } from "@specly/ui/use-toast";
+import type { Flow, PrimitiveType } from "@integramind/shared/types";
+import { toast } from "@integramind/ui/use-toast";
 import { useTheme } from "next-themes";
 import { FunctionNode } from "~/components/flow-builder/primitives/function";
 import { Stop } from "~/components/flow-builder/primitives/stop";

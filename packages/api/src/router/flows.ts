@@ -1,14 +1,14 @@
-import { and, eq, sql } from "@specly/db";
-import { flows, primitives } from "@specly/db/schema";
-import { mergeJson } from "@specly/db/utils";
-import type { Flow, StopPrimitive } from "@specly/shared/types";
+import { and, eq, sql } from "@integramind/db";
+import { flows, primitives } from "@integramind/db/schema";
+import { mergeJson } from "@integramind/db/utils";
+import type { Flow, StopPrimitive } from "@integramind/shared/types";
 import {
   flowTypesSchema,
   insertFlowSchema,
   updateFlowSchema,
-} from "@specly/shared/validators/flows";
+} from "@integramind/shared/validators/flows";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
-import { conversations } from "node_modules/@specly/db/src/schema/conversations";
+import { conversations } from "node_modules/@integramind/db/src/schema/conversations";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 

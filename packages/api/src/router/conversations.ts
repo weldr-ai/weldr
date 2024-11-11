@@ -1,5 +1,5 @@
-import { conversationMessages } from "@specly/db/schema";
-import { conversationMessageSchema } from "@specly/shared/validators/conversations";
+import { conversationMessages } from "@integramind/db/schema";
+import { conversationMessageSchema } from "@integramind/shared/validators/conversations";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";

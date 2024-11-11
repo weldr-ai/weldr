@@ -9,8 +9,8 @@ import type {
 import { DecoratorNode } from "lexical";
 import type { ReactNode } from "react";
 
-import { toCamelCase } from "@specly/shared/utils";
-import type { userMessageRawContentReferenceElementSchema } from "@specly/shared/validators/conversations";
+import { toCamelCase } from "@integramind/shared/utils";
+import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import type { z } from "zod";
 import { ReferenceBadge } from "~/components/editor/reference-badge";
 

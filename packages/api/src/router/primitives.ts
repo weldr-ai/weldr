@@ -1,15 +1,15 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
-import { primitives } from "@specly/db/schema";
+import { primitives } from "@integramind/db/schema";
 
-import { type SQL, and, eq } from "@specly/db";
-import { conversations } from "@specly/db/schema";
-import { mergeJson } from "@specly/db/utils";
-import type { InputSchema, Primitive } from "@specly/shared/types";
+import { type SQL, and, eq } from "@integramind/db";
+import { conversations } from "@integramind/db/schema";
+import { mergeJson } from "@integramind/db/utils";
+import type { InputSchema, Primitive } from "@integramind/shared/types";
 import {
   insertPrimitiveSchema,
   updatePrimitiveSchema,
-} from "@specly/shared/validators/primitives";
+} from "@integramind/shared/validators/primitives";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 

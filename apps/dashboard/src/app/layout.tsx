@@ -1,13 +1,13 @@
-import "@specly/ui/globals.css";
+import "@integramind/ui/globals.css";
 
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 
-import { ThemeProvider } from "@specly/ui/theme-provider";
-import { Toaster } from "@specly/ui/toaster";
-import { cn } from "@specly/ui/utils";
+import { ThemeProvider } from "@integramind/ui/theme-provider";
+import { Toaster } from "@integramind/ui/toaster";
+import { cn } from "@integramind/ui/utils";
 
-import { TooltipProvider } from "@specly/ui/tooltip";
+import { TooltipProvider } from "@integramind/ui/tooltip";
 import { ReactFlowProvider } from "@xyflow/react";
 import { QueryProvider } from "~/components/query-client-provider";
 import { TRPCReactProvider } from "~/lib/trpc/react";
@@ -18,7 +18,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Specly",
+  title: "IntegraMind",
   description:
     "Build LLM-powered AI agents in minutes for seamless workflow automation!",
 };

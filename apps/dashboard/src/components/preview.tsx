@@ -8,10 +8,10 @@ import {
   WorkflowIcon,
 } from "lucide-react";
 
-import { Button } from "@specly/ui/button";
+import { Button } from "@integramind/ui/button";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@specly/ui/avatar";
-import { SpeclyIcon } from "@specly/ui/icons/specly-icon";
+import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
+import { LogoIcon } from "@integramind/ui/icons/logo-icon";
 import { useTheme } from "next-themes";
 
 export function Preview() {
@@ -24,17 +24,17 @@ export function Preview() {
           <nav className="flex items-center text-sm">
             <div className="flex size-14 items-center justify-center border-r p-2">
               <Button variant="ghost" size="icon" className="size-full">
-                <SpeclyIcon
-                  className="size-6"
+                <LogoIcon
+                  className="size-10"
                   theme={resolvedTheme === "light" ? "light" : "dark"}
                 />
-                <span className="sr-only">Specly</span>
+                <span className="sr-only">IntegraMind</span>
               </Button>
             </div>
           </nav>
           <div className="flex w-[256px] items-center justify-center h-14 px-2.5">
             <Button variant="ghost" className="w-full">
-              Specly
+              IntegraMind
             </Button>
             <Button
               variant="ghost"
@@ -83,7 +83,7 @@ export function Preview() {
       </div>
       <main className="flex min-h-full w-full py-2.5 pr-2.5">
         <div className="flex size-full flex-col items-center justify-center gap-2 rounded-lg border bg-background">
-          <h1 className="text-2xl font-medium">Specly</h1>
+          <h1 className="text-2xl font-medium">IntegraMind</h1>
           <span className="text-muted-foreground">
             Build • Automate • Accelerate
           </span>

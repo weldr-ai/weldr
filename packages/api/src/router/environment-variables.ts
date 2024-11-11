@@ -1,5 +1,5 @@
-import { eq, sql } from "@specly/db";
-import { resourceEnvironmentVariables } from "@specly/db/schema";
+import { eq, sql } from "@integramind/db";
+import { resourceEnvironmentVariables } from "@integramind/db/schema";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";

@@ -1,6 +1,6 @@
 export default eventHandler(async (event) => {
   return {
-    name: "@specly/engine",
+    name: "@integramind/engine",
     version: "0.0.1",
   };
 });

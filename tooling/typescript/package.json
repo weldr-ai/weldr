@@ -1,5 +1,5 @@
 {
-  "name": "@specly/tsconfig",
+  "name": "@integramind/tsconfig",
   "version": "0.0.1",
   "private": true,
   "files": ["*.json"]

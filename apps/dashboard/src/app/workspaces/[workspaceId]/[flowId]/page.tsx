@@ -1,4 +1,4 @@
-import type { Conversation, Flow } from "@specly/shared/types";
+import type { Conversation, Flow } from "@integramind/shared/types";
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 

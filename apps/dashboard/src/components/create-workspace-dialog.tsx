@@ -6,7 +6,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@specly/ui/dialog";
+} from "@integramind/ui/dialog";
 
 import { CreateWorkspaceForm } from "~/components/create-workspace-form";
 

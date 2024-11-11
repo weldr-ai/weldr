@@ -1,5 +1,5 @@
 {
-  "name": "@specly/db",
+  "name": "@integramind/db",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -25,14 +25,14 @@
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
-    "@specly/shared": "workspace:*",
+    "@integramind/shared": "workspace:*",
     "drizzle-orm": "^0.35.3",
     "drizzle-zod": "^0.5.1",
     "pg": "^8.13.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@specly/tsconfig": "workspace:*",
+    "@integramind/tsconfig": "workspace:*",
     "@types/pg": "^8.11.10",
     "dotenv-cli": "^7.4.2",
     "drizzle-kit": "^0.26.2"

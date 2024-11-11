@@ -1,7 +1,7 @@
-import { Button } from "@specly/ui/button";
-import { ScrollArea } from "@specly/ui/scroll-area";
+import { Button } from "@integramind/ui/button";
+import { ScrollArea } from "@integramind/ui/scroll-area";
 
-import type { Integration, Resource } from "@specly/shared/types";
+import type { Integration, Resource } from "@integramind/shared/types";
 import { AddResourceDialog } from "./add-resource-dialog";
 
 export function ResourceList({

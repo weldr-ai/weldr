@@ -1,11 +1,11 @@
-import { createId } from "@paralleldrive/cuid2";
 import type {
   FlatInputSchema,
   JsonSchema,
   MessageRawContent,
-} from "@specly/shared/types";
-import { getDataTypeIcon, toCamelCase } from "@specly/shared/utils";
-import type { TreeDataItem } from "@specly/ui/tree-view";
+} from "@integramind/shared/types";
+import { getDataTypeIcon, toCamelCase } from "@integramind/shared/utils";
+import type { TreeDataItem } from "@integramind/ui/tree-view";
+import { createId } from "@paralleldrive/cuid2";
 
 export function jsonSchemaToTreeData(
   schema: JsonSchema | undefined = {},

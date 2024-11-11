@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Specly",
-    short_name: "Specly",
+    name: "IntegraMind",
+    short_name: "IntegraMind",
     description:
       "Create backend APIs, automation workflows, and integrations using only plain English, no coding required!",
     start_url: "/",
