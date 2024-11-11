@@ -60,15 +60,17 @@ export async function executeFunction({
     }));
   }
 
+  const hasInput =
+    input !== undefined && input !== null && Object.keys(input).length > 0;
+
   const requestBody = {
     functionName: name,
-    functionArgs: input,
+    hasInput,
+    functionArgs: hasInput ? input : undefined,
     code,
     utilities: utilities,
     dependencies,
   };
-
-  console.log("[requestBody]", JSON.stringify(requestBody, null, 2));
 
   try {
     const executionResult = await ofetch<{ output: Record<string, unknown> }>(
@@ -90,8 +92,8 @@ export async function executeFunction({
     console.log("[executionResult]", executionResult);
 
     await api.primitives.createTestRun({
-      input: input ?? {},
-      output: executionResult,
+      input: input ?? undefined,
+      output: executionResult ?? undefined,
       primitiveId: functionId,
     });
 

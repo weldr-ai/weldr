@@ -215,11 +215,10 @@ export const FunctionNode = memo(
               "Hi there! I'm Specly, your AI assistant. What does your function do?",
           },
         ],
-        createdAt: data.createdAt,
       },
-      ...((data.conversation?.messages ?? []).sort(
+      ...(data.conversation?.messages ?? []).sort(
         (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
-      ) as ConversationMessage[]),
+      ),
     ]);
     const [userMessageContent, setUserMessageContent] = useState<string | null>(
       null,
@@ -312,6 +311,7 @@ export const FunctionNode = memo(
         content: userMessageContent,
         rawContent: userMessageRawContent,
         conversationId: data.conversation.id,
+        createdAt: new Date(),
       };
 
       const newMessages = [...messages, newMessageUser];
@@ -337,6 +337,7 @@ export const FunctionNode = memo(
           role: "assistant",
           content: "",
           rawContent: [],
+          createdAt: new Date(),
         };
 
         if (content?.message?.content && content.message.type === "message") {
@@ -380,6 +381,7 @@ export const FunctionNode = memo(
 
       // if code generation is set, disable it and refetch the updated function metadata
       if (functionRequirementsMessageObject.message.type === "end") {
+        setIsGeneratingCode(false);
         const functionBuiltSuccessfullyMessage: ConversationMessage = {
           role: "assistant",
           rawContent: [
@@ -389,10 +391,10 @@ export const FunctionNode = memo(
             },
           ],
           content: "Your function has been built successfully!",
+          createdAt: new Date(),
         };
 
         await refetch();
-        setIsGeneratingCode(false);
         setMessages([...newMessages, functionBuiltSuccessfullyMessage]);
       }
 

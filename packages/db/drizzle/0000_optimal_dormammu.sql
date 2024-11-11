@@ -139,8 +139,8 @@ CREATE TABLE IF NOT EXISTS "primitives" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "test_runs" (
 	"id" text PRIMARY KEY NOT NULL,
-	"input" jsonb,
-	"output" jsonb,
+	"input" jsonb DEFAULT NULL,
+	"output" jsonb DEFAULT NULL,
 	"status" "test_run_status" DEFAULT 'success',
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"primitive_id" text NOT NULL

@@ -62,10 +62,12 @@ export async function generateFunction({
       system: getFunctionRequirementsAgentPrompt(functionId),
       messages,
       schema: functionRequirementsMessageSchema,
-      onFinish: async ({ usage, object }) => {
+      onFinish: async ({ usage, object, error }) => {
         console.log(
           `[gatherFunctionRequirements] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
         );
+        console.log(error);
+        console.log(JSON.stringify(object, null, 2));
 
         if (object?.message?.type === "message") {
           console.log(
@@ -128,8 +130,12 @@ export async function generateFunction({
             payload: {
               type: "function",
               metadata: {
-                inputSchema: JSON.parse(object.message.content.inputSchema),
-                outputSchema: JSON.parse(object.message.content.outputSchema),
+                inputSchema: object.message.content.inputSchema
+                  ? JSON.parse(object.message.content.inputSchema)
+                  : undefined,
+                outputSchema: object.message.content.outputSchema
+                  ? JSON.parse(object.message.content.outputSchema)
+                  : undefined,
                 rawDescription: object.message.content.description,
                 description: rawMessageContentToText(
                   object.message.content.description,
@@ -203,6 +209,7 @@ export async function generateFlowInputsSchemas({
         console.log(
           `[generateFlowInputsSchemas] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
         );
+        console.log(JSON.stringify(object, null, 2));
 
         if (object?.message?.type === "message") {
           console.log(
@@ -310,6 +317,7 @@ export async function generateFlowOutputsSchemas({
         console.log(
           `[generateFlowOutputsSchemas] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
         );
+        console.log(JSON.stringify(object, null, 2));
 
         if (object?.message?.type === "message") {
           console.log(

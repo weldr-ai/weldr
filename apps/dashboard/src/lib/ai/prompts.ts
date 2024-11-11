@@ -193,7 +193,7 @@ I want to filter the table customers, with columns: customer_id (integer) first_
   }
 }
 \`\`\`
-x
+
 # Notes
 - Make sure to avoid overwhelming the user with multiple questions at once; take an iterative, question-by-question approach.
 - If assumptions are necessary, state them explicitly and seek user confirmation.
@@ -593,12 +593,12 @@ export const getGenerateFunctionCodePrompt = async ({
 }: {
   name: string;
   description: string;
-  inputSchema: string;
-  outputSchema: string;
+  inputSchema: string | undefined;
+  outputSchema: string | undefined;
   logicalSteps: string;
   edgeCases: string;
   errorHandling: string;
-  resources: z.infer<typeof functionResourceSchema>[];
+  resources: z.infer<typeof functionResourceSchema>[] | undefined;
 }) => {
   const utilities: string[] = [];
 
@@ -621,10 +621,10 @@ Implement a function called \`${name}\`.
 ${description}
 
 ### Input JSON Schema
-${inputSchema}
+${inputSchema ?? "Has no input"}
 
 ### Output JSON Schema
-${outputSchema}
+${outputSchema ?? "Has no output"}
 
 ### Logical Steps
 ${logicalSteps}

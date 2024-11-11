@@ -255,22 +255,28 @@ export const functionRequirementsMessageSchema = z.object({
       .object({
         type: z.literal("end"),
         content: z.object({
-          inputSchema: z.string().describe(
-            `The JSON schema for the input of the function. Must follow these rules:
+          inputSchema: z
+            .string()
+            .describe(
+              `The JSON schema for the input of the function. Must follow these rules:
               - Schema must have \`$id\` property that follows the naming pattern \`/schemas/[FUNCTION_ID]/input\`.
               - Must include $ref to specify input sources.
               - Property names must be in camelCase.
               - Schema should be valid according to JSON Schema specification.
               - Properties should have clear, descriptive names that indicate their purpose.`,
-          ),
-          outputSchema: z.string().describe(
-            `The JSON schema for the output of the function. Must follow these rules:
+            )
+            .optional(),
+          outputSchema: z
+            .string()
+            .describe(
+              `The JSON schema for the output of the function. Must follow these rules:
               - Schema must have \`$id\` property that follows the naming pattern \`/schemas/[FUNCTION_ID]/output\`.
               - Schema must have \`title\` property. It should be a descriptive noun like 'Customer' or 'Order' that represents the data and it is like a TypeScript type name. If no descriptive title applies, use \`undefined\` as the title value.
               - Property names must be in camelCase.
               - Schema should be valid according to JSON Schema specification.
               - Properties should have clear, descriptive names that indicate their purpose.`,
-          ),
+            )
+            .optional(),
           resources: z
             .object({
               id: z.string().describe("The ID of the resource"),
@@ -316,6 +322,7 @@ export const functionRequirementsMessageSchema = z.object({
                 ),
             })
             .array()
+            .optional()
             .describe("The list of resources used in the function."),
           description: rawContentSchema.describe(
             "The description of the function.",

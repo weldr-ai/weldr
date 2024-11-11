@@ -71,8 +71,8 @@ export const testRuns = pgTable("test_runs", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
-  input: jsonb("input").$type<Record<string, unknown>>(),
-  output: jsonb("output").$type<Record<string, unknown>>(),
+  input: jsonb("input").$type<Record<string, unknown>>().default(sql`NULL`),
+  output: jsonb("output").$type<Record<string, unknown>>().default(sql`NULL`),
   status: testRunStatus("status").default("success"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   primitiveId: text("primitive_id")

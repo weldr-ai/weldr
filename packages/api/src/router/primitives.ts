@@ -176,8 +176,8 @@ export const primitivesRouter = {
   createTestRun: protectedProcedure
     .input(
       z.object({
-        output: z.record(z.string(), z.unknown()),
-        input: z.record(z.string(), z.unknown()),
+        input: z.record(z.string(), z.unknown()).optional(),
+        output: z.record(z.string(), z.unknown()).optional(),
         primitiveId: z.string(),
       }),
     )
@@ -186,8 +186,8 @@ export const primitivesRouter = {
         await ctx.db
           .insert(testRuns)
           .values({
-            output: input.output,
-            input: input.input,
+            output: input.output ?? undefined,
+            input: input.input ?? undefined,
             primitiveId: input.primitiveId,
           })
           .returning({ id: testRuns.id })
