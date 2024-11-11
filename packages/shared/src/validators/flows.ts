@@ -34,6 +34,8 @@ const baseFlowSchema = z.object({
   inputConversation: conversationSchema,
   outputConversation: conversationSchema,
   stopNode: stopPrimitiveSchema,
+  inputConversationId: z.string(),
+  outputConversationId: z.string(),
 });
 
 export const componentFlowSchema = baseFlowSchema.extend({

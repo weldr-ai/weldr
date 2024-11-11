@@ -9,6 +9,7 @@ import type {
 import { DecoratorNode } from "lexical";
 import type { ReactNode } from "react";
 
+import type { JsonSchema } from "@integramind/shared/types";
 import { toCamelCase } from "@integramind/shared/utils";
 import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import type { z } from "zod";
@@ -66,16 +67,55 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
 
   getTextContent(): string {
     switch (this.__reference.referenceType) {
-      case "input":
-        return `input ${toCamelCase(this.__reference.name)} (${this.__reference.dataType}), $ref: ${this.__reference.refUri}, required: ${this.__reference.required}`;
-      case "database":
+      case "variable": {
+        const baseText = `variable ${toCamelCase(this.__reference.name)} (${this.__reference.dataType}), $ref: ${this.__reference.refUri}, required: ${this.__reference.required}`;
+
+        const formatObjectProps = (props: JsonSchema["properties"]): string => {
+          if (!props) return "";
+          return Object.entries(props)
+            .map(
+              ([name, prop]) =>
+                `${name} (${prop.type}), required: ${prop.required ?? false}`,
+            )
+            .join(", ");
+        };
+
+        const formatArrayItemsType = (
+          itemsType: JsonSchema["items"],
+        ): string => {
+          if (typeof itemsType === "object") {
+            return `object, properties: ${formatObjectProps(itemsType.properties)}`;
+          }
+          return String(itemsType);
+        };
+
+        switch (this.__reference.dataType) {
+          case "object": {
+            return `${baseText}, properties: ${formatObjectProps(
+              this.__reference.properties,
+            )}`;
+          }
+          case "array": {
+            return `${baseText}, ${
+              this.__reference.itemsType
+                ? `itemsType: ${formatArrayItemsType(this.__reference.itemsType)}`
+                : ""
+            }`;
+          }
+          default: {
+            return baseText;
+          }
+        }
+      }
+      case "database": {
         return `database ${this.__reference.name} (ID: ${this.__reference.id}), with utilities: ${this.__reference.utils
           .map(
             (util) =>
               `name: ${util.name} (ID: ${util.id}), description: ${util.description}`,
           )
           .join(", ")}`;
-      case "database-table":
+      }
+      case "database-table": {
         return `table ${this.__reference.name}, with columns: ${this.formatColumns(
           this.__reference.columns ?? [],
         )}${
@@ -93,15 +133,18 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
               `name: ${util.name} (ID: ${util.id}), description: ${util.description}`,
           )
           .join(", ")}`;
-      case "database-column":
+      }
+      case "database-column": {
         return `column ${this.__reference.name} (${this.__reference.dataType}) in table ${this.__reference.table.name} in database ${this.__reference?.database?.name} (ID: ${this.__reference?.database?.id}), with utilities: ${this.__reference?.database?.utils
           .map(
             (util) =>
               `name: ${util.name} (ID: ${util.id}), description: ${util.description}`,
           )
           .join(", ")}`;
-      default:
+      }
+      default: {
         return "";
+      }
     }
   }
 

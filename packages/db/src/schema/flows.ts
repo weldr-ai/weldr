@@ -32,10 +32,10 @@ export const flows = pgTable("flows", {
   validationSchema: text("validation_schema"),
   inputConversationId: text("input_conversation_id")
     .references(() => conversations.id, { onDelete: "cascade" })
-    .default(sql`NULL`),
+    .notNull(),
   outputConversationId: text("output_conversation_id")
     .references(() => conversations.id, { onDelete: "cascade" })
-    .default(sql`NULL`),
+    .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

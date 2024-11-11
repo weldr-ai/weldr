@@ -16,10 +16,6 @@ export const conversations = pgTable("conversations", {
     .primaryKey()
     .$defaultFn(() => createId()),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
   createdBy: text("created_by")
     .references(() => users.id, {
       onDelete: "set null",
@@ -43,10 +39,6 @@ export const conversationMessages = pgTable("conversation_messages", {
     .$type<UserMessageRawContent | AssistantMessageRawContent>()
     .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
   conversationId: text("conversation_id")
     .references(() => conversations.id, { onDelete: "cascade" })
     .notNull(),

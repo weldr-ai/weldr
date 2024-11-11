@@ -247,6 +247,18 @@ export async function generateFlowInputsSchemas({
               validationSchema: object.message.content.zodSchema,
             },
           });
+
+          api.conversations.addMessage({
+            role: "assistant",
+            content: "Your input schema has been built successfully!",
+            rawContent: [
+              {
+                type: "text",
+                value: "Your input schema has been built successfully!",
+              },
+            ],
+            conversationId,
+          });
         }
       },
     });
@@ -267,13 +279,15 @@ export async function generateFlowInputsSchemas({
 
 export async function generateFlowOutputsSchemas({
   flowId,
-  conversationId,
   messages,
+  conversationId,
 }: {
   flowId: string;
-  conversationId: string;
   messages: CoreMessage[];
+  conversationId: string;
 }) {
+  console.log(conversationId);
+
   const session = await auth();
 
   if (!session?.user) {
@@ -301,6 +315,7 @@ export async function generateFlowOutputsSchemas({
           console.log(
             "[generateFlowOutputsSchemas] Adding message to conversation",
           );
+
           api.conversations.addMessage({
             role: "assistant",
             content: rawMessageContentToText(object.message.content),
@@ -338,6 +353,18 @@ export async function generateFlowOutputsSchemas({
               type: "endpoint",
               outputSchema: JSON.parse(object.message.content.outputSchema),
             },
+          });
+
+          api.conversations.addMessage({
+            role: "assistant",
+            content: "Your output schema has been built successfully!",
+            rawContent: [
+              {
+                type: "text",
+                value: "Your output schema has been built successfully!",
+              },
+            ],
+            conversationId,
           });
         }
       },

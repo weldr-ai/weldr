@@ -91,10 +91,12 @@ export function ReferencesPlugin({
           reference: {
             type: "reference",
             name: `${input.path}`,
-            referenceType: "input",
+            referenceType: "variable",
             dataType: input.type,
             refUri: input.refUri,
             required: input.required,
+            properties: input.properties,
+            itemsType: input.itemsType,
           },
           options: {
             keywords: ["input", input.path],

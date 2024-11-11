@@ -53,10 +53,11 @@ export type JsonSchema = JsonSchemaProperty & {
 export interface FlatInputSchema {
   path: string;
   type: DataType;
-  itemsType?: DataType | { [key: string]: FlatInputSchema };
   required: boolean;
   description?: string;
   refUri: string;
+  properties?: Record<string, JsonSchema>;
+  itemsType?: JsonSchema;
 }
 
 export type InputSchema = z.infer<typeof inputSchema>;

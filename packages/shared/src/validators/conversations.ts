@@ -3,10 +3,10 @@ import {
   databaseColumnReferenceSchema,
   databaseReferenceSchema,
   databaseTableReferenceSchema,
-  inputReferenceSchema,
   rawContentReferenceElementSchema,
   rawContentTextElementSchema,
   utilityFunctionReferenceSchema,
+  variableReferenceSchema,
 } from "./common";
 
 export const userMessageRawContentReferenceElementSchema = z.discriminatedUnion(
@@ -14,8 +14,8 @@ export const userMessageRawContentReferenceElementSchema = z.discriminatedUnion(
   [
     z.object({
       type: z.literal("reference"),
-      referenceType: z.literal("input"),
-      ...inputReferenceSchema.shape,
+      referenceType: z.literal("variable"),
+      ...variableReferenceSchema.shape,
     }),
     z.object({
       type: z.literal("reference"),
@@ -72,12 +72,10 @@ export const conversationMessageSchema = z.object({
   content: z.string(),
   rawContent: messageRawContentSchema,
   createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
 });
 
 export const conversationSchema = z.object({
   id: z.string(),
   createdAt: z.date(),
-  updatedAt: z.date(),
   messages: conversationMessageSchema.array(),
 });

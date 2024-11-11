@@ -43,24 +43,47 @@ export function jsonSchemaToTreeData(
   return jsonSchemaToTree(schema).children ?? [];
 }
 
-export function flattenInputSchema(
-  schema: JsonSchema,
+export function flattenInputSchema({
+  schema,
   path = "",
   required = false,
   refPath = "",
   expandArrays = true,
-): FlatInputSchema[] {
+}: {
+  schema: JsonSchema;
+  path?: string;
+  required?: boolean;
+  refPath?: string;
+  expandArrays?: boolean;
+}): FlatInputSchema[] {
   let tempPath = path;
+  const refUri = refPath ? `${refPath}` : `${schema.$id}`;
   const result: FlatInputSchema[] = [];
 
   // Add the schema itself as an input if it has a title
   if (schema.title) {
+    const properties =
+      schema.type === "object" && schema.properties
+        ? Object.entries(schema.properties).reduce<Record<string, JsonSchema>>(
+            (acc, [key, value]) => {
+              acc[key] = value;
+              return acc;
+            },
+            {},
+          )
+        : undefined;
+
+    const itemsType =
+      schema.type === "array" && schema.items ? schema.items : undefined;
+
     result.push({
       path: schema.title,
       type: schema.type ?? "null",
       required,
       description: schema.description,
-      refUri: refPath,
+      refUri,
+      ...(properties && { properties }),
+      ...(itemsType && { itemsType }),
     });
     // Update path to include the title for nested properties
     tempPath = schema.title;
@@ -73,45 +96,82 @@ export function flattenInputSchema(
       const newPath = tempPath ? `${tempPath}.${key}` : key;
       const newRefPath = refPath
         ? `${refPath}/properties/${key}`
-        : `${schema.$id ?? ""}/properties/${key}`;
+        : `${refUri}/properties/${key}`;
+
+      const properties =
+        value.type === "object" && value.properties
+          ? Object.entries(value.properties).reduce<Record<string, JsonSchema>>(
+              (acc, [k, v]) => {
+                acc[k] = v;
+                return acc;
+              },
+              {},
+            )
+          : undefined;
+
+      const itemsType =
+        value.type === "array" && value.items ? value.items : undefined;
+
       result.push({
         path: newPath,
         type: value.type ?? "null",
         required: isRequired,
         description: value.description,
         refUri: newRefPath,
+        ...(properties && { properties }),
+        ...(itemsType && { itemsType }),
       });
+
       if (value.type === "object" || (value.type === "array" && expandArrays)) {
         result.push(
-          ...flattenInputSchema(
-            value,
-            newPath,
-            isRequired,
-            newRefPath,
+          ...flattenInputSchema({
+            schema: value,
+            path: newPath,
+            required: isRequired,
+            refPath: newRefPath,
             expandArrays,
-          ),
+          }),
         );
       }
     }
   } else if (schema.type === "array" && schema.items && expandArrays) {
-    const itemsPath = `${tempPath}${schema.items.title ? schema.items.title : "items"}[]`;
-    const itemsRefPath = `${refPath}/items`;
+    const itemsPath = `${schema.title ? schema.title : "items"}[]`;
+    const itemsRefPath = refPath ? `${refPath}/items` : `${refUri}/items`;
+
+    const properties =
+      schema.items.type === "object" && schema.items.properties
+        ? Object.entries(schema.items.properties).reduce<
+            Record<string, JsonSchema>
+          >((acc, [key, value]) => {
+            acc[key] = value;
+            return acc;
+          }, {})
+        : undefined;
+
+    const itemsType =
+      schema.items.type === "array" && schema.items.items
+        ? schema.items.items
+        : undefined;
+
     result.push({
       path: itemsPath,
       type: schema.items.type ?? "null",
       required: false,
       description: schema.items.description,
       refUri: itemsRefPath,
+      ...(properties && { properties }),
+      ...(itemsType && { itemsType }),
     });
+
     if (schema.items.type === "object" || schema.items.type === "array") {
       result.push(
-        ...flattenInputSchema(
-          schema.items,
-          itemsPath,
-          false,
-          itemsRefPath,
+        ...flattenInputSchema({
+          schema: schema.items,
+          path: itemsPath,
+          required: false,
+          refPath: itemsRefPath,
           expandArrays,
-        ),
+        }),
       );
     }
   } else if (!schema.title) {
@@ -121,7 +181,7 @@ export function flattenInputSchema(
       type: schema.type ?? "null",
       required,
       description: schema.description,
-      refUri: refPath,
+      refUri,
     });
   }
 
@@ -147,8 +207,8 @@ export function rawMessageContentToText(
 
       if (element.type === "reference") {
         switch (element.referenceType) {
-          case "input":
-            return `input ${toCamelCase(element.name)} (${element.dataType})${
+          case "variable":
+            return `variable ${toCamelCase(element.name)} (${element.dataType})${
               "refUri" in element && element.refUri
                 ? `, $ref: ${element.refUri}`
                 : ""

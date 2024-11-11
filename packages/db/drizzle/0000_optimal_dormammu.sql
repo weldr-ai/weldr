@@ -2,6 +2,7 @@ CREATE TYPE "public"."roles" AS ENUM('user', 'assistant');--> statement-breakpoi
 CREATE TYPE "public"."flow_types" AS ENUM('utilities', 'task', 'endpoint');--> statement-breakpoint
 CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');--> statement-breakpoint
 CREATE TYPE "public"."primitive_types" AS ENUM('function', 'stop');--> statement-breakpoint
+CREATE TYPE "public"."test_run_status" AS ENUM('success', 'error');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "accounts" (
 	"user_id" text NOT NULL,
 	"type" text NOT NULL,
@@ -66,7 +67,6 @@ CREATE TABLE IF NOT EXISTS "conversation_messages" (
 	"content" text NOT NULL,
 	"raw_content" jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"conversation_id" text NOT NULL,
 	"created_by" text DEFAULT NULL
 );
@@ -74,7 +74,6 @@ CREATE TABLE IF NOT EXISTS "conversation_messages" (
 CREATE TABLE IF NOT EXISTS "conversations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" text DEFAULT NULL
 );
 --> statement-breakpoint
@@ -95,8 +94,8 @@ CREATE TABLE IF NOT EXISTS "flows" (
 	"input_schema" jsonb,
 	"output_schema" jsonb,
 	"validation_schema" text,
-	"input_conversation_id" text DEFAULT NULL,
-	"output_conversation_id" text DEFAULT NULL,
+	"input_conversation_id" text NOT NULL,
+	"output_conversation_id" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"workspace_id" text NOT NULL,
@@ -142,8 +141,8 @@ CREATE TABLE IF NOT EXISTS "test_runs" (
 	"id" text PRIMARY KEY NOT NULL,
 	"input" jsonb,
 	"output" jsonb,
+	"status" "test_run_status" DEFAULT 'success',
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"primitive_id" text NOT NULL
 );
 --> statement-breakpoint

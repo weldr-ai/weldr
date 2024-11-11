@@ -18,7 +18,6 @@ export const conversationsRouter = {
         rawContent: input.rawContent,
         role: input.role,
         createdAt: input.createdAt,
-        updatedAt: input.updatedAt,
         createdBy: ctx.session.user.id,
         conversationId: input.conversationId,
       });

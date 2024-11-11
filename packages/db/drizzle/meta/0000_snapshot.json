@@ -1,5 +1,5 @@
 {
-  "id": "f510487b-18a4-4588-ba27-a15463af2007",
+  "id": "bf3b8b47-e450-4830-b436-5eb3bc696223",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -375,13 +375,6 @@
           "notNull": true,
           "default": "now()"
         },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
         "conversation_id": {
           "name": "conversation_id",
           "type": "text",
@@ -433,13 +426,6 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -605,15 +591,13 @@
           "name": "input_conversation_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "default": "NULL"
+          "notNull": true
         },
         "output_conversation_id": {
           "name": "output_conversation_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "default": "NULL"
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -944,15 +928,16 @@
           "primaryKey": false,
           "notNull": false
         },
+        "status": {
+          "name": "status",
+          "type": "test_run_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'success'"
+        },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -1306,6 +1291,11 @@
       "name": "primitive_types",
       "schema": "public",
       "values": ["function", "stop"]
+    },
+    "public.test_run_status": {
+      "name": "test_run_status",
+      "schema": "public",
+      "values": ["success", "error"]
     }
   },
   "schemas": {},

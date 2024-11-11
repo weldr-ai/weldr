@@ -85,9 +85,9 @@ import type { ReferenceNode } from "./editor/nodes/reference-node";
 import MessageList from "./message-list";
 
 export function FlowSheet({ initialData }: { initialData: Flow }) {
-  const [generateMode, setGenerateMode] = useState<"input" | "output" | null>(
-    null,
-  );
+  const [generationMode, setGenerationMode] = useState<
+    "input" | "output" | null
+  >(null);
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -111,7 +111,10 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
 
   const outputReferencesSchema = nodesData.reduce((acc, node) => {
     if (node.data.metadata?.outputSchema) {
-      const schema = flattenInputSchema(node.data.metadata.outputSchema);
+      const schema = flattenInputSchema({
+        schema: node.data.metadata.outputSchema,
+        expandArrays: false,
+      });
       return acc.concat(schema);
     }
     return acc;
@@ -178,6 +181,8 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
   const [isGeneratingSchemas, setIsGeneratingSchemas] = useState(false);
 
   const inputConversation = useMemo(() => {
+    console.log(data.inputConversation.messages);
+
     const messages: ConversationMessage[] = [
       {
         id: createId(),
@@ -195,26 +200,8 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       ),
     ];
 
-    if (data.inputSchema && data.validationSchema) {
-      messages.push({
-        id: createId(),
-        role: "assistant",
-        content: "Your input schema has been built successfully!",
-        rawContent: [
-          {
-            type: "text",
-            value: "Your input schema has been built successfully!",
-          },
-        ],
-      });
-    }
-
     return messages;
-  }, [
-    data.inputConversation.messages,
-    data.inputSchema,
-    data.validationSchema,
-  ]);
+  }, [data.inputConversation.messages]);
 
   const outputConversation = useMemo(() => {
     const messages: ConversationMessage[] = [
@@ -234,22 +221,8 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       ),
     ];
 
-    if (data.outputSchema) {
-      messages.push({
-        id: createId(),
-        role: "assistant",
-        content: "Your output schema has been built successfully!",
-        rawContent: [
-          {
-            type: "text",
-            value: "Your output schema has been built successfully!",
-          },
-        ],
-      });
-    }
-
     return messages;
-  }, [data.outputSchema, data.outputConversation.messages]);
+  }, [data.outputConversation.messages]);
 
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
 
@@ -259,8 +232,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
   const [userMessageRawContent, setUserMessageRawContent] =
     useState<UserMessageRawContent>([]);
 
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmit = async (generationMode: "input" | "output") => {
     setIsGenerating(true);
 
     const editor = editorRef.current;
@@ -282,7 +254,11 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       role: "user",
       content: userMessageContent,
       rawContent: userMessageRawContent,
-      conversationId: data.inputConversation.id,
+      conversationId:
+        generationMode === "input"
+          ? data.inputConversation.id
+          : data.outputConversation.id,
+      createdAt: new Date(),
     };
 
     const newMessages: ConversationMessage[] = [...messages, newMessageUser];
@@ -295,19 +271,21 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       FlowInputSchemaMessage | FlowOutputSchemaMessage
     >;
 
-    if (generateMode === "input") {
+    if (generationMode === "input") {
       result = await generateFlowInputsSchemas({
         flowId: data.id,
-        conversationId: data.inputConversation.id,
+        conversationId: data.inputConversationId,
         messages: newMessages.map((message) => ({
           role: message.role,
           content: message.content,
         })),
       });
     } else {
+      console.log("Generating output schema");
+      console.log(data.outputConversationId);
       result = await generateFlowOutputsSchemas({
         flowId: data.id,
-        conversationId: data.outputConversation.id,
+        conversationId: data.outputConversationId,
         messages: newMessages.map((message) => ({
           role: message.role,
           content: message.content,
@@ -323,6 +301,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
         role: "assistant",
         content: "",
         rawContent: [],
+        createdAt: new Date(),
       };
 
       if (content?.message?.content && content.message.type === "message") {
@@ -340,7 +319,9 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
         const rawContent: AssistantMessageRawContent = [
           {
             type: "text",
-            value: `Generating the following ${generateMode === "input" ? "input" : "output"} schema: `,
+            value: `Generating the following ${
+              generationMode === "input" ? "input" : "output"
+            } schema: `,
           },
           ...content.message.content.description,
         ];
@@ -372,10 +353,15 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
         rawContent: [
           {
             type: "text",
-            value: `Your ${generateMode === "input" ? "input" : "output"} schema has been built successfully!`,
+            value: `Your ${
+              generationMode === "input" ? "input" : "output"
+            } schema has been built successfully!`,
           },
         ],
-        content: `Your ${generateMode === "input" ? "input" : "output"} schema has been built successfully!`,
+        content: `Your ${
+          generationMode === "input" ? "input" : "output"
+        } schema has been built successfully!`,
+        createdAt: new Date(),
       };
 
       setIsGeneratingSchemas(false);
@@ -394,6 +380,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       const root = $getRoot();
       const children = (root.getChildren()[0] as ParagraphNode)?.getChildren();
       const chat = root.getTextContent();
+      console.log(chat);
       const userMessageRawContent = children?.reduce((acc, child) => {
         if (child.__type === "text") {
           acc.push({
@@ -761,7 +748,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
               </div>
             </TabsContent>
             <TabsContent value="build" className="size-full">
-              {generateMode === null && (
+              {generationMode === null && (
                 <div className="flex flex-col w-full h-[calc(100vh-250px)] justify-center items-center gap-2">
                   <p className="text-sm text-muted-foreground">
                     Choose Specly's mode
@@ -770,7 +757,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                     className="w-48"
                     variant="outline"
                     onClick={() => {
-                      setGenerateMode("input");
+                      setGenerationMode("input");
                       setMessages(inputConversation);
                     }}
                   >
@@ -780,7 +767,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                     className="w-48"
                     variant="outline"
                     onClick={() => {
-                      setGenerateMode("output");
+                      setGenerationMode("output");
                       setMessages(outputConversation);
                     }}
                   >
@@ -788,7 +775,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                   </Button>
                 </div>
               )}
-              {generateMode !== null && (
+              {generationMode !== null && (
                 <div className="flex flex-col justify-between h-[calc(100vh-186px)]">
                   <div className="flex size-full flex-col gap-2">
                     <div className="flex items-center gap-2">
@@ -796,12 +783,12 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                         className="size-8"
                         variant="outline"
                         size="icon"
-                        onClick={() => setGenerateMode(null)}
+                        onClick={() => setGenerationMode(null)}
                       >
                         <ArrowLeftIcon className="size-4" />
                       </Button>
                       <p className="text-sm text-muted-foreground">
-                        Define your {generateMode} with Specly
+                        Define your {generationMode} with Specly
                       </p>
                     </div>
                     <ScrollArea
@@ -816,26 +803,29 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                     </ScrollArea>
                   </div>
                   <div className="mt-auto">
-                    <form className="relative" onSubmit={onSubmit}>
+                    <form className="relative">
                       <Editor
                         editorRef={editorRef}
                         id={createId()}
                         onChange={onChatChange}
                         rawMessage={userMessageRawContent}
-                        placeholder={`Define your ${data.type} ${generateMode} with Specly...`}
+                        placeholder={`Define your ${data.type} ${generationMode} with Specly...`}
                         typeaheadPosition="bottom"
                         inputSchema={
-                          generateMode === "output"
+                          generationMode === "output"
                             ? outputReferencesSchema
                             : undefined
                         }
-                        includeReferences={generateMode === "input"}
+                        includeReferences={generationMode === "input"}
                       />
                       <Button
-                        type="submit"
+                        type="button"
                         disabled={!userMessageContent || isGenerating}
                         size="sm"
                         className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
+                        onClick={async () => {
+                          await onSubmit(generationMode);
+                        }}
                       >
                         Send
                         <span className="ml-1">

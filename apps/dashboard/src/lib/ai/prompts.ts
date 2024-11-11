@@ -107,7 +107,7 @@ I want to filter the table customers, with columns: customer_id (integer) first_
   "type": "message",
   "content": [
     { "type": "text", "value": "What specific filter criteria should be applied to the " },
-    { "type": "reference", "referenceType": "input", "name": "customerId", "dataType": "integer" },
+    { "type": "reference", "referenceType": "variable", "name": "customerId", "dataType": "integer" },
     { "type": "text", "value": " field? Should it match exactly, or do you have specific range criteria?" }
   ]
 }
@@ -126,17 +126,17 @@ I want to filter the table customers, with columns: customer_id (integer) first_
       { "type": "text", "value": " table in the " },
       { "type": "reference", "referenceType": "database", "name": "CRM" },
       { "type": "text", "value": " database based on input fields " },
-      { "type": "reference", "referenceType": "input", "name": "customerId", "dataType": "integer" },
+      { "type": "reference", "referenceType": "variable", "name": "customerId", "dataType": "integer" },
       { "type": "text", "value": ", " },
-      { "type": "reference", "referenceType": "input", "name": "firstName", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "firstName", "dataType": "string" },
       { "type": "text", "value": ", " },
-      { "type": "reference", "referenceType": "input", "name": "lastName", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "lastName", "dataType": "string" },
       { "type": "text", "value": ", " },
-      { "type": "reference", "referenceType": "input", "name": "address", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "address", "dataType": "string" },
       { "type": "text", "value": ", " },
-      { "type": "reference", "referenceType": "input", "name": "phone", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "phone", "dataType": "string" },
       { "type": "text", "value": ", and " },
-      { "type": "reference", "referenceType": "input", "name": "email", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "email", "dataType": "string" },
       { "type": "text", "value": ", and returns matching records." }
     ],
     "resources": [
@@ -170,17 +170,17 @@ I want to filter the table customers, with columns: customer_id (integer) first_
     ],
     "logicalSteps": [
       { "type": "text", "value": "1. Build a SQL query with dynamic WHERE clauses for each provided input filter:\n- Add " },
-      { "type": "reference", "referenceType": "input", "name": "customerId", "dataType": "integer" },
+      { "type": "reference", "referenceType": "variable", "name": "customerId", "dataType": "integer" },
       { "type": "text", "value": " exact match if provided.\n- Add " },
-      { "type": "reference", "referenceType": "input", "name": "firstName", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "firstName", "dataType": "string" },
       { "type": "text", "value": " pattern match if provided.\n- Add " },
-      { "type": "reference", "referenceType": "input", "name": "lastName", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "lastName", "dataType": "string" },
       { "type": "text", "value": " pattern match if provided.\n- Add " },
-      { "type": "reference", "referenceType": "input", "name": "email", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "email", "dataType": "string" },
       { "type": "text", "value": " pattern match if provided.\n- Add " },
-      { "type": "reference", "referenceType": "input", "name": "phone", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "phone", "dataType": "string" },
       { "type": "text", "value": " pattern match if provided.\n- Add " },
-      { "type": "reference", "referenceType": "input", "name": "address", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "address", "dataType": "string" },
       { "type": "text", "value": " pattern match if provided.\n2. Use the " },
       { "type": "reference", "referenceType": "database", "name": "CRM" },
       { "type": "text", "value": "'s " },
@@ -386,7 +386,7 @@ Begin by summarizing their intent and then ask questions about each input one at
   "type": "message",
   "content": [
     { "type": "text", "value": "[Introductory statement]" },
-    { "type": "reference", "referenceType": "input", "name": "[inputName]", "dataType": "[inputDataType]" },
+    { "type": "reference", "referenceType": "variable", "name": "[inputName]", "dataType": "[inputDataType]" },
     { "type": "text", "value": "[Question or clarification]" }
   ]
 }
@@ -401,9 +401,9 @@ Begin by summarizing their intent and then ask questions about each input one at
   "content": {
     "description": [
       { "type": "text", "value": "The inputs schema is: " },
-      { "type": "reference", "referenceType": "input", "name": "[inputName1]", "dataType": "[dataType]" },
+      { "type": "reference", "referenceType": "variable", "name": "[inputName1]", "dataType": "[dataType]" },
       { "type": "text", "value": " (description of requirements and constraints), " },
-      { "type": "reference", "referenceType": "input", "name": "[inputName2]", "dataType": "[dataType]" },
+      { "type": "reference", "referenceType": "variable", "name": "[inputName2]", "dataType": "[dataType]" },
       { "type": "text", "value": " (description of requirements and constraints)" }
     ],
     "inputSchema": "{JSON Schema with \`$id\` as \`/schemas/[FLOW_ID]/input\`, in camelCase}",
@@ -426,7 +426,7 @@ Begin by summarizing their intent and then ask questions about each input one at
   "content": [
     { "type": "text", "value": "You need inputs for a route capturing a user profile. Let's clarify each field." },
     { "type": "text", "value": "For the " },
-    { "type": "reference", "referenceType": "input", "name": "username", "dataType": "string" },
+    { "type": "reference", "referenceType": "variable", "name": "username", "dataType": "string" },
     { "type": "text", "value": ", should it be required, and is there a minimum length for this field?" }
   ]
 }
@@ -438,7 +438,7 @@ Begin by summarizing their intent and then ask questions about each input one at
   "type": "message",
   "content": [
     { "type": "text", "value": "You also mentioned " },
-    { "type": "reference", "referenceType": "input", "name": "email", "dataType": "string" },
+    { "type": "reference", "referenceType": "variable", "name": "email", "dataType": "string" },
     { "type": "text", "value": ". Should this be in email format, and is it required?" }
   ]
 }
@@ -450,11 +450,11 @@ Begin by summarizing their intent and then ask questions about each input one at
   "type": "message",
   "content": [
     { "type": "text", "value": "To confirm, your input structure includes:" },
-    { "type": "reference", "referenceType": "input", "name": "username", "dataType": "string" },
+    { "type": "reference", "referenceType": "variable", "name": "username", "dataType": "string" },
     { "type": "text", "value": ": required string, min length 3; " },
-    { "type": "reference", "referenceType": "input", "name": "email", "dataType": "string" },
+    { "type": "reference", "referenceType": "variable", "name": "email", "dataType": "string" },
     { "type": "text", "value": ": required email format; " },
-    { "type": "reference", "referenceType": "input", "name": "age", "dataType": "integer" },
+    { "type": "reference", "referenceType": "variable", "name": "age", "dataType": "integer" },
     { "type": "text", "value": ": optional integer, range 18-99. Is this correct?" }
   ]
 }
@@ -467,11 +467,11 @@ Begin by summarizing their intent and then ask questions about each input one at
   "content": {
     "description": [
       { "type": "text", "value": "The inputs schema is: " },
-      { "type": "reference", "referenceType": "input", "name": "username", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "username", "dataType": "string" },
       { "type": "text", "value": " (required string with minimum length of 3 characters), " },
-      { "type": "reference", "referenceType": "input", "name": "email", "dataType": "string" },
+      { "type": "reference", "referenceType": "variable", "name": "email", "dataType": "string" },
       { "type": "text", "value": " (required string in email format), and " },
-      { "type": "reference", "referenceType": "input", "name": "age", "dataType": "integer" },
+      { "type": "reference", "referenceType": "variable", "name": "age", "dataType": "integer" },
       { "type": "text", "value": " (optional integer between 18 and 99)" }
     ],
     "inputSchema": "{\"$id\": \"/schemas/ws3bcjvej4v6ti3db6rz1nic/input\", \"type\": \"object\", \"properties\": {\"username\": {\"type\": \"string\", \"minLength\": 3}, \"email\": {\"type\": \"string\", \"format\": \"email\"}, \"age\": {\"type\": \"integer\", \"minimum\": 18, \"maximum\": 99}}, \"required\": [\"username\", \"email\"]}",
@@ -482,8 +482,104 @@ Begin by summarizing their intent and then ask questions about each input one at
 
 export const getFlowOutputSchemaAgentPrompt = (
   flowId: string,
-) => `Help the user define the structure of outputs required for a flow (ID: ${flowId}) by asking simple, structured questions to gather detailed information. Conclude by generating a JSON Schema and a Zod schema for those outputs based on the gathered information.
-`;
+) => `You will help the user define the output structure for their flow (ID: ${flowId}). Begin by asking simple, structured questions to gather detailed information regarding the properties and structure of the output, focusing solely on the naming and organization of fields rather than data types or constraints. Conclude by generating a JSON Schema for those outputs based on the gathered information.
+
+# Steps
+
+1. Start by asking broad questions to understand the nature of the outputs needed.
+   - **Example Questions**:
+     - What type of information should be included in the output?
+     - Can you describe some of the key properties or fields required?
+
+2. Narrow down questions to finalize the details about the field names and overall structure.
+   - **Focus on Field Naming**:
+     - Would you prefer specific names for fields like customerId, or should we rename it to simpler forms such as "id"?
+
+3. Confirm that all required properties are covered.
+   - **Confirmation Questions**:
+     - Are these fields named to your preference?
+     - Should any fields be grouped or nested in the final structure?
+
+4. Once the user confirms, construct a detailed JSON Schema for the flow output using the gathered field structure.
+
+# Output Format
+
+- Questions and confirmations should be structured as follows:
+\`\`\`json
+{
+  "type": "message",
+  "content": [
+    { "type": "text", "value": "[Question or confirmation]" }
+  ]
+}
+\`\`\`
+
+- Final output should be a JSON Schema in the following format:
+\`\`\`json
+{
+  "type": "end",
+  "content": {
+    "description": [
+      { "type": "text", "value": "The outputs schema is: " },
+      { "type": "reference", "referenceType": "output", "name": "[outputName1]", "dataType": "[dataType]", "$ref": "[referenceSchemaUri1]" },
+      { "type": "text", "value": ", and " },
+      { "type": "reference", "referenceType": "output", "name": "[outputName2]", "dataType": "[dataType]", "$ref": "[referenceSchemaUri2]" },
+    ],
+    "outputSchema": "{JSON Schema with \`$id\` as \`/schemas/[FLOW_ID]/output\`, properties in camelCase}",
+  }
+}
+\`\`\`
+
+# Examples
+
+**Example User Inputs and Model Output:**
+
+- **Input**: "We need the output to include customer (array), $ref: /schemas/yn1afu5neu9o0jue8kiv0zd9/output, required: false, itemsType: object, properties: email (string), required: false, phone (string), required: false, address (string), required: false, lastName (string), required: false, firstName (string), required: false, customerId (integer), required: false"
+- **Follow-Up Questions**:
+\`\`\`json
+{
+  "type": "message",
+  "content": [
+    { "type": "text", "value": "Do you want to change the name of any of the fields like " },
+    { "type": "reference", "referenceType": "variable", "name": "customerId", "dataType": "integer" },
+    { "type": "text", "value": " to " },
+    { "type": "reference", "referenceType": "variable", "name": "id", "dataType": "integer" },
+    { "type": "text", "value": "?" }
+  ]
+}
+\`\`\`
+
+{
+  "type": "message",
+    "content": [
+      { "type": "text", "value": "Do you want all the fields in the customer object or just some of them?" }
+    ]
+}
+\`\`\`
+
+**Final Message with JSON Schema**:
+\`\`\`json
+{
+  "type": "end",
+  "content": {
+    "description": [
+      { "type": "text", "value": "The outputs schema is: An array of customer objects with the following properties: " },
+      { "type": "reference", "referenceType": "variable", "name": "email", "dataType": "string" },
+      { "type": "text", "value": ", " },
+      { "type": "reference", "referenceType": "variable", "name": "phone", "dataType": "string" },
+      { "type": "text", "value": ", " },
+      { "type": "reference", "referenceType": "variable", "name": "address", "dataType": "string" },
+      { "type": "text", "value": ", " },
+      { "type": "reference", "referenceType": "variable", "name": "lastName", "dataType": "string" },
+      { "type": "text", "value": ", " },
+      { "type": "reference", "referenceType": "variable", "name": "firstName", "dataType": "string" },
+      { "type": "text", "value": ", and " },
+      { "type": "reference", "referenceType": "variable", "name": "customerId", "dataType": "integer" },
+    ],
+    "outputSchema": "{\"$id\": \"/schemas/yn1afu5neu9o0jue8kiv0zd9/output\", \"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"email\": {\"type\": \"string\", \"$ref\": \"/schemas/yn1afu5neu9o0jue8kiv0zd9/output\"}, \"phone\": {\"type\": \"string\", \"$ref\": \"/schemas/yn1afu5neu9o0jue8kiv0zd9/output\"}, \"address\": {\"type\": \"string\", \"$ref\": \"/schemas/yn1afu5neu9o0jue8kiv0zd9/output\"}, \"lastName\": {\"type\": \"string\", \"$ref\": \"/schemas/yn1afu5neu9o0jue8kiv0zd9/output\"}, \"firstName\": {\"type\": \"string\", \"$ref\": \"/schemas/yn1afu5neu9o0jue8kiv0zd9/output\"}, \"customerId\": {\"type\": \"integer\", \"$ref\": \"/schemas/yn1afu5neu9o0jue8kiv0zd9/output\"}}}}"
+  }
+}
+\`\`\``;
 
 export const getGenerateFunctionCodePrompt = async ({
   name,

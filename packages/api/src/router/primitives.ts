@@ -140,7 +140,7 @@ export const primitivesRouter = {
           ),
         });
 
-        if (isUnique) {
+        if (isUnique && isUnique.id !== existingPrimitive.id) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Primitive name already exists in this flow",

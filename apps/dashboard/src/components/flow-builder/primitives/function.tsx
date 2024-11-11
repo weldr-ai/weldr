@@ -158,15 +158,19 @@ export const FunctionNode = memo(
         return acc;
       }
 
-      const flatInputSchema = flattenInputSchema(
-        ancestor.data.metadata?.inputSchema,
-      );
+      const flatInputSchema = flattenInputSchema({
+        schema: ancestor.data.metadata?.inputSchema,
+      });
 
       return acc.concat(flatInputSchema);
     }, [] as FlatInputSchema[]);
 
     const inputSchema = data.flow?.inputSchema
-      ? [...passedInputs].concat(flattenInputSchema(data.flow.inputSchema))
+      ? [...passedInputs].concat(
+          flattenInputSchema({
+            schema: data.flow.inputSchema,
+          }),
+        )
       : [...passedInputs];
 
     const form = useForm<z.infer<typeof validationSchema>>({
@@ -230,6 +234,7 @@ export const FunctionNode = memo(
           root.getChildren()[0] as ParagraphNode
         )?.getChildren();
         const chat = root.getTextContent();
+        console.log(chat);
         const userMessageRawContent = children?.reduce((acc, child) => {
           if (child.__type === "text") {
             acc.push({

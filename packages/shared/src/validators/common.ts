@@ -36,11 +36,13 @@ export const jsonSchema: z.ZodType<JsonSchema> = jsonSchemaPropertySchema.and(
 export const inputSchema = jsonSchema;
 export const outputSchema = jsonSchema;
 
-export const inputReferenceSchema = z.object({
-  name: z.string().describe("The name of the input. Must be in camelCase."),
-  dataType: dataTypeSchema.describe("The data type of the input"),
-  refUri: z.string().describe("The URI of the input reference"),
-  required: z.boolean().describe("Whether the input is required"),
+export const variableReferenceSchema = z.object({
+  name: z.string().describe("The name of the variable. Must be in camelCase."),
+  dataType: dataTypeSchema.describe("The data type of the variable"),
+  refUri: z.string().describe("The URI of the variable reference"),
+  required: z.boolean().describe("Whether the variable is required"),
+  properties: z.record(z.string(), jsonSchema).optional(),
+  itemsType: jsonSchema.optional(),
 });
 
 export const databaseReferenceSchema = z.object({
@@ -102,10 +104,14 @@ export const rawContentTextElementSchema = z.object({
   value: z.string().describe("The value of the text"),
 });
 
-export const rawContentInputReferenceSchema = z.object({
+export const rawContentVariableReferenceSchema = z.object({
   type: z.literal("reference"),
-  referenceType: z.literal("input"),
-  ...inputReferenceSchema.omit({ refUri: true }).shape,
+  referenceType: z.literal("variable"),
+  ...variableReferenceSchema.omit({
+    refUri: true,
+    properties: true,
+    itemsType: true,
+  }).shape,
 });
 
 export const rawContentDatabaseReferenceSchema = z.object({
@@ -143,8 +149,8 @@ export const rawContentUtilityFunctionReferenceSchema = z.object({
 export const rawContentReferenceElementSchema = z.discriminatedUnion(
   "referenceType",
   [
-    rawContentInputReferenceSchema.describe(
-      "The input reference part of a message or description. Must be used when mentioning an input in a message or description.",
+    rawContentVariableReferenceSchema.describe(
+      "The variable reference part of a message or description. Must be used when mentioning a variable in a message or description.",
     ),
     rawContentDatabaseReferenceSchema.describe(
       "The database reference part of a message or description. Must be used when mentioning a database in a message or description.",
@@ -168,7 +174,7 @@ export const rawContentSchema = z
 const inputRawContentSchema = z
   .union([
     rawContentTextElementSchema,
-    rawContentInputReferenceSchema,
+    rawContentVariableReferenceSchema,
     rawContentDatabaseReferenceSchema,
     rawContentDatabaseTableReferenceSchema,
     rawContentDatabaseColumnReferenceSchema,
@@ -176,7 +182,7 @@ const inputRawContentSchema = z
   .array();
 
 const outputRawContentSchema = z
-  .union([rawContentTextElementSchema, rawContentInputReferenceSchema])
+  .union([rawContentTextElementSchema, rawContentVariableReferenceSchema])
   .array();
 
 export const flowInputSchemaMessageSchema = z.object({
