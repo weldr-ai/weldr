@@ -31,9 +31,9 @@ export function Hero() {
           <div className="rounded-[12px] border bg-foreground p-0.5">
             <Image
               className="rounded-xl"
-              alt="IntegraMind Dashboard"
+              alt="IntegraMind Editor"
               height={1080}
-              src="/dashboard.png"
+              src="/editor.png"
               width={1920}
             />
           </div>

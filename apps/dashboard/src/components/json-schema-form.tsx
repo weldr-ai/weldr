@@ -37,7 +37,21 @@ export function JsonSchemaForm({
   setFormData,
 }: JsonSchemaFormProps) {
   const [errors, setErrors] = useState<ValidationError[]>([]);
-  const [disabledFields, setDisabledFields] = useState<Set<string>>(new Set());
+  const [disabledFields, setDisabledFields] = useState<Set<string>>(() => {
+    // Initialize with all field paths
+    const paths = new Set<string>();
+    const collectPaths = (schema: JsonSchema, parentPath = "") => {
+      if (schema.properties) {
+        for (const [key, prop] of Object.entries(schema.properties)) {
+          const currentPath = parentPath ? `${parentPath}.${key}` : key;
+          paths.add(currentPath);
+          collectPaths(prop, currentPath);
+        }
+      }
+    };
+    collectPaths(schema);
+    return paths;
+  });
 
   // Validation logic remains the same
   const validateField = (
