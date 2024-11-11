@@ -63,16 +63,10 @@ export const baseInsertFlowSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .regex(/^[a-z0-9_]+$/, {
-      message:
-        "Name must only contain lowercase letters, numbers, and underscores",
+    .regex(/^\S*$/, {
+      message: "Cannot contain spaces.",
     })
-    .regex(/^[a-z0-9].*[a-z0-9]$/, {
-      message: "Name must not start or end with an underscore",
-    })
-    .regex(/^(?!.*__).*$/, {
-      message: "Name must not contain consecutive underscores",
-    }),
+    .transform((name) => name.trim()),
   description: z.string().trim().optional(),
   type: flowTypesSchema,
   workspaceId: z.string().min(1, {
@@ -120,16 +114,10 @@ export const baseUpdateFlowSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .regex(/^[a-z0-9_]+$/, {
-      message:
-        "Name must only contain lowercase letters, numbers, and underscores",
+    .regex(/^\S*$/, {
+      message: "Cannot contain spaces.",
     })
-    .regex(/^[a-z0-9].*[a-z0-9]$/, {
-      message: "Name must not start or end with an underscore",
-    })
-    .regex(/^(?!.*__).*$/, {
-      message: "Name must not contain consecutive underscores",
-    })
+    .transform((name) => name.trim())
     .optional(),
   description: z.string().optional(),
   inputSchema: inputSchema.optional(),

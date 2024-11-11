@@ -74,6 +74,8 @@ import { readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
+import { TestInputDialog } from "~/components/test-input-dialog";
+import { executeFunction } from "~/lib/actions/execute";
 import { generateFunction } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/react";
 import {
@@ -93,16 +95,10 @@ const validationSchema = z.object({
     .min(1, {
       message: "Name is required",
     })
-    .regex(/^[a-z0-9_]+$/, {
-      message:
-        "Name must only contain lowercase letters, numbers, and underscores",
+    .regex(/^\S*$/, {
+      message: "Cannot contain spaces.",
     })
-    .regex(/^[a-z0-9].*[a-z0-9]$/, {
-      message: "Name must not start or end with an underscore",
-    })
-    .regex(/^(?!.*__).*$/, {
-      message: "Name must not contain consecutive underscores",
-    }),
+    .transform((name) => name.trim()),
 });
 
 export const FunctionNode = memo(
@@ -198,6 +194,11 @@ export const FunctionNode = memo(
 
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
+    const [isRunning, setIsRunning] = useState<boolean>(false);
+    const [testInput, setTestInput] = useState<unknown>(
+      data.metadata?.testInput ?? {},
+    );
+
     const [messages, setMessages] = useState<ConversationMessage[]>([
       {
         role: "assistant",
@@ -210,24 +211,11 @@ export const FunctionNode = memo(
               "Hi there! I'm Specly, your AI assistant. What does your function do?",
           },
         ],
+        createdAt: data.createdAt,
       },
       ...((data.conversation?.messages ?? []).sort(
         (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
       ) as ConversationMessage[]),
-      ...((data.metadata?.rawDescription
-        ? [
-            {
-              role: "assistant",
-              content: "Your function has been built successfully!",
-              rawContent: [
-                {
-                  type: "text",
-                  value: "Your function has been built successfully!",
-                },
-              ],
-            },
-          ]
-        : []) as ConversationMessage[]),
     ]);
     const [userMessageContent, setUserMessageContent] = useState<string | null>(
       null,
@@ -358,6 +346,7 @@ export const FunctionNode = memo(
           content?.message?.type === "end" &&
           content?.message?.content?.description
         ) {
+          setIsGeneratingCode(true);
           const rawContent: AssistantMessageRawContent = [
             {
               type: "text",
@@ -367,8 +356,6 @@ export const FunctionNode = memo(
           ];
           newAssistantMessage.content = rawMessageContentToText(rawContent);
           newAssistantMessage.rawContent = rawContent;
-
-          await refetch();
         }
 
         if (newAssistantMessage) {
@@ -388,8 +375,6 @@ export const FunctionNode = memo(
 
       // if code generation is set, disable it and refetch the updated function metadata
       if (functionRequirementsMessageObject.message.type === "end") {
-        setIsGeneratingCode(true);
-
         const functionBuiltSuccessfullyMessage: ConversationMessage = {
           role: "assistant",
           rawContent: [
@@ -401,6 +386,7 @@ export const FunctionNode = memo(
           content: "Your function has been built successfully!",
         };
 
+        await refetch();
         setIsGeneratingCode(false);
         setMessages([...newMessages, functionBuiltSuccessfullyMessage]);
       }
@@ -502,6 +488,23 @@ export const FunctionNode = memo(
                             className="size-7 text-success hover:text-success"
                             variant="ghost"
                             size="icon"
+                            disabled={
+                              !data.metadata?.rawDescription ||
+                              !data.name ||
+                              isRunning
+                            }
+                            onClick={async () => {
+                              setIsRunning(true);
+                              await executeFunction({
+                                functionId: data.id,
+                                input:
+                                  Object.keys(testInput ?? {}).length > 0
+                                    ? (testInput as Record<string, unknown>)
+                                    : undefined,
+                              });
+                              setIsRunning(false);
+                              await refetch();
+                            }}
                           >
                             <PlayCircleIcon className="size-3.5" />
                           </Button>
@@ -569,9 +572,14 @@ export const FunctionNode = memo(
                   </Form>
                 </ExpandableCardHeader>
                 <div className="flex flex-col h-[calc(100dvh-492px)] p-4">
-                  <ScrollArea className="flex-grow mb-2" ref={scrollAreaRef}>
+                  <ScrollArea
+                    className="flex-grow w-full mb-2"
+                    ref={scrollAreaRef}
+                  >
                     <MessageList
                       messages={messages}
+                      testRuns={data.testRuns}
+                      isRunning={isRunning}
                       isGenerating={isGeneratingCode}
                       chatHistoryEndRef={chatHistoryEndRef}
                     />
@@ -623,9 +631,29 @@ export const FunctionNode = memo(
                         />
                       </div>
                       <div className="space-y-1">
-                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
-                          Input:
-                        </span>
+                        <div className="flex items-center justify-between pr-2">
+                          <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                            Input:
+                          </span>
+                          <TestInputDialog
+                            schema={data.metadata?.inputSchema as JsonSchema}
+                            formData={testInput}
+                            setFormData={setTestInput}
+                            onSubmit={async () => {
+                              await updateFunction.mutateAsync({
+                                where: {
+                                  id: data.id,
+                                },
+                                payload: {
+                                  type: "function",
+                                  metadata: {
+                                    testInput,
+                                  },
+                                },
+                              });
+                            }}
+                          />
+                        </div>
                         <TreeView
                           data={jsonSchemaToTreeData(
                             data.metadata?.inputSchema as JsonSchema,

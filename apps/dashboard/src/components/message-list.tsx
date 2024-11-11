@@ -1,46 +1,129 @@
-import type { ConversationMessage } from "@integramind/shared/types";
+import type { ConversationMessage, TestRun } from "@integramind/shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
+import { ScrollArea } from "@integramind/ui/scroll-area";
 import { createId } from "@paralleldrive/cuid2";
-import { Loader2 } from "lucide-react";
-import type { RefObject } from "react";
+import { type RefObject, useEffect, useState } from "react";
+import { JsonViewer } from "./json-viewer";
 import { RawContentViewer } from "./raw-content-viewer";
+
+const TypingDots = () => {
+  const [dots, setDots] = useState("");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((prevDots) => {
+        if (prevDots.length >= 3) return "";
+        return `${prevDots}.`;
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return <span>{dots}</span>;
+};
 
 export default function MessageList({
   messages,
+  testRuns,
+  isRunning,
   isGenerating,
   chatHistoryEndRef,
 }: {
   messages: ConversationMessage[];
+  testRuns?: TestRun[];
+  isRunning?: boolean;
   isGenerating: boolean;
   chatHistoryEndRef: RefObject<HTMLDivElement>;
 }) {
+  const testRunList: (TestRun & { type: "test-run" })[] = (testRuns ?? []).map(
+    (testRun) => ({
+      ...testRun,
+      type: "test-run",
+    }),
+  );
+
+  const messageList: (ConversationMessage & { type: "message" })[] =
+    messages.map((message) => ({
+      ...message,
+      type: "message",
+    }));
+
+  const allMessages: (
+    | (ConversationMessage & { type: "message" })
+    | (TestRun & { type: "test-run" })
+  )[] = [...messageList, ...testRunList].sort(
+    (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
+  );
+
   return (
-    <div className="flex flex-col gap-4">
-      {messages.map((messages) => (
-        <div className="flex items-start" key={messages.id ?? createId()}>
-          <Avatar className="size-6 rounded-md">
-            {messages.role === "user" ? (
-              <>
-                <AvatarImage src={undefined} alt="User" />
-                <AvatarFallback>
-                  <div className="size-full bg-gradient-to-br from-rose-500 via-amber-600 to-blue-500" />
-                </AvatarFallback>
-              </>
-            ) : (
-              <AvatarImage src="/logo.svg" alt="Specly" />
-            )}
-          </Avatar>
-          <div className="ml-3">
-            <RawContentViewer rawContent={messages.rawContent ?? []} />
-          </div>
-        </div>
-      ))}
+    <div className="flex flex-col w-full gap-4">
+      {allMessages.map((message) => {
+        if (message.type === "message") {
+          return <MessageItem key={message.id} message={message} />;
+        }
+        return <TestRunItem key={message.id} testRun={message} />;
+      })}
       {isGenerating && (
-        <div className="flex items-center justify-center">
-          <Loader2 className="size-4 animate-spin" />
+        <div className="flex items-start">
+          <Avatar className="size-6 rounded-md">
+            <AvatarImage src="/logo.svg" alt="Specly" />
+          </Avatar>
+          <span className="ml-3 text-sm text-muted-foreground">
+            Generating your function
+            <TypingDots />
+          </span>
+        </div>
+      )}
+      {isRunning && (
+        <div className="flex items-start">
+          <Avatar className="size-6 rounded-md">
+            <AvatarImage src="/logo.svg" alt="Specly" />
+          </Avatar>
+          <span className="ml-3 text-sm text-muted-foreground">
+            Running your function
+            <TypingDots />
+          </span>
         </div>
       )}
       <div ref={chatHistoryEndRef} />
+    </div>
+  );
+}
+
+function MessageItem({ message }: { message: ConversationMessage }) {
+  return (
+    <div className="flex w-full items-start" key={message.id ?? createId()}>
+      <Avatar className="size-6 rounded-md">
+        {message.role === "user" ? (
+          <>
+            <AvatarImage src={undefined} alt="User" />
+            <AvatarFallback>
+              <div className="size-full bg-gradient-to-br from-rose-500 via-amber-600 to-blue-500" />
+            </AvatarFallback>
+          </>
+        ) : (
+          <AvatarImage src="/logo.svg" alt="Specly" />
+        )}
+      </Avatar>
+      <div className="ml-3">
+        <RawContentViewer rawContent={message.rawContent ?? []} />
+      </div>
+    </div>
+  );
+}
+
+function TestRunItem({ testRun }: { testRun: TestRun }) {
+  return (
+    <div className="flex w-full items-start">
+      <Avatar className="size-6 rounded-md">
+        <AvatarImage src="/logo.svg" alt="Specly" />
+      </Avatar>
+      <div className="flex ml-3 w-full h-48 bg-background rounded-md">
+        <ScrollArea className="w-full max-h-48 px-1 py-2">
+          <JsonViewer data={testRun.output.output} />
+        </ScrollArea>
+      </div>
     </div>
   );
 }

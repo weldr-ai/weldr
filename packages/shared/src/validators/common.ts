@@ -11,17 +11,22 @@ export const dataTypeSchema = z.enum([
   "null",
 ]);
 
-export const baseJsonSchema = z.object({
+export const jsonSchemaPropertySchema = z.object({
   $id: z.string().optional(),
   $ref: z.string().optional(),
+  type: dataTypeSchema,
   title: z.string().optional(),
-  type: dataTypeSchema.optional(),
   description: z.string().optional(),
-  required: z.string().array().optional(),
+  required: z.array(z.string()).optional(),
+  minimum: z.number().optional(),
+  maximum: z.number().optional(),
+  minLength: z.number().optional(),
+  maxLength: z.number().optional(),
   enum: z.any().array().optional(),
+  format: z.string().optional(),
 });
 
-export const jsonSchema: z.ZodType<JsonSchema> = baseJsonSchema.and(
+export const jsonSchema: z.ZodType<JsonSchema> = jsonSchemaPropertySchema.and(
   z.object({
     properties: z.record(z.lazy(() => jsonSchema)).optional(),
     items: z.lazy(() => jsonSchema).optional(),
@@ -334,7 +339,13 @@ export const functionRequirementsMessageSchema = z.object({
               - Input validation errors can be ignored as inputs are validated separately.`,
           ),
           dependencies: z
-            .string()
+            .object({
+              name: z.string().describe("The name of the npm package"),
+              version: z
+                .string()
+                .optional()
+                .describe("The version of the npm package (optional)"),
+            })
             .array()
             .optional()
             .describe(

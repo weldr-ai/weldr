@@ -1,6 +1,6 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
-import { primitives } from "@integramind/db/schema";
+import { primitives, testRuns } from "@integramind/db/schema";
 
 import { type SQL, and, eq } from "@integramind/db";
 import { conversations } from "@integramind/db/schema";
@@ -86,6 +86,7 @@ export const primitivesRouter = {
               messages: true,
             },
           },
+          testRuns: true,
         },
       });
 
@@ -171,5 +172,34 @@ export const primitivesRouter = {
       }
 
       return updatedPrimitive[0];
+    }),
+  createTestRun: protectedProcedure
+    .input(
+      z.object({
+        output: z.record(z.string(), z.unknown()),
+        input: z.record(z.string(), z.unknown()),
+        primitiveId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = (
+        await ctx.db
+          .insert(testRuns)
+          .values({
+            output: input.output,
+            input: input.input,
+            primitiveId: input.primitiveId,
+          })
+          .returning({ id: testRuns.id })
+      )[0];
+
+      if (!result) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create test run",
+        });
+      }
+
+      return result;
     }),
 } satisfies TRPCRouterRecord;

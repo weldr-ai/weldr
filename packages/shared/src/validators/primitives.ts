@@ -8,6 +8,15 @@ import {
 } from "./common";
 import { conversationSchema } from "./conversations";
 
+export const testRunSchema = z.object({
+  id: z.string(),
+  input: z.any(),
+  output: z.any(),
+  status: z.enum(["success", "error"]),
+  createdAt: z.date(),
+  primitiveId: z.string(),
+});
+
 export const primitiveTypesSchema = z.enum(["function", "stop"]);
 
 export const primitiveBaseSchema = z.object({
@@ -36,6 +45,7 @@ export const functionResourceSchema = z.object({
 export const functionPrimitiveMetadataSchema = z.object({
   inputSchema: inputSchema.optional(),
   outputSchema: outputSchema.optional(),
+  testInput: z.unknown().optional(),
   description: z.string().optional(),
   rawDescription: rawContentSchema.optional(),
   code: z.string().optional(),
@@ -43,7 +53,9 @@ export const functionPrimitiveMetadataSchema = z.object({
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
   resources: functionResourceSchema.array().optional(),
-  dependencies: z.string().array().optional(),
+  dependencies: z
+    .array(z.object({ name: z.string(), version: z.string().optional() }))
+    .optional(),
 });
 
 export const primitiveMetadataSchema = z.union([
@@ -54,6 +66,7 @@ export const primitiveMetadataSchema = z.union([
 export const functionPrimitiveSchema = primitiveBaseSchema.extend({
   type: z.literal("function"),
   conversation: conversationSchema,
+  testRuns: testRunSchema.array(),
   metadata: functionPrimitiveMetadataSchema.nullable().optional(),
 });
 
@@ -78,16 +91,13 @@ export const insertPrimitiveSchema = z.object({
 export const updatePrimitiveBaseSchema = z.object({
   name: z
     .string()
-    .regex(/^[a-z0-9_]+$/, {
-      message:
-        "Name must only contain lowercase letters, numbers, and underscores",
+    .min(1, {
+      message: "Name is required.",
     })
-    .regex(/^[a-z0-9].*[a-z0-9]$/, {
-      message: "Name must not start or end with an underscore",
+    .regex(/^\S*$/, {
+      message: "Cannot contain spaces.",
     })
-    .regex(/^(?!.*__).*$/, {
-      message: "Name must not contain consecutive underscores",
-    })
+    .transform((name) => name.trim())
     .nullable()
     .optional(),
   positionX: z.number().optional(),

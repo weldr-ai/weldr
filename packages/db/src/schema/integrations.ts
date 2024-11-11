@@ -19,9 +19,8 @@ export const integrations = pgTable("integrations", {
   environmentVariables: text("environment_variables")
     .array()
     .default(sql`NULL`),
-  dependencies: jsonb("dependencies")
-    .$type<{ name: string; version?: string }[]>()
-    .notNull(),
+  dependencies:
+    jsonb("dependencies").$type<{ name: string; version?: string }[]>(),
 });
 
 export const integrationsRelations = relations(integrations, ({ many }) => ({
@@ -37,6 +36,7 @@ export const integrationUtils = pgTable("integration_utils", {
   description: text("description").notNull(),
   documentation: text("documentation").notNull(),
   implementation: text("implementation").notNull(),
+  filePath: text("file_path").notNull(),
   integrationId: text("integration_id")
     .references(() => integrations.id, { onDelete: "cascade" })
     .notNull(),

@@ -1,6 +1,6 @@
 {
-  "id": "f510487b-18a4-4588-ba27-a15463af2007",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "18f3f3ff-1975-42a6-a2a7-9de2021805e0",
+  "prevId": "f510487b-18a4-4588-ba27-a15463af2007",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -944,15 +944,16 @@
           "primaryKey": false,
           "notNull": false
         },
+        "status": {
+          "name": "status",
+          "type": "test_run_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'success'"
+        },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -1306,6 +1307,11 @@
       "name": "primitive_types",
       "schema": "public",
       "values": ["function", "stop"]
+    },
+    "public.test_run_status": {
+      "name": "test_run_status",
+      "schema": "public",
+      "values": ["success", "error"]
     }
   },
   "schemas": {},

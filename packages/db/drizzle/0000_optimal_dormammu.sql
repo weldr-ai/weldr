@@ -109,6 +109,7 @@ CREATE TABLE IF NOT EXISTS "integration_utils" (
 	"description" text NOT NULL,
 	"documentation" text NOT NULL,
 	"implementation" text NOT NULL,
+	"file_path" text NOT NULL,
 	"integration_id" text NOT NULL
 );
 --> statement-breakpoint
@@ -119,7 +120,7 @@ CREATE TABLE IF NOT EXISTS "integrations" (
 	"name" text NOT NULL,
 	"description" text NOT NULL,
 	"environment_variables" text[] DEFAULT NULL,
-	"dependencies" jsonb NOT NULL
+	"dependencies" jsonb
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "primitives" (
@@ -135,6 +136,15 @@ CREATE TABLE IF NOT EXISTS "primitives" (
 	"created_by" text DEFAULT NULL,
 	"conversation_id" text DEFAULT NULL,
 	CONSTRAINT "primitives_name_flow_id_unique" UNIQUE("name","flow_id")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "test_runs" (
+	"id" text PRIMARY KEY NOT NULL,
+	"input" jsonb,
+	"output" jsonb,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"primitive_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "resource_environment_variables" (
@@ -281,6 +291,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "primitives" ADD CONSTRAINT "primitives_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "test_runs" ADD CONSTRAINT "test_runs_primitive_id_primitives_id_fk" FOREIGN KEY ("primitive_id") REFERENCES "public"."primitives"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

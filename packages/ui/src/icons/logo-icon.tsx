@@ -28,14 +28,14 @@ export function LogoIcon({
             cy="235.636"
             r="43.6364"
             stroke="#111113"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="512.582"
             cy="788.364"
             r="43.6364"
             stroke="#111113"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <line
             x1="514.629"
@@ -43,26 +43,26 @@ export function LogoIcon({
             x2="514.629"
             y2="279.273"
             stroke="#111113"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="672.582"
             cy="322.909"
             r="43.6364"
             stroke="#111113"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="672.582"
             cy="701.091"
             r="43.6364"
             stroke="#111113"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <path
             d="M672.58 657.454V599.273L614.398 552.727V471.273L672.58 424.727L672.58 366.545"
             stroke="#111113"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="43.6364"
@@ -70,7 +70,7 @@ export function LogoIcon({
             r="43.6364"
             transform="matrix(-1 0 0 1 396.215 279.273)"
             stroke="#111113"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="43.6364"
@@ -78,12 +78,12 @@ export function LogoIcon({
             r="43.6364"
             transform="matrix(-1 0 0 1 396.215 657.454)"
             stroke="#111113"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <path
             d="M352.58 657.454V599.273L410.762 552.727L410.762 471.273L352.58 424.727V366.545"
             stroke="#111113"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="43.6364"
@@ -91,7 +91,7 @@ export function LogoIcon({
             r="43.6364"
             transform="matrix(-1 0 0 1 279.273 467.782)"
             stroke="#111113"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="43.6364"
@@ -99,7 +99,7 @@ export function LogoIcon({
             r="43.6364"
             transform="matrix(-1 0 0 1 832 467.782)"
             stroke="#111113"
-            stroke-width="25"
+            strokeWidth="25"
           />
         </svg>
       ) : (
@@ -117,14 +117,14 @@ export function LogoIcon({
             cy="235.636"
             r="43.6364"
             stroke="white"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="512.582"
             cy="788.364"
             r="43.6364"
             stroke="white"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <line
             x1="514.629"
@@ -132,26 +132,26 @@ export function LogoIcon({
             x2="514.629"
             y2="279.273"
             stroke="white"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="672.582"
             cy="322.909"
             r="43.6364"
             stroke="white"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="672.582"
             cy="701.091"
             r="43.6364"
             stroke="white"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <path
             d="M672.58 657.454V599.273L614.398 552.727V471.273L672.58 424.727L672.58 366.545"
             stroke="white"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="43.6364"
@@ -159,7 +159,7 @@ export function LogoIcon({
             r="43.6364"
             transform="matrix(-1 0 0 1 396.215 279.273)"
             stroke="white"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="43.6364"
@@ -167,12 +167,12 @@ export function LogoIcon({
             r="43.6364"
             transform="matrix(-1 0 0 1 396.215 657.454)"
             stroke="white"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <path
             d="M352.58 657.454V599.273L410.762 552.727L410.762 471.273L352.58 424.727V366.545"
             stroke="white"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="43.6364"
@@ -180,7 +180,7 @@ export function LogoIcon({
             r="43.6364"
             transform="matrix(-1 0 0 1 279.273 467.782)"
             stroke="white"
-            stroke-width="25"
+            strokeWidth="25"
           />
           <circle
             cx="43.6364"
@@ -188,7 +188,7 @@ export function LogoIcon({
             r="43.6364"
             transform="matrix(-1 0 0 1 832 467.782)"
             stroke="white"
-            stroke-width="25"
+            strokeWidth="25"
           />
         </svg>
       )}

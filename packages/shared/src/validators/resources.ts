@@ -22,9 +22,8 @@ export const insertResourceSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .regex(/^[A-Z][a-zA-Z0-9]*$/, {
-      message:
-        "Name must start with a capital letter, followed by letters and numbers only",
+    .regex(/^\S*$/, {
+      message: "Cannot contain spaces.",
     })
     .transform((name) => name.trim()),
   description: z.string().trim().optional(),

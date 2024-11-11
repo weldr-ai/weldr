@@ -8,7 +8,7 @@ import type { TreeDataItem } from "@integramind/ui/tree-view";
 import { createId } from "@paralleldrive/cuid2";
 
 export function jsonSchemaToTreeData(
-  schema: JsonSchema | undefined = {},
+  schema: JsonSchema | undefined = undefined,
 ): TreeDataItem[] {
   if (!schema) {
     return [];
@@ -48,6 +48,7 @@ export function flattenInputSchema(
   path = "",
   required = false,
   refPath = "",
+  expandArrays = true,
 ): FlatInputSchema[] {
   let tempPath = path;
   const result: FlatInputSchema[] = [];
@@ -80,13 +81,19 @@ export function flattenInputSchema(
         description: value.description,
         refUri: newRefPath,
       });
-      if (value.type === "object" || value.type === "array") {
+      if (value.type === "object" || (value.type === "array" && expandArrays)) {
         result.push(
-          ...flattenInputSchema(value, newPath, isRequired, newRefPath),
+          ...flattenInputSchema(
+            value,
+            newPath,
+            isRequired,
+            newRefPath,
+            expandArrays,
+          ),
         );
       }
     }
-  } else if (schema.type === "array" && schema.items) {
+  } else if (schema.type === "array" && schema.items && expandArrays) {
     const itemsPath = `${tempPath}${schema.items.title ? schema.items.title : "items"}[]`;
     const itemsRefPath = `${refPath}/items`;
     result.push({
@@ -98,7 +105,13 @@ export function flattenInputSchema(
     });
     if (schema.items.type === "object" || schema.items.type === "array") {
       result.push(
-        ...flattenInputSchema(schema.items, itemsPath, false, itemsRefPath),
+        ...flattenInputSchema(
+          schema.items,
+          itemsPath,
+          false,
+          itemsRefPath,
+          expandArrays,
+        ),
       );
     }
   } else if (!schema.title) {

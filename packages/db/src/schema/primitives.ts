@@ -62,4 +62,27 @@ export const primitivesRelations = relations(primitives, ({ one, many }) => ({
     fields: [primitives.conversationId],
     references: [conversations.id],
   }),
+  testRuns: many(testRuns),
+}));
+
+export const testRunStatus = pgEnum("test_run_status", ["success", "error"]);
+
+export const testRuns = pgTable("test_runs", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  input: jsonb("input").$type<Record<string, unknown>>(),
+  output: jsonb("output").$type<Record<string, unknown>>(),
+  status: testRunStatus("status").default("success"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  primitiveId: text("primitive_id")
+    .references(() => primitives.id, { onDelete: "cascade" })
+    .notNull(),
+});
+
+export const testRunsRelations = relations(testRuns, ({ one }) => ({
+  primitive: one(primitives, {
+    fields: [testRuns.primitiveId],
+    references: [primitives.id],
+  }),
 }));

@@ -143,6 +143,18 @@ export async function generateFunction({
               },
             },
           });
+
+          api.conversations.addMessage({
+            role: "assistant",
+            content: "Your function has been built successfully!",
+            rawContent: [
+              {
+                type: "text",
+                value: "Your function has been built successfully!",
+              },
+            ],
+            conversationId,
+          });
         }
       },
     });

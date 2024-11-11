@@ -176,6 +176,7 @@ export const flowsRouter = {
                   messages: true,
                 },
               },
+              testRuns: true,
             },
           },
           edges: true,

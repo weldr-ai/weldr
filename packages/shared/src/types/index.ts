@@ -1,11 +1,11 @@
 import type { z } from "zod";
 import type {
-  baseJsonSchema,
   dataTypeSchema,
   flowInputSchemaMessageSchema,
   flowOutputSchemaMessageSchema,
   functionRequirementsMessageSchema,
   inputSchema,
+  jsonSchemaPropertySchema,
   outputSchema,
   rawContentSchema,
 } from "../validators/common";
@@ -29,7 +29,7 @@ import type {
 import type {
   integrationSchema,
   integrationTypeSchema,
-  integrationUtilsSchema,
+  integrationUtilitySchema,
 } from "../validators/integrations";
 import type {
   functionPrimitiveMetadataSchema,
@@ -37,13 +37,15 @@ import type {
   primitiveMetadataSchema,
   primitiveSchema,
   stopPrimitiveSchema,
+  testRunSchema,
 } from "../validators/primitives";
 import type { resourceSchema } from "../validators/resources";
 import type { workspaceSchema } from "../validators/workspaces";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
 
-export type JsonSchema = z.infer<typeof baseJsonSchema> & {
+export type JsonSchemaProperty = z.infer<typeof jsonSchemaPropertySchema>;
+export type JsonSchema = JsonSchemaProperty & {
   properties?: Record<string, JsonSchema>;
   items?: JsonSchema;
 };
@@ -90,14 +92,14 @@ export type Resource = z.infer<typeof resourceSchema>;
 
 export type Integration = z.infer<typeof integrationSchema>;
 export type IntegrationType = z.infer<typeof integrationTypeSchema>;
-export type IntegrationUtils = z.infer<typeof integrationUtilsSchema>;
+export type IntegrationUtility = z.infer<typeof integrationUtilitySchema>;
 
 export type RawContent = z.infer<typeof rawContentSchema>;
 export type PrimitiveType = "function" | "stop";
 export type Primitive = z.infer<typeof primitiveSchema>;
-
 export type PrimitiveMetadata = z.infer<typeof primitiveMetadataSchema>;
 export type FunctionMetadata = z.infer<typeof functionPrimitiveMetadataSchema>;
+export type TestRun = z.infer<typeof testRunSchema>;
 
 export type FunctionPrimitive = z.infer<typeof functionPrimitiveSchema>;
 export type StopPrimitive = z.infer<typeof stopPrimitiveSchema>;
