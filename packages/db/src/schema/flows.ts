@@ -36,6 +36,7 @@ export const flows = pgTable("flows", {
   outputConversationId: text("output_conversation_id")
     .references(() => conversations.id, { onDelete: "cascade" })
     .notNull(),
+  flowCode: text("flow_code"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS "flows" (
 	"validation_schema" text,
 	"input_conversation_id" text NOT NULL,
 	"output_conversation_id" text NOT NULL,
+	"flow_code" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"workspace_id" text NOT NULL,

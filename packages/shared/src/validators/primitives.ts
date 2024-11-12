@@ -28,6 +28,7 @@ export const primitiveBaseSchema = z.object({
   positionX: z.number(),
   positionY: z.number(),
   flowId: z.string(),
+  conversationId: z.string(),
 });
 
 export const functionResourceSchema = z.object({
@@ -65,8 +66,8 @@ export const primitiveMetadataSchema = z.union([
 
 export const functionPrimitiveSchema = primitiveBaseSchema.extend({
   type: z.literal("function"),
-  conversation: conversationSchema,
-  testRuns: testRunSchema.array(),
+  conversation: conversationSchema.optional(),
+  testRuns: testRunSchema.array().optional(),
   metadata: functionPrimitiveMetadataSchema.nullable().optional(),
 });
 

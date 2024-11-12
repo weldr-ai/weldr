@@ -31,6 +31,7 @@ export default async function FlowPage({
         updatedAt: primitive.updatedAt,
         createdBy: primitive.createdBy,
         flowId: primitive.flowId,
+        conversationId: primitive.conversationId,
         conversation: primitive.conversation as Conversation,
         testRuns: primitive.testRuns,
         flow: {

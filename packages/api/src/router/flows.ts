@@ -1,7 +1,11 @@
 import { and, eq, sql } from "@integramind/db";
 import { flows, primitives } from "@integramind/db/schema";
 import { mergeJson } from "@integramind/db/utils";
-import type { Flow, StopPrimitive } from "@integramind/shared/types";
+import type {
+  Flow,
+  FunctionPrimitive,
+  StopPrimitive,
+} from "@integramind/shared/types";
 import {
   flowTypesSchema,
   insertFlowSchema,
@@ -160,6 +164,41 @@ export const flowsRouter = {
         stopNode: result.primitives[0] as StopPrimitive,
       } as Flow;
     }),
+  getPrimitivesAndEdges: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.flows.findFirst({
+        where: and(
+          eq(flows.id, input.id),
+          eq(flows.createdBy, ctx.session.user.id),
+        ),
+        with: {
+          primitives: true,
+          edges: true,
+        },
+      });
+
+      if (!result) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Flow not found",
+        });
+      }
+
+      const stopPrimitive = result.primitives.find(
+        (p) => p.type === "stop",
+      ) as StopPrimitive;
+
+      const functionPrimitives = result.primitives.filter(
+        (p) => p.type !== "stop",
+      ) as unknown as FunctionPrimitive[];
+
+      return {
+        stopPrimitive,
+        functionPrimitives,
+        edges: result.edges,
+      };
+    }),
   getByIdWithAssociatedData: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -242,29 +281,5 @@ export const flowsRouter = {
             eq(flows.createdBy, ctx.session.user.id),
           ),
         );
-    }),
-  getEndpointFlowByPath: protectedProcedure
-    .input(
-      z.object({
-        path: z.string(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const flow = await ctx.db.query.flows.findFirst({
-        where: sql`metadata::jsonb->>'path' = ${input.path}`,
-        with: {
-          primitives: true,
-          edges: true,
-        },
-      });
-
-      if (!flow) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Flow not found",
-        });
-      }
-
-      return flow;
     }),
 } satisfies TRPCRouterRecord;

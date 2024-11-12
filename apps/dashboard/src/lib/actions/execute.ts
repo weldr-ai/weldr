@@ -5,9 +5,11 @@ import { api } from "../trpc/rsc";
 
 export async function executeFunction({
   functionId,
+  hasInput,
   input,
 }: {
   functionId: string;
+  hasInput: boolean;
   input?: Record<string, unknown> | null | undefined;
 }) {
   const functionData = await api.primitives.getById({ id: functionId });
@@ -60,17 +62,16 @@ export async function executeFunction({
     }));
   }
 
-  const hasInput =
-    input !== undefined && input !== null && Object.keys(input).length > 0;
-
   const requestBody = {
-    functionName: name,
     hasInput,
+    functionName: name,
     functionArgs: hasInput ? input : undefined,
     code,
     utilities: utilities,
     dependencies,
   };
+
+  console.log("[requestBody]", requestBody);
 
   try {
     const executionResult = await ofetch<{ output: Record<string, unknown> }>(

@@ -27,6 +27,7 @@ const baseFlowSchema = z.object({
   inputSchema: inputSchema.nullable().optional(),
   validationSchema: z.string().nullable().optional(),
   outputSchema: outputSchema.nullable().optional(),
+  flowCode: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   createdBy: z.string().nullable(),

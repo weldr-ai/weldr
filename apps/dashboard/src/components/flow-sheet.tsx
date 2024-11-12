@@ -69,6 +69,7 @@ import { debounce } from "perfect-debounce";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
+import { runFlow } from "~/lib/actions/run-flow";
 import {
   generateFlowInputsSchemas,
   generateFlowOutputsSchemas,
@@ -181,8 +182,6 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
   const [isGeneratingSchemas, setIsGeneratingSchemas] = useState(false);
 
   const inputConversation = useMemo(() => {
-    console.log(data.inputConversation.messages);
-
     const messages: ConversationMessage[] = [
       {
         id: createId(),
@@ -281,8 +280,6 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
         })),
       });
     } else {
-      console.log("Generating output schema");
-      console.log(data.outputConversationId);
       result = await generateFlowOutputsSchemas({
         flowId: data.id,
         conversationId: data.outputConversationId,
@@ -479,6 +476,9 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                         className="size-7 text-success hover:text-success"
                         variant="ghost"
                         size="icon"
+                        onClick={async () => {
+                          await runFlow(data.id);
+                        }}
                       >
                         <PlayCircleIcon className="size-3.5" />
                       </Button>

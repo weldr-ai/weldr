@@ -203,23 +203,30 @@ export const FunctionNode = memo(
       data.metadata?.testInput ?? {},
     );
 
-    const [messages, setMessages] = useState<ConversationMessage[]>([
-      {
-        role: "assistant",
-        content:
-          "Hi there! I'm Specly, your AI assistant. What does your function do?",
-        rawContent: [
-          {
-            type: "text",
-            value:
-              "Hi there! I'm Specly, your AI assistant. What does your function do?",
-          },
-        ],
-      },
-      ...(data.conversation?.messages ?? []).sort(
-        (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
-      ),
-    ]);
+    const conversation: ConversationMessage[] = useMemo(
+      () => [
+        {
+          role: "assistant",
+          content:
+            "Hi there! I'm Specly, your AI assistant. What does your function do?",
+          rawContent: [
+            {
+              type: "text",
+              value:
+                "Hi there! I'm Specly, your AI assistant. What does your function do?",
+            },
+          ],
+        },
+        ...(data.conversation?.messages ?? []).sort(
+          (a, b) =>
+            (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
+        ),
+      ],
+      [data.conversation],
+    );
+
+    const [messages, setMessages] =
+      useState<ConversationMessage[]>(conversation);
     const [userMessageContent, setUserMessageContent] = useState<string | null>(
       null,
     );
@@ -233,7 +240,6 @@ export const FunctionNode = memo(
           root.getChildren()[0] as ParagraphNode
         )?.getChildren();
         const chat = root.getTextContent();
-        console.log(chat);
         const userMessageRawContent = children?.reduce((acc, child) => {
           if (child.__type === "text") {
             acc.push({
@@ -310,7 +316,7 @@ export const FunctionNode = memo(
         role: "user",
         content: userMessageContent,
         rawContent: userMessageRawContent,
-        conversationId: data.conversation.id,
+        conversationId: data.conversationId,
         createdAt: new Date(),
       };
 
@@ -322,7 +328,7 @@ export const FunctionNode = memo(
 
       const result = await generateFunction({
         functionId: data.id,
-        conversationId: data.conversation.id,
+        conversationId: data.conversationId,
         messages: newMessages.map((message) => ({
           role: message.role,
           content: message.content,
@@ -504,10 +510,12 @@ export const FunctionNode = memo(
                               setIsRunning(true);
                               await executeFunction({
                                 functionId: data.id,
-                                input:
-                                  Object.keys(testInput ?? {}).length > 0
-                                    ? (testInput as Record<string, unknown>)
-                                    : undefined,
+                                hasInput:
+                                  data.metadata?.inputSchema !== undefined,
+                                input: data.metadata?.testInput as Record<
+                                  string,
+                                  unknown
+                                >,
                               });
                               setIsRunning(false);
                               await refetch();
