@@ -194,6 +194,7 @@ export const flowsRouter = {
       ) as unknown as FunctionPrimitive[];
 
       return {
+        ...result,
         stopPrimitive,
         functionPrimitives,
         edges: result.edges,

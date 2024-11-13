@@ -159,6 +159,8 @@ export function ReferencesPlugin({
                     },
                     table: {
                       name: table.name,
+                      columns: table.columns,
+                      relationships: table.relationships,
                     },
                   },
                   options: {

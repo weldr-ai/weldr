@@ -88,7 +88,7 @@ export const databaseColumnReferenceSchema = z.object({
   dataType: z.string().describe("The SQL data type of the column"),
   database: databaseReferenceSchema.describe("The database of the column"),
   table: databaseTableReferenceSchema
-    .omit({ database: true, columns: true, relationships: true })
+    .omit({ database: true })
     .describe("The table of the column"),
 });
 
@@ -263,7 +263,8 @@ export const functionRequirementsMessageSchema = z.object({
               - Must include $ref to specify input sources.
               - Property names must be in camelCase.
               - Schema should be valid according to JSON Schema specification.
-              - Properties should have clear, descriptive names that indicate their purpose.`,
+              - Properties should have clear, descriptive names that indicate their purpose.
+              - Must be of type object.`,
             )
             .optional(),
           outputSchema: z
@@ -274,7 +275,8 @@ export const functionRequirementsMessageSchema = z.object({
               - Schema must have \`title\` property. It should be a descriptive noun like 'Customer' or 'Order' that represents the data and it is like a TypeScript type name. If no descriptive title applies, use \`undefined\` as the title value.
               - Property names must be in camelCase.
               - Schema should be valid according to JSON Schema specification.
-              - Properties should have clear, descriptive names that indicate their purpose.`,
+              - Properties should have clear, descriptive names that indicate their purpose.
+              - Must be of type object.`,
             )
             .optional(),
           resources: z

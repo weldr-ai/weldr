@@ -17,6 +17,7 @@ import { type CoreMessage, streamObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import { redirect } from "next/navigation";
 import {
+  FUNCTION_DEVELOPER_PROMPT,
   getFlowInputSchemaAgentPrompt,
   getFlowOutputSchemaAgentPrompt,
   getFunctionRequirementsAgentPrompt,
@@ -24,7 +25,7 @@ import {
 } from "~/lib/ai/prompts";
 import { api } from "../trpc/rsc";
 import { rawMessageContentToText } from "../utils";
-import { generateFunctionCode } from "./helpers";
+import { generateCode } from "./helpers";
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -118,11 +119,20 @@ export async function generateFunction({
               ),
               edgeCases: object.message.content.edgeCases,
               errorHandling: object.message.content.errorHandling,
+              dependencies: object.message.content.dependencies as
+                | {
+                    name: string;
+                    version: string;
+                  }[]
+                | undefined,
             });
 
-          const code = await generateFunctionCode({
+          console.log(generateFunctionCodePrompt);
+
+          const code = await generateCode({
             functionId,
             prompt: generateFunctionCodePrompt,
+            systemPrompt: FUNCTION_DEVELOPER_PROMPT,
           });
 
           api.primitives.update({
@@ -209,7 +219,6 @@ export async function generateFlowInputsSchemas({
         console.log(
           `[generateFlowInputsSchemas] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
         );
-        console.log(JSON.stringify(object, null, 2));
 
         if (object?.message?.type === "message") {
           console.log(

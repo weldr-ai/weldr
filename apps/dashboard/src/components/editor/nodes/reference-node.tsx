@@ -135,7 +135,11 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
           .join(", ")}`;
       }
       case "database-column": {
-        return `column ${this.__reference.name} (${this.__reference.dataType}) in table ${this.__reference.table.name} in database ${this.__reference?.database?.name} (ID: ${this.__reference?.database?.id}), with utilities: ${this.__reference?.database?.utils
+        return `column ${this.__reference.name} (${this.__reference.dataType}) in table ${this.__reference.table.name}, with columns ${this.__reference.table.columns
+          .map((column) => `${column.name} (${column.dataType})`)
+          .join(
+            ", ",
+          )} in database ${this.__reference.database.name} (ID: ${this.__reference.database.id}), with utilities: ${this.__reference.database.utils
           .map(
             (util) =>
               `name: ${util.name} (ID: ${util.id}), description: ${util.description}`,

@@ -154,12 +154,12 @@ export const FunctionNode = memo(
     }, [connections, getNode]);
 
     const passedInputs = ancestors.reduce((acc, ancestor) => {
-      if (!ancestor.data.metadata?.inputSchema) {
+      if (!ancestor.data.metadata?.outputSchema) {
         return acc;
       }
 
       const flatInputSchema = flattenInputSchema({
-        schema: ancestor.data.metadata?.inputSchema,
+        schema: ancestor.data.metadata?.outputSchema,
       });
 
       return acc.concat(flatInputSchema);
