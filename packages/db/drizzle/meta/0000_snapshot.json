@@ -1,5 +1,5 @@
 {
-  "id": "a766fdf4-99eb-4ba8-9830-f8cae2302b9b",
+  "id": "b681cfd6-f632-4e82-9430-564755915578",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -599,8 +599,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "flow_code": {
-          "name": "flow_code",
+        "code": {
+          "name": "code",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1210,11 +1210,24 @@
           "primaryKey": true,
           "notNull": true
         },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "secret_id": {
           "name": "secret_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "viewable": {
+          "name": "viewable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
         },
         "created_at": {
           "name": "created_at",

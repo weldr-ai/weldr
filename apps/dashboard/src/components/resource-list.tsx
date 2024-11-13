@@ -2,6 +2,8 @@ import { Button } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 
 import type { Integration, Resource } from "@integramind/shared/types";
+import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
+import { DatabaseIcon } from "lucide-react";
 import { AddResourceDialog } from "./add-resource-dialog";
 
 export function ResourceList({
@@ -18,6 +20,11 @@ export function ResourceList({
         <div className="flex flex-col">
           {resources?.map((resource) => (
             <Button key={resource.id} variant="ghost" size="sm">
+              {resource.integration.type === "postgres" ? (
+                <PostgresIcon className="size-3.5 mr-2" />
+              ) : (
+                <DatabaseIcon className="size-3.5 mr-2" />
+              )}
               {resource.name}
             </Button>
           ))}

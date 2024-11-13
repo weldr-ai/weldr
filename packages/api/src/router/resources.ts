@@ -94,7 +94,6 @@ export const resourcesRouter = {
               await tx
                 .insert(secrets)
                 .values({
-                  name: key,
                   secret: input.environmentVariables?.[key] ?? "",
                 })
                 .returning({ id: secrets.id })
@@ -111,6 +110,7 @@ export const resourcesRouter = {
               await tx
                 .insert(environmentVariables)
                 .values({
+                  key: key,
                   secretId: secret.id,
                   workspaceId: input.workspaceId,
                   createdBy: ctx.session.user.id,

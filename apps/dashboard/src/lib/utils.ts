@@ -49,19 +49,21 @@ export function flattenInputSchema({
   required = false,
   refPath = "",
   expandArrays = true,
+  title,
 }: {
   schema: JsonSchema;
   path?: string;
   required?: boolean;
   refPath?: string;
   expandArrays?: boolean;
+  title?: string;
 }): FlatInputSchema[] {
   let tempPath = path;
   const refUri = refPath ? `${refPath}` : `${schema.$id}`;
   const result: FlatInputSchema[] = [];
 
   // Add the schema itself as an input if it has a title
-  if (schema.title) {
+  if (schema.title || title) {
     const properties =
       schema.type === "object" && schema.properties
         ? Object.entries(schema.properties).reduce<Record<string, JsonSchema>>(
@@ -77,7 +79,7 @@ export function flattenInputSchema({
       schema.type === "array" && schema.items ? schema.items : undefined;
 
     result.push({
-      path: schema.title,
+      path: title ?? schema.title ?? "",
       type: schema.type ?? "null",
       required,
       description: schema.description,
@@ -86,7 +88,7 @@ export function flattenInputSchema({
       ...(itemsType && { itemsType }),
     });
     // Update path to include the title for nested properties
-    tempPath = schema.title;
+    tempPath = title ?? schema.title ?? "";
   }
 
   if (schema.type === "object" && schema.properties) {

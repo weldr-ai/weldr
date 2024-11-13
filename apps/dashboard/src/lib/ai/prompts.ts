@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Flow, FunctionPrimitive } from "@integramind/shared/types";
 import type { functionResourceSchema } from "@integramind/shared/validators/primitives";
 import type { z } from "zod";
 import { api } from "../trpc/rsc";
@@ -14,25 +15,17 @@ export const getFunctionRequirementsAgentPrompt = (
    - Capture initial details about the function, including intended inputs, outputs, and the overall goal.
    - Summarize the function's purpose and provide a starting question to clarify specific aspects of the user's request.
 
-2. **Ask Targeted Questions:**
-   - Formulate questions to gather detailed specifications, focusing on:
-     - **Specific operations and filtering criteria**: Ask questions to determine how data should be filtered, calculated, or manipulated.
-     - **Output structure and sorting preferences**: Confirm any specific format, order, or inclusions in the function's output.
-     - **Error handling approach**: Clarify what kind of error-handling methods the user prefers, such as error messages, fallback operations, or retry logic.
-     - **Additional requirements**: Identify edge cases, dependencies, or interactions with external services that could affect the function.
-   - Use the structured message format described below to maintain clarity and facilitate requirements tracing.
-
-3. **Verify Specifications:**
+2. **Verify Specifications:**
    - Confirm gathered information to ensure all assumptions and specifications align with the desired solution.
    - Focus on the functionality, not input validation, as validation is assumed to be external.
 
-4. **Suggest Enhancements:**
+3. **Suggest Enhancements:**
    - Make suggestions to improve the function's efficiency, robustness, or usability. Clearly explain the benefit of each proposed enhancement.
 
-5. **Iterate:**
-   - Continue iterating the questions and specifications, adjusting based on the user's responses, until the requirements are well understood.
+4. **Iterate:**
+   - Continue iterating the questions and specifications, adjusting based on the user's responses, until the requirements are well understood but don't ask too many questions.
 
-6. **Provide a Structured Summary:**
+5. **Provide a Structured Summary:**
    - Present a comprehensive structured summary detailing:
      - JSON schemas for inputs and outputs, all properties must be in camelCase.
      - A step-by-step breakdown of the function's operations.
@@ -44,6 +37,7 @@ export const getFunctionRequirementsAgentPrompt = (
 
 - **Question and Verification Messages:**
   - Each prompt you present should contain one targeted question to gather a specific piece of information.
+  - If the user request doesn't require too many clarifying questions, then just skip steps. Also steps are not required to be in order.
   - Format each response with structured content for questions or explanations, using \`text\` for text values and \`reference\` fields for inputs, databases, database tables, and database columns, and utilities.
 
 **Structured Message Format for Questions or Clarifications:**
@@ -196,41 +190,29 @@ I want to filter the table customers, with columns: customer_id (integer) first_
 
 # Notes
 - Make sure to avoid overwhelming the user with multiple questions at once; take an iterative, question-by-question approach.
-- If assumptions are necessary, state them explicitly and seek user confirmation.
+- If something is clear enough, just move on the don't ask the user.
 - Avoid discussing input validations; focus solely on functional aspects and user interactions.`;
 
-export const FUNCTION_DEVELOPER_PROMPT = `You are an expert Software Engineer and an expert in TypeScript. You are provided with function details including the function name, description, inputs, outputs, logical steps, edge cases, error handling, and utilities. Your task is to implement the function in TypeScript based on the provided guidelines.
+export const FUNCTION_DEVELOPER_PROMPT = `Implement the function as per given guidelines, utilizing the provided imports, type definitions, logical steps, and handling of edge cases appropriately.
 
 # Steps
 
-1. **Define TypeScript Types**: Utilize the input and output JSON schemas to define the structure for the inputs and outputs. Create TypeScript interfaces, types, or aliases for these data structures.
-
-2. **Define the Function Signature**: Based on the input and output type definitions, declare the function signature. This should include parameter types and the return type.
-
-3. **Write Helper Functions (if needed)**: Identify if any helper functions or additional code can simplify the main function logic and implement these helpers accordingly.
-
-4. **Implement the Function Logic**:
-  - Follow the provided logical steps to define the function body. The sequence and requirements of the logic must be accurately mirrored according to the detailed steps provided.
-  - Make use of any provided utility functions, such as database queries, API requests, or other runtime environments.
-  - Incorporate error handling mechanisms (including try-catch, proper logging, and user-friendly error messages).
-
-5. **Handle Edge Cases**: Include code that specifically addresses all mentioned edge cases, such as scenarios when the data could not be found or input is invalid.
-
-6. **Complete the Function**: Ensure that the complete function is formatted as correct TypeScript code, including type imports, function definition, and return.
-
-7. **Return the Code as a String**: Your response should provide the entire TypeScript implementation clearly and completely.
+1. **Define TypeScript Types** based on the provided input and output schemas.
+2. **Declare the Function Signature** and outline parameter definitions and return types.
+3. **Use or Define Helper Functions** to ensure clean, readable code (if needed).
+4. **Implement Logic** as per the detailed instructions provided, such as database or API queries and error handling.
+5. **Handle All Edge Cases** precisely as specified. Confirm correctness for scenarios such as empty datasets or invalid inputs.
+6. **Return Completed Code** as a textual TypeScript snippet with all necessary imports and definitions.
 
 # Output Format
 
-The output should be a full TypeScript code snippet, in the following components:
-  - **Imports**: All imported utilities and interfaces needed.
-  - **Type Definitions**: Interfaces and types derived from input/output JSON schemas.
-  - **Function Implementation**:
-    - Function name, parameters, and return type.
-    - Function logic according to the provided instructions, including error handling and edge case handling.
-  - Ensure all code is syntactically correct TypeScript.
+- Provide TypeScript code as **plain text**.
+- It should include:
+  - Import statements (only if explicitly provided).
+  - Complete interface/type definitions relating to inputs and outputs.
+  - Function implementation matching the requirements, with appropriate try-catch handling for errors.
 
-The response should be returned as **plain text**, containing the code snippet as a complete, runnable piece. No additional formatting (like Markdown code fences) should be used.
+**Do not use any additional formatting (such as Markdown code blocks). Only provide syntactically correct, runnable TypeScript code.**
 
 # Examples
 
@@ -343,7 +325,16 @@ async function getCustomerById({ customerId }: { customerId: number }): Promise<
     throw new Error("Failed to retrieve customer information");
   }
 }
-\`\`\``;
+\`\`\`
+
+# Note
+
+- Only use the resources, utilities, and imports explicitly stated within the requirements. Never assume the presence of any other utilities, files, or imports.
+- You can only use node.js standard library, unless we explicitly tell you to use something else.
+- You should only return the code as a string. No extra comments or formatting.
+- You can never use any external libraries, unless we explicitly tell you to use them.
+- You can never use any unlisted utilities. Because they don't exist.
+- Don't hallucinate.`;
 
 export const getFlowInputSchemaAgentPrompt = (
   flowId: string,
@@ -478,7 +469,10 @@ Begin by summarizing their intent and then ask questions about each input one at
     "zodSchema": "z.object({ username: z.string().min(3), email: z.string().email(), age: z.number().int().min(18).max(99).optional() })"
   }
 }
-\`\`\``;
+\`\`\`
+
+Note:
+- All the properties names must be in camelCase.`;
 
 export const getFlowOutputSchemaAgentPrompt = (
   flowId: string,
@@ -590,6 +584,7 @@ export const getGenerateFunctionCodePrompt = async ({
   edgeCases,
   errorHandling,
   resources,
+  dependencies,
 }: {
   name: string;
   description: string;
@@ -599,6 +594,12 @@ export const getGenerateFunctionCodePrompt = async ({
   edgeCases: string;
   errorHandling: string;
   resources: z.infer<typeof functionResourceSchema>[] | undefined;
+  dependencies:
+    | {
+        name: string;
+        version: string | undefined;
+      }[]
+    | undefined;
 }) => {
   const utilities: string[] = [];
 
@@ -636,7 +637,17 @@ ${edgeCases}
 ${errorHandling}
 
 ${
-  resources
+  dependencies && dependencies.length > 0
+    ? `### Dependencies\n${dependencies
+        .map((dependency) => {
+          return `- ${dependency.name} (version: ${dependency.version})`;
+        })
+        .join("\n")}`
+    : ""
+}
+
+${
+  resources && resources.length > 0
     ? `### Resources\n${resources
         .map((resource) => {
           switch (resource.metadata.type) {
@@ -666,3 +677,286 @@ ${
     : ""
 }`;
 };
+
+export const FLOW_COMPOSER_AGENT_PROMPT = `You will help the user compose a flow. You will be given a list of functions that the user can use in their flow and a list of connections between them.
+
+You will then use this information to compose a flow that will achieve the user's goal in a H3 route.
+
+# Steps
+
+1. Create a single file H3 app using the functions provided.
+
+# Output Format
+
+- You must only return the code as a string. No additional formatting (like Markdown code fences) should be used.
+
+
+# Examples
+
+User Request:
+
+Flow ID: sdfa12asd89euijasf
+
+Flow path: /user/{userId}
+
+Flow inputs:
+{
+  "$id": "/schemas/sdfa12asd89euijasf/input",
+  "type": "object",
+  "properties": {
+    "userId": {
+      "type": "string",
+    }
+  },
+  "required": ["userId"]
+}
+
+Flow outputs:
+{
+  "$id": "/schemas/sdfa12asd89euijasf/output",
+  "type": "object",
+  "properties": {
+    "userProfile": {
+      "$ref": "/schemas/ljkhjh21348shdj1s/output"
+    }
+  }
+}
+
+Functions:
+
+### getUserProfile (ID: saf9023irdksljfawfsadf)
+Input:
+{
+  "$id": "/schemas/saf9023irdksljfawfsadf/input",
+  "type": "object",
+  "properties": {
+    "userId": {
+      "type": "string",
+      "$ref": "/schemas/sdfa12asd89euijasf/input"
+    }
+  },
+  "required": ["userId"]
+}
+
+Output:
+{
+  "$id": "/schemas/saf9023irdksljfawfsadf/output",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "role": {
+      "type": "string"
+    }
+  },
+  "required": ["id", "name", "email", "role"]
+}
+
+Code:
+export const getUserProfile = async ({ userId }: { userId: string }) => {
+  // Query database for user profile
+  const user = await db.users.findUnique({
+    where: { id: userId }
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role
+  };
+}
+
+### formatUserProfile (ID: ljkhjh21348shdj1s)
+Input:
+{
+  "$id": "/schemas/ljkhjh21348shdj1s/input",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "$ref": "/schemas/saf9023irdksljfawfsadf/output"
+    },
+    "name": {
+      "type": "string",
+      "$ref": "/schemas/saf9023irdksljfawfsadf/output"
+    },
+    "email": {
+      "type": "string",
+      "$ref": "/schemas/saf9023irdksljfawfsadf/output"
+    },
+    "role": {
+      "type": "string",
+      "$ref": "/schemas/saf9023irdksljfawfsadf/output"
+    }
+  },
+  "required": ["id", "name", "email", "role"]
+}
+
+Output:
+{
+  "$id": "/schemas/ljkhjh21348shdj1s/output",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "role": {
+      "type": "string"
+    }
+  },
+  "required": ["id", "name", "email", "role"]
+}
+
+Code:
+export const formatUserProfile = (profile: {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}) => {
+  return {
+    id: profile.id,
+    name: profile.name.trim(),
+    email: profile.email.toLowerCase(),
+    role: profile.role
+  };
+}
+
+Connections: "saf9023irdksljfawfsadf -> ljkhjh21348shdj1s"
+
+Example Output:
+\`\`\`typescript
+import { createApp, createRouter, defineEventHandler, readBody, setResponseStatus } from "h3";
+
+interface RawUserProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  userRole: string;
+}
+
+interface FormattedUserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+async function getUserProfile({ userId }: { userId: string }): Promise<RawUserProfile> {
+  // Simulating database call
+  const profile = {
+    id: userId,
+    firstName: "John",
+    lastName: "Doe",
+    emailAddress: "john.doe@example.com",
+    userRole: "user"
+  };
+
+  if (!profile) {
+    throw new Error("User not found");
+  }
+
+  return profile;
+}
+
+function formatUserProfile(profile: RawUserProfile): FormattedUserProfile {
+  return {
+    id: profile.id,
+    name: \`\${profile.firstName} \${profile.lastName}\`,
+    email: profile.emailAddress,
+    role: profile.userRole
+  };
+}
+
+export const app = createApp();
+const router = createRouter();
+app.use(router);
+
+router.get("/user/:userId", eventHandler(async (event) => {
+  const { userId } = event.context.params;
+
+  try {
+    const userProfile = await getUserProfile({ userId });
+    const formattedProfile = formatUserProfile(userProfile);
+    setResponseStatus(event, 200);
+    return formattedProfile;
+  } catch (error) {
+    setResponseStatus(event, 500);
+    return {
+      error: "Failed to fetch user profile",
+    };
+  }
+}));
+
+export { app };
+\`\`\`
+
+Notes:
+- Return the code as a string. No additional formatting (like Markdown code fences) should be used.
+- Make sure to include the functions in the code.
+- Handle errors appropriately and return the appropriate status code and error message.
+- All the request data are body params. Nothing is in the path or query.`;
+
+export const getFlowComposerAgentPrompt = ({
+  flow,
+  functions,
+  edges,
+}: {
+  flow: Pick<Flow, "id" | "inputSchema" | "outputSchema"> & {
+    path: string;
+    method: "get" | "post" | "patch" | "delete";
+  };
+  functions: FunctionPrimitive[];
+  edges: {
+    source: string;
+    target: string;
+  }[];
+}) => `Flow ID: ${flow.id}
+
+Flow path (${flow.method}): ${flow.path}
+
+Flow inputs:
+${JSON.stringify(flow.inputSchema, null, 2)}
+
+Flow outputs:
+${JSON.stringify(flow.outputSchema, null, 2)}
+
+Functions:
+${functions
+  .map(
+    (func) => `### ${func.name} (ID: ${func.id})
+
+Input:
+${JSON.stringify(func.metadata?.inputSchema, null, 2)}
+
+Output:
+${JSON.stringify(func.metadata?.outputSchema, null, 2)}
+
+Code:
+${func.metadata?.code}`,
+  )
+  .join("\n\n")}
+
+Connections:
+${edges.map((edge) => `${edge.source} -> ${edge.target}`).join("\n")}`;

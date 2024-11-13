@@ -23,7 +23,7 @@ export const environmentVariablesRouter = {
         result.map(async (item) => {
           const secret = (
             await ctx.db.execute(
-              sql`select name, decrypted_secret from vault.decrypted_secrets where id=${item.environmentVariable.secretId}`,
+              sql`select decrypted_secret from vault.decrypted_secrets where id=${item.environmentVariable.secretId}`,
             )
           ).rows[0];
 
@@ -35,7 +35,7 @@ export const environmentVariablesRouter = {
           }
 
           return {
-            key: secret.name,
+            key: item.environmentVariable.key,
             value: secret.decrypted_secret,
           } as {
             key: string;

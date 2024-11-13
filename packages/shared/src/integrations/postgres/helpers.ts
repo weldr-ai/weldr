@@ -100,7 +100,7 @@ export async function getDatabaseStructure(
   try {
     await pool.connect();
 
-    // Get all tables
+    // Get all tables in public schema
     const tablesQuery = `
       SELECT table_name
       FROM information_schema.tables
@@ -111,7 +111,7 @@ export async function getDatabaseStructure(
     const tablesResult = await pool.query(tablesQuery);
 
     for (const tableRow of tablesResult.rows) {
-      // Get columns and primary key info
+      // Get columns and primary key info for tables in public schema
       const columnsQuery = `
         SELECT
           c.column_name,
@@ -124,16 +124,18 @@ export async function getDatabaseStructure(
           FROM information_schema.table_constraints tc
           JOIN information_schema.key_column_usage ku
           ON tc.constraint_name = ku.constraint_name
-          WHERE tc.table_name = $1
+          WHERE tc.table_schema = 'public'
+          AND tc.table_name = $1
           AND tc.constraint_type = 'PRIMARY KEY'
         ) pk ON c.column_name = pk.column_name
-        WHERE c.table_name = $1
+        WHERE c.table_schema = 'public'
+        AND c.table_name = $1
         ORDER BY c.ordinal_position;
       `;
 
       const columns = await pool.query(columnsQuery, [tableRow.table_name]);
 
-      // Get foreign key relationships
+      // Get foreign key relationships for tables in public schema
       const relationshipsQuery = `
         SELECT
           kcu.column_name,
@@ -145,6 +147,7 @@ export async function getDatabaseStructure(
         JOIN information_schema.constraint_column_usage AS ccu
           ON ccu.constraint_name = tc.constraint_name
         WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_schema = 'public'
         AND tc.table_name = $1;
       `;
 
@@ -169,7 +172,6 @@ export async function getDatabaseStructure(
     }
   } catch (error) {
     console.error("Error getting database structure:", error);
-    throw error;
   }
 
   return tables;

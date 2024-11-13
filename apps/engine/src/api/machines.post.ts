@@ -1,8 +1,6 @@
 import { z } from "zod";
 import {
-  allocateFlyIp,
   createDockerImage,
-  createFlyApp,
   createFlyMachine,
   deleteFlyApp,
 } from "~/utils/fly-client";
@@ -22,20 +20,11 @@ export default eventHandler(async (event) => {
   const { workspaceId } = body.data;
 
   try {
-    const flyApp = await createFlyApp(workspaceId);
-
-    if (!flyApp) {
-      setResponseStatus(event, 500);
-      return { message: "Failed to create Fly app" };
-    }
-
-    await allocateFlyIp(workspaceId);
-
     await createDockerImage(workspaceId, "integramind/backend", "latest");
 
-    const executorMachine = await createFlyMachine(
+    const machine = await createFlyMachine(
       workspaceId,
-      `registry.fly.io/${workspaceId}:backend`,
+      `registry.fly.io/${workspaceId}:latest`,
       {
         guest: {
           cpus: 1,
@@ -44,7 +33,7 @@ export default eventHandler(async (event) => {
       },
     );
 
-    if (!executorMachine) {
+    if (!machine) {
       setResponseStatus(event, 500);
       await deleteFlyApp(workspaceId);
       return { message: "Failed to create new App" };
@@ -52,7 +41,7 @@ export default eventHandler(async (event) => {
 
     setResponseStatus(event, 201);
     return {
-      executorMachineId: executorMachine.id,
+      machineId: machine.id,
     };
   } catch (error) {
     console.error(error);
