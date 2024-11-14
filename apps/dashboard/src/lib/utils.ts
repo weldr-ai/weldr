@@ -5,7 +5,6 @@ import type {
 } from "@integramind/shared/types";
 import { getDataTypeIcon, toCamelCase } from "@integramind/shared/utils";
 import type { TreeDataItem } from "@integramind/ui/tree-view";
-import { createId } from "@paralleldrive/cuid2";
 
 export function jsonSchemaToTreeData(
   schema: JsonSchema | undefined = undefined,
@@ -16,7 +15,7 @@ export function jsonSchemaToTreeData(
 
   function jsonSchemaToTree(schema: JsonSchema, name = "root"): TreeDataItem {
     const treeItem: TreeDataItem = {
-      id: createId(),
+      id: `${schema.$id}-${name}`,
       name,
       type: schema.type ?? "null",
       icon: getDataTypeIcon(schema.type ?? "null"),
@@ -28,7 +27,7 @@ export function jsonSchemaToTreeData(
       );
     } else if (schema.type === "array" && schema.items) {
       const arrayItem: TreeDataItem = {
-        id: createId(),
+        id: `${schema.$id}-${name}-items`,
         name: schema.title ?? "items",
         type: "array",
         icon: getDataTypeIcon("array"),

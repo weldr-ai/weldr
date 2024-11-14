@@ -1,7 +1,7 @@
 import { authRouter } from "./router/auth";
 import { conversationsRouter } from "./router/conversations";
-import { deployerRouter } from "./router/deployer";
 import { edgesRouter } from "./router/edges";
+import { engineRouter } from "./router/engine";
 import { environmentVariablesRouter } from "./router/environment-variables";
 import { flowsRouter } from "./router/flows";
 import { helloRouter } from "./router/hello";
@@ -19,7 +19,7 @@ export const appRouter = createTRPCRouter({
   resources: resourcesRouter,
   workspaces: workspacesRouter,
   flows: flowsRouter,
-  deployer: deployerRouter,
+  engine: engineRouter,
   conversations: conversationsRouter,
   integrations: integrationsRouter,
   environmentVariables: environmentVariablesRouter,

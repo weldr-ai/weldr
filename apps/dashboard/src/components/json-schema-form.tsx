@@ -13,7 +13,6 @@ import {
 } from "@integramind/ui/select";
 import { Switch } from "@integramind/ui/switch";
 import { Textarea } from "@integramind/ui/textarea";
-import { createId } from "@paralleldrive/cuid2";
 import { Minus, Plus } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
@@ -335,7 +334,8 @@ export function JsonSchemaForm({
           <div className="space-y-2">
             {/* @ts-expect-error */}
             {arrayValue.map((_: unknown, index: number) => (
-              <div key={createId()} className="flex items-center space-x-2">
+              // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+              <div key={index} className="flex items-center space-x-2">
                 {renderField(
                   `${name}[${index}]`,
                   schema.items as JsonSchema,
@@ -432,7 +432,8 @@ export function JsonSchemaForm({
         </div>
         {renderField(name, schema, path)}
         {fieldErrors.map((error, index) => (
-          <Alert variant="destructive" key={createId()}>
+          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+          <Alert variant="destructive" key={index}>
             <AlertDescription>{error.message}</AlertDescription>
           </Alert>
         ))}

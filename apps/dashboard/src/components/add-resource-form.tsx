@@ -1,12 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useEffect } from "react";
-import { useFormState, useFormStatus } from "react-dom";
-import type { FormState } from "react-hook-form";
+import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
@@ -25,7 +21,7 @@ import { toast } from "@integramind/ui/use-toast";
 
 import type { Integration } from "@integramind/shared/types";
 import { insertResourceSchema } from "@integramind/shared/validators/resources";
-import { addResource } from "~/lib/actions/resources";
+import { api } from "~/lib/trpc/react";
 
 export function AddResourceForm({
   integration,
@@ -34,9 +30,8 @@ export function AddResourceForm({
   integration: Omit<Integration, "dependencies">;
   setAddResourceDialogOpen?: (open: boolean) => void;
 }) {
-  const queryClient = useQueryClient();
+  const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const [state, addResourceAction] = useFormState(addResource, undefined);
 
   const form = useForm<z.infer<typeof insertResourceSchema>>({
     mode: "onChange",
@@ -50,51 +45,28 @@ export function AddResourceForm({
     },
   });
 
-  useEffect(() => {
-    async function handleStateUpdate() {
-      if (state) {
-        if (state.status === "success") {
-          form.reset();
-          toast({
-            title: "Success",
-            description: "Resource added successfully.",
-            duration: 2000,
-          });
-          await queryClient.invalidateQueries({ queryKey: ["resources"] });
-          if (setAddResourceDialogOpen) {
-            setAddResourceDialogOpen(false);
-          }
-        } else if (state.status === "validationError") {
-          for (const key of Object.keys(state.errors)) {
-            form.setError(key as keyof typeof form.formState.errors, {
-              message: state.errors[key],
-            });
-          }
-          toast({
-            title: "Validation Error",
-            description: "Please enter fields correctly.",
-            variant: "destructive",
-            duration: 2000,
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: `${state.message ? state.message : "Something went wrong."}`,
-            variant: "destructive",
-            duration: 2000,
-          });
-        }
-      }
-    }
-    void handleStateUpdate();
-  }, [form, queryClient, setAddResourceDialogOpen, state]);
+  const addResourceMutation = api.resources.create.useMutation({
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: "Resource created successfully.",
+        duration: 2000,
+      });
+      router.refresh();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+        duration: 2000,
+      });
+    },
+  });
 
   return (
     <Form {...form}>
-      <form
-        action={addResourceAction}
-        className="flex w-full flex-col space-y-4"
-      >
+      <form className="flex w-full flex-col space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -234,27 +206,20 @@ export function AddResourceForm({
           render={({ field }) => <Input {...field} className="hidden" />}
         />
         <div className="flex w-full justify-end">
-          <SubmitButton formState={form.formState} />
+          <Button
+            type="submit"
+            aria-disabled={
+              !form.formState.isValid || addResourceMutation.isPending
+            }
+            disabled={!form.formState.isValid || addResourceMutation.isPending}
+          >
+            {addResourceMutation.isPending && (
+              <Loader2Icon className="mr-1 size-3 animate-spin" />
+            )}
+            Add
+          </Button>
         </div>
       </form>
     </Form>
-  );
-}
-
-function SubmitButton({
-  formState,
-}: {
-  formState: FormState<z.infer<typeof insertResourceSchema>>;
-}) {
-  const { pending } = useFormStatus();
-  return (
-    <Button
-      type="submit"
-      aria-disabled={!formState.isValid || pending}
-      disabled={!formState.isValid || pending}
-    >
-      {pending && <Loader2Icon className="mr-1 size-3 animate-spin" />}
-      Add
-    </Button>
   );
 }

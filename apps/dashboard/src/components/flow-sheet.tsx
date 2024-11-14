@@ -70,11 +70,11 @@ import {
 } from "@integramind/ui/tooltip";
 import { TreeView } from "@integramind/ui/tree-view";
 import { toast } from "@integramind/ui/use-toast";
-import { createId } from "@paralleldrive/cuid2";
 import { useHandleConnections, useNodesData } from "@xyflow/react";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
+import { nanoid } from "nanoid";
 import { debounce } from "perfect-debounce";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -190,13 +190,14 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
   const inputTree = jsonSchemaToTreeData(data.inputSchema as JsonSchema);
   const outputTree = jsonSchemaToTreeData(data.outputSchema as JsonSchema);
 
+  const [isThinking, setIsThinking] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingSchemas, setIsGeneratingSchemas] = useState(false);
 
   const inputConversation = useMemo(() => {
     const messages: ConversationMessage[] = [
       {
-        id: createId(),
+        id: nanoid(),
         role: "assistant",
         content: `Hi there! I'm Specly, your AI assistant. What are your flow's input?`,
         rawContent: [
@@ -217,7 +218,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
   const outputConversation = useMemo(() => {
     const messages: ConversationMessage[] = [
       {
-        id: createId(),
+        id: nanoid(),
         role: "assistant",
         content: `Hi there! I'm Specly, your AI assistant. What are your flow's output?`,
         rawContent: [
@@ -244,6 +245,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
     useState<UserMessageRawContent>([]);
 
   const onSubmit = async (generationMode: "input" | "output") => {
+    setIsThinking(true);
     setIsGenerating(true);
 
     const editor = editorRef.current;
@@ -318,6 +320,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
           content.message.content,
         );
         newAssistantMessage.rawContent = content.message.content;
+        setIsThinking(false);
       }
 
       // if end message, start generating code
@@ -325,6 +328,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
         content?.message?.type === "end" &&
         content?.message?.content?.description
       ) {
+        setIsThinking(false);
         const rawContent: AssistantMessageRawContent = [
           {
             type: "text",
@@ -912,6 +916,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                     >
                       <MessageList
                         messages={messages}
+                        isThinking={isThinking}
                         isGenerating={isGeneratingSchemas}
                         chatHistoryEndRef={chatHistoryEndRef}
                       />
@@ -920,8 +925,8 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                   <div className="mt-auto">
                     <form className="relative">
                       <Editor
+                        id={nanoid()}
                         editorRef={editorRef}
-                        id={createId()}
                         onChange={onChatChange}
                         rawMessage={userMessageRawContent}
                         placeholder={`Define your ${data.type} ${generationMode} with Specly...`}

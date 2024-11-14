@@ -1,5 +1,5 @@
-import { createId } from "@paralleldrive/cuid2";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { nanoid } from "nanoid";
 import { useState } from "react";
 
 export const JsonViewer = ({
@@ -88,7 +88,7 @@ export const JsonViewer = ({
   const renderObject = () => {
     const entries = Object.entries(data as Record<string, unknown>);
     const content = entries.map(([key, value], index) => (
-      <div key={key} className="flex ml-6">
+      <div key={nanoid()} className="flex ml-6">
         <span className="text-warning">"{key}"</span>
         <span className="mr-1">:</span>
         <JsonViewer
@@ -104,7 +104,7 @@ export const JsonViewer = ({
   // Render array
   const renderArray = () => {
     const content = (data as unknown[]).map((item, index) => (
-      <div key={createId()} className="flex">
+      <div key={nanoid()} className="flex">
         <JsonViewer
           data={item}
           level={level + 1}

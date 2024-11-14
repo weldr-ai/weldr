@@ -68,7 +68,7 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   getTextContent(): string {
     switch (this.__reference.referenceType) {
       case "variable": {
-        const baseText = `variable ${toCamelCase(this.__reference.name)} (${this.__reference.dataType}), $ref: ${this.__reference.refUri}, required: ${this.__reference.required}`;
+        const baseText = `input variable ${toCamelCase(this.__reference.name)} (${this.__reference.dataType}), ${this.__reference.refUri ? ` $ref: ${this.__reference.refUri}` : ""}, required: ${this.__reference.required}`;
 
         const formatObjectProps = (props: JsonSchema["properties"]): string => {
           if (!props) return "";

@@ -1,7 +1,6 @@
 import type { ConversationMessage, TestRun } from "@integramind/shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
 import { ScrollArea } from "@integramind/ui/scroll-area";
-import { createId } from "@paralleldrive/cuid2";
 import { type RefObject, useEffect, useState } from "react";
 import { JsonViewer } from "./json-viewer";
 import { RawContentViewer } from "./raw-content-viewer";
@@ -27,13 +26,15 @@ export default function MessageList({
   messages,
   testRuns,
   isRunning,
+  isThinking,
   isGenerating,
   chatHistoryEndRef,
 }: {
   messages: ConversationMessage[];
   testRuns?: TestRun[];
   isRunning?: boolean;
-  isGenerating: boolean;
+  isThinking: boolean;
+  isGenerating?: boolean;
   chatHistoryEndRef: RefObject<HTMLDivElement>;
 }) {
   const testRunList: (TestRun & { type: "test-run" })[] = (testRuns ?? []).map(
@@ -60,17 +61,32 @@ export default function MessageList({
     <div className="flex flex-col w-full gap-4">
       {allMessages.map((message) => {
         if (message.type === "message") {
-          return <MessageItem key={message.id} message={message} />;
+          return (
+            message.rawContent.length > 0 && (
+              <MessageItem key={message.id} message={message} />
+            )
+          );
         }
         return <TestRunItem key={message.id} testRun={message} />;
       })}
+      {isThinking && (
+        <div className="flex items-start">
+          <Avatar className="size-6 rounded-md">
+            <AvatarImage src="/logo.svg" alt="Specly" />
+          </Avatar>
+          <span className="ml-3 text-sm text-muted-foreground">
+            Thinking
+            <TypingDots />
+          </span>
+        </div>
+      )}
       {isGenerating && (
         <div className="flex items-start">
           <Avatar className="size-6 rounded-md">
             <AvatarImage src="/logo.svg" alt="Specly" />
           </Avatar>
           <span className="ml-3 text-sm text-muted-foreground">
-            Generating your function
+            Building
             <TypingDots />
           </span>
         </div>
@@ -93,7 +109,7 @@ export default function MessageList({
 
 function MessageItem({ message }: { message: ConversationMessage }) {
   return (
-    <div className="flex w-full items-start" key={message.id ?? createId()}>
+    <div className="flex w-full items-start" key={message.id}>
       <Avatar className="size-6 rounded-md">
         {message.role === "user" ? (
           <>

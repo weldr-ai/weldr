@@ -75,7 +75,6 @@ import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { TestInputDialog } from "~/components/test-input-dialog";
-import { executeFunction } from "~/lib/actions/execute";
 import { generateFunction } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/react";
 import {
@@ -127,6 +126,12 @@ export const FunctionNode = memo(
       },
     });
 
+    const executeFunction = api.engine.executeFunction.useMutation({
+      onSuccess: async () => {
+        await refetch();
+      },
+    });
+
     const deleteFunction = api.primitives.delete.useMutation();
 
     const addMessage = api.conversations.addMessage.useMutation();
@@ -160,6 +165,7 @@ export const FunctionNode = memo(
 
       const flatInputSchema = flattenInputSchema({
         schema: ancestor.data.metadata?.outputSchema,
+        title: ancestor.data.name as string,
       });
 
       return acc.concat(flatInputSchema);
@@ -196,6 +202,7 @@ export const FunctionNode = memo(
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
+    const [isThinking, setIsThinking] = useState<boolean>(false);
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
     const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -295,6 +302,7 @@ export const FunctionNode = memo(
     const handleOnSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
+      setIsThinking(true);
       setIsGenerating(true);
 
       const editor = editorRef.current;
@@ -347,6 +355,7 @@ export const FunctionNode = memo(
         };
 
         if (content?.message?.content && content.message.type === "message") {
+          setIsThinking(false);
           newAssistantMessage.content = rawMessageContentToText(
             content.message.content,
           );
@@ -358,6 +367,7 @@ export const FunctionNode = memo(
           content?.message?.type === "end" &&
           content?.message?.content?.description
         ) {
+          setIsThinking(false);
           setIsGeneratingCode(true);
           const rawContent: AssistantMessageRawContent = [
             {
@@ -508,7 +518,7 @@ export const FunctionNode = memo(
                             }
                             onClick={async () => {
                               setIsRunning(true);
-                              await executeFunction({
+                              await executeFunction.mutateAsync({
                                 functionId: data.id,
                                 hasInput:
                                   data.metadata?.inputSchema !== undefined,
@@ -594,6 +604,7 @@ export const FunctionNode = memo(
                     <MessageList
                       messages={messages}
                       testRuns={data.testRuns}
+                      isThinking={isThinking}
                       isRunning={isRunning}
                       isGenerating={isGeneratingCode}
                       chatHistoryEndRef={chatHistoryEndRef}

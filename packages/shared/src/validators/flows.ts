@@ -87,9 +87,9 @@ export const insertEndpointFlowSchema = baseInsertFlowSchema.extend({
     method: z.enum(["get", "post", "patch", "delete"]),
     path: z
       .string()
-      .regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
+      .regex(/^\/[a-z0-9-]+(\/[a-z0-9-]+)*$/, {
         message:
-          "Must start with '/' and contain only lowercase letters and hyphens.",
+          "Must start with '/' and contain only lowercase letters, numbers and hyphens.",
       })
       .transform((path) => {
         if (path.startsWith("/")) return path.trim();

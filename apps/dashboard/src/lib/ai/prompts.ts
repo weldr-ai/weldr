@@ -27,7 +27,7 @@ export const getFunctionRequirementsAgentPrompt = (
 
 5. **Provide a Structured Summary:**
    - Present a comprehensive structured summary detailing:
-     - JSON schemas for inputs and outputs, all properties must be in camelCase.
+     - JSON schemas for inputs and outputs, that adheres to the JSON schema specification and all properties must be in camelCase.
      - A step-by-step breakdown of the function's operations.
      - Lists of all resources and utilities involved.
      - Consideration of key edge cases and error-handling strategies.

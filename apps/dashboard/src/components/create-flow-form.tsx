@@ -3,9 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useFormState, useFormStatus } from "react-dom";
-import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
@@ -31,7 +28,7 @@ import { toast } from "@integramind/ui/use-toast";
 
 import type { FlowType } from "@integramind/shared/types";
 import { insertFlowSchema } from "@integramind/shared/validators/flows";
-import { createFlow } from "~/lib/actions/flows";
+import { api } from "~/lib/trpc/react";
 
 export function CreateFlowForm({
   type,
@@ -42,7 +39,29 @@ export function CreateFlowForm({
 }) {
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const [state, createFlowAction] = useFormState(createFlow, undefined);
+
+  const createFlowMutation = api.flows.create.useMutation({
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: `${type.charAt(0).toUpperCase()}${type.slice(1)} created successfully.`,
+        duration: 2000,
+      });
+      if (setCreatePrimitiveDialogOpen) {
+        setCreatePrimitiveDialogOpen(false);
+      }
+      router.push(`/workspaces/${workspaceId}/${data.id}`);
+      router.refresh();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+        duration: 2000,
+      });
+    },
+  });
 
   const getInitialValues = (type: FlowType) => {
     const commonInitialValues = {
@@ -80,61 +99,12 @@ export function CreateFlowForm({
   const form = useForm<z.infer<typeof insertFlowSchema>>({
     mode: "onChange",
     resolver: zodResolver(insertFlowSchema),
-    defaultValues: {
-      ...getInitialValues(type),
-      ...(state &&
-        (state.status === "error" || state.status === "validationError") &&
-        state.fields),
-    },
+    defaultValues: getInitialValues(type),
   });
-
-  useEffect(() => {
-    async function handleStateUpdate() {
-      if (state) {
-        if (state.status === "success") {
-          form.reset();
-          toast({
-            title: "Success",
-            description: `${type.charAt(0).toUpperCase()}${type.slice(1)} created successfully.`,
-            duration: 2000,
-          });
-          if (setCreatePrimitiveDialogOpen) {
-            setCreatePrimitiveDialogOpen(false);
-          }
-          router.replace(`/workspaces/${workspaceId}/${state.payload.id}`);
-        } else if (state.status === "validationError") {
-          for (const key of Object.keys(state.errors) as Array<
-            keyof typeof state.errors
-          >) {
-            form.setError(key, {
-              message: state.errors[key],
-            });
-          }
-          toast({
-            title: "Validation Error",
-            description: "Please enter fields correctly.",
-            variant: "destructive",
-            duration: 2000,
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: "Something went wrong.",
-            variant: "destructive",
-            duration: 2000,
-          });
-        }
-      }
-    }
-    void handleStateUpdate();
-  }, [form, router, setCreatePrimitiveDialogOpen, state, type, workspaceId]);
 
   return (
     <Form {...form}>
-      <form
-        action={createFlowAction}
-        className="flex w-full flex-col space-y-4"
-      >
+      <form className="flex w-full flex-col space-y-4">
         <FormField
           control={form.control}
           name={"name"}
@@ -258,27 +228,23 @@ export function CreateFlowForm({
           render={({ field }) => <Input {...field} className="hidden" />}
         />
         <div className="flex w-full justify-end">
-          <SubmitButton formState={form.formState} />
+          <Button
+            type="button"
+            aria-disabled={
+              !form.formState.isValid || createFlowMutation.isPending
+            }
+            disabled={!form.formState.isValid || createFlowMutation.isPending}
+            onClick={() => {
+              createFlowMutation.mutate(form.getValues());
+            }}
+          >
+            {createFlowMutation.isPending && (
+              <Loader2Icon className="mr-1 size-3 animate-spin" />
+            )}
+            Create
+          </Button>
         </div>
       </form>
     </Form>
-  );
-}
-
-function SubmitButton({
-  formState,
-}: {
-  formState: FormState<z.infer<typeof insertFlowSchema>>;
-}) {
-  const { pending } = useFormStatus();
-  return (
-    <Button
-      type="submit"
-      aria-disabled={!formState.isValid || pending}
-      disabled={!formState.isValid || pending}
-    >
-      {pending && <Loader2Icon className="mr-1 size-3 animate-spin" />}
-      Create
-    </Button>
   );
 }

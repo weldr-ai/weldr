@@ -15,6 +15,7 @@ import { cn } from "@integramind/ui/utils";
 import type { DatabaseStructure } from "@integramind/shared/integrations/postgres/index";
 import type { FlatInputSchema } from "@integramind/shared/types";
 import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
+import { nanoid } from "nanoid";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";
 import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
@@ -272,7 +273,7 @@ export function ReferencesPlugin({
                       onMouseEnter={() => {
                         setHighlightedIndex(i);
                       }}
-                      key={option.key}
+                      key={nanoid()}
                     >
                       <ReferenceBadge
                         reference={option.reference}
