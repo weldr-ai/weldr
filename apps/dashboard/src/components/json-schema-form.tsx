@@ -38,14 +38,26 @@ export function JsonSchemaForm({
 }: JsonSchemaFormProps) {
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [disabledFields, setDisabledFields] = useState<Set<string>>(() => {
-    // Initialize with all field paths
+    // Initialize with all field paths that don't have values
     const paths = new Set<string>();
-    const collectPaths = (schema: JsonSchema, parentPath = "") => {
+    const collectPaths = (
+      schema: JsonSchema,
+      parentPath = "",
+      data: unknown = formData,
+    ) => {
       if (schema.properties) {
         for (const [key, prop] of Object.entries(schema.properties)) {
           const currentPath = parentPath ? `${parentPath}.${key}` : key;
-          paths.add(currentPath);
-          collectPaths(prop, currentPath);
+          // Only add to disabled fields if the field has no value and is not required
+          const value = currentPath
+            .split(".")
+            // @ts-expect-error
+            .reduce((obj, key) => obj?.[key], data);
+          if (!prop.required && value === undefined) {
+            paths.add(currentPath);
+          }
+          // @ts-expect-error
+          collectPaths(prop, currentPath, data?.[key]);
         }
       }
     };
@@ -119,15 +131,60 @@ export function JsonSchemaForm({
 
       // Navigate to the correct nested object
       let current = newData;
+      let parent = null;
+      let lastProp = "";
+
       for (let i = 0; i < parts.length - 1; i++) {
         const part = parts[i];
         if (!part) continue;
-        if (!(part in current)) {
+
+        parent = current;
+        lastProp = part;
+
+        // Handle array indices
+        const isArrayIndex = /\[(\d+)\]/.exec(part);
+        if (isArrayIndex) {
+          const arrayPath = part.split("[")[0];
+          const index = Number.parseInt(isArrayIndex[1] ?? "0", 10);
+
           // @ts-expect-error
-          current[part] = {};
+          if (!(arrayPath in current)) {
+            // @ts-expect-error
+            current[arrayPath] = [];
+          }
+          if (
+            // @ts-expect-error
+            !current[arrayPath][index] ||
+            // @ts-expect-error
+            typeof current[arrayPath][index] !== "object"
+          ) {
+            // Initialize array element as an object if we need to set properties on it
+            // @ts-expect-error
+            current[arrayPath][index] = {};
+          }
+          // @ts-expect-error
+          current = current[arrayPath][index];
+        } else {
+          // @ts-expect-error
+          if (!(part in current) || typeof current[part] !== "object") {
+            // @ts-expect-error
+            current[part] = {};
+          }
+          // @ts-expect-error
+          current = current[part];
         }
-        // @ts-expect-error
-        current = current[part] as Record<string, unknown>;
+      }
+
+      // Handle the final property
+      if (typeof current !== "object") {
+        // If current is not an object but we need to set a property on it,
+        // we need to update the parent to contain an object
+        if (parent && lastProp) {
+          // @ts-expect-error
+          parent[lastProp] = {};
+          // @ts-expect-error
+          current = parent[lastProp];
+        }
       }
 
       // Set the value
@@ -285,6 +342,7 @@ export function JsonSchemaForm({
                   `${path}.${index}`,
                 )}
                 <Button
+                  type="button"
                   variant="ghost"
                   size="icon"
                   onClick={() => {
@@ -293,18 +351,38 @@ export function JsonSchemaForm({
                     newValue.splice(index, 1);
                     handleChange(path, newValue, schema);
                   }}
-                  disabled={isDisabled}
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
               </div>
             ))}
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={() => {
+                // Initialize new item based on schema type
+                let newItem: unknown;
+                const itemSchema = schema.items as JsonSchema;
+                switch (itemSchema.type) {
+                  case "object":
+                    newItem = {};
+                    break;
+                  case "array":
+                    newItem = [];
+                    break;
+                  case "number":
+                  case "integer":
+                    newItem = 0;
+                    break;
+                  case "boolean":
+                    newItem = false;
+                    break;
+                  default:
+                    newItem = "";
+                }
                 // @ts-expect-error
-                const newValue = [...arrayValue, ""];
+                const newValue = [...arrayValue, newItem];
                 handleChange(path, newValue, schema);
               }}
               className="mt-2"

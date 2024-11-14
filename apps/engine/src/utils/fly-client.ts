@@ -42,6 +42,14 @@ export async function allocateFlyIp(workspaceId: string) {
   await exec(`fly ips allocate-v4 -a ${workspaceId} --yes`);
 }
 
+export async function createEnvironmentVariable(
+  workspaceId: string,
+  key: string,
+  value: string,
+) {
+  await exec(`fly secrets set ${key}=${value} -a ${workspaceId}`);
+}
+
 export async function getFlyApp(workspaceId: string) {
   const response = await axios.get<FlyApp>(
     `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceId}`,
@@ -78,12 +86,16 @@ export async function deleteFlyApp(workspaceId: string, force = false) {
   return response.data;
 }
 
-export async function createExecutorDockerImage(workspaceId: string) {
+export async function createDockerImage(
+  workspaceId: string,
+  dockerImageName: string,
+  dockerImageTag: string,
+) {
   try {
     await exec(
-      `docker tag integramind/executor:latest registry.fly.io/${workspaceId}:executor`,
+      `docker tag ${dockerImageName}:${dockerImageTag} registry.fly.io/${workspaceId}:${dockerImageTag}`,
     );
-    await exec(`docker push registry.fly.io/${workspaceId}:executor`);
+    await exec(`docker push registry.fly.io/${workspaceId}:${dockerImageTag}`);
   } catch (error) {
     throw new Error(`An error occurred while pushing Docker image: ${error}`);
   }

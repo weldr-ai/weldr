@@ -1,5 +1,5 @@
 import { and, eq, sql } from "@integramind/db";
-import { flows, primitives } from "@integramind/db/schema";
+import { conversations, flows, primitives } from "@integramind/db/schema";
 import { mergeJson } from "@integramind/db/utils";
 import type {
   Flow,
@@ -12,7 +12,6 @@ import {
   updateFlowSchema,
 } from "@integramind/shared/validators/flows";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
-import { conversations } from "node_modules/@integramind/db/src/schema/conversations";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
@@ -194,6 +193,7 @@ export const flowsRouter = {
       ) as unknown as FunctionPrimitive[];
 
       return {
+        ...result,
         stopPrimitive,
         functionPrimitives,
         edges: result.edges,

@@ -22,6 +22,9 @@ import { Textarea } from "@integramind/ui/textarea";
 import {
   AlertCircleIcon,
   ArrowLeftIcon,
+  CheckCircle2Icon,
+  ClipboardIcon,
+  Loader2Icon,
   PanelRightCloseIcon,
   PlayCircleIcon,
   RocketIcon,
@@ -31,6 +34,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type {
   AssistantMessageRawContent,
   ConversationMessage,
+  EndpointFlowMetadata,
   FlatInputSchema,
   Flow,
   FlowInputSchemaMessage,
@@ -45,6 +49,11 @@ import {
   updateFlowSchema,
   type updateTaskFlowSchema,
 } from "@integramind/shared/validators/flows";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@integramind/ui/popover";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import {
   Sheet,
@@ -60,6 +69,7 @@ import {
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
 import { TreeView } from "@integramind/ui/tree-view";
+import { toast } from "@integramind/ui/use-toast";
 import { createId } from "@paralleldrive/cuid2";
 import { useHandleConnections, useNodesData } from "@xyflow/react";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
@@ -69,7 +79,7 @@ import { debounce } from "perfect-debounce";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { runFlow } from "~/lib/actions/run-flow";
+import { executeFlow } from "~/lib/actions/execute";
 import {
   generateFlowInputsSchemas,
   generateFlowOutputsSchemas,
@@ -83,7 +93,9 @@ import {
 import type { FlowNode } from "~/types";
 import Editor from "./editor";
 import type { ReferenceNode } from "./editor/nodes/reference-node";
+import { JsonViewer } from "./json-viewer";
 import MessageList from "./message-list";
+import { TestInputDialog } from "./test-input-dialog";
 
 export function FlowSheet({ initialData }: { initialData: Flow }) {
   const [generationMode, setGenerationMode] = useState<
@@ -429,6 +441,20 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
     scrollToBottom();
   }, [scrollToBottom]);
 
+  const [isDeploying, setIsDeploying] = useState(false);
+
+  const [flowTestData, setFlowTestData] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+
+  const [flowTestResponse, setFlowTestResponse] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const [openTab, setOpenTab] = useState<"general" | "run" | "build">(
+    "general",
+  );
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen} modal={false}>
       <SheetTrigger asChild>
@@ -477,7 +503,15 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                         variant="ghost"
                         size="icon"
                         onClick={async () => {
-                          await runFlow(data.id);
+                          setOpenTab("run");
+                          setIsRunning(true);
+                          console.log(flowTestData);
+                          const response = await executeFlow({
+                            flowUrl: `https://${data.workspaceId}.fly.dev${(data.metadata as EndpointFlowMetadata).path}`,
+                            testData: flowTestData ?? {},
+                          });
+                          setFlowTestResponse(response);
+                          setIsRunning(false);
                         }}
                       >
                         <PlayCircleIcon className="size-3.5" />
@@ -492,13 +526,63 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        className="size-7 text-primary hover:text-primary"
-                        variant="ghost"
-                        size="icon"
-                      >
-                        <RocketIcon className="size-3.5" />
-                      </Button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            className="size-7 text-primary hover:text-primary"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setIsDeploying(true);
+                              setTimeout(() => {
+                                setIsDeploying(false);
+                              }, 30000);
+                            }}
+                          >
+                            <RocketIcon className="size-3.5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          side="bottom"
+                          align="end"
+                          className="h-40 w-96"
+                        >
+                          {isDeploying ? (
+                            <div className="flex flex-col size-full items-center justify-center gap-2">
+                              <Loader2Icon className="size-3.5 animate-spin" />
+                              <p className="text-xs text-muted-foreground">
+                                Deploying...
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col size-full items-center justify-center gap-3 px-4">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2Icon className="size-4 text-success" />
+                                <p className="text-sm font-medium">
+                                  Deployment successful!
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2 text-xs"
+                                onClick={() => {
+                                  const url = `https://${data.workspaceId}.fly.dev${(data.metadata as EndpointFlowMetadata).path}`;
+                                  navigator.clipboard.writeText(url);
+                                  toast({
+                                    title: "URL copied",
+                                    description:
+                                      "You can now share it with others",
+                                  });
+                                }}
+                              >
+                                <span>{`https://${data.workspaceId}.fly.dev`}</span>
+                                <ClipboardIcon className="size-3.5" />
+                              </Button>
+                            </div>
+                          )}
+                        </PopoverContent>
+                      </Popover>
                     </TooltipTrigger>
                     <TooltipContent
                       side="bottom"
@@ -569,13 +653,32 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
               />
             </SheetTitle>
           </SheetHeader>
-          <Tabs defaultValue="general" className="size-full p-4">
+          <Tabs
+            defaultValue="general"
+            className="size-full p-4"
+            value={openTab}
+          >
             <TabsList className="w-full justify-start bg-accent">
-              <TabsTrigger className="w-full" value="general">
+              <TabsTrigger
+                className="w-full"
+                value="general"
+                onClick={() => setOpenTab("general")}
+              >
                 General
               </TabsTrigger>
-              <TabsTrigger className="w-full" value="build">
+              <TabsTrigger
+                className="w-full"
+                value="build"
+                onClick={() => setOpenTab("build")}
+              >
                 Build
+              </TabsTrigger>
+              <TabsTrigger
+                className="w-full"
+                value="run"
+                onClick={() => setOpenTab("run")}
+              >
+                Run
               </TabsTrigger>
             </TabsList>
             <TabsContent value="general" className="size-full">
@@ -729,7 +832,19 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                     </FormItem>
                   )}
                 />
-                <span className="text-sm">Input</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Input</span>
+                  <TestInputDialog
+                    schema={data.inputSchema as JsonSchema}
+                    formData={flowTestData}
+                    setFormData={(data) => {
+                      setFlowTestData(data as Record<string, unknown>);
+                    }}
+                    onSubmit={() => {
+                      console.log(flowTestData);
+                    }}
+                  />
+                </div>
                 {inputTree.length === 0 ? (
                   <div className="flex w-full text-xs items-center justify-center text-muted-foreground">
                     Chat with Specly to define your {data.type} input
@@ -844,6 +959,18 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                   </div>
                 </div>
               )}
+            </TabsContent>
+            <TabsContent value="run" className="size-full">
+              <div className="flex flex-col gap-2 bg-background p-4 rounded-lg h-[calc(100vh-186px)]">
+                {isRunning ? (
+                  <div className="flex flex-col size-full items-center justify-center gap-2">
+                    <Loader2Icon className="size-3.5 animate-spin" />
+                    <p className="text-xs text-muted-foreground">Running...</p>
+                  </div>
+                ) : (
+                  <JsonViewer data={flowTestResponse} />
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </Form>

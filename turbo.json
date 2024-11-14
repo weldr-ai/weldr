@@ -32,5 +32,10 @@
       "cache": false
     }
   },
-  "globalEnv": ["NEXT_PUBLIC_BASE_URL"]
+  "globalEnv": [
+    "NEXT_PUBLIC_BASE_URL",
+    "FLY_API_TOKEN",
+    "FLY_ORG_ID",
+    "FLY_API_HOSTNAME"
+  ]
 }

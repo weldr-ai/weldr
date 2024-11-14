@@ -27,7 +27,7 @@ const baseFlowSchema = z.object({
   inputSchema: inputSchema.nullable().optional(),
   validationSchema: z.string().nullable().optional(),
   outputSchema: outputSchema.nullable().optional(),
-  flowCode: z.string().nullable().optional(),
+  code: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   createdBy: z.string().nullable(),
@@ -126,6 +126,7 @@ export const baseUpdateFlowSchema = z.object({
   inputSchema: inputSchema.optional(),
   validationSchema: z.string().optional(),
   outputSchema: outputSchema.optional(),
+  code: z.string().optional(),
 });
 
 export const updateEndpointFlowSchema = baseUpdateFlowSchema.extend({

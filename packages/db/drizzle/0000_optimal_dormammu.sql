@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS "flows" (
 	"validation_schema" text,
 	"input_conversation_id" text NOT NULL,
 	"output_conversation_id" text NOT NULL,
-	"flow_code" text,
+	"code" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"workspace_id" text NOT NULL,
@@ -180,7 +180,9 @@ CREATE TABLE IF NOT EXISTS "workspaces" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "environment_variables" (
 	"id" text PRIMARY KEY NOT NULL,
+	"key" text NOT NULL,
 	"secret_id" uuid NOT NULL,
+	"viewable" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"workspace_id" text NOT NULL,
