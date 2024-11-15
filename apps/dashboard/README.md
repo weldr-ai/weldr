@@ -1,1 +1,0 @@
-# `@integramind/dashboard`

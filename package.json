@@ -7,6 +7,7 @@
   },
   "scripts": {
     "build": "turbo build",
+    "check-types": "turbo check-types",
     "clean": "rm -rf .turbo node_modules",
     "clean:ws": "turbo clean",
     "commit": "git-cz",
@@ -23,7 +24,8 @@
     "format-and-lint:fix": "biome check . --write",
     "lint:staged": "lint-staged",
     "publish-packages": "changeset version && changeset publish",
-    "check-types": "turbo check-types"
+    "start": "turbo start",
+    "preview": "turbo preview"
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.3",
@@ -41,7 +43,7 @@
     "inquirer": "^9.2.22",
     "lint-staged": "^15.2.5",
     "turbo": "^2.0.14",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.3"
   },
   "config": {
     "commitizen": {

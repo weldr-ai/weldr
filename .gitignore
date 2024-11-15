@@ -47,3 +47,6 @@ dist/
 # nitro
 .output/
 .nitro/
+
+# executor
+temp/

@@ -1,11 +1,48 @@
 {
-  "extends": "@integramind/tsconfig/internal-package.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "paths": {
-      "~/*": ["./src/*"]
-    },
-    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"
+    // Language and Environment
+    "lib": ["ESNext"],
+    "target": "ESNext",
+
+    // Modules
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+
+    // JavaScript Support
+    "allowJs": true,
+    "checkJs": true,
+
+    // Interop Constraints
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    // Projects
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "disableSourceOfProjectReferenceRedirect": true,
+
+    // Type Checking
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+
+    // Output & Emit
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
+
+    // Editor Support
+    "noErrorTruncation": true,
+
+    // Completeness
+    "skipLibCheck": true
   },
-  "include": [".nitro/types/nitro.d.ts", "./**/*", "./src/**/*"],
-  "exclude": ["node_modules", ".output"]
+  "exclude": ["node_modules", "build", "dist", "src/temp"]
 }

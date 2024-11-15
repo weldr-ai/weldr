@@ -1,0 +1,24 @@
+{
+  "name": "@integramind/deployer",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nitro build",
+    "dev": "pnpm with-env nitro dev --port 3002",
+    "prepare": "nitro prepare",
+    "preview": "pnpm with-env node .output/server/index.mjs",
+    "clean": "git clean -xdf .turbo node_modules dist",
+    "check-types": "tsc --noEmit --emitDeclarationOnly false",
+    "with-env": "dotenv -e ../../.env --"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "handlebars": "^4.7.8"
+  },
+  "devDependencies": {
+    "@integramind/tsconfig": "workspace:*",
+    "dotenv-cli": "^7.4.1",
+    "nitropack": "latest"
+  }
+}

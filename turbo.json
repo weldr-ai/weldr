@@ -1,6 +1,6 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  "globalDependencies": ["**/.env"],
+  "globalDependencies": [".env"],
   "ui": "stream",
   "tasks": {
     "build": {
@@ -30,12 +30,12 @@
     },
     "//#clean": {
       "cache": false
+    },
+    "start": {
+      "cache": false
+    },
+    "preview": {
+      "cache": false
     }
-  },
-  "globalEnv": [
-    "NEXT_PUBLIC_BASE_URL",
-    "FLY_API_TOKEN",
-    "FLY_ORG_ID",
-    "FLY_API_HOSTNAME"
-  ]
+  }
 }

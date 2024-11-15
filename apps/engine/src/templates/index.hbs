@@ -1,0 +1,10 @@
+import superjson from "superjson";
+
+{{code}}
+
+{{#if hasInput }}
+const input = {{#if functionArgs }}{{{functionArgs}}}{{else}} {} {{/if}};
+{{/if}}
+const result = await {{{functionName}}}({{#if hasInput}}input{{/if}});
+const jsonString = superjson.stringify(result);
+console.log(jsonString);

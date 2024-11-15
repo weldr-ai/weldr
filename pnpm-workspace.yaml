@@ -1,4 +1,8 @@
 packages:
+  # Included directories
   - apps/*
-  - packages/**/*
+  - packages/*
   - tooling/*
+
+  # Excluded directories
+  - "!**/temp/**"
