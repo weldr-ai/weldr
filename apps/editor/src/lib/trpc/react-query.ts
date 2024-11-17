@@ -4,7 +4,7 @@ import {
   QueryClient,
   defaultShouldDehydrateQuery,
 } from "@tanstack/react-query";
-import SuperJSON from "superjson";
+import superjson from "superjson";
 
 export const createQueryClient = () =>
   new QueryClient({
@@ -25,13 +25,13 @@ export const createQueryClient = () =>
         staleTime: 30 * 1000,
       },
       dehydrate: {
-        serializeData: SuperJSON.serialize,
+        serializeData: superjson.serialize,
         shouldDehydrateQuery: (query) =>
           defaultShouldDehydrateQuery(query) ||
           query.state.status === "pending",
       },
       hydrate: {
-        deserializeData: SuperJSON.deserialize,
+        deserializeData: superjson.deserialize,
       },
     },
   });

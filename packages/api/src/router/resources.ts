@@ -102,7 +102,7 @@ export const resourcesRouter = {
             if (!secret) {
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
-                message: "Failed to create secret",
+                message: "Failed to create resource",
               });
             }
 
@@ -121,7 +121,7 @@ export const resourcesRouter = {
             if (!environmentVariable) {
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
-                message: "Failed to create environment variable",
+                message: "Failed to create resource",
               });
             }
 
@@ -138,7 +138,7 @@ export const resourcesRouter = {
             if (!resourceEnvironmentVariable) {
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
-                message: "Failed to create resource environment variable",
+                message: "Failed to create resource",
               });
             }
           }
@@ -155,7 +155,7 @@ export const resourcesRouter = {
 
       return result;
     }),
-  getAll: protectedProcedure
+  list: protectedProcedure
     .input(z.object({ workspaceId: z.string() }))
     .query(async ({ ctx, input }) => {
       return await ctx.db.query.resources.findMany({
@@ -164,15 +164,11 @@ export const resourcesRouter = {
           eq(resources.createdBy, ctx.session.user.id),
         ),
         with: {
-          integration: {
-            with: {
-              utils: true,
-            },
-          },
+          integration: true,
         },
       });
     }),
-  getById: protectedProcedure
+  byId: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.resources.findFirst({

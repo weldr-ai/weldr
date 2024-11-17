@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
@@ -21,7 +21,7 @@ import { toast } from "@integramind/ui/use-toast";
 
 import type { Integration } from "@integramind/shared/types";
 import { insertResourceSchema } from "@integramind/shared/validators/resources";
-import { api } from "~/lib/trpc/react";
+import { api } from "~/lib/trpc/client";
 
 export function AddResourceForm({
   integration,
@@ -30,7 +30,6 @@ export function AddResourceForm({
   integration: Omit<Integration, "dependencies">;
   setAddResourceDialogOpen?: (open: boolean) => void;
 }) {
-  const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
 
   const form = useForm<z.infer<typeof insertResourceSchema>>({
@@ -45,14 +44,19 @@ export function AddResourceForm({
     },
   });
 
+  const apiUtils = api.useUtils();
+
   const addResourceMutation = api.resources.create.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async () => {
       toast({
         title: "Success",
         description: "Resource created successfully.",
         duration: 2000,
       });
-      router.refresh();
+      if (setAddResourceDialogOpen) {
+        setAddResourceDialogOpen(false);
+      }
+      await apiUtils.resources.list.invalidate();
     },
     onError: (error) => {
       toast({
@@ -212,6 +216,10 @@ export function AddResourceForm({
               !form.formState.isValid || addResourceMutation.isPending
             }
             disabled={!form.formState.isValid || addResourceMutation.isPending}
+            onClick={async (e) => {
+              e.preventDefault();
+              await addResourceMutation.mutateAsync(form.getValues());
+            }}
           >
             {addResourceMutation.isPending && (
               <Loader2Icon className="mr-1 size-3 animate-spin" />

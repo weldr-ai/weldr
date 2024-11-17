@@ -17,14 +17,10 @@ import type { FlowType } from "@integramind/shared/types";
 import { CreateFlowForm } from "~/components/create-flow-form";
 
 export function CreateFlowDialog({ type }: { type: FlowType }) {
-  const [createPrimitiveDialogOpen, setCreatePrimitiveDialogOpen] =
-    useState(false);
+  const [createFlowDialogOpen, setCreateFlowDialogOpen] = useState(false);
 
   return (
-    <Dialog
-      open={createPrimitiveDialogOpen}
-      onOpenChange={setCreatePrimitiveDialogOpen}
-    >
+    <Dialog open={createFlowDialogOpen} onOpenChange={setCreateFlowDialogOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="text-xs">
           <PlusIcon className="mr-1.5 size-3.5" />
@@ -42,7 +38,7 @@ export function CreateFlowDialog({ type }: { type: FlowType }) {
         </DialogHeader>
         <CreateFlowForm
           type={type}
-          setCreatePrimitiveDialogOpen={setCreatePrimitiveDialogOpen}
+          setCreateFlowDialogOpen={setCreateFlowDialogOpen}
         />
       </DialogContent>
     </Dialog>

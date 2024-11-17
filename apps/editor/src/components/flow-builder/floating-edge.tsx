@@ -10,7 +10,7 @@ import { useState } from "react";
 
 import { Button } from "@integramind/ui/button";
 
-import { api } from "~/lib/trpc/react";
+import { api } from "~/lib/trpc/client";
 
 export default function DeletableEdge({
   id,
@@ -44,7 +44,13 @@ export default function DeletableEdge({
     targetPosition,
   });
 
-  const deleteEdge = api.edges.delete.useMutation();
+  const apiUtils = api.useUtils();
+
+  const deleteEdge = api.edges.delete.useMutation({
+    onSuccess: () => {
+      apiUtils.flows.byId.invalidate();
+    },
+  });
 
   const onEdgeClick = async () => {
     setEdges((edges) => edges.filter((edge) => edge.id !== id));

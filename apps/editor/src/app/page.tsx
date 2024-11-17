@@ -11,7 +11,7 @@ import { redirect } from "next/navigation";
 import { CreateWorkspaceForm } from "~/components/create-workspace-form";
 import { Preview } from "~/components/preview";
 import { WorkspacesDialog } from "~/components/workspaces-dialog";
-import { api } from "~/lib/trpc/rsc";
+import { api } from "~/lib/trpc/server";
 
 export default async function Home(): Promise<JSX.Element> {
   const session = await auth();
@@ -20,7 +20,7 @@ export default async function Home(): Promise<JSX.Element> {
     redirect("/auth/sign-in");
   }
 
-  const workspaces = await api.workspaces.getAll();
+  const workspaces = await api.workspaces.list();
 
   return (
     <div className="flex w-full">

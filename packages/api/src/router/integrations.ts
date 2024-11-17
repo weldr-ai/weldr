@@ -9,13 +9,13 @@ import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
 export const integrationsRouter = {
-  getAll: protectedProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     return await ctx.db.query.integrations.findMany();
   }),
-  getAllWithDependencies: protectedProcedure.query(async ({ ctx }) => {
+  listWithDependencies: protectedProcedure.query(async ({ ctx }) => {
     return await ctx.db.query.integrations.findMany();
   }),
-  getById: protectedProcedure
+  byId: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.integrations.findFirst({
@@ -31,7 +31,7 @@ export const integrationsRouter = {
 
       return result;
     }),
-  getUtilityById: protectedProcedure
+  utilityById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.integrationUtils.findFirst({
@@ -47,7 +47,7 @@ export const integrationsRouter = {
 
       return result;
     }),
-  getDependenciesByResourceIds: protectedProcedure
+  dependenciesByResourceIds: protectedProcedure
     .input(z.array(z.string()))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.resources.findMany({
@@ -65,7 +65,7 @@ export const integrationsRouter = {
         (resource) => resource.integration.dependencies ?? [],
       );
     }),
-  getUtilitiesByIds: protectedProcedure
+  utilitiesByIds: protectedProcedure
     .input(z.array(z.string()))
     .query(async ({ ctx, input }) => {
       return await ctx.db.query.integrationUtils.findMany({

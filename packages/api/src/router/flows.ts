@@ -104,7 +104,7 @@ export const flowsRouter = {
         });
       }
     }),
-  getAll: protectedProcedure
+  list: protectedProcedure
     .input(z.object({ workspaceId: z.string() }))
     .query(async ({ ctx, input }) => {
       return await ctx.db.query.flows.findMany({
@@ -114,7 +114,7 @@ export const flowsRouter = {
         ),
       });
     }),
-  getAllByType: protectedProcedure
+  listByType: protectedProcedure
     .input(z.object({ workspaceId: z.string(), type: flowTypesSchema }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.flows.findMany({
@@ -126,7 +126,7 @@ export const flowsRouter = {
       });
       return result;
     }),
-  getById: protectedProcedure
+  byId: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.flows.findFirst({
@@ -163,7 +163,7 @@ export const flowsRouter = {
         stopNode: result.primitives[0] as StopPrimitive,
       } as Flow;
     }),
-  getPrimitivesAndEdges: protectedProcedure
+  byIdWithPrimitivesAndEdges: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.flows.findFirst({
@@ -199,7 +199,7 @@ export const flowsRouter = {
         edges: result.edges,
       };
     }),
-  getByIdWithAssociatedData: protectedProcedure
+  byIdWithAssociatedData: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.flows.findFirst({

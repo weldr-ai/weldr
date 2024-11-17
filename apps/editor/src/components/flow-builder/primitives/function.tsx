@@ -42,6 +42,7 @@ import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
   CircleAlertIcon,
+  EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
   FunctionSquareIcon,
@@ -65,18 +66,27 @@ import type {
 } from "@integramind/shared/types";
 import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@integramind/ui/dropdown-menu";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
 import { TreeView } from "@integramind/ui/tree-view";
+import { createId } from "@paralleldrive/cuid2";
 import { readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import Editor from "~/components/editor";
 import { TestInputDialog } from "~/components/test-input-dialog";
 import { generateFunction } from "~/lib/ai/generator";
-import { api } from "~/lib/trpc/react";
+import { api } from "~/lib/trpc/client";
 import {
   flattenInputSchema,
   jsonSchemaToTreeData,
@@ -86,7 +96,6 @@ import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
 import type { ReferenceNode } from "../../editor/nodes/reference-node";
 import MessageList from "../../message-list";
 import { RawContentViewer } from "../../raw-content-viewer";
-import { PrimitiveDropdownMenu } from "./primitive-dropdown-menu";
 
 const validationSchema = z.object({
   name: z
@@ -107,7 +116,7 @@ export const FunctionNode = memo(
     positionAbsoluteX,
     positionAbsoluteY,
   }: FlowNodeProps) => {
-    const { data: fetchedData, refetch } = api.primitives.getById.useQuery(
+    const { data: fetchedData } = api.primitives.byId.useQuery(
       {
         id: _data.id,
       },
@@ -120,19 +129,25 @@ export const FunctionNode = memo(
       flow: { inputSchema: InputSchema | undefined };
     };
 
+    const apiUtils = api.useUtils();
+
     const updateFunction = api.primitives.update.useMutation({
       onSuccess: async () => {
-        await refetch();
+        await apiUtils.primitives.byId.invalidate({ id: data.id });
       },
     });
 
     const executeFunction = api.engine.executeFunction.useMutation({
       onSuccess: async () => {
-        await refetch();
+        await apiUtils.primitives.byId.invalidate({ id: data.id });
       },
     });
 
-    const deleteFunction = api.primitives.delete.useMutation();
+    const deleteFunction = api.primitives.delete.useMutation({
+      onSuccess: async () => {
+        await apiUtils.flows.byId.invalidate({ id: data.flowId });
+      },
+    });
 
     const addMessage = api.conversations.addMessage.useMutation();
 
@@ -213,6 +228,7 @@ export const FunctionNode = memo(
     const conversation: ConversationMessage[] = useMemo(
       () => [
         {
+          id: createId(),
           role: "assistant",
           content:
             "Hi there! I'm Specly, your AI assistant. What does your function do?",
@@ -410,7 +426,7 @@ export const FunctionNode = memo(
           createdAt: new Date(),
         };
 
-        await refetch();
+        await apiUtils.flows.byId.invalidate({ id: data.flowId });
         setMessages([...newMessages, functionBuiltSuccessfullyMessage]);
       }
 
@@ -528,7 +544,6 @@ export const FunctionNode = memo(
                                 >,
                               });
                               setIsRunning(false);
-                              await refetch();
                             }}
                           >
                             <PlayCircleIcon className="size-3.5" />
@@ -538,18 +553,46 @@ export const FunctionNode = memo(
                           <span className="text-success">Run</span>
                         </TooltipContent>
                       </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <PrimitiveDropdownMenu
-                            setDeleteAlertDialogOpen={setDeleteAlertDialogOpen}
-                            label="Function"
-                            docsUrlPath="function"
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-muted border">
-                          <span>More</span>
-                        </TooltipContent>
-                      </Tooltip>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            className="size-7 text-muted-foreground hover:text-muted-foreground"
+                            variant="ghost"
+                            size="icon"
+                          >
+                            <EllipsisVerticalIcon className="size-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent side="right" align="start">
+                          <DropdownMenuLabel className="text-xs">
+                            Function
+                          </DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-xs">
+                            <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
+                            Run with previous primitives
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="flex items-center justify-between text-xs">
+                            <Link
+                              className="flex items-center"
+                              href="https://docs.integramind.ai/primitives/function"
+                              target="blank"
+                            >
+                              <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
+                              Docs
+                            </Link>
+                            <ExternalLinkIcon className="size-3 text-muted-foreground" />
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                            onClick={() => setDeleteAlertDialogOpen(true)}
+                          >
+                            <TrashIcon className="mr-3 size-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                   <Form {...form}>

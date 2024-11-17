@@ -7,8 +7,6 @@ import type { z } from "zod";
 import { db, eq } from "@integramind/db";
 import { insertWaitlistSchema, waitlist } from "@integramind/db/schema";
 
-import { WaitlistConfirmationEmailTemplate } from "~/components/waitlist-confirmation-email-template";
-
 const resend = new Resend(process.env.RESEND_API_KEY ?? "");
 
 type FormState =
@@ -53,23 +51,29 @@ export async function joinWaitlist(
       redirect("/waitlist-confirmation");
     }
 
-    const result = (
-      await db
+    const result = await db.transaction(async (tx) => {
+      const result = await tx
         .insert(waitlist)
         .values({
           ...validation.data,
         })
-        .onConflictDoNothing()
-        .returning({ id: waitlist.id })
-    )[0];
+        .returning({ id: waitlist.id });
+
+      if (result) {
+        await resend.emails.send({
+          from: "IntegraMind <noreply@integramind.ai>",
+          to: [validation.data.email],
+          subject: "Thank you for your interest!",
+          html: "<p>Hi,</p><p>Thank you for your interest! We will get in touch with you soon when we launch.</p><p>If you have any questions, please feel free to reach out to us at <a href='mailto:hey@integramind.ai'>hey@integramind.ai</a>.</p><p>Best regards, <br /> IntegraMind Team</p>",
+        });
+      } else {
+        throw new Error("Failed to insert waitlist");
+      }
+
+      return result[0];
+    });
 
     if (result) {
-      await resend.emails.send({
-        from: "IntegraMind <noreploy@integramind.ai>",
-        to: [validation.data.email],
-        subject: "Thank you for your interest!",
-        react: WaitlistConfirmationEmailTemplate(),
-      });
       redirect("/waitlist-confirmation");
     } else {
       return { status: "error", fields };

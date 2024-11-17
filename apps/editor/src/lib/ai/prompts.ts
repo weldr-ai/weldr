@@ -3,7 +3,7 @@ import "server-only";
 import type { Flow, FunctionPrimitive } from "@integramind/shared/types";
 import type { functionResourceSchema } from "@integramind/shared/validators/primitives";
 import type { z } from "zod";
-import { api } from "../trpc/rsc";
+import { api } from "../trpc/server";
 
 export const getFunctionRequirementsAgentPrompt = (
   functionId: string,
@@ -606,7 +606,7 @@ export const getGenerateFunctionCodePrompt = async ({
   if (resources?.some((resource) => resource.utilities.length > 0)) {
     for (const resource of resources) {
       for (const utility of resource.utilities) {
-        const utilityData = await api.integrations.getUtilityById({
+        const utilityData = await api.integrations.utilityById({
           id: utility.id,
         });
 

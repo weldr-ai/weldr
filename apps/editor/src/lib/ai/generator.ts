@@ -26,7 +26,7 @@ import {
   getFunctionRequirementsAgentPrompt,
   getGenerateFunctionCodePrompt,
 } from "~/lib/ai/prompts";
-import { api } from "../trpc/rsc";
+import { api } from "../trpc/server";
 import { rawMessageContentToText } from "../utils";
 import { generateCode } from "./helpers";
 
@@ -53,7 +53,7 @@ export async function generateFunction({
   console.log(
     `[gatherFunctionRequirements] Starting for function ${functionId}`,
   );
-  const functionData = await api.primitives.getById({
+  const functionData = await api.primitives.byId({
     id: functionId,
   });
 
@@ -410,7 +410,7 @@ export async function generateFlowCode({
   flowId: string;
 }) {
   try {
-    const result = await api.flows.getPrimitivesAndEdges({
+    const result = await api.flows.byIdWithPrimitivesAndEdges({
       id: flowId,
     });
 

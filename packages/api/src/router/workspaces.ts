@@ -66,13 +66,13 @@ export const workspacesRouter = {
         return workspace;
       });
     }),
-  getAll: protectedProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     const result = await ctx.db.query.workspaces.findMany({
       where: eq(workspaces.createdBy, ctx.session.user.id),
     });
     return result;
   }),
-  getById: protectedProcedure
+  byId: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.workspaces.findFirst({
@@ -80,6 +80,14 @@ export const workspacesRouter = {
           eq(workspaces.id, input.id),
           eq(workspaces.createdBy, ctx.session.user.id),
         ),
+        with: {
+          resources: {
+            with: {
+              integration: true,
+            },
+          },
+          flows: true,
+        },
       });
 
       if (!result) {

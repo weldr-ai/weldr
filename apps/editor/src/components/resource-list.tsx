@@ -1,7 +1,8 @@
 import { Button } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 
-import type { Integration, Resource } from "@integramind/shared/types";
+import type { RouterOutputs } from "@integramind/api";
+import type { Integration } from "@integramind/shared/types";
 import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
 import { DatabaseIcon } from "lucide-react";
 import { AddResourceDialog } from "./add-resource-dialog";
@@ -11,7 +12,7 @@ export function ResourceList({
   resources,
 }: {
   integrations: Omit<Integration, "dependencies">[];
-  resources: Resource[];
+  resources: RouterOutputs["resources"]["list"];
 }) {
   return (
     <div className="flex size-full flex-col gap-2">

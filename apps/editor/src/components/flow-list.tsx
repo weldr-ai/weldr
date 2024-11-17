@@ -5,14 +5,15 @@ import { buttonVariants } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
-import type { Flow, FlowType } from "@integramind/shared/types";
+import type { RouterOutputs } from "@integramind/api";
+import type { FlowType } from "@integramind/shared/types";
 import { CreateFlowDialog } from "./create-flow-dialog";
 
 export function FlowList({
   flows,
   type,
 }: {
-  flows: Omit<Flow, "inputConversation" | "outputConversation" | "stopNode">[];
+  flows: RouterOutputs["flows"]["list"];
   type: FlowType;
 }) {
   const { flowId: currentFlowId } = useParams<{ flowId: string }>();

@@ -2,8 +2,8 @@
 
 import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState, useState } from "react";
+import { useFormStatus } from "react-dom";
 
 import { Button, buttonVariants } from "@integramind/ui/button";
 import {
@@ -26,7 +26,7 @@ import { signInWithMagicLink } from "~/lib/auth/actions";
 export default function SignIn() {
   const { resolvedTheme } = useTheme();
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [_, formAction] = useFormState(signInWithMagicLink, undefined);
+  const [_, formAction] = useActionState(signInWithMagicLink, undefined);
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center">

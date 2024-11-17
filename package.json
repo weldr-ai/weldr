@@ -19,7 +19,7 @@
     "db:push": "pnpm -F @integramind/db push",
     "db:studio": "pnpm -F @integramind/db studio",
     "db:up": "pnpm -F @integramind/db up",
-    "dev": "turbo watch dev",
+    "dev": "turbo dev",
     "format-and-lint": "biome check .",
     "format-and-lint:fix": "biome check . --write",
     "lint:staged": "lint-staged",

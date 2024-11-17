@@ -20,7 +20,7 @@ import {
   useReactFlow,
   useViewport,
 } from "@xyflow/react";
-import { MinusIcon, PlusIcon } from "lucide-react";
+import { FunctionSquareIcon, MinusIcon, PlusIcon } from "lucide-react";
 import type React from "react";
 import { useCallback } from "react";
 
@@ -30,13 +30,17 @@ import "~/styles/flow-builder.css";
 import { Button } from "@integramind/ui/button";
 
 import type { Flow, PrimitiveType } from "@integramind/shared/types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@integramind/ui/tooltip";
 import { toast } from "@integramind/ui/use-toast";
 import { useTheme } from "next-themes";
 import { FunctionNode } from "~/components/flow-builder/primitives/function";
 import { Stop } from "~/components/flow-builder/primitives/stop";
 import { FlowSheet } from "~/components/flow-sheet";
-import { PrimitivesMenu } from "~/components/primitives-menu";
-import { api } from "~/lib/trpc/react";
+import { api } from "~/lib/trpc/client";
 import type { FlowEdge, FlowNode, FlowNodeData } from "~/types";
 import FloatingEdge from "./floating-edge";
 
@@ -203,6 +207,14 @@ export function FlowBuilder({
     [nodes, edges],
   );
 
+  const onDragStart = (
+    event: React.DragEvent<HTMLDivElement>,
+    primitiveTypes: PrimitiveType,
+  ) => {
+    event.dataTransfer.setData("application/reactflow", primitiveTypes);
+    event.dataTransfer.effectAllowed = "move";
+  };
+
   return (
     <ReactFlow
       className="rounded-md"
@@ -280,7 +292,20 @@ export function FlowBuilder({
 
         <div className="h-9 border-l" />
 
-        <PrimitivesMenu />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              onDragStart={(event) => onDragStart(event, "function")}
+              draggable
+            >
+              <FunctionSquareIcon className="size-4" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-muted border">
+            <p>Function</p>
+          </TooltipContent>
+        </Tooltip>
       </Panel>
     </ReactFlow>
   );

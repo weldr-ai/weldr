@@ -24,10 +24,14 @@ import {
   ArrowLeftIcon,
   CheckCircle2Icon,
   ClipboardIcon,
+  ExternalLinkIcon,
+  FileTextIcon,
   Loader2Icon,
+  MoreVerticalIcon,
   PanelRightCloseIcon,
   PlayCircleIcon,
   RocketIcon,
+  TrashIcon,
 } from "lucide-react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +54,14 @@ import {
   type updateTaskFlowSchema,
 } from "@integramind/shared/validators/flows";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@integramind/ui/dropdown-menu";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -70,11 +82,14 @@ import {
 } from "@integramind/ui/tooltip";
 import { TreeView } from "@integramind/ui/tree-view";
 import { toast } from "@integramind/ui/use-toast";
+import { createId } from "@paralleldrive/cuid2";
 import { useHandleConnections, useNodesData } from "@xyflow/react";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import { nanoid } from "nanoid";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { debounce } from "perfect-debounce";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -84,13 +99,14 @@ import {
   generateFlowInputsSchemas,
   generateFlowOutputsSchemas,
 } from "~/lib/ai/generator";
-import { api } from "~/lib/trpc/react";
+import { api } from "~/lib/trpc/client";
 import {
   flattenInputSchema,
   jsonSchemaToTreeData,
   rawMessageContentToText,
 } from "~/lib/utils";
 import type { FlowNode } from "~/types";
+import { DeleteAlertDialog } from "./delete-alert-dialog";
 import Editor from "./editor";
 import type { ReferenceNode } from "./editor/nodes/reference-node";
 import { JsonViewer } from "./json-viewer";
@@ -98,13 +114,14 @@ import MessageList from "./message-list";
 import { TestInputDialog } from "./test-input-dialog";
 
 export function FlowSheet({ initialData }: { initialData: Flow }) {
+  const router = useRouter();
   const [generationMode, setGenerationMode] = useState<
     "input" | "output" | null
   >(null);
 
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data, refetch } = api.flows.getById.useQuery(
+  const { data } = api.flows.byId.useQuery(
     {
       id: initialData.id,
     },
@@ -133,17 +150,24 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
     return acc;
   }, [] as FlatInputSchema[]);
 
+  const apiUtils = api.useUtils();
+
   const updateFlow = api.flows.update.useMutation({
     onSuccess: async () => {
-      await refetch();
+      await apiUtils.flows.byId.invalidate();
     },
   });
 
-  const addMessage = api.conversations.addMessage.useMutation({
+  const deleteFlow = api.flows.delete.useMutation({
     onSuccess: async () => {
-      await refetch();
+      await apiUtils.flows.list.invalidate();
+      router.push(`/workspaces/${data.workspaceId}`);
     },
   });
+
+  const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] = useState(false);
+
+  const addMessage = api.conversations.addMessage.useMutation();
 
   const getDefaultValues = () => {
     const defaultValues = {
@@ -197,7 +221,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
   const inputConversation = useMemo(() => {
     const messages: ConversationMessage[] = [
       {
-        id: nanoid(),
+        id: createId(),
         role: "assistant",
         content: `Hi there! I'm Specly, your AI assistant. What are your flow's input?`,
         rawContent: [
@@ -218,7 +242,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
   const outputConversation = useMemo(() => {
     const messages: ConversationMessage[] = [
       {
-        id: nanoid(),
+        id: createId(),
         role: "assistant",
         content: `Hi there! I'm Specly, your AI assistant. What are your flow's output?`,
         rawContent: [
@@ -377,10 +401,11 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
         createdAt: new Date(),
       };
 
+      await apiUtils.flows.byId.invalidate({
+        id: data.id,
+      });
       setIsGeneratingSchemas(false);
       setMessages([...newMessages, schemaBuiltSuccessfullyMessage]);
-
-      await refetch();
     }
 
     setUserMessageContent(null);
@@ -509,7 +534,6 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                         onClick={async () => {
                           setOpenTab("run");
                           setIsRunning(true);
-                          console.log(flowTestData);
                           const response = await executeFlow({
                             flowUrl: `https://${data.workspaceId}.fly.dev${(data.metadata as EndpointFlowMetadata).path}`,
                             testData: flowTestData ?? {},
@@ -528,10 +552,11 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                       <p>Run</p>
                     </TooltipContent>
                   </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Popover>
-                        <PopoverTrigger asChild>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
                           <Button
                             className="size-7 text-primary hover:text-primary"
                             variant="ghost"
@@ -545,56 +570,96 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                           >
                             <RocketIcon className="size-3.5" />
                           </Button>
-                        </PopoverTrigger>
-                        <PopoverContent
+                        </TooltipTrigger>
+                        <TooltipContent
                           side="bottom"
-                          align="end"
-                          className="h-40 w-96"
+                          className="bg-muted border text-primary"
                         >
-                          {isDeploying ? (
-                            <div className="flex flex-col size-full items-center justify-center gap-2">
-                              <Loader2Icon className="size-3.5 animate-spin" />
-                              <p className="text-xs text-muted-foreground">
-                                Deploying...
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col size-full items-center justify-center gap-3 px-4">
-                              <div className="flex items-center gap-2">
-                                <CheckCircle2Icon className="size-4 text-success" />
-                                <p className="text-sm font-medium">
-                                  Deployment successful!
-                                </p>
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-2 text-xs"
-                                onClick={() => {
-                                  const url = `https://${data.workspaceId}.fly.dev${(data.metadata as EndpointFlowMetadata).path}`;
-                                  navigator.clipboard.writeText(url);
-                                  toast({
-                                    title: "URL copied",
-                                    description:
-                                      "You can now share it with others",
-                                  });
-                                }}
-                              >
-                                <span>{`https://${data.workspaceId}.fly.dev`}</span>
-                                <ClipboardIcon className="size-3.5" />
-                              </Button>
-                            </div>
-                          )}
-                        </PopoverContent>
-                      </Popover>
-                    </TooltipTrigger>
-                    <TooltipContent
+                          <p>Deploy</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </PopoverTrigger>
+                    <PopoverContent
                       side="bottom"
-                      className="bg-muted border text-primary"
+                      align="end"
+                      className="h-40 w-96"
                     >
-                      <p>Deploy</p>
-                    </TooltipContent>
-                  </Tooltip>
+                      {isDeploying ? (
+                        <div className="flex flex-col size-full items-center justify-center gap-2">
+                          <Loader2Icon className="size-3.5 animate-spin" />
+                          <p className="text-xs text-muted-foreground">
+                            Deploying...
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col size-full items-center justify-center gap-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2Icon className="size-4 text-success" />
+                            <p className="text-sm font-medium">
+                              Deployment successful!
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-2 text-xs"
+                            onClick={() => {
+                              const url = `https://${data.workspaceId}.fly.dev${(data.metadata as EndpointFlowMetadata).path}`;
+                              navigator.clipboard.writeText(url);
+                              toast({
+                                title: "URL copied",
+                                description: "You can now share it with others",
+                              });
+                            }}
+                          >
+                            <span>{`https://${data.workspaceId}.fly.dev`}</span>
+                            <ClipboardIcon className="size-3.5" />
+                          </Button>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        className="size-7 text-muted-foreground hover:text-muted-foreground"
+                        variant="ghost"
+                        size="icon"
+                      >
+                        <MoreVerticalIcon className="size-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      side="bottom"
+                      align="end"
+                      className="min-w-48"
+                    >
+                      <DropdownMenuLabel className="text-xs">
+                        {data.type.charAt(0).toUpperCase() + data.type.slice(1)}
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="flex items-center justify-between text-xs">
+                        <Link
+                          className="flex items-center"
+                          href="https://docs.integramind.ai/primitives/function"
+                          target="blank"
+                        >
+                          <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
+                          Docs
+                        </Link>
+                        <ExternalLinkIcon className="size-3 text-muted-foreground" />
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                        onClick={() => setDeleteAlertDialogOpen(true)}
+                      >
+                        <TrashIcon className="mr-3 size-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -980,6 +1045,15 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
           </Tabs>
         </Form>
       </SheetContent>
+      <DeleteAlertDialog
+        open={deleteAlertDialogOpen}
+        setOpen={setDeleteAlertDialogOpen}
+        onDelete={() => {
+          deleteFlow.mutate({
+            id: data.id,
+          });
+        }}
+      />
     </Sheet>
   );
 }

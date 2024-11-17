@@ -2,8 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon } from "lucide-react";
-import { useEffect } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState, useEffect } from "react";
+import { useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
@@ -20,7 +20,7 @@ export function JoinWaitlistForm({
 }: {
   variant?: "default" | "secondary";
 }) {
-  const [state, joinWaitlistAction] = useFormState(joinWaitlist, undefined);
+  const [state, joinWaitlistAction] = useActionState(joinWaitlist, undefined);
   const form = useForm<z.infer<typeof insertWaitlistSchema>>({
     resolver: zodResolver(insertWaitlistSchema),
     defaultValues: {

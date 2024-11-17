@@ -20,11 +20,10 @@ import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
 import { insertWorkspaceSchema } from "@integramind/shared/validators/workspaces";
-import { api } from "~/lib/trpc/react";
+import { api } from "~/lib/trpc/client";
 
 export function CreateWorkspaceForm() {
   const router = useRouter();
-
   const form = useForm<z.infer<typeof insertWorkspaceSchema>>({
     mode: "onChange",
     resolver: zodResolver(insertWorkspaceSchema),
@@ -35,15 +34,17 @@ export function CreateWorkspaceForm() {
     },
   });
 
+  const apiUtils = api.useUtils();
+
   const createWorkspaceMutation = api.workspaces.create.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast({
         title: "Success",
         description: "Workspace created successfully.",
         duration: 2000,
       });
+      await apiUtils.workspaces.list.invalidate();
       router.push(`/workspaces/${data.id}`);
-      router.refresh();
     },
     onError: (error) => {
       toast({
@@ -111,13 +112,17 @@ export function CreateWorkspaceForm() {
         />
         <div className="flex w-full justify-end">
           <Button
-            type="submit"
+            type="button"
             aria-disabled={
               !form.formState.isValid || createWorkspaceMutation.isPending
             }
             disabled={
               !form.formState.isValid || createWorkspaceMutation.isPending
             }
+            onClick={async (e) => {
+              e.preventDefault();
+              await createWorkspaceMutation.mutateAsync(form.getValues());
+            }}
           >
             {createWorkspaceMutation.isPending && (
               <Loader2Icon className="mr-1 size-3 animate-spin" />

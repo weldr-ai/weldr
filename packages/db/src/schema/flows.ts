@@ -67,4 +67,8 @@ export const flowsRelations = relations(flows, ({ many, one }) => ({
     fields: [flows.outputConversationId],
     references: [conversations.id],
   }),
+  workspace: one(workspaces, {
+    fields: [flows.workspaceId],
+    references: [workspaces.id],
+  }),
 }));

@@ -3,17 +3,18 @@ import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { FlowBuilder } from "~/components/flow-builder";
-import { api } from "~/lib/trpc/rsc";
+import { api } from "~/lib/trpc/server";
 import type { FlowEdge, FlowNode, FlowNodeData } from "~/types";
 
 export default async function FlowPage({
   params,
 }: {
-  params: { flowId: string };
+  params: Promise<{ flowId: string }>;
 }): Promise<JSX.Element | undefined> {
   try {
-    const flow = await api.flows.getByIdWithAssociatedData({
-      id: params.flowId,
+    const { flowId } = await params;
+    const flow = await api.flows.byIdWithAssociatedData({
+      id: flowId,
     });
 
     const initialNodes: FlowNode[] = flow.primitives.map((primitive) => ({

@@ -1,14 +1,15 @@
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
-import { api } from "~/lib/trpc/rsc";
+import { api } from "~/lib/trpc/server";
 
 export default async function WorkspacePage({
   params,
 }: {
-  params: { workspaceId: string };
+  params: Promise<{ workspaceId: string }>;
 }): Promise<JSX.Element> {
   try {
-    const workspace = await api.workspaces.getById({ id: params.workspaceId });
+    const { workspaceId } = await params;
+    const workspace = await api.workspaces.byId({ id: workspaceId });
     return (
       <div className="flex size-full">
         <div className="flex size-full flex-col items-center justify-center gap-2 bg-[#F0F0F3] dark:bg-background rounded-md shadow">

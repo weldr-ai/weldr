@@ -7,23 +7,22 @@ import { notFound, redirect } from "next/navigation";
 import { CommandCenter } from "~/components/command-center";
 import { Sidebar } from "~/components/sidebar";
 import { ResourcesProvider } from "~/lib/context/resources";
-import { api } from "~/lib/trpc/rsc";
+import { api } from "~/lib/trpc/server";
 
 export default async function WorkspacesLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: { workspaceId: string };
+  params: Promise<{ workspaceId: string }>;
 }): Promise<JSX.Element> {
   try {
-    const workspace = await api.workspaces.getById({ id: params.workspaceId });
-    const workspaces = await api.workspaces.getAll();
-    const flows = await api.flows.getAll({ workspaceId: params.workspaceId });
-    const integrations = await api.integrations.getAll();
-    const resources = await api.resources.getAll({
-      workspaceId: params.workspaceId,
-    });
+    const { workspaceId } = await params;
+    const workspace = await api.workspaces.byId({ id: workspaceId });
+    const workspaces = await api.workspaces.list();
+    const integrations = await api.integrations.list();
+    const resources = workspace.resources;
+    const flows = workspace.flows;
 
     const resourcesWithMetadata: (Resource & {
       metadata: unknown;
@@ -38,7 +37,7 @@ export default async function WorkspacesLayout({
       switch (resource.integration.type) {
         case "postgres": {
           const environmentVariables =
-            await api.environmentVariables.getByResourceId({
+            await api.environmentVariables.byResourceId({
               resourceId: resource.id,
             });
 
@@ -74,8 +73,8 @@ export default async function WorkspacesLayout({
             <Sidebar
               workspace={workspace}
               integrations={integrations}
-              resources={resources}
-              flows={flows}
+              initialResources={resources}
+              initialFlows={flows}
             />
           </div>
           <main className="flex w-full dark:bg-muted py-2.5 pr-2.5">

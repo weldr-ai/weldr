@@ -12,7 +12,7 @@ export default function WaitlistConfirmationPage() {
         alt="IntegraMind"
         height={500}
         priority
-        src="/logo-solid.png"
+        src="/logo.svg"
         width={500}
       />
       <p className="max-w-sm text-center">

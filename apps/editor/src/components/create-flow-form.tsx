@@ -28,30 +28,32 @@ import { toast } from "@integramind/ui/use-toast";
 
 import type { FlowType } from "@integramind/shared/types";
 import { insertFlowSchema } from "@integramind/shared/validators/flows";
-import { api } from "~/lib/trpc/react";
+import { api } from "~/lib/trpc/client";
 
 export function CreateFlowForm({
   type,
-  setCreatePrimitiveDialogOpen,
+  setCreateFlowDialogOpen,
 }: {
   type: FlowType;
-  setCreatePrimitiveDialogOpen?: (open: boolean) => void;
+  setCreateFlowDialogOpen?: (open: boolean) => void;
 }) {
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
 
+  const apiUtils = api.useUtils();
+
   const createFlowMutation = api.flows.create.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast({
         title: "Success",
         description: `${type.charAt(0).toUpperCase()}${type.slice(1)} created successfully.`,
         duration: 2000,
       });
-      if (setCreatePrimitiveDialogOpen) {
-        setCreatePrimitiveDialogOpen(false);
+      if (setCreateFlowDialogOpen) {
+        setCreateFlowDialogOpen(false);
       }
+      await apiUtils.flows.list.invalidate();
       router.push(`/workspaces/${workspaceId}/${data.id}`);
-      router.refresh();
     },
     onError: (error) => {
       toast({
@@ -234,8 +236,9 @@ export function CreateFlowForm({
               !form.formState.isValid || createFlowMutation.isPending
             }
             disabled={!form.formState.isValid || createFlowMutation.isPending}
-            onClick={() => {
-              createFlowMutation.mutate(form.getValues());
+            onClick={async (e) => {
+              e.preventDefault();
+              await createFlowMutation.mutateAsync(form.getValues());
             }}
           >
             {createFlowMutation.isPending && (

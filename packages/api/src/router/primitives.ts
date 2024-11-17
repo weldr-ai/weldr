@@ -66,7 +66,7 @@ export const primitivesRouter = {
         });
       }
     }),
-  getById: protectedProcedure
+  byId: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.primitives.findFirst({

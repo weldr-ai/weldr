@@ -5,7 +5,7 @@ import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
 export const environmentVariablesRouter = {
-  getByResourceId: protectedProcedure
+  byResourceId: protectedProcedure
     .input(
       z.object({
         resourceId: z.string(),

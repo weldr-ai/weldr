@@ -28,12 +28,8 @@ import {
 } from "@integramind/ui/dropdown-menu";
 import { cn } from "@integramind/ui/utils";
 
-import type {
-  Flow,
-  Integration,
-  Resource,
-  Workspace,
-} from "@integramind/shared/types";
+import type { RouterOutputs } from "@integramind/api";
+import type { Integration, Workspace } from "@integramind/shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
 import { LogoIcon } from "@integramind/ui/icons/logo-icon";
 import {
@@ -44,6 +40,7 @@ import {
 import { useState } from "react";
 import { signOut } from "~/lib/auth/actions";
 import { useCommandCenterStore, usePrimarySidebarStore } from "~/lib/store";
+import { api } from "~/lib/trpc/client";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 import { FlowList } from "./flow-list";
@@ -52,13 +49,13 @@ import { ResourceList } from "./resource-list";
 export function Sidebar({
   workspace,
   integrations,
-  resources,
-  flows,
+  initialResources,
+  initialFlows,
 }: {
   workspace: Workspace;
   integrations: Omit<Integration, "dependencies">[];
-  resources: Resource[];
-  flows: Omit<Flow, "inputConversation" | "outputConversation" | "stopNode">[];
+  initialResources: RouterOutputs["resources"]["list"];
+  initialFlows: RouterOutputs["flows"]["list"];
 }) {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
@@ -74,6 +71,24 @@ export function Sidebar({
     useState<boolean>(false);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+
+  const { data: resources } = api.resources.list.useQuery(
+    {
+      workspaceId: workspace.id,
+    },
+    {
+      initialData: initialResources,
+    },
+  );
+
+  const { data: flows } = api.flows.list.useQuery(
+    {
+      workspaceId: workspace.id,
+    },
+    {
+      initialData: initialFlows as RouterOutputs["flows"]["list"],
+    },
+  );
 
   const endpoints = flows.filter((flow) => flow.type === "endpoint");
   const tasks = flows.filter((flow) => flow.type === "task");

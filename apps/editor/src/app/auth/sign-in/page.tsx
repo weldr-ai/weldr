@@ -3,8 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState, useEffect } from "react";
+import { useFormStatus } from "react-dom";
 import type { FormState } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -37,7 +37,7 @@ import { signInWithMagicLink } from "~/lib/auth/actions";
 export default function SignIn() {
   const { resolvedTheme } = useTheme();
 
-  const [state, signInWithMagicLinkAction] = useFormState(
+  const [state, signInWithMagicLinkAction] = useActionState(
     signInWithMagicLink,
     undefined,
   );

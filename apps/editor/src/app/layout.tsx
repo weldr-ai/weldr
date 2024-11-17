@@ -10,7 +10,8 @@ import { cn } from "@integramind/ui/utils";
 import { TooltipProvider } from "@integramind/ui/tooltip";
 import { ReactFlowProvider } from "@xyflow/react";
 import { QueryProvider } from "~/components/query-client-provider";
-import { TRPCReactProvider } from "~/lib/trpc/react";
+import { TRPCReactProvider } from "~/lib/trpc/client";
+
 const poppins = Poppins({
   subsets: ["latin"],
   weight: "400",
@@ -29,7 +30,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }): Promise<JSX.Element> {
   return (
-    <html className="dark" lang="en">
+    <html lang="en">
       <body
         className={cn(
           "flex min-h-screen w-full flex-col bg-background font-sans antialiased",
@@ -39,8 +40,8 @@ export default async function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
-          disableTransitionOnChange
           enableSystem
+          disableTransitionOnChange
         >
           <ReactFlowProvider>
             <TRPCReactProvider>
