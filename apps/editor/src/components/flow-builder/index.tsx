@@ -68,7 +68,14 @@ export function FlowBuilder({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  const apiUtils = api.useUtils();
+
   const createPrimitive = api.primitives.create.useMutation({
+    onSuccess: () => {
+      apiUtils.flows.byId.invalidate({
+        id: flow.id,
+      });
+    },
     onError: (error) => {
       toast({
         title: "Error",
@@ -79,6 +86,11 @@ export function FlowBuilder({
   });
 
   const updatePrimitive = api.primitives.update.useMutation({
+    onSuccess: () => {
+      apiUtils.flows.byId.invalidate({
+        id: flow.id,
+      });
+    },
     onError: (error) => {
       toast({
         title: "Error",
@@ -89,6 +101,11 @@ export function FlowBuilder({
   });
 
   const createEdge = api.edges.create.useMutation({
+    onSuccess: () => {
+      apiUtils.flows.byId.invalidate({
+        id: flow.id,
+      });
+    },
     onError: (error) => {
       toast({
         title: "Error",
