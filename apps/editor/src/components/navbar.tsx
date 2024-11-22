@@ -10,14 +10,12 @@ import {
 } from "@integramind/ui/dropdown-menu";
 import { LogoIcon } from "@integramind/ui/icons/logo-icon";
 import { BoxesIcon, PlusIcon, TrashIcon } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useState } from "react";
 import { useCommandCenterStore } from "~/lib/store";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 
 export function Navbar() {
-  const { resolvedTheme } = useTheme();
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
   const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
     useState<boolean>(false);
@@ -30,10 +28,7 @@ export function Navbar() {
         <div className="flex items-center justify-center size-14 border-r">
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
-              <LogoIcon
-                className="size-10"
-                theme={resolvedTheme === "light" ? "light" : "dark"}
-              />
+              <LogoIcon className="size-10" />
               <span className="sr-only">integramind</span>
             </Button>
           </DropdownMenuTrigger>

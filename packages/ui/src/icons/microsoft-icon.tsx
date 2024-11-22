@@ -5,8 +5,8 @@ export function MicrosoftIcon({ className }: { className?: string }) {
       className={className}
       viewBox="0 0 256 256"
       xmlns="http://www.w3.org/2000/svg"
-      width="256"
-      height="256"
+      width="24"
+      height="24"
       preserveAspectRatio="xMidYMid"
     >
       <title>Microsoft</title>

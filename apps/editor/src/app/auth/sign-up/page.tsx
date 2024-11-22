@@ -2,10 +2,10 @@
 
 import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { useState } from "react";
+import { SupportLinks } from "../_components/support-links";
 
-import { Button, buttonVariants } from "@integramind/ui/button";
+import { Button } from "@integramind/ui/button";
 import {
   Card,
   CardContent,
@@ -14,54 +14,82 @@ import {
   CardTitle,
 } from "@integramind/ui/card";
 import { Input } from "@integramind/ui/input";
-import { Label } from "@integramind/ui/label";
-import { cn } from "@integramind/ui/utils";
 
-import { GoogleIcon } from "@integramind/ui/icons/google-icon";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { authClient } from "@integramind/auth/client";
+import { signUpSchema } from "@integramind/shared/validators/auth";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@integramind/ui/form";
 import { LogoIcon } from "@integramind/ui/icons/logo-icon";
-import { MicrosoftIcon } from "@integramind/ui/icons/microsoft-icon";
-import { useTheme } from "next-themes";
-import { signInWithMagicLink } from "~/lib/auth/actions";
+import { toast } from "@integramind/ui/use-toast";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import type { z } from "zod";
+import { Socials } from "../_components/socials";
 
-export default function SignIn() {
-  const { resolvedTheme } = useTheme();
+export default function SignUp() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [_, formAction] = useActionState(signInWithMagicLink, undefined);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const form = useForm<z.infer<typeof signUpSchema>>({
+    mode: "onChange",
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  async function onSubmit(data: z.infer<typeof signUpSchema>) {
+    await authClient.signUp.email({
+      name: `${data.firstName} ${data.lastName}`,
+      email: data.email,
+      password: data.password,
+      fetchOptions: {
+        onResponse: () => {
+          setIsSubmitting(false);
+        },
+        onRequest: () => {
+          setIsSubmitting(true);
+        },
+        onError: (ctx) => {
+          toast({
+            title: "Failed to sign up",
+            description: ctx.error?.message,
+            variant: "destructive",
+          });
+        },
+        onSuccess: () => {
+          router.push("/");
+        },
+      },
+    });
+  }
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center">
-      <Card className="mx-auto w-full max-w-md border-hidden bg-transparent p-8 shadow-none md:border-solid md:bg-card md:shadow-sm">
+      <Card className="mx-auto w-full max-w-lg border-hidden bg-transparent p-8 shadow-none md:border-solid md:bg-card md:shadow-sm">
         <CardHeader className="flex flex-col items-start justify-start">
           <CardTitle className="flex flex-col gap-4">
-            <LogoIcon
-              className="size-10"
-              theme={resolvedTheme === "dark" ? "dark" : "light"}
-            />
-            <span className="text-xl">Sign up to integramind</span>
+            <LogoIcon className="size-10" />
+            <span className="text-xl">Sign up to Integramind</span>
           </CardTitle>
           <CardDescription className="text-center">
             Welcome! Please fill in the details to get started.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-2">
-              <Button className="w-full" variant="outline" size="icon">
-                <GoogleIcon className="size-4" />
-                <span className="sr-only">Google Logo</span>
-              </Button>
-              <Button className="w-full" variant="outline" size="icon">
-                <MicrosoftIcon className="size-4" />
-                <span className="sr-only">Microsoft Logo</span>
-              </Button>
-            </div>
-            <Link
-              href="/sign-up/magic-auth"
-              className={cn(buttonVariants({ variant: "default" }))}
-            >
-              Continue with email code
-            </Link>
-          </div>
+          <Socials />
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border border-t" />
@@ -72,68 +100,130 @@ export default function SignIn() {
               </span>
             </div>
           </div>
-          <form className="flex flex-col gap-4" action={formAction}>
-            <div className="flex flex-col gap-4 md:flex-row md:gap-2">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="firstName">First name</Label>
-                <Input
-                  id="firstName"
+          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+            <Form {...form}>
+              <div className="flex flex-col gap-4 md:flex-row md:gap-2">
+                <FormField
+                  control={form.control}
                   name="firstName"
-                  type="text"
-                  placeholder="Your first name"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="lastName">Last name</Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  placeholder="Your last name"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email address</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Your email address"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Password</Label>
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-1 top-1 size-7"
-                >
-                  {showPassword ? (
-                    <EyeOffIcon className="size-3" />
-                  ) : (
-                    <EyeIcon className="size-3" />
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormLabel>First name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Your first name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </Button>
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Your password"
-                  required
+                />
+
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormLabel>Last name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Your last name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-            </div>
-            <Submit />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email address</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Your email address" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Your password"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-1 top-1 size-7"
+                        >
+                          {showPassword ? (
+                            <EyeOffIcon className="size-3" />
+                          ) : (
+                            <EyeIcon className="size-3" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Confirm your password"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-1 top-1 size-7"
+                        >
+                          {showPassword ? (
+                            <EyeOffIcon className="size-3" />
+                          ) : (
+                            <EyeIcon className="size-3" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                className="w-full"
+                type="submit"
+                aria-disabled={!form.formState.isValid || isSubmitting}
+                disabled={!form.formState.isValid || isSubmitting}
+              >
+                {isSubmitting && (
+                  <Loader2Icon className="mr-1 size-3 animate-spin" />
+                )}
+                Sign up
+              </Button>
+            </Form>
           </form>
           <div className="flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground md:flex-row md:gap-0">
             <div>
@@ -145,46 +235,10 @@ export default function SignIn() {
                 Sign in
               </Link>
             </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href="https://integramind.ai/contact-us"
-                className="hover:underline"
-              >
-                Help
-              </Link>
-              <Link
-                href="https://integramind.ai/privacy-policy"
-                className="hover:underline"
-              >
-                Privacy
-              </Link>
-              <Link
-                href="https://integramind.ai/terms-and-conditions"
-                className="hover:underline"
-              >
-                Terms
-              </Link>
-            </div>
+            <SupportLinks />
           </div>
         </CardContent>
       </Card>
     </main>
-  );
-}
-
-function Submit() {
-  const { pending } = useFormStatus();
-
-  return (
-    <Button
-      type="submit"
-      variant="outline"
-      className="text-xs"
-      aria-disabled={pending}
-      disabled={pending}
-    >
-      {pending && <Loader2Icon className="mr-1 size-3 animate-spin" />}
-      Continue
-    </Button>
   );
 }

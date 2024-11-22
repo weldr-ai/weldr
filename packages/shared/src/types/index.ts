@@ -121,16 +121,19 @@ export type BaseFormState<
 > =
   | {
       status: "success";
+      title?: string;
       payload: TPayload;
       message?: string;
     }
   | {
       status: "validationError";
+      title?: string;
       fields: FormFields;
       errors: FormFields;
     }
   | {
       status: "error";
+      title?: string;
       fields: FormFields;
       message?: string;
     }

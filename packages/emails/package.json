@@ -1,0 +1,24 @@
+{
+  "name": "@integramind/emails",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/templates/*.tsx"
+  },
+  "scripts": {
+    "dev": "email dev -p 3004 --dir ./src/templates",
+    "export": "email export"
+  },
+  "dependencies": {
+    "@react-email/components": "0.0.28",
+    "react-email": "3.0.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@integramind/tsconfig": "workspace:*",
+    "@integramind/tailwind-config": "workspace:*",
+    "tailwindcss": "3.4.11"
+  }
+}

@@ -6,7 +6,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@integramind/ui/card";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { AccountDropdownMenu } from "~/components/account-dropdown-menu";
 
 import { CreateWorkspaceForm } from "~/components/create-workspace-form";
 import { Preview } from "~/components/preview";
@@ -14,9 +16,9 @@ import { WorkspacesDialog } from "~/components/workspaces-dialog";
 import { api } from "~/lib/trpc/server";
 
 export default async function Home(): Promise<JSX.Element> {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
-  if (!session?.user) {
+  if (!session) {
     redirect("/auth/sign-in");
   }
 
@@ -24,7 +26,10 @@ export default async function Home(): Promise<JSX.Element> {
 
   return (
     <div className="flex w-full">
-      <div className="fixed inset-0 z-50 flex bg-black/80">
+      <div className="absolute left-3 bottom-1 z-50">
+        <AccountDropdownMenu />
+      </div>
+      <div className="fixed inset-0 z-10 flex bg-black/80">
         {workspaces.length > 0 ? (
           <WorkspacesDialog workspaces={workspaces} />
         ) : (

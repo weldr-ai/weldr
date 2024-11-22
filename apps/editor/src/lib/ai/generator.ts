@@ -16,6 +16,7 @@ import {
 } from "@integramind/shared/validators/common";
 import { type CoreMessage, streamObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   FLOW_COMPOSER_AGENT_PROMPT,
@@ -44,9 +45,9 @@ export async function generateFunction({
   conversationId: string;
   messages: CoreMessage[];
 }) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
-  if (!session?.user) {
+  if (!session) {
     redirect("/auth/sign-in");
   }
 
@@ -200,9 +201,9 @@ export async function generateFlowInputsSchemas({
   conversationId: string;
   messages: CoreMessage[];
 }) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
-  if (!session?.user) {
+  if (!session) {
     redirect("/auth/sign-in");
   }
 
@@ -307,9 +308,9 @@ export async function generateFlowOutputsSchemas({
 }) {
   console.log(conversationId);
 
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
-  if (!session?.user) {
+  if (!session) {
     redirect("/auth/sign-in");
   }
 

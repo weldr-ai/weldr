@@ -9,38 +9,28 @@ import {
   UnplugIcon,
   WorkflowIcon,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 
+import type { RouterOutputs } from "@integramind/api";
+import type { Integration, Workspace } from "@integramind/shared/types";
 import { Button } from "@integramind/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@integramind/ui/dropdown-menu";
-import { cn } from "@integramind/ui/utils";
-
-import type { RouterOutputs } from "@integramind/api";
-import type { Integration, Workspace } from "@integramind/shared/types";
-import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
 import { LogoIcon } from "@integramind/ui/icons/logo-icon";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
+import { cn } from "@integramind/ui/utils";
 import { useState } from "react";
-import { signOut } from "~/lib/auth/actions";
 import { useCommandCenterStore, usePrimarySidebarStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
+import { AccountDropdownMenu } from "./account-dropdown-menu";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 import { FlowList } from "./flow-list";
@@ -57,8 +47,6 @@ export function Sidebar({
   initialResources: RouterOutputs["resources"]["list"];
   initialFlows: RouterOutputs["flows"]["list"];
 }) {
-  const { theme, setTheme, resolvedTheme } = useTheme();
-
   const activeSection = usePrimarySidebarStore((state) => state.activeSection);
   const updateActiveSection = usePrimarySidebarStore(
     (state) => state.updateActiveSection,
@@ -105,10 +93,7 @@ export function Sidebar({
           >
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
-                <LogoIcon
-                  className="size-10"
-                  theme={resolvedTheme === "light" ? "light" : "dark"}
-                />
+                <LogoIcon className="size-10" />
                 <span className="sr-only">integramind</span>
               </Button>
             </DropdownMenuTrigger>
@@ -245,48 +230,7 @@ export function Sidebar({
               </TooltipContent>
             </Tooltip>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="size-8">
-                <Avatar className="size-8 rounded-md">
-                  <AvatarImage src={undefined} alt="User" />
-                  <AvatarFallback>
-                    <div className="size-full bg-gradient-to-br from-rose-500 via-amber-600 to-blue-500" />
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48" align="end" side="right">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Appearance</DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuRadioGroup
-                      onValueChange={setTheme}
-                      value={theme}
-                    >
-                      <DropdownMenuRadioItem value="light">
-                        Light
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="dark">
-                        Dark
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="system">
-                        System
-                      </DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => signOut()}>
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <AccountDropdownMenu />
         </div>
       </div>
       {isSidebarOpen && (
