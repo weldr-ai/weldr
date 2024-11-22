@@ -427,6 +427,7 @@ export const FunctionNode = memo(
         };
 
         await apiUtils.flows.byId.invalidate({ id: data.flowId });
+        await apiUtils.primitives.byId.invalidate({ id: data.id });
         setMessages([...newMessages, functionBuiltSuccessfullyMessage]);
       }
 
