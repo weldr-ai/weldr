@@ -6,7 +6,6 @@ import { cache } from "react";
 
 import type { AppRouter } from "@integramind/api";
 import { createCaller, createTRPCContext } from "@integramind/api";
-import { auth } from "@integramind/auth";
 
 import { createQueryClient } from "~/lib/trpc/react-query";
 
@@ -17,11 +16,7 @@ import { createQueryClient } from "~/lib/trpc/react-query";
 const createContext = cache(async () => {
   const heads = new Headers(await headers());
   heads.set("x-trpc-source", "rsc");
-
-  return createTRPCContext({
-    session: await auth(),
-    headers: heads,
-  });
+  return createTRPCContext({ headers: heads });
 });
 
 const getQueryClient = cache(createQueryClient);

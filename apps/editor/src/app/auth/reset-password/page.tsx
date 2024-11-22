@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
 import { authClient } from "@integramind/auth/client";
-import { signInSchema } from "@integramind/shared/validators/auth";
+import { resetPasswordSchema } from "@integramind/shared/validators/auth";
 import { Button } from "@integramind/ui/button";
 import {
   Card,
@@ -25,35 +25,30 @@ import {
   FormLabel,
   FormMessage,
 } from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
-
-import { Checkbox } from "@integramind/ui/checkbox";
 import { LogoIcon } from "@integramind/ui/icons/logo-icon";
+import { Input } from "@integramind/ui/input";
 import { toast } from "@integramind/ui/use-toast";
-
-import { Socials } from "../_components/socials";
+import { useRouter } from "next/navigation";
 import { SupportLinks } from "../_components/support-links";
 
-export default function SignIn() {
+export default function ResetPasswordPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const form = useForm<z.infer<typeof signInSchema>>({
+  const form = useForm<z.infer<typeof resetPasswordSchema>>({
     mode: "onChange",
-    resolver: zodResolver(signInSchema),
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      email: "",
       password: "",
-      rememberMe: "false",
+      confirmPassword: "",
     },
   });
 
-  async function onSubmit(data: z.infer<typeof signInSchema>) {
-    await authClient.signIn.email({
-      email: data.email,
-      password: data.password,
-      rememberMe: data.rememberMe === "true",
-      callbackURL: "/",
+  async function onSubmit(data: z.infer<typeof resetPasswordSchema>) {
+    await authClient.resetPassword({
+      newPassword: data.password,
       fetchOptions: {
         onResponse: () => {
           setIsSubmitting(false);
@@ -63,10 +58,13 @@ export default function SignIn() {
         },
         onError: (ctx) => {
           toast({
-            title: "Failed to sign in",
+            title: "Failed to reset password",
             description: ctx.error?.message,
             variant: "destructive",
           });
+        },
+        onSuccess: () => {
+          router.push("/auth/sign-in");
         },
       },
     });
@@ -78,62 +76,26 @@ export default function SignIn() {
         <CardHeader className="flex flex-col items-start justify-start">
           <CardTitle className="flex flex-col gap-4">
             <LogoIcon className="size-10" />
-            <span className="text-xl">Sign in to Integramind</span>
+            <span className="text-xl">Create new password</span>
           </CardTitle>
-          <CardDescription className="text-center">
-            Welcome back! Please sign in to continue
+          <CardDescription>
+            Please enter your new password below.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <Socials />
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground md:bg-card">
-                OR
-              </span>
-            </div>
-          </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Enter your email"
-                        required
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <FormField
                 control={form.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel>Password</FormLabel>
-                      <Link
-                        href="/auth/forgot-password"
-                        className="text-xs text-primary hover:underline"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
+                    <FormLabel>New Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           {...field}
-                          placeholder="Enter your password"
+                          placeholder="Enter new password"
                           required
                           type={showPassword ? "text" : "password"}
                         />
@@ -158,21 +120,35 @@ export default function SignIn() {
               />
               <FormField
                 control={form.control}
-                name="rememberMe"
+                name="confirmPassword"
                 render={({ field }) => (
-                  <FormItem className="flex w-full items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <FormControl>
-                        <Checkbox
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
                           {...field}
-                          checked={field.value === "true"}
-                          onCheckedChange={(value) =>
-                            field.onChange(value ? "true" : "false")
-                          }
+                          placeholder="Confirm new password"
+                          required
+                          type={showConfirmPassword ? "text" : "password"}
                         />
-                      </FormControl>
-                      <FormLabel>Remember me</FormLabel>
-                    </div>
+                        <Button
+                          className="absolute right-1 top-1 size-7"
+                          variant="ghost"
+                          size="icon"
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOffIcon className="size-3" />
+                          ) : (
+                            <EyeIcon className="size-3" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -186,18 +162,18 @@ export default function SignIn() {
                 {isSubmitting && (
                   <Loader2Icon className="mr-1 size-3 animate-spin" />
                 )}
-                Sign in
+                Reset password
               </Button>
             </form>
           </Form>
           <div className="flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground md:flex-row md:gap-0">
             <div>
-              No account?{" "}
+              Remember your password?{" "}
               <Link
-                href="/auth/sign-up"
+                href="/auth/sign-in"
                 className="text-primary hover:underline"
               >
-                Sign up
+                Sign in
               </Link>
             </div>
             <SupportLinks />

@@ -1,5 +1,3 @@
-"use client";
-
 import {
   BlocksIcon,
   DatabaseIcon,
@@ -10,13 +8,9 @@ import {
 
 import { Button } from "@integramind/ui/button";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
 import { LogoIcon } from "@integramind/ui/icons/logo-icon";
-import { useTheme } from "next-themes";
 
 export function Preview() {
-  const { resolvedTheme } = useTheme();
-
   return (
     <div className="flex size-full min-h-screen flex-row bg-background dark:bg-muted">
       <div className="flex flex-col">
@@ -24,10 +18,7 @@ export function Preview() {
           <nav className="flex items-center text-sm">
             <div className="flex size-14 items-center justify-center border-r p-2">
               <Button variant="ghost" size="icon" className="size-full">
-                <LogoIcon
-                  className="size-10"
-                  theme={resolvedTheme === "light" ? "light" : "dark"}
-                />
+                <LogoIcon className="size-10" />
                 <span className="sr-only">IntegraMind</span>
               </Button>
             </div>
@@ -61,15 +52,6 @@ export function Preview() {
                 <DatabaseIcon className="size-5" />
               </Button>
             </div>
-
-            <Button size="icon" variant="ghost" className="size-8">
-              <Avatar className="size-8 rounded-md">
-                <AvatarImage src={undefined} alt="User" />
-                <AvatarFallback>
-                  <div className="size-full bg-gradient-to-br from-rose-500 via-amber-600 to-blue-500" />
-                </AvatarFallback>
-              </Avatar>
-            </Button>
           </div>
           <div className="flex w-64 flex-col items-center">
             <div className="flex w-full p-2.5">

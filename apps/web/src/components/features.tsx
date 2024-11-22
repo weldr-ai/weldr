@@ -9,7 +9,7 @@ import Image from "next/image";
 import { Badge } from "@integramind/ui/badge";
 
 import { NotionIcon } from "@integramind/ui/icons/notion-icon";
-import { PostgresqlIcon } from "@integramind/ui/icons/postgresql-icon";
+import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
 import { SalesforceIcon } from "@integramind/ui/icons/salesforce-icon";
 import { SlackIcon } from "@integramind/ui/icons/slack-icon";
 
@@ -33,7 +33,7 @@ export function Features() {
             <div className="flex w-full flex-wrap items-center gap-1 text-xs lg:text-lg">
               From
               <span className="flex items-center rounded-md border bg-accent px-1.5 py-1 text-accent-foreground">
-                <PostgresqlIcon className="mr-2 size-4" />
+                <PostgresIcon className="mr-2 size-4" />
                 Acme DB
               </span>
               get
@@ -190,7 +190,7 @@ export function Features() {
             <SalesforceIcon />
           </div>
           <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
-            <PostgresqlIcon />
+            <PostgresIcon />
           </div>
         </div>
       </div>

@@ -31,11 +31,15 @@ export default eventHandler(async (event) => {
 
     await allocateFlyIp(workspaceId);
 
-    await createDockerImage(workspaceId, "integramind/backend", "latest");
+    await createDockerImage({
+      workspaceId,
+      dockerImageName: "integramind/engine",
+      outputTag: "engine",
+    });
 
     const executorMachine = await createFlyMachine(
       workspaceId,
-      `registry.fly.io/${workspaceId}:backend`,
+      `registry.fly.io/${workspaceId}:engine`,
       {
         guest: {
           cpus: 1,

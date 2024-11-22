@@ -86,16 +86,20 @@ export async function deleteFlyApp(workspaceId: string, force = false) {
   return response.data;
 }
 
-export async function createDockerImage(
-  workspaceId: string,
-  dockerImageName: string,
-  dockerImageTag: string,
-) {
+export async function createDockerImage({
+  workspaceId,
+  dockerImageName,
+  outputTag,
+}: {
+  workspaceId: string;
+  dockerImageName: string;
+  outputTag: string;
+}) {
   try {
     await exec(
-      `docker tag ${dockerImageName}:${dockerImageTag} registry.fly.io/${workspaceId}:${dockerImageTag}`,
+      `docker tag ${dockerImageName}:latest registry.fly.io/${workspaceId}:${outputTag}`,
     );
-    await exec(`docker push registry.fly.io/${workspaceId}:${dockerImageTag}`);
+    await exec(`docker push registry.fly.io/${workspaceId}:${outputTag}`);
   } catch (error) {
     throw new Error(`An error occurred while pushing Docker image: ${error}`);
   }
