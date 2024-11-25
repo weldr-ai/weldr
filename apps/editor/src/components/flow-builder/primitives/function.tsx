@@ -83,7 +83,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import Editor from "~/components/editor";
+import { Editor } from "~/components/editor";
 import { TestInputDialog } from "~/components/test-input-dialog";
 import { generateFunction } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/client";
@@ -104,10 +104,12 @@ const validationSchema = z.object({
     .min(1, {
       message: "Name is required",
     })
-    .regex(/^\S*$/, {
-      message: "Cannot contain spaces.",
+    .regex(/^[a-z]/, {
+      message: "Name must start with a small letter",
     })
-    .transform((name) => name.trim()),
+    .regex(/^[a-z][a-zA-Z0-9]*$/, {
+      message: "Can only contain letters and numbers",
+    }),
 });
 
 export const FunctionNode = memo(
@@ -630,6 +632,18 @@ export const FunctionNode = memo(
                                         },
                                       });
                                     }
+
+                                    if (e.target.value.length === 0) {
+                                      await updateFunction.mutateAsync({
+                                        where: {
+                                          id: data.id,
+                                        },
+                                        payload: {
+                                          type: "function",
+                                          name: null,
+                                        },
+                                      });
+                                    }
                                   },
                                   500,
                                   { trailing: false },
@@ -660,8 +674,8 @@ export const FunctionNode = memo(
                   <div className="mt-auto">
                     <form className="relative" onSubmit={handleOnSubmit}>
                       <Editor
-                        editorRef={editorRef}
                         id={data.id}
+                        editorRef={editorRef}
                         inputSchema={inputSchema}
                         rawMessage={userMessageRawContent}
                         placeholder="Create, refine, or fix your function with Specly..."

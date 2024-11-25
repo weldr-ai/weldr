@@ -108,7 +108,7 @@ import {
 } from "~/lib/utils";
 import type { FlowNode } from "~/types";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
-import Editor from "./editor";
+import { Editor } from "./editor";
 import type { ReferenceNode } from "./editor/plugins/reference/node";
 import { JsonViewer } from "./json-viewer";
 import MessageList from "./message-list";

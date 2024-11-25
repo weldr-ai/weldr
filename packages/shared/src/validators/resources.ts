@@ -19,11 +19,13 @@ export const insertResourceSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .regex(/^\S*$/, {
-      message: "Cannot contain spaces.",
+    .regex(/^[A-Z]/, {
+      message: "Must start with an uppercase letter",
     })
-    .transform((name) => name.trim()),
-  description: z.string().trim().optional(),
+    .regex(/^[A-Z][a-zA-Z0-9]*$/, {
+      message: "Can only contain letters and numbers",
+    }),
+  description: z.string().optional(),
   workspaceId: z.string().min(1, {
     message: "Workspace is required.",
   }),

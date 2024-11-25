@@ -1,3 +1,74 @@
-import { Editor } from "./editor";
+"use client";
 
-export default Editor;
+import type { InitialConfigType } from "@lexical/react/LexicalComposer";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import type { EditorState, LexicalEditor } from "lexical";
+
+import { cn } from "@integramind/ui/utils";
+
+import type {
+  FlatInputSchema,
+  UserMessageRawContent,
+} from "@integramind/shared/types";
+import { ReferencesPlugin } from "./plugins/reference";
+import { ReferenceNode } from "./plugins/reference/node";
+
+interface EditorProps {
+  id: string;
+  placeholder?: string;
+  onChange: (editorState: EditorState) => void;
+  className?: string;
+  editorRef?: { current: null | LexicalEditor };
+  rawMessage?: UserMessageRawContent;
+  includeReferences?: boolean;
+  inputSchema?: FlatInputSchema[];
+  typeaheadPosition?: "bottom" | "top";
+}
+
+export function Editor({ ...props }: EditorProps) {
+  const initialConfig: InitialConfigType = {
+    namespace: `editor-${props.id}`,
+    onError: (error) => {
+      console.error(error);
+    },
+    nodes: [ReferenceNode],
+    editable: true,
+  };
+
+  return (
+    <LexicalComposer initialConfig={initialConfig}>
+      <div className="flex size-full">
+        <ReferencesPlugin
+          inputSchema={props.inputSchema ?? []}
+          position={props.typeaheadPosition}
+          includeReferences={props.includeReferences}
+        />
+        <RichTextPlugin
+          contentEditable={
+            <ContentEditable
+              className={cn(
+                "size-full cursor-text min-h-[100px] h-full flex-col overflow-y-auto rounded-lg border border-input bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                props.className,
+              )}
+            />
+          }
+          placeholder={
+            <div className="pointer-events-none absolute px-2.5 py-2 text-sm text-muted-foreground">
+              {props.placeholder ?? "Start typing..."}
+            </div>
+          }
+          ErrorBoundary={LexicalErrorBoundary}
+        />
+      </div>
+      <OnChangePlugin onChange={props.onChange} />
+      <HistoryPlugin />
+      {props.editorRef && <EditorRefPlugin editorRef={props.editorRef} />}
+    </LexicalComposer>
+  );
+}

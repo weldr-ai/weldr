@@ -95,10 +95,12 @@ export const updatePrimitiveBaseSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .regex(/^\S*$/, {
-      message: "Cannot contain spaces.",
+    .regex(/^[a-z]/, {
+      message: "Name must start with a small letter",
     })
-    .transform((name) => name.trim())
+    .regex(/^[a-z][a-zA-Z0-9]*$/, {
+      message: "Can only contain letters and numbers",
+    })
     .nullable()
     .optional(),
   positionX: z.number().optional(),
