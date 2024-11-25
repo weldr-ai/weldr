@@ -37,7 +37,7 @@ export function AddResourceForm({
     resolver: zodResolver(insertResourceSchema),
     defaultValues: {
       name: "",
-      description: undefined,
+      description: "",
       workspaceId,
       integrationId: integration.id,
       environmentVariables: {},
@@ -189,11 +189,7 @@ export function AddResourceForm({
                 <span className="text-muted-foreground">(optional)</span>
               </FormLabel>
               <FormControl>
-                <Textarea
-                  {...field}
-                  placeholder="Enter resource description"
-                  value={field.value ?? ""}
-                />
+                <Textarea {...field} placeholder="Enter resource description" />
               </FormControl>
               <FormMessage />
             </FormItem>

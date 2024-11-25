@@ -82,8 +82,30 @@ export const workspacesRouter = {
         ),
         with: {
           resources: {
+            columns: {
+              id: true,
+              name: true,
+              description: true,
+            },
             with: {
-              integration: true,
+              integration: {
+                columns: {
+                  id: true,
+                  type: true,
+                  name: true,
+                  description: true,
+                },
+                with: {
+                  utils: {
+                    columns: {
+                      id: true,
+                      name: true,
+                      description: true,
+                      documentation: true,
+                    },
+                  },
+                },
+              },
             },
           },
           flows: true,

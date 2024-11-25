@@ -1,6 +1,6 @@
+import type { RouterOutputs } from "@integramind/api";
 import type { DbConfig } from "@integramind/shared/integrations/postgres";
 import { getDatabaseStructure } from "@integramind/shared/integrations/postgres/helpers";
-import type { Resource } from "@integramind/shared/types";
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
@@ -24,12 +24,12 @@ export default async function WorkspacesLayout({
     const resources = workspace.resources;
     const flows = workspace.flows;
 
-    const resourcesWithMetadata: (Resource & {
+    const resourcesWithMetadata: (RouterOutputs["workspaces"]["byId"]["resources"][0] & {
       metadata: unknown;
     })[] = [];
 
     for (const resource of resources) {
-      const temp: Resource & { metadata: unknown } = {
+      const temp = {
         ...resource,
         metadata: {},
       };
@@ -73,7 +73,17 @@ export default async function WorkspacesLayout({
             <Sidebar
               workspace={workspace}
               integrations={integrations}
-              initialResources={resources}
+              initialResources={resources.map((resource) => ({
+                id: resource.id,
+                name: resource.name,
+                description: resource.description,
+                integration: {
+                  id: resource.integration.id,
+                  name: resource.integration.name,
+                  description: resource.integration.description,
+                  type: resource.integration.type,
+                },
+              }))}
               initialFlows={flows}
             />
           </div>

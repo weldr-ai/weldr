@@ -18,9 +18,9 @@ import type { userMessageRawContentReferenceElementSchema } from "@integramind/s
 import { nanoid } from "nanoid";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";
-import { $createReferenceNode } from "~/components/editor/nodes/reference-node";
+import { $createReferenceNode } from "~/components/editor/plugins/reference/node";
 import { useResources } from "~/lib/context/resources";
-import { ReferenceBadge } from "../reference-badge";
+import { ReferenceBadge } from "../../reference-badge";
 
 export class ReferenceOption extends MenuOption {
   reference: z.infer<typeof userMessageRawContentReferenceElementSchema>;

@@ -10,7 +10,7 @@ export function RawContentViewer({
   rawContent: RawContent;
 }) {
   return (
-    <p className="text-sm select-text cursor-text">
+    <div className="text-sm select-text cursor-text">
       {rawContent.map((item, idx) => (
         <span
           key={nanoid()}
@@ -32,6 +32,6 @@ export function RawContentViewer({
           )}
         </span>
       ))}
-    </p>
+    </div>
   );
 }

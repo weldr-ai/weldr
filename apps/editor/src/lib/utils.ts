@@ -1,10 +1,13 @@
 import type {
+  AssistantMessageRawContent,
   FlatInputSchema,
   JsonSchema,
-  MessageRawContent,
+  UserMessageRawContent,
 } from "@integramind/shared/types";
 import { getDataTypeIcon, toCamelCase } from "@integramind/shared/utils";
+import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import type { TreeDataItem } from "@integramind/ui/tree-view";
+import type { z } from "zod";
 
 export function jsonSchemaToTreeData(
   schema: JsonSchema | undefined = undefined,
@@ -189,85 +192,188 @@ export function flattenInputSchema({
   return result;
 }
 
-export function rawMessageContentToText(
-  rawMessageContent: MessageRawContent = [],
+export function assistantMessageRawContentToText(
+  rawMessageContent: AssistantMessageRawContent = [],
 ): string {
-  function formatColumns(
-    columns: { name: string; dataType: string }[],
-  ): string {
-    return columns
-      .map((column) => `${column.name} (${column.dataType})`)
-      .join(", ");
-  }
-
   return rawMessageContent
     .map((element) => {
-      if (element.type === "text") {
-        return element.value;
-      }
-
-      if (element.type === "reference") {
-        switch (element.referenceType) {
-          case "variable":
-            return `variable ${toCamelCase(element.name)} (${element.dataType})${
-              "refUri" in element && element.refUri
-                ? `, $ref: ${element.refUri}`
-                : ""
-            }`;
-          case "database":
-            return `database ${element.name} (ID: ${element.id})${
-              "utils" in element && element.utils
-                ? `, with utilities: ${element.utils
-                    .map(
-                      (util) =>
-                        `name: ${util.name} (ID: ${util.id}), description: ${util.description}`,
-                    )
-                    .join(", ")}`
-                : ""
-            }`;
-          case "database-table":
-            return `table ${element.name}${
-              "columns" in element && element?.columns
-                ? `, with columns: ${formatColumns(element.columns ?? [])}`
-                : ""
-            }${
-              "relationships" in element && element?.relationships
-                ? `, with relationships: ${element?.relationships
-                    ?.map(
-                      (relationship) =>
-                        `column: ${relationship.columnName} -> table: ${relationship.referencedTable}, column: ${relationship.referencedColumn}`,
-                    )
-                    .join(", ")}`
-                : ""
-            }${
-              "database" in element && element?.database
-                ? ` in database ${element?.database.name} (ID: ${element?.database.id}), with utilities: ${element?.database?.utils
-                    .map(
-                      (util) =>
-                        `name: ${util.name} (ID: ${util.id}), description: ${util.description}`,
-                    )
-                    .join(", ")}`
-                : ""
-            }`;
-          case "database-column":
-            return `column ${element.name} (${element.dataType})${
-              "table" in element && element?.table
-                ? ` in table ${element?.table.name}`
-                : ""
-            }${
-              "database" in element && element?.database
-                ? ` in database ${element?.database.name} (ID: ${element?.database.id}), with utilities: ${element?.database?.utils
-                    .map(
-                      (util) =>
-                        `name: ${util.name} (ID: ${util.id}), description: ${util.description}`,
-                    )
-                    .join(", ")}`
-                : ""
-            }`;
-          default:
-            return "";
+      switch (element.type) {
+        case "text": {
+          return element.value;
+        }
+        case "reference": {
+          return element.name;
         }
       }
     })
     .join("");
+}
+
+function referenceToText(
+  reference: z.infer<typeof userMessageRawContentReferenceElementSchema>,
+  seenElements: Map<string, boolean>,
+): string {
+  switch (reference.referenceType) {
+    case "variable": {
+      const parts = [
+        `Input variable \`${toCamelCase(reference.name)}\``,
+        `Type: ${reference.dataType}`,
+        reference.refUri ? `$ref: ${reference.refUri}` : null,
+        `Required: ${reference.required}`,
+      ].filter(Boolean);
+
+      const formatObjectProps = (props: JsonSchema["properties"]): string => {
+        if (!props) return "";
+        return Object.entries(props)
+          .map(
+            ([name, prop]) =>
+              `- ${name}:\n` +
+              `  - Type: ${prop.type}\n` +
+              `  - Required: ${prop.required ?? false}`,
+          )
+          .join("\n");
+      };
+
+      const formatArrayItemsType = (itemsType: JsonSchema["items"]): string => {
+        if (typeof itemsType === "object") {
+          return `Properties:\n${formatObjectProps(itemsType.properties)}`;
+        }
+        return String(itemsType);
+      };
+
+      let details = "";
+      switch (reference.dataType) {
+        case "object": {
+          details = `\nProperties:\n${formatObjectProps(reference.properties)}`;
+          break;
+        }
+        case "array": {
+          if (reference.itemsType) {
+            details = `\nItems:\n${formatArrayItemsType(reference.itemsType)}`;
+          }
+          break;
+        }
+      }
+
+      return `${parts.join("\n")}${details}`;
+    }
+
+    case "database": {
+      return [
+        `Database \`${reference.name}\` (ID: ${reference.id})`,
+        "Utilities:",
+        ...reference.utils.map(
+          (util) =>
+            `- \`${util.name}\` (ID: ${util.id})\n` +
+            `  Description: ${util.description}`,
+        ),
+      ].join("\n");
+    }
+
+    case "database-table": {
+      const parts = [
+        `Table \`${reference.name}\``,
+        "Columns:",
+        ...(reference.columns?.map(
+          (col) => `- \`${col.name}\` (${col.dataType})`,
+        ) ?? []),
+      ];
+
+      if (reference.relationships.length > 0) {
+        parts.push("Relationships:");
+        parts.push(
+          ...reference.relationships.map(
+            (rel) =>
+              `- \`${rel.columnName}\` -> \`${rel.referencedTable}\`.\`${rel.referencedColumn}\``,
+          ),
+        );
+      }
+
+      return parts.join("\n");
+    }
+
+    case "database-column": {
+      const tableKey = `table-${reference.database.id}-${reference.table.name}`;
+      if (seenElements.has(tableKey)) return "";
+      seenElements.set(tableKey, true);
+
+      return [
+        `Table \`${reference.table.name}\``,
+        "Columns:",
+        ...reference.table.columns.map(
+          (col) => `- \`${col.name}\` (${col.dataType})`,
+        ),
+      ].join("\n");
+    }
+
+    default: {
+      return "";
+    }
+  }
+}
+
+export function userMessageRawContentToText(
+  rawMessageContent: UserMessageRawContent = [],
+): string {
+  const context: string[] = [];
+  const seenElements = new Map<string, boolean>();
+
+  const getElementKey = (element: UserMessageRawContent[number]): string => {
+    if (element.type === "text") return element.value;
+
+    switch (element.referenceType) {
+      case "variable":
+        return `var-${element.name}-${element.dataType}`;
+      case "database":
+        return `db-${element.id}`;
+      case "database-table":
+        return `table-${element.database?.id}-${element.name}`;
+      case "database-column":
+        return `col-${element.database.id}-${element.table.name}-${element.name}`;
+      default:
+        return "";
+    }
+  };
+
+  const text = rawMessageContent.reduce((acc, element) => {
+    switch (element.type) {
+      case "text": {
+        return `${acc}${element.value}`;
+      }
+
+      case "reference": {
+        const key = getElementKey(element);
+
+        if (!seenElements.has(key)) {
+          seenElements.set(key, true);
+
+          // For database-related references, check if we need to add database info first
+          if (
+            element.referenceType === "database-table" ||
+            element.referenceType === "database-column"
+          ) {
+            const dbKey = `db-${element.database.id}`;
+            if (!seenElements.has(dbKey)) {
+              seenElements.set(dbKey, true);
+              const dbInfo = {
+                ...element.database,
+                type: "reference" as const,
+                referenceType: "database" as const,
+              };
+              context.push(referenceToText(dbInfo, seenElements));
+            }
+          }
+
+          context.push(referenceToText(element, seenElements));
+        }
+        return `${acc}${element.name}`;
+      }
+    }
+  }, "");
+
+  return `${
+    context.length > 0
+      ? `## Context\n${context.filter(Boolean).join("\n\n")}\n\n`
+      : ""
+  }## Request\n${text}`;
 }

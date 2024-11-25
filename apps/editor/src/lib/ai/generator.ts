@@ -28,7 +28,7 @@ import {
   getGenerateFunctionCodePrompt,
 } from "~/lib/ai/prompts";
 import { api } from "../trpc/server";
-import { rawMessageContentToText } from "../utils";
+import { assistantMessageRawContentToText } from "../utils";
 import { generateCode } from "./helpers";
 
 const openai = createOpenAI({
@@ -80,7 +80,7 @@ export async function generateFunction({
           );
           api.conversations.addMessage({
             role: "assistant",
-            content: rawMessageContentToText(object.message.content),
+            content: assistantMessageRawContentToText(object.message.content),
             rawContent: object.message.content,
             conversationId,
           });
@@ -100,7 +100,7 @@ export async function generateFunction({
 
           api.conversations.addMessage({
             role: "assistant",
-            content: rawMessageContentToText(description),
+            content: assistantMessageRawContentToText(description),
             rawContent: description,
             conversationId,
           });
@@ -112,13 +112,13 @@ export async function generateFunction({
           const generateFunctionCodePrompt =
             await getGenerateFunctionCodePrompt({
               name: functionData?.name ?? "",
-              description: rawMessageContentToText(
+              description: assistantMessageRawContentToText(
                 object.message.content.description,
               ),
               inputSchema: object.message.content.inputSchema,
               outputSchema: object.message.content.outputSchema,
               resources: object.message.content.resources,
-              logicalSteps: rawMessageContentToText(
+              logicalSteps: assistantMessageRawContentToText(
                 object.message.content.logicalSteps,
               ),
               edgeCases: object.message.content.edgeCases,
@@ -151,7 +151,7 @@ export async function generateFunction({
                   ? JSON.parse(object.message.content.outputSchema)
                   : undefined,
                 rawDescription: object.message.content.description,
-                description: rawMessageContentToText(
+                description: assistantMessageRawContentToText(
                   object.message.content.description,
                 ),
                 resources: object.message.content.resources,
@@ -230,7 +230,7 @@ export async function generateFlowInputsSchemas({
           );
           api.conversations.addMessage({
             role: "assistant",
-            content: rawMessageContentToText(object.message.content),
+            content: assistantMessageRawContentToText(object.message.content),
             rawContent: object.message.content,
             conversationId,
           });
@@ -250,7 +250,7 @@ export async function generateFlowInputsSchemas({
 
           api.conversations.addMessage({
             role: "assistant",
-            content: rawMessageContentToText(description),
+            content: assistantMessageRawContentToText(description),
             rawContent: description,
             conversationId,
           });
@@ -339,7 +339,7 @@ export async function generateFlowOutputsSchemas({
 
           api.conversations.addMessage({
             role: "assistant",
-            content: rawMessageContentToText(object.message.content),
+            content: assistantMessageRawContentToText(object.message.content),
             rawContent: object.message.content,
             conversationId,
           });
@@ -359,7 +359,7 @@ export async function generateFlowOutputsSchemas({
 
           api.conversations.addMessage({
             role: "assistant",
-            content: rawMessageContentToText(description),
+            content: assistantMessageRawContentToText(description),
             rawContent: description,
             conversationId,
           });

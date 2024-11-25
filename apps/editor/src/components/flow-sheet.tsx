@@ -101,14 +101,15 @@ import {
 } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/client";
 import {
+  assistantMessageRawContentToText,
   flattenInputSchema,
   jsonSchemaToTreeData,
-  rawMessageContentToText,
+  userMessageRawContentToText,
 } from "~/lib/utils";
 import type { FlowNode } from "~/types";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 import Editor from "./editor";
-import type { ReferenceNode } from "./editor/nodes/reference-node";
+import type { ReferenceNode } from "./editor/plugins/reference/node";
 import { JsonViewer } from "./json-viewer";
 import MessageList from "./message-list";
 import { TestInputDialog } from "./test-input-dialog";
@@ -340,7 +341,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
       };
 
       if (content?.message?.content && content.message.type === "message") {
-        newAssistantMessage.content = rawMessageContentToText(
+        newAssistantMessage.content = assistantMessageRawContentToText(
           content.message.content,
         );
         newAssistantMessage.rawContent = content.message.content;
@@ -363,7 +364,8 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
           ...content.message.content.description,
         ];
 
-        newAssistantMessage.content = rawMessageContentToText(rawContent);
+        newAssistantMessage.content =
+          assistantMessageRawContentToText(rawContent);
         newAssistantMessage.rawContent = rawContent;
       }
 
@@ -417,8 +419,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
     editorState.read(async () => {
       const root = $getRoot();
       const children = (root.getChildren()[0] as ParagraphNode)?.getChildren();
-      const chat = root.getTextContent();
-      console.log(chat);
+
       const userMessageRawContent = children?.reduce((acc, child) => {
         if (child.__type === "text") {
           acc.push({
@@ -439,6 +440,7 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
         return acc;
       }, [] as UserMessageRawContent);
 
+      const chat = userMessageRawContentToText(userMessageRawContent);
       setUserMessageContent(chat);
       setUserMessageRawContent(userMessageRawContent);
     });

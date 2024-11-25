@@ -10,10 +10,7 @@ export const resourceSchema = z.object({
   createdBy: z.string(),
   workspaceId: z.string(),
   integrationId: z.string(),
-  integration: integrationSchema.omit({
-    environmentVariables: true,
-    dependencies: true,
-  }),
+  integration: integrationSchema,
 });
 
 export const insertResourceSchema = z.object({

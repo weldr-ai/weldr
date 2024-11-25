@@ -3,10 +3,10 @@ import "@integramind/ui/globals.css";
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 
-import { ThemeProvider } from "@integramind/ui/theme-provider";
 import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
 
+import { ThemeProvider } from "@integramind/ui/theme-provider";
 import { TooltipProvider } from "@integramind/ui/tooltip";
 import { ReactFlowProvider } from "@xyflow/react";
 import { QueryProvider } from "~/components/query-client-provider";
@@ -30,7 +30,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }): Promise<JSX.Element> {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
           "flex min-h-screen w-full flex-col bg-background font-sans antialiased",

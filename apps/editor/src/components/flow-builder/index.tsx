@@ -30,13 +30,13 @@ import "~/styles/flow-builder.css";
 import { Button } from "@integramind/ui/button";
 
 import type { Flow, PrimitiveType } from "@integramind/shared/types";
+import { useTheme } from "@integramind/ui/theme-provider";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
 import { toast } from "@integramind/ui/use-toast";
-import { useTheme } from "next-themes";
 import { FunctionNode } from "~/components/flow-builder/primitives/function";
 import { Stop } from "~/components/flow-builder/primitives/stop";
 import { FlowSheet } from "~/components/flow-sheet";

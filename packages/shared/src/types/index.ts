@@ -96,6 +96,7 @@ export type IntegrationType = z.infer<typeof integrationTypeSchema>;
 export type IntegrationUtility = z.infer<typeof integrationUtilitySchema>;
 
 export type RawContent = z.infer<typeof rawContentSchema>;
+
 export type PrimitiveType = "function" | "stop";
 export type Primitive = z.infer<typeof primitiveSchema>;
 export type PrimitiveMetadata = z.infer<typeof primitiveMetadataSchema>;

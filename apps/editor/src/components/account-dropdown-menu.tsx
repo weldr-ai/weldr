@@ -17,8 +17,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@integramind/ui/dropdown-menu";
+import { useTheme } from "@integramind/ui/theme-provider";
 import { LogOutIcon } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 
 export function AccountDropdownMenu() {

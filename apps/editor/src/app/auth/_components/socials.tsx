@@ -7,9 +7,9 @@ import { Button } from "@integramind/ui/button";
 import { GithubIcon } from "@integramind/ui/icons/github-icon";
 import { GoogleIcon } from "@integramind/ui/icons/google-icon";
 import { MicrosoftIcon } from "@integramind/ui/icons/microsoft-icon";
+import { useTheme } from "@integramind/ui/theme-provider";
 import { toast } from "@integramind/ui/use-toast";
 import { cn } from "@integramind/ui/utils";
-import { useTheme } from "next-themes";
 
 export function Socials() {
   const { resolvedTheme: theme } = useTheme();

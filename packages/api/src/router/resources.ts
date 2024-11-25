@@ -163,8 +163,20 @@ export const resourcesRouter = {
           eq(resources.workspaceId, input.workspaceId),
           eq(resources.createdBy, ctx.session.user.id),
         ),
+        columns: {
+          id: true,
+          name: true,
+          description: true,
+        },
         with: {
-          integration: true,
+          integration: {
+            columns: {
+              id: true,
+              name: true,
+              description: true,
+              type: true,
+            },
+          },
         },
       });
     }),

@@ -88,12 +88,13 @@ import { TestInputDialog } from "~/components/test-input-dialog";
 import { generateFunction } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/client";
 import {
+  assistantMessageRawContentToText,
   flattenInputSchema,
   jsonSchemaToTreeData,
-  rawMessageContentToText,
+  userMessageRawContentToText,
 } from "~/lib/utils";
 import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
-import type { ReferenceNode } from "../../editor/nodes/reference-node";
+import type { ReferenceNode } from "../../editor/plugins/reference/node";
 import MessageList from "../../message-list";
 import { RawContentViewer } from "../../raw-content-viewer";
 
@@ -200,7 +201,7 @@ export const FunctionNode = memo(
       reValidateMode: "onChange",
       resolver: zodResolver(validationSchema),
       defaultValues: {
-        name: data.name ?? undefined,
+        name: data.name ?? "",
       },
     });
 
@@ -262,7 +263,7 @@ export const FunctionNode = memo(
         const children = (
           root.getChildren()[0] as ParagraphNode
         )?.getChildren();
-        const chat = root.getTextContent();
+
         const userMessageRawContent = children?.reduce((acc, child) => {
           if (child.__type === "text") {
             acc.push({
@@ -283,6 +284,7 @@ export const FunctionNode = memo(
           return acc;
         }, [] as UserMessageRawContent);
 
+        const chat = userMessageRawContentToText(userMessageRawContent);
         setUserMessageContent(chat);
         setUserMessageRawContent(userMessageRawContent);
       });
@@ -372,7 +374,7 @@ export const FunctionNode = memo(
 
         if (content?.message?.content && content.message.type === "message") {
           setIsThinking(false);
-          newAssistantMessage.content = rawMessageContentToText(
+          newAssistantMessage.content = assistantMessageRawContentToText(
             content.message.content,
           );
           newAssistantMessage.rawContent = content.message.content;
@@ -392,7 +394,8 @@ export const FunctionNode = memo(
             },
             ...content.message.content.description,
           ];
-          newAssistantMessage.content = rawMessageContentToText(rawContent);
+          newAssistantMessage.content =
+            assistantMessageRawContentToText(rawContent);
           newAssistantMessage.rawContent = rawContent;
         }
 
@@ -744,11 +747,11 @@ export const FunctionNode = memo(
                         <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
                           Logical Steps:
                         </span>
-                        <p className="text-sm select-text cursor-text">
+                        <div className="text-sm select-text cursor-text">
                           <RawContentViewer
                             rawContent={data.metadata?.logicalSteps ?? []}
                           />
-                        </p>
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">

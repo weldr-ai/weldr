@@ -9,7 +9,6 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, LexicalEditor } from "lexical";
-import { $createParagraphNode, $createTextNode, $getRoot } from "lexical";
 
 import { cn } from "@integramind/ui/utils";
 
@@ -17,14 +16,13 @@ import type {
   FlatInputSchema,
   UserMessageRawContent,
 } from "@integramind/shared/types";
-import { ReferencesPlugin } from "~/components/editor/plugins/reference-plugin";
-import { $createReferenceNode, ReferenceNode } from "./nodes/reference-node";
+import { ReferencesPlugin } from "./plugins/reference";
+import { ReferenceNode } from "./plugins/reference/node";
 
 interface EditorProps {
   id: string;
   placeholder?: string;
   onChange: (editorState: EditorState) => void;
-  onError?: (error: Error, editor: LexicalEditor) => void;
   className?: string;
   editorRef?: { current: null | LexicalEditor };
   rawMessage?: UserMessageRawContent;
@@ -34,30 +32,12 @@ interface EditorProps {
 }
 
 export function Editor({ ...props }: EditorProps) {
-  const nodes = [];
-  nodes.push(ReferenceNode);
-
-  function $getEditorState() {
-    const root = $getRoot();
-    const paragraph = $createParagraphNode();
-
-    for (const item of props.rawMessage ?? []) {
-      if (item.type === "text") {
-        paragraph.append($createTextNode(item.value));
-      } else if (item.type === "reference") {
-        const referenceNode = $createReferenceNode(item);
-        paragraph.append(referenceNode);
-      }
-    }
-
-    root.append(paragraph);
-  }
-
   const initialConfig: InitialConfigType = {
     namespace: `editor-${props.id}`,
-    editorState: $getEditorState,
-    onError: props.onError ?? (() => {}),
-    nodes,
+    onError: (error) => {
+      console.error(error);
+    },
+    nodes: [ReferenceNode],
     editable: true,
   };
 

@@ -1,10 +1,12 @@
 "use client";
 
-import type { Resource } from "@integramind/shared/types";
+import type { RouterOutputs } from "@integramind/api";
 import { createContext, useContext } from "react";
 
 export const ResourcesContext = createContext<
-  (Resource & { metadata?: unknown })[]
+  (RouterOutputs["workspaces"]["byId"]["resources"][0] & {
+    metadata?: unknown;
+  })[]
 >([]);
 
 export function useResources() {
@@ -16,7 +18,9 @@ export function ResourcesProvider({
   resources,
 }: {
   children: React.ReactNode;
-  resources: (Resource & { metadata?: unknown })[];
+  resources: (RouterOutputs["workspaces"]["byId"]["resources"][0] & {
+    metadata?: unknown;
+  })[];
 }) {
   return (
     <ResourcesContext.Provider value={resources}>
