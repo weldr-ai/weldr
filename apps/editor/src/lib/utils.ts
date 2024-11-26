@@ -4,7 +4,7 @@ import type {
   JsonSchema,
   UserMessageRawContent,
 } from "@integramind/shared/types";
-import { getDataTypeIcon, toCamelCase } from "@integramind/shared/utils";
+import { getDataTypeIcon } from "@integramind/shared/utils";
 import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import type { TreeDataItem } from "@integramind/ui/tree-view";
 import type { z } from "zod";
@@ -216,7 +216,7 @@ function referenceToText(
   switch (reference.referenceType) {
     case "variable": {
       const parts = [
-        `Input variable \`${toCamelCase(reference.name)}\``,
+        `Value of the input variable \`${reference.name}\``,
         `Type: ${reference.dataType}`,
         reference.refUri ? `$ref: ${reference.refUri}` : null,
         `Required: ${reference.required}`,
@@ -242,6 +242,7 @@ function referenceToText(
       };
 
       let details = "";
+
       switch (reference.dataType) {
         case "object": {
           details = `\nProperties:\n${formatObjectProps(reference.properties)}`;
@@ -293,17 +294,29 @@ function referenceToText(
     }
 
     case "database-column": {
-      const tableKey = `table-${reference.database.id}-${reference.table.name}`;
+      const tableKey = `db-table-${reference.table.name}-${reference.database.id}`;
       if (seenElements.has(tableKey)) return "";
       seenElements.set(tableKey, true);
 
-      return [
+      const parts = [
         `Table \`${reference.table.name}\``,
         "Columns:",
         ...reference.table.columns.map(
           (col) => `- \`${col.name}\` (${col.dataType})`,
         ),
-      ].join("\n");
+      ];
+
+      if (reference.table.relationships.length > 0) {
+        parts.push("Relationships:");
+        parts.push(
+          ...reference.table.relationships.map(
+            (rel) =>
+              `- \`${rel.columnName}\` -> \`${rel.referencedTable}\`.\`${rel.referencedColumn}\``,
+          ),
+        );
+      }
+
+      return parts.join("\n");
     }
 
     default: {
@@ -314,7 +327,7 @@ function referenceToText(
 
 export function userMessageRawContentToText(
   rawMessageContent: UserMessageRawContent = [],
-): string {
+): string | null {
   const context: string[] = [];
   const seenElements = new Map<string, boolean>();
 
@@ -322,58 +335,63 @@ export function userMessageRawContentToText(
     if (element.type === "text") return element.value;
 
     switch (element.referenceType) {
-      case "variable":
+      case "variable": {
         return `var-${element.name}-${element.dataType}`;
+      }
       case "database":
         return `db-${element.id}`;
       case "database-table":
-        return `table-${element.database?.id}-${element.name}`;
+        return `db-table-${element.name}-${element.database.id}`;
       case "database-column":
-        return `col-${element.database.id}-${element.table.name}-${element.name}`;
+        return `db-col-${element.name}-${element.database.id}-${element.table.name}`;
       default:
         return "";
     }
   };
 
-  const text = rawMessageContent.reduce((acc, element) => {
-    switch (element.type) {
-      case "text": {
-        return `${acc}${element.value}`;
-      }
-
-      case "reference": {
-        const key = getElementKey(element);
-
-        if (!seenElements.has(key)) {
-          seenElements.set(key, true);
-
-          // For database-related references, check if we need to add database info first
-          if (
-            element.referenceType === "database-table" ||
-            element.referenceType === "database-column"
-          ) {
-            const dbKey = `db-${element.database.id}`;
-            if (!seenElements.has(dbKey)) {
-              seenElements.set(dbKey, true);
-              const dbInfo = {
-                ...element.database,
-                type: "reference" as const,
-                referenceType: "database" as const,
-              };
-              context.push(referenceToText(dbInfo, seenElements));
-            }
-          }
-
-          context.push(referenceToText(element, seenElements));
+  const text = rawMessageContent
+    .reduce((acc, element) => {
+      switch (element.type) {
+        case "text": {
+          return `${acc}${element.value}`;
         }
-        return `${acc}${element.name}`;
-      }
-    }
-  }, "");
 
-  return `${
-    context.length > 0
-      ? `## Context\n${context.filter(Boolean).join("\n\n")}\n\n`
-      : ""
-  }## Request\n${text}`;
+        case "reference": {
+          const key = getElementKey(element);
+
+          if (!seenElements.has(key)) {
+            seenElements.set(key, true);
+
+            // For database-related references, check if we need to add database info first
+            if (
+              element.referenceType === "database-table" ||
+              element.referenceType === "database-column"
+            ) {
+              const dbKey = `db-${element.database.id}`;
+              if (!seenElements.has(dbKey)) {
+                seenElements.set(dbKey, true);
+                const dbInfo = {
+                  ...element.database,
+                  type: "reference" as const,
+                  referenceType: "database" as const,
+                };
+                context.push(referenceToText(dbInfo, seenElements));
+              }
+            }
+
+            context.push(referenceToText(element, seenElements));
+          }
+          return `${acc}${element.name}`;
+        }
+      }
+    }, "")
+    .trim();
+
+  return text.length > 0
+    ? `${
+        context.length > 0
+          ? `## Context\n${context.filter(Boolean).join("\n\n")}\n\n`
+          : ""
+      }## Request\n${text}`
+    : null;
 }

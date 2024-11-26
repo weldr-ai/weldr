@@ -101,7 +101,6 @@ export const workspacesRouter = {
                       id: true,
                       name: true,
                       description: true,
-                      documentation: true,
                     },
                   },
                 },
