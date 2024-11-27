@@ -1,6 +1,6 @@
 import type { Config } from "drizzle-kit";
 
-export const connectionString = process.env.DATABASE_URL ?? "";
+const connectionString = process.env.DATABASE_URL ?? "";
 
 export default {
   schema: [
