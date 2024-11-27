@@ -292,8 +292,8 @@ export const FunctionNode = memo(
       });
     }
 
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
     const chatHistoryEndRef = useRef<HTMLDivElement>(null);
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     const scrollToBottom = useCallback(() => {
@@ -668,8 +668,8 @@ export const FunctionNode = memo(
                       isThinking={isThinking}
                       isRunning={isRunning}
                       isGenerating={isGeneratingCode}
-                      chatHistoryEndRef={chatHistoryEndRef}
                     />
+                    <div ref={chatHistoryEndRef} />
                   </ScrollArea>
                   <div className="mt-auto">
                     <form className="relative" onSubmit={handleOnSubmit}>

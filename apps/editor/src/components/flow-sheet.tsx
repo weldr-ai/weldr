@@ -985,8 +985,8 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                         messages={messages}
                         isThinking={isThinking}
                         isGenerating={isGeneratingSchemas}
-                        chatHistoryEndRef={chatHistoryEndRef}
                       />
+                      <div ref={chatHistoryEndRef} />
                     </ScrollArea>
                   </div>
                   <div className="mt-auto">

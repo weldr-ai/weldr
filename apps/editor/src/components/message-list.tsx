@@ -1,7 +1,7 @@
 import type { ConversationMessage, TestRun } from "@integramind/shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
 import { ScrollArea } from "@integramind/ui/scroll-area";
-import { type RefObject, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { JsonViewer } from "./json-viewer";
 import { RawContentViewer } from "./raw-content-viewer";
 
@@ -28,14 +28,12 @@ export default function MessageList({
   isRunning,
   isThinking,
   isGenerating,
-  chatHistoryEndRef,
 }: {
   messages: ConversationMessage[];
   testRuns?: TestRun[];
   isRunning?: boolean;
   isThinking: boolean;
   isGenerating?: boolean;
-  chatHistoryEndRef: RefObject<HTMLDivElement>;
 }) {
   const testRunList: (TestRun & { type: "test-run" })[] = (testRuns ?? []).map(
     (testRun) => ({
@@ -59,18 +57,18 @@ export default function MessageList({
 
   return (
     <div className="flex flex-col w-full gap-4">
-      {allMessages.map((message) => {
+      {allMessages.map((message, index) => {
         if (message.type === "message") {
+          if (!message.rawContent.length) return null;
           return (
-            message.rawContent.length > 0 && (
-              <MessageItem key={message.id} message={message} />
-            )
+            <MessageItem key={`${message.id ?? index}`} message={message} />
           );
         }
-        return <TestRunItem key={message.id} testRun={message} />;
+        return <TestRunItem key={`${message.id ?? index}`} testRun={message} />;
       })}
+
       {isThinking && (
-        <div className="flex items-start">
+        <div key="thinking" className="flex items-start">
           <Avatar className="size-6 rounded-md">
             <AvatarImage src="/logo-solid.svg" alt="Specly" />
           </Avatar>
@@ -80,8 +78,9 @@ export default function MessageList({
           </span>
         </div>
       )}
+
       {isGenerating && (
-        <div className="flex items-start">
+        <div key="generating" className="flex items-start">
           <Avatar className="size-6 rounded-md">
             <AvatarImage src="/logo-solid.svg" alt="Specly" />
           </Avatar>
@@ -91,8 +90,9 @@ export default function MessageList({
           </span>
         </div>
       )}
+
       {isRunning && (
-        <div className="flex items-start">
+        <div key="running" className="flex items-start">
           <Avatar className="size-6 rounded-md">
             <AvatarImage src="/logo-solid.svg" alt="Specly" />
           </Avatar>
@@ -102,7 +102,6 @@ export default function MessageList({
           </span>
         </div>
       )}
-      <div ref={chatHistoryEndRef} />
     </div>
   );
 }
