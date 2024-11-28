@@ -6,6 +6,6 @@
     },
     "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"
   },
-  "include": [".nitro/types/nitro.d.ts", "./**/*", "./src/**/*"],
+  "include": ["./**/*", "./src/**/*"],
   "exclude": ["node_modules", ".output"]
 }

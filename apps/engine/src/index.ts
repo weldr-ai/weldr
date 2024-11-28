@@ -88,6 +88,6 @@ router.post(
 );
 
 createServer(toNodeListener(app)).listen(
-  `${Number(process.env.ENGINE_PORT ?? 3003)}`,
+  `${Number(process.env.ENGINE_PORT ?? 3000)}`,
 );
-console.log(`Server running on port ${process.env.ENGINE_PORT ?? 3003}`);
+console.log(`Server running on port ${process.env.ENGINE_PORT ?? 3000}`);

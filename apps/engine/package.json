@@ -3,12 +3,13 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "dev": "tsx --watch src/index.ts",
+    "dev": "pnpm with-env tsx --watch src/index.ts",
     "start": "npx --yes listhen -w --open dist/index.js --port 3000",
     "preview": "tsup src/index.ts --format esm --dts --minify && cp -r src/templates dist/templates && npx --yes listhen --open dist/index.js --port 3000",
     "build": "tsup src/index.ts --format esm --dts --minify && cp -r src/templates dist/templates",
     "clean": "git clean -xdf .turbo node_modules dist src/temp",
-    "check-types": "tsc --noEmit --emitDeclarationOnly false"
+    "check-types": "tsc --noEmit --emitDeclarationOnly false",
+    "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
     "h3": "^1.12.0",
@@ -20,7 +21,8 @@
     "@types/node": "^22.2.0",
     "tsup": "^8.2.4",
     "tsx": "^4.19.2",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "dotenv": "^16.4.5"
   },
   "packageManager": "pnpm@9.12.3"
 }
