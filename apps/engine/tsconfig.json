@@ -44,5 +44,5 @@
     // Completeness
     "skipLibCheck": true
   },
-  "exclude": ["node_modules", "build", "dist", "src/temp"]
+  "exclude": ["node_modules", "build", "dist", "temp"]
 }

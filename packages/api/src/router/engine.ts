@@ -167,7 +167,7 @@ export const engineRouter = {
       try {
         const executionResult = await ofetch<{
           output: Record<string, unknown>;
-        }>("http://localhost:3003", {
+        }>("http://localhost:3003/execute/function", {
           method: "POST",
           body: JSON.stringify(requestBody),
           async onRequestError({ request, options, error }) {
@@ -205,8 +205,12 @@ export const engineRouter = {
     .input(
       z.object({
         flowId: z.string(),
-        hasInput: z.boolean(),
-        input: z.record(z.any()).optional(),
+        request: z.object({
+          body: z.unknown().optional(),
+          query: z.record(z.string(), z.string()).optional(),
+          params: z.record(z.string(), z.string()).optional(),
+          headers: z.record(z.string(), z.string()).optional(),
+        }),
       }),
     )
     .mutation(async ({ ctx, input }) => {

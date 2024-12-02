@@ -1,9 +1,8 @@
 {
-  "name": "execute",
+  "name": "functions",
   "module": "index.ts",
   "type": "module",
   "dependencies": {
     "superjson": "^2.2.1"
-  },
-  "packageManager": "pnpm@9.12.3"
+  }
 }
