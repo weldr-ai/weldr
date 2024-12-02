@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { databaseTableSchema } from "../integrations/postgres";
 import {
+  dependencySchema,
   inputSchema,
   outputSchema,
   rawContentSchema,
@@ -54,9 +55,7 @@ export const functionPrimitiveMetadataSchema = z.object({
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
   resources: functionResourceSchema.array().optional(),
-  dependencies: z
-    .array(z.object({ name: z.string(), version: z.string().optional() }))
-    .optional(),
+  dependencies: dependencySchema.array().optional(),
 });
 
 export const primitiveMetadataSchema = z.union([

@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import type {
   dataTypeSchema,
+  dependencySchema,
   flowInputSchemaMessageSchema,
   flowOutputSchemaMessageSchema,
   functionRequirementsMessageSchema,
@@ -96,6 +97,8 @@ export type IntegrationType = z.infer<typeof integrationTypeSchema>;
 export type IntegrationUtility = z.infer<typeof integrationUtilitySchema>;
 
 export type RawContent = z.infer<typeof rawContentSchema>;
+
+export type Dependency = z.infer<typeof dependencySchema>;
 
 export type PrimitiveType = "function" | "stop";
 export type Primitive = z.infer<typeof primitiveSchema>;

@@ -99,6 +99,11 @@ export const utilityFunctionReferenceSchema = z.object({
   docs: z.string().describe("The documentation of the utility function"),
 });
 
+export const dependencySchema = z.object({
+  name: z.string().describe("The name of the npm package"),
+  version: z.string().optional().describe("The version of the npm package"),
+});
+
 export const rawContentTextElementSchema = z.object({
   type: z.literal("text"),
   value: z.string().describe("The value of the text"),
@@ -353,14 +358,7 @@ export const functionRequirementsMessageSchema = z.object({
               - Whether to retry operations and how many times.
               - Input validation errors can be ignored as inputs are validated separately.`,
           ),
-          dependencies: z
-            .object({
-              name: z.string().describe("The name of the npm package"),
-              version: z
-                .string()
-                .optional()
-                .describe("The version of the npm package (optional)"),
-            })
+          dependencies: dependencySchema
             .array()
             .optional()
             .describe(

@@ -1,9 +1,9 @@
+import Handlebars from "handlebars";
 import { exec as exec_ } from "node:child_process";
 import fs from "node:fs/promises";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import Handlebars from "handlebars";
 import superjson from "superjson";
 import type { Dependency, Utility } from "./index";
 
@@ -76,19 +76,63 @@ async function installDependencies(
   console.log("[installDependencies] Dependencies installed successfully");
 }
 
-async function createUtilityFiles(tempDir: string, utilities: Utility[]) {
-  for (const utility of utilities) {
-    const utilityPath = path.join(tempDir, "lib", utility.filePath);
-    const utilityDir = path.dirname(utilityPath);
+async function createLibraries(
+  tempDir: string,
+  utilities: Utility[],
+  environmentVariablesMap?: Record<string, string>,
+) {
+  const groupedUtilities = utilities.reduce(
+    (acc, utility) => {
+      const key = utility.filePath;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(utility);
+      return acc;
+    },
+    {} as Record<string, Utility[]>,
+  );
 
-    console.log(`[createUtilityFiles] Creating directory: ${utilityDir}`);
+  for (const [utilityPath, lib] of Object.entries(groupedUtilities)) {
+    if (!lib || lib.length === 0) continue;
+
+    const utilityDir = path.join(tempDir, "lib", path.dirname(utilityPath));
+
+    console.log(`[createLibraries] Creating directory: ${utilityDir}`);
     await fs.mkdir(utilityDir, { recursive: true });
 
-    console.log(`[createUtilityFiles] Creating file: ${utility.filePath}`);
-    await fs.writeFile(utilityPath, utility.content);
-    console.log(`[createUtilityFiles] File created: ${utility.filePath}`);
+    const fullPath = path.join(tempDir, "lib", utilityPath);
+    console.log(`[createLibraries] Creating file: ${fullPath}`);
+
+    const template = lib.map(({ content }) => content).join("\n");
+    const compiledTemplate = Handlebars.compile(template, { noEscape: true });
+    const fileContent = compiledTemplate(environmentVariablesMap);
+
+    await fs.writeFile(fullPath, fileContent);
+
+    console.log(`[createLibraries] File created: ${fullPath}`);
   }
-  console.log("[createUtilityFiles] All utility files created successfully");
+
+  console.log("[createLibraries] All libraries created successfully");
+}
+
+async function writeTestEnvFile(
+  tempDir: string,
+  testEnv: { key: string; value: string }[],
+) {
+  try {
+    const envPath = path.join(tempDir, ".env");
+    console.log("[writeEnvFile] Writing to:", envPath);
+
+    const envContent = testEnv
+      .map(({ key, value }) => `${key}=${value}`)
+      .join("\n");
+    await fs.writeFile(envPath, envContent);
+
+    console.log("[writeEnvFile] Environment variables written successfully");
+  } catch (error) {
+    console.error("[writeEnvFile] Failed to write .env file:", error);
+  }
 }
 
 export async function executeCode({
@@ -98,6 +142,8 @@ export async function executeCode({
   hasInput,
   utilities,
   dependencies,
+  environmentVariablesMap,
+  testEnv,
 }: {
   code: string;
   hasInput: boolean;
@@ -105,6 +151,8 @@ export async function executeCode({
   functionArgs?: Record<string, unknown>;
   utilities?: Utility[];
   dependencies?: Dependency[];
+  environmentVariablesMap?: Record<string, string>;
+  testEnv?: { key: string; value: string }[];
 }) {
   console.log("[executeCode] Starting code execution process...");
   const tempDir = await createTemporaryDirectory();
@@ -118,12 +166,21 @@ export async function executeCode({
 
   if (utilities && utilities.length > 0) {
     console.log("[executeCode] Setting up utilities...");
-    await createUtilityFiles(tempDir, utilities);
+    await createLibraries(tempDir, utilities, environmentVariablesMap);
   }
 
   if (dependencies && dependencies.length > 0) {
     console.log("[executeCode] Installing additional dependencies...");
     await installDependencies(tempDir, dependencies);
+  }
+
+  if (
+    testEnv &&
+    Object.keys(testEnv).length > 0 &&
+    process.env.NODE_ENV === "development"
+  ) {
+    console.log("[executeCode] Writing environment variables...");
+    await writeTestEnvFile(tempDir, testEnv);
   }
 
   try {

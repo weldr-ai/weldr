@@ -1,4 +1,3 @@
-import { createServer } from "node:http";
 import {
   createApp,
   createRouter,
@@ -7,6 +6,7 @@ import {
   setResponseStatus,
   toNodeListener,
 } from "h3";
+import { createServer } from "node:http";
 import { z } from "zod";
 import { executeCode } from "./utils";
 
@@ -33,8 +33,36 @@ router.get(
 );
 
 router.post(
+  "/hello",
+  defineEventHandler(async (event) => {
+    const validationSchema = z.object({
+      name: z.string(),
+    });
+
+    if (event.headers.get("content-type") !== "application/json") {
+      setResponseStatus(event, 415);
+      return { message: "Content-Type must be application/json" };
+    }
+
+    const body = await readValidatedBody(event, validationSchema.safeParse);
+
+    if (body.error) {
+      setResponseStatus(event, 400);
+      return { message: "Invalid request body" };
+    }
+
+    return { message: `Hello, ${body.data.name}!` };
+  }),
+);
+
+router.post(
   "/",
   defineEventHandler(async (event) => {
+    if (event.headers.get("content-type") !== "application/json") {
+      setResponseStatus(event, 415);
+      return { message: "Content-Type must be application/json" };
+    }
+
     const validationSchema = z.object({
       code: z.string(),
       functionName: z.string(),
@@ -56,6 +84,11 @@ router.post(
         })
         .array()
         .optional(),
+      environmentVariablesMap: z.record(z.string(), z.string()).optional(),
+      testEnv: z
+        .object({ key: z.string(), value: z.string() })
+        .array()
+        .optional(),
     });
 
     const body = await readValidatedBody(event, validationSchema.safeParse);
@@ -72,6 +105,8 @@ router.post(
       hasInput,
       dependencies,
       utilities,
+      environmentVariablesMap,
+      testEnv,
     } = body.data;
 
     const output = await executeCode({
@@ -81,6 +116,8 @@ router.post(
       utilities,
       dependencies,
       hasInput,
+      environmentVariablesMap,
+      testEnv,
     });
 
     return { output };

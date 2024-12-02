@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS "flows" (
 	"input_conversation_id" text NOT NULL,
 	"output_conversation_id" text NOT NULL,
 	"code" text,
+	"is_updated" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"workspace_id" text NOT NULL,

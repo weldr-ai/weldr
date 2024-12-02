@@ -3,7 +3,7 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "dev": "pnpm with-env tsx --watch src/index.ts",
+    "dev": "NODE_ENV=development pnpm with-env tsx --watch src/index.ts",
     "start": "npx --yes listhen -w --open dist/index.js --port 3000",
     "preview": "tsup src/index.ts --format esm --dts --minify && cp -r src/templates dist/templates && npx --yes listhen --open dist/index.js --port 3000",
     "build": "tsup src/index.ts --format esm --dts --minify && cp -r src/templates dist/templates",

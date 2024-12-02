@@ -94,7 +94,6 @@ import { debounce } from "perfect-debounce";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { executeFlow } from "~/lib/actions/execute";
 import {
   generateFlowInputsSchemas,
   generateFlowOutputsSchemas,
@@ -479,7 +478,9 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
     unknown
   > | null>(null);
 
-  const [flowTestResponse, setFlowTestResponse] = useState<string | null>(null);
+  const [flowTestResponse, _setFlowTestResponse] = useState<string | null>(
+    null,
+  );
   const [isRunning, setIsRunning] = useState(false);
 
   const [openTab, setOpenTab] = useState<"general" | "run" | "build">(
@@ -536,11 +537,11 @@ export function FlowSheet({ initialData }: { initialData: Flow }) {
                         onClick={async () => {
                           setOpenTab("run");
                           setIsRunning(true);
-                          const response = await executeFlow({
-                            flowUrl: `https://${data.workspaceId}.fly.dev${(data.metadata as EndpointFlowMetadata).path}`,
-                            testData: flowTestData ?? {},
-                          });
-                          setFlowTestResponse(response);
+                          // const response = await executeFlow({
+                          //   flowUrl: `https://${data.workspaceId}.fly.dev${(data.metadata as EndpointFlowMetadata).path}`,
+                          //   testData: flowTestData ?? {},
+                          // });
+                          // setFlowTestResponse(response);
                           setIsRunning(false);
                         }}
                       >

@@ -58,6 +58,7 @@ export const resourcesRelations = relations(resources, ({ one }) => ({
 export const resourceEnvironmentVariables = pgTable(
   "resource_environment_variables",
   {
+    mappedKey: text("mapped_key").notNull(),
     resourceId: text("resource_id")
       .references(() => resources.id, { onDelete: "cascade" })
       .notNull(),

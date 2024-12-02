@@ -1,7 +1,10 @@
-import { eq, inArray } from "@integramind/db";
+import { eq, inArray, sql } from "@integramind/db";
 import {
+  environmentVariables,
+  flows,
   integrationUtils,
   primitives,
+  resourceEnvironmentVariables,
   resources,
   testRuns,
 } from "@integramind/db/schema";
@@ -74,6 +77,59 @@ export const engineRouter = {
         );
       }
 
+      const environmentVariablesMap: Record<string, string> = {};
+
+      // Add environment variables when running locally
+      const testEnvironmentVariablesData: {
+        key: string;
+        value: string;
+      }[] = [];
+
+      for (const resourceId of resourceIds ?? []) {
+        const resourceEnvironmentVariablesData =
+          await ctx.db.query.resourceEnvironmentVariables.findMany({
+            where: eq(resourceEnvironmentVariables.resourceId, resourceId),
+          });
+
+        for (const resourceEnvironmentVariableData of resourceEnvironmentVariablesData) {
+          const environmentVariableData =
+            await ctx.db.query.environmentVariables.findFirst({
+              where: eq(
+                environmentVariables.id,
+                resourceEnvironmentVariableData.environmentVariableId,
+              ),
+            });
+
+          if (!environmentVariableData) {
+            continue;
+          }
+
+          environmentVariablesMap[resourceEnvironmentVariableData.mappedKey] =
+            environmentVariableData.key;
+
+          // Only fetch secrets in development for testing
+          if (process.env.NODE_ENV === "development") {
+            const secret = (
+              await ctx.db.execute(
+                sql`select decrypted_secret from vault.decrypted_secrets where id=${environmentVariableData.secretId}`,
+              )
+            ).rows[0];
+
+            if (!secret) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Secret not found",
+              });
+            }
+
+            testEnvironmentVariablesData.push({
+              key: environmentVariableData.key,
+              value: secret.decrypted_secret as string,
+            });
+          }
+        }
+      }
+
       const utilityIds = functionData.metadata?.resources?.reduce(
         (acc, resource) => {
           return acc.concat(resource.utilities.map((utility) => utility.id));
@@ -99,14 +155,19 @@ export const engineRouter = {
         functionName: name,
         functionArgs: input.hasInput ? input.input : undefined,
         code,
-        utilities: utilities,
+        utilities,
         dependencies,
+        environmentVariablesMap,
+        testEnv:
+          process.env.NODE_ENV === "development"
+            ? testEnvironmentVariablesData
+            : undefined,
       };
 
       try {
         const executionResult = await ofetch<{
           output: Record<string, unknown>;
-        }>("http://localhost:3003/", {
+        }>("http://localhost:3003", {
           method: "POST",
           body: JSON.stringify(requestBody),
           async onRequestError({ request, options, error }) {
@@ -138,6 +199,26 @@ export const engineRouter = {
           status: "error",
           message: "Failed to execute function",
         };
+      }
+    }),
+  executeFlow: protectedProcedure
+    .input(
+      z.object({
+        flowId: z.string(),
+        hasInput: z.boolean(),
+        input: z.record(z.any()).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const flowData = await ctx.db.query.flows.findFirst({
+        where: eq(flows.id, input.flowId),
+      });
+
+      if (!flowData) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Flow not found",
+        });
       }
     }),
 } satisfies TRPCRouterRecord;

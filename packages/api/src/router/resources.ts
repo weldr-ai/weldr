@@ -35,13 +35,27 @@ export const resourcesRouter = {
       switch (integration?.type) {
         case "postgres": {
           const connectionTest = await testConnection({
-            host: input.environmentVariables?.POSTGRES_HOST ?? "",
+            host:
+              input.environmentVariables?.find(
+                (env) => env.mappedKey === "POSTGRES_HOST",
+              )?.value ?? "",
             port: Number.parseInt(
-              input.environmentVariables?.POSTGRES_PORT ?? "5432",
+              input.environmentVariables?.find(
+                (env) => env.mappedKey === "POSTGRES_PORT",
+              )?.value ?? "5432",
             ),
-            database: input.environmentVariables?.POSTGRES_DB ?? "",
-            user: input.environmentVariables?.POSTGRES_USER ?? "",
-            password: input.environmentVariables?.POSTGRES_PASSWORD ?? "",
+            database:
+              input.environmentVariables?.find(
+                (env) => env.mappedKey === "POSTGRES_DB",
+              )?.value ?? "",
+            user:
+              input.environmentVariables?.find(
+                (env) => env.mappedKey === "POSTGRES_USER",
+              )?.value ?? "",
+            password:
+              input.environmentVariables?.find(
+                (env) => env.mappedKey === "POSTGRES_PASSWORD",
+              )?.value ?? "",
           });
 
           if (!connectionTest) {
@@ -89,12 +103,12 @@ export const resourcesRouter = {
             });
           }
 
-          for (const key in input.environmentVariables ?? {}) {
+          for (const env of input.environmentVariables ?? []) {
             const secret = (
               await tx
                 .insert(secrets)
                 .values({
-                  secret: input.environmentVariables?.[key] ?? "",
+                  secret: env.value,
                 })
                 .returning({ id: secrets.id })
             )[0];
@@ -110,7 +124,7 @@ export const resourcesRouter = {
               await tx
                 .insert(environmentVariables)
                 .values({
-                  key: key,
+                  key: env.key,
                   secretId: secret.id,
                   workspaceId: input.workspaceId,
                   createdBy: ctx.session.user.id,
@@ -129,6 +143,7 @@ export const resourcesRouter = {
               await tx
                 .insert(resourceEnvironmentVariables)
                 .values({
+                  mappedKey: env.mappedKey,
                   resourceId: resource.id,
                   environmentVariableId: environmentVariable.id,
                 })

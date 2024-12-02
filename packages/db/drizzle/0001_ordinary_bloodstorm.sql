@@ -1,0 +1,1 @@
+ALTER TABLE "resource_environment_variables" ADD COLUMN "mapped_key" text;

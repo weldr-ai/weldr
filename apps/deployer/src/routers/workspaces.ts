@@ -17,6 +17,11 @@ const router = createRouter();
 router.post(
   "/workspaces",
   eventHandler(async (event) => {
+    if (event.headers.get("content-type") !== "application/json") {
+      setResponseStatus(event, 415);
+      return { message: "Content-Type must be application/json" };
+    }
+
     const validationSchema = z.object({
       workspaceId: z.string(),
     });
@@ -77,6 +82,11 @@ router.post(
 router.delete(
   "/workspaces/:workspaceId",
   eventHandler(async (event) => {
+    if (event.headers.get("content-type") !== "application/json") {
+      setResponseStatus(event, 415);
+      return { message: "Content-Type must be application/json" };
+    }
+
     const validationSchema = z.object({
       workspaceId: z.string(),
     });

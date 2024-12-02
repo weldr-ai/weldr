@@ -1,6 +1,13 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
-import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 import type {
   FlowMetadata,
@@ -37,6 +44,7 @@ export const flows = pgTable("flows", {
     .references(() => conversations.id, { onDelete: "cascade" })
     .notNull(),
   code: text("code"),
+  isUpdated: boolean("is_updated").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
