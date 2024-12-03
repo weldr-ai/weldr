@@ -32,20 +32,15 @@ import {
 } from "@integramind/ui/resizable";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
-import {
-  Handle,
-  Position,
-  useHandleConnections,
-  useReactFlow,
-} from "@xyflow/react";
+import { useReactFlow } from "@xyflow/react";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
+  BoxIcon,
   CircleAlertIcon,
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
-  FunctionSquareIcon,
   PlayCircleIcon,
   TrashIcon,
 } from "lucide-react";
@@ -57,11 +52,8 @@ import { z } from "zod";
 import type {
   AssistantMessageRawContent,
   ConversationMessage,
-  FlatInputSchema,
-  FunctionPrimitive,
-  FunctionRequirementsMessage,
-  InputSchema,
   JsonSchema,
+  PrimitiveRequirementsMessage,
   UserMessageRawContent,
 } from "@integramind/shared/types";
 import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
@@ -85,18 +77,19 @@ import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { Editor } from "~/components/editor";
 import { TestInputDialog } from "~/components/test-input-dialog";
-import { generateFunction } from "~/lib/ai/generator";
+import { generatePrimitive } from "~/lib/ai/generator";
+import { useResources } from "~/lib/context/resources";
 import { api } from "~/lib/trpc/client";
 import {
   assistantMessageRawContentToText,
-  flattenInputSchema,
+  getResourceReferences,
   jsonSchemaToTreeData,
   userMessageRawContentToText,
 } from "~/lib/utils";
-import type { FlowEdge, FlowNode, FlowNodeProps } from "~/types";
-import type { ReferenceNode } from "../../editor/plugins/reference/node";
-import MessageList from "../../message-list";
-import { RawContentViewer } from "../../raw-content-viewer";
+import type { FlowNode, FlowNodeProps } from "~/types";
+import type { ReferenceNode } from "../editor/plugins/reference/node";
+import MessageList from "../message-list";
+import { RawContentViewer } from "../raw-content-viewer";
 
 const validationSchema = z.object({
   name: z
@@ -112,7 +105,7 @@ const validationSchema = z.object({
     }),
 });
 
-export const FunctionNode = memo(
+export const PrimitiveNode = memo(
   ({
     data: _data,
     selected,
@@ -128,25 +121,26 @@ export const FunctionNode = memo(
       },
     );
 
-    const data = fetchedData as FunctionPrimitive & {
-      flow: { inputSchema: InputSchema | undefined };
-    };
+    const data = fetchedData;
 
     const apiUtils = api.useUtils();
 
-    const updateFunction = api.primitives.update.useMutation({
+    const updatePrimitive = api.primitives.update.useMutation({
+      onSuccess: async () => {
+        await apiUtils.primitives.byId.invalidate({ id: data.id });
+        await apiUtils.dependencies.available.invalidate({
+          primitiveId: data.id,
+        });
+      },
+    });
+
+    const executePrimitive = api.engine.executePrimitive.useMutation({
       onSuccess: async () => {
         await apiUtils.primitives.byId.invalidate({ id: data.id });
       },
     });
 
-    const executeFunction = api.engine.executeFunction.useMutation({
-      onSuccess: async () => {
-        await apiUtils.primitives.byId.invalidate({ id: data.id });
-      },
-    });
-
-    const deleteFunction = api.primitives.delete.useMutation({
+    const deletePrimitive = api.primitives.delete.useMutation({
       onSuccess: async () => {
         await apiUtils.flows.byId.invalidate({ id: data.flowId });
       },
@@ -156,46 +150,7 @@ export const FunctionNode = memo(
 
     const editorRef = useRef<LexicalEditor>(null);
 
-    const { deleteElements, fitBounds, getNode } = useReactFlow<
-      FlowNode,
-      FlowEdge
-    >();
-
-    const connections = useHandleConnections({
-      type: "target",
-      nodeId: _data.id,
-    });
-
-    const ancestors = useMemo(() => {
-      return connections.reduce((acc, connection) => {
-        const ancestor = getNode(connection.source);
-        if (ancestor) {
-          acc.push(ancestor);
-        }
-        return acc;
-      }, [] as FlowNode[]);
-    }, [connections, getNode]);
-
-    const passedInputs = ancestors.reduce((acc, ancestor) => {
-      if (!ancestor.data.metadata?.outputSchema) {
-        return acc;
-      }
-
-      const flatInputSchema = flattenInputSchema({
-        schema: ancestor.data.metadata?.outputSchema,
-        title: ancestor.data.name as string,
-      });
-
-      return acc.concat(flatInputSchema);
-    }, [] as FlatInputSchema[]);
-
-    const inputSchema = data.flow?.inputSchema
-      ? [...passedInputs].concat(
-          flattenInputSchema({
-            schema: data.flow.inputSchema,
-          }),
-        )
-      : [...passedInputs];
+    const { deleteElements, fitBounds } = useReactFlow<FlowNode>();
 
     const form = useForm<z.infer<typeof validationSchema>>({
       mode: "all",
@@ -224,9 +179,7 @@ export const FunctionNode = memo(
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
     const [isRunning, setIsRunning] = useState<boolean>(false);
-    const [testInput, setTestInput] = useState<unknown>(
-      data.metadata?.testInput ?? {},
-    );
+    const [testInput, setTestInput] = useState<unknown>(data.testInput ?? {});
 
     const conversation: ConversationMessage[] = useMemo(
       () => [
@@ -234,12 +187,12 @@ export const FunctionNode = memo(
           id: createId(),
           role: "assistant",
           content:
-            "Hi there! I'm Specly, your AI assistant. What does your function do?",
+            "Hi there! I'm Specly, your AI assistant. What does your primitive do?",
           rawContent: [
             {
               type: "text",
               value:
-                "Hi there! I'm Specly, your AI assistant. What does your function do?",
+                "Hi there! I'm Specly, your AI assistant. What does your primitive do?",
             },
           ],
         },
@@ -354,8 +307,8 @@ export const FunctionNode = memo(
 
       await addMessage.mutateAsync(newMessageUser);
 
-      const result = await generateFunction({
-        functionId: data.id,
+      const result = await generatePrimitive({
+        primitiveId: data.id,
         conversationId: data.conversationId,
         messages: newMessages.map((message) => ({
           role: message.role,
@@ -392,7 +345,7 @@ export const FunctionNode = memo(
           const rawContent: AssistantMessageRawContent = [
             {
               type: "text",
-              value: "Generating the following function: ",
+              value: "Generating the following primitive: ",
             },
             ...content.message.content.description,
           ];
@@ -412,34 +365,62 @@ export const FunctionNode = memo(
         newMessages.push(newAssistantMessage);
       }
 
-      const functionRequirementsMessageObject = JSON.parse(
+      const primitiveRequirementsMessageObject = JSON.parse(
         newAssistantMessageStr,
-      ) as FunctionRequirementsMessage;
+      ) as PrimitiveRequirementsMessage;
 
-      // if code generation is set, disable it and refetch the updated function metadata
-      if (functionRequirementsMessageObject.message.type === "end") {
+      // if code generation is set, disable it and refetch the updated primitive metadata
+      if (primitiveRequirementsMessageObject.message.type === "end") {
         setIsGeneratingCode(false);
-        const functionBuiltSuccessfullyMessage: ConversationMessage = {
+        const primitiveBuiltSuccessfullyMessage: ConversationMessage = {
           role: "assistant",
           rawContent: [
             {
               type: "text",
-              value: "Your function has been built successfully!",
+              value: "Your primitive has been built successfully!",
             },
           ],
-          content: "Your function has been built successfully!",
+          content: "Your primitive has been built successfully!",
           createdAt: new Date(),
         };
 
         await apiUtils.flows.byId.invalidate({ id: data.flowId });
         await apiUtils.primitives.byId.invalidate({ id: data.id });
-        setMessages([...newMessages, functionBuiltSuccessfullyMessage]);
+        setMessages([...newMessages, primitiveBuiltSuccessfullyMessage]);
       }
 
       setUserMessageContent(null);
       setUserMessageRawContent([]);
       setIsGenerating(false);
     };
+
+    const resources = useResources();
+    const availableDependencies = api.dependencies.available.useQuery({
+      primitiveId: data.id,
+    });
+
+    const references: z.infer<
+      typeof userMessageRawContentReferenceElementSchema
+    >[] = [
+      ...getResourceReferences(resources),
+      ...(availableDependencies.data ?? []).map(
+        (d) =>
+          ({
+            type: "reference",
+            referenceType: "primitive",
+            id: d.id,
+            name: d.name ?? "",
+            inputSchema: JSON.stringify(d.inputSchema ?? {}),
+            outputSchema: JSON.stringify(d.outputSchema ?? {}),
+            description: d.description ?? "",
+            logicalSteps: assistantMessageRawContentToText(
+              d.logicalSteps ?? [],
+            ),
+            edgeCases: d.edgeCases ?? "",
+            errorHandling: d.errorHandling ?? "",
+          }) as z.infer<typeof userMessageRawContentReferenceElementSchema>,
+      ),
+    ];
 
     return (
       <>
@@ -471,19 +452,21 @@ export const FunctionNode = memo(
                 >
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2 text-xs">
-                      <FunctionSquareIcon className="size-4 text-primary" />
-                      <span className="text-muted-foreground">Function</span>
+                      <BoxIcon className="size-4 text-primary" />
+                      <span className="text-muted-foreground">Primitive</span>
                     </div>
-                    {(!data.name || !data.metadata?.description) && (
+                    {(!data.name || !data.description) && (
                       <CircleAlertIcon className="size-4 text-destructive" />
                     )}
                   </div>
-                  <span className="text-sm">{data.name ?? "new_function"}</span>
+                  <span className="text-sm">
+                    {data.name ?? "new_primitive"}
+                  </span>
                 </Card>
               </ExpandableCardTrigger>
             </ContextMenuTrigger>
             <ContextMenuContent>
-              <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
+              <ContextMenuLabel className="text-xs">Primitive</ContextMenuLabel>
               <ContextMenuSeparator />
               <ContextMenuItem className="text-xs">
                 <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
@@ -492,7 +475,7 @@ export const FunctionNode = memo(
               <ContextMenuItem className="flex items-center justify-between text-xs">
                 <Link
                   className="flex items-center"
-                  href="https://docs.integramind.ai/primitives/function"
+                  href="https://docs.integramind.ai/primitvies"
                   target="blank"
                 >
                   <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
@@ -523,8 +506,8 @@ export const FunctionNode = memo(
                 <ExpandableCardHeader className="flex flex-col items-start justify-start p-4 border-b">
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2 text-xs">
-                      <FunctionSquareIcon className="size-4 text-primary" />
-                      <span className="text-muted-foreground">Function</span>
+                      <BoxIcon className="size-4 text-primary" />
+                      <span className="text-muted-foreground">Primitive</span>
                     </div>
                     <div className="flex items-center">
                       <Tooltip>
@@ -534,17 +517,14 @@ export const FunctionNode = memo(
                             variant="ghost"
                             size="icon"
                             disabled={
-                              !data.metadata?.rawDescription ||
-                              !data.name ||
-                              isRunning
+                              !data.rawDescription || !data.name || isRunning
                             }
                             onClick={async () => {
                               setIsRunning(true);
-                              await executeFunction.mutateAsync({
-                                functionId: data.id,
-                                hasInput:
-                                  data.metadata?.inputSchema !== undefined,
-                                input: data.metadata?.testInput as Record<
+                              await executePrimitive.mutateAsync({
+                                primitiveId: data.id,
+                                hasInput: data.inputSchema !== undefined,
+                                input: data.testInput as Record<
                                   string,
                                   unknown
                                 >,
@@ -571,7 +551,7 @@ export const FunctionNode = memo(
                         </DropdownMenuTrigger>
                         <DropdownMenuContent side="right" align="start">
                           <DropdownMenuLabel className="text-xs">
-                            Function
+                            Primitive
                           </DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-xs">
@@ -581,7 +561,7 @@ export const FunctionNode = memo(
                           <DropdownMenuItem className="flex items-center justify-between text-xs">
                             <Link
                               className="flex items-center"
-                              href="https://docs.integramind.ai/primitives/function"
+                              href="https://docs.integramind.ai/primitives"
                               target="blank"
                             >
                               <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
@@ -612,7 +592,7 @@ export const FunctionNode = memo(
                               {...field}
                               autoComplete="off"
                               className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
-                              placeholder="function_name"
+                              placeholder="primitive_name"
                               onChange={(e) => {
                                 field.onChange(e);
                                 debounce(
@@ -622,24 +602,22 @@ export const FunctionNode = memo(
                                         e.target.value,
                                       ).success;
                                     if (isValid) {
-                                      await updateFunction.mutateAsync({
+                                      await updatePrimitive.mutateAsync({
                                         where: {
                                           id: data.id,
                                         },
                                         payload: {
-                                          type: "function",
                                           name: e.target.value,
                                         },
                                       });
                                     }
 
                                     if (e.target.value.length === 0) {
-                                      await updateFunction.mutateAsync({
+                                      await updatePrimitive.mutateAsync({
                                         where: {
                                           id: data.id,
                                         },
                                         payload: {
-                                          type: "function",
                                           name: null,
                                         },
                                       });
@@ -676,9 +654,9 @@ export const FunctionNode = memo(
                       <Editor
                         id={data.id}
                         editorRef={editorRef}
-                        inputSchema={inputSchema}
+                        references={references}
                         rawMessage={userMessageRawContent}
-                        placeholder="Create, refine, or fix your function with Specly..."
+                        placeholder="Create, refine, or fix your primitive with Specly..."
                         onChange={onChatChange}
                       />
                       <Button
@@ -706,7 +684,7 @@ export const FunctionNode = memo(
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={35} minSize={20} className="p-4">
-                {data.metadata?.rawDescription ? (
+                {data.rawDescription ? (
                   <ScrollArea className="size-full">
                     <div className="max-h-[500px] space-y-2">
                       <div className="space-y-1">
@@ -714,7 +692,7 @@ export const FunctionNode = memo(
                           Description:
                         </span>
                         <RawContentViewer
-                          rawContent={data.metadata?.rawDescription ?? []}
+                          rawContent={data.rawDescription ?? []}
                         />
                       </div>
                       <div className="space-y-1">
@@ -723,28 +701,23 @@ export const FunctionNode = memo(
                             Input:
                           </span>
                           <TestInputDialog
-                            schema={data.metadata?.inputSchema as JsonSchema}
+                            schema={data.inputSchema as JsonSchema}
                             formData={testInput}
                             setFormData={setTestInput}
                             onSubmit={async () => {
-                              await updateFunction.mutateAsync({
+                              await updatePrimitive.mutateAsync({
                                 where: {
                                   id: data.id,
                                 },
                                 payload: {
-                                  type: "function",
-                                  metadata: {
-                                    testInput,
-                                  },
+                                  testInput,
                                 },
                               });
                             }}
                           />
                         </div>
                         <TreeView
-                          data={jsonSchemaToTreeData(
-                            data.metadata?.inputSchema as JsonSchema,
-                          )}
+                          data={jsonSchemaToTreeData(data.inputSchema)}
                         />
                       </div>
                       <div className="space-y-1">
@@ -752,9 +725,7 @@ export const FunctionNode = memo(
                           Output:
                         </span>
                         <TreeView
-                          data={jsonSchemaToTreeData(
-                            data.metadata?.outputSchema as JsonSchema,
-                          )}
+                          data={jsonSchemaToTreeData(data.outputSchema)}
                         />
                       </div>
                       <div className="space-y-1">
@@ -763,7 +734,7 @@ export const FunctionNode = memo(
                         </span>
                         <div className="text-sm select-text cursor-text">
                           <RawContentViewer
-                            rawContent={data.metadata?.logicalSteps ?? []}
+                            rawContent={data.logicalSteps ?? []}
                           />
                         </div>
                       </div>
@@ -772,7 +743,7 @@ export const FunctionNode = memo(
                           Edge Cases:
                         </span>
                         <p className="text-sm select-text cursor-text">
-                          {data.metadata?.edgeCases}
+                          {data.edgeCases}
                         </p>
                       </div>
                       <div className="space-y-1">
@@ -780,7 +751,7 @@ export const FunctionNode = memo(
                           Error Handling:
                         </span>
                         <p className="text-sm select-text cursor-text">
-                          {data.metadata?.errorHandling}
+                          {data.errorHandling}
                         </p>
                       </div>
                     </div>
@@ -788,8 +759,8 @@ export const FunctionNode = memo(
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <span className="text-sm text-muted-foreground">
-                      Function is not implemented yet. Chat with Specly to build
-                      it.
+                      Primitive is not implemented yet. Chat with Specly to
+                      build it.
                     </span>
                   </div>
                 )}
@@ -797,16 +768,6 @@ export const FunctionNode = memo(
             </ResizablePanelGroup>
           </ExpandableCardContent>
         </ExpandableCard>
-        <Handle
-          className="border rounded-full bg-background p-1"
-          type="target"
-          position={Position.Left}
-        />
-        <Handle
-          className="border rounded-full bg-background p-1"
-          type="source"
-          position={Position.Right}
-        />
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
@@ -818,7 +779,7 @@ export const FunctionNode = memo(
                 },
               ],
             });
-            deleteFunction.mutate({
+            deletePrimitive.mutate({
               id: data.id,
             });
           }}

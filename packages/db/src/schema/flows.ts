@@ -16,8 +16,8 @@ import type {
 } from "@integramind/shared/types";
 import { users } from "./auth";
 import { conversations } from "./conversations";
-import { edges } from "./edges";
 import { primitives } from "./primitives";
+import { testRuns } from "./test-runs";
 import { workspaces } from "./workspaces";
 
 export const flowTypes = pgEnum("flow_types", [
@@ -33,16 +33,10 @@ export const flows = pgTable("flows", {
   name: text("name").notNull(),
   description: text("description"),
   type: flowTypes("type").notNull(),
-  metadata: jsonb("metadata").$type<FlowMetadata>().notNull(),
   inputSchema: jsonb("input_schema").$type<InputSchema>(),
   outputSchema: jsonb("output_schema").$type<OutputSchema>(),
   validationSchema: text("validation_schema"),
-  inputConversationId: text("input_conversation_id")
-    .references(() => conversations.id, { onDelete: "cascade" })
-    .notNull(),
-  outputConversationId: text("output_conversation_id")
-    .references(() => conversations.id, { onDelete: "cascade" })
-    .notNull(),
+  metadata: jsonb("metadata").$type<FlowMetadata>().notNull(),
   code: text("code"),
   isUpdated: boolean("is_updated").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -50,10 +44,13 @@ export const flows = pgTable("flows", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
+  conversationId: text("conversation_id")
+    .references(() => conversations.id, { onDelete: "cascade" })
+    .notNull(),
   workspaceId: text("workspace_id")
     .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
-  createdBy: text("created_by")
+  userId: text("user_id")
     .references(() => users.id, {
       onDelete: "set null",
     })
@@ -62,21 +59,17 @@ export const flows = pgTable("flows", {
 
 export const flowsRelations = relations(flows, ({ many, one }) => ({
   primitives: many(primitives),
-  edges: many(edges),
   user: one(users, {
-    fields: [flows.createdBy],
+    fields: [flows.userId],
     references: [users.id],
   }),
-  inputConversation: one(conversations, {
-    fields: [flows.inputConversationId],
-    references: [conversations.id],
-  }),
-  outputConversation: one(conversations, {
-    fields: [flows.outputConversationId],
+  conversation: one(conversations, {
+    fields: [flows.conversationId],
     references: [conversations.id],
   }),
   workspace: one(workspaces, {
     fields: [flows.workspaceId],
     references: [workspaces.id],
   }),
+  testRuns: many(testRuns),
 }));

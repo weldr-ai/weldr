@@ -1,10 +1,9 @@
-import type { Conversation, Flow } from "@integramind/shared/types";
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { FlowBuilder } from "~/components/flow-builder";
 import { api } from "~/lib/trpc/server";
-import type { FlowEdge, FlowNode, FlowNodeData } from "~/types";
+import type { FlowNode, FlowNodeData } from "~/types";
 
 export default async function FlowPage({
   params,
@@ -19,47 +18,15 @@ export default async function FlowPage({
 
     const initialNodes: FlowNode[] = flow.primitives.map((primitive) => ({
       id: primitive.id,
-      type: primitive.type,
+      type: "primitive",
       dragHandle: ".drag-handle",
-      deletable: primitive.type !== "stop",
       position: { x: primitive.positionX, y: primitive.positionY },
-      data: {
-        id: primitive.id,
-        type: primitive.type,
-        name: primitive.name,
-        metadata: primitive.metadata,
-        createdAt: primitive.createdAt,
-        updatedAt: primitive.updatedAt,
-        createdBy: primitive.createdBy,
-        flowId: primitive.flowId,
-        conversationId: primitive.conversationId,
-        conversation: primitive.conversation as Conversation,
-        testRuns: primitive.testRuns,
-        flow: {
-          inputSchema: flow.inputSchema,
-        },
-      } as FlowNodeData,
-    }));
-
-    const initialEdges: FlowEdge[] = flow.edges.map((edge) => ({
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      type: "floating",
+      data: primitive as FlowNodeData,
     }));
 
     return (
       <div className="flex size-full">
-        <FlowBuilder
-          flow={
-            {
-              ...flow,
-              stopNode: flow.primitives.find((p) => p.type === "stop"),
-            } as Flow
-          }
-          initialNodes={initialNodes}
-          initialEdges={initialEdges}
-        />
+        <FlowBuilder flow={flow} initialNodes={initialNodes} />
       </div>
     );
   } catch (error) {

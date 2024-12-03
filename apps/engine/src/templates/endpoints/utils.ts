@@ -1,7 +1,7 @@
-import { type H3Event, createEvent } from "h3";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Socket } from "node:net";
 import { Readable } from "node:stream";
+import { type H3Event, createEvent } from "h3";
 
 interface MockRequestOptions {
   method?: string;

@@ -20,7 +20,7 @@ export const workspaces = pgTable("workspaces", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-  createdBy: text("created_by")
+  userId: text("user_id")
     .references(() => users.id, {
       onDelete: "set null",
     })
@@ -32,7 +32,7 @@ export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   flows: many(flows),
   environmentVariables: many(environmentVariables),
   user: one(users, {
-    fields: [workspaces.createdBy],
+    fields: [workspaces.userId],
     references: [users.id],
   }),
 }));

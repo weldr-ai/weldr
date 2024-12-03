@@ -2,7 +2,7 @@ import { renderDataTypeIcon } from "@integramind/shared/utils";
 import type { rawContentReferenceElementSchema } from "@integramind/shared/validators/common";
 import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
 import { cn } from "@integramind/ui/utils";
-import { ColumnsIcon, FunctionSquareIcon, TableIcon } from "lucide-react";
+import { BoxIcon, ColumnsIcon, TableIcon } from "lucide-react";
 import type { z } from "zod";
 
 interface ReferenceBadgeProps {
@@ -26,8 +26,9 @@ export function ReferenceBadge({ reference, className }: ReferenceBadgeProps) {
         <ColumnsIcon className="mr-1 size-3 text-primary" />
       ) : reference.referenceType === "database-table" ? (
         <TableIcon className="mr-1 size-3 text-primary" />
-      ) : reference.referenceType === "utility-function" ? (
-        <FunctionSquareIcon className="mr-1 size-3 text-primary" />
+      ) : reference.referenceType === "utility-function" ||
+        reference.referenceType === "primitive" ? (
+        <BoxIcon className="mr-1 size-3 text-primary" />
       ) : (
         <></>
       )}

@@ -11,15 +11,15 @@ export function getTypescriptCode(content: string): string {
 }
 
 export async function generateCode({
-  functionId,
+  primitiveId,
   prompt,
   systemPrompt,
 }: {
-  functionId: string;
+  primitiveId: string;
   prompt: string;
   systemPrompt: string;
 }) {
-  console.log(`[generateCode] Starting for function ${functionId}`);
+  console.log(`[generateCode] Starting for primitive ${primitiveId}`);
 
   const { text, usage } = await generateText({
     model: anthropic("claude-3-5-sonnet-20240620"),

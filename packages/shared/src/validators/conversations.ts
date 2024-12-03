@@ -3,10 +3,10 @@ import {
   databaseColumnReferenceSchema,
   databaseReferenceSchema,
   databaseTableReferenceSchema,
+  primitiveReferenceSchema,
   rawContentReferenceElementSchema,
   rawContentTextElementSchema,
   utilityFunctionReferenceSchema,
-  variableReferenceSchema,
 } from "./common";
 
 export const userMessageRawContentReferenceElementSchema = z.discriminatedUnion(
@@ -14,8 +14,8 @@ export const userMessageRawContentReferenceElementSchema = z.discriminatedUnion(
   [
     z.object({
       type: z.literal("reference"),
-      referenceType: z.literal("variable"),
-      ...variableReferenceSchema.shape,
+      referenceType: z.literal("primitive"),
+      ...primitiveReferenceSchema.shape,
     }),
     z.object({
       type: z.literal("reference"),

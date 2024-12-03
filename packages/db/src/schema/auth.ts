@@ -2,7 +2,6 @@ import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { edges } from "./edges";
 import { flows } from "./flows";
 import { primitives } from "./primitives";
 import { resources } from "./resources";
@@ -25,7 +24,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   workspaces: many(workspaces),
   flows: many(flows),
   primitives: many(primitives),
-  edges: many(edges),
   resources: many(resources),
 }));
 

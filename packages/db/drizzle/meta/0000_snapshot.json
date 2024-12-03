@@ -1,5 +1,5 @@
 {
-  "id": "21b5cd63-64cb-438c-8bfd-628f8ec01c47",
+  "id": "bd1e1f5c-9588-49db-bb28-18fc440e1804",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -328,8 +328,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "created_by": {
-          "name": "created_by",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -347,11 +347,11 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "conversation_messages_created_by_users_id_fk": {
-          "name": "conversation_messages_created_by_users_id_fk",
+        "conversation_messages_user_id_users_id_fk": {
+          "name": "conversation_messages_user_id_users_id_fk",
           "tableFrom": "conversation_messages",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -380,8 +380,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "created_by": {
-          "name": "created_by",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -390,92 +390,11 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "conversations_created_by_users_id_fk": {
-          "name": "conversations_created_by_users_id_fk",
+        "conversations_user_id_users_id_fk": {
+          "name": "conversations_user_id_users_id_fk",
           "tableFrom": "conversations",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.edges": {
-      "name": "edges",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "source": {
-          "name": "source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target": {
-          "name": "target",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "flow_id": {
-          "name": "flow_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "NULL"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "edges_source_primitives_id_fk": {
-          "name": "edges_source_primitives_id_fk",
-          "tableFrom": "edges",
-          "tableTo": "primitives",
-          "columnsFrom": ["source"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "edges_target_primitives_id_fk": {
-          "name": "edges_target_primitives_id_fk",
-          "tableFrom": "edges",
-          "tableTo": "primitives",
-          "columnsFrom": ["target"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "edges_flow_id_flows_id_fk": {
-          "name": "edges_flow_id_flows_id_fk",
-          "tableFrom": "edges",
-          "tableTo": "flows",
-          "columnsFrom": ["flow_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "edges_created_by_users_id_fk": {
-          "name": "edges_created_by_users_id_fk",
-          "tableFrom": "edges",
-          "tableTo": "users",
-          "columnsFrom": ["created_by"],
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -516,12 +435,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "metadata": {
-          "name": "metadata",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
         "input_schema": {
           "name": "input_schema",
           "type": "jsonb",
@@ -540,15 +453,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "input_conversation_id": {
-          "name": "input_conversation_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "output_conversation_id": {
-          "name": "output_conversation_id",
-          "type": "text",
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true
         },
@@ -579,14 +486,20 @@
           "notNull": true,
           "default": "now()"
         },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "workspace_id": {
           "name": "workspace_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "created_by": {
-          "name": "created_by",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -595,20 +508,11 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "flows_input_conversation_id_conversations_id_fk": {
-          "name": "flows_input_conversation_id_conversations_id_fk",
+        "flows_conversation_id_conversations_id_fk": {
+          "name": "flows_conversation_id_conversations_id_fk",
           "tableFrom": "flows",
           "tableTo": "conversations",
-          "columnsFrom": ["input_conversation_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "flows_output_conversation_id_conversations_id_fk": {
-          "name": "flows_output_conversation_id_conversations_id_fk",
-          "tableFrom": "flows",
-          "tableTo": "conversations",
-          "columnsFrom": ["output_conversation_id"],
+          "columnsFrom": ["conversation_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -622,11 +526,11 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "flows_created_by_users_id_fk": {
-          "name": "flows_created_by_users_id_fk",
+        "flows_user_id_users_id_fk": {
+          "name": "flows_user_id_users_id_fk",
           "tableFrom": "flows",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -770,22 +674,9 @@
           "primaryKey": true,
           "notNull": true
         },
-        "type": {
-          "name": "type",
-          "type": "primitive_types",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
         "name": {
           "name": "name",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -793,15 +684,79 @@
           "name": "position_x",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "notNull": false
         },
         "position_y": {
           "name": "position_y",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "notNull": false
+        },
+        "input_schema": {
+          "name": "input_schema",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "output_schema": {
+          "name": "output_schema",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "test_input": {
+          "name": "test_input",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "raw_description": {
+          "name": "raw_description",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "logical_steps": {
+          "name": "logical_steps",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "edge_cases": {
+          "name": "edge_cases",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_handling": {
+          "name": "error_handling",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resources": {
+          "name": "resources",
+          "type": "jsonb[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "packages": {
+          "name": "packages",
+          "type": "jsonb[]",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -817,14 +772,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "flow_id": {
-          "name": "flow_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_by": {
-          "name": "created_by",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -836,24 +785,43 @@
           "primaryKey": false,
           "notNull": false,
           "default": "NULL"
+        },
+        "flow_id": {
+          "name": "flow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "unique_name": {
+          "name": "unique_name",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "flow_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
-        "primitives_flow_id_flows_id_fk": {
-          "name": "primitives_flow_id_flows_id_fk",
-          "tableFrom": "primitives",
-          "tableTo": "flows",
-          "columnsFrom": ["flow_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "primitives_created_by_users_id_fk": {
-          "name": "primitives_created_by_users_id_fk",
+        "primitives_user_id_users_id_fk": {
+          "name": "primitives_user_id_users_id_fk",
           "tableFrom": "primitives",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -866,73 +834,12 @@
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "primitives_name_flow_id_unique": {
-          "name": "primitives_name_flow_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["name", "flow_id"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.test_runs": {
-      "name": "test_runs",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
         },
-        "input": {
-          "name": "input",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "NULL"
-        },
-        "output": {
-          "name": "output",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "NULL"
-        },
-        "status": {
-          "name": "status",
-          "type": "test_run_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'success'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "primitive_id": {
-          "name": "primitive_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "test_runs_primitive_id_primitives_id_fk": {
-          "name": "test_runs_primitive_id_primitives_id_fk",
-          "tableFrom": "test_runs",
-          "tableTo": "primitives",
-          "columnsFrom": ["primitive_id"],
+        "primitives_flow_id_flows_id_fk": {
+          "name": "primitives_flow_id_flows_id_fk",
+          "tableFrom": "primitives",
+          "tableTo": "flows",
+          "columnsFrom": ["flow_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -948,6 +855,12 @@
       "name": "resource_environment_variables",
       "schema": "",
       "columns": {
+        "mapped_key": {
+          "name": "mapped_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "resource_id": {
           "name": "resource_id",
           "type": "text",
@@ -1047,8 +960,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "created_by": {
-          "name": "created_by",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1074,11 +987,11 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "resources_created_by_users_id_fk": {
-          "name": "resources_created_by_users_id_fk",
+        "resources_user_id_users_id_fk": {
+          "name": "resources_user_id_users_id_fk",
           "tableFrom": "resources",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1144,8 +1057,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "created_by": {
-          "name": "created_by",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -1154,11 +1067,11 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "workspaces_created_by_users_id_fk": {
-          "name": "workspaces_created_by_users_id_fk",
+        "workspaces_user_id_users_id_fk": {
+          "name": "workspaces_user_id_users_id_fk",
           "tableFrom": "workspaces",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -1225,8 +1138,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "created_by": {
-          "name": "created_by",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1253,13 +1166,186 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "environment_variables_created_by_users_id_fk": {
-          "name": "environment_variables_created_by_users_id_fk",
+        "environment_variables_user_id_users_id_fk": {
+          "name": "environment_variables_user_id_users_id_fk",
           "tableFrom": "environment_variables",
           "tableTo": "users",
-          "columnsFrom": ["created_by"],
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.test_runs": {
+      "name": "test_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "input": {
+          "name": "input",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "NULL"
+        },
+        "output": {
+          "name": "output",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "NULL"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "primitive_id": {
+          "name": "primitive_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "flow_id": {
+          "name": "flow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "test_runs_primitive_id_primitives_id_fk": {
+          "name": "test_runs_primitive_id_primitives_id_fk",
+          "tableFrom": "test_runs",
+          "tableTo": "primitives",
+          "columnsFrom": ["primitive_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "test_runs_flow_id_flows_id_fk": {
+          "name": "test_runs_flow_id_flows_id_fk",
+          "tableFrom": "test_runs",
+          "tableTo": "flows",
+          "columnsFrom": ["flow_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.dependencies": {
+      "name": "dependencies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "target_primitive_id": {
+          "name": "target_primitive_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_primitive_id": {
+          "name": "source_primitive_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "NULL"
+        },
+        "source_utility_id": {
+          "name": "source_utility_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "NULL"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "unique_dependency": {
+          "name": "unique_dependency",
+          "columns": [
+            {
+              "expression": "target_primitive_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_primitive_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_utility_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "dependencies_target_primitive_id_primitives_id_fk": {
+          "name": "dependencies_target_primitive_id_primitives_id_fk",
+          "tableFrom": "dependencies",
+          "tableTo": "primitives",
+          "columnsFrom": ["target_primitive_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "dependencies_source_primitive_id_primitives_id_fk": {
+          "name": "dependencies_source_primitive_id_primitives_id_fk",
+          "tableFrom": "dependencies",
+          "tableTo": "primitives",
+          "columnsFrom": ["source_primitive_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "dependencies_source_utility_id_flows_id_fk": {
+          "name": "dependencies_source_utility_id_flows_id_fk",
+          "tableFrom": "dependencies",
+          "tableTo": "flows",
+          "columnsFrom": ["source_utility_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1285,16 +1371,6 @@
       "name": "integration_type",
       "schema": "public",
       "values": ["postgres", "mysql"]
-    },
-    "public.primitive_types": {
-      "name": "primitive_types",
-      "schema": "public",
-      "values": ["function", "stop"]
-    },
-    "public.test_run_status": {
-      "name": "test_run_status",
-      "schema": "public",
-      "values": ["success", "error"]
     }
   },
   "schemas": {},

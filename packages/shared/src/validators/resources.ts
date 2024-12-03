@@ -7,7 +7,7 @@ export const resourceSchema = z.object({
   description: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  createdBy: z.string(),
+  userId: z.string(),
   workspaceId: z.string(),
   integrationId: z.string(),
   integration: integrationSchema,

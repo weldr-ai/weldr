@@ -8,57 +8,57 @@ import {
   resources,
   testRuns,
 } from "@integramind/db/schema";
+import type { Package, Primitive } from "@integramind/shared/types";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
 export const engineRouter = {
-  executeFunction: protectedProcedure
+  executePrimitive: protectedProcedure
     .input(
       z.object({
-        functionId: z.string(),
+        primitiveId: z.string(),
         hasInput: z.boolean(),
         input: z.record(z.any()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const functionData = await ctx.db.query.primitives.findFirst({
-        where: eq(primitives.id, input.functionId),
-      });
+      const primitive = (await ctx.db.query.primitives.findFirst({
+        where: eq(primitives.id, input.primitiveId),
+      })) as
+        | Omit<Primitive, "testRuns" | "dependencies" | "conversation">
+        | undefined;
 
-      if (!functionData) {
+      if (!primitive) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Function not found",
+          message: "Primitive not found",
         });
       }
 
-      const name = functionData.name;
+      const name = primitive.name;
 
       if (!name) {
         return {
           status: "error",
-          message: "Please implement your function first",
+          message: "Please implement your primitive first",
         };
       }
 
-      const code = functionData?.metadata?.code;
+      const code = primitive.code;
 
       if (!code) {
         return {
           status: "error",
           message:
-            "Please talk with the assistant to create the function first",
+            "Please talk with the assistant to create the primitive first",
         };
       }
 
-      const resourceIds = functionData.metadata?.resources?.map(
-        (resource) => resource.id,
-      );
+      const resourceIds = primitive.resources?.map((resource) => resource.id);
 
-      let dependencies: { name: string; version?: string }[] =
-        functionData?.metadata?.dependencies ?? [];
+      let packages: Package[] = primitive.packages ?? [];
 
       if (resourceIds && resourceIds.length > 0) {
         const result = await ctx.db.query.resources.findMany({
@@ -72,7 +72,7 @@ export const engineRouter = {
           },
         });
 
-        dependencies = dependencies.concat(
+        packages = packages.concat(
           result.flatMap((resource) => resource.integration.dependencies ?? []),
         );
       }
@@ -130,12 +130,9 @@ export const engineRouter = {
         }
       }
 
-      const utilityIds = functionData.metadata?.resources?.reduce(
-        (acc, resource) => {
-          return acc.concat(resource.utilities.map((utility) => utility.id));
-        },
-        [] as string[],
-      );
+      const utilityIds = primitive.resources?.reduce((acc, resource) => {
+        return acc.concat(resource.utilities.map((utility) => utility.id));
+      }, [] as string[]);
 
       let utilities: { filePath: string; content: string }[] = [];
 
@@ -156,7 +153,7 @@ export const engineRouter = {
         functionArgs: input.hasInput ? input.input : undefined,
         code,
         utilities,
-        dependencies,
+        packages,
         environmentVariablesMap,
         testEnv:
           process.env.NODE_ENV === "development"
@@ -166,7 +163,7 @@ export const engineRouter = {
 
       try {
         const executionResult = await ofetch<{
-          output: Record<string, unknown>;
+          output: { stdout: string; stderr: string };
         }>("http://localhost:3003/execute/function", {
           method: "POST",
           body: JSON.stringify(requestBody),
@@ -186,8 +183,8 @@ export const engineRouter = {
 
         await ctx.db.insert(testRuns).values({
           input: input.hasInput ? input.input : undefined,
-          output: executionResult ?? undefined,
-          primitiveId: input.functionId,
+          output: executionResult.output,
+          primitiveId: input.primitiveId,
         });
 
         return {

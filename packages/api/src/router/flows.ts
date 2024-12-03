@@ -1,11 +1,7 @@
-import { and, eq, sql } from "@integramind/db";
-import { conversations, flows, primitives } from "@integramind/db/schema";
+import { and, eq, inArray, sql } from "@integramind/db";
+import { conversations, flows } from "@integramind/db/schema";
 import { mergeJson } from "@integramind/db/utils";
-import type {
-  Flow,
-  FunctionPrimitive,
-  StopPrimitive,
-} from "@integramind/shared/types";
+import type { Conversation, Flow, Primitive } from "@integramind/shared/types";
 import {
   flowTypesSchema,
   insertFlowSchema,
@@ -34,28 +30,19 @@ export const flowsRouter = {
 
       try {
         const result = await ctx.db.transaction(async (tx) => {
-          const inputConversation = (
+          const conversation = (
             await tx
               .insert(conversations)
               .values({
-                createdBy: ctx.session.user.id,
+                userId: ctx.session.user.id,
               })
               .returning({ id: conversations.id })
           )[0];
 
-          const outputConversation = (
-            await tx
-              .insert(conversations)
-              .values({
-                createdBy: ctx.session.user.id,
-              })
-              .returning({ id: conversations.id })
-          )[0];
-
-          if (!inputConversation || !outputConversation) {
+          if (!conversation) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create flow",
+              message: "Failed to create conversation",
             });
           }
 
@@ -65,9 +52,8 @@ export const flowsRouter = {
             type: input.type,
             metadata: sql`${{}}::jsonb`,
             workspaceId: input.workspaceId,
-            createdBy: ctx.session.user.id,
-            inputConversationId: inputConversation.id,
-            outputConversationId: outputConversation.id,
+            userId: ctx.session.user.id,
+            conversationId: conversation.id,
           };
 
           if (input.type === "endpoint" || input.type === "task") {
@@ -85,12 +71,6 @@ export const flowsRouter = {
               message: "Failed to create flow",
             });
           }
-
-          await tx.insert(primitives).values({
-            type: "stop",
-            flowId: result[0].id,
-            createdBy: ctx.session.user.id,
-          });
 
           return result[0];
         });
@@ -110,7 +90,7 @@ export const flowsRouter = {
       return await ctx.db.query.flows.findMany({
         where: and(
           eq(flows.workspaceId, input.workspaceId),
-          eq(flows.createdBy, ctx.session.user.id),
+          eq(flows.userId, ctx.session.user.id),
         ),
       });
     }),
@@ -121,10 +101,21 @@ export const flowsRouter = {
         where: and(
           eq(flows.workspaceId, input.workspaceId),
           eq(flows.type, input.type),
-          eq(flows.createdBy, ctx.session.user.id),
+          eq(flows.userId, ctx.session.user.id),
         ),
       });
       return result;
+    }),
+  utilitiesByIds: protectedProcedure
+    .input(z.object({ ids: z.string().array() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.query.flows.findMany({
+        where: and(
+          eq(flows.type, "utilities"),
+          eq(flows.userId, ctx.session.user.id),
+          inArray(flows.id, input.ids),
+        ),
+      });
     }),
   byId: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -132,18 +123,10 @@ export const flowsRouter = {
       const result = await ctx.db.query.flows.findFirst({
         where: and(
           eq(flows.id, input.id),
-          eq(flows.createdBy, ctx.session.user.id),
+          eq(flows.userId, ctx.session.user.id),
         ),
         with: {
-          primitives: {
-            where: eq(primitives.type, "stop"),
-          },
-          inputConversation: {
-            with: {
-              messages: true,
-            },
-          },
-          outputConversation: {
+          conversation: {
             with: {
               messages: true,
             },
@@ -158,22 +141,18 @@ export const flowsRouter = {
         });
       }
 
-      return {
-        ...result,
-        stopNode: result.primitives[0] as StopPrimitive,
-      } as Flow;
+      return result as Flow;
     }),
-  byIdWithPrimitivesAndEdges: protectedProcedure
+  byIdWithPrimitives: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.flows.findFirst({
         where: and(
           eq(flows.id, input.id),
-          eq(flows.createdBy, ctx.session.user.id),
+          eq(flows.userId, ctx.session.user.id),
         ),
         with: {
           primitives: true,
-          edges: true,
         },
       });
 
@@ -184,20 +163,7 @@ export const flowsRouter = {
         });
       }
 
-      const stopPrimitive = result.primitives.find(
-        (p) => p.type === "stop",
-      ) as StopPrimitive;
-
-      const functionPrimitives = result.primitives.filter(
-        (p) => p.type !== "stop",
-      ) as unknown as FunctionPrimitive[];
-
-      return {
-        ...result,
-        stopPrimitive,
-        functionPrimitives,
-        edges: result.edges,
-      };
+      return result;
     }),
   byIdWithAssociatedData: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -205,7 +171,7 @@ export const flowsRouter = {
       const result = await ctx.db.query.flows.findFirst({
         where: and(
           eq(flows.id, input.id),
-          eq(flows.createdBy, ctx.session.user.id),
+          eq(flows.userId, ctx.session.user.id),
         ),
         with: {
           primitives: {
@@ -218,13 +184,7 @@ export const flowsRouter = {
               testRuns: true,
             },
           },
-          edges: true,
-          inputConversation: {
-            with: {
-              messages: true,
-            },
-          },
-          outputConversation: {
+          conversation: {
             with: {
               messages: true,
             },
@@ -239,7 +199,10 @@ export const flowsRouter = {
         });
       }
 
-      return result;
+      return result as Flow & {
+        primitives: Primitive[];
+        conversation: Conversation;
+      };
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -247,7 +210,7 @@ export const flowsRouter = {
       await ctx.db
         .delete(flows)
         .where(
-          and(eq(flows.id, input.id), eq(flows.createdBy, ctx.session.user.id)),
+          and(eq(flows.id, input.id), eq(flows.userId, ctx.session.user.id)),
         );
     }),
   update: protectedProcedure
@@ -256,7 +219,7 @@ export const flowsRouter = {
       const savedPrimitive = await ctx.db.query.flows.findFirst({
         where: and(
           eq(flows.id, input.where.id),
-          eq(flows.createdBy, ctx.session.user.id),
+          eq(flows.userId, ctx.session.user.id),
         ),
       });
 
@@ -278,7 +241,7 @@ export const flowsRouter = {
         .where(
           and(
             eq(flows.id, input.where.id),
-            eq(flows.createdBy, ctx.session.user.id),
+            eq(flows.userId, ctx.session.user.id),
           ),
         );
     }),

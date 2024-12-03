@@ -90,7 +90,7 @@ export const resourcesRouter = {
                 name: input.name,
                 description: input.description,
                 workspaceId: input.workspaceId,
-                createdBy: ctx.session.user.id,
+                userId: ctx.session.user.id,
                 integrationId: input.integrationId,
               })
               .returning({ id: resources.id })
@@ -127,7 +127,7 @@ export const resourcesRouter = {
                   key: env.key,
                   secretId: secret.id,
                   workspaceId: input.workspaceId,
-                  createdBy: ctx.session.user.id,
+                  userId: ctx.session.user.id,
                 })
                 .returning({ id: environmentVariables.id })
             )[0];
@@ -176,7 +176,7 @@ export const resourcesRouter = {
       return await ctx.db.query.resources.findMany({
         where: and(
           eq(resources.workspaceId, input.workspaceId),
-          eq(resources.createdBy, ctx.session.user.id),
+          eq(resources.userId, ctx.session.user.id),
         ),
         columns: {
           id: true,
@@ -201,7 +201,7 @@ export const resourcesRouter = {
       const result = await ctx.db.query.resources.findFirst({
         where: and(
           eq(resources.id, input.id),
-          eq(resources.createdBy, ctx.session.user.id),
+          eq(resources.userId, ctx.session.user.id),
         ),
         with: {
           integration: {

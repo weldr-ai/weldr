@@ -1,20 +1,25 @@
-import type { PrimitiveMetadata } from "@integramind/shared/types";
+import type {
+  InputSchema,
+  OutputSchema,
+  Package,
+  RawContent,
+  Resource,
+} from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import {
   integer,
   jsonb,
-  pgEnum,
   pgTable,
   text,
   timestamp,
-  unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { conversations } from "./conversations";
+import { dependencies } from "./dependencies";
 import { flows } from "./flows";
-
-export const primitiveTypes = pgEnum("primitive_types", ["function", "stop"]);
+import { testRuns } from "./test-runs";
 
 export const primitives = pgTable(
   "primitives",
@@ -22,20 +27,26 @@ export const primitives = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => createId()),
-    type: primitiveTypes("type").notNull(),
     name: text("name"),
-    metadata: jsonb("metadata").$type<PrimitiveMetadata>(),
-    positionX: integer("position_x").default(0).notNull(),
-    positionY: integer("position_y").default(0).notNull(),
+    positionX: integer("position_x"),
+    positionY: integer("position_y"),
+    inputSchema: jsonb("input_schema").$type<InputSchema>(),
+    outputSchema: jsonb("output_schema").$type<OutputSchema>(),
+    testInput: jsonb("test_input").$type<unknown>(),
+    description: text("description"),
+    rawDescription: jsonb("raw_description").$type<RawContent>(),
+    code: text("code"),
+    logicalSteps: jsonb("logical_steps").$type<RawContent>(),
+    edgeCases: text("edge_cases"),
+    errorHandling: text("error_handling"),
+    resources: jsonb("resources").$type<Resource[]>().array(),
+    packages: jsonb("packages").$type<Package[]>().array(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
-    flowId: text("flow_id")
-      .references(() => flows.id, { onDelete: "cascade" })
-      .notNull(),
-    createdBy: text("created_by")
+    userId: text("user_id")
       .references(() => users.id, {
         onDelete: "set null",
       })
@@ -43,9 +54,12 @@ export const primitives = pgTable(
     conversationId: text("conversation_id")
       .references(() => conversations.id, { onDelete: "cascade" })
       .default(sql`NULL`),
+    flowId: text("flow_id")
+      .references(() => flows.id, { onDelete: "cascade" })
+      .notNull(),
   },
   (t) => ({
-    uniqueNameInFlow: unique().on(t.name, t.flowId),
+    uniqueName: uniqueIndex("unique_name").on(t.name, t.flowId),
   }),
 );
 
@@ -54,35 +68,14 @@ export const primitivesRelations = relations(primitives, ({ one, many }) => ({
     fields: [primitives.flowId],
     references: [flows.id],
   }),
-  user: one(users, {
-    fields: [primitives.createdBy],
-    references: [users.id],
-  }),
   conversation: one(conversations, {
     fields: [primitives.conversationId],
     references: [conversations.id],
   }),
   testRuns: many(testRuns),
-}));
-
-export const testRunStatus = pgEnum("test_run_status", ["success", "error"]);
-
-export const testRuns = pgTable("test_runs", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  input: jsonb("input").$type<Record<string, unknown>>().default(sql`NULL`),
-  output: jsonb("output").$type<Record<string, unknown>>().default(sql`NULL`),
-  status: testRunStatus("status").default("success"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  primitiveId: text("primitive_id")
-    .references(() => primitives.id, { onDelete: "cascade" })
-    .notNull(),
-});
-
-export const testRunsRelations = relations(testRuns, ({ one }) => ({
-  primitive: one(primitives, {
-    fields: [testRuns.primitiveId],
-    references: [primitives.id],
+  user: one(users, {
+    fields: [primitives.userId],
+    references: [users.id],
   }),
+  dependencies: many(dependencies),
 }));

@@ -1,17 +1,8 @@
-import type { Node, NodeProps, Edge as ReactFlowEdge } from "@xyflow/react";
+import type { Node, NodeProps } from "@xyflow/react";
 
-import type {
-  Conversation,
-  InputSchema,
-  Primitive,
-  PrimitiveType,
-} from "@integramind/shared/types";
+import type { Primitive } from "@integramind/shared/types";
 
-export type NodeType = PrimitiveType;
-export type FlowEdge = ReactFlowEdge<Record<string, unknown>, "floating">;
-export type FlowNodeData = Primitive & {
-  flow: { inputSchema: InputSchema | undefined };
-  conversation: Conversation;
-};
-export type FlowNode = Node<FlowNodeData, NodeType>;
+export type FlowNodeType = "primitive";
+export type FlowNodeData = Primitive;
+export type FlowNode = Node<FlowNodeData, FlowNodeType>;
 export type FlowNodeProps = NodeProps<FlowNode>;

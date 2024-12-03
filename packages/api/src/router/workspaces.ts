@@ -18,7 +18,7 @@ export const workspacesRouter = {
               name: input.name,
               subdomain: input.subdomain,
               description: input.description,
-              createdBy: ctx.session.user.id,
+              userId: ctx.session.user.id,
             })
             .returning({ id: workspaces.id })
         )[0];
@@ -68,7 +68,7 @@ export const workspacesRouter = {
     }),
   list: protectedProcedure.query(async ({ ctx }) => {
     const result = await ctx.db.query.workspaces.findMany({
-      where: eq(workspaces.createdBy, ctx.session.user.id),
+      where: eq(workspaces.userId, ctx.session.user.id),
     });
     return result;
   }),
@@ -78,7 +78,7 @@ export const workspacesRouter = {
       const result = await ctx.db.query.workspaces.findFirst({
         where: and(
           eq(workspaces.id, input.id),
-          eq(workspaces.createdBy, ctx.session.user.id),
+          eq(workspaces.userId, ctx.session.user.id),
         ),
         with: {
           resources: {
@@ -147,7 +147,7 @@ export const workspacesRouter = {
         .where(
           and(
             eq(workspaces.id, input.id),
-            eq(workspaces.createdBy, ctx.session.user.id),
+            eq(workspaces.userId, ctx.session.user.id),
           ),
         );
     }),

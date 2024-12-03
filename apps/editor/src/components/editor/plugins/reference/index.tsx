@@ -12,14 +12,11 @@ import { useCallback, useMemo, useState } from "react";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
-import type { DatabaseStructure } from "@integramind/shared/integrations/postgres/index";
-import type { FlatInputSchema } from "@integramind/shared/types";
 import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import { nanoid } from "nanoid";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";
 import { $createReferenceNode } from "~/components/editor/plugins/reference/node";
-import { useResources } from "~/lib/context/resources";
 import { ReferenceBadge } from "../../reference-badge";
 
 export class ReferenceOption extends MenuOption {
@@ -47,17 +44,14 @@ export class ReferenceOption extends MenuOption {
 }
 
 export function ReferencesPlugin({
-  inputSchema,
+  references,
   position = "top",
-  includeReferences = true,
 }: {
-  inputSchema: FlatInputSchema[];
+  references: z.infer<typeof userMessageRawContentReferenceElementSchema>[];
   position?: "bottom" | "top";
-  includeReferences?: boolean;
 }) {
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
-  const resources = useResources();
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch("/", {
     minLength: 0,
@@ -86,128 +80,62 @@ export function ReferencesPlugin({
   );
 
   const inputOptions: ReferenceOption[] = useMemo(() => {
-    const options: ReferenceOption[] = inputSchema.map(
-      (input) =>
-        new ReferenceOption({
-          reference: {
-            type: "reference",
-            name: `${input.path}`,
-            referenceType: "variable",
-            dataType: input.type,
-            refUri: input.refUri,
-            required: input.required,
-            properties: input.properties,
-            itemsType: input.itemsType,
-          },
-          options: {
-            keywords: ["input", input.path],
-            onSelect: (queryString) => {
-              console.log(queryString);
-            },
-          },
-        }),
-    );
-
-    if (includeReferences) {
-      for (const resource of resources ?? []) {
-        options.push(
-          new ReferenceOption({
-            reference: {
-              id: resource.id,
-              type: "reference",
-              name: resource.name,
-              referenceType: "database",
-              utils:
-                resource.integration.utils?.map((util) => ({
-                  id: util.id,
-                  name: util.name,
-                  description: util.description,
-                })) ?? [],
-            },
-            options: {
-              keywords: ["resource", "database", resource.name],
-              onSelect: (queryString) => {
-                console.log(queryString);
+    return references.reduce((acc, reference) => {
+      switch (reference.referenceType) {
+        case "primitive": {
+          acc.push(
+            new ReferenceOption({
+              reference,
+              options: {
+                keywords: [reference.name, "primitive"],
+                onSelect: () => {},
               },
-            },
-          }),
-        );
-
-        if (
-          resource.integration.type === "postgres" ||
-          resource.integration.type === "mysql"
-        ) {
-          const databaseStructure = resource.metadata as DatabaseStructure;
-
-          for (const table of databaseStructure) {
-            for (const column of table.columns) {
-              options.push(
-                new ReferenceOption({
-                  reference: {
-                    type: "reference",
-                    name: `${table.name}.${column.name}`,
-                    referenceType: "database-column",
-                    dataType: column.dataType,
-                    database: {
-                      id: resource.id,
-                      name: resource.name,
-                      utils:
-                        resource.integration.utils?.map((util) => ({
-                          id: util.id,
-                          name: util.name,
-                          description: util.description,
-                        })) ?? [],
-                    },
-                    table: {
-                      name: table.name,
-                      columns: table.columns,
-                      relationships: table.relationships,
-                    },
-                  },
-                  options: {
-                    keywords: ["column", resource.name, column.name],
-                    onSelect: (queryString) => {
-                      console.log(queryString);
-                    },
-                  },
-                }),
-              );
-            }
-
-            options.push(
-              new ReferenceOption({
-                reference: {
-                  type: "reference",
-                  name: `${table.name}`,
-                  referenceType: "database-table",
-                  database: {
-                    id: resource.id,
-                    name: resource.name,
-                    utils:
-                      resource.integration.utils?.map((util) => ({
-                        id: util.id,
-                        name: util.name,
-                        description: util.description,
-                      })) ?? [],
-                  },
-                  columns: table.columns,
-                  relationships: table.relationships,
-                },
-                options: {
-                  keywords: ["table", resource.name, table.name],
-                  onSelect: (queryString) => {
-                    console.log(queryString);
-                  },
-                },
-              }),
-            );
-          }
+            }),
+          );
+          break;
         }
+        case "database": {
+          acc.push(
+            new ReferenceOption({
+              reference,
+              options: {
+                keywords: [reference.name, "database"],
+                onSelect: () => {},
+              },
+            }),
+          );
+          break;
+        }
+        case "database-table": {
+          acc.push(
+            new ReferenceOption({
+              reference,
+              options: {
+                keywords: [reference.name, "database", "table"],
+                onSelect: () => {},
+              },
+            }),
+          );
+          break;
+        }
+        case "database-column": {
+          acc.push(
+            new ReferenceOption({
+              reference,
+              options: {
+                keywords: [reference.name, "database", "column"],
+                onSelect: () => {},
+              },
+            }),
+          );
+          break;
+        }
+        default:
+          break;
       }
-    }
-
-    return options;
-  }, [inputSchema, resources, includeReferences]);
+      return acc;
+    }, [] as ReferenceOption[]);
+  }, [references]);
 
   const options = useMemo(() => {
     if (!queryString) {

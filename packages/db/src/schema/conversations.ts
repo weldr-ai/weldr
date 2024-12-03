@@ -16,18 +16,27 @@ export const conversations = pgTable("conversations", {
     .primaryKey()
     .$defaultFn(() => createId()),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  createdBy: text("created_by")
+  userId: text("user_id")
     .references(() => users.id, {
       onDelete: "set null",
     })
     .default(sql`NULL`),
 });
 
-export const conversationRelations = relations(conversations, ({ many }) => ({
-  messages: many(conversationMessages),
-  primitives: many(primitives),
-  flows: many(flows),
-}));
+export const conversationRelations = relations(
+  conversations,
+  ({ one, many }) => ({
+    messages: many(conversationMessages),
+    primitives: one(primitives, {
+      fields: [conversations.id],
+      references: [primitives.conversationId],
+    }),
+    flows: one(flows, {
+      fields: [conversations.id],
+      references: [flows.conversationId],
+    }),
+  }),
+);
 
 export const conversationMessages = pgTable("conversation_messages", {
   id: text("id")
@@ -42,7 +51,7 @@ export const conversationMessages = pgTable("conversation_messages", {
   conversationId: text("conversation_id")
     .references(() => conversations.id, { onDelete: "cascade" })
     .notNull(),
-  createdBy: text("created_by")
+  userId: text("user_id")
     .references(() => users.id, {
       onDelete: "set null",
     })

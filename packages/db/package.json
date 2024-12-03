@@ -27,6 +27,7 @@
     "@integramind/shared": "workspace:*",
     "@paralleldrive/cuid2": "^2.2.2",
     "drizzle-orm": "^0.36.4",
+    "drizzle-zod": "^0.5.1",
     "pg": "^8.13.1"
   },
   "devDependencies": {

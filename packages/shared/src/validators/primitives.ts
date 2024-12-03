@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { databaseTableSchema } from "../integrations/postgres";
 import {
-  dependencySchema,
   inputSchema,
   outputSchema,
+  packageSchema,
   rawContentSchema,
   utilityFunctionReferenceSchema,
 } from "./common";
@@ -13,26 +13,18 @@ export const testRunSchema = z.object({
   id: z.string(),
   input: z.any(),
   output: z.any(),
-  status: z.enum(["success", "error"]),
   createdAt: z.date(),
   primitiveId: z.string(),
 });
 
-export const primitiveTypesSchema = z.enum(["function", "stop"]);
-
-export const primitiveBaseSchema = z.object({
+export const dependencySchema = z.object({
   id: z.string(),
-  name: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  createdBy: z.string().nullable(),
-  positionX: z.number(),
-  positionY: z.number(),
-  flowId: z.string(),
-  conversationId: z.string(),
+  targetPrimitiveId: z.string(),
+  sourcePrimitiveId: z.string(),
+  sourceUtilityId: z.string(),
 });
 
-export const functionResourceSchema = z.object({
+export const primitiveResourceSchema = z.object({
   id: z.string(),
   name: z.string(),
   metadata: z.discriminatedUnion("type", [
@@ -44,7 +36,13 @@ export const functionResourceSchema = z.object({
   utilities: utilityFunctionReferenceSchema.omit({ docs: true }).array(),
 });
 
-export const functionPrimitiveMetadataSchema = z.object({
+export const primitiveSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  positionX: z.number(),
+  positionY: z.number(),
   inputSchema: inputSchema.optional(),
   outputSchema: outputSchema.optional(),
   testInput: z.unknown().optional(),
@@ -54,74 +52,52 @@ export const functionPrimitiveMetadataSchema = z.object({
   logicalSteps: rawContentSchema.optional(),
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
-  resources: functionResourceSchema.array().optional(),
-  dependencies: dependencySchema.array().optional(),
+  resources: primitiveResourceSchema.array().optional(),
+  packages: packageSchema.array().optional(),
+  userId: z.string().nullable(),
+  flowId: z.string(),
+  conversationId: z.string(),
+  conversation: conversationSchema,
+  testRuns: testRunSchema.array(),
 });
-
-export const primitiveMetadataSchema = z.union([
-  functionPrimitiveMetadataSchema,
-  z.null(),
-]);
-
-export const functionPrimitiveSchema = primitiveBaseSchema.extend({
-  type: z.literal("function"),
-  conversation: conversationSchema.optional(),
-  testRuns: testRunSchema.array().optional(),
-  metadata: functionPrimitiveMetadataSchema.nullable().optional(),
-});
-
-export const stopPrimitiveSchema = primitiveBaseSchema.extend({
-  type: z.literal("stop"),
-  metadata: z.null().optional(),
-});
-
-export const primitiveSchema = z.discriminatedUnion("type", [
-  functionPrimitiveSchema,
-  stopPrimitiveSchema,
-]);
 
 export const insertPrimitiveSchema = z.object({
   id: z.string(),
-  type: primitiveTypesSchema,
+  flowId: z.string(),
   positionX: z.number(),
   positionY: z.number(),
-  flowId: z.string(),
-});
-
-export const updatePrimitiveBaseSchema = z.object({
-  name: z
-    .string()
-    .min(1, {
-      message: "Name is required.",
-    })
-    .regex(/^[a-z]/, {
-      message: "Name must start with a small letter",
-    })
-    .regex(/^[a-z][a-zA-Z0-9]*$/, {
-      message: "Can only contain letters and numbers",
-    })
-    .nullable()
-    .optional(),
-  positionX: z.number().optional(),
-  positionY: z.number().optional(),
-});
-
-export const updateFunctionSchema = updatePrimitiveBaseSchema.extend({
-  type: z.literal("function"),
-  metadata: functionPrimitiveMetadataSchema.nullable().optional(),
-});
-
-export const updateStopSchema = updatePrimitiveBaseSchema.extend({
-  type: z.literal("stop"),
-  metadata: z.null().optional(),
 });
 
 export const updatePrimitiveSchema = z.object({
   where: z.object({
     id: z.string(),
   }),
-  payload: z.discriminatedUnion("type", [
-    updateFunctionSchema,
-    updateStopSchema,
-  ]),
+  payload: z.object({
+    name: z
+      .string()
+      .min(1, {
+        message: "Name is required.",
+      })
+      .regex(/^[a-z]/, {
+        message: "Name must start with a small letter",
+      })
+      .regex(/^[a-z][a-zA-Z0-9]*$/, {
+        message: "Can only contain letters and numbers",
+      })
+      .nullable()
+      .optional(),
+    positionX: z.number().optional(),
+    positionY: z.number().optional(),
+    testInput: z.unknown().optional(),
+    inputSchema: inputSchema.optional(),
+    outputSchema: outputSchema.optional(),
+    description: z.string().optional(),
+    rawDescription: rawContentSchema.optional(),
+    code: z.string().optional(),
+    logicalSteps: rawContentSchema.optional(),
+    edgeCases: z.string().optional(),
+    errorHandling: z.string().optional(),
+    resources: primitiveResourceSchema.array().optional(),
+    packages: packageSchema.array().optional(),
+  }),
 });

@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { inputSchema, outputSchema } from "./common";
 import { conversationSchema } from "./conversations";
-import { stopPrimitiveSchema } from "./primitives";
 
 export const flowTypesSchema = z.enum(["task", "endpoint", "utilities"]);
 
@@ -17,7 +16,7 @@ export const taskFlowMetadataSchema = z.object({
   triggerType: z.enum(["webhook", "schedule"]),
 });
 
-export const utilitiesFlowMetadataSchema = z.object({});
+export const utilityFlowMetadataSchema = z.object({});
 
 const baseFlowSchema = z.object({
   id: z.string(),
@@ -30,18 +29,15 @@ const baseFlowSchema = z.object({
   code: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  createdBy: z.string().nullable(),
+  userId: z.string().nullable(),
   workspaceId: z.string(),
-  inputConversation: conversationSchema,
-  outputConversation: conversationSchema,
-  stopNode: stopPrimitiveSchema,
-  inputConversationId: z.string(),
-  outputConversationId: z.string(),
+  conversationId: z.string(),
+  conversation: conversationSchema,
 });
 
-export const componentFlowSchema = baseFlowSchema.extend({
+export const utilityFlowSchema = baseFlowSchema.extend({
   type: z.literal("utilities"),
-  metadata: utilitiesFlowMetadataSchema,
+  metadata: utilityFlowMetadataSchema,
 });
 
 export const endpointFlowSchema = baseFlowSchema.extend({
@@ -55,7 +51,7 @@ export const taskFlowSchema = baseFlowSchema.extend({
 });
 
 export const flowSchema = z.discriminatedUnion("type", [
-  componentFlowSchema,
+  utilityFlowSchema,
   endpointFlowSchema,
   taskFlowSchema,
 ]);

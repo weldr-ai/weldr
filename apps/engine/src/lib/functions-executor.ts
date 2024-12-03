@@ -1,7 +1,7 @@
-import Handlebars from "handlebars";
 import fs from "node:fs/promises";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import Handlebars from "handlebars";
 import superjson from "superjson";
 import type { Dependency, Utility } from "../index";
 import {

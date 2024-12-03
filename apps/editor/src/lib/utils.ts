@@ -1,6 +1,7 @@
+import type { RouterOutputs } from "@integramind/api";
+import type { DatabaseStructure } from "@integramind/shared/integrations/postgres/index";
 import type {
   AssistantMessageRawContent,
-  FlatInputSchema,
   JsonSchema,
   UserMessageRawContent,
 } from "@integramind/shared/types";
@@ -18,7 +19,7 @@ export function jsonSchemaToTreeData(
 
   function jsonSchemaToTree(schema: JsonSchema, name = "root"): TreeDataItem {
     const treeItem: TreeDataItem = {
-      id: `${schema.$id}-${name}`,
+      id: name,
       name,
       type: schema.type ?? "null",
       icon: getDataTypeIcon(schema.type ?? "null"),
@@ -30,7 +31,7 @@ export function jsonSchemaToTreeData(
       );
     } else if (schema.type === "array" && schema.items) {
       const arrayItem: TreeDataItem = {
-        id: `${schema.$id}-${name}-items`,
+        id: `${name}-items`,
         name: schema.title ?? "items",
         type: "array",
         icon: getDataTypeIcon("array"),
@@ -43,153 +44,6 @@ export function jsonSchemaToTreeData(
   }
 
   return jsonSchemaToTree(schema).children ?? [];
-}
-
-export function flattenInputSchema({
-  schema,
-  path = "",
-  required = false,
-  refPath = "",
-  expandArrays = true,
-  title,
-}: {
-  schema: JsonSchema;
-  path?: string;
-  required?: boolean;
-  refPath?: string;
-  expandArrays?: boolean;
-  title?: string;
-}): FlatInputSchema[] {
-  let tempPath = path;
-  const refUri = refPath ? `${refPath}` : `${schema.$id}`;
-  const result: FlatInputSchema[] = [];
-
-  // Add the schema itself as an input if it has a title
-  if (schema.title || title) {
-    const properties =
-      schema.type === "object" && schema.properties
-        ? Object.entries(schema.properties).reduce<Record<string, JsonSchema>>(
-            (acc, [key, value]) => {
-              acc[key] = value;
-              return acc;
-            },
-            {},
-          )
-        : undefined;
-
-    const itemsType =
-      schema.type === "array" && schema.items ? schema.items : undefined;
-
-    result.push({
-      path: title ?? schema.title ?? "",
-      type: schema.type ?? "null",
-      required,
-      description: schema.description,
-      refUri,
-      ...(properties && { properties }),
-      ...(itemsType && { itemsType }),
-    });
-    // Update path to include the title for nested properties
-    tempPath = title ?? schema.title ?? "";
-  }
-
-  if (schema.type === "object" && schema.properties) {
-    const requiredProperties = schema.required || [];
-    for (const [key, value] of Object.entries(schema.properties)) {
-      const isRequired = requiredProperties.includes(key);
-      const newPath = tempPath ? `${tempPath}.${key}` : key;
-      const newRefPath = refPath
-        ? `${refPath}/properties/${key}`
-        : `${refUri}/properties/${key}`;
-
-      const properties =
-        value.type === "object" && value.properties
-          ? Object.entries(value.properties).reduce<Record<string, JsonSchema>>(
-              (acc, [k, v]) => {
-                acc[k] = v;
-                return acc;
-              },
-              {},
-            )
-          : undefined;
-
-      const itemsType =
-        value.type === "array" && value.items ? value.items : undefined;
-
-      result.push({
-        path: newPath,
-        type: value.type ?? "null",
-        required: isRequired,
-        description: value.description,
-        refUri: newRefPath,
-        ...(properties && { properties }),
-        ...(itemsType && { itemsType }),
-      });
-
-      if (value.type === "object" || (value.type === "array" && expandArrays)) {
-        result.push(
-          ...flattenInputSchema({
-            schema: value,
-            path: newPath,
-            required: isRequired,
-            refPath: newRefPath,
-            expandArrays,
-          }),
-        );
-      }
-    }
-  } else if (schema.type === "array" && schema.items && expandArrays) {
-    const itemsPath = `${schema.title ? schema.title : "items"}[]`;
-    const itemsRefPath = refPath ? `${refPath}/items` : `${refUri}/items`;
-
-    const properties =
-      schema.items.type === "object" && schema.items.properties
-        ? Object.entries(schema.items.properties).reduce<
-            Record<string, JsonSchema>
-          >((acc, [key, value]) => {
-            acc[key] = value;
-            return acc;
-          }, {})
-        : undefined;
-
-    const itemsType =
-      schema.items.type === "array" && schema.items.items
-        ? schema.items.items
-        : undefined;
-
-    result.push({
-      path: itemsPath,
-      type: schema.items.type ?? "null",
-      required: false,
-      description: schema.items.description,
-      refUri: itemsRefPath,
-      ...(properties && { properties }),
-      ...(itemsType && { itemsType }),
-    });
-
-    if (schema.items.type === "object" || schema.items.type === "array") {
-      result.push(
-        ...flattenInputSchema({
-          schema: schema.items,
-          path: itemsPath,
-          required: false,
-          refPath: itemsRefPath,
-          expandArrays,
-        }),
-      );
-    }
-  } else if (!schema.title) {
-    // Only add non-titled primitive schemas here since titled ones are added above
-    result.push({
-      path: tempPath,
-      type: schema.type ?? "null",
-      required,
-      description: schema.description,
-      refUri,
-    });
-  }
-
-  return result;
 }
 
 export function assistantMessageRawContentToText(
@@ -214,49 +68,22 @@ function referenceToText(
   seenElements: Map<string, boolean>,
 ): string {
   switch (reference.referenceType) {
-    case "variable": {
-      const parts = [
-        `Value of the input variable \`${reference.name}\``,
-        `Type: ${reference.dataType}`,
-        reference.refUri ? `$ref: ${reference.refUri}` : null,
-        `Required: ${reference.required}`,
-      ].filter(Boolean);
-
-      const formatObjectProps = (props: JsonSchema["properties"]): string => {
-        if (!props) return "";
-        return Object.entries(props)
-          .map(
-            ([name, prop]) =>
-              `- ${name}:\n` +
-              `  - Type: ${prop.type}\n` +
-              `  - Required: ${prop.required ?? false}`,
-          )
-          .join("\n");
-      };
-
-      const formatArrayItemsType = (itemsType: JsonSchema["items"]): string => {
-        if (typeof itemsType === "object") {
-          return `Properties:\n${formatObjectProps(itemsType.properties)}`;
-        }
-        return String(itemsType);
-      };
-
-      let details = "";
-
-      switch (reference.dataType) {
-        case "object": {
-          details = `\nProperties:\n${formatObjectProps(reference.properties)}`;
-          break;
-        }
-        case "array": {
-          if (reference.itemsType) {
-            details = `\nItems:\n${formatArrayItemsType(reference.itemsType)}`;
-          }
-          break;
-        }
-      }
-
-      return `${parts.join("\n")}${details}`;
+    case "primitive": {
+      return [
+        `Function \`${reference.name}\` (ID: ${reference.id})`,
+        "Input Schema:",
+        reference.inputSchema,
+        "Output Schema:",
+        reference.outputSchema,
+        "Description:",
+        reference.description,
+        "Logical Steps:",
+        reference.logicalSteps,
+        "Edge Cases:",
+        reference.edgeCases,
+        "Error Handling:",
+        reference.errorHandling,
+      ].join("\n");
     }
 
     case "database": {
@@ -335,15 +162,18 @@ export function userMessageRawContentToText(
     if (element.type === "text") return element.value;
 
     switch (element.referenceType) {
-      case "variable": {
-        return `var-${element.name}-${element.dataType}`;
+      case "primitive": {
+        return `function-${element.id}`;
       }
-      case "database":
+      case "database": {
         return `db-${element.id}`;
-      case "database-table":
+      }
+      case "database-table": {
         return `db-table-${element.name}-${element.database.id}`;
-      case "database-column":
+      }
+      case "database-column": {
         return `db-col-${element.name}-${element.database.id}-${element.table.name}`;
+      }
       default:
         return "";
     }
@@ -394,4 +224,82 @@ export function userMessageRawContentToText(
           : ""
       }## Request\n${text}`
     : null;
+}
+
+export function getResourceReferences(
+  resources: (RouterOutputs["workspaces"]["byId"]["resources"][0] & {
+    metadata?: unknown;
+  })[],
+): z.infer<typeof userMessageRawContentReferenceElementSchema>[] {
+  const references: z.infer<
+    typeof userMessageRawContentReferenceElementSchema
+  >[] = [];
+
+  for (const resource of resources ?? []) {
+    references.push({
+      id: resource.id,
+      type: "reference",
+      name: resource.name,
+      referenceType: "database",
+      utils:
+        resource.integration.utils?.map((util) => ({
+          id: util.id,
+          name: util.name,
+          description: util.description,
+        })) ?? [],
+    });
+
+    if (
+      resource.integration.type === "postgres" ||
+      resource.integration.type === "mysql"
+    ) {
+      const databaseStructure = resource.metadata as DatabaseStructure;
+
+      for (const table of databaseStructure) {
+        for (const column of table.columns) {
+          references.push({
+            type: "reference",
+            name: `${table.name}.${column.name}`,
+            referenceType: "database-column",
+            dataType: column.dataType,
+            database: {
+              id: resource.id,
+              name: resource.name,
+              utils:
+                resource.integration.utils?.map((util) => ({
+                  id: util.id,
+                  name: util.name,
+                  description: util.description,
+                })) ?? [],
+            },
+            table: {
+              name: table.name,
+              columns: table.columns,
+              relationships: table.relationships,
+            },
+          });
+        }
+
+        references.push({
+          type: "reference",
+          name: `${table.name}`,
+          referenceType: "database-table",
+          database: {
+            id: resource.id,
+            name: resource.name,
+            utils:
+              resource.integration.utils?.map((util) => ({
+                id: util.id,
+                name: util.name,
+                description: util.description,
+              })) ?? [],
+          },
+          columns: table.columns,
+          relationships: table.relationships,
+        });
+      }
+    }
+  }
+
+  return references;
 }

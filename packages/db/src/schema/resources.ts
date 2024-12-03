@@ -31,7 +31,7 @@ export const resources = pgTable(
     integrationId: text("integration_id")
       .references(() => integrations.id, { onDelete: "cascade" })
       .notNull(),
-    createdBy: text("created_by")
+    userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
   },
@@ -46,7 +46,7 @@ export const resourcesRelations = relations(resources, ({ one }) => ({
     references: [workspaces.id],
   }),
   user: one(users, {
-    fields: [resources.createdBy],
+    fields: [resources.userId],
     references: [users.id],
   }),
   integration: one(integrations, {

@@ -22,7 +22,7 @@ export const environmentVariables = pgTable("environment_variables", {
   workspaceId: text("workspace_id")
     .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
-  createdBy: text("created_by").references(() => users.id, {
+  userId: text("user_id").references(() => users.id, {
     onDelete: "set null",
   }),
 });
@@ -34,8 +34,8 @@ export const environmentVariablesRelations = relations(
       fields: [environmentVariables.workspaceId],
       references: [workspaces.id],
     }),
-    createdBy: one(users, {
-      fields: [environmentVariables.createdBy],
+    user: one(users, {
+      fields: [environmentVariables.userId],
       references: [users.id],
     }),
   }),

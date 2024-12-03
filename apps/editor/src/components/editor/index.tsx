@@ -12,10 +12,9 @@ import type { EditorState, LexicalEditor } from "lexical";
 
 import { cn } from "@integramind/ui/utils";
 
-import type {
-  FlatInputSchema,
-  UserMessageRawContent,
-} from "@integramind/shared/types";
+import type { UserMessageRawContent } from "@integramind/shared/types";
+import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
+import type { z } from "zod";
 import { ReferencesPlugin } from "./plugins/reference";
 import { ReferenceNode } from "./plugins/reference/node";
 
@@ -26,8 +25,7 @@ interface EditorProps {
   className?: string;
   editorRef?: { current: null | LexicalEditor };
   rawMessage?: UserMessageRawContent;
-  includeReferences?: boolean;
-  inputSchema?: FlatInputSchema[];
+  references?: z.infer<typeof userMessageRawContentReferenceElementSchema>[];
   typeaheadPosition?: "bottom" | "top";
 }
 
@@ -45,9 +43,8 @@ export function Editor({ ...props }: EditorProps) {
     <LexicalComposer initialConfig={initialConfig}>
       <div className="flex size-full">
         <ReferencesPlugin
-          inputSchema={props.inputSchema ?? []}
+          references={props.references ?? []}
           position={props.typeaheadPosition}
-          includeReferences={props.includeReferences}
         />
         <RichTextPlugin
           contentEditable={

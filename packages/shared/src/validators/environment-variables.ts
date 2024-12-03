@@ -6,9 +6,9 @@ export const environmentVariableSchema = z.object({
   value: z.string(),
   viewable: z.boolean(),
   workspaceId: z.string(),
-  createdBy: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  userId: z.string().nullable(),
 });
 
 export const insertEnvironmentVariableSchema = z.object({

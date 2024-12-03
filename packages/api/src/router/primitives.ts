@@ -1,11 +1,9 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
-import { primitives, testRuns } from "@integramind/db/schema";
+import { conversations, primitives, testRuns } from "@integramind/db/schema";
 
-import { type SQL, and, eq } from "@integramind/db";
-import { conversations } from "@integramind/db/schema";
-import { mergeJson } from "@integramind/db/utils";
-import type { InputSchema, Primitive } from "@integramind/shared/types";
+import { type SQL, and, eq, inArray } from "@integramind/db";
+import type { Primitive } from "@integramind/shared/types";
 import {
   insertPrimitiveSchema,
   updatePrimitiveSchema,
@@ -17,32 +15,29 @@ export const primitivesRouter = {
   create: protectedProcedure
     .input(insertPrimitiveSchema)
     .mutation(async ({ ctx, input }) => {
-      if (input.type === "stop") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Stop primitive cannot be created",
-        });
-      }
-
       try {
         const result = await ctx.db.transaction(async (tx) => {
-          let conversation: { id: string } | undefined;
-          if (input.type === "function") {
-            conversation = (
-              await tx
-                .insert(conversations)
-                .values({
-                  createdBy: ctx.session.user.id,
-                })
-                .returning({ id: conversations.id })
-            )[0];
+          const conversation = (
+            await tx
+              .insert(conversations)
+              .values({
+                userId: ctx.session.user.id,
+              })
+              .returning({ id: conversations.id })
+          )[0];
+
+          if (!conversation) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create conversation",
+            });
           }
 
           const result = await tx
             .insert(primitives)
             .values({
               ...input,
-              createdBy: ctx.session.user.id,
+              userId: ctx.session.user.id,
               conversationId: conversation?.id,
             })
             .returning();
@@ -66,28 +61,26 @@ export const primitivesRouter = {
         });
       }
     }),
+  byIds: protectedProcedure
+    .input(z.object({ ids: z.string().array() }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.primitives.findMany({
+        where: and(
+          eq(primitives.userId, ctx.session.user.id),
+          inArray(primitives.id, input.ids),
+        ),
+      });
+
+      return result;
+    }),
   byId: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.primitives.findFirst({
         where: and(
           eq(primitives.id, input.id),
-          eq(primitives.createdBy, ctx.session.user.id),
+          eq(primitives.userId, ctx.session.user.id),
         ),
-        with: {
-          flow: {
-            columns: {
-              id: true,
-              inputSchema: true,
-            },
-          },
-          conversation: {
-            with: {
-              messages: true,
-            },
-          },
-          testRuns: true,
-        },
       });
 
       if (!result) {
@@ -97,28 +90,14 @@ export const primitivesRouter = {
         });
       }
 
-      return result as Primitive & {
-        flow: { inputSchema: InputSchema | undefined };
-      };
-    }),
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      await ctx.db
-        .delete(primitives)
-        .where(
-          and(
-            eq(primitives.id, input.id),
-            eq(primitives.createdBy, ctx.session.user.id),
-          ),
-        );
+      return result as Primitive;
     }),
   update: protectedProcedure
     .input(updatePrimitiveSchema)
     .mutation(async ({ ctx, input }) => {
       const where: SQL[] = [
         eq(primitives.id, input.where.id),
-        eq(primitives.createdBy, ctx.session.user.id),
+        eq(primitives.userId, ctx.session.user.id),
       ];
 
       const existingPrimitive = await ctx.db.query.primitives.findFirst({
@@ -150,16 +129,11 @@ export const primitivesRouter = {
 
       const updatedPrimitive = await ctx.db
         .update(primitives)
-        .set({
-          ...input.payload,
-          metadata: input.payload.metadata
-            ? mergeJson(primitives.metadata, input.payload.metadata)
-            : undefined,
-        })
+        .set(input.payload)
         .where(
           and(
             eq(primitives.id, existingPrimitive.id),
-            eq(primitives.createdBy, ctx.session.user.id),
+            eq(primitives.userId, ctx.session.user.id),
           ),
         )
         .returning({ id: primitives.id });
@@ -173,11 +147,23 @@ export const primitivesRouter = {
 
       return updatedPrimitive[0];
     }),
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .delete(primitives)
+        .where(
+          and(
+            eq(primitives.id, input.id),
+            eq(primitives.userId, ctx.session.user.id),
+          ),
+        );
+    }),
   createTestRun: protectedProcedure
     .input(
       z.object({
         input: z.record(z.string(), z.unknown()).optional(),
-        output: z.record(z.string(), z.unknown()).optional(),
+        output: z.object({ stdout: z.string(), stderr: z.string() }).optional(),
         primitiveId: z.string(),
       }),
     )
@@ -186,7 +172,7 @@ export const primitivesRouter = {
         await ctx.db
           .insert(testRuns)
           .values({
-            output: input.output ?? undefined,
+            output: input.output ?? { stdout: "", stderr: "" },
             input: input.input ?? undefined,
             primitiveId: input.primitiveId,
           })
