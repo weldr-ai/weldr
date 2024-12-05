@@ -16,6 +16,10 @@ import {
   FormMessage,
 } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
+import { toast } from "@integramind/ui/use-toast";
+
+import type { FlowType } from "@integramind/shared/types";
+import { insertFlowSchema } from "@integramind/shared/validators/flows";
 import {
   Select,
   SelectContent,
@@ -23,11 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@integramind/ui/select";
-import { Textarea } from "@integramind/ui/textarea";
-import { toast } from "@integramind/ui/use-toast";
-
-import type { FlowType } from "@integramind/shared/types";
-import { insertFlowSchema } from "@integramind/shared/validators/flows";
 import { api } from "~/lib/trpc/client";
 
 export function CreateFlowForm({
@@ -68,12 +67,11 @@ export function CreateFlowForm({
   const getInitialValues = (type: FlowType) => {
     const commonInitialValues = {
       name: "",
-      description: "",
       workspaceId,
     };
 
     switch (type) {
-      case "utilities":
+      case "utility":
         return {
           ...commonInitialValues,
           type,
@@ -83,16 +81,15 @@ export function CreateFlowForm({
           ...commonInitialValues,
           type,
           metadata: {
-            method: undefined,
             path: "",
           },
         };
-      case "task":
+      case "workflow":
         return {
           ...commonInitialValues,
           type,
           metadata: {
-            triggerType: undefined,
+            recurrence: undefined,
           },
         };
     }
@@ -124,62 +121,8 @@ export function CreateFlowForm({
             </FormItem>
           )}
         />
-        {type === "task" && (
-          <FormField
-            control={form.control}
-            name="metadata.triggerType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">Type</FormLabel>
-                <FormControl>
-                  <Select
-                    name={field.name}
-                    defaultValue={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Trigger Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="webhook">Webhook</SelectItem>
-                      <SelectItem value="schedule">Schedule</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
         {type === "endpoint" && (
           <>
-            <FormField
-              control={form.control}
-              name="metadata.method"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">HTTP Method</FormLabel>
-                  <FormControl>
-                    <Select
-                      name={field.name}
-                      defaultValue={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger className="bg-background">
-                        <SelectValue placeholder="HTTP Method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="get">GET</SelectItem>
-                        <SelectItem value="post">POST</SelectItem>
-                        <SelectItem value="patch">PATCH</SelectItem>
-                        <SelectItem value="delete">DELETE</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="metadata.path"
@@ -199,26 +142,34 @@ export function CreateFlowForm({
             />
           </>
         )}
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-xs">
-                Description{" "}
-                <span className="text-muted-foreground">(optional)</span>
-              </FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  placeholder="Enter task description"
-                  value={field.value ?? ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {type === "workflow" && (
+          <FormField
+            control={form.control}
+            name="metadata.recurrence"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Recurrence</FormLabel>
+                <FormControl>
+                  <Select
+                    {...field}
+                    onValueChange={(value) => field.onChange(value)}
+                  >
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Select recurrence" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hourly">Hourly</SelectItem>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="workspaceId"

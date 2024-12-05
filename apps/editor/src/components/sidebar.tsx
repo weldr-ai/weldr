@@ -79,8 +79,8 @@ export function Sidebar({
   );
 
   const endpoints = flows.filter((flow) => flow.type === "endpoint");
-  const tasks = flows.filter((flow) => flow.type === "task");
-  const utilities = flows.filter((flow) => flow.type === "utilities");
+  const workflows = flows.filter((flow) => flow.type === "workflow");
+  const utilities = flows.filter((flow) => flow.type === "utility");
 
   return (
     <div className="flex ">
@@ -171,11 +171,11 @@ export function Sidebar({
               <TooltipTrigger asChild>
                 <Button
                   className={cn({
-                    "bg-accent border": activeSection === "tasks",
+                    "bg-accent border": activeSection === "workflows",
                   })}
                   onClick={() => {
                     setIsSidebarOpen(true);
-                    updateActiveSection("tasks");
+                    updateActiveSection("workflows");
                   }}
                   size="icon"
                   variant="ghost"
@@ -184,7 +184,7 @@ export function Sidebar({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right" className="bg-muted border">
-                <p>Tasks</p>
+                <p>Workflows</p>
               </TooltipContent>
             </Tooltip>
 
@@ -192,11 +192,11 @@ export function Sidebar({
               <TooltipTrigger asChild>
                 <Button
                   className={cn({
-                    "bg-accent border": activeSection === "utilities",
+                    "bg-accent border": activeSection === "utility",
                   })}
                   onClick={() => {
                     setIsSidebarOpen(true);
-                    updateActiveSection("utilities");
+                    updateActiveSection("utility");
                   }}
                   size="icon"
                   variant="ghost"
@@ -268,21 +268,21 @@ export function Sidebar({
                 >
                   <FlowList flows={endpoints} type="endpoint" />
                 </div>
-              ) : activeSection === "tasks" ? (
+              ) : activeSection === "workflows" ? (
                 <div
                   className={cn("w-full", {
-                    hidden: activeSection !== "tasks",
+                    hidden: activeSection !== "workflows",
                   })}
                 >
-                  <FlowList flows={tasks} type="task" />
+                  <FlowList flows={workflows} type="workflow" />
                 </div>
-              ) : activeSection === "utilities" ? (
+              ) : activeSection === "utility" ? (
                 <div
                   className={cn("w-full", {
-                    hidden: activeSection !== "utilities",
+                    hidden: activeSection !== "utility",
                   })}
                 >
-                  <FlowList flows={utilities} type="utilities" />
+                  <FlowList flows={utilities} type="utility" />
                 </div>
               ) : (
                 <div

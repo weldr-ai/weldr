@@ -1,9 +1,11 @@
+import { cn } from "@integramind/ui/utils";
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { FlowBuilder } from "~/components/flow-builder";
 import { api } from "~/lib/trpc/server";
 import type { FlowNode, FlowNodeData } from "~/types";
+import { Overlay } from "./_components/overlay";
 
 export default async function FlowPage({
   params,
@@ -16,6 +18,10 @@ export default async function FlowPage({
       id: flowId,
     });
 
+    const initialEdges = await api.edges.listByFlowId({
+      flowId,
+    });
+
     const initialNodes: FlowNode[] = flow.primitives.map((primitive) => ({
       id: primitive.id,
       type: "primitive",
@@ -25,8 +31,17 @@ export default async function FlowPage({
     }));
 
     return (
-      <div className="flex size-full">
-        <FlowBuilder flow={flow} initialNodes={initialNodes} />
+      <div
+        className={cn("flex size-full", {
+          relative: !flow.inputSchema,
+        })}
+      >
+        <FlowBuilder
+          flow={flow}
+          initialNodes={initialNodes}
+          initialEdges={initialEdges}
+        />
+        <Overlay show={!flow.inputSchema} flowType={flow.type} />
       </div>
     );
   } catch (error) {

@@ -18,9 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@integramind/ui/select";
-import { Textarea } from "@integramind/ui/textarea";
 import {
   AlertCircleIcon,
+  ArrowLeftIcon,
   CheckCircle2Icon,
   ClipboardIcon,
   ExternalLinkIcon,
@@ -35,10 +35,13 @@ import {
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type {
+  AssistantMessageRawContent,
   ConversationMessage,
   EndpointFlowMetadata,
+  FlatInputSchema,
   Flow,
-  JsonSchema,
+  FlowInputSchemaMessage,
+  FlowOutputSchemaMessage,
   UserMessageRawContent,
 } from "@integramind/shared/types";
 import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
@@ -46,7 +49,7 @@ import {
   baseUpdateFlowSchema,
   updateEndpointFlowSchema,
   updateFlowSchema,
-  type updateTaskFlowSchema,
+  updateWorkflowFlowSchema,
 } from "@integramind/shared/validators/flows";
 import {
   DropdownMenu,
@@ -78,6 +81,7 @@ import {
 import { TreeView } from "@integramind/ui/tree-view";
 import { toast } from "@integramind/ui/use-toast";
 import { createId } from "@paralleldrive/cuid2";
+import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import { nanoid } from "nanoid";
@@ -87,14 +91,24 @@ import { debounce } from "perfect-debounce";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
+import {
+  generateFlowInputSchema,
+  generateFlowOutputsSchemas,
+} from "~/lib/ai/generator";
+import { useResources } from "~/lib/context/resources";
 import { api } from "~/lib/trpc/client";
-import { jsonSchemaToTreeData, userMessageRawContentToText } from "~/lib/utils";
+import {
+  assistantMessageRawContentToText,
+  flattenInputSchema,
+  getResourceReferences,
+  jsonSchemaToTreeData,
+  userMessageRawContentToText,
+} from "~/lib/utils";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 import { Editor } from "./editor";
 import type { ReferenceNode } from "./editor/plugins/reference/node";
 import { JsonViewer } from "./json-viewer";
 import MessageList from "./message-list";
-import { TestInputDialog } from "./test-input-dialog";
 
 export function FlowSheet({
   initialData,
@@ -103,16 +117,18 @@ export function FlowSheet({
 }) {
   const router = useRouter();
 
-  const [isOpen, setIsOpen] = useState(false);
-
   const { data } = api.flows.byId.useQuery(
     {
       id: initialData.id,
     },
     {
+      // FIXME:
+      // @ts-expect-error
       initialData,
     },
   );
+
+  const [isOpen, setIsOpen] = useState(!data.inputSchema);
 
   const apiUtils = api.useUtils();
 
@@ -151,13 +167,13 @@ export function FlowSheet({
             path: data.metadata.path,
           },
         } as z.infer<typeof updateEndpointFlowSchema>;
-      case "task":
+      case "workflow":
         return {
           ...defaultValues,
           metadata: {
-            triggerType: data.metadata.triggerType,
+            recurrence: data.metadata.recurrence,
           },
-        } as z.infer<typeof updateTaskFlowSchema>;
+        } as z.infer<typeof updateWorkflowFlowSchema>;
     }
   };
 
@@ -175,37 +191,58 @@ export function FlowSheet({
     },
   });
 
-  const inputTree = jsonSchemaToTreeData(data.inputSchema as JsonSchema);
-  const outputTree = jsonSchemaToTreeData(data.outputSchema as JsonSchema);
-
   const [isThinking, setIsThinking] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isGeneratingSchemas, _setIsGeneratingSchemas] = useState(false);
+  const [isGeneratingSchemas, setIsGeneratingSchemas] = useState(false);
+  const [generationMode, setGenerationMode] = useState<
+    "input" | "output" | null
+  >(!data.inputSchema ? "input" : null);
 
-  const conversation = useMemo(() => {
+  const inputConversation = useMemo(() => {
     const messages: ConversationMessage[] = [
       {
         id: createId(),
         role: "assistant",
-        content: `Hi there! I'm Specly, your AI assistant. What does this flow do?`,
+        content: `Hi there! I'm Specly, your AI assistant. What are your flow's input?`,
         rawContent: [
           {
             type: "text",
-            value: `Hi there! I'm Specly, your AI assistant. What does this flow do?`,
+            value: `Hi there! I'm Specly, your AI assistant. What are your flow's input?`,
           },
         ],
       },
-      ...data.conversation.messages.sort(
+      ...data.inputConversation.messages.sort(
         (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
       ),
     ];
 
     return messages;
-  }, [data.conversation.messages]);
+  }, [data.inputConversation.messages]);
 
-  const [messages, setMessages] = useState<ConversationMessage[]>([
-    ...conversation,
-  ]);
+  const outputConversation = useMemo(() => {
+    const messages: ConversationMessage[] = [
+      {
+        id: createId(),
+        role: "assistant",
+        content: `Hi there! I'm Specly, your AI assistant. What are your flow's output?`,
+        rawContent: [
+          {
+            type: "text",
+            value: `Hi there! I'm Specly, your AI assistant. What are your flow's output?`,
+          },
+        ],
+      },
+      ...data.outputConversation.messages.sort(
+        (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
+      ),
+    ];
+
+    return messages;
+  }, [data.outputConversation.messages]);
+
+  const [messages, setMessages] = useState<ConversationMessage[]>(
+    !data.inputSchema ? inputConversation : [],
+  );
 
   const [userMessageContent, setUserMessageContent] = useState<string | null>(
     null,
@@ -213,7 +250,7 @@ export function FlowSheet({
   const [userMessageRawContent, setUserMessageRawContent] =
     useState<UserMessageRawContent>([]);
 
-  const onSubmit = async () => {
+  const onSubmit = async (generationMode: "input" | "output") => {
     setIsThinking(true);
     setIsGenerating(true);
 
@@ -236,7 +273,10 @@ export function FlowSheet({
       role: "user",
       content: userMessageContent,
       rawContent: userMessageRawContent,
-      conversationId: data.conversation.id,
+      conversationId:
+        generationMode === "input"
+          ? data.inputConversation.id
+          : data.outputConversation.id,
       createdAt: new Date(),
     };
 
@@ -246,83 +286,112 @@ export function FlowSheet({
 
     await addMessage.mutateAsync(newMessageUser);
 
-    // const result = await generateFlowCode({
-    //   flowId: data.id,
-    //   messages: newMessages,
-    // });
+    let result: StreamableValue<
+      FlowInputSchemaMessage | FlowOutputSchemaMessage
+    >;
 
-    // let newAssistantMessageStr = "";
-    // let newAssistantMessage: ConversationMessage | null = null;
+    if (generationMode === "input") {
+      result = await generateFlowInputSchema({
+        flowId: data.id,
+        flowType: data.type,
+        conversationId: data.inputConversationId,
+        messages: newMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+      });
+    } else {
+      result = await generateFlowOutputsSchemas({
+        flowId: data.id,
+        flowType: data.type,
+        conversationId: data.outputConversationId,
+        messages: newMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+      });
+    }
 
-    // for await (const content of readStreamableValue(result)) {
-    //   newAssistantMessage = {
-    //     role: "assistant",
-    //     content: "",
-    //     rawContent: [],
-    //     createdAt: new Date(),
-    //   };
+    let newAssistantMessageStr = "";
+    let newAssistantMessage: ConversationMessage | null = null;
 
-    //   if (content?.message?.content && content.message.type === "message") {
-    //     newAssistantMessage.content = assistantMessageRawContentToText(
-    //       content.message.content,
-    //     );
-    //     newAssistantMessage.rawContent = content.message.content;
-    //     setIsThinking(false);
-    //   }
+    for await (const content of readStreamableValue(result)) {
+      newAssistantMessage = {
+        role: "assistant",
+        content: "",
+        rawContent: [],
+        createdAt: new Date(),
+      };
 
-    //   // if end message, start generating code
-    //   if (
-    //     content?.message?.type === "end" &&
-    //     content?.message?.content?.description
-    //   ) {
-    //     setIsThinking(false);
-    //     const rawContent: AssistantMessageRawContent = [
-    //       {
-    //         type: "text",
-    //         value: "Generating your flow...",
-    //       },
-    //       ...content.message.content.description,
-    //     ];
+      if (content?.message?.content && content.message.type === "message") {
+        newAssistantMessage.content = assistantMessageRawContentToText(
+          content.message.content,
+        );
+        newAssistantMessage.rawContent = content.message.content;
+        setIsThinking(false);
+      }
 
-    //     newAssistantMessage.content =
-    //       assistantMessageRawContentToText(rawContent);
-    //     newAssistantMessage.rawContent = rawContent;
-    //   }
+      // if end message, start generating code
+      if (
+        content?.message?.type === "end" &&
+        content?.message?.content?.description
+      ) {
+        setIsThinking(false);
+        const rawContent: AssistantMessageRawContent = [
+          {
+            type: "text",
+            value: `Generating the following ${
+              generationMode === "input" ? "input" : "output"
+            } schema: `,
+          },
+          ...content.message.content.description,
+        ];
 
-    //   if (newAssistantMessage) {
-    //     setMessages([...newMessages, newAssistantMessage]);
-    //   }
-    //   newAssistantMessageStr = JSON.stringify(content);
-    // }
+        newAssistantMessage.content =
+          assistantMessageRawContentToText(rawContent);
+        newAssistantMessage.rawContent = rawContent;
+      }
 
-    // // add the last message to the new messages temporary list
-    // if (newAssistantMessage) {
-    //   newMessages.push(newAssistantMessage);
-    // }
+      if (newAssistantMessage) {
+        setMessages([...newMessages, newAssistantMessage]);
+      }
+      newAssistantMessageStr = JSON.stringify(content);
+    }
 
-    // const schemaMessageObject = JSON.parse(newAssistantMessageStr);
+    // add the last message to the new messages temporary list
+    if (newAssistantMessage) {
+      newMessages.push(newAssistantMessage);
+    }
 
-    // if (schemaMessageObject.message.type === "end") {
-    //   setIsGeneratingSchemas(true);
+    const schemaMessageObject = JSON.parse(newAssistantMessageStr) as
+      | FlowInputSchemaMessage
+      | FlowOutputSchemaMessage;
 
-    //   const schemaBuiltSuccessfullyMessage: ConversationMessage = {
-    //     role: "assistant",
-    //     rawContent: [
-    //       {
-    //         type: "text",
-    //         value: "Your flow has been built successfully!",
-    //       },
-    //     ],
-    //     content: "Your flow has been built successfully!",
-    //     createdAt: new Date(),
-    //   };
+    if (schemaMessageObject.message.type === "end") {
+      setIsGeneratingSchemas(true);
 
-    //   await apiUtils.flows.byId.invalidate({
-    //     id: data.id,
-    //   });
-    //   setIsGeneratingSchemas(false);
-    //   setMessages([...newMessages, schemaBuiltSuccessfullyMessage]);
-    // }
+      const schemaBuiltSuccessfullyMessage: ConversationMessage = {
+        role: "assistant",
+        rawContent: [
+          {
+            type: "text",
+            value: `Your ${
+              generationMode === "input" ? "input" : "output"
+            } schema has been built successfully!`,
+          },
+        ],
+        content: `Your ${
+          generationMode === "input" ? "input" : "output"
+        } schema has been built successfully!`,
+        createdAt: new Date(),
+      };
+
+      await apiUtils.flows.byId.invalidate({
+        id: data.id,
+      });
+      setIsGeneratingSchemas(false);
+      setMessages([...newMessages, schemaBuiltSuccessfullyMessage]);
+    }
 
     setUserMessageContent(null);
     setUserMessageRawContent([]);
@@ -354,7 +423,9 @@ export function FlowSheet({
         return acc;
       }, [] as UserMessageRawContent);
 
-      const chat = userMessageRawContentToText(userMessageRawContent);
+      const chat = userMessageRawContentToText(userMessageRawContent, {
+        includeDatabaseInfo: false,
+      });
       setUserMessageContent(chat);
       setUserMessageRawContent(userMessageRawContent);
     });
@@ -388,36 +459,76 @@ export function FlowSheet({
 
   const [isDeploying, setIsDeploying] = useState(false);
 
-  const [flowTestData, setFlowTestData] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
-
   const [flowTestResponse, _setFlowTestResponse] = useState<string | null>(
     null,
   );
   const [isRunning, setIsRunning] = useState(false);
 
-  const [openTab, setOpenTab] = useState<"general" | "run" | "build">(
-    "general",
+  const [openTab, setOpenTab] = useState<"general" | "build" | "run">(
+    !data.inputSchema ? "build" : "general",
   );
 
+  const resources = useResources();
+
+  const { data: flowPrimitives } = api.flows.primitives.useQuery({
+    flowId: data.id,
+  });
+
+  const references = useMemo(() => {
+    if (generationMode === "input") {
+      return [...getResourceReferences(resources, ["database"])];
+    }
+
+    const outputs = flowPrimitives?.reduce((acc, d) => {
+      acc.push(
+        ...flattenInputSchema({
+          id: d.id,
+          schema: d.outputSchema ?? undefined,
+          refPath: `local/${d.id}/output`,
+          sourcePrimitiveId: d.id,
+        }),
+      );
+      return acc;
+    }, [] as FlatInputSchema[]);
+
+    return (
+      outputs?.map((output) => ({
+        type: "reference" as const,
+        referenceType: "variable" as const,
+        name: output.path,
+        required: output.required,
+        dataType: output.type,
+        refUri: output.refUri,
+        properties: output.properties,
+        itemsType: output.itemsType,
+        sourcePrimitiveId: output.sourcePrimitiveId,
+      })) ?? []
+    );
+  }, [flowPrimitives, resources, generationMode]);
+
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen} modal={false}>
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        // Only allow closing if input schema exists
+        if (data.inputSchema || open) {
+          setIsOpen(open);
+        }
+      }}
+      modal={false}
+    >
       <SheetTrigger asChild>
-        <Button className="rounded-full gap-2 text-xs" variant="ghost">
-          {!(
-            data.inputSchema &&
-            data.validationSchema &&
-            data.outputSchema
-          ) && <AlertCircleIcon className="size-4 text-destructive" />}
+        <Button
+          className="rounded-full gap-2 text-xs"
+          variant="ghost"
+          disabled={!data.inputSchema}
+        >
+          {!data.canRun && (
+            <AlertCircleIcon className="size-4 text-destructive" />
+          )}
           {data.type === "endpoint" ? (
             <span className="p-0.5 px-3 rounded-full border border-primary bg-primary/20 text-primary">
               {data.metadata.method.toUpperCase()}
-            </span>
-          ) : data.type === "task" ? (
-            <span className="p-0.5 px-3 rounded-full border border-primary bg-primary/20 text-primary">
-              {data.metadata.triggerType.toUpperCase()}
             </span>
           ) : (
             <></>
@@ -434,13 +545,32 @@ export function FlowSheet({
                   <Badge variant="default" className="text-xs">
                     {data.type === "endpoint"
                       ? data.metadata.method.toUpperCase()
-                      : data.type === "task"
-                        ? data.metadata.triggerType.toUpperCase()
-                        : "COMPONENT"}
+                      : data.type === "workflow"
+                        ? "WORKFLOW"
+                        : "UTILITY"}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {data.type.charAt(0).toUpperCase() + data.type.slice(1)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {data.type.charAt(0).toUpperCase() + data.type.slice(1)}
+                    </span>
+                    {!data.canRun && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <AlertCircleIcon className="size-3.5 text-destructive" />
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="bottom"
+                          className="bg-muted border text-destructive"
+                        >
+                          <p>
+                            {!data.inputSchema
+                              ? `Define the ${data.type} inputs first`
+                              : `Define the ${data.type} outputs first`}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center">
                   <Tooltip>
@@ -449,6 +579,7 @@ export function FlowSheet({
                         className="size-7 text-success hover:text-success"
                         variant="ghost"
                         size="icon"
+                        disabled={!data.canRun}
                         onClick={async () => {
                           setOpenTab("run");
                           setIsRunning(true);
@@ -479,6 +610,7 @@ export function FlowSheet({
                             className="size-7 text-primary hover:text-primary"
                             variant="ghost"
                             size="icon"
+                            disabled={!data.canRun}
                             onClick={() => {
                               setIsDeploying(true);
                               setTimeout(() => {
@@ -663,6 +795,7 @@ export function FlowSheet({
               <TabsTrigger
                 className="w-full"
                 value="run"
+                disabled={!data.canRun}
                 onClick={() => setOpenTab("run")}
               >
                 Run
@@ -671,12 +804,12 @@ export function FlowSheet({
             <TabsContent value="general" className="size-full">
               <div className="flex flex-col gap-2">
                 {data.type === "endpoint" && (
-                  <>
+                  <div className="grid grid-cols-3 gap-2">
                     <FormField
                       control={form.control}
                       name="payload.metadata.path"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="col-span-2">
                           <FormLabel className="text-xs">URL Path</FormLabel>
                           <FormControl>
                             <Input
@@ -722,7 +855,7 @@ export function FlowSheet({
                       control={form.control}
                       name="payload.metadata.method"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="col-span-1">
                           <FormLabel className="text-xs">Method</FormLabel>
                           <FormControl>
                             <Select
@@ -730,10 +863,13 @@ export function FlowSheet({
                               autoComplete="off"
                               name={field.name}
                               onValueChange={async (value) => {
+                                console.log(value);
                                 field.onChange(value);
                                 const isValid =
                                   updateEndpointFlowSchema.shape.metadata.safeParse(
-                                    value,
+                                    {
+                                      method: value,
+                                    },
                                   ).success;
                                 if (isValid) {
                                   await updateFlow.mutateAsync({
@@ -772,143 +908,219 @@ export function FlowSheet({
                         </FormItem>
                       )}
                     />
-                  </>
+                  </div>
                 )}
-                <FormField
-                  control={form.control}
-                  name="payload.description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          className="resize-none h-[244px]"
-                          autoComplete="off"
-                          placeholder={`Enter ${data.type} description`}
-                          value={field.value}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            debounce(
-                              async () => {
-                                const isValid =
-                                  baseUpdateFlowSchema.shape.description.safeParse(
-                                    e.target.value,
-                                  ).success;
-                                if (isValid) {
-                                  await updateFlow.mutateAsync({
-                                    where: {
-                                      id: data.id,
+                {data.type === "workflow" && (
+                  <FormField
+                    control={form.control}
+                    name="payload.metadata.recurrence"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Recurrence</FormLabel>
+                        <FormControl>
+                          <Select
+                            {...field}
+                            name={field.name}
+                            onValueChange={async (value) => {
+                              field.onChange(value);
+                              const isValid =
+                                updateWorkflowFlowSchema.shape.metadata.safeParse(
+                                  {
+                                    recurrence: value,
+                                  },
+                                ).success;
+                              if (isValid) {
+                                await updateFlow.mutateAsync({
+                                  where: { id: data.id },
+                                  payload: {
+                                    type: "workflow",
+                                    metadata: {
+                                      recurrence: value as
+                                        | "hourly"
+                                        | "daily"
+                                        | "weekly"
+                                        | "monthly",
                                     },
-                                    payload: {
-                                      type: data.type,
-                                      description: e.target.value,
-                                    } as z.infer<
-                                      typeof updateFlowSchema
-                                    >["payload"],
-                                  });
-                                }
-                              },
-                              500,
-                              { trailing: false },
-                            )();
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Input</span>
-                  <TestInputDialog
-                    schema={data.inputSchema as JsonSchema}
-                    formData={flowTestData}
-                    setFormData={(data) => {
-                      setFlowTestData(data as Record<string, unknown>);
-                    }}
-                    onSubmit={() => {
-                      console.log(flowTestData);
-                    }}
+                                  },
+                                });
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="bg-background">
+                              <SelectValue placeholder="Select recurrence" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="hourly">Hourly</SelectItem>
+                              <SelectItem value="daily">Daily</SelectItem>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                {inputTree.length === 0 ? (
-                  <div className="flex w-full text-xs items-center justify-center text-muted-foreground">
-                    Chat with Specly to define your {data.type} input
-                  </div>
-                ) : (
-                  <TreeView data={inputTree} expandAll={true} />
                 )}
-                <span className="text-sm">Output</span>
-                {outputTree.length === 0 ? (
-                  <div className="flex w-full text-xs items-center justify-center text-muted-foreground">
-                    Chat with Specly to define your {data.type} output
-                  </div>
+                {data.inputSchema ? (
+                  <>
+                    <span className="text-xs">Summary</span>
+                    <div className="flex flex-col gap-2">
+                      {data.description && (
+                        <>
+                          <span className="text-xs text-muted-foreground">
+                            Description
+                          </span>
+                          <p className="text-sm">{data.description}</p>
+                        </>
+                      )}
+                      {data.inputSchema && (
+                        <>
+                          <span className="text-xs text-muted-foreground">
+                            Input Schema
+                          </span>
+                          <TreeView
+                            data={jsonSchemaToTreeData(data.inputSchema)}
+                          />
+                        </>
+                      )}
+                      {data.outputSchema && (
+                        <>
+                          <span className="text-xs text-muted-foreground">
+                            Output Schema
+                          </span>
+                          <TreeView
+                            data={jsonSchemaToTreeData(data.outputSchema)}
+                          />
+                        </>
+                      )}
+                    </div>
+                  </>
                 ) : (
-                  <TreeView data={outputTree} expandAll={true} />
+                  <div className="flex flex-col justify-center items-center h-[calc(100vh-320px)]">
+                    <span className="text-sm text-muted-foreground">
+                      Build your {data.type} to see a summary
+                    </span>
+                  </div>
                 )}
               </div>
             </TabsContent>
             <TabsContent value="build" className="size-full">
-              <div className="flex flex-col justify-between h-[calc(100vh-186px)]">
-                <ScrollArea
-                  className="h-[calc(100vh-344px)] mb-4"
-                  ref={scrollAreaRef}
-                >
-                  <MessageList
-                    messages={messages}
-                    isThinking={isThinking}
-                    isGenerating={isGeneratingSchemas}
-                  />
-                  <div ref={chatHistoryEndRef} />
-                </ScrollArea>
-                <div className="mt-auto">
-                  <form className="relative">
-                    <Editor
-                      id={nanoid()}
-                      editorRef={editorRef}
-                      onChange={onChatChange}
-                      rawMessage={userMessageRawContent}
-                      placeholder="Define your flow with Specly..."
-                      typeaheadPosition="bottom"
-                      references={undefined}
-                    />
-                    <Button
-                      type="button"
-                      disabled={!userMessageContent || isGenerating}
-                      size="sm"
-                      className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
-                      onClick={onSubmit}
-                    >
-                      Send
-                      <span className="ml-1">
-                        <span className="px-1 py-0.5 bg-white/20 rounded-sm disabled:text-muted-foreground">
-                          {typeof window !== "undefined" &&
-                          window.navigator?.userAgent
-                            .toLowerCase()
-                            .includes("mac")
-                            ? "⌘"
-                            : "Ctrl"}
-                          ⏎
-                        </span>
-                      </span>
-                    </Button>
-                  </form>
+              {generationMode === null && (
+                <div className="flex flex-col w-full h-[calc(100vh-250px)] justify-center items-center gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    Choose Specly's mode
+                  </p>
+                  <Button
+                    className="w-48"
+                    variant="outline"
+                    onClick={() => {
+                      setGenerationMode("input");
+                      setMessages(inputConversation);
+                    }}
+                  >
+                    Define {data.type} input
+                  </Button>
+                  <Button
+                    className="w-48"
+                    variant="outline"
+                    disabled={data.type !== "endpoint"}
+                    onClick={() => {
+                      setGenerationMode("output");
+                      setMessages(outputConversation);
+                    }}
+                  >
+                    Define {data.type} output
+                  </Button>
                 </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="run" className="size-full">
-              <div className="flex flex-col gap-2 bg-background p-4 rounded-lg h-[calc(100vh-186px)]">
-                {isRunning ? (
-                  <div className="flex flex-col size-full items-center justify-center gap-2">
-                    <Loader2Icon className="size-3.5 animate-spin" />
-                    <p className="text-xs text-muted-foreground">Running...</p>
+              )}
+              {generationMode !== null && (
+                <div className="flex flex-col justify-between h-[calc(100vh-186px)]">
+                  <div className="flex size-full flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        className="size-8"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setGenerationMode(null)}
+                      >
+                        <ArrowLeftIcon className="size-4" />
+                      </Button>
+                      <p className="text-sm text-muted-foreground">
+                        Define your {generationMode} with Specly
+                      </p>
+                    </div>
+                    <ScrollArea
+                      className="h-[calc(100vh-344px)] mb-4"
+                      ref={scrollAreaRef}
+                    >
+                      <MessageList
+                        messages={messages}
+                        isThinking={isThinking}
+                        isGenerating={isGeneratingSchemas}
+                      />
+                      <div ref={chatHistoryEndRef} />
+                    </ScrollArea>
                   </div>
-                ) : (
-                  <JsonViewer data={flowTestResponse} />
-                )}
-              </div>
+                  <div className="mt-auto">
+                    <form className="relative">
+                      <Editor
+                        id={nanoid()}
+                        editorRef={editorRef}
+                        onChange={onChatChange}
+                        rawMessage={userMessageRawContent}
+                        placeholder={`Define your ${data.type} ${generationMode} with Specly...`}
+                        typeaheadPosition="bottom"
+                        references={references}
+                        onSubmit={async () => {
+                          if (userMessageContent && !isGenerating) {
+                            await onSubmit(generationMode);
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        disabled={!userMessageContent || isGenerating}
+                        size="sm"
+                        className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
+                        onClick={async () => {
+                          await onSubmit(generationMode);
+                        }}
+                      >
+                        Send
+                        <span className="ml-1">
+                          <span className="px-1 py-0.5 bg-white/20 rounded-sm disabled:text-muted-foreground">
+                            {typeof window !== "undefined" &&
+                            window.navigator?.userAgent
+                              .toLowerCase()
+                              .includes("mac")
+                              ? "⌘"
+                              : "Ctrl"}
+                            ⏎
+                          </span>
+                        </span>
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              )}
             </TabsContent>
+            {data.canRun && (
+              <TabsContent value="run" className="size-full">
+                <div className="flex flex-col gap-2 bg-background p-4 rounded-lg h-[calc(100vh-186px)]">
+                  {isRunning ? (
+                    <div className="flex flex-col size-full items-center justify-center gap-2">
+                      <Loader2Icon className="size-3.5 animate-spin" />
+                      <p className="text-xs text-muted-foreground">
+                        Running...
+                      </p>
+                    </div>
+                  ) : (
+                    <JsonViewer data={flowTestResponse} />
+                  )}
+                </div>
+              </TabsContent>
+            )}
           </Tabs>
         </Form>
       </SheetContent>

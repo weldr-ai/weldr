@@ -12,6 +12,7 @@ export const dataTypeSchema = z.enum([
 ]);
 
 export const jsonSchemaPropertySchema = z.object({
+  $ref: z.string().optional(),
   type: dataTypeSchema,
   title: z.string().optional(),
   description: z.string().optional(),
@@ -34,15 +35,26 @@ export const jsonSchema: z.ZodType<JsonSchema> = jsonSchemaPropertySchema.and(
 export const inputSchema = jsonSchema;
 export const outputSchema = jsonSchema;
 
-export const primitiveReferenceSchema = z.object({
-  id: z.string().describe("The ID of the primitive"),
-  name: z.string().describe("The name of the primitive"),
-  inputSchema: z.string().describe("The input schema of the primitive"),
-  outputSchema: z.string().describe("The output schema of the primitive"),
-  description: z.string().describe("The description of the primitive"),
-  logicalSteps: z.string().describe("The logical steps of the primitive"),
-  edgeCases: z.string().describe("The edge cases of the primitive"),
-  errorHandling: z.string().describe("The error handling of the primitive"),
+export const variableReferenceSchema = z.object({
+  name: z.string().describe("The name of the variable. Must be in camelCase."),
+  dataType: dataTypeSchema.describe("The data type of the variable"),
+  refUri: z.string().describe("The URI of the variable reference"),
+  required: z.boolean().describe("Whether the variable is required"),
+  properties: z.record(z.string(), jsonSchema).optional(),
+  itemsType: jsonSchema.optional(),
+  sourcePrimitiveId: z.string().optional(),
+});
+
+export const functionReferenceSchema = z.object({
+  id: z.string().describe("The ID of the function"),
+  name: z.string().describe("The name of the function"),
+  inputSchema: z.string().describe("The input schema of the function"),
+  outputSchema: z.string().describe("The output schema of the function"),
+  description: z.string().describe("The description of the function"),
+  logicalSteps: z.string().describe("The logical steps of the function"),
+  edgeCases: z.string().describe("The edge cases of the function"),
+  errorHandling: z.string().describe("The error handling of the function"),
+  scope: z.enum(["local", "imported"]),
 });
 
 export const databaseReferenceSchema = z.object({
@@ -59,24 +71,29 @@ export const databaseReferenceSchema = z.object({
 });
 
 export const databaseTableReferenceSchema = z.object({
-  name: z.string().describe("The name of the table"),
+  name: z.string().min(1).describe("The name of the table"),
   database: databaseReferenceSchema.describe("The database of the table"),
   columns: z
     .object({
-      name: z.string().describe("The name of the column"),
-      dataType: z.string().describe("The SQL data type of the column"),
+      name: z.string().min(1).describe("The name of the column"),
+      dataType: z.string().min(1).describe("The SQL data type of the column"),
     })
     .array()
     .describe("The columns of the table"),
   relationships: z
     .object({
-      columnName: z.string().describe("The name of the column"),
-      referencedTable: z.string().describe("The name of the referenced table"),
+      columnName: z.string().min(1).describe("The name of the column"),
+      referencedTable: z
+        .string()
+        .min(1)
+        .describe("The name of the referenced table"),
       referencedColumn: z
         .string()
+        .min(1)
         .describe("The name of the referenced column"),
     })
-    .array(),
+    .array()
+    .optional(),
 });
 
 export const databaseColumnReferenceSchema = z.object({
@@ -93,13 +110,16 @@ export const databaseColumnReferenceSchema = z.object({
 });
 
 export const utilityFunctionReferenceSchema = z.object({
-  id: z.string().describe("The ID of the utility function"),
-  name: z.string().describe("The name of the utility function"),
-  description: z.string().describe("The description of the utility function"),
-  docs: z.string().describe("The documentation of the utility function"),
+  id: z.string().min(1).describe("The ID of the utility function"),
+  name: z.string().min(1).describe("The name of the utility function"),
+  description: z
+    .string()
+    .min(1)
+    .describe("The description of the utility function"),
+  docs: z.string().min(1).describe("The documentation of the utility function"),
 });
 
-export const packageSchema = z.object({
+export const dependencySchema = z.object({
   name: z.string().describe("The name of the npm package"),
   version: z.string().optional().describe("The version of the npm package"),
 });
@@ -112,22 +132,18 @@ export const rawContentTextElementSchema = z.object({
 export const rawContentVariableReferenceSchema = z.object({
   type: z.literal("reference"),
   referenceType: z.literal("variable"),
-  name: z.string().describe("The name of the variable. Must be in camelCase."),
-  dataType: dataTypeSchema.describe("The data type of the variable"),
-  required: z.boolean().describe("Whether the variable is required"),
+  ...variableReferenceSchema.omit({
+    refUri: true,
+    properties: true,
+    itemsType: true,
+    sourcePrimitiveId: true,
+  }).shape,
 });
 
-export const rawContentPrimitiveReferenceSchema = z.object({
+export const rawContentFunctionReferenceSchema = z.object({
   type: z.literal("reference"),
-  referenceType: z.literal("primitive"),
-  ...primitiveReferenceSchema.omit({
-    description: true,
-    logicalSteps: true,
-    edgeCases: true,
-    errorHandling: true,
-    inputSchema: true,
-    outputSchema: true,
-  }).shape,
+  referenceType: z.literal("function"),
+  name: z.string().describe("The name of the function"),
 });
 
 export const rawContentDatabaseReferenceSchema = z.object({
@@ -152,24 +168,14 @@ export const rawContentDatabaseColumnReferenceSchema = z.object({
   ...databaseColumnReferenceSchema.omit({ database: true, table: true }).shape,
 });
 
-export const rawContentUtilityFunctionReferenceSchema = z.object({
-  type: z.literal("reference"),
-  referenceType: z.literal("utility-function"),
-  ...utilityFunctionReferenceSchema.omit({
-    description: true,
-    id: true,
-    docs: true,
-  }).shape,
-});
-
 export const rawContentReferenceElementSchema = z.discriminatedUnion(
   "referenceType",
   [
-    rawContentPrimitiveReferenceSchema.describe(
-      "The primitive reference part of a message or description. Must be used when mentioning a primitive in a message or description.",
-    ),
     rawContentVariableReferenceSchema.describe(
       "The variable reference part of a message or description. Must be used when mentioning a variable in a message or description.",
+    ),
+    rawContentFunctionReferenceSchema.describe(
+      "The function reference part of a message or description. Must be used when mentioning a function in a message or description.",
     ),
     rawContentDatabaseReferenceSchema.describe(
       "The database reference part of a message or description. Must be used when mentioning a database in a message or description.",
@@ -180,15 +186,77 @@ export const rawContentReferenceElementSchema = z.discriminatedUnion(
     rawContentDatabaseColumnReferenceSchema.describe(
       "The database-column reference part of a message or description. Must be used when mentioning a database column in a message or description.",
     ),
-    rawContentUtilityFunctionReferenceSchema.describe(
-      "The utility function reference part of a message or description. Must be used when mentioning a utility function in a message or description.",
-    ),
   ],
 );
 
 export const rawContentSchema = z
   .union([rawContentTextElementSchema, rawContentReferenceElementSchema])
   .array();
+
+const flowInputRawContentSchema = z
+  .union([
+    rawContentTextElementSchema,
+    rawContentVariableReferenceSchema,
+    rawContentDatabaseReferenceSchema,
+    rawContentDatabaseTableReferenceSchema,
+    rawContentDatabaseColumnReferenceSchema,
+  ])
+  .array();
+
+const outputRawContentSchema = z
+  .union([rawContentTextElementSchema, rawContentVariableReferenceSchema])
+  .array();
+
+export const flowInputSchemaMessageSchema = z.object({
+  message: z.discriminatedUnion("type", [
+    z
+      .object({
+        type: z.literal("message"),
+        content: flowInputRawContentSchema,
+      })
+      .describe("The message of the inputs requirements gathering"),
+    z.object({
+      type: z.literal("end"),
+      content: z.object({
+        description: flowInputRawContentSchema.describe(
+          "The description of the inputs schema. Must consist of text and reference parts. The reference parts must be used when mentioning a reference in the description.",
+        ),
+        inputSchema: z.string().describe(
+          `The JSON schema for the inputs of the flow. Must follow these rules:
+            - Property names must be in camelCase.
+            - Schema should be valid according to JSON Schema specification.
+            - Properties should have clear, descriptive names that indicate their purpose.
+            - Schema must be divided into body, query parameters and path parameters.`,
+        ),
+      }),
+    }),
+  ]),
+});
+
+export const flowOutputSchemaMessageSchema = z.object({
+  message: z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("message"),
+      content: outputRawContentSchema,
+    }),
+    z.object({
+      type: z.literal("end"),
+      content: z.object({
+        description: outputRawContentSchema.describe(
+          "The description of the output schema. Must consist of text and reference parts. The reference parts must be used when mentioning a reference in the description.",
+        ),
+        outputSchema: z.string().describe(
+          `The JSON schema for the output of the flow. Must follow these rules:
+          - Schema must have \`title\` property. It should be a descriptive noun like 'Customer' or 'Order' that represents the data and it is like a TypeScript type name. If no descriptive title applies, use \`undefined\` as the title value.
+          - Properties must have \`$ref\` property to specify input sources. Always include the \`$ref\` property. You will find it in the context.
+          - Property names must be in camelCase.
+          - Schema should be valid according to JSON Schema specification.
+          - Properties should have clear, descriptive names that indicate their purpose.`,
+        ),
+      }),
+    }),
+  ]),
+});
 
 export const primitiveRequirementsMessageSchema = z.object({
   message: z.discriminatedUnion("type", [
@@ -206,21 +274,22 @@ export const primitiveRequirementsMessageSchema = z.object({
             .string()
             .describe(
               `The JSON schema for the input of the function. Must follow these rules:
-              - Property names must be in camelCase.
-              - Schema should be valid according to JSON Schema specification.
-              - Properties should have clear, descriptive names that indicate their purpose.
-              - Must be of type object.`,
+                - Properties must have \`$ref\` property to specify input sources. Always include the \`$ref\` property. You will find it in the context.
+                - Property names must be in camelCase.
+                - Schema should be valid according to JSON Schema specification.
+                - Properties should have clear, descriptive names that indicate their purpose.
+                - Must be of type object.`,
             )
             .optional(),
           outputSchema: z
             .string()
             .describe(
               `The JSON schema for the output of the function. Must follow these rules:
-              - Schema must have \`title\` property. It should be a descriptive noun like 'Customer' or 'Order' that represents the data and it is like a TypeScript type name. If no descriptive title applies, use \`undefined\` as the title value.
-              - Property names must be in camelCase.
-              - Schema should be valid according to JSON Schema specification.
-              - Properties should have clear, descriptive names that indicate their purpose.
-              - Must be of type object.`,
+                - Schema must have \`title\` property. It should be a descriptive noun like 'Customer' or 'Order' that represents the data and it is like a TypeScript type name. If no descriptive title applies, use \`undefined\` as the title value.
+                - Property names must be in camelCase.
+                - Schema should be valid according to JSON Schema specification.
+                - Properties should have clear, descriptive names that indicate their purpose.
+                - Must be of type object.`,
             )
             .optional(),
           resources: z
@@ -243,18 +312,20 @@ export const primitiveRequirementsMessageSchema = z.object({
                         .array()
                         .describe("The columns of the table"),
                       relationships: z
-                        .object({
-                          columnName: z
-                            .string()
-                            .describe("The name of the column"),
-                          referencedTable: z
-                            .string()
-                            .describe("The name of the referenced table"),
-                          referencedColumn: z
-                            .string()
-                            .describe("The name of the referenced column"),
-                        })
-                        .array(),
+                        .array(
+                          z.object({
+                            columnName: z
+                              .string()
+                              .describe("The name of the column"),
+                            referencedTable: z
+                              .string()
+                              .describe("The name of the referenced table"),
+                            referencedColumn: z
+                              .string()
+                              .describe("The name of the referenced column"),
+                          }),
+                        )
+                        .optional(),
                     })
                     .array()
                     .describe("The tables of the database"),
@@ -263,6 +334,7 @@ export const primitiveRequirementsMessageSchema = z.object({
               utilities: utilityFunctionReferenceSchema
                 .omit({ docs: true })
                 .array()
+                .optional()
                 .describe(
                   "The list of utilities that the resource provides and can be used to implement the function",
                 ),
@@ -297,28 +369,38 @@ export const primitiveRequirementsMessageSchema = z.object({
               - Whether to retry operations and how many times.
               - Input validation errors can be ignored as inputs are validated separately.`,
           ),
-          usedPrimitiveIds: z
-            .string()
-            .array()
+          extraUsedUtilities: z
+            .object({
+              local: z
+                .string()
+                .array()
+                .optional()
+                .describe(
+                  "The list of local utilities that are used in the function.",
+                ),
+              imported: z
+                .string()
+                .array()
+                .optional()
+                .describe(
+                  "The list of imported utilities that are used in the function.",
+                ),
+            })
             .optional()
             .describe(
-              "The list of primitive IDs that the function uses. Must be in the format '[PRIMITIVE_ID]', where [PRIMITIVE_ID] is the ID of the primitive.",
+              "The list of utilities that are used in the function but not listed in the `resources` section.",
             ),
-          usedUtilityIds: z
-            .string()
-            .array()
-            .optional()
-            .describe(
-              "The list of utility IDs that the function uses. Must be in the format '[UTILITY_ID]', where [UTILITY_ID] is the ID of the utility.",
-            ),
-          packages: packageSchema
+          dependencies: dependencySchema
             .array()
             .optional()
             .describe(
               `The npm dependencies of the function.
               # Guidelines:
+                - Don't include dependencies for SDKs that can be done with a simple HTTP request for external APIs.
                 - Don't worry about specifying dependencies for the database provider.
                 - Don't worry about the version of the packages.
+                - Don't hallucinate non-existent dependencies.
+                - If the task is simple, don't include unnecessary dependencies.
                 - Must be a valid npm package name.
                 - Include @types packages if they are needed.
                 - Don't use suspicious packages.

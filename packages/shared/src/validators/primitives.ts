@@ -1,28 +1,14 @@
 import { z } from "zod";
 import { databaseTableSchema } from "../integrations/postgres";
 import {
+  dependencySchema,
   inputSchema,
   outputSchema,
-  packageSchema,
   rawContentSchema,
   utilityFunctionReferenceSchema,
 } from "./common";
 import { conversationSchema } from "./conversations";
-
-export const testRunSchema = z.object({
-  id: z.string(),
-  input: z.any(),
-  output: z.any(),
-  createdAt: z.date(),
-  primitiveId: z.string(),
-});
-
-export const dependencySchema = z.object({
-  id: z.string(),
-  targetPrimitiveId: z.string(),
-  sourcePrimitiveId: z.string(),
-  sourceUtilityId: z.string(),
-});
+import { testRunSchema } from "./test-runs";
 
 export const primitiveResourceSchema = z.object({
   id: z.string(),
@@ -33,7 +19,10 @@ export const primitiveResourceSchema = z.object({
       tables: databaseTableSchema.array(),
     }),
   ]),
-  utilities: utilityFunctionReferenceSchema.omit({ docs: true }).array(),
+  utilities: utilityFunctionReferenceSchema
+    .omit({ docs: true })
+    .array()
+    .optional(),
 });
 
 export const primitiveSchema = z.object({
@@ -53,12 +42,13 @@ export const primitiveSchema = z.object({
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
   resources: primitiveResourceSchema.array().optional(),
-  packages: packageSchema.array().optional(),
+  dependencies: dependencySchema.array().optional(),
   userId: z.string().nullable(),
   flowId: z.string(),
   conversationId: z.string(),
   conversation: conversationSchema,
   testRuns: testRunSchema.array(),
+  canRun: z.boolean().optional(),
 });
 
 export const insertPrimitiveSchema = z.object({
@@ -98,6 +88,6 @@ export const updatePrimitiveSchema = z.object({
     edgeCases: z.string().optional(),
     errorHandling: z.string().optional(),
     resources: primitiveResourceSchema.array().optional(),
-    packages: packageSchema.array().optional(),
+    dependencies: dependencySchema.array().optional(),
   }),
 });

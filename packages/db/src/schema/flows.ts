@@ -16,13 +16,14 @@ import type {
 } from "@integramind/shared/types";
 import { users } from "./auth";
 import { conversations } from "./conversations";
+import { edges } from "./edges";
 import { primitives } from "./primitives";
 import { testRuns } from "./test-runs";
 import { workspaces } from "./workspaces";
 
 export const flowTypes = pgEnum("flow_types", [
-  "utilities",
-  "task",
+  "utility",
+  "workflow",
   "endpoint",
 ]);
 
@@ -35,7 +36,6 @@ export const flows = pgTable("flows", {
   type: flowTypes("type").notNull(),
   inputSchema: jsonb("input_schema").$type<InputSchema>(),
   outputSchema: jsonb("output_schema").$type<OutputSchema>(),
-  validationSchema: text("validation_schema"),
   metadata: jsonb("metadata").$type<FlowMetadata>().notNull(),
   code: text("code"),
   isUpdated: boolean("is_updated").default(false).notNull(),
@@ -44,9 +44,8 @@ export const flows = pgTable("flows", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-  conversationId: text("conversation_id")
-    .references(() => conversations.id, { onDelete: "cascade" })
-    .notNull(),
+  inputConversationId: text("input_conversation_id").notNull(),
+  outputConversationId: text("output_conversation_id").notNull(),
   workspaceId: text("workspace_id")
     .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
@@ -59,12 +58,17 @@ export const flows = pgTable("flows", {
 
 export const flowsRelations = relations(flows, ({ many, one }) => ({
   primitives: many(primitives),
+  edges: many(edges, { relationName: "flow" }),
   user: one(users, {
     fields: [flows.userId],
     references: [users.id],
   }),
-  conversation: one(conversations, {
-    fields: [flows.conversationId],
+  inputConversation: one(conversations, {
+    fields: [flows.inputConversationId],
+    references: [conversations.id],
+  }),
+  outputConversation: one(conversations, {
+    fields: [flows.outputConversationId],
     references: [conversations.id],
   }),
   workspace: one(workspaces, {

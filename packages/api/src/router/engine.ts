@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from "@integramind/db";
+import { and, eq, inArray, sql } from "@integramind/db";
 import {
   environmentVariables,
   flows,
@@ -8,11 +8,12 @@ import {
   resources,
   testRuns,
 } from "@integramind/db/schema";
-import type { Package, Primitive } from "@integramind/shared/types";
+import type { Dependency, Primitive } from "@integramind/shared/types";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
+import { canRunPrimitive } from "../utils";
 
 export const engineRouter = {
   executePrimitive: protectedProcedure
@@ -25,10 +26,11 @@ export const engineRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const primitive = (await ctx.db.query.primitives.findFirst({
-        where: eq(primitives.id, input.primitiveId),
-      })) as
-        | Omit<Primitive, "testRuns" | "dependencies" | "conversation">
-        | undefined;
+        where: and(
+          eq(primitives.id, input.primitiveId),
+          eq(primitives.userId, ctx.session.user.id),
+        ),
+      })) as Omit<Primitive, "testRuns" | "conversation"> | undefined;
 
       if (!primitive) {
         throw new TRPCError({
@@ -37,28 +39,18 @@ export const engineRouter = {
         });
       }
 
-      const name = primitive.name;
+      const canRun = canRunPrimitive(primitive as Primitive);
 
-      if (!name) {
-        return {
-          status: "error",
-          message: "Please implement your primitive first",
-        };
-      }
-
-      const code = primitive.code;
-
-      if (!code) {
-        return {
-          status: "error",
-          message:
-            "Please talk with the assistant to create the primitive first",
-        };
+      if (!canRun) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Primitive cannot be run",
+        });
       }
 
       const resourceIds = primitive.resources?.map((resource) => resource.id);
 
-      let packages: Package[] = primitive.packages ?? [];
+      let dependencies: Dependency[] = primitive.dependencies ?? [];
 
       if (resourceIds && resourceIds.length > 0) {
         const result = await ctx.db.query.resources.findMany({
@@ -72,7 +64,7 @@ export const engineRouter = {
           },
         });
 
-        packages = packages.concat(
+        dependencies = dependencies.concat(
           result.flatMap((resource) => resource.integration.dependencies ?? []),
         );
       }
@@ -131,7 +123,9 @@ export const engineRouter = {
       }
 
       const utilityIds = primitive.resources?.reduce((acc, resource) => {
-        return acc.concat(resource.utilities.map((utility) => utility.id));
+        return acc.concat(
+          resource.utilities?.map((utility) => utility.id) ?? [],
+        );
       }, [] as string[]);
 
       let utilities: { filePath: string; content: string }[] = [];
@@ -149,11 +143,11 @@ export const engineRouter = {
 
       const requestBody = {
         hasInput: input.hasInput,
-        functionName: name,
+        functionName: primitive.name,
         functionArgs: input.hasInput ? input.input : undefined,
-        code,
+        code: primitive.code,
         utilities,
-        packages,
+        dependencies,
         environmentVariablesMap,
         testEnv:
           process.env.NODE_ENV === "development"
@@ -183,7 +177,8 @@ export const engineRouter = {
 
         await ctx.db.insert(testRuns).values({
           input: input.hasInput ? input.input : undefined,
-          output: executionResult.output,
+          stdout: executionResult.output.stdout,
+          stderr: executionResult.output.stderr,
           primitiveId: input.primitiveId,
         });
 

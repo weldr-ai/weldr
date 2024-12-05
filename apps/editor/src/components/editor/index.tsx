@@ -9,6 +9,7 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, LexicalEditor } from "lexical";
+import { useEffect } from "react";
 
 import { cn } from "@integramind/ui/utils";
 
@@ -27,6 +28,7 @@ interface EditorProps {
   rawMessage?: UserMessageRawContent;
   references?: z.infer<typeof userMessageRawContentReferenceElementSchema>[];
   typeaheadPosition?: "bottom" | "top";
+  onSubmit?: () => void;
 }
 
 export function Editor({ ...props }: EditorProps) {
@@ -38,6 +40,18 @@ export function Editor({ ...props }: EditorProps) {
     nodes: [ReferenceNode],
     editable: true,
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && props.onSubmit) {
+        e.preventDefault();
+        props.onSubmit();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [props.onSubmit]);
 
   return (
     <LexicalComposer initialConfig={initialConfig}>

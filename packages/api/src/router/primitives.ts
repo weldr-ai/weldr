@@ -1,15 +1,21 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
-import { conversations, primitives, testRuns } from "@integramind/db/schema";
+import {
+  conversations,
+  flows,
+  primitives,
+  testRuns,
+} from "@integramind/db/schema";
 
 import { type SQL, and, eq, inArray } from "@integramind/db";
-import type { Primitive } from "@integramind/shared/types";
+import type { InputSchema, Primitive } from "@integramind/shared/types";
 import {
   insertPrimitiveSchema,
   updatePrimitiveSchema,
 } from "@integramind/shared/validators/primitives";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
+import { canRunPrimitive } from "../utils";
 
 export const primitivesRouter = {
   create: protectedProcedure
@@ -30,6 +36,24 @@ export const primitivesRouter = {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to create conversation",
+            });
+          }
+
+          const flow = await tx.query.flows.findFirst({
+            where: eq(flows.id, input.flowId),
+          });
+
+          if (!flow) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Flow not found",
+            });
+          }
+
+          if (!flow.inputSchema) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Cannot create primitive in flow without input schema",
             });
           }
 
@@ -71,7 +95,10 @@ export const primitivesRouter = {
         ),
       });
 
-      return result;
+      return result.map((primitive) => ({
+        ...primitive,
+        canRun: canRunPrimitive(primitive as Primitive),
+      })) as Primitive[];
     }),
   byId: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -81,6 +108,13 @@ export const primitivesRouter = {
           eq(primitives.id, input.id),
           eq(primitives.userId, ctx.session.user.id),
         ),
+        with: {
+          flow: {
+            columns: {
+              inputSchema: true,
+            },
+          },
+        },
       });
 
       if (!result) {
@@ -90,7 +124,12 @@ export const primitivesRouter = {
         });
       }
 
-      return result as Primitive;
+      return {
+        ...result,
+        canRun: canRunPrimitive(
+          result as Primitive & { flow: { inputSchema: InputSchema } },
+        ),
+      } as Primitive & { flow: { inputSchema?: InputSchema } };
     }),
   update: protectedProcedure
     .input(updatePrimitiveSchema)
@@ -150,11 +189,29 @@ export const primitivesRouter = {
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const primitive = await ctx.db.query.primitives.findFirst({
+        where: and(
+          eq(primitives.id, input.id),
+          eq(primitives.userId, ctx.session.user.id),
+        ),
+      });
+
+      if (!primitive) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Primitive not found",
+        });
+      }
+
+      await ctx.db
+        .delete(conversations)
+        .where(eq(conversations.id, primitive.conversationId));
+
       await ctx.db
         .delete(primitives)
         .where(
           and(
-            eq(primitives.id, input.id),
+            eq(primitives.id, primitive.id),
             eq(primitives.userId, ctx.session.user.id),
           ),
         );
@@ -172,7 +229,8 @@ export const primitivesRouter = {
         await ctx.db
           .insert(testRuns)
           .values({
-            output: input.output ?? { stdout: "", stderr: "" },
+            stdout: input.output?.stdout ?? "",
+            stderr: input.output?.stderr ?? "",
             input: input.input ?? undefined,
             primitiveId: input.primitiveId,
           })

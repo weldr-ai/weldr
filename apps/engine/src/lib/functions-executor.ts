@@ -2,7 +2,6 @@ import fs from "node:fs/promises";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import Handlebars from "handlebars";
-import superjson from "superjson";
 import type { Dependency, Utility } from "../index";
 import {
   createLibraries,
@@ -42,7 +41,7 @@ async function createIndexFile({
   console.log("[generatePackage] Generating Node.js project...");
   console.log(`[generatePackage] Function to execute: ${functionName}`);
   const template = await fs.readFile(
-    path.join(__dirname, "templates", "functions", "index.hbs"),
+    path.join(__dirname, "..", "templates", "functions", "index.hbs"),
     "utf-8",
   );
   const compiledTemplate = Handlebars.compile(template, { noEscape: true });
@@ -56,7 +55,7 @@ async function createIndexFile({
   await fs.writeFile(tempFile, indexFile);
   console.log("[generatePackage] Generated index.ts file");
   await fs.copyFile(
-    path.join(__dirname, "templates", "functions", "package.json"),
+    path.join(__dirname, "..", "templates", "functions", "package.json"),
     path.join(tempDir, "package.json"),
   );
   console.log("[generatePackage] Package.json copied successfully");
@@ -112,18 +111,8 @@ export async function executeFunction({
   try {
     console.log("[executeFunction] Executing user code...");
     const { stdout, stderr } = await exec(`cd ${tempDir} && bun index.ts`);
-    const jsonStartIndex = stdout.indexOf('{"json":');
-    const jsonEndIndex = stdout.lastIndexOf("}") + 1;
-    const jsonOutput = stdout.slice(jsonStartIndex, jsonEndIndex);
-    console.log("[executeFunction] Code execution completed");
-    if (stderr && !jsonOutput) {
-      console.error(`[executeFunction] Error during execution: ${stderr}`);
-      return;
-    }
-    console.log("[executeFunction] Parsing execution output");
-    const parsedOutput = superjson.parse(jsonOutput);
     console.log("[executeFunction] Execution completed successfully");
-    return parsedOutput;
+    return { stdout, stderr };
   } catch (error) {
     console.error(`[executeFunction] Execution failed: ${error}`);
   }

@@ -6,8 +6,6 @@ import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { flows } from "./flows";
-import { primitives } from "./primitives";
 
 export const roles = pgEnum("roles", ["user", "assistant"]);
 
@@ -23,20 +21,9 @@ export const conversations = pgTable("conversations", {
     .default(sql`NULL`),
 });
 
-export const conversationRelations = relations(
-  conversations,
-  ({ one, many }) => ({
-    messages: many(conversationMessages),
-    primitives: one(primitives, {
-      fields: [conversations.id],
-      references: [primitives.conversationId],
-    }),
-    flows: one(flows, {
-      fields: [conversations.id],
-      references: [flows.conversationId],
-    }),
-  }),
-);
+export const conversationRelations = relations(conversations, ({ many }) => ({
+  messages: many(conversationMessages),
+}));
 
 export const conversationMessages = pgTable("conversation_messages", {
   id: text("id")

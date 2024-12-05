@@ -1,6 +1,7 @@
 CREATE TYPE "public"."roles" AS ENUM('user', 'assistant');--> statement-breakpoint
-CREATE TYPE "public"."flow_types" AS ENUM('utilities', 'task', 'endpoint');--> statement-breakpoint
+CREATE TYPE "public"."flow_types" AS ENUM('utility', 'workflow', 'endpoint');--> statement-breakpoint
 CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');--> statement-breakpoint
+CREATE TYPE "public"."dependency_type" AS ENUM('consumes', 'requires');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -71,13 +72,13 @@ CREATE TABLE IF NOT EXISTS "flows" (
 	"type" "flow_types" NOT NULL,
 	"input_schema" jsonb,
 	"output_schema" jsonb,
-	"validation_schema" text,
 	"metadata" jsonb NOT NULL,
 	"code" text,
 	"is_updated" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"conversation_id" text NOT NULL,
+	"input_conversation_id" text NOT NULL,
+	"output_conversation_id" text NOT NULL,
 	"workspace_id" text NOT NULL,
 	"user_id" text DEFAULT NULL
 );
@@ -117,11 +118,11 @@ CREATE TABLE IF NOT EXISTS "primitives" (
 	"edge_cases" text,
 	"error_handling" text,
 	"resources" jsonb[],
-	"packages" jsonb[],
+	"dependencies" jsonb[],
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"user_id" text DEFAULT NULL,
-	"conversation_id" text DEFAULT NULL,
+	"conversation_id" text NOT NULL,
 	"flow_id" text NOT NULL
 );
 --> statement-breakpoint
@@ -171,17 +172,20 @@ CREATE TABLE IF NOT EXISTS "environment_variables" (
 CREATE TABLE IF NOT EXISTS "test_runs" (
 	"id" text PRIMARY KEY NOT NULL,
 	"input" jsonb DEFAULT NULL,
-	"output" jsonb DEFAULT NULL,
+	"stdout" text DEFAULT NULL,
+	"stderr" text DEFAULT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"primitive_id" text,
 	"flow_id" text
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "dependencies" (
+CREATE TABLE IF NOT EXISTS "edges" (
 	"id" text PRIMARY KEY NOT NULL,
+	"type" "dependency_type" NOT NULL,
 	"target_primitive_id" text NOT NULL,
-	"source_primitive_id" text DEFAULT NULL,
-	"source_utility_id" text DEFAULT NULL,
+	"local_source_id" text DEFAULT NULL,
+	"imported_source_id" text DEFAULT NULL,
+	"flow_id" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -216,12 +220,6 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "flows" ADD CONSTRAINT "flows_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "flows" ADD CONSTRAINT "flows_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -241,12 +239,6 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "primitives" ADD CONSTRAINT "primitives_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "primitives" ADD CONSTRAINT "primitives_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -324,22 +316,28 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_target_primitive_id_primitives_id_fk" FOREIGN KEY ("target_primitive_id") REFERENCES "public"."primitives"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "edges" ADD CONSTRAINT "edges_target_primitive_id_primitives_id_fk" FOREIGN KEY ("target_primitive_id") REFERENCES "public"."primitives"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_source_primitive_id_primitives_id_fk" FOREIGN KEY ("source_primitive_id") REFERENCES "public"."primitives"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "edges" ADD CONSTRAINT "edges_local_source_id_primitives_id_fk" FOREIGN KEY ("local_source_id") REFERENCES "public"."primitives"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_source_utility_id_flows_id_fk" FOREIGN KEY ("source_utility_id") REFERENCES "public"."flows"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "edges" ADD CONSTRAINT "edges_imported_source_id_flows_id_fk" FOREIGN KEY ("imported_source_id") REFERENCES "public"."flows"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "edges" ADD CONSTRAINT "edges_flow_id_flows_id_fk" FOREIGN KEY ("flow_id") REFERENCES "public"."flows"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "unique_name" ON "primitives" USING btree ("name","flow_id");--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_dependency" ON "dependencies" USING btree ("target_primitive_id","source_primitive_id","source_utility_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "unique_dependency" ON "edges" USING btree ("target_primitive_id","local_source_id","imported_source_id");

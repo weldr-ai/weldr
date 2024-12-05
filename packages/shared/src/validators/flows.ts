@@ -2,7 +2,7 @@ import { z } from "zod";
 import { inputSchema, outputSchema } from "./common";
 import { conversationSchema } from "./conversations";
 
-export const flowTypesSchema = z.enum(["task", "endpoint", "utilities"]);
+export const flowTypesSchema = z.enum(["workflow", "endpoint", "utility"]);
 
 export const endpointFlowMetadataSchema = z.object({
   method: z.enum(["get", "post", "patch", "delete"]),
@@ -12,8 +12,8 @@ export const endpointFlowMetadataSchema = z.object({
   }),
 });
 
-export const taskFlowMetadataSchema = z.object({
-  triggerType: z.enum(["webhook", "schedule"]),
+export const workflowFlowMetadataSchema = z.object({
+  recurrence: z.enum(["hourly", "daily", "weekly", "monthly"]),
 });
 
 export const utilityFlowMetadataSchema = z.object({});
@@ -24,19 +24,22 @@ const baseFlowSchema = z.object({
   description: z.string().optional().nullable(),
   type: flowTypesSchema,
   inputSchema: inputSchema.nullable().optional(),
-  validationSchema: z.string().nullable().optional(),
   outputSchema: outputSchema.nullable().optional(),
   code: z.string().nullable().optional(),
+  isUpdated: z.boolean().optional(),
+  canRun: z.boolean().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   userId: z.string().nullable(),
   workspaceId: z.string(),
-  conversationId: z.string(),
-  conversation: conversationSchema,
+  inputConversationId: z.string(),
+  inputConversation: conversationSchema,
+  outputConversationId: z.string(),
+  outputConversation: conversationSchema,
 });
 
 export const utilityFlowSchema = baseFlowSchema.extend({
-  type: z.literal("utilities"),
+  type: z.literal("utility"),
   metadata: utilityFlowMetadataSchema,
 });
 
@@ -45,15 +48,15 @@ export const endpointFlowSchema = baseFlowSchema.extend({
   metadata: endpointFlowMetadataSchema,
 });
 
-export const taskFlowSchema = baseFlowSchema.extend({
-  type: z.literal("task"),
-  metadata: taskFlowMetadataSchema,
+export const workflowFlowSchema = baseFlowSchema.extend({
+  type: z.literal("workflow"),
+  metadata: workflowFlowMetadataSchema,
 });
 
 export const flowSchema = z.discriminatedUnion("type", [
   utilityFlowSchema,
   endpointFlowSchema,
-  taskFlowSchema,
+  workflowFlowSchema,
 ]);
 
 export const baseInsertFlowSchema = z.object({
@@ -63,31 +66,35 @@ export const baseInsertFlowSchema = z.object({
       message: "Name is required.",
     })
     .regex(/^[a-z]/, {
-      message: "Name must start with a small letter",
+      message: "Must start with a lowercase letter",
     })
-    .regex(/^[a-z][a-zA-Z0-9]*$/, {
-      message: "Can only contain letters and numbers",
+    .regex(/^[a-z][a-z0-9-]*$/, {
+      message: "Can only contain lowercase letters, numbers and hyphens",
     }),
-  description: z.string().trim().optional(),
   type: flowTypesSchema,
   workspaceId: z.string().min(1, {
     message: "Workspace is required.",
   }),
 });
 
-export const insertUtilitiesFlowSchema = baseInsertFlowSchema.extend({
-  type: z.literal("utilities"),
+export const insertUtilityFlowSchema = baseInsertFlowSchema.extend({
+  type: z.literal("utility"),
 });
 
 export const insertEndpointFlowSchema = baseInsertFlowSchema.extend({
   type: z.literal("endpoint"),
   metadata: z.object({
-    method: z.enum(["get", "post", "patch", "delete"]),
     path: z
       .string()
-      .regex(/^\/[a-z0-9-]+(\/[a-z0-9-]+)*$/, {
+      .regex(/^\//, {
+        message: "Must start with '/'",
+      })
+      .regex(/^\/[a-z0-9]/, {
+        message: "First segment must start with a letter or number",
+      })
+      .regex(/^\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*$/, {
         message:
-          "Must start with '/' and contain only lowercase letters, numbers and hyphens.",
+          "Path segments must contain only lowercase letters, numbers and hyphens",
       })
       .transform((path) => {
         if (path.startsWith("/")) return path.trim();
@@ -96,17 +103,17 @@ export const insertEndpointFlowSchema = baseInsertFlowSchema.extend({
   }),
 });
 
-export const insertTaskFlowSchema = baseInsertFlowSchema.extend({
-  type: z.literal("task"),
+export const insertWorkflowFlowSchema = baseInsertFlowSchema.extend({
+  type: z.literal("workflow"),
   metadata: z.object({
-    triggerType: z.enum(["webhook", "schedule"]),
+    recurrence: z.enum(["hourly", "daily", "weekly", "monthly"]),
   }),
 });
 
 export const insertFlowSchema = z.discriminatedUnion("type", [
-  insertUtilitiesFlowSchema,
+  insertUtilityFlowSchema,
   insertEndpointFlowSchema,
-  insertTaskFlowSchema,
+  insertWorkflowFlowSchema,
 ]);
 
 export const baseUpdateFlowSchema = z.object({
@@ -115,11 +122,11 @@ export const baseUpdateFlowSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .regex(/^[A-Z]/, {
-      message: "Must start with an uppercase letter",
+    .regex(/^[a-z]/, {
+      message: "Must start with a lowercase letter",
     })
-    .regex(/^[A-Z][a-zA-Z0-9]*$/, {
-      message: "Can only contain letters and numbers",
+    .regex(/^[a-z][a-z0-9-]*$/, {
+      message: "Can only contain lowercase letters, numbers and hyphens",
     })
     .optional(),
   description: z.string().optional(),
@@ -149,17 +156,17 @@ export const updateEndpointFlowSchema = baseUpdateFlowSchema.extend({
     .optional(),
 });
 
-export const updateTaskFlowSchema = baseUpdateFlowSchema.extend({
-  type: z.literal("task"),
+export const updateWorkflowFlowSchema = baseUpdateFlowSchema.extend({
+  type: z.literal("workflow"),
   metadata: z
     .object({
-      triggerType: z.enum(["webhook", "schedule"]).optional(),
+      recurrence: z.enum(["hourly", "daily", "weekly", "monthly"]).optional(),
     })
     .optional(),
 });
 
-export const updateUtilitiesFlow = baseUpdateFlowSchema.extend({
-  type: z.literal("utilities"),
+export const updateUtilityFlowSchema = baseUpdateFlowSchema.extend({
+  type: z.literal("utility"),
   metadata: z.object({}).optional(),
 });
 
@@ -168,8 +175,8 @@ export const updateFlowSchema = z.object({
     id: z.string(),
   }),
   payload: z.discriminatedUnion("type", [
-    updateUtilitiesFlow,
+    updateUtilityFlowSchema,
     updateEndpointFlowSchema,
-    updateTaskFlowSchema,
+    updateWorkflowFlowSchema,
   ]),
 });

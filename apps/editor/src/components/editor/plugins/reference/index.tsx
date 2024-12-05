@@ -82,12 +82,24 @@ export function ReferencesPlugin({
   const inputOptions: ReferenceOption[] = useMemo(() => {
     return references.reduce((acc, reference) => {
       switch (reference.referenceType) {
-        case "primitive": {
+        case "variable": {
           acc.push(
             new ReferenceOption({
               reference,
               options: {
-                keywords: [reference.name, "primitive"],
+                keywords: [reference.name, "variable"],
+                onSelect: () => {},
+              },
+            }),
+          );
+          break;
+        }
+        case "function": {
+          acc.push(
+            new ReferenceOption({
+              reference,
+              options: {
+                keywords: [reference.name, "function"],
                 onSelect: () => {},
               },
             }),

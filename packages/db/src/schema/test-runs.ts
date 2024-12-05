@@ -16,9 +16,8 @@ export const testRuns = pgTable("test_runs", {
     .primaryKey()
     .$defaultFn(() => createId()),
   input: jsonb("input").$type<Record<string, unknown>>().default(sql`NULL`),
-  output: jsonb("output")
-    .$type<{ stdout: string; stderr: string }>()
-    .default(sql`NULL`),
+  stdout: text("stdout").default(sql`NULL`),
+  stderr: text("stderr").default(sql`NULL`),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   primitiveId: text("primitive_id").references(() => primitives.id, {
     onDelete: "cascade",

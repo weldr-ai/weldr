@@ -1,7 +1,7 @@
 import { and, eq, inArray, sql } from "@integramind/db";
-import { conversations, flows } from "@integramind/db/schema";
+import { conversations, flows, primitives } from "@integramind/db/schema";
 import { mergeJson } from "@integramind/db/utils";
-import type { Conversation, Flow, Primitive } from "@integramind/shared/types";
+import type { Flow, InputSchema, Primitive } from "@integramind/shared/types";
 import {
   flowTypesSchema,
   insertFlowSchema,
@@ -10,6 +10,7 @@ import {
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
+import { canRunFlow, canRunPrimitive } from "../utils";
 
 export const flowsRouter = {
   create: protectedProcedure
@@ -30,7 +31,7 @@ export const flowsRouter = {
 
       try {
         const result = await ctx.db.transaction(async (tx) => {
-          const conversation = (
+          const inputConversation = (
             await tx
               .insert(conversations)
               .values({
@@ -39,24 +40,47 @@ export const flowsRouter = {
               .returning({ id: conversations.id })
           )[0];
 
-          if (!conversation) {
+          if (!inputConversation) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to create conversation",
             });
           }
 
+          const outputConversation = (
+            await tx
+              .insert(conversations)
+              .values({
+                userId: ctx.session.user.id,
+              })
+              .returning({ id: conversations.id })
+          )[0];
+
+          if (!outputConversation) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create output conversation",
+            });
+          }
+
           const values = {
             name: input.name,
-            description: input.description,
             type: input.type,
             metadata: sql`${{}}::jsonb`,
             workspaceId: input.workspaceId,
             userId: ctx.session.user.id,
-            conversationId: conversation.id,
+            inputConversationId: inputConversation.id,
+            outputConversationId: outputConversation.id,
           };
 
-          if (input.type === "endpoint" || input.type === "task") {
+          if (input.type === "endpoint") {
+            values.metadata = sql`${{
+              ...input.metadata,
+              method: "GET",
+            }}::jsonb`;
+          }
+
+          if (input.type === "workflow") {
             values.metadata = sql`${input.metadata}::jsonb`;
           }
 
@@ -111,7 +135,7 @@ export const flowsRouter = {
     .query(async ({ ctx, input }) => {
       return await ctx.db.query.flows.findMany({
         where: and(
-          eq(flows.type, "utilities"),
+          eq(flows.type, "utility"),
           eq(flows.userId, ctx.session.user.id),
           inArray(flows.id, input.ids),
         ),
@@ -126,7 +150,13 @@ export const flowsRouter = {
           eq(flows.userId, ctx.session.user.id),
         ),
         with: {
-          conversation: {
+          primitives: true,
+          inputConversation: {
+            with: {
+              messages: true,
+            },
+          },
+          outputConversation: {
             with: {
               messages: true,
             },
@@ -141,7 +171,12 @@ export const flowsRouter = {
         });
       }
 
-      return result as Flow;
+      return {
+        ...result,
+        canRun: canRunFlow(
+          result as unknown as Flow & { primitives: Primitive[] },
+        ),
+      } as Flow & { canRun: boolean };
     }),
   byIdWithPrimitives: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -163,7 +198,10 @@ export const flowsRouter = {
         });
       }
 
-      return result;
+      return {
+        ...result,
+        canRun: canRunFlow(result as Flow & { primitives: Primitive[] }),
+      };
     }),
   byIdWithAssociatedData: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -184,7 +222,12 @@ export const flowsRouter = {
               testRuns: true,
             },
           },
-          conversation: {
+          inputConversation: {
+            with: {
+              messages: true,
+            },
+          },
+          outputConversation: {
             with: {
               messages: true,
             },
@@ -199,31 +242,70 @@ export const flowsRouter = {
         });
       }
 
-      return result as Flow & {
-        primitives: Primitive[];
-        conversation: Conversation;
+      return {
+        ...result,
+        canRun: canRunFlow(result as Flow & { primitives: Primitive[] }),
+        primitives: result.primitives.map((primitive) => ({
+          ...primitive,
+          canRun: canRunPrimitive(primitive as Primitive),
+          flow: { inputSchema: result.inputSchema },
+        })),
+      } as Flow & {
+        primitives: (Primitive & { flow: { inputSchema: InputSchema } })[];
       };
+    }),
+  primitives: protectedProcedure
+    .input(z.object({ flowId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.query.primitives.findMany({
+        where: and(
+          eq(primitives.flowId, input.flowId),
+          eq(primitives.userId, ctx.session.user.id),
+        ),
+      });
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const flow = await ctx.db.query.flows.findFirst({
+        where: and(
+          eq(flows.id, input.id),
+          eq(flows.userId, ctx.session.user.id),
+        ),
+      });
+
+      if (!flow) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Flow not found",
+        });
+      }
+
+      await ctx.db
+        .delete(conversations)
+        .where(eq(conversations.id, flow.inputConversationId));
+
+      await ctx.db
+        .delete(conversations)
+        .where(eq(conversations.id, flow.outputConversationId));
+
       await ctx.db
         .delete(flows)
         .where(
-          and(eq(flows.id, input.id), eq(flows.userId, ctx.session.user.id)),
+          and(eq(flows.id, flow.id), eq(flows.userId, ctx.session.user.id)),
         );
     }),
   update: protectedProcedure
     .input(updateFlowSchema)
     .mutation(async ({ ctx, input }) => {
-      const savedPrimitive = await ctx.db.query.flows.findFirst({
+      const savedFlow = await ctx.db.query.flows.findFirst({
         where: and(
           eq(flows.id, input.where.id),
           eq(flows.userId, ctx.session.user.id),
         ),
       });
 
-      if (!savedPrimitive) {
+      if (!savedFlow) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Flow not found",

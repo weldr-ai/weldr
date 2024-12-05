@@ -14,8 +14,9 @@ import { TRPCReactProvider } from "~/lib/trpc/client";
 
 const poppins = Poppins({
   subsets: ["latin"],
-  weight: "400",
+  weight: ["400"],
   variable: "--font-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {

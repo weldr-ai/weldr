@@ -32,15 +32,15 @@ import {
 } from "@integramind/ui/resizable";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
-import { useReactFlow } from "@xyflow/react";
+import { Handle, Position, useReactFlow } from "@xyflow/react";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
 import {
-  BoxIcon,
   CircleAlertIcon,
   EllipsisVerticalIcon,
   ExternalLinkIcon,
   FileTextIcon,
+  FunctionSquareIcon,
   PlayCircleIcon,
   TrashIcon,
 } from "lucide-react";
@@ -52,6 +52,7 @@ import { z } from "zod";
 import type {
   AssistantMessageRawContent,
   ConversationMessage,
+  FlatInputSchema,
   JsonSchema,
   PrimitiveRequirementsMessage,
   UserMessageRawContent,
@@ -79,9 +80,11 @@ import { Editor } from "~/components/editor";
 import { TestInputDialog } from "~/components/test-input-dialog";
 import { generatePrimitive } from "~/lib/ai/generator";
 import { useResources } from "~/lib/context/resources";
+import { useFlowBuilderStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
 import {
   assistantMessageRawContentToText,
+  flattenInputSchema,
   getResourceReferences,
   jsonSchemaToTreeData,
   userMessageRawContentToText,
@@ -123,20 +126,31 @@ export const PrimitiveNode = memo(
 
     const data = fetchedData;
 
+    const { data: testRuns } = api.testRuns.listByPrimitiveId.useQuery(
+      {
+        primitiveId: data.id,
+      },
+      {
+        initialData: data.testRuns ?? [],
+      },
+    );
+
+    const { deleteElements, fitBounds } = useReactFlow<FlowNode>();
+
     const apiUtils = api.useUtils();
 
     const updatePrimitive = api.primitives.update.useMutation({
       onSuccess: async () => {
         await apiUtils.primitives.byId.invalidate({ id: data.id });
-        await apiUtils.dependencies.available.invalidate({
-          primitiveId: data.id,
-        });
       },
     });
 
     const executePrimitive = api.engine.executePrimitive.useMutation({
       onSuccess: async () => {
         await apiUtils.primitives.byId.invalidate({ id: data.id });
+        await apiUtils.testRuns.listByPrimitiveId.invalidate({
+          primitiveId: data.id,
+        });
       },
     });
 
@@ -149,8 +163,6 @@ export const PrimitiveNode = memo(
     const addMessage = api.conversations.addMessage.useMutation();
 
     const editorRef = useRef<LexicalEditor>(null);
-
-    const { deleteElements, fitBounds } = useReactFlow<FlowNode>();
 
     const form = useForm<z.infer<typeof validationSchema>>({
       mode: "all",
@@ -175,6 +187,7 @@ export const PrimitiveNode = memo(
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
+    const showEdges = useFlowBuilderStore((state) => state.showEdges);
     const [isThinking, setIsThinking] = useState<boolean>(false);
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
@@ -272,8 +285,10 @@ export const PrimitiveNode = memo(
       scrollToBottom();
     }, [scrollToBottom]);
 
-    const handleOnSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
+    const handleOnSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
+      if (e) {
+        e.preventDefault();
+      }
 
       setIsThinking(true);
       setIsGenerating(true);
@@ -377,15 +392,21 @@ export const PrimitiveNode = memo(
           rawContent: [
             {
               type: "text",
-              value: "Your primitive has been built successfully!",
+              value: "Your function has been built successfully!",
             },
           ],
-          content: "Your primitive has been built successfully!",
+          content: "Your function has been built successfully!",
           createdAt: new Date(),
         };
 
         await apiUtils.flows.byId.invalidate({ id: data.flowId });
         await apiUtils.primitives.byId.invalidate({ id: data.id });
+        await apiUtils.edges.available.invalidate({
+          primitiveId: data.id,
+        });
+        await apiUtils.edges.listByFlowId.invalidate({
+          flowId: data.flowId,
+        });
         setMessages([...newMessages, primitiveBuiltSuccessfullyMessage]);
       }
 
@@ -394,33 +415,70 @@ export const PrimitiveNode = memo(
       setIsGenerating(false);
     };
 
+    const flowInput = flattenInputSchema({
+      id: "root",
+      schema: data.flow.inputSchema,
+      refPath: "global/input",
+    });
     const resources = useResources();
-    const availableDependencies = api.dependencies.available.useQuery({
+    const availableDependencies = api.edges.available.useQuery({
       primitiveId: data.id,
     });
+    const availableDependenciesInputs = (
+      availableDependencies.data ?? []
+    )?.reduce((acc, d) => {
+      acc.push(
+        ...flattenInputSchema({
+          id: d.id,
+          schema: d.outputSchema,
+          refPath: `local/${d.id}/output`,
+          sourcePrimitiveId: d.id,
+        }),
+      );
+      return acc;
+    }, [] as FlatInputSchema[]);
+    const availableVariables = [
+      ...flowInput,
+      ...availableDependenciesInputs,
+    ].map((input) => ({
+      type: "reference" as const,
+      referenceType: "variable" as const,
+      name: input.path,
+      required: input.required,
+      dataType: input.type,
+      refUri: input.refUri,
+      properties: input.properties,
+      itemsType: input.itemsType,
+      sourcePrimitiveId: input.sourcePrimitiveId,
+    }));
 
     const references: z.infer<
       typeof userMessageRawContentReferenceElementSchema
-    >[] = [
-      ...getResourceReferences(resources),
-      ...(availableDependencies.data ?? []).map(
-        (d) =>
-          ({
-            type: "reference",
-            referenceType: "primitive",
-            id: d.id,
-            name: d.name ?? "",
-            inputSchema: JSON.stringify(d.inputSchema ?? {}),
-            outputSchema: JSON.stringify(d.outputSchema ?? {}),
-            description: d.description ?? "",
-            logicalSteps: assistantMessageRawContentToText(
-              d.logicalSteps ?? [],
-            ),
-            edgeCases: d.edgeCases ?? "",
-            errorHandling: d.errorHandling ?? "",
-          }) as z.infer<typeof userMessageRawContentReferenceElementSchema>,
-      ),
-    ];
+    >[] = useMemo(
+      () => [
+        ...getResourceReferences(resources),
+        ...availableVariables,
+        ...(availableDependencies.data ?? []).map(
+          (d) =>
+            ({
+              type: "reference",
+              referenceType: "function",
+              id: d.id,
+              name: d.name ?? "",
+              inputSchema: JSON.stringify(d.inputSchema ?? {}),
+              outputSchema: JSON.stringify(d.outputSchema ?? {}),
+              description: d.description ?? "",
+              logicalSteps: assistantMessageRawContentToText(
+                d.logicalSteps ?? [],
+              ),
+              edgeCases: d.edgeCases ?? "",
+              errorHandling: d.errorHandling ?? "",
+              scope: "local",
+            }) as z.infer<typeof userMessageRawContentReferenceElementSchema>,
+        ),
+      ],
+      [availableDependencies.data, availableVariables, resources],
+    );
 
     return (
       <>
@@ -452,30 +510,28 @@ export const PrimitiveNode = memo(
                 >
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2 text-xs">
-                      <BoxIcon className="size-4 text-primary" />
-                      <span className="text-muted-foreground">Primitive</span>
+                      <FunctionSquareIcon className="size-4 text-primary" />
+                      <span className="text-muted-foreground">Function</span>
                     </div>
-                    {(!data.name || !data.description) && (
+                    {!data.canRun && (
                       <CircleAlertIcon className="size-4 text-destructive" />
                     )}
                   </div>
-                  <span className="text-sm">
-                    {data.name ?? "new_primitive"}
-                  </span>
+                  <span className="text-sm">{data.name ?? "new_function"}</span>
                 </Card>
               </ExpandableCardTrigger>
             </ContextMenuTrigger>
             <ContextMenuContent>
-              <ContextMenuLabel className="text-xs">Primitive</ContextMenuLabel>
+              <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
               <ContextMenuSeparator />
               <ContextMenuItem className="text-xs">
                 <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
-                Run with previous primitives
+                Run with previous functions
               </ContextMenuItem>
               <ContextMenuItem className="flex items-center justify-between text-xs">
                 <Link
                   className="flex items-center"
-                  href="https://docs.integramind.ai/primitvies"
+                  href="https://docs.integramind.ai/functions"
                   target="blank"
                 >
                   <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
@@ -506,8 +562,8 @@ export const PrimitiveNode = memo(
                 <ExpandableCardHeader className="flex flex-col items-start justify-start p-4 border-b">
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2 text-xs">
-                      <BoxIcon className="size-4 text-primary" />
-                      <span className="text-muted-foreground">Primitive</span>
+                      <FunctionSquareIcon className="size-4 text-primary" />
+                      <span className="text-muted-foreground">Function</span>
                     </div>
                     <div className="flex items-center">
                       <Tooltip>
@@ -551,17 +607,17 @@ export const PrimitiveNode = memo(
                         </DropdownMenuTrigger>
                         <DropdownMenuContent side="right" align="start">
                           <DropdownMenuLabel className="text-xs">
-                            Primitive
+                            Function
                           </DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-xs">
                             <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
-                            Run with previous primitives
+                            Run with previous functions
                           </DropdownMenuItem>
                           <DropdownMenuItem className="flex items-center justify-between text-xs">
                             <Link
                               className="flex items-center"
-                              href="https://docs.integramind.ai/primitives"
+                              href="https://docs.integramind.ai/functions"
                               target="blank"
                             >
                               <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
@@ -592,7 +648,7 @@ export const PrimitiveNode = memo(
                               {...field}
                               autoComplete="off"
                               className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
-                              placeholder="primitive_name"
+                              placeholder="function_name"
                               onChange={(e) => {
                                 field.onChange(e);
                                 debounce(
@@ -642,7 +698,7 @@ export const PrimitiveNode = memo(
                   >
                     <MessageList
                       messages={messages}
-                      testRuns={data.testRuns}
+                      testRuns={testRuns}
                       isThinking={isThinking}
                       isRunning={isRunning}
                       isGenerating={isGeneratingCode}
@@ -656,8 +712,13 @@ export const PrimitiveNode = memo(
                         editorRef={editorRef}
                         references={references}
                         rawMessage={userMessageRawContent}
-                        placeholder="Create, refine, or fix your primitive with Specly..."
+                        placeholder="Create, refine, or fix your function with Specly..."
                         onChange={onChatChange}
+                        onSubmit={async () => {
+                          if (userMessageContent && !isGenerating) {
+                            await handleOnSubmit();
+                          }
+                        }}
                       />
                       <Button
                         type="submit"
@@ -717,7 +778,9 @@ export const PrimitiveNode = memo(
                           />
                         </div>
                         <TreeView
-                          data={jsonSchemaToTreeData(data.inputSchema)}
+                          data={jsonSchemaToTreeData(
+                            data.inputSchema ?? undefined,
+                          )}
                         />
                       </div>
                       <div className="space-y-1">
@@ -725,7 +788,9 @@ export const PrimitiveNode = memo(
                           Output:
                         </span>
                         <TreeView
-                          data={jsonSchemaToTreeData(data.outputSchema)}
+                          data={jsonSchemaToTreeData(
+                            data.outputSchema ?? undefined,
+                          )}
                         />
                       </div>
                       <div className="space-y-1">
@@ -759,8 +824,8 @@ export const PrimitiveNode = memo(
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <span className="text-sm text-muted-foreground">
-                      Primitive is not implemented yet. Chat with Specly to
-                      build it.
+                      Function is not implemented yet. Chat with Specly to build
+                      it.
                     </span>
                   </div>
                 )}
@@ -768,6 +833,24 @@ export const PrimitiveNode = memo(
             </ResizablePanelGroup>
           </ExpandableCardContent>
         </ExpandableCard>
+        <Handle
+          className={cn(
+            "border rounded-full bg-background p-1",
+            showEdges ? "" : "opacity-0",
+          )}
+          type="target"
+          position={Position.Left}
+          isConnectable={false}
+        />
+        <Handle
+          className={cn(
+            "border rounded-full bg-background p-1",
+            showEdges ? "" : "opacity-0",
+          )}
+          type="source"
+          position={Position.Right}
+          isConnectable={false}
+        />
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}

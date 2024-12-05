@@ -1,7 +1,7 @@
 import type {
+  Dependency,
   InputSchema,
   OutputSchema,
-  Package,
   RawContent,
   Resource,
 } from "@integramind/shared/types";
@@ -17,7 +17,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { conversations } from "./conversations";
-import { dependencies } from "./dependencies";
+import { edges } from "./edges";
 import { flows } from "./flows";
 import { testRuns } from "./test-runs";
 
@@ -40,7 +40,7 @@ export const primitives = pgTable(
     edgeCases: text("edge_cases"),
     errorHandling: text("error_handling"),
     resources: jsonb("resources").$type<Resource[]>().array(),
-    packages: jsonb("packages").$type<Package[]>().array(),
+    dependencies: jsonb("dependencies").$type<Dependency[]>().array(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -51,9 +51,7 @@ export const primitives = pgTable(
         onDelete: "set null",
       })
       .default(sql`NULL`),
-    conversationId: text("conversation_id")
-      .references(() => conversations.id, { onDelete: "cascade" })
-      .default(sql`NULL`),
+    conversationId: text("conversation_id").notNull(),
     flowId: text("flow_id")
       .references(() => flows.id, { onDelete: "cascade" })
       .notNull(),
@@ -77,5 +75,5 @@ export const primitivesRelations = relations(primitives, ({ one, many }) => ({
     fields: [primitives.userId],
     references: [users.id],
   }),
-  dependencies: many(dependencies),
+  edges: many(edges),
 }));

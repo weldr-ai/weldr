@@ -2,6 +2,7 @@ import type { RouterOutputs } from "@integramind/api";
 import type { DatabaseStructure } from "@integramind/shared/integrations/postgres/index";
 import type {
   AssistantMessageRawContent,
+  FlatInputSchema,
   JsonSchema,
   UserMessageRawContent,
 } from "@integramind/shared/types";
@@ -19,7 +20,7 @@ export function jsonSchemaToTreeData(
 
   function jsonSchemaToTree(schema: JsonSchema, name = "root"): TreeDataItem {
     const treeItem: TreeDataItem = {
-      id: name,
+      id: `${name}`,
       name,
       type: schema.type ?? "null",
       icon: getDataTypeIcon(schema.type ?? "null"),
@@ -46,6 +47,175 @@ export function jsonSchemaToTreeData(
   return jsonSchemaToTree(schema).children ?? [];
 }
 
+export function flattenInputSchema({
+  id,
+  schema,
+  path = "",
+  required = false,
+  refPath = "",
+  expandArrays = true,
+  title,
+  sourcePrimitiveId,
+}: {
+  id: string;
+  schema?: JsonSchema;
+  path?: string;
+  required?: boolean;
+  refPath?: string;
+  expandArrays?: boolean;
+  title?: string;
+  sourcePrimitiveId?: string;
+}): FlatInputSchema[] {
+  if (!schema) {
+    return [];
+  }
+
+  let tempPath = path;
+  const refUri = schema.$ref ? schema.$ref : refPath ? `${refPath}` : `/${id}`;
+  const result: FlatInputSchema[] = [];
+
+  // Add the schema itself as an input if it has a title
+  if (schema.title || title) {
+    const properties =
+      schema.type === "object" && schema.properties
+        ? Object.entries(schema.properties).reduce<Record<string, JsonSchema>>(
+            (acc, [key, value]) => {
+              acc[key] = value;
+              return acc;
+            },
+            {},
+          )
+        : undefined;
+
+    const itemsType =
+      schema.type === "array" && schema.items ? schema.items : undefined;
+
+    result.push({
+      path: title ?? schema.title ?? "",
+      type: schema.type ?? "null",
+      required,
+      description: schema.description,
+      refUri,
+      sourcePrimitiveId,
+      ...(properties && { properties }),
+      ...(itemsType && { itemsType }),
+    });
+    // Update path to include the title for nested properties
+    tempPath = title ?? schema.title ?? "";
+  }
+
+  if (schema.type === "object" && schema.properties) {
+    const requiredProperties = schema.required || [];
+    for (const [key, value] of Object.entries(schema.properties)) {
+      const isRequired = requiredProperties.includes(key);
+      const newPath = tempPath ? `${tempPath}.${key}` : key;
+      const newRefPath = value.$ref
+        ? value.$ref
+        : refPath
+          ? `${refPath}/properties/${key}`
+          : `${refUri}/properties/${key}`;
+
+      const properties =
+        value.type === "object" && value.properties
+          ? Object.entries(value.properties).reduce<Record<string, JsonSchema>>(
+              (acc, [k, v]) => {
+                acc[k] = v;
+                return acc;
+              },
+              {},
+            )
+          : undefined;
+
+      const itemsType =
+        value.type === "array" && value.items ? value.items : undefined;
+
+      result.push({
+        path: newPath,
+        type: value.type ?? "null",
+        required: isRequired,
+        description: value.description,
+        refUri: newRefPath,
+        sourcePrimitiveId,
+        ...(properties && { properties }),
+        ...(itemsType && { itemsType }),
+      });
+
+      if (value.type === "object" || (value.type === "array" && expandArrays)) {
+        result.push(
+          ...flattenInputSchema({
+            id,
+            schema: value,
+            path: newPath,
+            required: isRequired,
+            refPath: newRefPath,
+            expandArrays,
+            sourcePrimitiveId,
+          }),
+        );
+      }
+    }
+  } else if (schema.type === "array" && schema.items && expandArrays) {
+    const itemsPath = `${schema.title ? schema.title : "items"}[]`;
+    const itemsRefPath = schema.items.$ref
+      ? schema.items.$ref
+      : refPath
+        ? `${refPath}/items`
+        : `${refUri}/items`;
+
+    const properties =
+      schema.items.type === "object" && schema.items.properties
+        ? Object.entries(schema.items.properties).reduce<
+            Record<string, JsonSchema>
+          >((acc, [key, value]) => {
+            acc[key] = value;
+            return acc;
+          }, {})
+        : undefined;
+
+    const itemsType =
+      schema.items.type === "array" && schema.items.items
+        ? schema.items.items
+        : undefined;
+
+    result.push({
+      path: itemsPath,
+      type: schema.items.type ?? "null",
+      required: false,
+      description: schema.items.description,
+      refUri: itemsRefPath,
+      sourcePrimitiveId,
+      ...(properties && { properties }),
+      ...(itemsType && { itemsType }),
+    });
+
+    if (schema.items.type === "object" || schema.items.type === "array") {
+      result.push(
+        ...flattenInputSchema({
+          id,
+          schema: schema.items,
+          path: itemsPath,
+          required: false,
+          refPath: itemsRefPath,
+          expandArrays,
+          sourcePrimitiveId,
+        }),
+      );
+    }
+  } else if (!schema.title) {
+    // Only add non-titled primitive schemas here since titled ones are added above
+    result.push({
+      path: tempPath,
+      type: schema.type ?? "null",
+      required,
+      description: schema.description,
+      refUri,
+      sourcePrimitiveId,
+    });
+  }
+
+  return result;
+}
+
 export function assistantMessageRawContentToText(
   rawMessageContent: AssistantMessageRawContent = [],
 ): string {
@@ -68,13 +238,66 @@ function referenceToText(
   seenElements: Map<string, boolean>,
 ): string {
   switch (reference.referenceType) {
-    case "primitive": {
+    case "variable": {
+      const parts = [
+        `Value of the input variable \`${reference.name}\``,
+        `Type: ${reference.dataType}`,
+        `Is optional: ${!reference.required}`,
+        reference.sourcePrimitiveId
+          ? `Source function ID: ${reference.sourcePrimitiveId}`
+          : null,
+        reference.refUri ? `$ref: /schemas/${reference.refUri}` : null,
+      ].filter(Boolean);
+
+      const formatObjectProps = (props: JsonSchema["properties"]): string => {
+        if (!props) return "";
+        return Object.entries(props)
+          .map(
+            ([name, prop]) =>
+              `- ${name}:\n` +
+              `  - Type: ${prop.type}\n` +
+              `  - Is optional: ${!prop.required}\n` +
+              `  - $ref: /schemas/${reference.refUri}/properties/${name}`,
+          )
+          .join("\n");
+      };
+
+      const formatArrayItemsType = (itemsType: JsonSchema["items"]): string => {
+        if (typeof itemsType === "object") {
+          return `Properties:\n${formatObjectProps(itemsType.properties)}`;
+        }
+        return String(itemsType);
+      };
+
+      let details = "";
+
+      switch (reference.dataType) {
+        case "object": {
+          details = `\nProperties:\n${formatObjectProps(reference.properties)}`;
+          break;
+        }
+        case "array": {
+          if (reference.itemsType) {
+            details = `\nItems:\n${formatArrayItemsType(reference.itemsType)}`;
+          }
+          break;
+        }
+      }
+
+      return `${parts.join("\n")}${details}`;
+    }
+
+    case "function": {
       return [
         `Function \`${reference.name}\` (ID: ${reference.id})`,
-        "Input Schema:",
-        reference.inputSchema,
-        "Output Schema:",
-        reference.outputSchema,
+        "Scope:",
+        reference.scope === "local" ? "Local function" : "Imported function",
+        ...(reference.inputSchema
+          ? ["Input Schema:", reference.inputSchema]
+          : []),
+        ...(reference.outputSchema
+          ? ["Output Schema:", reference.outputSchema]
+          : []),
         "Description:",
         reference.description,
         "Logical Steps:",
@@ -89,33 +312,40 @@ function referenceToText(
     case "database": {
       return [
         `Database \`${reference.name}\` (ID: ${reference.id})`,
-        "Utilities:",
-        ...reference.utils.map(
-          (util) =>
-            `- \`${util.name}\` (ID: ${util.id})\n` +
-            `  Description: ${util.description}`,
-        ),
+        ...(reference.utils.length > 0
+          ? [
+              "Utilities:",
+              ...reference.utils.map(
+                (util) =>
+                  `- \`${util.name}\` (ID: ${util.id})\n` +
+                  `  Description: ${util.description}`,
+              ),
+            ]
+          : []),
       ].join("\n");
     }
 
     case "database-table": {
       const parts = [
         `Table \`${reference.name}\``,
-        "Columns:",
-        ...(reference.columns?.map(
-          (col) => `- \`${col.name}\` (${col.dataType})`,
-        ) ?? []),
+        ...(reference.columns?.length > 0
+          ? [
+              "Columns:",
+              ...reference.columns.map(
+                (col) => `- \`${col.name}\` (${col.dataType})`,
+              ),
+            ]
+          : []),
+        ...(reference.relationships && reference.relationships.length > 0
+          ? [
+              "Relationships:",
+              ...reference.relationships.map(
+                (rel) =>
+                  `- \`${rel.columnName}\` -> \`${rel.referencedTable}\`.\`${rel.referencedColumn}\``,
+              ),
+            ]
+          : []),
       ];
-
-      if (reference.relationships.length > 0) {
-        parts.push("Relationships:");
-        parts.push(
-          ...reference.relationships.map(
-            (rel) =>
-              `- \`${rel.columnName}\` -> \`${rel.referencedTable}\`.\`${rel.referencedColumn}\``,
-          ),
-        );
-      }
 
       return parts.join("\n");
     }
@@ -127,21 +357,25 @@ function referenceToText(
 
       const parts = [
         `Table \`${reference.table.name}\``,
-        "Columns:",
-        ...reference.table.columns.map(
-          (col) => `- \`${col.name}\` (${col.dataType})`,
-        ),
+        ...(reference.table.columns.length > 0
+          ? [
+              "Columns:",
+              ...reference.table.columns.map(
+                (col) => `- \`${col.name}\` (${col.dataType})`,
+              ),
+            ]
+          : []),
+        ...(reference.table.relationships &&
+        reference.table.relationships.length > 0
+          ? [
+              "Relationships:",
+              ...reference.table.relationships.map(
+                (rel) =>
+                  `- \`${rel.columnName}\` -> \`${rel.referencedTable}\`.\`${rel.referencedColumn}\``,
+              ),
+            ]
+          : []),
       ];
-
-      if (reference.table.relationships.length > 0) {
-        parts.push("Relationships:");
-        parts.push(
-          ...reference.table.relationships.map(
-            (rel) =>
-              `- \`${rel.columnName}\` -> \`${rel.referencedTable}\`.\`${rel.referencedColumn}\``,
-          ),
-        );
-      }
 
       return parts.join("\n");
     }
@@ -154,6 +388,11 @@ function referenceToText(
 
 export function userMessageRawContentToText(
   rawMessageContent: UserMessageRawContent = [],
+  options: {
+    includeDatabaseInfo: boolean;
+  } = {
+    includeDatabaseInfo: true,
+  },
 ): string | null {
   const context: string[] = [];
   const seenElements = new Map<string, boolean>();
@@ -162,7 +401,10 @@ export function userMessageRawContentToText(
     if (element.type === "text") return element.value;
 
     switch (element.referenceType) {
-      case "primitive": {
+      case "variable": {
+        return `var-${element.name}-${element.dataType}`;
+      }
+      case "function": {
         return `function-${element.id}`;
       }
       case "database": {
@@ -198,7 +440,7 @@ export function userMessageRawContentToText(
               element.referenceType === "database-column"
             ) {
               const dbKey = `db-${element.database.id}`;
-              if (!seenElements.has(dbKey)) {
+              if (!seenElements.has(dbKey) && options.includeDatabaseInfo) {
                 seenElements.set(dbKey, true);
                 const dbInfo = {
                   ...element.database,
@@ -230,73 +472,85 @@ export function getResourceReferences(
   resources: (RouterOutputs["workspaces"]["byId"]["resources"][0] & {
     metadata?: unknown;
   })[],
+  notInclude: (
+    | "database"
+    | "database-table"
+    | "database-column"
+    | "function"
+  )[] = [],
 ): z.infer<typeof userMessageRawContentReferenceElementSchema>[] {
   const references: z.infer<
     typeof userMessageRawContentReferenceElementSchema
   >[] = [];
 
   for (const resource of resources ?? []) {
-    references.push({
-      id: resource.id,
-      type: "reference",
-      name: resource.name,
-      referenceType: "database",
-      utils:
-        resource.integration.utils?.map((util) => ({
-          id: util.id,
-          name: util.name,
-          description: util.description,
-        })) ?? [],
-    });
+    if (!notInclude.includes("database")) {
+      references.push({
+        id: resource.id,
+        type: "reference",
+        name: resource.name,
+        referenceType: "database",
+        utils:
+          resource.integration.utils?.map((util) => ({
+            id: util.id,
+            name: util.name,
+            description: util.description,
+          })) ?? [],
+      });
+    }
 
-    if (
-      resource.integration.type === "postgres" ||
-      resource.integration.type === "mysql"
-    ) {
-      const databaseStructure = resource.metadata as DatabaseStructure;
+    if (!notInclude.includes("database-table")) {
+      if (
+        resource.integration.type === "postgres" ||
+        resource.integration.type === "mysql"
+      ) {
+        const databaseStructure = resource.metadata as DatabaseStructure;
 
-      for (const table of databaseStructure) {
-        for (const column of table.columns) {
-          references.push({
-            type: "reference",
-            name: `${table.name}.${column.name}`,
-            referenceType: "database-column",
-            dataType: column.dataType,
-            database: {
-              id: resource.id,
-              name: resource.name,
-              utils:
-                resource.integration.utils?.map((util) => ({
-                  id: util.id,
-                  name: util.name,
-                  description: util.description,
-                })) ?? [],
-            },
-            table: {
-              name: table.name,
+        for (const table of databaseStructure) {
+          for (const column of table.columns) {
+            references.push({
+              type: "reference",
+              name: `${table.name}.${column.name}`,
+              referenceType: "database-column",
+              dataType: column.dataType,
+              database: {
+                id: resource.id,
+                name: resource.name,
+                utils:
+                  resource.integration.utils?.map((util) => ({
+                    id: util.id,
+                    name: util.name,
+                    description: util.description,
+                  })) ?? [],
+              },
+              table: {
+                name: table.name,
+                columns: table.columns,
+                relationships: table.relationships,
+              },
+            });
+          }
+
+          if (!notInclude.includes("database-table")) {
+            references.push({
+              type: "reference",
+              name: `${table.name}`,
+              referenceType: "database-table",
+              database: {
+                id: resource.id,
+                name: resource.name,
+                utils:
+                  resource.integration.utils?.map((util) => ({
+                    id: util.id,
+                    name: util.name,
+                    description: util.description,
+                  })) ?? [],
+              },
               columns: table.columns,
               relationships: table.relationships,
-            },
-          });
+            });
+          }
         }
-
-        references.push({
-          type: "reference",
-          name: `${table.name}`,
-          referenceType: "database-table",
-          database: {
-            id: resource.id,
-            name: resource.name,
-            utils:
-              resource.integration.utils?.map((util) => ({
-                id: util.id,
-                name: util.name,
-                description: util.description,
-              })) ?? [],
-          },
-          columns: table.columns,
-          relationships: table.relationships,
-        });
       }
     }
   }

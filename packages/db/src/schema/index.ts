@@ -1,6 +1,6 @@
 export * from "./auth";
 export * from "./conversations";
-export * from "./dependencies";
+export * from "./edges";
 export * from "./environment-variables";
 export * from "./flows";
 export * from "./integrations";

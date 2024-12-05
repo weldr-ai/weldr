@@ -1,5 +1,5 @@
 {
-  "id": "bd1e1f5c-9588-49db-bb28-18fc440e1804",
+  "id": "d5b8a2dc-496d-4fb5-afc7-001a6dd3eb2b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -447,12 +447,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "validation_schema": {
-          "name": "validation_schema",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "metadata": {
           "name": "metadata",
           "type": "jsonb",
@@ -486,8 +480,14 @@
           "notNull": true,
           "default": "now()"
         },
-        "conversation_id": {
-          "name": "conversation_id",
+        "input_conversation_id": {
+          "name": "input_conversation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "output_conversation_id": {
+          "name": "output_conversation_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -508,15 +508,6 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "flows_conversation_id_conversations_id_fk": {
-          "name": "flows_conversation_id_conversations_id_fk",
-          "tableFrom": "flows",
-          "tableTo": "conversations",
-          "columnsFrom": ["conversation_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "flows_workspace_id_workspaces_id_fk": {
           "name": "flows_workspace_id_workspaces_id_fk",
           "tableFrom": "flows",
@@ -752,8 +743,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "packages": {
-          "name": "packages",
+        "dependencies": {
+          "name": "dependencies",
           "type": "jsonb[]",
           "primaryKey": false,
           "notNull": false
@@ -783,8 +774,7 @@
           "name": "conversation_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "default": "NULL"
+          "notNull": true
         },
         "flow_id": {
           "name": "flow_id",
@@ -824,15 +814,6 @@
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "primitives_conversation_id_conversations_id_fk": {
-          "name": "primitives_conversation_id_conversations_id_fk",
-          "tableFrom": "primitives",
-          "tableTo": "conversations",
-          "columnsFrom": ["conversation_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "primitives_flow_id_flows_id_fk": {
@@ -1199,9 +1180,16 @@
           "notNull": false,
           "default": "NULL"
         },
-        "output": {
-          "name": "output",
-          "type": "jsonb",
+        "stdout": {
+          "name": "stdout",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "NULL"
+        },
+        "stderr": {
+          "name": "stderr",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "default": "NULL"
@@ -1253,8 +1241,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.dependencies": {
-      "name": "dependencies",
+    "public.edges": {
+      "name": "edges",
       "schema": "",
       "columns": {
         "id": {
@@ -1263,25 +1251,38 @@
           "primaryKey": true,
           "notNull": true
         },
+        "type": {
+          "name": "type",
+          "type": "dependency_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
         "target_primitive_id": {
           "name": "target_primitive_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "source_primitive_id": {
-          "name": "source_primitive_id",
+        "local_source_id": {
+          "name": "local_source_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "default": "NULL"
         },
-        "source_utility_id": {
-          "name": "source_utility_id",
+        "imported_source_id": {
+          "name": "imported_source_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "default": "NULL"
+        },
+        "flow_id": {
+          "name": "flow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -1302,13 +1303,13 @@
               "nulls": "last"
             },
             {
-              "expression": "source_primitive_id",
+              "expression": "local_source_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "source_utility_id",
+              "expression": "imported_source_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1321,29 +1322,38 @@
         }
       },
       "foreignKeys": {
-        "dependencies_target_primitive_id_primitives_id_fk": {
-          "name": "dependencies_target_primitive_id_primitives_id_fk",
-          "tableFrom": "dependencies",
+        "edges_target_primitive_id_primitives_id_fk": {
+          "name": "edges_target_primitive_id_primitives_id_fk",
+          "tableFrom": "edges",
           "tableTo": "primitives",
           "columnsFrom": ["target_primitive_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "dependencies_source_primitive_id_primitives_id_fk": {
-          "name": "dependencies_source_primitive_id_primitives_id_fk",
-          "tableFrom": "dependencies",
+        "edges_local_source_id_primitives_id_fk": {
+          "name": "edges_local_source_id_primitives_id_fk",
+          "tableFrom": "edges",
           "tableTo": "primitives",
-          "columnsFrom": ["source_primitive_id"],
+          "columnsFrom": ["local_source_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "dependencies_source_utility_id_flows_id_fk": {
-          "name": "dependencies_source_utility_id_flows_id_fk",
-          "tableFrom": "dependencies",
+        "edges_imported_source_id_flows_id_fk": {
+          "name": "edges_imported_source_id_flows_id_fk",
+          "tableFrom": "edges",
           "tableTo": "flows",
-          "columnsFrom": ["source_utility_id"],
+          "columnsFrom": ["imported_source_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "edges_flow_id_flows_id_fk": {
+          "name": "edges_flow_id_flows_id_fk",
+          "tableFrom": "edges",
+          "tableTo": "flows",
+          "columnsFrom": ["flow_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1365,12 +1375,17 @@
     "public.flow_types": {
       "name": "flow_types",
       "schema": "public",
-      "values": ["utilities", "task", "endpoint"]
+      "values": ["utility", "workflow", "endpoint"]
     },
     "public.integration_type": {
       "name": "integration_type",
       "schema": "public",
       "values": ["postgres", "mysql"]
+    },
+    "public.dependency_type": {
+      "name": "dependency_type",
+      "schema": "public",
+      "values": ["consumes", "requires"]
     }
   },
   "schemas": {},
