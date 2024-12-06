@@ -6,7 +6,6 @@ import type {
   AssistantMessageRawContent,
   FlowInputSchemaMessage,
   FlowOutputSchemaMessage,
-  FlowType,
   PrimitiveRequirementsMessage,
 } from "@integramind/shared/types";
 import {
@@ -19,9 +18,10 @@ import { createStreamableValue } from "ai/rsc";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
+  ENDPOINT_INPUT_SCHEMA_AGENT_PROMPT,
   FLOW_INPUT_SCHEMA_AGENT_PROMPT,
   FLOW_OUTPUT_SCHEMA_AGENT_PROMPT,
-  FUNCTION_DEVELOPER_PROMPT,
+  PRIMITIVE_DEVELOPER_PROMPT,
   PRIMITIVE_REQUIREMENTS_AGENT_PROMPT,
   getGeneratePrimitiveCodePrompt,
 } from "~/lib/ai/prompts";
@@ -55,7 +55,14 @@ export async function generatePrimitive({
     id: primitiveId,
   });
 
-  const stream = createStreamableValue();
+  if (!primitiveData.name) {
+    return {
+      status: "error",
+      message: "Primitive name is required",
+    };
+  }
+
+  const stream = createStreamableValue<PrimitiveRequirementsMessage>();
 
   (async () => {
     console.log(
@@ -181,7 +188,9 @@ export async function generatePrimitive({
             ),
           ];
 
-          await api.edges.createBulk(edgesData);
+          if (edgesData.length > 0) {
+            await api.edges.createBulk(edgesData);
+          }
 
           const generatePrimitiveCodePrompt =
             await getGeneratePrimitiveCodePrompt({
@@ -212,7 +221,7 @@ export async function generatePrimitive({
           const code = await generateCode({
             primitiveId,
             prompt: generatePrimitiveCodePrompt,
-            systemPrompt: FUNCTION_DEVELOPER_PROMPT,
+            systemPrompt: PRIMITIVE_DEVELOPER_PROMPT,
           });
 
           api.primitives.update({
@@ -263,12 +272,10 @@ export async function generatePrimitive({
 
 export async function generateFlowInputSchema({
   flowId,
-  flowType,
   conversationId,
   messages,
 }: {
   flowId: string;
-  flowType: FlowType;
   conversationId: string;
   messages: CoreMessage[];
 }) {
@@ -278,7 +285,30 @@ export async function generateFlowInputSchema({
     redirect("/auth/sign-in");
   }
 
-  console.log(`[generateFlowInputsSchemas] Starting for ${flowType} ${flowId}`);
+  const flowData = await api.flows.byId({
+    id: flowId,
+  });
+
+  if (!flowData.name) {
+    return {
+      status: "error",
+      message: "Flow name is required",
+    };
+  }
+
+  if (
+    flowData.type === "endpoint" &&
+    (!flowData.metadata.path || !flowData.metadata.method)
+  ) {
+    return {
+      status: "error",
+      message: "Flow path and method are required",
+    };
+  }
+
+  console.log(
+    `[generateFlowInputsSchemas] Starting for ${flowData.type} ${flowId}`,
+  );
   const stream = createStreamableValue<FlowInputSchemaMessage>();
 
   (async () => {
@@ -287,11 +317,18 @@ export async function generateFlowInputSchema({
     );
     const { partialObjectStream } = streamObject({
       model: openai("gpt-4o"),
-      system: FLOW_INPUT_SCHEMA_AGENT_PROMPT,
+      system:
+        flowData.type === "endpoint"
+          ? ENDPOINT_INPUT_SCHEMA_AGENT_PROMPT
+          : FLOW_INPUT_SCHEMA_AGENT_PROMPT,
       messages: [
         {
           role: "user",
-          content: `I want to create inputs for ${flowType} (ID: ${flowId})`,
+          content: `I want to create inputs for flow ${flowData.name} (ID: ${flowId}) of type ${flowData.type}${
+            flowData.type === "endpoint"
+              ? ` with path ${flowData.metadata.path}`
+              : ""
+          }`,
         },
         ...messages,
       ],
@@ -315,7 +352,7 @@ export async function generateFlowInputSchema({
 
         if (object?.message?.type === "end") {
           console.log(
-            `[generateFlowInputsSchemas] Processing final input schema for ${flowType} ${flowId}`,
+            `[generateFlowInputsSchemas] Processing final input schema for ${flowData.type} ${flowId}`,
           );
 
           const description: AssistantMessageRawContent = [
@@ -334,7 +371,7 @@ export async function generateFlowInputSchema({
           });
 
           console.log(
-            `[generateFlowInputsSchemas] Updating ${flowType} ${flowId} with generated input schema`,
+            `[generateFlowInputsSchemas] Updating ${flowData.type} ${flowId} with generated input schema`,
           );
 
           api.flows.update({
@@ -365,7 +402,7 @@ export async function generateFlowInputSchema({
     }
 
     console.log(
-      `[generateFlowInputsSchemas] Stream completed for ${flowType} ${flowId}`,
+      `[generateFlowInputsSchemas] Stream completed for ${flowData.type} ${flowId}`,
     );
 
     stream.done();
@@ -376,12 +413,10 @@ export async function generateFlowInputSchema({
 
 export async function generateFlowOutputsSchemas({
   flowId,
-  flowType,
   messages,
   conversationId,
 }: {
   flowId: string;
-  flowType: FlowType;
   messages: CoreMessage[];
   conversationId: string;
 }) {
@@ -391,12 +426,23 @@ export async function generateFlowOutputsSchemas({
     redirect("/auth/sign-in");
   }
 
+  const flowData = await api.flows.byId({
+    id: flowId,
+  });
+
+  if (!flowData.name) {
+    return {
+      status: "error",
+      message: "Flow name is required",
+    };
+  }
+
   console.log(`[generateFlowOutputsSchemas] Starting for flow ${flowId}`);
   const stream = createStreamableValue<FlowOutputSchemaMessage>();
 
   (async () => {
     console.log(
-      `[generateFlowOutputsSchemas] Streaming response for ${flowType} ${flowId}`,
+      `[generateFlowOutputsSchemas] Streaming response for ${flowData.type} ${flowId}`,
     );
     const { partialObjectStream } = streamObject({
       model: openai("gpt-4o"),
@@ -404,7 +450,7 @@ export async function generateFlowOutputsSchemas({
       messages: [
         {
           role: "user",
-          content: `I want to create outputs for ${flowType} (ID: ${flowId})`,
+          content: `I want to create outputs for flow ${flowData.name} (ID: ${flowId}) of type ${flowData.type}`,
         },
         ...messages,
       ],
@@ -429,7 +475,7 @@ export async function generateFlowOutputsSchemas({
 
         if (object?.message?.type === "end") {
           console.log(
-            `[generateFlowOutputsSchemas] Processing final output schema for ${flowType} ${flowId}`,
+            `[generateFlowOutputsSchemas] Processing final output schema for ${flowData.type} ${flowId}`,
           );
           const description: AssistantMessageRawContent = [
             {
@@ -447,7 +493,7 @@ export async function generateFlowOutputsSchemas({
           });
 
           console.log(
-            `[generateFlowOutputsSchemas] Updating ${flowType} ${flowId} with generated output schema`,
+            `[generateFlowOutputsSchemas] Updating ${flowData.type} ${flowId} with generated output schema`,
           );
 
           api.flows.update({
@@ -478,7 +524,7 @@ export async function generateFlowOutputsSchemas({
     }
 
     console.log(
-      `[generateFlowOutputsSchemas] Stream completed for ${flowType} ${flowId}`,
+      `[generateFlowOutputsSchemas] Stream completed for ${flowData.type} ${flowId}`,
     );
 
     stream.done();

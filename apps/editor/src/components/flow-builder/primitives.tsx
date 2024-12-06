@@ -73,7 +73,7 @@ import {
 } from "@integramind/ui/tooltip";
 import { TreeView } from "@integramind/ui/tree-view";
 import { createId } from "@paralleldrive/cuid2";
-import { readStreamableValue } from "ai/rsc";
+import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { Editor } from "~/components/editor";
@@ -253,6 +253,7 @@ export const PrimitiveNode = memo(
         }, [] as UserMessageRawContent);
 
         const chat = userMessageRawContentToText(userMessageRawContent);
+        console.log(chat);
         setUserMessageContent(chat);
         setUserMessageRawContent(userMessageRawContent);
       });
@@ -331,10 +332,21 @@ export const PrimitiveNode = memo(
         })),
       });
 
+      if (
+        typeof result === "object" &&
+        "status" in result &&
+        result.status === "error"
+      ) {
+        setIsGenerating(false);
+        return;
+      }
+
       let newAssistantMessageStr = "";
       let newAssistantMessage: ConversationMessage | null = null;
 
-      for await (const content of readStreamableValue(result)) {
+      for await (const content of readStreamableValue(
+        result as StreamableValue<PrimitiveRequirementsMessage>,
+      )) {
         newAssistantMessage = {
           role: "assistant",
           content: "",
@@ -418,7 +430,7 @@ export const PrimitiveNode = memo(
     const flowInput = flattenInputSchema({
       id: "root",
       schema: data.flow.inputSchema,
-      refPath: "global/input",
+      refPath: `${data.flow.type}/input`,
     });
     const resources = useResources();
     const availableDependencies = api.edges.available.useQuery({
@@ -715,14 +727,20 @@ export const PrimitiveNode = memo(
                         placeholder="Create, refine, or fix your function with Specly..."
                         onChange={onChatChange}
                         onSubmit={async () => {
-                          if (userMessageContent && !isGenerating) {
+                          if (
+                            userMessageContent &&
+                            !isGenerating &&
+                            data.name
+                          ) {
                             await handleOnSubmit();
                           }
                         }}
                       />
                       <Button
                         type="submit"
-                        disabled={!userMessageContent || isGenerating}
+                        disabled={
+                          !userMessageContent || isGenerating || !data.name
+                        }
                         size="sm"
                         className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
                       >

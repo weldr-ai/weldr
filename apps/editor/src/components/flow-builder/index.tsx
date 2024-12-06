@@ -295,7 +295,7 @@ export function FlowBuilder({
             </div>
           </TooltipTrigger>
           <TooltipContent side="top" className="bg-muted border">
-            <p>Primitive</p>
+            <p>Function</p>
           </TooltipContent>
         </Tooltip>
       </Panel>

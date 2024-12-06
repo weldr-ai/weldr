@@ -61,7 +61,39 @@ export function AddPostgresResourceForm({
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await addResourceMutation.mutateAsync(form.getValues());
+
+    const environmentVariables = [
+      {
+        mappedKey: "POSTGRES_DB",
+        key: "POSTGRES_DB",
+        value: form.getValues().POSTGRES_DB,
+      },
+      {
+        mappedKey: "POSTGRES_USER",
+        key: "POSTGRES_USER",
+        value: form.getValues().POSTGRES_USER,
+      },
+      {
+        mappedKey: "POSTGRES_PASSWORD",
+        key: "POSTGRES_PASSWORD",
+        value: form.getValues().POSTGRES_PASSWORD,
+      },
+      {
+        mappedKey: "POSTGRES_HOST",
+        key: "POSTGRES_HOST",
+        value: form.getValues().POSTGRES_HOST,
+      },
+      {
+        mappedKey: "POSTGRES_PORT",
+        key: "POSTGRES_PORT",
+        value: form.getValues().POSTGRES_PORT,
+      },
+    ];
+
+    await addResourceMutation.mutateAsync({
+      ...form.getValues(),
+      environmentVariables,
+    });
   };
 
   return (

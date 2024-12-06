@@ -250,6 +250,16 @@ export function FlowSheet({
   const [userMessageRawContent, setUserMessageRawContent] =
     useState<UserMessageRawContent>([]);
 
+  const canGenerateSchemas = useMemo(() => {
+    if (data.type === "endpoint") {
+      return !!data.metadata.method && !!data.metadata.path;
+    }
+    if (data.type === "workflow") {
+      return !!data.metadata.recurrence;
+    }
+    return true;
+  }, [data.type, data.metadata]);
+
   const onSubmit = async (generationMode: "input" | "output") => {
     setIsThinking(true);
     setIsGenerating(true);
@@ -286,14 +296,11 @@ export function FlowSheet({
 
     await addMessage.mutateAsync(newMessageUser);
 
-    let result: StreamableValue<
-      FlowInputSchemaMessage | FlowOutputSchemaMessage
-    >;
+    let result: unknown;
 
     if (generationMode === "input") {
       result = await generateFlowInputSchema({
         flowId: data.id,
-        flowType: data.type,
         conversationId: data.inputConversationId,
         messages: newMessages.map((message) => ({
           role: message.role,
@@ -303,7 +310,6 @@ export function FlowSheet({
     } else {
       result = await generateFlowOutputsSchemas({
         flowId: data.id,
-        flowType: data.type,
         conversationId: data.outputConversationId,
         messages: newMessages.map((message) => ({
           role: message.role,
@@ -312,10 +318,23 @@ export function FlowSheet({
       });
     }
 
+    if (
+      typeof result === "object" &&
+      "status" in (result as { status: string }) &&
+      (result as { status: string }).status === "error"
+    ) {
+      setIsGenerating(false);
+      return;
+    }
+
     let newAssistantMessageStr = "";
     let newAssistantMessage: ConversationMessage | null = null;
 
-    for await (const content of readStreamableValue(result)) {
+    for await (const content of readStreamableValue(
+      result as StreamableValue<
+        FlowInputSchemaMessage | FlowOutputSchemaMessage
+      >,
+    )) {
       newAssistantMessage = {
         role: "assistant",
         content: "",
@@ -966,13 +985,16 @@ export function FlowSheet({
                   <>
                     <span className="text-xs">Summary</span>
                     <div className="flex flex-col gap-2">
-                      {data.description && (
-                        <>
-                          <span className="text-xs text-muted-foreground">
-                            Description
-                          </span>
-                          <p className="text-sm">{data.description}</p>
-                        </>
+                      <span className="text-xs text-muted-foreground">
+                        Description
+                      </span>
+                      {data.description ? (
+                        <p className="text-sm">{data.description}</p>
+                      ) : (
+                        <p className="text-sm text-center text-muted-foreground">
+                          The flow description will be generated after the first
+                          run
+                        </p>
                       )}
                       {data.inputSchema && (
                         <>
@@ -1018,13 +1040,14 @@ export function FlowSheet({
                       setGenerationMode("input");
                       setMessages(inputConversation);
                     }}
+                    disabled={!canGenerateSchemas}
                   >
                     Define {data.type} input
                   </Button>
                   <Button
                     className="w-48"
                     variant="outline"
-                    disabled={data.type !== "endpoint"}
+                    disabled={!canGenerateSchemas}
                     onClick={() => {
                       setGenerationMode("output");
                       setMessages(outputConversation);
@@ -1080,7 +1103,11 @@ export function FlowSheet({
                       />
                       <Button
                         type="button"
-                        disabled={!userMessageContent || isGenerating}
+                        disabled={
+                          !userMessageContent ||
+                          isGenerating ||
+                          !canGenerateSchemas
+                        }
                         size="sm"
                         className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
                         onClick={async () => {

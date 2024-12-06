@@ -86,16 +86,13 @@ export const insertEndpointFlowSchema = baseInsertFlowSchema.extend({
   metadata: z.object({
     path: z
       .string()
-      .regex(/^\//, {
-        message: "Must start with '/'",
-      })
-      .regex(/^\/[a-z0-9]/, {
-        message: "First segment must start with a letter or number",
-      })
-      .regex(/^\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*$/, {
-        message:
-          "Path segments must contain only lowercase letters, numbers and hyphens",
-      })
+      .regex(
+        /^\/(?:[a-z0-9][a-z0-9-]*|\[[a-z][a-zA-Z0-9]*\])(?:\/(?:[a-z0-9][a-z0-9-]*|\[[a-z][a-zA-Z0-9]*\]))*$/,
+        {
+          message:
+            "Path must start with '/' followed by segments that are either lowercase alphanumeric with hyphens or variables in square brackets starting with lowercase (e.g. [userId]).",
+        },
+      )
       .transform((path) => {
         if (path.startsWith("/")) return path.trim();
         return `/${path.trim()}`;
@@ -143,10 +140,13 @@ export const updateEndpointFlowSchema = baseUpdateFlowSchema.extend({
       method: z.enum(["get", "post", "patch", "delete"]).optional(),
       path: z
         .string()
-        .regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
-          message:
-            "Must start with '/' and contain only lowercase letters and hyphens.",
-        })
+        .regex(
+          /^\/(?:[a-z0-9][a-z0-9-]*|\[[a-z][a-zA-Z0-9]*\])(?:\/(?:[a-z0-9][a-z0-9-]*|\[[a-z][a-zA-Z0-9]*\]))*$/,
+          {
+            message:
+              "Path must start with '/' followed by segments that are either lowercase alphanumeric with hyphens or variables in square brackets starting with lowercase (e.g. [userId]).",
+          },
+        )
         .transform((path) => {
           if (path.startsWith("/")) return path.trim();
           return `/${path.trim()}`;

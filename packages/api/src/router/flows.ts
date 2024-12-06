@@ -1,7 +1,12 @@
 import { and, eq, inArray, sql } from "@integramind/db";
 import { conversations, flows, primitives } from "@integramind/db/schema";
 import { mergeJson } from "@integramind/db/utils";
-import type { Flow, InputSchema, Primitive } from "@integramind/shared/types";
+import type {
+  Flow,
+  FlowType,
+  InputSchema,
+  Primitive,
+} from "@integramind/shared/types";
 import {
   flowTypesSchema,
   insertFlowSchema,
@@ -248,10 +253,15 @@ export const flowsRouter = {
         primitives: result.primitives.map((primitive) => ({
           ...primitive,
           canRun: canRunPrimitive(primitive as Primitive),
-          flow: { inputSchema: result.inputSchema },
+          flow: {
+            inputSchema: result.inputSchema,
+            type: result.type,
+          },
         })),
       } as Flow & {
-        primitives: (Primitive & { flow: { inputSchema: InputSchema } })[];
+        primitives: (Primitive & {
+          flow: { inputSchema: InputSchema; type: FlowType };
+        })[];
       };
     }),
   primitives: protectedProcedure

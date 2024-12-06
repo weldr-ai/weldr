@@ -8,7 +8,11 @@ import {
 } from "@integramind/db/schema";
 
 import { type SQL, and, eq, inArray } from "@integramind/db";
-import type { InputSchema, Primitive } from "@integramind/shared/types";
+import type {
+  FlowType,
+  InputSchema,
+  Primitive,
+} from "@integramind/shared/types";
 import {
   insertPrimitiveSchema,
   updatePrimitiveSchema,
@@ -112,6 +116,7 @@ export const primitivesRouter = {
           flow: {
             columns: {
               inputSchema: true,
+              type: true,
             },
           },
         },
@@ -127,9 +132,13 @@ export const primitivesRouter = {
       return {
         ...result,
         canRun: canRunPrimitive(
-          result as Primitive & { flow: { inputSchema: InputSchema } },
+          result as Primitive & {
+            flow: { inputSchema: InputSchema; type: FlowType };
+          },
         ),
-      } as Primitive & { flow: { inputSchema?: InputSchema } };
+      } as Primitive & {
+        flow: { inputSchema?: InputSchema; type: FlowType };
+      };
     }),
   update: protectedProcedure
     .input(updatePrimitiveSchema)
