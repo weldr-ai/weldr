@@ -8,6 +8,10 @@ export const integrationTypes = pgEnum("integration_type", [
   "mysql",
 ]);
 
+export const integrationCategories = pgEnum("integration_category", [
+  "database",
+]);
+
 export const integrations = pgTable("integrations", {
   id: text("id")
     .primaryKey()
@@ -21,6 +25,7 @@ export const integrations = pgTable("integrations", {
     .default(sql`NULL`),
   dependencies:
     jsonb("dependencies").$type<{ name: string; version?: string }[]>(),
+  category: integrationCategories("category").default(sql`NULL`),
 });
 
 export const integrationsRelations = relations(integrations, ({ many }) => ({

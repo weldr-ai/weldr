@@ -1,10 +1,8 @@
-import { cn } from "@integramind/ui/utils";
-
 export function LambdaIcon({ className }: { className?: string }) {
   return (
     <svg
       role="graphics-symbol"
-      className={cn(className)}
+      className={className}
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"

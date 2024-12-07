@@ -80,6 +80,7 @@ import {
 } from "@integramind/ui/tooltip";
 import { TreeView } from "@integramind/ui/tree-view";
 import { toast } from "@integramind/ui/use-toast";
+import { cn } from "@integramind/ui/utils";
 import { createId } from "@paralleldrive/cuid2";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
@@ -135,6 +136,7 @@ export function FlowSheet({
   const updateFlow = api.flows.update.useMutation({
     onSuccess: async () => {
       await apiUtils.flows.byId.invalidate();
+      await apiUtils.flows.list.invalidate();
     },
   });
 
@@ -180,6 +182,7 @@ export function FlowSheet({
   const editorRef = useRef<LexicalEditor>(null);
 
   const form = useForm<z.infer<typeof updateFlowSchema>>({
+    mode: "onChange",
     resolver: zodResolver(updateFlowSchema),
     defaultValues: {
       where: {
@@ -545,13 +548,25 @@ export function FlowSheet({
           {!data.canRun && (
             <AlertCircleIcon className="size-4 text-destructive" />
           )}
-          {data.type === "endpoint" ? (
-            <span className="p-0.5 px-3 rounded-full border border-primary bg-primary/20 text-primary">
-              {data.metadata.method.toUpperCase()}
-            </span>
-          ) : (
-            <></>
-          )}
+          <Badge
+            variant="outline"
+            className={cn("text-xs border-transparent", {
+              "text-primary bg-primary/15":
+                data.type === "endpoint" && data.metadata.method === "get",
+              "text-success bg-success/15":
+                data.type === "endpoint" && data.metadata.method === "post",
+              "text-warning bg-warning/15":
+                data.type === "endpoint" && data.metadata.method === "patch",
+              "text-destructive bg-destructive/15":
+                data.type === "endpoint" && data.metadata.method === "delete",
+            })}
+          >
+            {data.type === "endpoint"
+              ? data.metadata.method.toUpperCase()
+              : data.type === "workflow"
+                ? "WORKFLOW"
+                : "UTILITY"}
+          </Badge>
           <span>{data.name}</span>
         </Button>
       </SheetTrigger>
@@ -561,7 +576,23 @@ export function FlowSheet({
             <SheetTitle className="flex flex-col items-start justify-start border-b p-4">
               <div className="flex w-full items-center justify-between">
                 <div className="flex w-full items-center gap-2">
-                  <Badge variant="default" className="text-xs">
+                  <Badge
+                    variant="outline"
+                    className={cn("text-xs border-transparent", {
+                      "text-primary bg-primary/15":
+                        data.type === "endpoint" &&
+                        data.metadata.method === "get",
+                      "text-success bg-success/15":
+                        data.type === "endpoint" &&
+                        data.metadata.method === "post",
+                      "text-warning bg-warning/15":
+                        data.type === "endpoint" &&
+                        data.metadata.method === "patch",
+                      "text-destructive bg-destructive/15":
+                        data.type === "endpoint" &&
+                        data.metadata.method === "delete",
+                    })}
+                  >
                     {data.type === "endpoint"
                       ? data.metadata.method.toUpperCase()
                       : data.type === "workflow"

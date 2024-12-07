@@ -510,7 +510,7 @@ export function getResourceReferences(
           for (const column of table.columns) {
             references.push({
               type: "reference",
-              name: `${table.name}.${column.name}`,
+              name: `${resource.name}.${table.name}.${column.name}`,
               referenceType: "database-column",
               dataType: column.dataType,
               database: {
@@ -534,7 +534,7 @@ export function getResourceReferences(
           if (!notInclude.includes("database-table")) {
             references.push({
               type: "reference",
-              name: `${table.name}`,
+              name: `${resource.name}.${table.name}`,
               referenceType: "database-table",
               database: {
                 id: resource.id,

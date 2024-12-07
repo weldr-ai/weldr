@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusIcon } from "lucide-react";
+import { EditIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@integramind/ui/button";
@@ -12,18 +12,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@integramind/ui/dialog";
-import { ScrollArea } from "@integramind/ui/scroll-area";
 
-import type { Integration } from "@integramind/shared/types";
-import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
+import type { RouterOutputs } from "@integramind/api";
+import type {
+  EnvironmentVariable,
+  Integration,
+} from "@integramind/shared/types";
 import { AddResourceForm } from "~/components/add-resource-form";
 
 export function AddResourceDialog({
-  integrations,
-}: { integrations: Omit<Integration, "dependencies">[] }) {
-  const [integration, setIntegration] = useState<
-    Omit<Integration, "dependencies"> | undefined
-  >();
+  integration,
+  env,
+  resource,
+}: {
+  integration: Pick<Integration, "id" | "name" | "type">;
+  env: Pick<EnvironmentVariable, "id" | "key">[];
+  resource?: RouterOutputs["workspaces"]["byId"]["resources"][number];
+}) {
   const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
 
   return (
@@ -32,9 +37,18 @@ export function AddResourceDialog({
       onOpenChange={setAddResourceDialogOpen}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" className="text-xs">
-          <PlusIcon className="mr-1.5 size-3.5" />
-          Add new resource
+        <Button variant={resource ? "outline" : "default"} className="text-xs">
+          {resource ? (
+            <>
+              {resource.name}
+              <EditIcon className="ml-auto size-3.5" />
+            </>
+          ) : (
+            <>
+              <PlusIcon className="mr-1.5 size-3.5" />
+              Add new resource
+            </>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -48,30 +62,13 @@ export function AddResourceDialog({
               : "Select an integration to add a resource."}
           </DialogDescription>
         </DialogHeader>
-        {integration ? (
-          <AddResourceForm
-            integration={integration}
-            setAddResourceDialogOpen={setAddResourceDialogOpen}
-          />
-        ) : (
-          <ScrollArea className="h-[300px] w-full">
-            <div className="grid size-full grid-cols-3 gap-2">
-              {integrations.map((integration) => (
-                <Button
-                  key={integration.id}
-                  variant="outline"
-                  onClick={() => setIntegration(integration)}
-                  className="flex h-24 w-full flex-col items-center justify-center gap-2"
-                >
-                  {integration.type === "postgres" ? (
-                    <PostgresIcon className="size-6" />
-                  ) : null}
-                  {integration.name}
-                </Button>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
+        <AddResourceForm
+          integration={integration}
+          resource={resource}
+          env={env}
+          resourceEnvironmentVariables={resource?.environmentVariables}
+          setAddResourceDialogOpen={setAddResourceDialogOpen}
+        />
       </DialogContent>
     </Dialog>
   );

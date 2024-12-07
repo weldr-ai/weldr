@@ -2,15 +2,28 @@
 
 import { toast } from "@integramind/ui/use-toast";
 
-import type { Integration } from "@integramind/shared/types";
+import type { RouterOutputs } from "@integramind/api";
+import type {
+  EnvironmentVariable,
+  Integration,
+} from "@integramind/shared/types";
 import { api } from "~/lib/trpc/client";
-import { AddPostgresResourceForm } from "./add-postgres-resourc-form";
+import { AddPostgresResourceForm } from "./add-postgres-resource-form";
 
 export function AddResourceForm({
   integration,
+  env,
+  resource,
+  resourceEnvironmentVariables,
   setAddResourceDialogOpen,
 }: {
-  integration: Omit<Integration, "dependencies">;
+  integration: Pick<Integration, "id" | "name" | "type">;
+  env: Pick<EnvironmentVariable, "key">[];
+  resource?: RouterOutputs["workspaces"]["byId"]["resources"][number];
+  resourceEnvironmentVariables?: {
+    mapTo: string;
+    userKey: string;
+  }[];
   setAddResourceDialogOpen?: (open: boolean) => void;
 }) {
   const apiUtils = api.useUtils();
@@ -37,12 +50,35 @@ export function AddResourceForm({
     },
   });
 
+  const updateResourceMutation = api.resources.update.useMutation({
+    onSuccess: async () => {
+      toast({
+        title: "Success",
+        description: "Resource updated successfully.",
+        duration: 2000,
+      });
+      await apiUtils.resources.list.invalidate();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+        duration: 2000,
+      });
+    },
+  });
+
   switch (integration.type) {
     case "postgres": {
       return (
         <AddPostgresResourceForm
           postgresIntegration={integration}
+          env={env}
           addResourceMutation={addResourceMutation}
+          updateResourceMutation={updateResourceMutation}
+          resource={resource}
+          resourceEnvironmentVariables={resourceEnvironmentVariables}
         />
       );
     }

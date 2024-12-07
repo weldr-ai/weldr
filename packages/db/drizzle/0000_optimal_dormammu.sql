@@ -1,5 +1,6 @@
 CREATE TYPE "public"."roles" AS ENUM('user', 'assistant');--> statement-breakpoint
 CREATE TYPE "public"."flow_types" AS ENUM('utility', 'workflow', 'endpoint');--> statement-breakpoint
+CREATE TYPE "public"."integration_category" AS ENUM('database');--> statement-breakpoint
 CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');--> statement-breakpoint
 CREATE TYPE "public"."dependency_type" AS ENUM('consumes', 'requires');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "accounts" (
@@ -100,7 +101,8 @@ CREATE TABLE IF NOT EXISTS "integrations" (
 	"name" text NOT NULL,
 	"description" text NOT NULL,
 	"environment_variables" text[] DEFAULT NULL,
-	"dependencies" jsonb
+	"dependencies" jsonb,
+	"category" "integration_category" DEFAULT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "primitives" (
@@ -127,11 +129,10 @@ CREATE TABLE IF NOT EXISTS "primitives" (
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "resource_environment_variables" (
-	"mapped_key" text NOT NULL,
+	"map_to" text NOT NULL,
 	"resource_id" text NOT NULL,
 	"environment_variable_id" text NOT NULL,
-	CONSTRAINT "resource_environment_variables_resource_id_environment_variable_id_pk" PRIMARY KEY("resource_id","environment_variable_id"),
-	CONSTRAINT "resource_environment_variables_resource_id_environment_variable_id_unique" UNIQUE("resource_id","environment_variable_id")
+	CONSTRAINT "resource_environment_variables_resource_id_environment_variable_id_pk" PRIMARY KEY("resource_id","environment_variable_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "resources" (
@@ -162,11 +163,11 @@ CREATE TABLE IF NOT EXISTS "environment_variables" (
 	"id" text PRIMARY KEY NOT NULL,
 	"key" text NOT NULL,
 	"secret_id" uuid NOT NULL,
-	"viewable" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"workspace_id" text NOT NULL,
-	"user_id" text
+	"user_id" text,
+	CONSTRAINT "unique_key" UNIQUE("workspace_id","key")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "test_runs" (

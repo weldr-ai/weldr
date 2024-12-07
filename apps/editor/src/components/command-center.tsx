@@ -14,12 +14,14 @@ import {
   CommandList,
 } from "@integramind/ui/command";
 
-import type { Workspace } from "@integramind/shared/types";
+import type { RouterOutputs } from "@integramind/api";
 import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { useCommandCenterStore } from "~/lib/store";
 
 // TODO: the command center should be a complete center to navigate the workspace quickly
-export function CommandCenter({ workspaces }: { workspaces: Workspace[] }) {
+export function CommandCenter({
+  workspaces,
+}: { workspaces: RouterOutputs["workspaces"]["list"] }) {
   const router = useRouter();
   const commandCenterOpen = useCommandCenterStore((state) => state.open);
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);

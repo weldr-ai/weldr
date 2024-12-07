@@ -1,5 +1,5 @@
 {
-  "id": "d5b8a2dc-496d-4fb5-afc7-001a6dd3eb2b",
+  "id": "5d16d9a2-6836-4019-9da0-f61b28821464",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -645,6 +645,14 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
+        },
+        "category": {
+          "name": "category",
+          "type": "integration_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "NULL"
         }
       },
       "indexes": {},
@@ -836,8 +844,8 @@
       "name": "resource_environment_variables",
       "schema": "",
       "columns": {
-        "mapped_key": {
-          "name": "mapped_key",
+        "map_to": {
+          "name": "map_to",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -882,13 +890,7 @@
           "columns": ["resource_id", "environment_variable_id"]
         }
       },
-      "uniqueConstraints": {
-        "resource_environment_variables_resource_id_environment_variable_id_unique": {
-          "name": "resource_environment_variables_resource_id_environment_variable_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["resource_id", "environment_variable_id"]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1092,13 +1094,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "viewable": {
-          "name": "viewable",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -1158,7 +1153,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "unique_key": {
+          "name": "unique_key",
+          "nullsNotDistinct": false,
+          "columns": ["workspace_id", "key"]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1376,6 +1377,11 @@
       "name": "flow_types",
       "schema": "public",
       "values": ["utility", "workflow", "endpoint"]
+    },
+    "public.integration_category": {
+      "name": "integration_category",
+      "schema": "public",
+      "values": ["database"]
     },
     "public.integration_type": {
       "name": "integration_type",

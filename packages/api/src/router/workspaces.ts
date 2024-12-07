@@ -1,6 +1,12 @@
 import { and, eq } from "@integramind/db";
-import { workspaces } from "@integramind/db/schema";
-import { insertWorkspaceSchema } from "@integramind/shared/validators/workspaces";
+import {
+  resourceEnvironmentVariables,
+  workspaces,
+} from "@integramind/db/schema";
+import {
+  insertWorkspaceSchema,
+  updateWorkspaceSchema,
+} from "@integramind/shared/validators/workspaces";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";
@@ -75,12 +81,17 @@ export const workspacesRouter = {
   byId: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query.workspaces.findFirst({
+      const workspace = await ctx.db.query.workspaces.findFirst({
         where: and(
           eq(workspaces.id, input.id),
           eq(workspaces.userId, ctx.session.user.id),
         ),
         with: {
+          environmentVariables: {
+            columns: {
+              secretId: false,
+            },
+          },
           resources: {
             columns: {
               id: true,
@@ -94,6 +105,7 @@ export const workspacesRouter = {
                   type: true,
                   name: true,
                   description: true,
+                  category: true,
                 },
                 with: {
                   utils: {
@@ -110,6 +122,61 @@ export const workspacesRouter = {
           flows: true,
         },
       });
+
+      if (!workspace) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Workspace not found",
+        });
+      }
+
+      const resourceEnvs = await Promise.all(
+        workspace.resources.map(async (resource) => {
+          const data = await ctx.db.query.resourceEnvironmentVariables.findMany(
+            {
+              where: eq(resourceEnvironmentVariables.resourceId, resource.id),
+              with: {
+                environmentVariable: {
+                  columns: {
+                    key: true,
+                  },
+                },
+              },
+            },
+          );
+          return {
+            ...resource,
+            environmentVariables: data.map((rev) => ({
+              id: rev.environmentVariableId,
+              mapTo: rev.mapTo,
+              userKey: rev.environmentVariable.key,
+            })),
+          };
+        }),
+      );
+
+      const result = {
+        ...workspace,
+        resources: resourceEnvs,
+      };
+
+      return result;
+    }),
+  update: protectedProcedure
+    .input(updateWorkspaceSchema)
+    .mutation(async ({ ctx, input }) => {
+      const result = (
+        await ctx.db
+          .update(workspaces)
+          .set(input.payload)
+          .where(
+            and(
+              eq(workspaces.id, input.where.id),
+              eq(workspaces.userId, ctx.session.user.id),
+            ),
+          )
+          .returning()
+      )[0];
 
       if (!result) {
         throw new TRPCError({

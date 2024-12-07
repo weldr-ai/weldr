@@ -6,10 +6,10 @@ export const flowTypesSchema = z.enum(["workflow", "endpoint", "utility"]);
 
 export const endpointFlowMetadataSchema = z.object({
   method: z.enum(["get", "post", "patch", "delete"]),
-  path: z.string().regex(/^\/[a-z-]+(\/[a-z-]+)*$/, {
-    message:
-      "Must start with '/' and contain only lowercase letters and hyphens.",
+  path: z.string().min(1, {
+    message: "Path is required.",
   }),
+  openApiSchema: z.record(z.string(), z.any()).optional(),
 });
 
 export const workflowFlowMetadataSchema = z.object({
@@ -60,17 +60,9 @@ export const flowSchema = z.discriminatedUnion("type", [
 ]);
 
 export const baseInsertFlowSchema = z.object({
-  name: z
-    .string()
-    .min(1, {
-      message: "Name is required.",
-    })
-    .regex(/^[a-z]/, {
-      message: "Must start with a lowercase letter",
-    })
-    .regex(/^[a-z][a-z0-9-]*$/, {
-      message: "Can only contain lowercase letters, numbers and hyphens",
-    }),
+  name: z.string().min(1, {
+    message: "Name is required.",
+  }),
   type: flowTypesSchema,
   workspaceId: z.string().min(1, {
     message: "Workspace is required.",
@@ -84,19 +76,16 @@ export const insertUtilityFlowSchema = baseInsertFlowSchema.extend({
 export const insertEndpointFlowSchema = baseInsertFlowSchema.extend({
   type: z.literal("endpoint"),
   metadata: z.object({
+    method: z.enum(["get", "post", "patch", "delete"]),
     path: z
       .string()
       .regex(
-        /^\/(?:[a-z0-9][a-z0-9-]*|\[[a-z][a-zA-Z0-9]*\])(?:\/(?:[a-z0-9][a-z0-9-]*|\[[a-z][a-zA-Z0-9]*\]))*$/,
+        /^\/(?:[a-z0-9][a-z0-9-]*|\{[a-z][a-zA-Z0-9]*\})(?:\/(?:[a-z0-9][a-z0-9-]*|\{[a-z][a-zA-Z0-9]*\}))*$/,
         {
           message:
-            "Path must start with '/' followed by segments that are either lowercase alphanumeric with hyphens or variables in square brackets starting with lowercase (e.g. [userId]).",
+            "Path must start with '/' followed by segments that are either lowercase alphanumeric with hyphens or variables in curly braces starting with lowercase (e.g. {userId}).",
         },
-      )
-      .transform((path) => {
-        if (path.startsWith("/")) return path.trim();
-        return `/${path.trim()}`;
-      }),
+      ),
   }),
 });
 
@@ -119,12 +108,6 @@ export const baseUpdateFlowSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .regex(/^[a-z]/, {
-      message: "Must start with a lowercase letter",
-    })
-    .regex(/^[a-z][a-z0-9-]*$/, {
-      message: "Can only contain lowercase letters, numbers and hyphens",
-    })
     .optional(),
   description: z.string().optional(),
   inputSchema: inputSchema.optional(),
@@ -141,16 +124,12 @@ export const updateEndpointFlowSchema = baseUpdateFlowSchema.extend({
       path: z
         .string()
         .regex(
-          /^\/(?:[a-z0-9][a-z0-9-]*|\[[a-z][a-zA-Z0-9]*\])(?:\/(?:[a-z0-9][a-z0-9-]*|\[[a-z][a-zA-Z0-9]*\]))*$/,
+          /^\/(?:[a-z0-9][a-z0-9-]*|\{[a-z][a-zA-Z0-9]*\})(?:\/(?:[a-z0-9][a-z0-9-]*|\{[a-z][a-zA-Z0-9]*\}))*$/,
           {
             message:
-              "Path must start with '/' followed by segments that are either lowercase alphanumeric with hyphens or variables in square brackets starting with lowercase (e.g. [userId]).",
+              "Path must start with '/' followed by segments that are either lowercase alphanumeric with hyphens or variables in curly braces starting with lowercase (e.g. {userId}).",
           },
         )
-        .transform((path) => {
-          if (path.startsWith("/")) return path.trim();
-          return `/${path.trim()}`;
-        })
         .optional(),
     })
     .optional(),

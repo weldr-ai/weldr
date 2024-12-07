@@ -96,7 +96,7 @@ export const engineRouter = {
             continue;
           }
 
-          environmentVariablesMap[resourceEnvironmentVariableData.mappedKey] =
+          environmentVariablesMap[resourceEnvironmentVariableData.mapTo] =
             environmentVariableData.key;
 
           // Only fetch secrets in development for testing

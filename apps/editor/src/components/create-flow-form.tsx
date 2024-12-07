@@ -82,6 +82,7 @@ export function CreateFlowForm({
           type,
           metadata: {
             path: "",
+            method: undefined,
           },
         };
       case "workflow":
@@ -135,6 +136,32 @@ export function CreateFlowForm({
                       placeholder="Enter action URL path"
                       {...field}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="metadata.method"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Method</FormLabel>
+                  <FormControl>
+                    <Select
+                      {...field}
+                      onValueChange={(value) => field.onChange(value)}
+                    >
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder="Select method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="get">GET</SelectItem>
+                        <SelectItem value="post">POST</SelectItem>
+                        <SelectItem value="patch">PATCH</SelectItem>
+                        <SelectItem value="delete">DELETE</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

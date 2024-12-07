@@ -20,7 +20,6 @@ export default async function WorkspacesLayout({
     const { workspaceId } = await params;
     const workspace = await api.workspaces.byId({ id: workspaceId });
     const workspaces = await api.workspaces.list();
-    const integrations = await api.integrations.list();
     const resources = workspace.resources;
     const flows = workspace.flows;
 
@@ -68,27 +67,12 @@ export default async function WorkspacesLayout({
 
     return (
       <ResourcesProvider resources={resourcesWithMetadata}>
-        <div className="flex size-full min-h-screen flex-rows bg-background">
-          <div className="sticky flex h-full dark:bg-muted z-50">
-            <Sidebar
-              workspace={workspace}
-              integrations={integrations}
-              initialResources={resources.map((resource) => ({
-                id: resource.id,
-                name: resource.name,
-                description: resource.description,
-                integration: {
-                  id: resource.integration.id,
-                  name: resource.integration.name,
-                  description: resource.integration.description,
-                  type: resource.integration.type,
-                },
-              }))}
-              initialFlows={flows}
-            />
+        <div className="flex h-screen bg-background">
+          <div className="sticky top-0 h-screen dark:bg-muted z-50">
+            <Sidebar workspace={workspace} initialFlows={flows} />
           </div>
-          <main className="flex w-full dark:bg-muted py-2.5 pr-2.5">
-            <div className="flex size-full rounded-md border shadow">
+          <main className="flex-1 dark:bg-muted py-2.5 pr-2.5">
+            <div className="h-full rounded-md border overflow-auto bg-background">
               {children}
             </div>
           </main>

@@ -23,13 +23,13 @@ export const flowsRouter = {
     .mutation(async ({ ctx, input }) => {
       if (input.type === "endpoint") {
         const flow = await ctx.db.query.flows.findFirst({
-          where: sql`metadata::jsonb->>'path' = ${input.metadata.path}`,
+          where: sql`metadata::jsonb->>'path' = ${input.metadata.path} AND metadata::jsonb->>'method' = ${input.metadata.method}`,
         });
 
         if (flow) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Endpoint with this path already exists",
+            message: "Endpoint with this path and method already exists",
           });
         }
       }
@@ -78,14 +78,7 @@ export const flowsRouter = {
             outputConversationId: outputConversation.id,
           };
 
-          if (input.type === "endpoint") {
-            values.metadata = sql`${{
-              ...input.metadata,
-              method: "GET",
-            }}::jsonb`;
-          }
-
-          if (input.type === "workflow") {
+          if (input.type === "workflow" || input.type === "endpoint") {
             values.metadata = sql`${input.metadata}::jsonb`;
           }
 

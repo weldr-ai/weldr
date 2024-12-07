@@ -14,11 +14,13 @@ import {
   CommandList,
 } from "@integramind/ui/command";
 
-import type { Workspace } from "@integramind/shared/types";
+import type { RouterOutputs } from "@integramind/api";
 import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
 import { useCommandCenterStore } from "~/lib/store";
 
-export function WorkspacesDialog({ workspaces }: { workspaces: Workspace[] }) {
+export function WorkspacesDialog({
+  workspaces,
+}: { workspaces: RouterOutputs["workspaces"]["list"] }) {
   const router = useRouter();
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
   const [createWorkspaceDialogOpen, setCreateWorkspaceDialogOpen] =

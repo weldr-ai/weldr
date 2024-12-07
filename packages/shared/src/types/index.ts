@@ -18,6 +18,7 @@ import type {
   userMessageRawContentSchema,
 } from "../validators/conversations";
 import type { edgeSchema } from "../validators/edges";
+import type { environmentVariableSchema } from "../validators/environment-variables";
 import type {
   endpointFlowMetadataSchema,
   endpointFlowSchema,
@@ -95,6 +96,8 @@ export type Resource = z.infer<typeof resourceSchema>;
 export type Integration = z.infer<typeof integrationSchema>;
 export type IntegrationType = z.infer<typeof integrationTypeSchema>;
 export type IntegrationUtility = z.infer<typeof integrationUtilitySchema>;
+
+export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;
 
 export type RawContent = z.infer<typeof rawContentSchema>;
 export type Dependency = z.infer<typeof dependencySchema>;

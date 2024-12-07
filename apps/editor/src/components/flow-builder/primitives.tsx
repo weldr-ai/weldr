@@ -165,9 +165,7 @@ export const PrimitiveNode = memo(
     const editorRef = useRef<LexicalEditor>(null);
 
     const form = useForm<z.infer<typeof validationSchema>>({
-      mode: "all",
-      criteriaMode: "all",
-      reValidateMode: "onChange",
+      mode: "onChange",
       resolver: zodResolver(validationSchema),
       defaultValues: {
         name: data.name ?? "",

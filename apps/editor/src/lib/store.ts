@@ -2,12 +2,12 @@ import { create } from "zustand";
 import { type PersistOptions, persist } from "zustand/middleware";
 
 interface PrimarySidebarState {
-  activeSection: "utility" | "endpoints" | "workflows" | "resources" | null;
+  activeSection: "utility" | "endpoints" | "workflows" | null;
 }
 
 interface PrimarySidebarAction {
   updateActiveSection: (
-    activeSection: "utility" | "endpoints" | "workflows" | "resources" | null,
+    activeSection: "utility" | "endpoints" | "workflows" | null,
   ) => void;
 }
 

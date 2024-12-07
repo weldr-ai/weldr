@@ -1,14 +1,16 @@
-import { and, eq } from "@integramind/db";
+import { and, db, eq, sql } from "@integramind/db";
 import {
   environmentVariables,
   integrations,
   resourceEnvironmentVariables,
   resources,
-  secrets,
   workspaces,
 } from "@integramind/db/schema";
 import { testConnection } from "@integramind/shared/integrations/postgres/helpers";
-import { insertResourceSchema } from "@integramind/shared/validators/resources";
+import {
+  insertResourceSchema,
+  updateResourceSchema,
+} from "@integramind/shared/validators/resources";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
@@ -32,30 +34,66 @@ export const resourcesRouter = {
         where: eq(integrations.id, input.integrationId),
       });
 
+      const environment: {
+        id: string;
+        mapTo: string;
+        userKey: string;
+        value: string;
+      }[] = [];
+
+      for (const env of input.environmentVariables ?? []) {
+        const environmentVariable =
+          await ctx.db.query.environmentVariables.findFirst({
+            where: eq(environmentVariables.key, env.userKey),
+          });
+
+        if (!environmentVariable) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Environment variable not found",
+          });
+        }
+
+        const secret = (
+          await db.execute(
+            sql`select decrypted_secret from vault.decrypted_secrets where id=${environmentVariable.secretId}`,
+          )
+        ).rows[0]?.decrypted_secret as string;
+
+        if (!secret) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Environment variable not found",
+          });
+        }
+
+        environment.push({
+          id: environmentVariable.id,
+          userKey: environmentVariable.key,
+          mapTo: env.mapTo,
+          value: secret,
+        });
+      }
+
       switch (integration?.type) {
         case "postgres": {
           const connectionTest = await testConnection({
             host:
-              input.environmentVariables?.find(
-                (env) => env.mappedKey === "POSTGRES_HOST",
-              )?.value ?? "",
+              environment.find((env) => env.mapTo === "POSTGRES_HOST")?.value ??
+              "",
             port: Number.parseInt(
-              input.environmentVariables?.find(
-                (env) => env.mappedKey === "POSTGRES_PORT",
-              )?.value ?? "5432",
+              environment.find((env) => env.mapTo === "POSTGRES_PORT")?.value ??
+                "5432",
             ),
             database:
-              input.environmentVariables?.find(
-                (env) => env.mappedKey === "POSTGRES_DB",
-              )?.value ?? "",
+              environment.find((env) => env.mapTo === "POSTGRES_DB")?.value ??
+              "",
             user:
-              input.environmentVariables?.find(
-                (env) => env.mappedKey === "POSTGRES_USER",
-              )?.value ?? "",
+              environment.find((env) => env.mapTo === "POSTGRES_USER")?.value ??
+              "",
             password:
-              input.environmentVariables?.find(
-                (env) => env.mappedKey === "POSTGRES_PASSWORD",
-              )?.value ?? "",
+              environment.find((env) => env.mapTo === "POSTGRES_PASSWORD")
+                ?.value ?? "",
           });
 
           if (!connectionTest) {
@@ -103,49 +141,14 @@ export const resourcesRouter = {
             });
           }
 
-          for (const env of input.environmentVariables ?? []) {
-            const secret = (
-              await tx
-                .insert(secrets)
-                .values({
-                  secret: env.value,
-                })
-                .returning({ id: secrets.id })
-            )[0];
-
-            if (!secret) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Failed to create resource",
-              });
-            }
-
-            const environmentVariable = (
-              await tx
-                .insert(environmentVariables)
-                .values({
-                  key: env.key,
-                  secretId: secret.id,
-                  workspaceId: input.workspaceId,
-                  userId: ctx.session.user.id,
-                })
-                .returning({ id: environmentVariables.id })
-            )[0];
-
-            if (!environmentVariable) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Failed to create resource",
-              });
-            }
-
+          for (const env of environment) {
             const resourceEnvironmentVariable = (
               await tx
                 .insert(resourceEnvironmentVariables)
                 .values({
-                  mappedKey: env.mappedKey,
+                  mapTo: env.mapTo,
                   resourceId: resource.id,
-                  environmentVariableId: environmentVariable.id,
+                  environmentVariableId: env.id,
                 })
                 .returning()
             )[0];
@@ -215,6 +218,148 @@ export const resourcesRouter = {
       if (!result) {
         throw new Error("Resource not found");
       }
+
+      return result;
+    }),
+  update: protectedProcedure
+    .input(updateResourceSchema)
+    .mutation(async ({ ctx, input }) => {
+      const resource = await ctx.db.query.resources.findFirst({
+        where: eq(resources.id, input.where.id),
+        with: {
+          integration: {
+            columns: {
+              type: true,
+            },
+          },
+        },
+      });
+
+      if (!resource) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Resource not found",
+        });
+      }
+
+      const currentSecrets: {
+        userKey: string;
+        mapTo: string;
+        value: string;
+      }[] = [];
+
+      const currentResourceEnvironmentVariables =
+        await ctx.db.query.resourceEnvironmentVariables.findMany({
+          where: eq(resourceEnvironmentVariables.resourceId, resource.id),
+          with: {
+            environmentVariable: true,
+          },
+        });
+
+      for (const rev of currentResourceEnvironmentVariables) {
+        const secret = (
+          await db.execute(
+            sql`select decrypted_secret from vault.decrypted_secrets where id=${rev.environmentVariable.secretId}`,
+          )
+        ).rows[0]?.decrypted_secret as string;
+
+        if (!secret) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Environment variable not found",
+          });
+        }
+
+        currentSecrets.push({
+          userKey: rev.environmentVariable.key,
+          mapTo: rev.mapTo,
+          value: secret,
+        });
+      }
+
+      const updatedSecrets: {
+        userKey: string;
+        mapTo: string;
+        value: string;
+      }[] = [];
+
+      for (const env of input.payload.environmentVariables ?? []) {
+        const environmentVariable =
+          await ctx.db.query.environmentVariables.findFirst({
+            where: eq(environmentVariables.key, env.userKey),
+          });
+
+        if (!environmentVariable) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Environment variable not found",
+          });
+        }
+
+        const secret = (
+          await db.execute(
+            sql`select decrypted_secret from vault.decrypted_secrets where id=${environmentVariable.secretId}`,
+          )
+        ).rows[0]?.decrypted_secret as string;
+
+        if (!secret) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Environment variable not found",
+          });
+        }
+
+        updatedSecrets.push({
+          userKey: environmentVariable.key,
+          mapTo: env.mapTo,
+          value: secret,
+        });
+      }
+
+      const newEnvironment = currentSecrets.map((secret) => {
+        const updated = updatedSecrets.find((s) => s.mapTo === secret.mapTo);
+        return updated ?? secret;
+      });
+
+      if (input.payload.environmentVariables) {
+        switch (resource.integration.type) {
+          case "postgres": {
+            const connectionTest = await testConnection({
+              host:
+                newEnvironment.find((env) => env.mapTo === "POSTGRES_HOST")
+                  ?.value ?? "",
+              port: Number.parseInt(
+                newEnvironment.find((env) => env.mapTo === "POSTGRES_PORT")
+                  ?.value ?? "5432",
+              ),
+              database:
+                newEnvironment.find((env) => env.mapTo === "POSTGRES_DB")
+                  ?.value ?? "",
+              user:
+                newEnvironment.find((env) => env.mapTo === "POSTGRES_USER")
+                  ?.value ?? "",
+              password:
+                newEnvironment.find((env) => env.mapTo === "POSTGRES_PASSWORD")
+                  ?.value ?? "",
+            });
+
+            if (!connectionTest) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "Failed to connect to the database",
+              });
+            }
+          }
+        }
+      }
+
+      const result = await ctx.db
+        .update(resources)
+        .set({
+          name: input.payload.name,
+          description: input.payload.description,
+        })
+        .where(eq(resources.id, input.where.id));
 
       return result;
     }),

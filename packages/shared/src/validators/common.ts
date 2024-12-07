@@ -11,6 +11,55 @@ export const dataTypeSchema = z.enum([
   "null",
 ]);
 
+export const responsesSchema = z.record(
+  z.string().regex(/^[0-9]{3}$/),
+  z.object({
+    description: z.string(),
+    content: z
+      .record(
+        z.object({
+          schema: z.object({
+            type: z.enum([
+              "string",
+              "number",
+              "integer",
+              "boolean",
+              "array",
+              "object",
+            ]),
+            properties: z
+              .record(
+                z.object({
+                  type: z.enum([
+                    "string",
+                    "number",
+                    "integer",
+                    "boolean",
+                    "array",
+                    "object",
+                  ]),
+                  description: z.string().optional(),
+                }),
+              )
+              .optional(),
+            items: z
+              .object({
+                type: z.enum([
+                  "string",
+                  "number",
+                  "integer",
+                  "boolean",
+                  "object",
+                ]),
+              })
+              .optional(),
+          }),
+        }),
+      )
+      .optional(),
+  }),
+);
+
 export const jsonSchemaPropertySchema = z.object({
   $ref: z.string().optional(),
   type: dataTypeSchema,

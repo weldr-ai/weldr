@@ -55,16 +55,6 @@ function pgTypeToJsonSchemaType(pgType: string): DataType {
 }
 
 export async function testConnection(config: DbConfig): Promise<boolean> {
-  console.log(config);
-
-  console.log(
-    config.host,
-    config.port,
-    config.database,
-    config.user,
-    config.password,
-  );
-
   const pool = new Pool({
     host: config.host,
     port: config.port,

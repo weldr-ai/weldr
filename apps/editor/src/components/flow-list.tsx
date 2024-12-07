@@ -6,7 +6,7 @@ import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
 import type { RouterOutputs } from "@integramind/api";
-import type { FlowType } from "@integramind/shared/types";
+import type { EndpointFlowMetadata, FlowType } from "@integramind/shared/types";
 import { CreateFlowDialog } from "./create-flow-dialog";
 
 export function FlowList({
@@ -29,9 +29,28 @@ export function FlowList({
               key={flow.id}
               className={cn(buttonVariants({ variant: "ghost" }), {
                 "bg-accent": currentFlowId === flow.id,
+                "justify-between items-center": flow.type === "endpoint",
               })}
             >
               {flow.name}
+              {flow.type === "endpoint" && (
+                <span
+                  className={cn({
+                    "text-primary":
+                      (flow.metadata as EndpointFlowMetadata).method === "get",
+                    "text-success":
+                      (flow.metadata as EndpointFlowMetadata).method === "post",
+                    "text-warning":
+                      (flow.metadata as EndpointFlowMetadata).method ===
+                      "patch",
+                    "text-destructive":
+                      (flow.metadata as EndpointFlowMetadata).method ===
+                      "delete",
+                  })}
+                >
+                  {(flow.metadata as EndpointFlowMetadata).method.toUpperCase()}
+                </span>
+              )}
             </Link>
           ))}
         </div>

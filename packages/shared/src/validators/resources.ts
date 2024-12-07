@@ -19,11 +19,9 @@ export const insertResourceSchema = z.object({
     .min(1, {
       message: "Name is required.",
     })
-    .regex(/^[A-Z]/, {
-      message: "Must start with an uppercase letter",
-    })
-    .regex(/^[A-Z][a-zA-Z0-9]*$/, {
-      message: "Can only contain letters and numbers",
+    .regex(/^[a-zA-Z][a-zA-Z0-9]*$/, {
+      message:
+        "Must start with a letter and can only contain letters and numbers",
     }),
   description: z.string().optional(),
   workspaceId: z.string().min(1, {
@@ -33,7 +31,27 @@ export const insertResourceSchema = z.object({
     message: "Integration is required.",
   }),
   environmentVariables: z
-    .object({ mappedKey: z.string(), key: z.string(), value: z.string() })
+    .object({
+      userKey: z.string(),
+      mapTo: z.string(),
+    })
     .array()
     .optional(),
+});
+
+export const updateResourceSchema = z.object({
+  where: z.object({
+    id: z.string(),
+  }),
+  payload: z.object({
+    name: z.string().optional(),
+    description: z.string().optional(),
+    environmentVariables: z
+      .object({
+        userKey: z.string(),
+        mapTo: z.string(),
+      })
+      .array()
+      .optional(),
+  }),
 });

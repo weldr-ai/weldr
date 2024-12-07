@@ -4,15 +4,14 @@ import {
   BlocksIcon,
   BoxesIcon,
   PlusIcon,
+  SettingsIcon,
   SidebarCloseIcon,
   TrashIcon,
-  UnplugIcon,
   WorkflowIcon,
 } from "lucide-react";
 
 import type { RouterOutputs } from "@integramind/api";
-import type { Integration, Workspace } from "@integramind/shared/types";
-import { Button } from "@integramind/ui/button";
+import { Button, buttonVariants } from "@integramind/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +26,7 @@ import {
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
 import { cn } from "@integramind/ui/utils";
+import Link from "next/link";
 import { useState } from "react";
 import { useCommandCenterStore, usePrimarySidebarStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
@@ -34,17 +34,12 @@ import { AccountDropdownMenu } from "./account-dropdown-menu";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 import { FlowList } from "./flow-list";
-import { ResourceList } from "./resource-list";
 
 export function Sidebar({
   workspace,
-  integrations,
-  initialResources,
   initialFlows,
 }: {
-  workspace: Workspace;
-  integrations: Omit<Integration, "dependencies">[];
-  initialResources: RouterOutputs["resources"]["list"];
+  workspace: RouterOutputs["workspaces"]["byId"];
   initialFlows: RouterOutputs["flows"]["list"];
 }) {
   const activeSection = usePrimarySidebarStore((state) => state.activeSection);
@@ -59,15 +54,6 @@ export function Sidebar({
     useState<boolean>(false);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
-
-  const { data: resources } = api.resources.list.useQuery(
-    {
-      workspaceId: workspace.id,
-    },
-    {
-      initialData: initialResources,
-    },
-  );
 
   const { data: flows } = api.flows.list.useQuery(
     {
@@ -85,58 +71,67 @@ export function Sidebar({
   return (
     <div className="flex ">
       <div className="flex flex-col w-14 size-full">
-        <DropdownMenu>
-          <div
-            className={cn("flex items-center justify-center h-14 border-b", {
-              "border-r": isSidebarOpen,
-            })}
-          >
+        <div
+          className={cn("flex items-center justify-center h-14 border-b", {
+            "border-r": isSidebarOpen,
+          })}
+        >
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
                 <LogoIcon className="size-10" />
-                <span className="sr-only">integramind</span>
+                <span className="sr-only">IntegraMind</span>
               </Button>
             </DropdownMenuTrigger>
-          </div>
-          <DropdownMenuContent className="w-56" align="start" side="right">
-            <DropdownMenuItem
-              className="text-xs"
-              onClick={() => setCreateWorkspaceDialogOpen(true)}
-            >
-              <PlusIcon className="mr-3 size-4 text-muted-foreground" />
-              Create Workspace
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="flex items-center justify-between text-xs"
-              onClick={() => setCommandCenterOpen(true)}
-            >
-              <div className="flex gap-3">
-                <BoxesIcon className="size-4 text-muted-foreground" />
-                <span>View All Workspaces</span>
-              </div>
-              <span className="text-muted-foreground">cmd+k</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-xs text-destructive hover:text-destructive/90 focus:text-destructive/90"
-              onClick={() => setDeleteAlertDialogOpen(true)}
-            >
-              <TrashIcon className="mr-3 size-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-          <CreateWorkspaceDialog
-            open={createWorkspaceDialogOpen}
-            setOpen={setCreateWorkspaceDialogOpen}
-          />
-          <DeleteAlertDialog
-            open={deleteAlertDialogOpen}
-            setOpen={setDeleteAlertDialogOpen}
-            onDelete={() => {
-              return;
-            }}
-          />
-        </DropdownMenu>
+            <DropdownMenuContent className="w-56" align="end" side="right">
+              <DropdownMenuItem className="text-xs">
+                <Link
+                  href={`/workspaces/${workspace.id}/settings`}
+                  className="flex items-center justify-start w-full"
+                >
+                  <SettingsIcon className="mr-3 size-4 text-muted-foreground" />
+                  Workspace Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-xs"
+                onClick={() => setCreateWorkspaceDialogOpen(true)}
+              >
+                <PlusIcon className="mr-3 size-4 text-muted-foreground" />
+                Create Workspace
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="flex items-center justify-between text-xs"
+                onClick={() => setCommandCenterOpen(true)}
+              >
+                <div className="flex gap-3">
+                  <BoxesIcon className="size-4 text-muted-foreground" />
+                  <span>View All Workspaces</span>
+                </div>
+                <span className="text-muted-foreground">cmd+k</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-xs text-destructive hover:text-destructive/90 focus:text-destructive/90"
+                onClick={() => setDeleteAlertDialogOpen(true)}
+              >
+                <TrashIcon className="mr-3 size-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+            <CreateWorkspaceDialog
+              open={createWorkspaceDialogOpen}
+              setOpen={setCreateWorkspaceDialogOpen}
+            />
+            <DeleteAlertDialog
+              open={deleteAlertDialogOpen}
+              setOpen={setDeleteAlertDialogOpen}
+              onDelete={() => {
+                return;
+              }}
+            />
+          </DropdownMenu>
+        </div>
         <div
           className={cn(
             "flex flex-col py-2.5 h-[calc(100dvh-56px)] items-center justify-between",
@@ -159,11 +154,14 @@ export function Sidebar({
                   size="icon"
                   variant="ghost"
                 >
-                  <span className="text-[10px] font-bold">HTTP</span>
+                  <span className="text-[11px] font-bold">API</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right" className="bg-muted border">
-                <p>Endpoints</p>
+              <TooltipContent
+                side="right"
+                className="bg-muted border relative -top-2"
+              >
+                <p>API</p>
               </TooltipContent>
             </Tooltip>
 
@@ -183,7 +181,10 @@ export function Sidebar({
                   <WorkflowIcon className="size-5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right" className="bg-muted border">
+              <TooltipContent
+                side="right"
+                className="bg-muted border relative -top-2"
+              >
                 <p>Workflows</p>
               </TooltipContent>
             </Tooltip>
@@ -204,29 +205,11 @@ export function Sidebar({
                   <BlocksIcon className="size-5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right" className="bg-muted border">
+              <TooltipContent
+                side="right"
+                className="bg-muted border relative -top-2"
+              >
                 <p>Utilities</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className={cn({
-                    "bg-accent border": activeSection === "resources",
-                  })}
-                  onClick={() => {
-                    setIsSidebarOpen(true);
-                    updateActiveSection("resources");
-                  }}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <UnplugIcon className="size-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="bg-muted border">
-                <p>Resources</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -236,9 +219,15 @@ export function Sidebar({
       {isSidebarOpen && (
         <div className="flex flex-col w-[256px]">
           <div className="flex items-center justify-between border-b h-14 px-2.5">
-            <Button className="w-full" variant="ghost">
+            <Link
+              href={`/workspaces/${workspace.id}`}
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "w-full",
+              )}
+            >
               {workspace.name}
-            </Button>
+            </Link>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -276,24 +265,13 @@ export function Sidebar({
                 >
                   <FlowList flows={workflows} type="workflow" />
                 </div>
-              ) : activeSection === "utility" ? (
+              ) : (
                 <div
                   className={cn("w-full", {
                     hidden: activeSection !== "utility",
                   })}
                 >
                   <FlowList flows={utilities} type="utility" />
-                </div>
-              ) : (
-                <div
-                  className={cn("w-full", {
-                    hidden: activeSection !== "resources",
-                  })}
-                >
-                  <ResourceList
-                    integrations={integrations}
-                    resources={resources}
-                  />
                 </div>
               )}
             </div>

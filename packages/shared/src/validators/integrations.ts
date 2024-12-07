@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const integrationTypeSchema = z.enum(["postgres", "mysql"]);
+export const integrationCategorySchema = z.enum(["database"]);
 
 export const integrationUtilitySchema = z.object({
   id: z.string(),
@@ -8,6 +9,7 @@ export const integrationUtilitySchema = z.object({
   description: z.string(),
   implementation: z.string(),
   integrationId: z.string(),
+  category: integrationCategorySchema.optional(),
 });
 
 export const integrationSchema = z.object({
@@ -15,6 +17,7 @@ export const integrationSchema = z.object({
   name: z.string(),
   description: z.string(),
   version: z.string(),
+  category: integrationCategorySchema.optional(),
   type: integrationTypeSchema,
   environmentVariables: z.string().array().optional().nullable(),
   dependencies: z
