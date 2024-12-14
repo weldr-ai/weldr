@@ -55,7 +55,7 @@ export function flattenInputSchema({
   refPath = "",
   expandArrays = true,
   title,
-  sourcePrimitiveId,
+  sourceFuncId,
 }: {
   id: string;
   schema?: JsonSchema;
@@ -64,7 +64,7 @@ export function flattenInputSchema({
   refPath?: string;
   expandArrays?: boolean;
   title?: string;
-  sourcePrimitiveId?: string;
+  sourceFuncId?: string;
 }): FlatInputSchema[] {
   if (!schema) {
     return [];
@@ -96,7 +96,7 @@ export function flattenInputSchema({
       required,
       description: schema.description,
       refUri,
-      sourcePrimitiveId,
+      sourceFuncId,
       ...(properties && { properties }),
       ...(itemsType && { itemsType }),
     });
@@ -135,7 +135,7 @@ export function flattenInputSchema({
         required: isRequired,
         description: value.description,
         refUri: newRefPath,
-        sourcePrimitiveId,
+        sourceFuncId,
         ...(properties && { properties }),
         ...(itemsType && { itemsType }),
       });
@@ -149,7 +149,7 @@ export function flattenInputSchema({
             required: isRequired,
             refPath: newRefPath,
             expandArrays,
-            sourcePrimitiveId,
+            sourceFuncId,
           }),
         );
       }
@@ -183,7 +183,7 @@ export function flattenInputSchema({
       required: false,
       description: schema.items.description,
       refUri: itemsRefPath,
-      sourcePrimitiveId,
+      sourceFuncId,
       ...(properties && { properties }),
       ...(itemsType && { itemsType }),
     });
@@ -197,19 +197,19 @@ export function flattenInputSchema({
           required: false,
           refPath: itemsRefPath,
           expandArrays,
-          sourcePrimitiveId,
+          sourceFuncId,
         }),
       );
     }
   } else if (!schema.title) {
-    // Only add non-titled primitive schemas here since titled ones are added above
+    // Only add non-titled function schemas here since titled ones are added above
     result.push({
       path: tempPath,
       type: schema.type ?? "null",
       required,
       description: schema.description,
       refUri,
-      sourcePrimitiveId,
+      sourceFuncId,
     });
   }
 
@@ -243,8 +243,8 @@ function referenceToText(
         `Value of the input variable \`${reference.name}\``,
         `Type: ${reference.dataType}`,
         `Is optional: ${!reference.required}`,
-        reference.sourcePrimitiveId
-          ? `Source function ID: ${reference.sourcePrimitiveId}`
+        reference.sourceFuncId
+          ? `Source function ID: ${reference.sourceFuncId}`
           : null,
         reference.refUri ? `$ref: /schemas/${reference.refUri}` : null,
       ].filter(Boolean);

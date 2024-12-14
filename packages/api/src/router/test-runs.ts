@@ -5,11 +5,11 @@ import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
 export const testRunsRouter = {
-  listByPrimitiveId: protectedProcedure
-    .input(z.object({ primitiveId: z.string() }))
+  listByFuncId: protectedProcedure
+    .input(z.object({ funcId: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.testRuns.findMany({
-        where: eq(testRuns.primitiveId, input.primitiveId),
+        where: eq(testRuns.funcId, input.funcId),
       });
 
       return result;

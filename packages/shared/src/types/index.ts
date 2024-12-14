@@ -4,10 +4,10 @@ import type {
   dependencySchema,
   flowInputSchemaMessageSchema,
   flowOutputSchemaMessageSchema,
+  funcRequirementsMessageSchema,
   inputSchema,
   jsonSchemaPropertySchema,
   outputSchema,
-  primitiveRequirementsMessageSchema,
   rawContentSchema,
 } from "../validators/common";
 import type {
@@ -28,12 +28,12 @@ import type {
   workflowFlowMetadataSchema,
   workflowFlowSchema,
 } from "../validators/flows";
+import type { funcSchema } from "../validators/funcs";
 import type {
   integrationSchema,
   integrationTypeSchema,
   integrationUtilitySchema,
 } from "../validators/integrations";
-import type { primitiveSchema } from "../validators/primitives";
 import type { resourceSchema } from "../validators/resources";
 import type { testRunSchema } from "../validators/test-runs";
 import type { workspaceSchema } from "../validators/workspaces";
@@ -54,7 +54,7 @@ export interface FlatInputSchema {
   refUri: string;
   properties?: Record<string, JsonSchema>;
   itemsType?: JsonSchema;
-  sourcePrimitiveId?: string;
+  sourceFuncId?: string;
 }
 
 export type InputSchema = z.infer<typeof inputSchema>;
@@ -101,11 +101,11 @@ export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;
 
 export type RawContent = z.infer<typeof rawContentSchema>;
 export type Dependency = z.infer<typeof dependencySchema>;
-export type Primitive = z.infer<typeof primitiveSchema>;
+export type Func = z.infer<typeof funcSchema>;
 export type TestRun = z.infer<typeof testRunSchema>;
 
-export type PrimitiveRequirementsMessage = z.infer<
-  typeof primitiveRequirementsMessageSchema
+export type FuncRequirementsMessage = z.infer<
+  typeof funcRequirementsMessageSchema
 >;
 
 export type BaseFormState<

@@ -10,7 +10,7 @@ import {
 import { conversationSchema } from "./conversations";
 import { testRunSchema } from "./test-runs";
 
-export const primitiveResourceSchema = z.object({
+export const funcResourceSchema = z.object({
   id: z.string(),
   name: z.string(),
   metadata: z.discriminatedUnion("type", [
@@ -25,7 +25,7 @@ export const primitiveResourceSchema = z.object({
     .optional(),
 });
 
-export const primitiveSchema = z.object({
+export const funcSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
   createdAt: z.date(),
@@ -41,7 +41,7 @@ export const primitiveSchema = z.object({
   logicalSteps: rawContentSchema.optional(),
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
-  resources: primitiveResourceSchema.array().optional(),
+  resources: funcResourceSchema.array().optional(),
   dependencies: dependencySchema.array().optional(),
   userId: z.string().nullable(),
   flowId: z.string(),
@@ -51,14 +51,14 @@ export const primitiveSchema = z.object({
   canRun: z.boolean().optional(),
 });
 
-export const insertPrimitiveSchema = z.object({
+export const insertFuncSchema = z.object({
   id: z.string(),
   flowId: z.string(),
   positionX: z.number(),
   positionY: z.number(),
 });
 
-export const updatePrimitiveSchema = z.object({
+export const updateFuncSchema = z.object({
   where: z.object({
     id: z.string(),
   }),
@@ -87,7 +87,7 @@ export const updatePrimitiveSchema = z.object({
     logicalSteps: rawContentSchema.optional(),
     edgeCases: z.string().optional(),
     errorHandling: z.string().optional(),
-    resources: primitiveResourceSchema.array().optional(),
+    resources: funcResourceSchema.array().optional(),
     dependencies: dependencySchema.array().optional(),
   }),
 });

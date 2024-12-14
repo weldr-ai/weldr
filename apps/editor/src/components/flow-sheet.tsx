@@ -480,7 +480,7 @@ export function FlowSheet({
 
   const resources = useResources();
 
-  const { data: flowPrimitives } = api.flows.primitives.useQuery({
+  const { data: flowFuncs } = api.flows.funcs.useQuery({
     flowId: data.id,
   });
 
@@ -489,17 +489,17 @@ export function FlowSheet({
       return [...getResourceReferences(resources, ["database"])];
     }
 
-    if (!flowPrimitives) {
+    if (!flowFuncs) {
       return [];
     }
 
-    const outputs = flowPrimitives.reduce((acc, d) => {
+    const outputs = flowFuncs.reduce((acc, d) => {
       acc.push(
         ...flattenInputSchema({
           id: d.id,
           schema: d.outputSchema ?? undefined,
           refPath: `local/${d.id}/output`,
-          sourcePrimitiveId: d.id,
+          sourceFuncId: d.id,
         }),
       );
       return acc;
@@ -509,7 +509,7 @@ export function FlowSheet({
       id: data.id,
       schema: data.inputSchema ?? undefined,
       refPath: `${data.type}/input`,
-      sourcePrimitiveId: data.id,
+      sourceFuncId: data.id,
     });
 
     return [
@@ -522,7 +522,7 @@ export function FlowSheet({
         refUri: output.refUri,
         properties: output.properties,
         itemsType: output.itemsType,
-        sourcePrimitiveId: output.sourcePrimitiveId,
+        sourceFuncId: output.sourceFuncId,
       })),
       ...flowInputs.map((input) => ({
         type: "reference" as const,
@@ -534,7 +534,7 @@ export function FlowSheet({
       })),
     ];
   }, [
-    flowPrimitives,
+    flowFuncs,
     resources,
     generationMode,
     data.id,
@@ -678,7 +678,7 @@ export function FlowSheet({
                       <DropdownMenuItem className="flex items-center justify-between text-xs">
                         <Link
                           className="flex items-center"
-                          href="https://docs.integramind.ai/primitives/function"
+                          href="https://docs.integramind.ai/functions"
                           target="blank"
                         >
                           <FileTextIcon className="mr-3 size-4 text-muted-foreground" />

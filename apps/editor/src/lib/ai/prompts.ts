@@ -1,11 +1,11 @@
 import "server-only";
 
 import type { Dependency } from "@integramind/shared/types";
-import type { primitiveResourceSchema } from "@integramind/shared/validators/primitives";
+import type { funcResourceSchema } from "@integramind/shared/validators/funcs";
 import type { z } from "zod";
 import { api } from "../trpc/server";
 
-export const PRIMITIVE_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gathering agent specializing in defining detailed specifications for functions through interactive dialogue. Your task is to assist users in clarifying their requirements, and ultimately provide a structured summary of the function specifications.
+export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gathering agent specializing in defining detailed specifications for functions through interactive dialogue. Your task is to assist users in clarifying their requirements, and ultimately provide a structured summary of the function specifications.
 
 # Steps
 
@@ -236,7 +236,7 @@ I want to filter the customers table using any of these input fields: customerId
 - If something is clear enough, just move on the don't ask the user.
 - Don't ask too detailed question if everything is clear.`;
 
-export const PRIMITIVE_DEVELOPER_PROMPT = `Implement the function as per given guidelines, utilizing the provided imports, type definitions, logical steps, and handling of edge cases appropriately.
+export const FUNC_DEVELOPER_PROMPT = `Implement the function as per given guidelines, utilizing the provided imports, type definitions, logical steps, and handling of edge cases appropriately.
 
 # Steps
 
@@ -379,7 +379,7 @@ async function getCustomerById({ customerId }: { customerId: number }): Promise<
 - You can never use any unlisted utilities. Because they don't exist.
 - Don't hallucinate.`;
 
-export const getGeneratePrimitiveCodePrompt = async ({
+export const getGenerateFuncCodePrompt = async ({
   name,
   description,
   inputSchema,
@@ -399,14 +399,14 @@ export const getGeneratePrimitiveCodePrompt = async ({
   logicalSteps: string;
   edgeCases: string;
   errorHandling: string;
-  resources?: z.infer<typeof primitiveResourceSchema>[];
+  resources?: z.infer<typeof funcResourceSchema>[];
   usedLocalUtilitiesIds: string[] | undefined;
   usedImportedUtilitiesIds: string[] | undefined;
   dependencies: Dependency[] | undefined;
 }) => {
   const utilities: string[] = [];
 
-  const usedLocalUtilities = await api.primitives.byIds({
+  const usedLocalUtilities = await api.funcs.byIds({
     ids: usedLocalUtilitiesIds ?? [],
   });
 

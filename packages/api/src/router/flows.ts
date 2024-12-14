@@ -1,11 +1,11 @@
 import { and, eq, inArray, sql } from "@integramind/db";
-import { conversations, flows, primitives } from "@integramind/db/schema";
+import { conversations, flows, funcs } from "@integramind/db/schema";
 import { mergeJson } from "@integramind/db/utils";
 import type {
   Flow,
   FlowType,
+  Func,
   InputSchema,
-  Primitive,
 } from "@integramind/shared/types";
 import {
   flowTypesSchema,
@@ -15,7 +15,7 @@ import {
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { canRunFlow, canRunPrimitive } from "../utils";
+import { canRunFlow, canRunFunc } from "../utils";
 
 export const flowsRouter = {
   create: protectedProcedure
@@ -148,7 +148,7 @@ export const flowsRouter = {
           eq(flows.userId, ctx.session.user.id),
         ),
         with: {
-          primitives: true,
+          funcs: true,
           inputConversation: {
             with: {
               messages: true,
@@ -171,12 +171,10 @@ export const flowsRouter = {
 
       return {
         ...result,
-        canRun: canRunFlow(
-          result as unknown as Flow & { primitives: Primitive[] },
-        ),
+        canRun: canRunFlow(result as unknown as Flow & { funcs: Func[] }),
       } as Flow & { canRun: boolean };
     }),
-  byIdWithPrimitives: protectedProcedure
+  byIdWithFuncs: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.flows.findFirst({
@@ -185,7 +183,7 @@ export const flowsRouter = {
           eq(flows.userId, ctx.session.user.id),
         ),
         with: {
-          primitives: true,
+          funcs: true,
         },
       });
 
@@ -198,7 +196,7 @@ export const flowsRouter = {
 
       return {
         ...result,
-        canRun: canRunFlow(result as Flow & { primitives: Primitive[] }),
+        canRun: canRunFlow(result as Flow & { funcs: Func[] }),
       };
     }),
   byIdWithAssociatedData: protectedProcedure
@@ -210,7 +208,7 @@ export const flowsRouter = {
           eq(flows.userId, ctx.session.user.id),
         ),
         with: {
-          primitives: {
+          funcs: {
             with: {
               conversation: {
                 with: {
@@ -242,28 +240,28 @@ export const flowsRouter = {
 
       return {
         ...result,
-        canRun: canRunFlow(result as Flow & { primitives: Primitive[] }),
-        primitives: result.primitives.map((primitive) => ({
-          ...primitive,
-          canRun: canRunPrimitive(primitive as Primitive),
+        canRun: canRunFlow(result as Flow & { funcs: Func[] }),
+        funcs: result.funcs.map((func) => ({
+          ...func,
+          canRun: canRunFunc(func as Func),
           flow: {
             inputSchema: result.inputSchema,
             type: result.type,
           },
         })),
       } as Flow & {
-        primitives: (Primitive & {
+        funcs: (Func & {
           flow: { inputSchema: InputSchema; type: FlowType };
         })[];
       };
     }),
-  primitives: protectedProcedure
+  funcs: protectedProcedure
     .input(z.object({ flowId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.query.primitives.findMany({
+      return await ctx.db.query.funcs.findMany({
         where: and(
-          eq(primitives.flowId, input.flowId),
-          eq(primitives.userId, ctx.session.user.id),
+          eq(funcs.flowId, input.flowId),
+          eq(funcs.userId, ctx.session.user.id),
         ),
       });
     }),

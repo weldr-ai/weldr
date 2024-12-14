@@ -1,6 +1,6 @@
 import { db, eq } from "@integramind/db";
 import { edges } from "@integramind/db/schema";
-import type { Flow, Primitive } from "@integramind/shared/types";
+import type { Flow, Func } from "@integramind/shared/types";
 
 export async function wouldCreateCycle({
   targetId,
@@ -22,7 +22,7 @@ export async function wouldCreateCycle({
   const recursionStack = new Set<string>();
 
   async function dfs(currentId: string): Promise<boolean> {
-    // If we reach the target primitive, we've found a cycle
+    // If we reach the target func, we've found a cycle
     if (currentId === targetId) {
       return true;
     }
@@ -52,21 +52,21 @@ export async function wouldCreateCycle({
     return false;
   }
 
-  // Start DFS from the source primitive
+  // Start DFS from the source func
   return await dfs(localSourceId);
 }
 
-export function canRunFlow(flow: Flow & { primitives: Primitive[] }) {
+export function canRunFlow(flow: Flow & { funcs: Func[] }) {
   let canRun = true;
 
-  for (const primitive of flow.primitives) {
+  for (const func of flow.funcs) {
     if (
-      !primitive.name ||
-      !primitive.description ||
-      !primitive.code ||
-      !primitive.edgeCases ||
-      !primitive.logicalSteps ||
-      !primitive.errorHandling
+      !func.name ||
+      !func.description ||
+      !func.code ||
+      !func.edgeCases ||
+      !func.logicalSteps ||
+      !func.errorHandling
     ) {
       canRun = false;
       break;
@@ -80,8 +80,8 @@ export function canRunFlow(flow: Flow & { primitives: Primitive[] }) {
   return canRun;
 }
 
-export function canRunPrimitive(primitive: Primitive) {
-  if (!primitive.name || !primitive.description || !primitive.code) {
+export function canRunFunc(func: Func) {
+  if (!func.name || !func.description || !func.code) {
     return false;
   }
 

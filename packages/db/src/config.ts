@@ -8,7 +8,7 @@ export default {
     "./src/schema/conversations.ts",
     "./src/schema/flows.ts",
     "./src/schema/integrations.ts",
-    "./src/schema/primitives.ts",
+    "./src/schema/funcs.ts",
     "./src/schema/resources.ts",
     "./src/schema/workspaces.ts",
     "./src/schema/environment-variables.ts",

@@ -6,12 +6,12 @@ import type {
   AssistantMessageRawContent,
   FlowInputSchemaMessage,
   FlowOutputSchemaMessage,
-  PrimitiveRequirementsMessage,
+  FuncRequirementsMessage,
 } from "@integramind/shared/types";
 import {
   flowInputSchemaMessageSchema,
   flowOutputSchemaMessageSchema,
-  primitiveRequirementsMessageSchema,
+  funcRequirementsMessageSchema,
 } from "@integramind/shared/validators/common";
 import { type CoreMessage, streamObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
@@ -22,9 +22,9 @@ import {
   ENDPOINT_OUTPUT_SCHEMA_AGENT_PROMPT,
   FLOW_INPUT_SCHEMA_AGENT_PROMPT,
   FLOW_OUTPUT_SCHEMA_AGENT_PROMPT,
-  PRIMITIVE_DEVELOPER_PROMPT,
-  PRIMITIVE_REQUIREMENTS_AGENT_PROMPT,
-  getGeneratePrimitiveCodePrompt,
+  FUNC_DEVELOPER_PROMPT,
+  FUNC_REQUIREMENTS_AGENT_PROMPT,
+  getGenerateFuncCodePrompt,
 } from "~/lib/ai/prompts";
 import { api } from "../trpc/server";
 import { assistantMessageRawContentToText, flattenInputSchema } from "../utils";
@@ -35,12 +35,12 @@ const openai = createOpenAI({
   compatibility: "strict",
 });
 
-export async function generatePrimitive({
-  primitiveId,
+export async function generateFunc({
+  funcId,
   conversationId,
   messages,
 }: {
-  primitiveId: string;
+  funcId: string;
   conversationId: string;
   messages: CoreMessage[];
 }) {
@@ -50,47 +50,43 @@ export async function generatePrimitive({
     redirect("/auth/sign-in");
   }
 
-  console.log(`[generatePrimitive] Starting for primitive ${primitiveId}`);
+  console.log(`[generateFunc] Starting for func ${funcId}`);
 
-  const primitiveData = await api.primitives.byId({
-    id: primitiveId,
+  const funcData = await api.funcs.byId({
+    id: funcId,
   });
 
-  if (!primitiveData.name) {
+  if (!funcData.name) {
     return {
       status: "error",
-      message: "Primitive name is required",
+      message: "Function name is required",
     };
   }
 
-  const stream = createStreamableValue<PrimitiveRequirementsMessage>();
+  const stream = createStreamableValue<FuncRequirementsMessage>();
 
   (async () => {
-    console.log(
-      `[generatePrimitive] Streaming response for primitive ${primitiveId}`,
-    );
+    console.log(`[generateFunc] Streaming response for func ${funcId}`);
     const { partialObjectStream } = streamObject({
       model: openai("gpt-4o-2024-11-20"),
-      system: PRIMITIVE_REQUIREMENTS_AGENT_PROMPT,
+      system: FUNC_REQUIREMENTS_AGENT_PROMPT,
       messages: [
         {
           role: "user",
-          content: `You are implementing a function called ${primitiveData?.name} and it has ID: ${primitiveId}.`,
+          content: `You are implementing a function called ${funcData?.name} and it has ID: ${funcId}.`,
         },
         ...messages,
       ],
-      schema: primitiveRequirementsMessageSchema,
+      schema: funcRequirementsMessageSchema,
       onFinish: async ({ usage, object, error }) => {
         console.log(
-          `[generatePrimitive] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
+          `[generateFunc] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
         );
-        console.log(
-          `[generatePrimitive] Error: ${JSON.stringify(error, null, 2)}`,
-        );
+        console.log(`[generateFunc] Error: ${JSON.stringify(error, null, 2)}`);
 
         if (object?.message?.type === "message") {
           console.log(
-            `[generatePrimitive] Adding message to conversation for primitive ${primitiveId}`,
+            `[generateFunc] Adding message to conversation for func ${funcId}`,
           );
           api.conversations.addMessage({
             role: "assistant",
@@ -101,7 +97,7 @@ export async function generatePrimitive({
         }
 
         if (object?.message?.type === "end") {
-          console.log("[generatePrimitive] Processing final requirements");
+          console.log("[generateFunc] Processing final requirements");
 
           const description: AssistantMessageRawContent = [
             {
@@ -119,7 +115,7 @@ export async function generatePrimitive({
           });
 
           console.log(
-            `[generatePrimitive] Updating primitive ${primitiveId} with gathered requirements`,
+            `[generateFunc] Updating func ${funcId} with gathered requirements`,
           );
 
           const inputSchema = object.message.content.inputSchema
@@ -131,7 +127,7 @@ export async function generatePrimitive({
             : undefined;
 
           const flattenedInputSchema = flattenInputSchema({
-            id: primitiveId,
+            id: funcId,
             schema: inputSchema,
           });
 
@@ -159,35 +155,35 @@ export async function generatePrimitive({
             }
           }
 
-          console.log("[generatePrimitive] Creating edges", edges);
+          console.log("[generateFunc] Creating edges", edges);
 
           const edgesData = [
             ...Array.from(edges.local).map((id) => ({
               type: "consumes" as const,
-              flowId: primitiveData?.flowId,
+              flowId: funcData?.flowId,
               localSourceId: id,
-              targetId: primitiveId,
+              targetId: funcId,
             })),
             ...Array.from(edges.imported).map((id) => ({
               type: "consumes" as const,
-              flowId: primitiveData?.flowId,
+              flowId: funcData?.flowId,
               importedSourceId: id,
-              targetId: primitiveId,
+              targetId: funcId,
             })),
             ...(object.message.content.extraUsedUtilities?.local ?? []).map(
               (id) => ({
                 type: "requires" as const,
-                flowId: primitiveData?.flowId,
+                flowId: funcData?.flowId,
                 localSourceId: id,
-                targetId: primitiveId,
+                targetId: funcId,
               }),
             ),
             ...(object.message.content.extraUsedUtilities?.imported ?? []).map(
               (id) => ({
                 type: "requires" as const,
-                flowId: primitiveData?.flowId,
+                flowId: funcData?.flowId,
                 importedSourceId: id,
-                targetId: primitiveId,
+                targetId: funcId,
               }),
             ),
           ];
@@ -196,40 +192,39 @@ export async function generatePrimitive({
             await api.edges.createBulk(edgesData);
           }
 
-          const generatePrimitiveCodePrompt =
-            await getGeneratePrimitiveCodePrompt({
-              name: primitiveData?.name ?? "",
-              description: assistantMessageRawContentToText(
-                object.message.content.description,
-              ),
-              inputSchema: JSON.stringify(inputSchema),
-              outputSchema: JSON.stringify(outputSchema),
-              resources: object.message.content.resources,
-              logicalSteps: assistantMessageRawContentToText(
-                object.message.content.logicalSteps,
-              ),
-              usedLocalUtilitiesIds:
-                object.message.content.extraUsedUtilities?.local,
-              usedImportedUtilitiesIds:
-                object.message.content.extraUsedUtilities?.imported,
-              edgeCases: object.message.content.edgeCases,
-              errorHandling: object.message.content.errorHandling,
-              dependencies: object.message.content.dependencies as
-                | {
-                    name: string;
-                    version: string;
-                  }[]
-                | undefined,
-            });
-
-          const code = await generateCode({
-            primitiveId,
-            prompt: generatePrimitiveCodePrompt,
-            systemPrompt: PRIMITIVE_DEVELOPER_PROMPT,
+          const generatedFuncCodePrompt = await getGenerateFuncCodePrompt({
+            name: funcData?.name ?? "",
+            description: assistantMessageRawContentToText(
+              object.message.content.description,
+            ),
+            inputSchema: JSON.stringify(inputSchema),
+            outputSchema: JSON.stringify(outputSchema),
+            resources: object.message.content.resources,
+            logicalSteps: assistantMessageRawContentToText(
+              object.message.content.logicalSteps,
+            ),
+            usedLocalUtilitiesIds:
+              object.message.content.extraUsedUtilities?.local,
+            usedImportedUtilitiesIds:
+              object.message.content.extraUsedUtilities?.imported,
+            edgeCases: object.message.content.edgeCases,
+            errorHandling: object.message.content.errorHandling,
+            dependencies: object.message.content.dependencies as
+              | {
+                  name: string;
+                  version: string;
+                }[]
+              | undefined,
           });
 
-          api.primitives.update({
-            where: { id: primitiveId },
+          const code = await generateCode({
+            funcId,
+            prompt: generatedFuncCodePrompt,
+            systemPrompt: FUNC_DEVELOPER_PROMPT,
+          });
+
+          api.funcs.update({
+            where: { id: funcId },
             payload: {
               inputSchema,
               outputSchema,
@@ -262,12 +257,10 @@ export async function generatePrimitive({
     });
 
     for await (const partialObject of partialObjectStream) {
-      stream.update(partialObject as PrimitiveRequirementsMessage);
+      stream.update(partialObject as FuncRequirementsMessage);
     }
 
-    console.log(
-      `[generatePrimitive] Stream completed for primitive ${primitiveId}`,
-    );
+    console.log(`[generateFunc] Stream completed for func ${funcId}`);
     stream.done();
   })();
 

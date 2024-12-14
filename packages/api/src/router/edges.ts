@@ -1,6 +1,6 @@
 import { eq } from "@integramind/db";
-import { edges, primitives } from "@integramind/db/schema";
-import type { Primitive } from "@integramind/shared/types";
+import { edges, funcs } from "@integramind/db/schema";
+import type { Func } from "@integramind/shared/types";
 import { createEdgeSchema } from "@integramind/shared/validators/edges";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
@@ -64,17 +64,17 @@ export const edgesRouter = {
       await ctx.db.insert(edges).values(input).onConflictDoNothing();
     }),
   available: protectedProcedure
-    .input(z.object({ primitiveId: z.string() }))
+    .input(z.object({ funcId: z.string() }))
     .query(async ({ ctx, input }) => {
-      // Get all existing dependencies for this primitive
+      // Get all existing dependencies for this function
       const existingDeps = await ctx.db.query.edges.findMany({
-        where: eq(edges.localSourceId, input.primitiveId),
+        where: eq(edges.localSourceId, input.funcId),
         columns: {
           targetId: true,
         },
       });
 
-      // Get all primitives that this primitive depends on (directly or indirectly)
+      // Get all functions that this function depends on (directly or indirectly)
       const dependencyChain = new Set<string>();
       const queue = existingDeps.map((d) => d.targetId);
 
@@ -92,23 +92,23 @@ export const edgesRouter = {
         }
       }
 
-      // Get all primitives except those that would create cycles
-      const availablePrimitives = (await ctx.db.query.primitives.findMany({
-        where: eq(primitives.userId, ctx.session.user.id),
-      })) as Primitive[];
+      // Get all functions except those that would create cycles
+      const availableFunctions = (await ctx.db.query.funcs.findMany({
+        where: eq(funcs.userId, ctx.session.user.id),
+      })) as Func[];
 
-      return availablePrimitives.filter(
-        (p) =>
-          p.id !== input.primitiveId && // Can't depend on itself
-          p.name &&
-          p.description &&
-          p.rawDescription &&
-          p.logicalSteps &&
-          p.edgeCases &&
-          p.errorHandling &&
-          p.code &&
-          !dependencyChain.has(p.id) && // Can't create cycles
-          !existingDeps.some((d) => d.targetId === p.id), // Not already a dependency
+      return availableFunctions.filter(
+        (f) =>
+          f.id !== input.funcId && // Can't depend on itself
+          f.name &&
+          f.description &&
+          f.rawDescription &&
+          f.logicalSteps &&
+          f.edgeCases &&
+          f.errorHandling &&
+          f.code &&
+          !dependencyChain.has(f.id) && // Can't create cycles
+          !existingDeps.some((d) => d.targetId === f.id), // Not already a dependency
       );
     }),
 } satisfies TRPCRouterRecord;

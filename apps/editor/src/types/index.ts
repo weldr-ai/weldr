@@ -1,13 +1,9 @@
 import type { Node, NodeProps } from "@xyflow/react";
 
-import type {
-  FlowType,
-  InputSchema,
-  Primitive,
-} from "@integramind/shared/types";
+import type { FlowType, Func, InputSchema } from "@integramind/shared/types";
 
-export type FlowNodeType = "primitive";
-export type FlowNodeData = Primitive & {
+export type FlowNodeType = "func";
+export type FlowNodeData = Func & {
   flow: { inputSchema?: InputSchema; type: FlowType };
 };
 export type FlowNode = Node<FlowNodeData, FlowNodeType>;

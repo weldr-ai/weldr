@@ -1,29 +1,20 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
-import {
-  conversations,
-  flows,
-  primitives,
-  testRuns,
-} from "@integramind/db/schema";
+import { conversations, flows, funcs, testRuns } from "@integramind/db/schema";
 
 import { type SQL, and, eq, inArray } from "@integramind/db";
-import type {
-  FlowType,
-  InputSchema,
-  Primitive,
-} from "@integramind/shared/types";
+import type { FlowType, Func, InputSchema } from "@integramind/shared/types";
 import {
-  insertPrimitiveSchema,
-  updatePrimitiveSchema,
-} from "@integramind/shared/validators/primitives";
+  insertFuncSchema,
+  updateFuncSchema,
+} from "@integramind/shared/validators/funcs";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { canRunPrimitive } from "../utils";
+import { canRunFunc } from "../utils";
 
-export const primitivesRouter = {
+export const funcsRouter = {
   create: protectedProcedure
-    .input(insertPrimitiveSchema)
+    .input(insertFuncSchema)
     .mutation(async ({ ctx, input }) => {
       try {
         const result = await ctx.db.transaction(async (tx) => {
@@ -57,12 +48,12 @@ export const primitivesRouter = {
           if (!flow.inputSchema) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: "Cannot create primitive in flow without input schema",
+              message: "Cannot create function in flow without input schema",
             });
           }
 
           const result = await tx
-            .insert(primitives)
+            .insert(funcs)
             .values({
               ...input,
               userId: ctx.session.user.id,
@@ -73,7 +64,7 @@ export const primitivesRouter = {
           if (!result[0]) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create primitive",
+              message: "Failed to create function",
             });
           }
 
@@ -85,32 +76,32 @@ export const primitivesRouter = {
         console.error(error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create primitive",
+          message: "Failed to create function",
         });
       }
     }),
   byIds: protectedProcedure
     .input(z.object({ ids: z.string().array() }))
     .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query.primitives.findMany({
+      const result = await ctx.db.query.funcs.findMany({
         where: and(
-          eq(primitives.userId, ctx.session.user.id),
-          inArray(primitives.id, input.ids),
+          eq(funcs.userId, ctx.session.user.id),
+          inArray(funcs.id, input.ids),
         ),
       });
 
-      return result.map((primitive) => ({
-        ...primitive,
-        canRun: canRunPrimitive(primitive as Primitive),
-      })) as Primitive[];
+      return result.map((func) => ({
+        ...func,
+        canRun: canRunFunc(func as Func),
+      })) as Func[];
     }),
   byId: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query.primitives.findFirst({
+      const result = await ctx.db.query.funcs.findFirst({
         where: and(
-          eq(primitives.id, input.id),
-          eq(primitives.userId, ctx.session.user.id),
+          eq(funcs.id, input.id),
+          eq(funcs.userId, ctx.session.user.id),
         ),
         with: {
           flow: {
@@ -125,104 +116,101 @@ export const primitivesRouter = {
       if (!result) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Primitive not found",
+          message: "Function not found",
         });
       }
 
       return {
         ...result,
-        canRun: canRunPrimitive(
-          result as Primitive & {
+        canRun: canRunFunc(
+          result as Func & {
             flow: { inputSchema: InputSchema; type: FlowType };
           },
         ),
-      } as Primitive & {
+      } as Func & {
         flow: { inputSchema?: InputSchema; type: FlowType };
       };
     }),
   update: protectedProcedure
-    .input(updatePrimitiveSchema)
+    .input(updateFuncSchema)
     .mutation(async ({ ctx, input }) => {
       const where: SQL[] = [
-        eq(primitives.id, input.where.id),
-        eq(primitives.userId, ctx.session.user.id),
+        eq(funcs.id, input.where.id),
+        eq(funcs.userId, ctx.session.user.id),
       ];
 
-      const existingPrimitive = await ctx.db.query.primitives.findFirst({
+      const existingFunc = await ctx.db.query.funcs.findFirst({
         where: and(...where),
       });
 
-      if (!existingPrimitive) {
+      if (!existingFunc) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Primitive not found",
+          message: "Function not found",
         });
       }
 
       if (input.payload.name) {
-        const isUnique = await ctx.db.query.primitives.findFirst({
+        const isUnique = await ctx.db.query.funcs.findFirst({
           where: and(
-            eq(primitives.name, input.payload.name),
-            eq(primitives.flowId, existingPrimitive.flowId),
+            eq(funcs.name, input.payload.name),
+            eq(funcs.flowId, existingFunc.flowId),
           ),
         });
 
-        if (isUnique && isUnique.id !== existingPrimitive.id) {
+        if (isUnique && isUnique.id !== existingFunc.id) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Primitive name already exists in this flow",
+            message: "Function name already exists in this flow",
           });
         }
       }
 
-      const updatedPrimitive = await ctx.db
-        .update(primitives)
+      const updatedFunc = await ctx.db
+        .update(funcs)
         .set(input.payload)
         .where(
           and(
-            eq(primitives.id, existingPrimitive.id),
-            eq(primitives.userId, ctx.session.user.id),
+            eq(funcs.id, existingFunc.id),
+            eq(funcs.userId, ctx.session.user.id),
           ),
         )
-        .returning({ id: primitives.id });
+        .returning({ id: funcs.id });
 
-      if (!updatedPrimitive[0]) {
+      if (!updatedFunc[0]) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update primitive",
+          message: "Failed to update function",
         });
       }
 
-      return updatedPrimitive[0];
+      return updatedFunc[0];
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const primitive = await ctx.db.query.primitives.findFirst({
+      const func = await ctx.db.query.funcs.findFirst({
         where: and(
-          eq(primitives.id, input.id),
-          eq(primitives.userId, ctx.session.user.id),
+          eq(funcs.id, input.id),
+          eq(funcs.userId, ctx.session.user.id),
         ),
       });
 
-      if (!primitive) {
+      if (!func) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Primitive not found",
+          message: "Function not found",
         });
       }
 
       await ctx.db
         .delete(conversations)
-        .where(eq(conversations.id, primitive.conversationId));
+        .where(eq(conversations.id, func.conversationId));
 
       await ctx.db
-        .delete(primitives)
+        .delete(funcs)
         .where(
-          and(
-            eq(primitives.id, primitive.id),
-            eq(primitives.userId, ctx.session.user.id),
-          ),
+          and(eq(funcs.id, func.id), eq(funcs.userId, ctx.session.user.id)),
         );
     }),
   createTestRun: protectedProcedure
@@ -230,7 +218,7 @@ export const primitivesRouter = {
       z.object({
         input: z.record(z.string(), z.unknown()).optional(),
         output: z.object({ stdout: z.string(), stderr: z.string() }).optional(),
-        primitiveId: z.string(),
+        funcId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -241,7 +229,7 @@ export const primitivesRouter = {
             stdout: input.output?.stdout ?? "",
             stderr: input.output?.stderr ?? "",
             input: input.input ?? undefined,
-            primitiveId: input.primitiveId,
+            funcId: input.funcId,
           })
           .returning({ id: testRuns.id })
       )[0];

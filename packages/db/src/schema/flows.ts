@@ -17,7 +17,7 @@ import type {
 import { users } from "./auth";
 import { conversations } from "./conversations";
 import { edges } from "./edges";
-import { primitives } from "./primitives";
+import { funcs } from "./funcs";
 import { testRuns } from "./test-runs";
 import { workspaces } from "./workspaces";
 
@@ -57,7 +57,7 @@ export const flows = pgTable("flows", {
 });
 
 export const flowsRelations = relations(flows, ({ many, one }) => ({
-  primitives: many(primitives),
+  funcs: many(funcs),
   edges: many(edges, { relationName: "flow" }),
   user: one(users, {
     fields: [flows.userId],

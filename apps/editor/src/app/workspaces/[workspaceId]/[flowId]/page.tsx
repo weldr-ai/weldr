@@ -22,12 +22,12 @@ export default async function FlowPage({
       flowId,
     });
 
-    const initialNodes: FlowNode[] = flow.primitives.map((primitive) => ({
-      id: primitive.id,
-      type: "primitive",
+    const initialNodes: FlowNode[] = flow.funcs.map((func) => ({
+      id: func.id,
+      type: "func",
       dragHandle: ".drag-handle",
-      position: { x: primitive.positionX, y: primitive.positionY },
-      data: primitive as FlowNodeData,
+      position: { x: func.positionX, y: func.positionY },
+      data: func as FlowNodeData,
     }));
 
     return (

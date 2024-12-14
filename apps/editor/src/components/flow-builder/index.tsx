@@ -41,10 +41,10 @@ import { toast } from "@integramind/ui/use-toast";
 import { FlowSheet } from "~/components/flow-sheet";
 import { useFlowBuilderStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
-import { PrimitiveNode } from "./primitive-node";
+import { FuncNode } from "./func-node";
 
 const nodeTypes = {
-  primitive: PrimitiveNode,
+  func: FuncNode,
 };
 
 const edgeTypes = {
@@ -92,7 +92,7 @@ export function FlowBuilder({
 
   const apiUtils = api.useUtils();
 
-  const createPrimitive = api.primitives.create.useMutation({
+  const createFunc = api.funcs.create.useMutation({
     onSuccess: () => {
       apiUtils.flows.byId.invalidate({
         id: flow.id,
@@ -107,7 +107,7 @@ export function FlowBuilder({
     },
   });
 
-  const updatePrimitive = api.primitives.update.useMutation({
+  const updateFunc = api.funcs.update.useMutation({
     onSuccess: () => {
       apiUtils.flows.byId.invalidate({
         id: flow.id,
@@ -141,7 +141,7 @@ export function FlowBuilder({
       setNodes((nodes) =>
         nodes.concat({
           id: newNodeId,
-          type: "primitive",
+          type: "func",
           position: { x: Math.floor(position.x), y: Math.floor(position.y) },
           data: {
             id: newNodeId,
@@ -154,20 +154,14 @@ export function FlowBuilder({
         }),
       );
 
-      await createPrimitive.mutateAsync({
+      await createFunc.mutateAsync({
         id: newNodeId,
         flowId: flow.id,
         positionX: Math.floor(position.x),
         positionY: Math.floor(position.y),
       });
     },
-    [
-      createPrimitive,
-      flow.id,
-      setNodes,
-      screenToFlowPosition,
-      flow.inputSchema,
-    ],
+    [createFunc, flow.id, setNodes, screenToFlowPosition, flow.inputSchema],
   );
 
   const onNodeDragStop = useCallback(
@@ -176,7 +170,7 @@ export function FlowBuilder({
       node: ReactFlowNode,
       _nodes: ReactFlowNode[],
     ) => {
-      await updatePrimitive.mutateAsync({
+      await updateFunc.mutateAsync({
         where: {
           id: node.id,
         },
@@ -186,7 +180,7 @@ export function FlowBuilder({
         },
       });
     },
-    [updatePrimitive],
+    [updateFunc],
   );
 
   const onDragStart = (event: React.DragEvent<HTMLDivElement>) => {

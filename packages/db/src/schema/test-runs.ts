@@ -9,7 +9,7 @@ import { pgTable } from "drizzle-orm/pg-core";
 
 import { createId } from "@paralleldrive/cuid2";
 import { flows } from "./flows";
-import { primitives } from "./primitives";
+import { funcs } from "./funcs";
 
 export const testRuns = pgTable("test_runs", {
   id: text("id")
@@ -19,16 +19,16 @@ export const testRuns = pgTable("test_runs", {
   stdout: text("stdout").default(sql`NULL`),
   stderr: text("stderr").default(sql`NULL`),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  primitiveId: text("primitive_id").references(() => primitives.id, {
+  funcId: text("func_id").references(() => funcs.id, {
     onDelete: "cascade",
   }),
   flowId: text("flow_id").references(() => flows.id, { onDelete: "cascade" }),
 });
 
 export const testRunsRelations = relations(testRuns, ({ one }) => ({
-  primitive: one(primitives, {
-    fields: [testRuns.primitiveId],
-    references: [primitives.id],
+  func: one(funcs, {
+    fields: [testRuns.funcId],
+    references: [funcs.id],
   }),
   flow: one(flows, {
     fields: [testRuns.flowId],

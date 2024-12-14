@@ -3,8 +3,8 @@ import { edgesRouter } from "./router/edges";
 import { engineRouter } from "./router/engine";
 import { environmentVariablesRouter } from "./router/environment-variables";
 import { flowsRouter } from "./router/flows";
+import { funcsRouter } from "./router/funcs";
 import { integrationsRouter } from "./router/integrations";
-import { primitivesRouter } from "./router/primitives";
 import { resourcesRouter } from "./router/resources";
 import { testRunsRouter } from "./router/test-runs";
 import { workspacesRouter } from "./router/workspaces";
@@ -12,7 +12,7 @@ import { workspacesRouter } from "./router/workspaces";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
-  primitives: primitivesRouter,
+  funcs: funcsRouter,
   edges: edgesRouter,
   resources: resourcesRouter,
   workspaces: workspacesRouter,

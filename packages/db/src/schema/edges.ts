@@ -8,7 +8,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { flows } from "./flows";
-import { primitives } from "./primitives";
+import { funcs } from "./funcs";
 
 export const dependencyType = pgEnum("dependency_type", [
   "consumes",
@@ -22,11 +22,11 @@ export const edges = pgTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     type: dependencyType("type").notNull(),
-    targetId: text("target_primitive_id")
-      .references(() => primitives.id, { onDelete: "cascade" })
+    targetId: text("target_func_id")
+      .references(() => funcs.id, { onDelete: "cascade" })
       .notNull(),
     localSourceId: text("local_source_id")
-      .references(() => primitives.id, { onDelete: "cascade" })
+      .references(() => funcs.id, { onDelete: "cascade" })
       .default(sql`NULL`),
     importedSourceId: text("imported_source_id")
       .references(() => flows.id, { onDelete: "cascade" })
@@ -46,13 +46,13 @@ export const edges = pgTable(
 );
 
 export const edgesRelations = relations(edges, ({ one }) => ({
-  target: one(primitives, {
+  target: one(funcs, {
     fields: [edges.targetId],
-    references: [primitives.id],
+    references: [funcs.id],
   }),
-  localSource: one(primitives, {
+  localSource: one(funcs, {
     fields: [edges.localSourceId],
-    references: [primitives.id],
+    references: [funcs.id],
   }),
   importedSource: one(flows, {
     relationName: "importedSource",

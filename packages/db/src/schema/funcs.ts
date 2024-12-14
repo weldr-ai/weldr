@@ -21,8 +21,8 @@ import { edges } from "./edges";
 import { flows } from "./flows";
 import { testRuns } from "./test-runs";
 
-export const primitives = pgTable(
-  "primitives",
+export const funcs = pgTable(
+  "funcs",
   {
     id: text("id")
       .primaryKey()
@@ -59,18 +59,18 @@ export const primitives = pgTable(
   }),
 );
 
-export const primitivesRelations = relations(primitives, ({ one, many }) => ({
+export const funcRelations = relations(funcs, ({ one, many }) => ({
   flow: one(flows, {
-    fields: [primitives.flowId],
+    fields: [funcs.flowId],
     references: [flows.id],
   }),
   conversation: one(conversations, {
-    fields: [primitives.conversationId],
+    fields: [funcs.conversationId],
     references: [conversations.id],
   }),
   testRuns: many(testRuns),
   user: one(users, {
-    fields: [primitives.userId],
+    fields: [funcs.userId],
     references: [users.id],
   }),
   edges: many(edges),

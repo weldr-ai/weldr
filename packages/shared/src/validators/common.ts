@@ -91,7 +91,7 @@ export const variableReferenceSchema = z.object({
   required: z.boolean().describe("Whether the variable is required"),
   properties: z.record(z.string(), jsonSchema).optional(),
   itemsType: jsonSchema.optional(),
-  sourcePrimitiveId: z.string().optional(),
+  sourceFuncId: z.string().optional(),
 });
 
 export const functionReferenceSchema = z.object({
@@ -185,7 +185,7 @@ export const rawContentVariableReferenceSchema = z.object({
     refUri: true,
     properties: true,
     itemsType: true,
-    sourcePrimitiveId: true,
+    sourceFuncId: true,
     required: true,
   }).shape,
 });
@@ -308,7 +308,7 @@ export const flowOutputSchemaMessageSchema = z.object({
   ]),
 });
 
-export const primitiveRequirementsMessageSchema = z.object({
+export const funcRequirementsMessageSchema = z.object({
   message: z.discriminatedUnion("type", [
     z
       .object({

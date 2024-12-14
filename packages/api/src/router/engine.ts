@@ -2,55 +2,55 @@ import { and, eq, inArray, sql } from "@integramind/db";
 import {
   environmentVariables,
   flows,
+  funcs,
   integrationUtils,
-  primitives,
   resourceEnvironmentVariables,
   resources,
   testRuns,
 } from "@integramind/db/schema";
-import type { Dependency, Primitive } from "@integramind/shared/types";
+import type { Dependency, Func } from "@integramind/shared/types";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { canRunPrimitive } from "../utils";
+import { canRunFunc } from "../utils";
 
 export const engineRouter = {
-  executePrimitive: protectedProcedure
+  executeFunc: protectedProcedure
     .input(
       z.object({
-        primitiveId: z.string(),
+        funcId: z.string(),
         hasInput: z.boolean(),
         input: z.record(z.any()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const primitive = (await ctx.db.query.primitives.findFirst({
+      const func = (await ctx.db.query.funcs.findFirst({
         where: and(
-          eq(primitives.id, input.primitiveId),
-          eq(primitives.userId, ctx.session.user.id),
+          eq(funcs.id, input.funcId),
+          eq(funcs.userId, ctx.session.user.id),
         ),
-      })) as Omit<Primitive, "testRuns" | "conversation"> | undefined;
+      })) as Omit<Func, "testRuns" | "conversation"> | undefined;
 
-      if (!primitive) {
+      if (!func) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Primitive not found",
+          message: "Function not found",
         });
       }
 
-      const canRun = canRunPrimitive(primitive as Primitive);
+      const canRun = canRunFunc(func as Func);
 
       if (!canRun) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Primitive cannot be run",
+          message: "Function cannot be run",
         });
       }
 
-      const resourceIds = primitive.resources?.map((resource) => resource.id);
+      const resourceIds = func.resources?.map((resource) => resource.id);
 
-      let dependencies: Dependency[] = primitive.dependencies ?? [];
+      let dependencies: Dependency[] = func.dependencies ?? [];
 
       if (resourceIds && resourceIds.length > 0) {
         const result = await ctx.db.query.resources.findMany({
@@ -122,7 +122,7 @@ export const engineRouter = {
         }
       }
 
-      const utilityIds = primitive.resources?.reduce((acc, resource) => {
+      const utilityIds = func.resources?.reduce((acc, resource) => {
         return acc.concat(
           resource.utilities?.map((utility) => utility.id) ?? [],
         );
@@ -143,9 +143,9 @@ export const engineRouter = {
 
       const requestBody = {
         hasInput: input.hasInput,
-        functionName: primitive.name,
+        functionName: func.name,
         functionArgs: input.hasInput ? input.input : undefined,
-        code: primitive.code,
+        code: func.code,
         utilities,
         dependencies,
         environmentVariablesMap,
@@ -179,7 +179,7 @@ export const engineRouter = {
           input: input.hasInput ? input.input : undefined,
           stdout: executionResult.output.stdout,
           stderr: executionResult.output.stderr,
-          primitiveId: input.primitiveId,
+          funcId: input.funcId,
         });
 
         return {

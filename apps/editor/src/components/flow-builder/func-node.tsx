@@ -53,8 +53,8 @@ import type {
   AssistantMessageRawContent,
   ConversationMessage,
   FlatInputSchema,
+  FuncRequirementsMessage,
   JsonSchema,
-  PrimitiveRequirementsMessage,
   UserMessageRawContent,
 } from "@integramind/shared/types";
 import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
@@ -78,7 +78,7 @@ import { debounce } from "perfect-debounce";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { Editor } from "~/components/editor";
 import { TestInputDialog } from "~/components/test-input-dialog";
-import { generatePrimitive } from "~/lib/ai/generator";
+import { generateFunc } from "~/lib/ai/generator";
 import { useResources } from "~/lib/context/resources";
 import { useFlowBuilderStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
@@ -108,14 +108,14 @@ const validationSchema = z.object({
     }),
 });
 
-export const PrimitiveNode = memo(
+export const FuncNode = memo(
   ({
     data: _data,
     selected,
     positionAbsoluteX,
     positionAbsoluteY,
   }: FlowNodeProps) => {
-    const { data: fetchedData } = api.primitives.byId.useQuery(
+    const { data: fetchedData } = api.funcs.byId.useQuery(
       {
         id: _data.id,
       },
@@ -126,9 +126,9 @@ export const PrimitiveNode = memo(
 
     const data = fetchedData;
 
-    const { data: testRuns } = api.testRuns.listByPrimitiveId.useQuery(
+    const { data: testRuns } = api.testRuns.listByFuncId.useQuery(
       {
-        primitiveId: data.id,
+        funcId: data.id,
       },
       {
         initialData: data.testRuns ?? [],
@@ -139,22 +139,22 @@ export const PrimitiveNode = memo(
 
     const apiUtils = api.useUtils();
 
-    const updatePrimitive = api.primitives.update.useMutation({
+    const updateFunc = api.funcs.update.useMutation({
       onSuccess: async () => {
-        await apiUtils.primitives.byId.invalidate({ id: data.id });
+        await apiUtils.funcs.byId.invalidate({ id: data.id });
       },
     });
 
-    const executePrimitive = api.engine.executePrimitive.useMutation({
+    const executeFunc = api.engine.executeFunc.useMutation({
       onSuccess: async () => {
-        await apiUtils.primitives.byId.invalidate({ id: data.id });
-        await apiUtils.testRuns.listByPrimitiveId.invalidate({
-          primitiveId: data.id,
+        await apiUtils.funcs.byId.invalidate({ id: data.id });
+        await apiUtils.testRuns.listByFuncId.invalidate({
+          funcId: data.id,
         });
       },
     });
 
-    const deletePrimitive = api.primitives.delete.useMutation({
+    const deleteFunc = api.funcs.delete.useMutation({
       onSuccess: async () => {
         await apiUtils.flows.byId.invalidate({ id: data.flowId });
       },
@@ -198,12 +198,12 @@ export const PrimitiveNode = memo(
           id: createId(),
           role: "assistant",
           content:
-            "Hi there! I'm Integrator, your AI assistant. What does your primitive do?",
+            "Hi there! I'm Integrator, your AI assistant. What does your function do?",
           rawContent: [
             {
               type: "text",
               value:
-                "Hi there! I'm Integrator, your AI assistant. What does your primitive do?",
+                "Hi there! I'm Integrator, your AI assistant. What does your function do?",
             },
           ],
         },
@@ -321,8 +321,8 @@ export const PrimitiveNode = memo(
 
       await addMessage.mutateAsync(newMessageUser);
 
-      const result = await generatePrimitive({
-        primitiveId: data.id,
+      const result = await generateFunc({
+        funcId: data.id,
         conversationId: data.conversationId,
         messages: newMessages.map((message) => ({
           role: message.role,
@@ -343,7 +343,7 @@ export const PrimitiveNode = memo(
       let newAssistantMessage: ConversationMessage | null = null;
 
       for await (const content of readStreamableValue(
-        result as StreamableValue<PrimitiveRequirementsMessage>,
+        result as StreamableValue<FuncRequirementsMessage>,
       )) {
         newAssistantMessage = {
           role: "assistant",
@@ -370,7 +370,7 @@ export const PrimitiveNode = memo(
           const rawContent: AssistantMessageRawContent = [
             {
               type: "text",
-              value: "Generating the following primitive: ",
+              value: "Generating the following function: ",
             },
             ...content.message.content.description,
           ];
@@ -390,14 +390,14 @@ export const PrimitiveNode = memo(
         newMessages.push(newAssistantMessage);
       }
 
-      const primitiveRequirementsMessageObject = JSON.parse(
+      const funcRequirementsMessageObject = JSON.parse(
         newAssistantMessageStr,
-      ) as PrimitiveRequirementsMessage;
+      ) as FuncRequirementsMessage;
 
-      // if code generation is set, disable it and refetch the updated primitive metadata
-      if (primitiveRequirementsMessageObject.message.type === "end") {
+      // if code generation is set, disable it and refetch the updated function metadata
+      if (funcRequirementsMessageObject.message.type === "end") {
         setIsGeneratingCode(false);
-        const primitiveBuiltSuccessfullyMessage: ConversationMessage = {
+        const funcBuiltSuccessfullyMessage: ConversationMessage = {
           role: "assistant",
           rawContent: [
             {
@@ -410,12 +410,12 @@ export const PrimitiveNode = memo(
         };
 
         await apiUtils.flows.byId.invalidate({ id: data.flowId });
-        await apiUtils.primitives.byId.invalidate({ id: data.id });
+        await apiUtils.funcs.byId.invalidate({ id: data.id });
         await apiUtils.edges.available.invalidate();
         await apiUtils.edges.listByFlowId.invalidate({
           flowId: data.flowId,
         });
-        setMessages([...newMessages, primitiveBuiltSuccessfullyMessage]);
+        setMessages([...newMessages, funcBuiltSuccessfullyMessage]);
       }
 
       setUserMessageContent(null);
@@ -430,7 +430,7 @@ export const PrimitiveNode = memo(
     });
     const resources = useResources();
     const availableDependencies = api.edges.available.useQuery({
-      primitiveId: data.id,
+      funcId: data.id,
     });
     const availableDependenciesInputs = (
       availableDependencies.data ?? []
@@ -440,7 +440,7 @@ export const PrimitiveNode = memo(
           id: d.id,
           schema: d.outputSchema,
           refPath: `local/${d.id}/output`,
-          sourcePrimitiveId: d.id,
+          sourceFuncId: d.id,
         }),
       );
       return acc;
@@ -457,7 +457,7 @@ export const PrimitiveNode = memo(
       refUri: input.refUri,
       properties: input.properties,
       itemsType: input.itemsType,
-      sourcePrimitiveId: input.sourcePrimitiveId,
+      sourceFuncId: input.sourceFuncId,
     }));
 
     const references: z.infer<
@@ -585,8 +585,8 @@ export const PrimitiveNode = memo(
                             }
                             onClick={async () => {
                               setIsRunning(true);
-                              await executePrimitive.mutateAsync({
-                                primitiveId: data.id,
+                              await executeFunc.mutateAsync({
+                                funcId: data.id,
                                 hasInput: data.inputSchema !== undefined,
                                 input: data.testInput as Record<
                                   string,
@@ -666,7 +666,7 @@ export const PrimitiveNode = memo(
                                         e.target.value,
                                       ).success;
                                     if (isValid) {
-                                      await updatePrimitive.mutateAsync({
+                                      await updateFunc.mutateAsync({
                                         where: {
                                           id: data.id,
                                         },
@@ -677,7 +677,7 @@ export const PrimitiveNode = memo(
                                     }
 
                                     if (e.target.value.length === 0) {
-                                      await updatePrimitive.mutateAsync({
+                                      await updateFunc.mutateAsync({
                                         where: {
                                           id: data.id,
                                         },
@@ -780,7 +780,7 @@ export const PrimitiveNode = memo(
                             formData={testInput}
                             setFormData={setTestInput}
                             onSubmit={async () => {
-                              await updatePrimitive.mutateAsync({
+                              await updateFunc.mutateAsync({
                                 where: {
                                   id: data.id,
                                 },
@@ -876,7 +876,7 @@ export const PrimitiveNode = memo(
                 },
               ],
             });
-            deletePrimitive.mutate({
+            deleteFunc.mutate({
               id: data.id,
             });
           }}
