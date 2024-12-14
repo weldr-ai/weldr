@@ -3,7 +3,7 @@ import type {
   UserMessageRawContent,
 } from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 
@@ -15,10 +15,8 @@ export const conversations = pgTable("conversations", {
     .$defaultFn(() => createId()),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   userId: text("user_id")
-    .references(() => users.id, {
-      onDelete: "set null",
-    })
-    .default(sql`NULL`),
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
 });
 
 export const conversationRelations = relations(conversations, ({ many }) => ({
@@ -39,10 +37,8 @@ export const conversationMessages = pgTable("conversation_messages", {
     .references(() => conversations.id, { onDelete: "cascade" })
     .notNull(),
   userId: text("user_id")
-    .references(() => users.id, {
-      onDelete: "set null",
-    })
-    .default(sql`NULL`),
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
 });
 
 export const conversationMessageRelations = relations(

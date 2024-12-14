@@ -41,7 +41,7 @@ import { toast } from "@integramind/ui/use-toast";
 import { FlowSheet } from "~/components/flow-sheet";
 import { useFlowBuilderStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
-import { PrimitiveNode } from "./primitives";
+import { PrimitiveNode } from "./primitive-node";
 
 const nodeTypes = {
   primitive: PrimitiveNode,

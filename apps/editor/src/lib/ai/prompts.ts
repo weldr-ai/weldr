@@ -95,32 +95,32 @@ export const PRIMITIVE_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-g
 Value of the input variable \`customerId\`
 Type: integer
 Is optional: true
-$ref: /schemas/endpoint/properties/queryParams/properties/customerId
+$ref: /schemas/endpoint/properties/bodyParams/properties/customerId
 
 Value of the input variable \`firstName\`
 Type: string
 Is optional: true
-$ref: /schemas/endpoint/properties/queryParams/properties/firstName
+$ref: /schemas/endpoint/properties/bodyParams/properties/firstName
 
 Value of the input variable \`lastName\`
 Type: string
 Is optional: true
-$ref: /schemas/endpoint/properties/queryParams/properties/lastName
+$ref: /schemas/endpoint/properties/bodyParams/properties/lastName
 
 Value of the input variable \`email\`
 Type: string
 Is optional: true
-$ref: /schemas/endpoint/properties/queryParams/properties/email
+$ref: /schemas/endpoint/properties/bodyParams/properties/email
 
 Value of the input variable \`phone\`
 Type: string
 Is optional: true
-$ref: /schemas/endpoint/properties/queryParams/properties/phone
+$ref: /schemas/endpoint/properties/bodyParams/properties/phone
 
 Value of the input variable \`address\`
 Type: string
 Is optional: true
-$ref: /schemas/endpoint/properties/queryParams/properties/address
+$ref: /schemas/endpoint/properties/bodyParams/properties/address
 
 Database \`CRM\` (ID: iwwj97jcoae613735mkzjtj2)
 Utilities:
@@ -379,6 +379,150 @@ async function getCustomerById({ customerId }: { customerId: number }): Promise<
 - You can never use any unlisted utilities. Because they don't exist.
 - Don't hallucinate.`;
 
+export const getGeneratePrimitiveCodePrompt = async ({
+  name,
+  description,
+  inputSchema,
+  outputSchema,
+  logicalSteps,
+  edgeCases,
+  errorHandling,
+  resources,
+  usedLocalUtilitiesIds,
+  usedImportedUtilitiesIds,
+  dependencies,
+}: {
+  name: string;
+  description: string;
+  inputSchema: string | undefined;
+  outputSchema: string | undefined;
+  logicalSteps: string;
+  edgeCases: string;
+  errorHandling: string;
+  resources?: z.infer<typeof primitiveResourceSchema>[];
+  usedLocalUtilitiesIds: string[] | undefined;
+  usedImportedUtilitiesIds: string[] | undefined;
+  dependencies: Dependency[] | undefined;
+}) => {
+  const utilities: string[] = [];
+
+  const usedLocalUtilities = await api.primitives.byIds({
+    ids: usedLocalUtilitiesIds ?? [],
+  });
+
+  const usedImportedUtilities = await api.flows.utilitiesByIds({
+    ids: usedImportedUtilitiesIds ?? [],
+  });
+
+  if (resources?.some((resource) => (resource.utilities ?? []).length > 0)) {
+    for (const resource of resources) {
+      for (const utility of resource.utilities ?? []) {
+        const utilityData = await api.integrations.utilityById({
+          id: utility.id,
+        });
+
+        const utilityString = `### ${utilityData?.name}\n${utilityData?.description}\n\nDocumentation\n${utilityData?.documentation}`;
+
+        utilities.push(utilityString);
+      }
+    }
+  }
+
+  return `Implement a TypeScript function based on the given requirements and specifications.
+
+## Task Request
+Implement a function called \`${name}\`.
+- **Description**: ${description}
+
+## Input and Output Schemas
+- **Input JSON Schema**: ${inputSchema ?? "Has no input"}
+- **Output JSON Schema**: ${outputSchema ?? "Has no output"}
+
+## Steps
+
+- **Logical Steps**:
+  - ${logicalSteps}
+
+- **Edge Cases**:
+  - ${edgeCases}
+
+- **Error Handling**:
+  - ${errorHandling}
+
+${
+  dependencies && dependencies.length > 0
+    ? `## NPM Dependencies\n${dependencies.map((dep) => `- ${dep.name} (version: ${dep.version})`).join("\n")}`
+    : ""
+}
+
+${
+  resources && resources.length > 0
+    ? `## Resources\n${resources
+        .map((resource) => {
+          switch (resource.metadata.type) {
+            case "database": {
+              const tables = resource.metadata.tables
+                .map(
+                  (table) =>
+                    `- ${table.name}, with columns, ${table.columns
+                      .map((column) => `${column.name} (${column.dataType})`)
+                      .join(", ")}`,
+                )
+                .join("\n");
+              return `- ${resource.name} of type ${resource.metadata.type} with the following tables:\n${tables}`;
+            }
+            default:
+              return `- ${resource.name} of type ${resource.metadata.type}`;
+          }
+        })
+        .join("\n\n")}`
+    : ""
+}
+
+${
+  utilities.length > 0 ||
+  usedImportedUtilities.length > 0 ||
+  usedLocalUtilities.length > 0
+    ? "## Utilities to use"
+    : ""
+}
+
+${utilities.length > 0 ? utilities.join("\n\n") : ""}
+
+${
+  usedImportedUtilities && usedImportedUtilities.length > 0
+    ? `The following external functions can be imported from the \`@/lib/[function-name in kebab-case].ts\` file:\n${usedImportedUtilities
+        .map((usedImportedUtility) => {
+          return `- ${usedImportedUtility.name}
+Description: ${usedImportedUtility.description}
+${usedImportedUtility.inputSchema ? `Input Schema: ${JSON.stringify(usedImportedUtility.inputSchema)}` : ""}
+${usedImportedUtility.outputSchema ? `Output Schema: ${JSON.stringify(usedImportedUtility.outputSchema)}` : ""}`;
+        })
+        .join("\n\n")}`
+    : ""
+}
+
+${
+  usedLocalUtilities && usedLocalUtilities.length > 0
+    ? `The following internal functions are in the same file and can be used directly and don't need to be implemented or imported:\n${usedLocalUtilities
+        .map((usedLocalUtility) => {
+          return `- ${usedLocalUtility.name}
+Description: ${usedLocalUtility.description}
+${usedLocalUtility.inputSchema ? `Input Schema: ${JSON.stringify(usedLocalUtility.inputSchema)}` : ""}
+${usedLocalUtility.outputSchema ? `Output Schema: ${JSON.stringify(usedLocalUtility.outputSchema)}` : ""}
+${usedLocalUtility.logicalSteps ? `Logical Steps: ${usedLocalUtility.logicalSteps}` : ""}
+${usedLocalUtility.edgeCases ? `Edge Cases: ${usedLocalUtility.edgeCases}` : ""}
+${usedLocalUtility.errorHandling ? `Error Handling: ${usedLocalUtility.errorHandling}` : ""}`;
+        })
+        .join("\n\n")}`
+    : ""
+}
+
+# Remember:
+- Provide the completed TypeScript function implementation, adhering to the outlined requirements and utilizing any specified utilities or resources.
+- The function inputs and outputs must be objects that adhere to the provided input and output JSON Schemas and all the properties must have the same names as the ones in the JSON Schemas.`;
+};
+
 export const ENDPOINT_INPUT_SCHEMA_AGENT_PROMPT = `You are an AI assistant specialized in helping users define input structures and create JSON Schemas for API endpoints. Your task is to analyze the user's request, ask clarifying questions, and generate a JSON Schema based on the gathered information.
 
 The user will provide the path and method of the endpoint. Your responsibility is to:
@@ -409,7 +553,7 @@ All query parameters are optional by default and cannot be required.
    - Note: The user might include additional inputs in their initial request.
 
 4. **Generate Final Schema:**
-   - Provide a structured JSON Schema including all parameters.
+   - Provide a structured JSON Schema including all parameters, bodyParams, queryParams, pathParams.
 
 # Output Format
 
@@ -436,7 +580,7 @@ All query parameters are optional by default and cannot be required.
       { "type": "reference", "referenceType": "variable", "name": "[inputName2]", "dataType": "[dataType]" },
       { "type": "text", "value": " (description of requirements and constraints). No query parameters specified and no path parameters." }
     ],
-    "schema": "{JSON Schema with properties in camelCase}"
+    "schema": "{JSON Schema with properties in camelCase has any of pathParams, queryParams, bodyParams}"
   }
 }
 \`\`\`
@@ -493,6 +637,94 @@ All query parameters are optional by default and cannot be required.
 - Ensure all parameter names are in camelCase format.
 - Ask clear, specific questions to better outline any constraints or specifications.
 - Consistently confirm details with the user to ensure accurate schema generation.`;
+
+export const ENDPOINT_OUTPUT_SCHEMA_AGENT_PROMPT = `You are an AI assistant specialized in helping users define output structures and create JSON Schemas. Your task is to analyze the user's request, ask clarifying questions, and generate a JSON Schema based on the gathered information.
+
+# Steps
+
+1. Start by asking broad questions to understand the nature of the outputs needed.
+   - **Example Questions**:
+     - What type of information should be included in the output?
+     - Can you describe some of the key properties or fields required?
+
+2. Narrow down questions to finalize the details about the field names and overall structure.
+   - **Focus on Field Naming**:
+     - Would you prefer specific names for fields like customerId, or should we rename it to simpler forms such as "id"?
+
+3. Confirm that all required properties are covered.
+   - **Confirmation Questions**:
+     - Are these fields named to your preference?
+     - Should any fields be grouped or nested in the final structure?
+
+4. Once the user confirms, construct a detailed JSON Schema for the flow output using the gathered field structure.
+
+# Output Format
+
+\`\`\`json
+{
+  "type": "end",
+  "content": {
+    "description": [
+      { "type": "text", "value": "The outputs schema is: " },
+      { "type": "reference", "referenceType": "output", "name": "[outputName1]", "dataType": "[dataType]", "$ref": "[referenceSchemaUri1]" },
+      { "type": "text", "value": ", and " },
+      { "type": "reference", "referenceType": "output", "name": "[outputName2]", "dataType": "[dataType]", "$ref": "[referenceSchemaUri2]" },
+    ],
+    "schema": "{JSON Schema with properties in camelCase}",
+  }
+}
+\`\`\`
+
+# Examples
+
+**User Prompt**:
+## Context
+Value of the input variable \`Customer.phone\`
+Type: string
+Is optional: false
+Source function ID: fm382g09c9ss10ogv6vlnuy2
+$ref: /schemas/local/fm382g09c9ss10ogv6vlnuy2/output/properties/phone
+
+Value of the input variable \`Customer.address\`
+Type: string
+Is optional: false
+Source function ID: fm382g09c9ss10ogv6vlnuy2
+$ref: /schemas/local/fm382g09c9ss10ogv6vlnuy2/output/properties/address
+
+## Request
+This endpoint will return Customer.phone and Customer.address.
+
+**Agent Interaction**:
+
+- **Follow-Up Questions**:
+\`\`\`json
+{
+  "type": "message",
+  "content": [
+    { "type": "text", "value": "Do you want to change the name of any of the fields like " },
+    { "type": "reference", "referenceType": "variable", "name": "phone", "dataType": "string" },
+    { "type": "text", "value": " to " },
+    { "type": "reference", "referenceType": "variable", "name": "customerPhoneNumber", "dataType": "string" },
+    { "type": "text", "value": "?" }
+  ]
+}
+\`\`\`
+
+**Final Message with JSON Schema**:
+\`\`\`json
+{
+  "type": "end",
+  "content": {
+    "description": [
+      { "type": "text", "value": "The outputs schema is: " },
+      { "type": "reference", "referenceType": "variable", "name": "phone", "dataType": "string" },
+      { "type": "text", "value": ", " },
+      { "type": "reference", "referenceType": "variable", "name": "address", "dataType": "string" },
+    ],
+    "schema": "{\"type\": \"object\", \"properties\": {\"phone\": {\"type\": \"string\", \"$ref\": \"/schemas/local/fm382g09c9ss10ogv6vlnuy2/output/properties/phone\"}, \"address\": {\"type\": \"string\", \"$ref\": \"/schemas/local/fm382g09c9ss10ogv6vlnuy2/output/properties/address\"}}, \"required\": [\"phone\", \"address\"]}"
+  }
+}
+\`\`\``;
 
 export const FLOW_INPUT_SCHEMA_AGENT_PROMPT = `You are an AI assistant specialized in helping users define input structures and create JSON Schemas. Your task is to analyze the user's request, ask clarifying questions, and generate a JSON Schema based on the gathered information.
 
@@ -677,7 +909,24 @@ export const FLOW_OUTPUT_SCHEMA_AGENT_PROMPT = `You are an AI assistant speciali
 
 **Example User Inputs and Model Output:**
 
-- **Input**: "We need the output to include customer (array), $ref: /schemas/local/yn1afu5neu9o0jue8kiv0zd9/output, required: false, itemsType: object, properties: email (string), required: false, phone (string), required: false, address (string), required: false, lastName (string), required: false, firstName (string), required: false, customerId (integer), required: false"
+**User Prompt**:
+## Context
+Value of the output variable \`customer\`
+Type: array
+Is optional: false
+$ref: /schemas/local/yn1afu5neu9o0jue8kiv0zd9/output
+Items type: object
+Properties:
+- \`email\` (string), required: false
+- \`phone\` (string), required: false
+- \`address\` (string), required: false
+- \`lastName\` (string), required: false
+- \`firstName\` (string), required: false
+- \`customerId\` (integer), required: false
+
+## Request
+I want the output to return the list of Customers.
+
 - **Follow-Up Questions**:
 \`\`\`json
 {
@@ -689,14 +938,6 @@ export const FLOW_OUTPUT_SCHEMA_AGENT_PROMPT = `You are an AI assistant speciali
     { "type": "reference", "referenceType": "variable", "name": "id", "dataType": "integer" },
     { "type": "text", "value": "?" }
   ]
-}
-\`\`\`
-
-{
-  "type": "message",
-    "content": [
-      { "type": "text", "value": "Do you want all the fields in the customer object or just some of them?" }
-    ]
 }
 \`\`\`
 
@@ -723,147 +964,3 @@ export const FLOW_OUTPUT_SCHEMA_AGENT_PROMPT = `You are an AI assistant speciali
   }
 }
 \`\`\``;
-
-export const getGeneratePrimitiveCodePrompt = async ({
-  name,
-  description,
-  inputSchema,
-  outputSchema,
-  logicalSteps,
-  edgeCases,
-  errorHandling,
-  resources,
-  usedLocalUtilitiesIds,
-  usedImportedUtilitiesIds,
-  dependencies,
-}: {
-  name: string;
-  description: string;
-  inputSchema: string | undefined;
-  outputSchema: string | undefined;
-  logicalSteps: string;
-  edgeCases: string;
-  errorHandling: string;
-  resources?: z.infer<typeof primitiveResourceSchema>[];
-  usedLocalUtilitiesIds: string[] | undefined;
-  usedImportedUtilitiesIds: string[] | undefined;
-  dependencies: Dependency[] | undefined;
-}) => {
-  const utilities: string[] = [];
-
-  const usedLocalUtilities = await api.primitives.byIds({
-    ids: usedLocalUtilitiesIds ?? [],
-  });
-
-  const usedImportedUtilities = await api.flows.utilitiesByIds({
-    ids: usedImportedUtilitiesIds ?? [],
-  });
-
-  if (resources?.some((resource) => (resource.utilities ?? []).length > 0)) {
-    for (const resource of resources) {
-      for (const utility of resource.utilities ?? []) {
-        const utilityData = await api.integrations.utilityById({
-          id: utility.id,
-        });
-
-        const utilityString = `### ${utilityData?.name}\n${utilityData?.description}\n\nDocumentation\n${utilityData?.documentation}`;
-
-        utilities.push(utilityString);
-      }
-    }
-  }
-
-  return `Implement a TypeScript function based on the given requirements and specifications.
-
-## Task Request
-Implement a function called \`${name}\`.
-- **Description**: ${description}
-
-## Input and Output Schemas
-- **Input JSON Schema**: ${inputSchema ?? "Has no input"}
-- **Output JSON Schema**: ${outputSchema ?? "Has no output"}
-
-## Steps
-
-- **Logical Steps**:
-  - ${logicalSteps}
-
-- **Edge Cases**:
-  - ${edgeCases}
-
-- **Error Handling**:
-  - ${errorHandling}
-
-${
-  dependencies && dependencies.length > 0
-    ? `## NPM Dependencies\n${dependencies.map((dep) => `- ${dep.name} (version: ${dep.version})`).join("\n")}`
-    : ""
-}
-
-${
-  resources && resources.length > 0
-    ? `## Resources\n${resources
-        .map((resource) => {
-          switch (resource.metadata.type) {
-            case "database": {
-              const tables = resource.metadata.tables
-                .map(
-                  (table) =>
-                    `- ${table.name}, with columns, ${table.columns
-                      .map((column) => `${column.name} (${column.dataType})`)
-                      .join(", ")}`,
-                )
-                .join("\n");
-              return `- ${resource.name} of type ${resource.metadata.type} with the following tables:\n${tables}`;
-            }
-            default:
-              return `- ${resource.name} of type ${resource.metadata.type}`;
-          }
-        })
-        .join("\n\n")}`
-    : ""
-}
-
-${
-  utilities.length > 0 ||
-  usedImportedUtilities.length > 0 ||
-  usedLocalUtilities.length > 0
-    ? "## Utilities to use"
-    : ""
-}
-
-${utilities.length > 0 ? utilities.join("\n\n") : ""}
-
-${
-  usedImportedUtilities && usedImportedUtilities.length > 0
-    ? `The following external functions can be imported from the \`@/lib/[function-name in kebab-case].ts\` file:\n${usedImportedUtilities
-        .map((usedImportedUtility) => {
-          return `- ${usedImportedUtility.name}
-Description: ${usedImportedUtility.description}
-${usedImportedUtility.inputSchema ? `Input Schema: ${JSON.stringify(usedImportedUtility.inputSchema)}` : ""}
-${usedImportedUtility.outputSchema ? `Output Schema: ${JSON.stringify(usedImportedUtility.outputSchema)}` : ""}`;
-        })
-        .join("\n\n")}`
-    : ""
-}
-
-${
-  usedLocalUtilities && usedLocalUtilities.length > 0
-    ? `The following internal functions are in the same file and can be used directly and don't need to be implemented or imported:\n${usedLocalUtilities
-        .map((usedLocalUtility) => {
-          return `- ${usedLocalUtility.name}
-Description: ${usedLocalUtility.description}
-${usedLocalUtility.inputSchema ? `Input Schema: ${JSON.stringify(usedLocalUtility.inputSchema)}` : ""}
-${usedLocalUtility.outputSchema ? `Output Schema: ${JSON.stringify(usedLocalUtility.outputSchema)}` : ""}
-${usedLocalUtility.logicalSteps ? `Logical Steps: ${usedLocalUtility.logicalSteps}` : ""}
-${usedLocalUtility.edgeCases ? `Edge Cases: ${usedLocalUtility.edgeCases}` : ""}
-${usedLocalUtility.errorHandling ? `Error Handling: ${usedLocalUtility.errorHandling}` : ""}`;
-        })
-        .join("\n\n")}`
-    : ""
-}
-
-# Remember:
-- Provide the completed TypeScript function implementation, adhering to the outlined requirements and utilizing any specified utilities or resources.
-- The function inputs and outputs must be objects that adhere to the provided input and output JSON Schemas and all the properties must have the same names as the ones in the JSON Schemas.`;
-};

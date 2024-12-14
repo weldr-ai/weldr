@@ -6,7 +6,7 @@ import type {
   Resource,
 } from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import {
   integer,
   jsonb,
@@ -47,10 +47,8 @@ export const primitives = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     userId: text("user_id")
-      .references(() => users.id, {
-        onDelete: "set null",
-      })
-      .default(sql`NULL`),
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
     conversationId: text("conversation_id").notNull(),
     flowId: text("flow_id")
       .references(() => flows.id, { onDelete: "cascade" })

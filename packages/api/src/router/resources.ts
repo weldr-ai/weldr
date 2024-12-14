@@ -225,7 +225,10 @@ export const resourcesRouter = {
     .input(updateResourceSchema)
     .mutation(async ({ ctx, input }) => {
       const resource = await ctx.db.query.resources.findFirst({
-        where: eq(resources.id, input.where.id),
+        where: and(
+          eq(resources.id, input.where.id),
+          eq(resources.userId, ctx.session.user.id),
+        ),
         with: {
           integration: {
             columns: {

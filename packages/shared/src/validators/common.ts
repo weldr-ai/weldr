@@ -186,6 +186,7 @@ export const rawContentVariableReferenceSchema = z.object({
     properties: true,
     itemsType: true,
     sourcePrimitiveId: true,
+    required: true,
   }).shape,
 });
 

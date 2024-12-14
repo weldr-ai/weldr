@@ -1,8 +1,9 @@
 "use client";
 
 import {
-  BlocksIcon,
+  AppWindowIcon,
   BoxesIcon,
+  DatabaseIcon,
   PlusIcon,
   SettingsIcon,
   SidebarCloseIcon,
@@ -66,7 +67,6 @@ export function Sidebar({
 
   const endpoints = flows.filter((flow) => flow.type === "endpoint");
   const workflows = flows.filter((flow) => flow.type === "workflow");
-  const utilities = flows.filter((flow) => flow.type === "utility");
 
   return (
     <div className="flex ">
@@ -145,6 +145,30 @@ export function Sidebar({
               <TooltipTrigger asChild>
                 <Button
                   className={cn({
+                    "bg-accent border": activeSection === "pages",
+                  })}
+                  onClick={() => {
+                    setIsSidebarOpen(true);
+                    updateActiveSection("pages");
+                  }}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <AppWindowIcon className="size-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                className="bg-muted border relative -top-2"
+              >
+                <p>Pages</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className={cn({
                     "bg-accent border": activeSection === "endpoints",
                   })}
                   onClick={() => {
@@ -169,6 +193,30 @@ export function Sidebar({
               <TooltipTrigger asChild>
                 <Button
                   className={cn({
+                    "bg-accent border": activeSection === "database",
+                  })}
+                  onClick={() => {
+                    setIsSidebarOpen(true);
+                    updateActiveSection("database");
+                  }}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <DatabaseIcon className="size-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                className="bg-muted border relative -top-2"
+              >
+                <p>Database</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className={cn({
                     "bg-accent border": activeSection === "workflows",
                   })}
                   onClick={() => {
@@ -186,30 +234,6 @@ export function Sidebar({
                 className="bg-muted border relative -top-2"
               >
                 <p>Workflows</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className={cn({
-                    "bg-accent border": activeSection === "utility",
-                  })}
-                  onClick={() => {
-                    setIsSidebarOpen(true);
-                    updateActiveSection("utility");
-                  }}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <BlocksIcon className="size-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="right"
-                className="bg-muted border relative -top-2"
-              >
-                <p>Utilities</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -266,13 +290,7 @@ export function Sidebar({
                   <FlowList flows={workflows} type="workflow" />
                 </div>
               ) : (
-                <div
-                  className={cn("w-full", {
-                    hidden: activeSection !== "utility",
-                  })}
-                >
-                  <FlowList flows={utilities} type="utility" />
-                </div>
+                <></>
               )}
             </div>
           )}

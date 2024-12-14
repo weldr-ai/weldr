@@ -49,6 +49,7 @@ export const environmentVariablesRouter = {
             .insert(environmentVariables)
             .values({
               ...input,
+              userId: ctx.session.user.id,
               secretId: secret.id,
             })
             .returning({
@@ -138,7 +139,10 @@ export const environmentVariablesRouter = {
     .mutation(async ({ input, ctx }) => {
       const environmentVariable =
         await ctx.db.query.environmentVariables.findFirst({
-          where: eq(environmentVariables.id, input.id),
+          where: and(
+            eq(environmentVariables.id, input.id),
+            eq(environmentVariables.userId, ctx.session.user.id),
+          ),
         });
 
       if (!environmentVariable) {

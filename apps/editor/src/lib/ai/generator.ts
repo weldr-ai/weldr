@@ -19,6 +19,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   ENDPOINT_INPUT_SCHEMA_AGENT_PROMPT,
+  ENDPOINT_OUTPUT_SCHEMA_AGENT_PROMPT,
   FLOW_INPUT_SCHEMA_AGENT_PROMPT,
   FLOW_OUTPUT_SCHEMA_AGENT_PROMPT,
   PRIMITIVE_DEVELOPER_PROMPT,
@@ -79,9 +80,12 @@ export async function generatePrimitive({
         ...messages,
       ],
       schema: primitiveRequirementsMessageSchema,
-      onFinish: async ({ usage, object }) => {
+      onFinish: async ({ usage, object, error }) => {
         console.log(
           `[generatePrimitive] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
+        );
+        console.log(
+          `[generatePrimitive] Error: ${JSON.stringify(error, null, 2)}`,
         );
 
         if (object?.message?.type === "message") {
@@ -132,11 +136,11 @@ export async function generatePrimitive({
           });
 
           const edges: {
-            local: string[];
-            imported: string[];
+            local: Set<string>;
+            imported: Set<string>;
           } = {
-            local: [],
-            imported: [],
+            local: new Set(),
+            imported: new Set(),
           };
 
           for (const input of flattenedInputSchema) {
@@ -149,22 +153,22 @@ export async function generatePrimitive({
             );
 
             if (isLocal?.[1]) {
-              edges.local.push(isLocal[1]);
+              edges.local.add(isLocal[1]);
             } else if (isImported?.[1]) {
-              edges.imported.push(isImported[1]);
+              edges.imported.add(isImported[1]);
             }
           }
 
           console.log("[generatePrimitive] Creating edges", edges);
 
           const edgesData = [
-            ...edges.local.map((id) => ({
+            ...Array.from(edges.local).map((id) => ({
               type: "consumes" as const,
               flowId: primitiveData?.flowId,
               localSourceId: id,
               targetId: primitiveId,
             })),
-            ...edges.imported.map((id) => ({
+            ...Array.from(edges.imported).map((id) => ({
               type: "consumes" as const,
               flowId: primitiveData?.flowId,
               importedSourceId: id,
@@ -333,9 +337,12 @@ export async function generateFlowInputSchema({
         ...messages,
       ],
       schema: flowInputSchemaMessageSchema,
-      onFinish: ({ usage, object }) => {
+      onFinish: ({ usage, object, error }) => {
         console.log(
           `[generateFlowInputsSchemas] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
+        );
+        console.log(
+          `[generateFlowInputsSchemas] Error: ${JSON.stringify(error, null, 2)}`,
         );
 
         if (object?.message?.type === "message") {
@@ -411,7 +418,7 @@ export async function generateFlowInputSchema({
   return stream.value;
 }
 
-export async function generateFlowOutputsSchemas({
+export async function generateFlowOutputSchema({
   flowId,
   messages,
   conversationId,
@@ -437,16 +444,19 @@ export async function generateFlowOutputsSchemas({
     };
   }
 
-  console.log(`[generateFlowOutputsSchemas] Starting for flow ${flowId}`);
+  console.log(`[generateFlowOutputSchema] Starting for flow ${flowId}`);
   const stream = createStreamableValue<FlowOutputSchemaMessage>();
 
   (async () => {
     console.log(
-      `[generateFlowOutputsSchemas] Streaming response for ${flowData.type} ${flowId}`,
+      `[generateFlowOutputSchema] Streaming response for ${flowData.type} ${flowId}`,
     );
     const { partialObjectStream } = streamObject({
       model: openai("gpt-4o"),
-      system: FLOW_OUTPUT_SCHEMA_AGENT_PROMPT,
+      system:
+        flowData.type === "endpoint"
+          ? ENDPOINT_OUTPUT_SCHEMA_AGENT_PROMPT
+          : FLOW_OUTPUT_SCHEMA_AGENT_PROMPT,
       messages: [
         {
           role: "user",
@@ -455,14 +465,17 @@ export async function generateFlowOutputsSchemas({
         ...messages,
       ],
       schema: flowOutputSchemaMessageSchema,
-      onFinish: ({ usage, object }) => {
+      onFinish: ({ usage, object, error }) => {
         console.log(
-          `[generateFlowOutputsSchemas] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
+          `[generateFlowOutputSchema] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
+        );
+        console.log(
+          `[generateFlowOutputSchema] Error: ${JSON.stringify(error, null, 2)}`,
         );
 
         if (object?.message?.type === "message") {
           console.log(
-            "[generateFlowOutputsSchemas] Adding message to conversation",
+            "[generateFlowOutputSchema] Adding message to conversation",
           );
 
           api.conversations.addMessage({
@@ -475,7 +488,7 @@ export async function generateFlowOutputsSchemas({
 
         if (object?.message?.type === "end") {
           console.log(
-            `[generateFlowOutputsSchemas] Processing final output schema for ${flowData.type} ${flowId}`,
+            `[generateFlowOutputSchema] Processing final output schema for ${flowData.type} ${flowId}`,
           );
           const description: AssistantMessageRawContent = [
             {
@@ -493,7 +506,7 @@ export async function generateFlowOutputsSchemas({
           });
 
           console.log(
-            `[generateFlowOutputsSchemas] Updating ${flowData.type} ${flowId} with generated output schema`,
+            `[generateFlowOutputSchema] Updating ${flowData.type} ${flowId} with generated output schema`,
           );
 
           api.flows.update({
@@ -524,7 +537,7 @@ export async function generateFlowOutputsSchemas({
     }
 
     console.log(
-      `[generateFlowOutputsSchemas] Stream completed for ${flowData.type} ${flowId}`,
+      `[generateFlowOutputSchema] Stream completed for ${flowData.type} ${flowId}`,
     );
 
     stream.done();

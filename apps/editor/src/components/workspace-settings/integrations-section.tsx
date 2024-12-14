@@ -270,9 +270,9 @@ export function IntegrationsSection({
                         theme: resolvedTheme === "dark" ? "dark" : "light",
                       })
                     : null}
-                  <span className="flex items-center gap-2 text-lg font-semibold">
-                    {integration.name}{" "}
-                    <span className="text-xs text-muted-foreground">
+                  <span className="flex items-center text-lg font-semibold">
+                    {integration.name}
+                    <span className="ml-2 text-xs text-muted-foreground">
                       (Coming Soon)
                     </span>
                   </span>

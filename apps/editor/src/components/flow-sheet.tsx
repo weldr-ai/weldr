@@ -21,15 +21,12 @@ import {
 import {
   AlertCircleIcon,
   ArrowLeftIcon,
-  CheckCircle2Icon,
-  ClipboardIcon,
   ExternalLinkIcon,
   FileTextIcon,
   Loader2Icon,
   MoreVerticalIcon,
   PanelRightCloseIcon,
   PlayCircleIcon,
-  RocketIcon,
   TrashIcon,
 } from "lucide-react";
 
@@ -37,7 +34,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type {
   AssistantMessageRawContent,
   ConversationMessage,
-  EndpointFlowMetadata,
   FlatInputSchema,
   Flow,
   FlowInputSchemaMessage,
@@ -59,11 +55,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@integramind/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@integramind/ui/popover";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import {
   Sheet,
@@ -79,7 +70,6 @@ import {
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
 import { TreeView } from "@integramind/ui/tree-view";
-import { toast } from "@integramind/ui/use-toast";
 import { cn } from "@integramind/ui/utils";
 import { createId } from "@paralleldrive/cuid2";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
@@ -94,7 +84,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import {
   generateFlowInputSchema,
-  generateFlowOutputsSchemas,
+  generateFlowOutputSchema,
 } from "~/lib/ai/generator";
 import { useResources } from "~/lib/context/resources";
 import { api } from "~/lib/trpc/client";
@@ -206,11 +196,11 @@ export function FlowSheet({
       {
         id: createId(),
         role: "assistant",
-        content: `Hi there! I'm Specly, your AI assistant. What are your flow's input?`,
+        content: `Hi there! I'm Integrator, your AI assistant. What are your flow's input?`,
         rawContent: [
           {
             type: "text",
-            value: `Hi there! I'm Specly, your AI assistant. What are your flow's input?`,
+            value: `Hi there! I'm Integrator, your AI assistant. What are your flow's input?`,
           },
         ],
       },
@@ -227,11 +217,11 @@ export function FlowSheet({
       {
         id: createId(),
         role: "assistant",
-        content: `Hi there! I'm Specly, your AI assistant. What are your flow's output?`,
+        content: `Hi there! I'm Integrator, your AI assistant. What are your flow's output?`,
         rawContent: [
           {
             type: "text",
-            value: `Hi there! I'm Specly, your AI assistant. What are your flow's output?`,
+            value: `Hi there! I'm Integrator, your AI assistant. What are your flow's output?`,
           },
         ],
       },
@@ -311,7 +301,7 @@ export function FlowSheet({
         })),
       });
     } else {
-      result = await generateFlowOutputsSchemas({
+      result = await generateFlowOutputSchema({
         flowId: data.id,
         conversationId: data.outputConversationId,
         messages: newMessages.map((message) => ({
@@ -479,8 +469,6 @@ export function FlowSheet({
     scrollToBottom();
   }, [scrollToBottom]);
 
-  const [isDeploying, setIsDeploying] = useState(false);
-
   const [flowTestResponse, _setFlowTestResponse] = useState<string | null>(
     null,
   );
@@ -501,7 +489,11 @@ export function FlowSheet({
       return [...getResourceReferences(resources, ["database"])];
     }
 
-    const outputs = flowPrimitives?.reduce((acc, d) => {
+    if (!flowPrimitives) {
+      return [];
+    }
+
+    const outputs = flowPrimitives.reduce((acc, d) => {
       acc.push(
         ...flattenInputSchema({
           id: d.id,
@@ -513,8 +505,15 @@ export function FlowSheet({
       return acc;
     }, [] as FlatInputSchema[]);
 
-    return (
-      outputs?.map((output) => ({
+    const flowInputs = flattenInputSchema({
+      id: data.id,
+      schema: data.inputSchema ?? undefined,
+      refPath: `${data.type}/input`,
+      sourcePrimitiveId: data.id,
+    });
+
+    return [
+      ...outputs.map((output) => ({
         type: "reference" as const,
         referenceType: "variable" as const,
         name: output.path,
@@ -524,9 +523,24 @@ export function FlowSheet({
         properties: output.properties,
         itemsType: output.itemsType,
         sourcePrimitiveId: output.sourcePrimitiveId,
-      })) ?? []
-    );
-  }, [flowPrimitives, resources, generationMode]);
+      })),
+      ...flowInputs.map((input) => ({
+        type: "reference" as const,
+        referenceType: "variable" as const,
+        name: input.path,
+        required: input.required,
+        dataType: input.type,
+        refUri: input.refUri,
+      })),
+    ];
+  }, [
+    flowPrimitives,
+    resources,
+    generationMode,
+    data.id,
+    data.inputSchema,
+    data.type,
+  ]);
 
   return (
     <Sheet
@@ -563,9 +577,7 @@ export function FlowSheet({
           >
             {data.type === "endpoint"
               ? data.metadata.method.toUpperCase()
-              : data.type === "workflow"
-                ? "WORKFLOW"
-                : "UTILITY"}
+              : data.type.charAt(0).toUpperCase() + data.type.slice(1)}
           </Badge>
           <span>{data.name}</span>
         </Button>
@@ -595,9 +607,7 @@ export function FlowSheet({
                   >
                     {data.type === "endpoint"
                       ? data.metadata.method.toUpperCase()
-                      : data.type === "workflow"
-                        ? "WORKFLOW"
-                        : "UTILITY"}
+                      : data.type.charAt(0).toUpperCase() + data.type.slice(1)}
                   </Badge>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">
@@ -633,11 +643,6 @@ export function FlowSheet({
                         onClick={async () => {
                           setOpenTab("run");
                           setIsRunning(true);
-                          // const response = await executeFlow({
-                          //   flowUrl: `https://${data.workspaceId}.fly.dev${(data.metadata as EndpointFlowMetadata).path}`,
-                          //   testData: flowTestData ?? {},
-                          // });
-                          // setFlowTestResponse(response);
                           setIsRunning(false);
                         }}
                       >
@@ -651,75 +656,6 @@ export function FlowSheet({
                       <p>Run</p>
                     </TooltipContent>
                   </Tooltip>
-
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            className="size-7 text-primary hover:text-primary"
-                            variant="ghost"
-                            size="icon"
-                            disabled={!data.canRun}
-                            onClick={() => {
-                              setIsDeploying(true);
-                              setTimeout(() => {
-                                setIsDeploying(false);
-                              }, 30000);
-                            }}
-                          >
-                            <RocketIcon className="size-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="bg-muted border text-primary"
-                        >
-                          <p>Deploy</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      side="bottom"
-                      align="end"
-                      className="h-40 w-96"
-                    >
-                      {isDeploying ? (
-                        <div className="flex flex-col size-full items-center justify-center gap-2">
-                          <Loader2Icon className="size-3.5 animate-spin" />
-                          <p className="text-xs text-muted-foreground">
-                            Deploying...
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col size-full items-center justify-center gap-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2Icon className="size-4 text-success" />
-                            <p className="text-sm font-medium">
-                              Deployment successful!
-                            </p>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-2 text-xs"
-                            onClick={() => {
-                              const url = `https://${data.workspaceId}.fly.dev${(data.metadata as EndpointFlowMetadata).path}`;
-                              navigator.clipboard.writeText(url);
-                              toast({
-                                title: "URL copied",
-                                description: "You can now share it with others",
-                              });
-                            }}
-                          >
-                            <span>{`https://${data.workspaceId}.fly.dev`}</span>
-                            <ClipboardIcon className="size-3.5" />
-                          </Button>
-                        </div>
-                      )}
-                    </PopoverContent>
-                  </Popover>
-
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -1016,16 +952,13 @@ export function FlowSheet({
                   <>
                     <span className="text-xs">Summary</span>
                     <div className="flex flex-col gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        Description
-                      </span>
-                      {data.description ? (
-                        <p className="text-sm">{data.description}</p>
-                      ) : (
-                        <p className="text-sm text-center text-muted-foreground">
-                          The flow description will be generated after the first
-                          run
-                        </p>
+                      {data.description && (
+                        <>
+                          <span className="text-xs text-muted-foreground">
+                            Description
+                          </span>
+                          <p className="text-sm">{data.description}</p>
+                        </>
                       )}
                       {data.inputSchema && (
                         <>
@@ -1062,7 +995,7 @@ export function FlowSheet({
               {generationMode === null && (
                 <div className="flex flex-col w-full h-[calc(100vh-250px)] justify-center items-center gap-2">
                   <p className="text-sm text-muted-foreground">
-                    Choose Specly's mode
+                    Choose Integrator's mode
                   </p>
                   <Button
                     className="w-48"
@@ -1071,14 +1004,12 @@ export function FlowSheet({
                       setGenerationMode("input");
                       setMessages(inputConversation);
                     }}
-                    disabled={!canGenerateSchemas}
                   >
                     Define {data.type} input
                   </Button>
                   <Button
                     className="w-48"
                     variant="outline"
-                    disabled={!canGenerateSchemas}
                     onClick={() => {
                       setGenerationMode("output");
                       setMessages(outputConversation);
@@ -1101,7 +1032,7 @@ export function FlowSheet({
                         <ArrowLeftIcon className="size-4" />
                       </Button>
                       <p className="text-sm text-muted-foreground">
-                        Define your {generationMode} with Specly
+                        Define your {generationMode} with Integrator
                       </p>
                     </div>
                     <ScrollArea

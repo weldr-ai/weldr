@@ -198,12 +198,12 @@ export const PrimitiveNode = memo(
           id: createId(),
           role: "assistant",
           content:
-            "Hi there! I'm Specly, your AI assistant. What does your primitive do?",
+            "Hi there! I'm Integrator, your AI assistant. What does your primitive do?",
           rawContent: [
             {
               type: "text",
               value:
-                "Hi there! I'm Specly, your AI assistant. What does your primitive do?",
+                "Hi there! I'm Integrator, your AI assistant. What does your primitive do?",
             },
           ],
         },
@@ -411,9 +411,7 @@ export const PrimitiveNode = memo(
 
         await apiUtils.flows.byId.invalidate({ id: data.flowId });
         await apiUtils.primitives.byId.invalidate({ id: data.id });
-        await apiUtils.edges.available.invalidate({
-          primitiveId: data.id,
-        });
+        await apiUtils.edges.available.invalidate();
         await apiUtils.edges.listByFlowId.invalidate({
           flowId: data.flowId,
         });
@@ -722,7 +720,7 @@ export const PrimitiveNode = memo(
                         editorRef={editorRef}
                         references={references}
                         rawMessage={userMessageRawContent}
-                        placeholder="Create, refine, or fix your function with Specly..."
+                        placeholder="Create, refine, or fix your function with Integrator..."
                         onChange={onChatChange}
                         onSubmit={async () => {
                           if (
@@ -840,8 +838,8 @@ export const PrimitiveNode = memo(
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <span className="text-sm text-muted-foreground">
-                      Function is not implemented yet. Chat with Specly to build
-                      it.
+                      Function is not implemented yet. Chat with Integrator to
+                      build it.
                     </span>
                   </div>
                 )}

@@ -71,7 +71,7 @@ export default function MessageList({
       {isThinking && (
         <div key="thinking" className="flex items-start">
           <Avatar className="size-6 rounded-md">
-            <AvatarImage src="/logo-solid.svg" alt="Specly" />
+            <AvatarImage src="/logo-solid.svg" alt="Integrator" />
           </Avatar>
           <span className="ml-3 text-sm text-muted-foreground">
             Thinking
@@ -83,7 +83,7 @@ export default function MessageList({
       {isGenerating && (
         <div key="generating" className="flex items-start">
           <Avatar className="size-6 rounded-md">
-            <AvatarImage src="/logo-solid.svg" alt="Specly" />
+            <AvatarImage src="/logo-solid.svg" alt="Integrator" />
           </Avatar>
           <span className="ml-3 text-sm text-muted-foreground">
             Building
@@ -95,7 +95,7 @@ export default function MessageList({
       {isRunning && (
         <div key="running" className="flex items-start">
           <Avatar className="size-6 rounded-md">
-            <AvatarImage src="/logo-solid.svg" alt="Specly" />
+            <AvatarImage src="/logo-solid.svg" alt="Integrator" />
           </Avatar>
           <span className="ml-3 text-sm text-muted-foreground">
             Running your function
@@ -119,7 +119,7 @@ function MessageItem({ message }: { message: ConversationMessage }) {
             </AvatarFallback>
           </>
         ) : (
-          <AvatarImage src="/logo-solid.svg" alt="Specly" />
+          <AvatarImage src="/logo-solid.svg" alt="Integrator" />
         )}
       </Avatar>
       <div className="ml-3">
@@ -135,7 +135,7 @@ function TestRunItem({ testRun }: { testRun: TestRun }) {
   return (
     <div className="flex w-full items-start">
       <Avatar className="size-6 rounded-md">
-        <AvatarImage src="/logo-solid.svg" alt="Specly" />
+        <AvatarImage src="/logo-solid.svg" alt="Integrator" />
       </Avatar>
       <div className="flex ml-3 w-full h-48 bg-background rounded-md">
         <ScrollArea className="w-full max-h-48 px-1 py-2">

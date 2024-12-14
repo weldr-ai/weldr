@@ -23,9 +23,9 @@ export const environmentVariables = pgTable(
     workspaceId: text("workspace_id")
       .references(() => workspaces.id, { onDelete: "cascade" })
       .notNull(),
-    userId: text("user_id").references(() => users.id, {
-      onDelete: "set null",
-    }),
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
   },
   (t) => ({
     uniqueKey: unique("unique_key").on(t.workspaceId, t.key),
