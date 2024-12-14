@@ -1,5 +1,5 @@
 {
-  "id": "31b18290-7615-47ae-92dc-d4494fcb338e",
+  "id": "74471c85-502b-47a1-9715-6734c84a53ee",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -404,6 +404,113 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.endpoints": {
+      "name": "endpoints",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "http_method": {
+          "name": "http_method",
+          "type": "http_methods",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "route_handler": {
+          "name": "route_handler",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "open_api_spec": {
+          "name": "open_api_spec",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "endpoints_user_id_users_id_fk": {
+          "name": "endpoints_user_id_users_id_fk",
+          "tableFrom": "endpoints",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "endpoints_workspace_id_workspaces_id_fk": {
+          "name": "endpoints_workspace_id_workspaces_id_fk",
+          "tableFrom": "endpoints",
+          "tableTo": "workspaces",
+          "columnsFrom": ["workspace_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "endpoints_workspace_id_path_http_method_unique": {
+          "name": "endpoints_workspace_id_path_http_method_unique",
+          "nullsNotDistinct": false,
+          "columns": ["workspace_id", "path", "http_method"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.flows": {
       "name": "flows",
       "schema": "",
@@ -426,13 +533,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "type": {
-          "name": "type",
-          "type": "flow_types",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
         "input_schema": {
           "name": "input_schema",
           "type": "jsonb",
@@ -444,12 +544,6 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
         },
         "code": {
           "name": "code",
@@ -500,8 +594,7 @@
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "default": "NULL"
+          "notNull": true
         }
       },
       "indexes": {},
@@ -521,7 +614,7 @@
           "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
-          "onDelete": "set null",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1369,10 +1462,10 @@
       "schema": "public",
       "values": ["user", "assistant"]
     },
-    "public.flow_types": {
-      "name": "flow_types",
+    "public.http_methods": {
+      "name": "http_methods",
       "schema": "public",
-      "values": ["utility", "workflow", "endpoint"]
+      "values": ["GET", "POST", "PUT", "DELETE", "PATCH"]
     },
     "public.integration_category": {
       "name": "integration_category",

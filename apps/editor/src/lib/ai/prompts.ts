@@ -410,7 +410,7 @@ export const getGenerateFuncCodePrompt = async ({
     ids: usedLocalUtilitiesIds ?? [],
   });
 
-  const usedImportedUtilities = await api.flows.utilitiesByIds({
+  const usedImportedUtilities = await api.flows.byIds({
     ids: usedImportedUtilitiesIds ?? [],
   });
 

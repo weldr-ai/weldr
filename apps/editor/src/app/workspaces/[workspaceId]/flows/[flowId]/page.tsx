@@ -41,7 +41,7 @@ export default async function FlowPage({
           initialNodes={initialNodes}
           initialEdges={initialEdges}
         />
-        <Overlay show={!flow.inputSchema} flowType={flow.type} />
+        <Overlay show={!flow.inputSchema} />
       </div>
     );
   } catch (error) {

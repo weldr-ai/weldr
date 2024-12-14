@@ -19,15 +19,7 @@ import type {
 } from "../validators/conversations";
 import type { edgeSchema } from "../validators/edges";
 import type { environmentVariableSchema } from "../validators/environment-variables";
-import type {
-  endpointFlowMetadataSchema,
-  endpointFlowSchema,
-  flowSchema,
-  flowTypesSchema,
-  utilityFlowMetadataSchema,
-  workflowFlowMetadataSchema,
-  workflowFlowSchema,
-} from "../validators/flows";
+import type { flowSchema } from "../validators/flows";
 import type { funcSchema } from "../validators/funcs";
 import type {
   integrationSchema,
@@ -62,19 +54,7 @@ export type OutputSchema = z.infer<typeof outputSchema>;
 
 export type Workspace = z.infer<typeof workspaceSchema>;
 
-export type EndpointFlowMetadata = z.infer<typeof endpointFlowMetadataSchema>;
-export type WorkflowFlowMetadata = z.infer<typeof workflowFlowMetadataSchema>;
-export type UtilityFlowMetadata = z.infer<typeof utilityFlowMetadataSchema>;
-
-export type EndpointFlow = z.infer<typeof endpointFlowSchema>;
-export type WorkflowFlow = z.infer<typeof workflowFlowSchema>;
-
-export type FlowType = z.infer<typeof flowTypesSchema>;
 export type Flow = z.infer<typeof flowSchema>;
-export type FlowMetadata =
-  | UtilityFlowMetadata
-  | EndpointFlowMetadata
-  | WorkflowFlowMetadata;
 export type FlowEdge = z.infer<typeof edgeSchema>;
 
 export type UserMessageRawContent = z.infer<typeof userMessageRawContentSchema>;

@@ -18,8 +18,6 @@ import { createStreamableValue } from "ai/rsc";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
-  ENDPOINT_INPUT_SCHEMA_AGENT_PROMPT,
-  ENDPOINT_OUTPUT_SCHEMA_AGENT_PROMPT,
   FLOW_INPUT_SCHEMA_AGENT_PROMPT,
   FLOW_OUTPUT_SCHEMA_AGENT_PROMPT,
   FUNC_DEVELOPER_PROMPT,
@@ -160,20 +158,20 @@ export async function generateFunc({
           const edgesData = [
             ...Array.from(edges.local).map((id) => ({
               type: "consumes" as const,
-              flowId: funcData?.flowId,
+              flowId: funcData.flowId,
               localSourceId: id,
               targetId: funcId,
             })),
             ...Array.from(edges.imported).map((id) => ({
               type: "consumes" as const,
-              flowId: funcData?.flowId,
+              flowId: funcData.flowId,
               importedSourceId: id,
               targetId: funcId,
             })),
             ...(object.message.content.extraUsedUtilities?.local ?? []).map(
               (id) => ({
                 type: "requires" as const,
-                flowId: funcData?.flowId,
+                flowId: funcData.flowId,
                 localSourceId: id,
                 targetId: funcId,
               }),
@@ -181,7 +179,7 @@ export async function generateFunc({
             ...(object.message.content.extraUsedUtilities?.imported ?? []).map(
               (id) => ({
                 type: "requires" as const,
-                flowId: funcData?.flowId,
+                flowId: funcData.flowId,
                 importedSourceId: id,
                 targetId: funcId,
               }),
@@ -293,19 +291,7 @@ export async function generateFlowInputSchema({
     };
   }
 
-  if (
-    flowData.type === "endpoint" &&
-    (!flowData.metadata.path || !flowData.metadata.method)
-  ) {
-    return {
-      status: "error",
-      message: "Flow path and method are required",
-    };
-  }
-
-  console.log(
-    `[generateFlowInputsSchemas] Starting for ${flowData.type} ${flowId}`,
-  );
+  console.log(`[generateFlowInputsSchemas] Starting for flow ${flowId}`);
   const stream = createStreamableValue<FlowInputSchemaMessage>();
 
   (async () => {
@@ -314,18 +300,11 @@ export async function generateFlowInputSchema({
     );
     const { partialObjectStream } = streamObject({
       model: openai("gpt-4o"),
-      system:
-        flowData.type === "endpoint"
-          ? ENDPOINT_INPUT_SCHEMA_AGENT_PROMPT
-          : FLOW_INPUT_SCHEMA_AGENT_PROMPT,
+      system: FLOW_INPUT_SCHEMA_AGENT_PROMPT,
       messages: [
         {
           role: "user",
-          content: `I want to create inputs for flow ${flowData.name} (ID: ${flowId}) of type ${flowData.type}${
-            flowData.type === "endpoint"
-              ? ` with path ${flowData.metadata.path}`
-              : ""
-          }`,
+          content: `I want to create inputs for flow ${flowData.name} (ID: ${flowId})`,
         },
         ...messages,
       ],
@@ -352,7 +331,7 @@ export async function generateFlowInputSchema({
 
         if (object?.message?.type === "end") {
           console.log(
-            `[generateFlowInputsSchemas] Processing final input schema for ${flowData.type} ${flowId}`,
+            `[generateFlowInputsSchemas] Processing final input schema for flow ${flowId}`,
           );
 
           const description: AssistantMessageRawContent = [
@@ -371,13 +350,12 @@ export async function generateFlowInputSchema({
           });
 
           console.log(
-            `[generateFlowInputsSchemas] Updating ${flowData.type} ${flowId} with generated input schema`,
+            `[generateFlowInputsSchemas] Updating flow ${flowId} with generated input schema`,
           );
 
           api.flows.update({
             where: { id: flowId },
             payload: {
-              type: "endpoint",
               inputSchema: JSON.parse(object.message.content.inputSchema),
             },
           });
@@ -402,7 +380,7 @@ export async function generateFlowInputSchema({
     }
 
     console.log(
-      `[generateFlowInputsSchemas] Stream completed for ${flowData.type} ${flowId}`,
+      `[generateFlowInputsSchemas] Stream completed for flow ${flowId}`,
     );
 
     stream.done();
@@ -442,18 +420,15 @@ export async function generateFlowOutputSchema({
 
   (async () => {
     console.log(
-      `[generateFlowOutputSchema] Streaming response for ${flowData.type} ${flowId}`,
+      `[generateFlowOutputSchema] Streaming response for flow ${flowId}`,
     );
     const { partialObjectStream } = streamObject({
       model: openai("gpt-4o"),
-      system:
-        flowData.type === "endpoint"
-          ? ENDPOINT_OUTPUT_SCHEMA_AGENT_PROMPT
-          : FLOW_OUTPUT_SCHEMA_AGENT_PROMPT,
+      system: FLOW_OUTPUT_SCHEMA_AGENT_PROMPT,
       messages: [
         {
           role: "user",
-          content: `I want to create outputs for flow ${flowData.name} (ID: ${flowId}) of type ${flowData.type}`,
+          content: `I want to create outputs for flow ${flowData.name} (ID: ${flowId})`,
         },
         ...messages,
       ],
@@ -481,7 +456,7 @@ export async function generateFlowOutputSchema({
 
         if (object?.message?.type === "end") {
           console.log(
-            `[generateFlowOutputSchema] Processing final output schema for ${flowData.type} ${flowId}`,
+            `[generateFlowOutputSchema] Processing final output schema for flow ${flowId}`,
           );
           const description: AssistantMessageRawContent = [
             {
@@ -499,13 +474,12 @@ export async function generateFlowOutputSchema({
           });
 
           console.log(
-            `[generateFlowOutputSchema] Updating ${flowData.type} ${flowId} with generated output schema`,
+            `[generateFlowOutputSchema] Updating flow ${flowId} with generated output schema`,
           );
 
           api.flows.update({
             where: { id: flowId },
             payload: {
-              type: "endpoint",
               outputSchema: JSON.parse(object.message.content.outputSchema),
             },
           });
@@ -530,7 +504,7 @@ export async function generateFlowOutputSchema({
     }
 
     console.log(
-      `[generateFlowOutputSchema] Stream completed for ${flowData.type} ${flowId}`,
+      `[generateFlowOutputSchema] Stream completed for flow ${flowId}`,
     );
 
     stream.done();

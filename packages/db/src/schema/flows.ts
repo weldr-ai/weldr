@@ -1,19 +1,8 @@
 import { createId } from "@paralleldrive/cuid2";
-import { relations, sql } from "drizzle-orm";
-import {
-  boolean,
-  jsonb,
-  pgEnum,
-  pgTable,
-  text,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { boolean, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-import type {
-  FlowMetadata,
-  InputSchema,
-  OutputSchema,
-} from "@integramind/shared/types";
+import type { InputSchema, OutputSchema } from "@integramind/shared/types";
 import { users } from "./auth";
 import { conversations } from "./conversations";
 import { edges } from "./edges";
@@ -21,22 +10,14 @@ import { funcs } from "./funcs";
 import { testRuns } from "./test-runs";
 import { workspaces } from "./workspaces";
 
-export const flowTypes = pgEnum("flow_types", [
-  "utility",
-  "workflow",
-  "endpoint",
-]);
-
 export const flows = pgTable("flows", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
   name: text("name").notNull(),
   description: text("description"),
-  type: flowTypes("type").notNull(),
   inputSchema: jsonb("input_schema").$type<InputSchema>(),
   outputSchema: jsonb("output_schema").$type<OutputSchema>(),
-  metadata: jsonb("metadata").$type<FlowMetadata>().notNull(),
   code: text("code"),
   isUpdated: boolean("is_updated").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -50,10 +31,8 @@ export const flows = pgTable("flows", {
     .references(() => workspaces.id, { onDelete: "cascade" })
     .notNull(),
   userId: text("user_id")
-    .references(() => users.id, {
-      onDelete: "set null",
-    })
-    .default(sql`NULL`),
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
 });
 
 export const flowsRelations = relations(flows, ({ many, one }) => ({

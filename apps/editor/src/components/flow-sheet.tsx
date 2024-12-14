@@ -1,23 +1,14 @@
 "use client";
 
-import { Badge } from "@integramind/ui/badge";
 import { Button } from "@integramind/ui/button";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@integramind/ui/select";
 import {
   AlertCircleIcon,
   ArrowLeftIcon,
@@ -41,12 +32,7 @@ import type {
   UserMessageRawContent,
 } from "@integramind/shared/types";
 import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
-import {
-  baseUpdateFlowSchema,
-  updateEndpointFlowSchema,
-  updateFlowSchema,
-  updateWorkflowFlowSchema,
-} from "@integramind/shared/validators/flows";
+import { updateFlowSchema } from "@integramind/shared/validators/flows";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,7 +56,6 @@ import {
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
 import { TreeView } from "@integramind/ui/tree-view";
-import { cn } from "@integramind/ui/utils";
 import { createId } from "@paralleldrive/cuid2";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
@@ -141,34 +126,6 @@ export function FlowSheet({
 
   const addMessage = api.conversations.addMessage.useMutation();
 
-  const getDefaultValues = () => {
-    const defaultValues = {
-      type: data.type,
-      name: data.name ?? undefined,
-      description: data.description ?? undefined,
-      inputSchema: data.inputSchema ?? undefined,
-      metadata: {},
-    };
-
-    switch (data.type) {
-      case "endpoint":
-        return {
-          ...defaultValues,
-          metadata: {
-            method: data.metadata.method,
-            path: data.metadata.path,
-          },
-        } as z.infer<typeof updateEndpointFlowSchema>;
-      case "workflow":
-        return {
-          ...defaultValues,
-          metadata: {
-            recurrence: data.metadata.recurrence,
-          },
-        } as z.infer<typeof updateWorkflowFlowSchema>;
-    }
-  };
-
   const editorRef = useRef<LexicalEditor>(null);
 
   const form = useForm<z.infer<typeof updateFlowSchema>>({
@@ -179,7 +136,8 @@ export function FlowSheet({
         id: data.id,
       },
       payload: {
-        ...getDefaultValues(),
+        name: data.name,
+        description: data.description ?? undefined,
       },
     },
   });
@@ -242,16 +200,6 @@ export function FlowSheet({
   );
   const [userMessageRawContent, setUserMessageRawContent] =
     useState<UserMessageRawContent>([]);
-
-  const canGenerateSchemas = useMemo(() => {
-    if (data.type === "endpoint") {
-      return !!data.metadata.method && !!data.metadata.path;
-    }
-    if (data.type === "workflow") {
-      return !!data.metadata.recurrence;
-    }
-    return true;
-  }, [data.type, data.metadata]);
 
   const onSubmit = async (generationMode: "input" | "output") => {
     setIsThinking(true);
@@ -508,7 +456,7 @@ export function FlowSheet({
     const flowInputs = flattenInputSchema({
       id: data.id,
       schema: data.inputSchema ?? undefined,
-      refPath: `${data.type}/input`,
+      refPath: `flow/${data.id}/input`,
       sourceFuncId: data.id,
     });
 
@@ -533,14 +481,7 @@ export function FlowSheet({
         refUri: input.refUri,
       })),
     ];
-  }, [
-    flowFuncs,
-    resources,
-    generationMode,
-    data.id,
-    data.inputSchema,
-    data.type,
-  ]);
+  }, [flowFuncs, resources, generationMode, data.id, data.inputSchema]);
 
   return (
     <Sheet
@@ -562,23 +503,6 @@ export function FlowSheet({
           {!data.canRun && (
             <AlertCircleIcon className="size-4 text-destructive" />
           )}
-          <Badge
-            variant="outline"
-            className={cn("text-xs border-transparent", {
-              "text-primary bg-primary/15":
-                data.type === "endpoint" && data.metadata.method === "get",
-              "text-success bg-success/15":
-                data.type === "endpoint" && data.metadata.method === "post",
-              "text-warning bg-warning/15":
-                data.type === "endpoint" && data.metadata.method === "patch",
-              "text-destructive bg-destructive/15":
-                data.type === "endpoint" && data.metadata.method === "delete",
-            })}
-          >
-            {data.type === "endpoint"
-              ? data.metadata.method.toUpperCase()
-              : data.type.charAt(0).toUpperCase() + data.type.slice(1)}
-          </Badge>
           <span>{data.name}</span>
         </Button>
       </SheetTrigger>
@@ -587,50 +511,25 @@ export function FlowSheet({
           <SheetHeader>
             <SheetTitle className="flex flex-col items-start justify-start border-b p-4">
               <div className="flex w-full items-center justify-between">
-                <div className="flex w-full items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className={cn("text-xs border-transparent", {
-                      "text-primary bg-primary/15":
-                        data.type === "endpoint" &&
-                        data.metadata.method === "get",
-                      "text-success bg-success/15":
-                        data.type === "endpoint" &&
-                        data.metadata.method === "post",
-                      "text-warning bg-warning/15":
-                        data.type === "endpoint" &&
-                        data.metadata.method === "patch",
-                      "text-destructive bg-destructive/15":
-                        data.type === "endpoint" &&
-                        data.metadata.method === "delete",
-                    })}
-                  >
-                    {data.type === "endpoint"
-                      ? data.metadata.method.toUpperCase()
-                      : data.type.charAt(0).toUpperCase() + data.type.slice(1)}
-                  </Badge>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {data.type.charAt(0).toUpperCase() + data.type.slice(1)}
-                    </span>
-                    {!data.canRun && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <AlertCircleIcon className="size-3.5 text-destructive" />
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="bg-muted border text-destructive"
-                        >
-                          <p>
-                            {!data.inputSchema
-                              ? `Define the ${data.type} inputs first`
-                              : `Define the ${data.type} outputs first`}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Flow</span>
+                  {!data.canRun && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertCircleIcon className="size-3.5 text-destructive" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-muted border text-destructive"
+                      >
+                        <p>
+                          {!data.inputSchema
+                            ? "Define the flow inputs first"
+                            : "Define the flow outputs first"}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </div>
                 <div className="flex items-center">
                   <Tooltip>
@@ -672,7 +571,7 @@ export function FlowSheet({
                       className="min-w-48"
                     >
                       <DropdownMenuLabel className="text-xs">
-                        {data.type.charAt(0).toUpperCase() + data.type.slice(1)}
+                        Flow
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="flex items-center justify-between text-xs">
@@ -723,13 +622,13 @@ export function FlowSheet({
                         {...field}
                         autoComplete="off"
                         className="h-8 border-none shadow-none p-0 text-base focus-visible:ring-0 bg-muted"
-                        placeholder={`${data.type.charAt(0).toUpperCase() + data.type.slice(1)} name`}
+                        placeholder="Flow name"
                         onChange={(e) => {
                           field.onChange(e);
                           debounce(
                             async () => {
                               const isValid =
-                                baseUpdateFlowSchema.shape.name.safeParse(
+                                updateFlowSchema.shape.payload.shape.name.safeParse(
                                   e.target.value,
                                 ).success;
                               if (isValid) {
@@ -738,7 +637,6 @@ export function FlowSheet({
                                     id: data.id,
                                   },
                                   payload: {
-                                    type: data.type,
                                     name: e.target.value,
                                   } as z.infer<
                                     typeof updateFlowSchema
@@ -789,165 +687,6 @@ export function FlowSheet({
             </TabsList>
             <TabsContent value="general" className="size-full">
               <div className="flex flex-col gap-2">
-                {data.type === "endpoint" && (
-                  <div className="grid grid-cols-3 gap-2">
-                    <FormField
-                      control={form.control}
-                      name="payload.metadata.path"
-                      render={({ field }) => (
-                        <FormItem className="col-span-2">
-                          <FormLabel className="text-xs">URL Path</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              autoComplete="off"
-                              placeholder="Enter endpoint URL path"
-                              value={field.value}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                debounce(
-                                  async () => {
-                                    const isValid =
-                                      updateEndpointFlowSchema.shape.metadata.safeParse(
-                                        {
-                                          path: e.target.value,
-                                        },
-                                      ).success;
-                                    if (isValid) {
-                                      await updateFlow.mutateAsync({
-                                        where: {
-                                          id: data.id,
-                                        },
-                                        payload: {
-                                          type: "endpoint",
-                                          metadata: {
-                                            path: e.target.value,
-                                          },
-                                        },
-                                      });
-                                    }
-                                  },
-                                  500,
-                                  { trailing: false },
-                                )();
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="payload.metadata.method"
-                      render={({ field }) => (
-                        <FormItem className="col-span-1">
-                          <FormLabel className="text-xs">Method</FormLabel>
-                          <FormControl>
-                            <Select
-                              {...field}
-                              autoComplete="off"
-                              name={field.name}
-                              onValueChange={async (value) => {
-                                console.log(value);
-                                field.onChange(value);
-                                const isValid =
-                                  updateEndpointFlowSchema.shape.metadata.safeParse(
-                                    {
-                                      method: value,
-                                    },
-                                  ).success;
-                                if (isValid) {
-                                  await updateFlow.mutateAsync({
-                                    where: {
-                                      id: data.id,
-                                    },
-                                    payload: {
-                                      type: "endpoint",
-                                      metadata: {
-                                        method: value as
-                                          | "get"
-                                          | "post"
-                                          | "patch"
-                                          | "delete",
-                                      },
-                                    },
-                                  });
-                                }
-                              }}
-                            >
-                              <SelectTrigger className="bg-background">
-                                <SelectValue
-                                  placeholder="Select method"
-                                  className="placeholder-muted-foreground"
-                                />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="get">GET</SelectItem>
-                                <SelectItem value="post">POST</SelectItem>
-                                <SelectItem value="patch">PATCH</SelectItem>
-                                <SelectItem value="delete">DELETE</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-                {data.type === "workflow" && (
-                  <FormField
-                    control={form.control}
-                    name="payload.metadata.recurrence"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Recurrence</FormLabel>
-                        <FormControl>
-                          <Select
-                            {...field}
-                            name={field.name}
-                            onValueChange={async (value) => {
-                              field.onChange(value);
-                              const isValid =
-                                updateWorkflowFlowSchema.shape.metadata.safeParse(
-                                  {
-                                    recurrence: value,
-                                  },
-                                ).success;
-                              if (isValid) {
-                                await updateFlow.mutateAsync({
-                                  where: { id: data.id },
-                                  payload: {
-                                    type: "workflow",
-                                    metadata: {
-                                      recurrence: value as
-                                        | "hourly"
-                                        | "daily"
-                                        | "weekly"
-                                        | "monthly",
-                                    },
-                                  },
-                                });
-                              }
-                            }}
-                          >
-                            <SelectTrigger className="bg-background">
-                              <SelectValue placeholder="Select recurrence" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="hourly">Hourly</SelectItem>
-                              <SelectItem value="daily">Daily</SelectItem>
-                              <SelectItem value="weekly">Weekly</SelectItem>
-                              <SelectItem value="monthly">Monthly</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
                 {data.inputSchema ? (
                   <>
                     <span className="text-xs">Summary</span>
@@ -985,7 +724,7 @@ export function FlowSheet({
                 ) : (
                   <div className="flex flex-col justify-center items-center h-[calc(100vh-320px)]">
                     <span className="text-sm text-muted-foreground">
-                      Build your {data.type} to see a summary
+                      Build your flow to see a summary
                     </span>
                   </div>
                 )}
@@ -1005,7 +744,7 @@ export function FlowSheet({
                       setMessages(inputConversation);
                     }}
                   >
-                    Define {data.type} input
+                    Define flow input
                   </Button>
                   <Button
                     className="w-48"
@@ -1015,7 +754,7 @@ export function FlowSheet({
                       setMessages(outputConversation);
                     }}
                   >
-                    Define {data.type} output
+                    Define flow output
                   </Button>
                 </div>
               )}
@@ -1054,7 +793,7 @@ export function FlowSheet({
                         editorRef={editorRef}
                         onChange={onChatChange}
                         rawMessage={userMessageRawContent}
-                        placeholder={`Define your ${data.type} ${generationMode} with Specly...`}
+                        placeholder={`Define your flow ${generationMode} with Specly...`}
                         typeaheadPosition="bottom"
                         references={references}
                         onSubmit={async () => {
@@ -1065,11 +804,7 @@ export function FlowSheet({
                       />
                       <Button
                         type="button"
-                        disabled={
-                          !userMessageContent ||
-                          isGenerating ||
-                          !canGenerateSchemas
-                        }
+                        disabled={!userMessageContent || isGenerating}
                         size="sm"
                         className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
                         onClick={async () => {

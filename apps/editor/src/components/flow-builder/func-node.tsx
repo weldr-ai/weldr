@@ -135,6 +135,10 @@ export const FuncNode = memo(
       },
     );
 
+    const { data: flow } = api.flows.byId.useQuery({
+      id: data.flowId,
+    });
+
     const { deleteElements, fitBounds } = useReactFlow<FlowNode>();
 
     const apiUtils = api.useUtils();
@@ -156,7 +160,9 @@ export const FuncNode = memo(
 
     const deleteFunc = api.funcs.delete.useMutation({
       onSuccess: async () => {
-        await apiUtils.flows.byId.invalidate({ id: data.flowId });
+        if (data.flowId) {
+          await apiUtils.flows.byId.invalidate({ id: data.flowId });
+        }
       },
     });
 
@@ -409,12 +415,15 @@ export const FuncNode = memo(
           createdAt: new Date(),
         };
 
-        await apiUtils.flows.byId.invalidate({ id: data.flowId });
+        if (data.flowId) {
+          await apiUtils.flows.byId.invalidate({ id: data.flowId });
+          await apiUtils.edges.listByFlowId.invalidate({
+            flowId: data.flowId,
+          });
+        }
+
         await apiUtils.funcs.byId.invalidate({ id: data.id });
         await apiUtils.edges.available.invalidate();
-        await apiUtils.edges.listByFlowId.invalidate({
-          flowId: data.flowId,
-        });
         setMessages([...newMessages, funcBuiltSuccessfullyMessage]);
       }
 
@@ -425,16 +434,18 @@ export const FuncNode = memo(
 
     const flowInput = flattenInputSchema({
       id: "root",
-      schema: data.flow.inputSchema,
-      refPath: `${data.flow.type}/input`,
+      schema: flow?.inputSchema ?? undefined,
+      refPath: `flow/${data.flowId}/input`,
     });
+
     const resources = useResources();
     const availableDependencies = api.edges.available.useQuery({
       funcId: data.id,
     });
+
     const availableDependenciesInputs = (
       availableDependencies.data ?? []
-    )?.reduce((acc, d) => {
+    ).reduce((acc, d) => {
       acc.push(
         ...flattenInputSchema({
           id: d.id,
@@ -445,6 +456,7 @@ export const FuncNode = memo(
       );
       return acc;
     }, [] as FlatInputSchema[]);
+
     const availableVariables = [
       ...flowInput,
       ...availableDependenciesInputs,

@@ -46,9 +46,9 @@ export const funcSchema = z.object({
   userId: z.string().nullable(),
   flowId: z.string(),
   conversationId: z.string(),
+  canRun: z.boolean().optional(),
   conversation: conversationSchema,
   testRuns: testRunSchema.array(),
-  canRun: z.boolean().optional(),
 });
 
 export const insertFuncSchema = z.object({

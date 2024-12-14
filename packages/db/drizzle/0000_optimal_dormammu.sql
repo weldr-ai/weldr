@@ -1,5 +1,5 @@
 CREATE TYPE "public"."roles" AS ENUM('user', 'assistant');--> statement-breakpoint
-CREATE TYPE "public"."flow_types" AS ENUM('utility', 'workflow', 'endpoint');--> statement-breakpoint
+CREATE TYPE "public"."http_methods" AS ENUM('GET', 'POST', 'PUT', 'DELETE', 'PATCH');--> statement-breakpoint
 CREATE TYPE "public"."integration_category" AS ENUM('database');--> statement-breakpoint
 CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');--> statement-breakpoint
 CREATE TYPE "public"."dependency_type" AS ENUM('consumes', 'requires');--> statement-breakpoint
@@ -66,14 +66,27 @@ CREATE TABLE IF NOT EXISTS "conversations" (
 	"user_id" text NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "endpoints" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"http_method" "http_methods" NOT NULL,
+	"path" text NOT NULL,
+	"route_handler" text,
+	"open_api_spec" jsonb,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"user_id" text NOT NULL,
+	"workspace_id" text NOT NULL,
+	CONSTRAINT "endpoints_workspace_id_path_http_method_unique" UNIQUE("workspace_id","path","http_method")
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "flows" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
-	"type" "flow_types" NOT NULL,
 	"input_schema" jsonb,
 	"output_schema" jsonb,
-	"metadata" jsonb NOT NULL,
 	"code" text,
 	"is_updated" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -81,7 +94,7 @@ CREATE TABLE IF NOT EXISTS "flows" (
 	"input_conversation_id" text NOT NULL,
 	"output_conversation_id" text NOT NULL,
 	"workspace_id" text NOT NULL,
-	"user_id" text DEFAULT NULL
+	"user_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "integration_utils" (
@@ -221,13 +234,25 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "endpoints" ADD CONSTRAINT "endpoints_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "endpoints" ADD CONSTRAINT "endpoints_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "flows" ADD CONSTRAINT "flows_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "flows" ADD CONSTRAINT "flows_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+ ALTER TABLE "flows" ADD CONSTRAINT "flows_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

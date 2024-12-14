@@ -4,11 +4,12 @@ import {
   AppWindowIcon,
   BoxesIcon,
   DatabaseIcon,
+  FunctionSquareIcon,
   PlusIcon,
+  RefreshCcwIcon,
   SettingsIcon,
   SidebarCloseIcon,
   TrashIcon,
-  WorkflowIcon,
 } from "lucide-react";
 
 import type { RouterOutputs } from "@integramind/api";
@@ -30,11 +31,9 @@ import { cn } from "@integramind/ui/utils";
 import Link from "next/link";
 import { useState } from "react";
 import { useCommandCenterStore, usePrimarySidebarStore } from "~/lib/store";
-import { api } from "~/lib/trpc/client";
 import { AccountDropdownMenu } from "./account-dropdown-menu";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
-import { FlowList } from "./flow-list";
 
 export function Sidebar({
   workspace,
@@ -55,18 +54,6 @@ export function Sidebar({
     useState<boolean>(false);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
-
-  const { data: flows } = api.flows.list.useQuery(
-    {
-      workspaceId: workspace.id,
-    },
-    {
-      initialData: initialFlows as RouterOutputs["flows"]["list"],
-    },
-  );
-
-  const endpoints = flows.filter((flow) => flow.type === "endpoint");
-  const workflows = flows.filter((flow) => flow.type === "workflow");
 
   return (
     <div className="flex ">
@@ -193,6 +180,54 @@ export function Sidebar({
               <TooltipTrigger asChild>
                 <Button
                   className={cn({
+                    "bg-accent border": activeSection === "workflows",
+                  })}
+                  onClick={() => {
+                    setIsSidebarOpen(true);
+                    updateActiveSection("workflows");
+                  }}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <RefreshCcwIcon className="size-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                className="bg-muted border relative -top-2"
+              >
+                <p>Workflows</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className={cn({
+                    "bg-accent border": activeSection === "functions",
+                  })}
+                  onClick={() => {
+                    setIsSidebarOpen(true);
+                    updateActiveSection("functions");
+                  }}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <FunctionSquareIcon className="size-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                className="bg-muted border relative -top-2"
+              >
+                <p>Functions</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className={cn({
                     "bg-accent border": activeSection === "database",
                   })}
                   onClick={() => {
@@ -210,30 +245,6 @@ export function Sidebar({
                 className="bg-muted border relative -top-2"
               >
                 <p>Database</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className={cn({
-                    "bg-accent border": activeSection === "workflows",
-                  })}
-                  onClick={() => {
-                    setIsSidebarOpen(true);
-                    updateActiveSection("workflows");
-                  }}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <WorkflowIcon className="size-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="right"
-                className="bg-muted border relative -top-2"
-              >
-                <p>Workflows</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -273,7 +284,7 @@ export function Sidebar({
           </div>
           {activeSection && (
             <div className="p-2.5">
-              {activeSection === "endpoints" ? (
+              {/* {activeSection === "endpoints" ? (
                 <div
                   className={cn("w-full", {
                     hidden: activeSection !== "endpoints",
@@ -291,7 +302,7 @@ export function Sidebar({
                 </div>
               ) : (
                 <></>
-              )}
+              )} */}
             </div>
           )}
         </div>

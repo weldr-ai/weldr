@@ -3,7 +3,7 @@ import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { conversations, flows, funcs, testRuns } from "@integramind/db/schema";
 
 import { type SQL, and, eq, inArray } from "@integramind/db";
-import type { FlowType, Func, InputSchema } from "@integramind/shared/types";
+import type { Func } from "@integramind/shared/types";
 import {
   insertFuncSchema,
   updateFuncSchema,
@@ -103,14 +103,6 @@ export const funcsRouter = {
           eq(funcs.id, input.id),
           eq(funcs.userId, ctx.session.user.id),
         ),
-        with: {
-          flow: {
-            columns: {
-              inputSchema: true,
-              type: true,
-            },
-          },
-        },
       });
 
       if (!result) {
@@ -122,14 +114,8 @@ export const funcsRouter = {
 
       return {
         ...result,
-        canRun: canRunFunc(
-          result as Func & {
-            flow: { inputSchema: InputSchema; type: FlowType };
-          },
-        ),
-      } as Func & {
-        flow: { inputSchema?: InputSchema; type: FlowType };
-      };
+        canRun: canRunFunc(result as Func),
+      } as Func;
     }),
   update: protectedProcedure
     .input(updateFuncSchema)
@@ -151,14 +137,19 @@ export const funcsRouter = {
       }
 
       if (input.payload.name) {
-        const isUnique = await ctx.db.query.funcs.findFirst({
-          where: and(
-            eq(funcs.name, input.payload.name),
-            eq(funcs.flowId, existingFunc.flowId),
-          ),
-        });
+        let isUnique = false;
 
-        if (isUnique && isUnique.id !== existingFunc.id) {
+        if (existingFunc.flowId) {
+          isUnique =
+            (await ctx.db.query.funcs.findFirst({
+              where: and(
+                eq(funcs.name, input.payload.name),
+                eq(funcs.flowId, existingFunc.flowId),
+              ),
+            })) !== undefined;
+        }
+
+        if (isUnique) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Function name already exists in this flow",

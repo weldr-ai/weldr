@@ -13,10 +13,9 @@ import {
   DialogTrigger,
 } from "@integramind/ui/dialog";
 
-import type { FlowType } from "@integramind/shared/types";
 import { CreateFlowForm } from "~/components/create-flow-form";
 
-export function CreateFlowDialog({ type }: { type: FlowType }) {
+export function CreateFlowDialog() {
   const [createFlowDialogOpen, setCreateFlowDialogOpen] = useState(false);
 
   return (
@@ -24,22 +23,17 @@ export function CreateFlowDialog({ type }: { type: FlowType }) {
       <DialogTrigger asChild>
         <Button variant="outline" className="text-xs">
           <PlusIcon className="mr-1.5 size-3.5" />
-          Create new {type}
+          Create new flow
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            Create {type.charAt(0).toUpperCase() + type.slice(1)}
-          </DialogTitle>
+          <DialogTitle>Create new flow</DialogTitle>
           <DialogDescription>
-            Enter the {type} details then press create.
+            Enter the flow details then press create.
           </DialogDescription>
         </DialogHeader>
-        <CreateFlowForm
-          type={type}
-          setCreateFlowDialogOpen={setCreateFlowDialogOpen}
-        />
+        <CreateFlowForm setCreateFlowDialogOpen={setCreateFlowDialogOpen} />
       </DialogContent>
     </Dialog>
   );

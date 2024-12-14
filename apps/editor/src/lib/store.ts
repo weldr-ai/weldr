@@ -2,12 +2,26 @@ import { create } from "zustand";
 import { type PersistOptions, persist } from "zustand/middleware";
 
 interface PrimarySidebarState {
-  activeSection: "pages" | "database" | "endpoints" | "workflows" | null;
+  activeSection:
+    | "pages"
+    | "database"
+    | "endpoints"
+    | "workflows"
+    | "functions"
+    | "modules"
+    | null;
 }
 
 interface PrimarySidebarAction {
   updateActiveSection: (
-    activeSection: "pages" | "database" | "endpoints" | "workflows" | null,
+    activeSection:
+      | "pages"
+      | "database"
+      | "endpoints"
+      | "workflows"
+      | "functions"
+      | "modules"
+      | null,
   ) => void;
 }
 

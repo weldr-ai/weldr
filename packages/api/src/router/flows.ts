@@ -1,14 +1,7 @@
-import { and, eq, inArray, sql } from "@integramind/db";
+import { and, eq, inArray } from "@integramind/db";
 import { conversations, flows, funcs } from "@integramind/db/schema";
-import { mergeJson } from "@integramind/db/utils";
-import type {
-  Flow,
-  FlowType,
-  Func,
-  InputSchema,
-} from "@integramind/shared/types";
+import type { Flow, Func, InputSchema } from "@integramind/shared/types";
 import {
-  flowTypesSchema,
   insertFlowSchema,
   updateFlowSchema,
 } from "@integramind/shared/validators/flows";
@@ -21,19 +14,6 @@ export const flowsRouter = {
   create: protectedProcedure
     .input(insertFlowSchema)
     .mutation(async ({ ctx, input }) => {
-      if (input.type === "endpoint") {
-        const flow = await ctx.db.query.flows.findFirst({
-          where: sql`metadata::jsonb->>'path' = ${input.metadata.path} AND metadata::jsonb->>'method' = ${input.metadata.method}`,
-        });
-
-        if (flow) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Endpoint with this path and method already exists",
-          });
-        }
-      }
-
       try {
         const result = await ctx.db.transaction(async (tx) => {
           const inputConversation = (
@@ -68,23 +48,15 @@ export const flowsRouter = {
             });
           }
 
-          const values = {
-            name: input.name,
-            type: input.type,
-            metadata: sql`${{}}::jsonb`,
-            workspaceId: input.workspaceId,
-            userId: ctx.session.user.id,
-            inputConversationId: inputConversation.id,
-            outputConversationId: outputConversation.id,
-          };
-
-          if (input.type === "workflow" || input.type === "endpoint") {
-            values.metadata = sql`${input.metadata}::jsonb`;
-          }
-
           const result = await tx
             .insert(flows)
-            .values(values)
+            .values({
+              name: input.name,
+              workspaceId: input.workspaceId,
+              userId: ctx.session.user.id,
+              inputConversationId: inputConversation.id,
+              outputConversationId: outputConversation.id,
+            })
             .returning({ id: flows.id });
 
           if (!result[0]) {
@@ -116,24 +88,11 @@ export const flowsRouter = {
         ),
       });
     }),
-  listByType: protectedProcedure
-    .input(z.object({ workspaceId: z.string(), type: flowTypesSchema }))
-    .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query.flows.findMany({
-        where: and(
-          eq(flows.workspaceId, input.workspaceId),
-          eq(flows.type, input.type),
-          eq(flows.userId, ctx.session.user.id),
-        ),
-      });
-      return result;
-    }),
-  utilitiesByIds: protectedProcedure
+  byIds: protectedProcedure
     .input(z.object({ ids: z.string().array() }))
     .query(async ({ ctx, input }) => {
       return await ctx.db.query.flows.findMany({
         where: and(
-          eq(flows.type, "utility"),
           eq(flows.userId, ctx.session.user.id),
           inArray(flows.id, input.ids),
         ),
@@ -246,12 +205,11 @@ export const flowsRouter = {
           canRun: canRunFunc(func as Func),
           flow: {
             inputSchema: result.inputSchema,
-            type: result.type,
           },
         })),
       } as Flow & {
         funcs: (Func & {
-          flow: { inputSchema: InputSchema; type: FlowType };
+          flow: { inputSchema: InputSchema };
         })[];
       };
     }),
@@ -315,12 +273,7 @@ export const flowsRouter = {
 
       await ctx.db
         .update(flows)
-        .set({
-          ...input.payload,
-          metadata: input.payload.metadata
-            ? mergeJson(flows.metadata, input.payload.metadata)
-            : undefined,
-        })
+        .set(input.payload)
         .where(
           and(
             eq(flows.id, input.where.id),
