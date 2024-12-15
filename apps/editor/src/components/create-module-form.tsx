@@ -18,31 +18,32 @@ import {
 import { Input } from "@integramind/ui/input";
 import { toast } from "@integramind/ui/use-toast";
 
-import { insertFlowSchema } from "@integramind/shared/validators/flows";
+import { insertModuleSchema } from "@integramind/shared/validators/modules";
+import { Textarea } from "@integramind/ui/textarea";
 import { api } from "~/lib/trpc/client";
 
-export function CreateFlowForm({
-  setCreateFlowDialogOpen,
+export function CreateModuleForm({
+  setCreateModuleDialogOpen,
 }: {
-  setCreateFlowDialogOpen?: (open: boolean) => void;
+  setCreateModuleDialogOpen?: (open: boolean) => void;
 }) {
   const router = useRouter();
   const { workspaceId } = useParams<{ workspaceId: string }>();
 
   const apiUtils = api.useUtils();
 
-  const createFlowMutation = api.flows.create.useMutation({
+  const createModuleMutation = api.modules.create.useMutation({
     onSuccess: async (data) => {
       toast({
         title: "Success",
-        description: "Flow created successfully.",
+        description: "Module created successfully.",
         duration: 2000,
       });
-      if (setCreateFlowDialogOpen) {
-        setCreateFlowDialogOpen(false);
+      if (setCreateModuleDialogOpen) {
+        setCreateModuleDialogOpen(false);
       }
-      await apiUtils.flows.list.invalidate();
-      router.push(`/workspaces/${workspaceId}/flows/${data.id}`);
+      await apiUtils.modules.list.invalidate();
+      router.push(`/workspaces/${workspaceId}/modules/${data.id}`);
     },
     onError: (error) => {
       toast({
@@ -54,11 +55,12 @@ export function CreateFlowForm({
     },
   });
 
-  const form = useForm<z.infer<typeof insertFlowSchema>>({
+  const form = useForm<z.infer<typeof insertModuleSchema>>({
     mode: "onChange",
-    resolver: zodResolver(insertFlowSchema),
+    resolver: zodResolver(insertModuleSchema),
     defaultValues: {
       name: "",
+      description: "",
       workspaceId,
     },
   });
@@ -68,14 +70,31 @@ export function CreateFlowForm({
       <form className="flex w-full flex-col space-y-4">
         <FormField
           control={form.control}
-          name={"name"}
+          name="name"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
                 <Input
                   autoComplete="off"
-                  placeholder="Enter flow name"
+                  placeholder="Enter module name"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs">Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  autoComplete="off"
+                  placeholder="Enter module description"
                   {...field}
                 />
               </FormControl>
@@ -92,15 +111,15 @@ export function CreateFlowForm({
           <Button
             type="button"
             aria-disabled={
-              !form.formState.isValid || createFlowMutation.isPending
+              !form.formState.isValid || createModuleMutation.isPending
             }
-            disabled={!form.formState.isValid || createFlowMutation.isPending}
+            disabled={!form.formState.isValid || createModuleMutation.isPending}
             onClick={async (e) => {
               e.preventDefault();
-              await createFlowMutation.mutateAsync(form.getValues());
+              await createModuleMutation.mutateAsync(form.getValues());
             }}
           >
-            {createFlowMutation.isPending && (
+            {createModuleMutation.isPending && (
               <Loader2Icon className="mr-1 size-3 animate-spin" />
             )}
             Create

@@ -198,6 +198,7 @@ export function ReferencesPlugin({
                         },
                       )}
                       tabIndex={-1}
+                      // biome-ignore lint/a11y/useSemanticElements: <explanation>
                       role="option"
                       aria-selected={selectedIndex === i}
                       onClick={() => {

@@ -21,7 +21,7 @@ export default async function WorkspacesLayout({
     const workspace = await api.workspaces.byId({ id: workspaceId });
     const workspaces = await api.workspaces.list();
     const resources = workspace.resources;
-    const flows = workspace.flows;
+    const modules = workspace.modules;
 
     const resourcesWithMetadata: (RouterOutputs["workspaces"]["byId"]["resources"][0] & {
       metadata: unknown;
@@ -69,7 +69,7 @@ export default async function WorkspacesLayout({
       <ResourcesProvider resources={resourcesWithMetadata}>
         <div className="flex h-screen bg-background">
           <div className="sticky top-0 h-screen dark:bg-muted z-50">
-            <Sidebar workspace={workspace} initialFlows={flows} />
+            <Sidebar workspace={workspace} initialModules={modules} />
           </div>
           <main className="flex-1 dark:bg-muted py-2.5 pr-2.5">
             <div className="h-full rounded-md border overflow-auto bg-background">

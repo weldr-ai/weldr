@@ -3,8 +3,9 @@ import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
+import { endpoints } from "./endpoints";
 import { environmentVariables } from "./environment-variables";
-import { flows } from "./flows";
+import { modules } from "./modules";
 import { resources } from "./resources";
 
 export const workspaces = pgTable("workspaces", {
@@ -14,7 +15,7 @@ export const workspaces = pgTable("workspaces", {
   name: text("name").notNull(),
   subdomain: text("subdomain").unique().notNull(),
   description: text("description"),
-  executorMachineId: text("executor_machine_id"),
+  engineMachineId: text("engine_machine_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -27,7 +28,8 @@ export const workspaces = pgTable("workspaces", {
 
 export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   resources: many(resources),
-  flows: many(flows),
+  modules: many(modules),
+  endpoints: many(endpoints),
   environmentVariables: many(environmentVariables),
   user: one(users, {
     fields: [workspaces.userId],

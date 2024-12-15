@@ -3,7 +3,7 @@ import { z } from "zod";
 export const integrationTypeSchema = z.enum(["postgres", "mysql"]);
 export const integrationCategorySchema = z.enum(["database"]);
 
-export const integrationUtilitySchema = z.object({
+export const integrationHelperFunctionSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
@@ -24,5 +24,8 @@ export const integrationSchema = z.object({
     .array(z.object({ name: z.string(), version: z.string().optional() }))
     .optional()
     .nullable(),
-  utils: integrationUtilitySchema.array().optional().nullable(),
+  helperFunctions: integrationHelperFunctionSchema
+    .array()
+    .optional()
+    .nullable(),
 });

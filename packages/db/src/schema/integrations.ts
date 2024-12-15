@@ -1,6 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
-import { jsonb, pgEnum, pgTable, text } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, text } from "drizzle-orm/pg-core";
+import { modules } from "./modules";
 import { resources } from "./resources";
 
 export const integrationTypes = pgEnum("integration_type", [
@@ -23,36 +24,10 @@ export const integrations = pgTable("integrations", {
   environmentVariables: text("environment_variables")
     .array()
     .default(sql`NULL`),
-  dependencies:
-    jsonb("dependencies").$type<{ name: string; version?: string }[]>(),
   category: integrationCategories("category").default(sql`NULL`),
 });
 
 export const integrationsRelations = relations(integrations, ({ many }) => ({
   resources: many(resources),
-  utils: many(integrationUtils),
+  modules: many(modules),
 }));
-
-export const integrationUtils = pgTable("integration_utils", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  documentation: text("documentation").notNull(),
-  implementation: text("implementation").notNull(),
-  filePath: text("file_path").notNull(),
-  integrationId: text("integration_id")
-    .references(() => integrations.id, { onDelete: "cascade" })
-    .notNull(),
-});
-
-export const integrationUtilsRelations = relations(
-  integrationUtils,
-  ({ one }) => ({
-    integration: one(integrations, {
-      fields: [integrationUtils.integrationId],
-      references: [integrations.id],
-    }),
-  }),
-);

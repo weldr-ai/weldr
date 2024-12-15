@@ -1,47 +1,42 @@
-import { cn } from "@integramind/ui/utils";
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
-import { FlowBuilder } from "~/components/flow-builder";
+import { Canvas } from "~/components/canvas";
 import { api } from "~/lib/trpc/server";
-import type { FlowNode, FlowNodeData } from "~/types";
-import { Overlay } from "./_components/overlay";
+import type { CanvasEdge, CanvasNode, CanvasNodeData } from "~/types";
 
-export default async function FlowPage({
+export default async function ModulePage({
   params,
 }: {
-  params: Promise<{ flowId: string }>;
+  params: Promise<{ moduleId: string }>;
 }): Promise<JSX.Element | undefined> {
   try {
-    const { flowId } = await params;
-    const flow = await api.flows.byIdWithAssociatedData({
-      id: flowId,
+    const { moduleId } = await params;
+    const module = await api.modules.byId({
+      id: moduleId,
     });
 
-    const initialEdges = await api.edges.listByFlowId({
-      flowId,
-    });
+    const initialEdges: CanvasEdge[] = module.edges.map((edge) => ({
+      id: `${edge.source}-${edge.target}`,
+      source: edge.source,
+      target: edge.target,
+    }));
 
-    const initialNodes: FlowNode[] = flow.funcs.map((func) => ({
+    const initialNodes: CanvasNode[] = module.funcs.map((func) => ({
       id: func.id,
       type: "func",
       dragHandle: ".drag-handle",
-      position: { x: func.positionX, y: func.positionY },
-      data: func as FlowNodeData,
+      position: { x: func.positionX ?? 0, y: func.positionY ?? 0 },
+      data: func as unknown as CanvasNodeData,
     }));
 
     return (
-      <div
-        className={cn("flex size-full", {
-          relative: !flow.inputSchema,
-        })}
-      >
-        <FlowBuilder
-          flow={flow}
+      <div className="flex size-full">
+        <Canvas
+          moduleId={moduleId}
           initialNodes={initialNodes}
           initialEdges={initialEdges}
         />
-        <Overlay show={!flow.inputSchema} />
       </div>
     );
   } catch (error) {

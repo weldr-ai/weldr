@@ -9,8 +9,6 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { flows } from "./flows";
-import { funcs } from "./funcs";
 import { workspaces } from "./workspaces";
 
 export const httpMethods = pgEnum("http_methods", [
@@ -54,7 +52,9 @@ export const endpoints = pgTable(
   }),
 );
 
-export const endpointsRelations = relations(endpoints, ({ many }) => ({
-  flows: many(flows),
-  funcs: many(funcs),
+export const endpointsRelations = relations(endpoints, ({ one, many }) => ({
+  workspace: one(workspaces, {
+    fields: [endpoints.workspaceId],
+    references: [workspaces.id],
+  }),
 }));

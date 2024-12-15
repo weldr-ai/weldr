@@ -23,14 +23,13 @@ import {
 import type React from "react";
 import { useCallback, useEffect } from "react";
 
-import type { FlowNode, FlowNodeData } from "~/types";
+import type { CanvasEdge, CanvasNode, CanvasNodeData } from "~/types";
 
 import "@xyflow/react/dist/base.css";
 import "~/styles/flow-builder.css";
 
 import { Button } from "@integramind/ui/button";
 
-import type { Flow, FlowEdge } from "@integramind/shared/types";
 import { useTheme } from "@integramind/ui/theme-provider";
 import {
   Tooltip,
@@ -38,7 +37,6 @@ import {
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
 import { toast } from "@integramind/ui/use-toast";
-import { FlowSheet } from "~/components/flow-sheet";
 import { useFlowBuilderStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
 import { FuncNode } from "./func-node";
@@ -51,31 +49,34 @@ const edgeTypes = {
   smoothstep: SmoothStepEdge,
 };
 
-export function FlowBuilder({
-  flow,
+export function Canvas({
+  moduleId,
   initialNodes,
   initialEdges,
 }: {
-  flow: Flow;
-  initialNodes: FlowNode[];
-  initialEdges: FlowEdge[];
+  moduleId: string;
+  initialNodes: CanvasNode[];
+  initialEdges: CanvasEdge[];
 }) {
   const showEdges = useFlowBuilderStore((state) => state.showEdges);
   const toggleEdges = useFlowBuilderStore((state) => state.toggleEdges);
-
-  const { data: edgesData } = api.edges.listByFlowId.useQuery(
+  const { data: edgesData } = api.funcDependencies.byModuleId.useQuery(
     {
-      flowId: flow.id,
+      id: moduleId,
     },
     {
-      initialData: initialEdges,
+      initialData: initialEdges.map((edge) => ({
+        source: edge.source,
+        target: edge.target,
+      })),
     },
   );
 
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, setNodes, onNodesChange] =
+    useNodesState<CanvasNode>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(
     showEdges ? [] : [],
   );
@@ -83,19 +84,18 @@ export function FlowBuilder({
   useEffect(() => {
     setEdges(
       edgesData.map((edge) => ({
-        id: edge.id,
-        source: edge.localSourceId,
-        target: edge.targetId,
+        id: `${edge.source}-${edge.target}`,
+        source: edge.source,
+        target: edge.target,
       })) as Edge[],
     );
   }, [edgesData, setEdges]);
-
   const apiUtils = api.useUtils();
 
   const createFunc = api.funcs.create.useMutation({
     onSuccess: () => {
-      apiUtils.flows.byId.invalidate({
-        id: flow.id,
+      apiUtils.modules.byId.invalidate({
+        id: moduleId,
       });
     },
     onError: (error) => {
@@ -109,8 +109,8 @@ export function FlowBuilder({
 
   const updateFunc = api.funcs.update.useMutation({
     onSuccess: () => {
-      apiUtils.flows.byId.invalidate({
-        id: flow.id,
+      apiUtils.modules.byId.invalidate({
+        id: moduleId,
       });
     },
     onError: (error) => {
@@ -145,23 +145,20 @@ export function FlowBuilder({
           position: { x: Math.floor(position.x), y: Math.floor(position.y) },
           data: {
             id: newNodeId,
-            flowId: flow.id,
+            moduleId: moduleId,
             conversation: {},
-            flow: {
-              inputSchema: flow.inputSchema,
-            },
-          } as FlowNodeData,
+          } as CanvasNodeData,
         }),
       );
 
       await createFunc.mutateAsync({
         id: newNodeId,
-        flowId: flow.id,
+        moduleId,
         positionX: Math.floor(position.x),
         positionY: Math.floor(position.y),
       });
     },
-    [createFunc, flow.id, setNodes, screenToFlowPosition, flow.inputSchema],
+    [createFunc, moduleId, setNodes, screenToFlowPosition],
   );
 
   const onNodeDragStop = useCallback(
@@ -191,8 +188,8 @@ export function FlowBuilder({
     <ReactFlow
       className="rounded-md"
       nodes={nodes}
-      edges={showEdges ? edges : []}
       onNodesChange={onNodesChange}
+      edges={edges}
       onEdgesChange={onEdgesChange}
       edgeTypes={edgeTypes}
       onDrop={onDrop}
@@ -224,72 +221,75 @@ export function FlowBuilder({
         position="bottom-right"
         className="flex flex-row items-center rounded-full border bg-background dark:bg-muted p-0.5 space-x-0.5"
       >
-        <div className="flex flex-row items-center">
-          <Button
-            className="rounded-full"
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              zoomOut();
-            }}
-          >
-            <MinusIcon className="size-4" />
-          </Button>
-          <Button
-            className="w-14 rounded-full text-xs"
-            variant="ghost"
-            onClick={() => {
-              fitView();
-            }}
-          >
-            {`${Math.floor(viewPort.zoom * 100)}%`}
-          </Button>
-          <Button
-            className="rounded-full"
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              zoomIn();
-            }}
-          >
-            <PlusIcon className="size-4" />
-          </Button>
-        </div>
-        <div className="h-9 border-l" />
         <Button
           className="rounded-full"
           variant="ghost"
           size="icon"
-          onClick={toggleEdges}
+          onClick={() => {
+            zoomOut();
+          }}
         >
-          {showEdges ? (
-            <EyeIcon className="size-4" />
-          ) : (
-            <EyeOffIcon className="size-4" />
-          )}
+          <MinusIcon className="size-4" />
+        </Button>
+        <Button
+          className="w-[94px] rounded-full text-xs"
+          variant="ghost"
+          onClick={() => {
+            fitView();
+          }}
+        >
+          {`${Math.floor(viewPort.zoom * 100)}%`}
+        </Button>
+        <Button
+          className="rounded-full"
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            zoomIn();
+          }}
+        >
+          <PlusIcon className="size-4" />
         </Button>
       </Panel>
       <Panel
         position="bottom-center"
-        className="flex items-center bg-background dark:bg-muted rounded-full gap-1 p-1 border"
+        className="flex items-center bg-background dark:bg-muted rounded-full gap-0.5 p-0.5 border"
       >
-        <FlowSheet initialData={flow} />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className="inline-flex items-center text-xs justify-center h-9 px-2 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              onDragStart={onDragStart}
+              draggable
+            >
+              <FunctionSquareIcon className="size-4 mr-2" />
+              Function
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-muted border">
+            <p>Function</p>
+          </TooltipContent>
+        </Tooltip>
 
         <div className="h-9 border-l" />
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <div
-              className="inline-flex items-center justify-center size-9 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
-              onDragStart={onDragStart}
-              aria-disabled={!flow.inputSchema}
-              draggable={!!flow.inputSchema}
+            <Button
+              className="rounded-full"
+              variant="ghost"
+              size="icon"
+              onClick={toggleEdges}
             >
-              <FunctionSquareIcon className="size-4" />
-            </div>
+              {showEdges ? (
+                <EyeIcon className="size-4" />
+              ) : (
+                <EyeOffIcon className="size-4" />
+              )}
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="bg-muted border">
-            <p>Function</p>
+            <p>Show edges</p>
           </TooltipContent>
         </Tooltip>
       </Panel>

@@ -5,8 +5,8 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { conversationMessages, conversations } from "./conversations";
 import { endpoints } from "./endpoints";
 import { environmentVariables } from "./environment-variables";
-import { flows } from "./flows";
 import { funcs } from "./funcs";
+import { modules } from "./modules";
 import { resources } from "./resources";
 import { workspaces } from "./workspaces";
 
@@ -25,7 +25,7 @@ export const users = pgTable("users", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   workspaces: many(workspaces),
-  flows: many(flows),
+  modules: many(modules),
   funcs: many(funcs),
   resources: many(resources),
   environmentVariables: many(environmentVariables),

@@ -1,10 +1,11 @@
 import { conversationsRouter } from "./router/conversations";
-import { edgesRouter } from "./router/edges";
 import { engineRouter } from "./router/engine";
 import { environmentVariablesRouter } from "./router/environment-variables";
-import { flowsRouter } from "./router/flows";
+import { funcDependenciesRouter } from "./router/func-dependencies";
+import { funcInternalGraphRouter } from "./router/func-internal-graph";
 import { funcsRouter } from "./router/funcs";
 import { integrationsRouter } from "./router/integrations";
+import { modulesRouter } from "./router/modules";
 import { resourcesRouter } from "./router/resources";
 import { testRunsRouter } from "./router/test-runs";
 import { workspacesRouter } from "./router/workspaces";
@@ -13,15 +14,16 @@ import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
   funcs: funcsRouter,
-  edges: edgesRouter,
+  funcDependencies: funcDependenciesRouter,
   resources: resourcesRouter,
   workspaces: workspacesRouter,
-  flows: flowsRouter,
+  modules: modulesRouter,
   engine: engineRouter,
   conversations: conversationsRouter,
   integrations: integrationsRouter,
   environmentVariables: environmentVariablesRouter,
   testRuns: testRunsRouter,
+  funcInternalGraph: funcInternalGraphRouter,
 });
 
 // export type definition of API

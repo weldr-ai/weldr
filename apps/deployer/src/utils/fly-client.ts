@@ -14,13 +14,13 @@ interface FlyApp {
   };
 }
 
-export async function createFlyApp(workspaceId: string): Promise<FlyApp> {
+export async function createFlyApp(appId: string): Promise<FlyApp> {
   const response = await axios.post(
     `${process.env.FLY_API_HOSTNAME}/v1/apps`,
     {
-      app_name: workspaceId,
+      app_name: appId,
       org_slug: process.env.FLY_ORG_SLUG,
-      network: `${workspaceId}-network`,
+      network: `${appId}-network`,
     },
     {
       headers: {
@@ -38,21 +38,21 @@ export async function createFlyApp(workspaceId: string): Promise<FlyApp> {
   return response.data;
 }
 
-export async function allocateFlyIp(workspaceId: string) {
-  await exec(`fly ips allocate-v4 -a ${workspaceId} --yes`);
+export async function allocateFlyIp(appId: string) {
+  await exec(`fly ips allocate-v4 -a ${appId} --yes`);
 }
 
 export async function createEnvironmentVariable(
-  workspaceId: string,
+  appId: string,
   key: string,
   value: string,
 ) {
-  await exec(`fly secrets set ${key}=${value} -a ${workspaceId}`);
+  await exec(`fly secrets set ${key}=${value} -a ${appId}`);
 }
 
-export async function getFlyApp(workspaceId: string) {
+export async function getFlyApp(appId: string) {
   const response = await axios.get<FlyApp>(
-    `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceId}`,
+    `${process.env.FLY_API_HOSTNAME}/v1/apps/${appId}`,
     {
       headers: {
         Authorization: `Bearer ${process.env.FLY_API_KEY}`,
@@ -68,9 +68,9 @@ export async function getFlyApp(workspaceId: string) {
   return response.data;
 }
 
-export async function deleteFlyApp(workspaceId: string, force = false) {
+export async function deleteFlyApp(appId: string, force = false) {
   const response = await axios.delete(
-    `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceId}?force=${force}`,
+    `${process.env.FLY_API_HOSTNAME}/v1/apps/${appId}?force=${force}`,
     {
       headers: {
         Authorization: `Bearer ${process.env.FLY_API_KEY}`,
@@ -87,26 +87,26 @@ export async function deleteFlyApp(workspaceId: string, force = false) {
 }
 
 export async function createDockerImage({
-  workspaceId,
+  appId,
   dockerImageName,
   outputTag,
 }: {
-  workspaceId: string;
+  appId: string;
   dockerImageName: string;
   outputTag: string;
 }) {
   try {
     await exec(
-      `docker tag ${dockerImageName}:latest registry.fly.io/${workspaceId}:${outputTag}`,
+      `docker tag ${dockerImageName}:latest registry.fly.io/${appId}:${outputTag}`,
     );
-    await exec(`docker push registry.fly.io/${workspaceId}:${outputTag}`);
+    await exec(`docker push registry.fly.io/${appId}:${outputTag}`);
   } catch (error) {
     throw new Error(`An error occurred while pushing Docker image: ${error}`);
   }
 }
 
 export async function createFlyMachine(
-  workspaceId: string,
+  appId: string,
   image: string,
   config?: {
     guest?: {
@@ -149,7 +149,7 @@ export async function createFlyMachine(
   };
 
   const response = await axios.post(
-    `${process.env.FLY_API_HOSTNAME}/v1/apps/${workspaceId}/machines`,
+    `${process.env.FLY_API_HOSTNAME}/v1/apps/${appId}/machines`,
     data,
     { headers },
   );

@@ -52,7 +52,6 @@ import { z } from "zod";
 import type {
   AssistantMessageRawContent,
   ConversationMessage,
-  FlatInputSchema,
   FuncRequirementsMessage,
   JsonSchema,
   UserMessageRawContent,
@@ -84,12 +83,11 @@ import { useFlowBuilderStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
 import {
   assistantMessageRawContentToText,
-  flattenInputSchema,
   getResourceReferences,
   jsonSchemaToTreeData,
   userMessageRawContentToText,
 } from "~/lib/utils";
-import type { FlowNode, FlowNodeProps } from "~/types";
+import type { CanvasNode, CanvasNodeProps } from "~/types";
 import type { ReferenceNode } from "../editor/plugins/reference/node";
 import MessageList from "../message-list";
 import { RawContentViewer } from "../raw-content-viewer";
@@ -114,7 +112,7 @@ export const FuncNode = memo(
     selected,
     positionAbsoluteX,
     positionAbsoluteY,
-  }: FlowNodeProps) => {
+  }: CanvasNodeProps) => {
     const { data: fetchedData } = api.funcs.byId.useQuery(
       {
         id: _data.id,
@@ -135,11 +133,7 @@ export const FuncNode = memo(
       },
     );
 
-    const { data: flow } = api.flows.byId.useQuery({
-      id: data.flowId,
-    });
-
-    const { deleteElements, fitBounds } = useReactFlow<FlowNode>();
+    const { deleteElements, fitBounds } = useReactFlow<CanvasNode>();
 
     const apiUtils = api.useUtils();
 
@@ -160,9 +154,7 @@ export const FuncNode = memo(
 
     const deleteFunc = api.funcs.delete.useMutation({
       onSuccess: async () => {
-        if (data.flowId) {
-          await apiUtils.flows.byId.invalidate({ id: data.flowId });
-        }
+        await apiUtils.modules.byId.invalidate({ id: data.moduleId });
       },
     });
 
@@ -295,6 +287,10 @@ export const FuncNode = memo(
         e.preventDefault();
       }
 
+      if (!data.conversationId) {
+        return;
+      }
+
       setIsThinking(true);
       setIsGenerating(true);
 
@@ -415,15 +411,9 @@ export const FuncNode = memo(
           createdAt: new Date(),
         };
 
-        if (data.flowId) {
-          await apiUtils.flows.byId.invalidate({ id: data.flowId });
-          await apiUtils.edges.listByFlowId.invalidate({
-            flowId: data.flowId,
-          });
-        }
-
+        await apiUtils.modules.byId.invalidate({ id: data.moduleId });
         await apiUtils.funcs.byId.invalidate({ id: data.id });
-        await apiUtils.edges.available.invalidate();
+        await apiUtils.funcDependencies.available.invalidate();
         setMessages([...newMessages, funcBuiltSuccessfullyMessage]);
       }
 
@@ -432,72 +422,52 @@ export const FuncNode = memo(
       setIsGenerating(false);
     };
 
-    const flowInput = flattenInputSchema({
-      id: "root",
-      schema: flow?.inputSchema ?? undefined,
-      refPath: `flow/${data.flowId}/input`,
-    });
-
     const resources = useResources();
-    const availableDependencies = api.edges.available.useQuery({
+    const availableHelperFunctions = api.funcDependencies.available.useQuery({
       funcId: data.id,
     });
 
-    const availableDependenciesInputs = (
-      availableDependencies.data ?? []
-    ).reduce((acc, d) => {
-      acc.push(
-        ...flattenInputSchema({
-          id: d.id,
-          schema: d.outputSchema,
-          refPath: `local/${d.id}/output`,
-          sourceFuncId: d.id,
-        }),
-      );
-      return acc;
-    }, [] as FlatInputSchema[]);
+    const helperFunctionReferences = availableHelperFunctions.data?.reduce(
+      (acc, func) => {
+        if (
+          !func.name ||
+          !func.description ||
+          !func.edgeCases ||
+          !func.errorHandling ||
+          !func.logicalSteps ||
+          !func.inputSchema ||
+          !func.outputSchema
+        ) {
+          return acc;
+        }
 
-    const availableVariables = [
-      ...flowInput,
-      ...availableDependenciesInputs,
-    ].map((input) => ({
-      type: "reference" as const,
-      referenceType: "variable" as const,
-      name: input.path,
-      required: input.required,
-      dataType: input.type,
-      refUri: input.refUri,
-      properties: input.properties,
-      itemsType: input.itemsType,
-      sourceFuncId: input.sourceFuncId,
-    }));
+        acc.push({
+          type: "reference",
+          referenceType: "function",
+          id: func.id,
+          name: func.name,
+          inputSchema: JSON.stringify(func.inputSchema),
+          outputSchema: JSON.stringify(func.outputSchema),
+          description: func.description,
+          logicalSteps: assistantMessageRawContentToText(func.logicalSteps),
+          edgeCases: func.edgeCases,
+          errorHandling: func.errorHandling,
+          scope: "local",
+        });
+
+        return acc;
+      },
+      [] as z.infer<typeof userMessageRawContentReferenceElementSchema>[],
+    );
 
     const references: z.infer<
       typeof userMessageRawContentReferenceElementSchema
     >[] = useMemo(
       () => [
         ...getResourceReferences(resources),
-        ...availableVariables,
-        ...(availableDependencies.data ?? []).map(
-          (d) =>
-            ({
-              type: "reference",
-              referenceType: "function",
-              id: d.id,
-              name: d.name ?? "",
-              inputSchema: JSON.stringify(d.inputSchema ?? {}),
-              outputSchema: JSON.stringify(d.outputSchema ?? {}),
-              description: d.description ?? "",
-              logicalSteps: assistantMessageRawContentToText(
-                d.logicalSteps ?? [],
-              ),
-              edgeCases: d.edgeCases ?? "",
-              errorHandling: d.errorHandling ?? "",
-              scope: "local",
-            }) as z.infer<typeof userMessageRawContentReferenceElementSchema>,
-        ),
+        ...(helperFunctionReferences ?? []),
       ],
-      [availableDependencies.data, availableVariables, resources],
+      [resources, helperFunctionReferences],
     );
 
     return (

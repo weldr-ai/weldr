@@ -68,57 +68,6 @@ export const useCommandCenterStore = create<CommandCenterStore>()(
   ),
 );
 
-interface OnboardingState {
-  onboardedFlows: Set<string>;
-}
-
-interface OnboardingAction {
-  markFlowAsOnboarded: (flowId: string) => void;
-}
-
-type OnboardingStore = OnboardingState & OnboardingAction;
-
-const onboardingPersist: PersistOptions<OnboardingStore> = {
-  name: "onboarding-storage",
-  storage: {
-    getItem: (name) => {
-      const str = localStorage.getItem(name);
-      if (!str) return null;
-      const { state } = JSON.parse(str);
-      return {
-        state: {
-          ...state,
-          onboardedFlows: new Set(state.onboardedFlows),
-        },
-      };
-    },
-    setItem: (name, value) => {
-      const { state } = value;
-      const serializedValue = {
-        state: {
-          ...state,
-          onboardedFlows: Array.from(state.onboardedFlows),
-        },
-      };
-      localStorage.setItem(name, JSON.stringify(serializedValue));
-    },
-    removeItem: (name) => localStorage.removeItem(name),
-  },
-};
-
-export const useOnboardingStore = create<OnboardingStore>()(
-  persist(
-    (set) => ({
-      onboardedFlows: new Set(),
-      markFlowAsOnboarded: (flowId) =>
-        set((state) => ({
-          onboardedFlows: new Set(state.onboardedFlows).add(flowId),
-        })),
-    }),
-    onboardingPersist,
-  ),
-);
-
 interface FlowBuilderState {
   showEdges: boolean;
 }

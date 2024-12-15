@@ -1,9 +1,9 @@
 import type {
-  Dependency,
+  FuncResource,
   InputSchema,
+  NpmDependency,
   OutputSchema,
   RawContent,
-  Resource,
 } from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
@@ -17,8 +17,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { conversations } from "./conversations";
-import { edges } from "./edges";
-import { flows } from "./flows";
+import { funcInternalGraph } from "./func-internal-graph";
+import { modules } from "./modules";
 import { testRuns } from "./test-runs";
 
 export const funcs = pgTable(
@@ -28,8 +28,8 @@ export const funcs = pgTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     name: text("name"),
-    positionX: integer("position_x"),
-    positionY: integer("position_y"),
+    positionX: integer("position_x").default(0),
+    positionY: integer("position_y").default(0),
     inputSchema: jsonb("input_schema").$type<InputSchema>(),
     outputSchema: jsonb("output_schema").$type<OutputSchema>(),
     testInput: jsonb("test_input").$type<unknown>(),
@@ -39,30 +39,29 @@ export const funcs = pgTable(
     logicalSteps: jsonb("logical_steps").$type<RawContent>(),
     edgeCases: text("edge_cases"),
     errorHandling: text("error_handling"),
-    resources: jsonb("resources").$type<Resource[]>().array(),
-    dependencies: jsonb("dependencies").$type<Dependency[]>().array(),
+    resources: jsonb("resources").$type<FuncResource[]>(),
+    documentation: text("documentation"),
+    npmDependencies: jsonb("npm_dependencies").$type<NpmDependency[]>(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
-    userId: text("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    conversationId: text("conversation_id").notNull(),
-    flowId: text("flow_id")
-      .references(() => flows.id, { onDelete: "cascade" })
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id").references(() => conversations.id),
+    moduleId: text("module_id")
+      .references(() => modules.id, { onDelete: "cascade" })
       .notNull(),
   },
   (t) => ({
-    uniqueName: uniqueIndex("unique_name").on(t.name, t.flowId),
+    uniqueName: uniqueIndex("unique_name").on(t.name, t.moduleId),
   }),
 );
 
 export const funcRelations = relations(funcs, ({ one, many }) => ({
-  flow: one(flows, {
-    fields: [funcs.flowId],
-    references: [flows.id],
+  module: one(modules, {
+    fields: [funcs.moduleId],
+    references: [modules.id],
   }),
   conversation: one(conversations, {
     fields: [funcs.conversationId],
@@ -73,5 +72,5 @@ export const funcRelations = relations(funcs, ({ one, many }) => ({
     fields: [funcs.userId],
     references: [users.id],
   }),
-  edges: many(edges),
+  internalGraph: one(funcInternalGraph),
 }));

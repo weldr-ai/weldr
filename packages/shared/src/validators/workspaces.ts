@@ -9,7 +9,6 @@ export const workspaceSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   userId: z.string().nullable(),
-  secretId: z.string(),
   environmentVariables: environmentVariableSchema.array(),
 });
 

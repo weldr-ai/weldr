@@ -138,6 +138,7 @@ const Carousel = React.forwardRef<
           className={cn("relative", className)}
           onKeyDownCapture={handleKeyDown}
           ref={ref}
+          // biome-ignore lint/a11y/useSemanticElements: <explanation>
           role="region"
           {...props}
         >
@@ -252,10 +253,10 @@ const CarouselNext = React.forwardRef<
 CarouselNext.displayName = "CarouselNext";
 
 export {
-  type CarouselApi,
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselPrevious,
   CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
 };

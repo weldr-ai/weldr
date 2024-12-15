@@ -1,19 +1,16 @@
 import { and, eq, inArray, sql } from "@integramind/db";
 import {
   environmentVariables,
-  flows,
   funcs,
-  integrationUtils,
   resourceEnvironmentVariables,
   resources,
   testRuns,
 } from "@integramind/db/schema";
-import type { Dependency, Func } from "@integramind/shared/types";
+import type { Func, NpmDependency } from "@integramind/shared/types";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { canRunFunc } from "../utils";
 
 export const engineRouter = {
   executeFunc: protectedProcedure
@@ -39,7 +36,7 @@ export const engineRouter = {
         });
       }
 
-      const canRun = canRunFunc(func as Func);
+      const canRun = Boolean(func.name && func.code && func.description);
 
       if (!canRun) {
         throw new TRPCError({
@@ -50,22 +47,60 @@ export const engineRouter = {
 
       const resourceIds = func.resources?.map((resource) => resource.id);
 
-      let dependencies: Dependency[] = func.dependencies ?? [];
+      const npmDependencies: NpmDependency[] = func.npmDependencies ?? [];
+      const modules: { path: string; code: string }[] = [];
 
       if (resourceIds && resourceIds.length > 0) {
         const result = await ctx.db.query.resources.findMany({
           where: inArray(resources.id, resourceIds),
           with: {
             integration: {
-              columns: {
-                dependencies: true,
+              with: {
+                modules: {
+                  with: {
+                    funcs: {
+                      columns: {
+                        code: true,
+                        npmDependencies: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
         });
 
-        dependencies = dependencies.concat(
-          result.flatMap((resource) => resource.integration.dependencies ?? []),
+        modules.push(
+          ...result.flatMap((resource) =>
+            resource.integration.modules.reduce<
+              { path: string; code: string }[]
+            >(
+              (acc, module) =>
+                acc.concat(
+                  module.funcs.reduce<{ path: string; code: string }[]>(
+                    (funcAcc, func) => {
+                      if (module.path && func.code) {
+                        funcAcc.push({ path: module.path, code: func.code });
+                      }
+                      return funcAcc;
+                    },
+                    [],
+                  ),
+                ),
+              [],
+            ),
+          ),
+        );
+
+        npmDependencies.push(
+          ...result.flatMap((resource) =>
+            resource.integration.modules.flatMap((module) =>
+              module.funcs.flatMap(
+                (func) => (func.npmDependencies ?? []) as NpmDependency[],
+              ),
+            ),
+          ),
         );
       }
 
@@ -122,32 +157,13 @@ export const engineRouter = {
         }
       }
 
-      const utilityIds = func.resources?.reduce((acc, resource) => {
-        return acc.concat(
-          resource.utilities?.map((utility) => utility.id) ?? [],
-        );
-      }, [] as string[]);
-
-      let utilities: { filePath: string; content: string }[] = [];
-
-      if (utilityIds && utilityIds.length > 0) {
-        const utilitiesData = await ctx.db.query.integrationUtils.findMany({
-          where: inArray(integrationUtils.id, utilityIds),
-        });
-
-        utilities = utilitiesData.map((utility) => ({
-          filePath: utility.filePath,
-          content: utility.implementation,
-        }));
-      }
-
       const requestBody = {
         hasInput: input.hasInput,
         functionName: func.name,
         functionArgs: input.hasInput ? input.input : undefined,
         code: func.code,
-        utilities,
-        dependencies,
+        modules,
+        dependencies: npmDependencies,
         environmentVariablesMap,
         testEnv:
           process.env.NODE_ENV === "development"
@@ -191,30 +207,6 @@ export const engineRouter = {
           status: "error",
           message: "Failed to execute function",
         };
-      }
-    }),
-  executeFlow: protectedProcedure
-    .input(
-      z.object({
-        flowId: z.string(),
-        request: z.object({
-          body: z.unknown().optional(),
-          query: z.record(z.string(), z.string()).optional(),
-          params: z.record(z.string(), z.string()).optional(),
-          headers: z.record(z.string(), z.string()).optional(),
-        }),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const flowData = await ctx.db.query.flows.findFirst({
-        where: eq(flows.id, input.flowId),
-      });
-
-      if (!flowData) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Flow not found",
-        });
       }
     }),
 } satisfies TRPCRouterRecord;

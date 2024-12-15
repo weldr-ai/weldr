@@ -86,28 +86,26 @@ export function AddPostgresResourceForm({
     defaultValues,
   });
 
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
+  const onSubmit = async (data: z.infer<typeof validationSchema>) => {
     const environmentVariables = [
       {
-        userKey: form.getValues("POSTGRES_DB"),
+        userKey: data.POSTGRES_DB,
         mapTo: "POSTGRES_DB",
       },
       {
-        userKey: form.getValues("POSTGRES_USER"),
+        userKey: data.POSTGRES_USER,
         mapTo: "POSTGRES_USER",
       },
       {
-        userKey: form.getValues("POSTGRES_PASSWORD"),
+        userKey: data.POSTGRES_PASSWORD,
         mapTo: "POSTGRES_PASSWORD",
       },
       {
-        userKey: form.getValues("POSTGRES_HOST"),
+        userKey: data.POSTGRES_HOST,
         mapTo: "POSTGRES_HOST",
       },
       {
-        userKey: form.getValues("POSTGRES_PORT"),
+        userKey: data.POSTGRES_PORT,
         mapTo: "POSTGRES_PORT",
       },
     ];
@@ -116,13 +114,13 @@ export function AddPostgresResourceForm({
       await updateResourceMutation.mutateAsync({
         where: { id: resource.id },
         payload: {
-          ...form.getValues(),
+          ...data,
           environmentVariables,
         },
       });
     } else {
       await addResourceMutation.mutateAsync({
-        ...form.getValues(),
+        ...data,
         environmentVariables,
       });
     }
@@ -130,7 +128,10 @@ export function AddPostgresResourceForm({
 
   return (
     <Form {...form}>
-      <form className="flex w-full flex-col space-y-4" onSubmit={onSubmit}>
+      <form
+        className="flex w-full flex-col space-y-4"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         <FormField
           control={form.control}
           name="name"

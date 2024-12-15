@@ -47,6 +47,10 @@ export const endpointsRouter = {
         return result[0];
       } catch (error) {
         console.error(error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create endpoint",
@@ -73,6 +77,10 @@ export const endpointsRouter = {
       return endpoint;
     } catch (error) {
       console.error(error);
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to get endpoint",
@@ -94,6 +102,10 @@ export const endpointsRouter = {
           );
       } catch (error) {
         console.error(error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to list endpoints",
@@ -115,6 +127,10 @@ export const endpointsRouter = {
           );
       } catch (error) {
         console.error(error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to update endpoint",
@@ -135,6 +151,10 @@ export const endpointsRouter = {
           );
       } catch (error) {
         console.error(error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to delete endpoint",

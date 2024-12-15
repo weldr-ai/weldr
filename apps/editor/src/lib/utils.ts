@@ -312,10 +312,10 @@ function referenceToText(
     case "database": {
       return [
         `Database \`${reference.name}\` (ID: ${reference.id})`,
-        ...(reference.utils.length > 0
+        ...(reference.helperFunctions.length > 0
           ? [
-              "Utilities:",
-              ...reference.utils.map(
+              "Helper Functions:",
+              ...reference.helperFunctions.map(
                 (util) =>
                   `- \`${util.name}\` (ID: ${util.id})\n` +
                   `  Description: ${util.description}`,
@@ -483,6 +483,36 @@ export function getResourceReferences(
     typeof userMessageRawContentReferenceElementSchema
   >[] = [];
 
+  const getHelperFunctions = (
+    modules: RouterOutputs["workspaces"]["byId"]["resources"][0]["integration"]["modules"],
+  ) => {
+    return (
+      modules?.reduce(
+        (acc, module) => {
+          const funcs = [];
+
+          for (const func of module.funcs) {
+            if (func.name && func.description) {
+              funcs.push({
+                id: func.id,
+                name: func.name,
+                description: func.description,
+              });
+            }
+          }
+
+          acc.push(...funcs);
+          return acc;
+        },
+        [] as {
+          id: string;
+          name: string;
+          description: string;
+        }[],
+      ) ?? []
+    );
+  };
+
   for (const resource of resources ?? []) {
     if (!notInclude.includes("database")) {
       references.push({
@@ -490,12 +520,7 @@ export function getResourceReferences(
         type: "reference",
         name: resource.name,
         referenceType: "database",
-        utils:
-          resource.integration.utils?.map((util) => ({
-            id: util.id,
-            name: util.name,
-            description: util.description,
-          })) ?? [],
+        helperFunctions: getHelperFunctions(resource.integration.modules),
       });
     }
 
@@ -516,12 +541,9 @@ export function getResourceReferences(
               database: {
                 id: resource.id,
                 name: resource.name,
-                utils:
-                  resource.integration.utils?.map((util) => ({
-                    id: util.id,
-                    name: util.name,
-                    description: util.description,
-                  })) ?? [],
+                helperFunctions: getHelperFunctions(
+                  resource.integration.modules,
+                ),
               },
               table: {
                 name: table.name,
@@ -539,12 +561,9 @@ export function getResourceReferences(
               database: {
                 id: resource.id,
                 name: resource.name,
-                utils:
-                  resource.integration.utils?.map((util) => ({
-                    id: util.id,
-                    name: util.name,
-                    description: util.description,
-                  })) ?? [],
+                helperFunctions: getHelperFunctions(
+                  resource.integration.modules,
+                ),
               },
               columns: table.columns,
               relationships: table.relationships,

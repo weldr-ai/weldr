@@ -1,6 +1,11 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
-import { conversations, flows, funcs, testRuns } from "@integramind/db/schema";
+import {
+  conversations,
+  funcs,
+  modules,
+  testRuns,
+} from "@integramind/db/schema";
 
 import { type SQL, and, eq, inArray } from "@integramind/db";
 import type { Func } from "@integramind/shared/types";
@@ -10,7 +15,6 @@ import {
 } from "@integramind/shared/validators/funcs";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { canRunFunc } from "../utils";
 
 export const funcsRouter = {
   create: protectedProcedure
@@ -34,21 +38,14 @@ export const funcsRouter = {
             });
           }
 
-          const flow = await tx.query.flows.findFirst({
-            where: eq(flows.id, input.flowId),
+          const module = await tx.query.modules.findFirst({
+            where: eq(modules.id, input.moduleId),
           });
 
-          if (!flow) {
+          if (!module) {
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: "Flow not found",
-            });
-          }
-
-          if (!flow.inputSchema) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: "Cannot create function in flow without input schema",
+              message: "Module not found",
             });
           }
 
@@ -74,6 +71,10 @@ export const funcsRouter = {
         return result;
       } catch (error) {
         console.error(error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create function",
@@ -92,7 +93,7 @@ export const funcsRouter = {
 
       return result.map((func) => ({
         ...func,
-        canRun: canRunFunc(func as Func),
+        canRun: Boolean(func.name && func.code && func.description),
       })) as Func[];
     }),
   byId: protectedProcedure
@@ -114,7 +115,7 @@ export const funcsRouter = {
 
       return {
         ...result,
-        canRun: canRunFunc(result as Func),
+        canRun: Boolean(result.name && result.code && result.description),
       } as Func;
     }),
   update: protectedProcedure
@@ -129,7 +130,7 @@ export const funcsRouter = {
         where: and(...where),
       });
 
-      if (!existingFunc) {
+      if (!existingFunc || !existingFunc.conversationId) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Function not found",
@@ -139,20 +140,20 @@ export const funcsRouter = {
       if (input.payload.name) {
         let isUnique = false;
 
-        if (existingFunc.flowId) {
+        if (existingFunc.moduleId) {
           isUnique =
             (await ctx.db.query.funcs.findFirst({
               where: and(
                 eq(funcs.name, input.payload.name),
-                eq(funcs.flowId, existingFunc.flowId),
+                eq(funcs.moduleId, existingFunc.moduleId),
               ),
             })) !== undefined;
         }
 
-        if (isUnique) {
+        if (isUnique && existingFunc.id !== input.where.id) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Function name already exists in this flow",
+            message: "Function name already exists in this module",
           });
         }
       }
@@ -187,7 +188,7 @@ export const funcsRouter = {
         ),
       });
 
-      if (!func) {
+      if (!func || !func.conversationId) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Function not found",

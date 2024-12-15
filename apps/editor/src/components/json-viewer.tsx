@@ -55,6 +55,7 @@ export const JsonViewer = ({
               setIsExpanded(!isExpanded);
             }
           }}
+          // biome-ignore lint/a11y/useSemanticElements: <explanation>
           role="button"
           tabIndex={0}
         >

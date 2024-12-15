@@ -14,6 +14,7 @@
     "@integramind/auth": "workspace:*",
     "@integramind/db": "workspace:*",
     "@integramind/shared": "workspace:*",
+    "@paralleldrive/cuid2": "^2.2.2",
     "@trpc/server": "11.0.0-rc.638",
     "ofetch": "^1.4.1",
     "react": "^18.2.0",

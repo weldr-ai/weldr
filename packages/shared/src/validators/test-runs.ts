@@ -6,6 +6,5 @@ export const testRunSchema = z.object({
   stdout: z.string().nullable(),
   stderr: z.string().nullable(),
   createdAt: z.date(),
-  funcId: z.string().nullable(),
-  flowId: z.string().nullable(),
+  funcId: z.string(),
 });

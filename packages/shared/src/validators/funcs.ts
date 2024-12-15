@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { databaseTableSchema } from "../integrations/postgres";
 import {
-  dependencySchema,
   inputSchema,
+  npmDependencySchema,
   outputSchema,
   rawContentSchema,
-  utilityFunctionReferenceSchema,
 } from "./common";
 import { conversationSchema } from "./conversations";
+import { funcDependencySchema } from "./func-dependencies";
+import { funcInternalGraphConnectionSchema } from "./func-internal-graph";
 import { testRunSchema } from "./test-runs";
 
 export const funcResourceSchema = z.object({
@@ -19,10 +20,6 @@ export const funcResourceSchema = z.object({
       tables: databaseTableSchema.array(),
     }),
   ]),
-  utilities: utilityFunctionReferenceSchema
-    .omit({ docs: true })
-    .array()
-    .optional(),
 });
 
 export const funcSchema = z.object({
@@ -30,30 +27,33 @@ export const funcSchema = z.object({
   name: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  positionX: z.number(),
-  positionY: z.number(),
+  positionX: z.number().default(0),
+  positionY: z.number().default(0),
   inputSchema: inputSchema.optional(),
   outputSchema: outputSchema.optional(),
   testInput: z.unknown().optional(),
   description: z.string().optional(),
   rawDescription: rawContentSchema.optional(),
   code: z.string().optional(),
+  documentation: z.string().optional(),
   logicalSteps: rawContentSchema.optional(),
   edgeCases: z.string().optional(),
   errorHandling: z.string().optional(),
-  resources: funcResourceSchema.array().optional(),
-  dependencies: dependencySchema.array().optional(),
+  resources: funcResourceSchema.array().optional().nullable(),
+  npmDependencies: npmDependencySchema.array().optional().nullable(),
   userId: z.string().nullable(),
-  flowId: z.string(),
-  conversationId: z.string(),
+  conversationId: z.string().nullable(),
+  moduleId: z.string(),
   canRun: z.boolean().optional(),
   conversation: conversationSchema,
   testRuns: testRunSchema.array(),
+  funcDependencies: funcDependencySchema.array(),
+  internalConnections: funcInternalGraphConnectionSchema.array(),
 });
 
 export const insertFuncSchema = z.object({
   id: z.string(),
-  flowId: z.string(),
+  moduleId: z.string(),
   positionX: z.number(),
   positionY: z.number(),
 });
@@ -84,10 +84,11 @@ export const updateFuncSchema = z.object({
     description: z.string().optional(),
     rawDescription: rawContentSchema.optional(),
     code: z.string().optional(),
+    documentation: z.string().optional(),
     logicalSteps: rawContentSchema.optional(),
     edgeCases: z.string().optional(),
     errorHandling: z.string().optional(),
-    resources: funcResourceSchema.array().optional(),
-    dependencies: dependencySchema.array().optional(),
+    resources: funcResourceSchema.array().optional().nullable(),
+    npmDependencies: npmDependencySchema.array().optional().nullable(),
   }),
 });

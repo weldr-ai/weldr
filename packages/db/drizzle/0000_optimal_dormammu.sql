@@ -1,8 +1,7 @@
-CREATE TYPE "public"."roles" AS ENUM('user', 'assistant');--> statement-breakpoint
+CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant');--> statement-breakpoint
 CREATE TYPE "public"."http_methods" AS ENUM('GET', 'POST', 'PUT', 'DELETE', 'PATCH');--> statement-breakpoint
 CREATE TYPE "public"."integration_category" AS ENUM('database');--> statement-breakpoint
 CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');--> statement-breakpoint
-CREATE TYPE "public"."dependency_type" AS ENUM('consumes', 'requires');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -52,7 +51,7 @@ CREATE TABLE IF NOT EXISTS "waitlist" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "conversation_messages" (
 	"id" text PRIMARY KEY NOT NULL,
-	"role" "roles" NOT NULL,
+	"role" "message_roles" NOT NULL,
 	"content" text NOT NULL,
 	"raw_content" jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -81,30 +80,16 @@ CREATE TABLE IF NOT EXISTS "endpoints" (
 	CONSTRAINT "endpoints_workspace_id_path_http_method_unique" UNIQUE("workspace_id","path","http_method")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "flows" (
+CREATE TABLE IF NOT EXISTS "modules" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
-	"input_schema" jsonb,
-	"output_schema" jsonb,
-	"code" text,
-	"is_updated" boolean DEFAULT false NOT NULL,
+	"path" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"input_conversation_id" text NOT NULL,
-	"output_conversation_id" text NOT NULL,
-	"workspace_id" text NOT NULL,
-	"user_id" text NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "integration_utils" (
-	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"description" text NOT NULL,
-	"documentation" text NOT NULL,
-	"implementation" text NOT NULL,
-	"file_path" text NOT NULL,
-	"integration_id" text NOT NULL
+	"workspace_id" text,
+	"user_id" text,
+	"integration_id" text
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "integrations" (
@@ -114,15 +99,14 @@ CREATE TABLE IF NOT EXISTS "integrations" (
 	"name" text NOT NULL,
 	"description" text NOT NULL,
 	"environment_variables" text[] DEFAULT NULL,
-	"dependencies" jsonb,
 	"category" "integration_category" DEFAULT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "funcs" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text,
-	"position_x" integer,
-	"position_y" integer,
+	"position_x" integer DEFAULT 0,
+	"position_y" integer DEFAULT 0,
 	"input_schema" jsonb,
 	"output_schema" jsonb,
 	"test_input" jsonb,
@@ -132,13 +116,14 @@ CREATE TABLE IF NOT EXISTS "funcs" (
 	"logical_steps" jsonb,
 	"edge_cases" text,
 	"error_handling" text,
-	"resources" jsonb[],
-	"dependencies" jsonb[],
+	"resources" jsonb,
+	"documentation" text,
+	"npm_dependencies" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"user_id" text NOT NULL,
-	"conversation_id" text NOT NULL,
-	"flow_id" text NOT NULL
+	"user_id" text,
+	"conversation_id" text,
+	"module_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "resource_environment_variables" (
@@ -165,7 +150,7 @@ CREATE TABLE IF NOT EXISTS "workspaces" (
 	"name" text NOT NULL,
 	"subdomain" text NOT NULL,
 	"description" text,
-	"executor_machine_id" text,
+	"engine_machine_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"user_id" text NOT NULL,
@@ -189,17 +174,24 @@ CREATE TABLE IF NOT EXISTS "test_runs" (
 	"stdout" text DEFAULT NULL,
 	"stderr" text DEFAULT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"func_id" text,
-	"flow_id" text
+	"func_id" text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "edges" (
-	"id" text PRIMARY KEY NOT NULL,
-	"type" "dependency_type" NOT NULL,
+CREATE TABLE IF NOT EXISTS "func_dependencies" (
+	"func_id" text NOT NULL,
+	"dependency_func_id" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "func_internal_graph" (
+	"func_id" text NOT NULL,
+	CONSTRAINT "func_internal_graph_func_id_unique" UNIQUE("func_id")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "func_internal_graph_edges" (
+	"source_func_id" text NOT NULL,
 	"target_func_id" text NOT NULL,
-	"local_source_id" text DEFAULT NULL,
-	"imported_source_id" text DEFAULT NULL,
-	"flow_id" text NOT NULL,
+	"connections" jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -246,19 +238,19 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "flows" ADD CONSTRAINT "flows_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "modules" ADD CONSTRAINT "modules_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "flows" ADD CONSTRAINT "flows_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "modules" ADD CONSTRAINT "modules_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "integration_utils" ADD CONSTRAINT "integration_utils_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "modules" ADD CONSTRAINT "modules_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -270,7 +262,13 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "funcs" ADD CONSTRAINT "funcs_flow_id_flows_id_fk" FOREIGN KEY ("flow_id") REFERENCES "public"."flows"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "funcs" ADD CONSTRAINT "funcs_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "funcs" ADD CONSTRAINT "funcs_module_id_modules_id_fk" FOREIGN KEY ("module_id") REFERENCES "public"."modules"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -336,34 +334,39 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "test_runs" ADD CONSTRAINT "test_runs_flow_id_flows_id_fk" FOREIGN KEY ("flow_id") REFERENCES "public"."flows"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "func_dependencies" ADD CONSTRAINT "func_dependencies_func_id_funcs_id_fk" FOREIGN KEY ("func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "edges" ADD CONSTRAINT "edges_target_func_id_funcs_id_fk" FOREIGN KEY ("target_func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "func_dependencies" ADD CONSTRAINT "func_dependencies_dependency_func_id_funcs_id_fk" FOREIGN KEY ("dependency_func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "edges" ADD CONSTRAINT "edges_local_source_id_funcs_id_fk" FOREIGN KEY ("local_source_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "func_internal_graph" ADD CONSTRAINT "func_internal_graph_func_id_funcs_id_fk" FOREIGN KEY ("func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "edges" ADD CONSTRAINT "edges_imported_source_id_flows_id_fk" FOREIGN KEY ("imported_source_id") REFERENCES "public"."flows"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "func_internal_graph_edges" ADD CONSTRAINT "func_internal_graph_edges_source_func_id_funcs_id_fk" FOREIGN KEY ("source_func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "edges" ADD CONSTRAINT "edges_flow_id_flows_id_fk" FOREIGN KEY ("flow_id") REFERENCES "public"."flows"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "func_internal_graph_edges" ADD CONSTRAINT "func_internal_graph_edges_target_func_id_funcs_id_fk" FOREIGN KEY ("target_func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_name" ON "funcs" USING btree ("name","flow_id");--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_dependency" ON "edges" USING btree ("target_func_id","local_source_id","imported_source_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "unique_name" ON "funcs" USING btree ("name","module_id");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "unique_dependency" ON "func_dependencies" USING btree ("func_id","dependency_func_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "func_idx" ON "func_dependencies" USING btree ("func_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dependency_idx" ON "func_dependencies" USING btree ("dependency_func_id");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "unique_source_target" ON "func_internal_graph_edges" USING btree ("source_func_id","target_func_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "internal_conn_source_idx" ON "func_internal_graph_edges" USING btree ("source_func_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "internal_conn_target_idx" ON "func_internal_graph_edges" USING btree ("target_func_id");

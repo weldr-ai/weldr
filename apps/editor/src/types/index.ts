@@ -1,10 +1,9 @@
-import type { Node, NodeProps } from "@xyflow/react";
+import type { Edge, Node, NodeProps } from "@xyflow/react";
 
-import type { Func, InputSchema } from "@integramind/shared/types";
+import type { Func } from "@integramind/shared/types";
 
-export type FlowNodeType = "func";
-export type FlowNodeData = Func & {
-  flow: { inputSchema?: InputSchema };
-};
-export type FlowNode = Node<FlowNodeData, FlowNodeType>;
-export type FlowNodeProps = NodeProps<FlowNode>;
+export type CanvasNodeType = "func";
+export type CanvasNodeData = Func;
+export type CanvasNode = Node<CanvasNodeData, CanvasNodeType>;
+export type CanvasEdge = Edge;
+export type CanvasNodeProps = NodeProps<CanvasNode>;

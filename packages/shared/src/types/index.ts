@@ -1,12 +1,10 @@
 import type { z } from "zod";
 import type {
   dataTypeSchema,
-  dependencySchema,
-  flowInputSchemaMessageSchema,
-  flowOutputSchemaMessageSchema,
   funcRequirementsMessageSchema,
   inputSchema,
   jsonSchemaPropertySchema,
+  npmDependencySchema,
   outputSchema,
   rawContentSchema,
 } from "../validators/common";
@@ -17,15 +15,14 @@ import type {
   messageRawContentSchema,
   userMessageRawContentSchema,
 } from "../validators/conversations";
-import type { edgeSchema } from "../validators/edges";
 import type { environmentVariableSchema } from "../validators/environment-variables";
-import type { flowSchema } from "../validators/flows";
-import type { funcSchema } from "../validators/funcs";
+import type { funcResourceSchema, funcSchema } from "../validators/funcs";
 import type {
+  integrationHelperFunctionSchema,
   integrationSchema,
   integrationTypeSchema,
-  integrationUtilitySchema,
 } from "../validators/integrations";
+import type { moduleSchema } from "../validators/modules";
 import type { resourceSchema } from "../validators/resources";
 import type { testRunSchema } from "../validators/test-runs";
 import type { workspaceSchema } from "../validators/workspaces";
@@ -54,33 +51,29 @@ export type OutputSchema = z.infer<typeof outputSchema>;
 
 export type Workspace = z.infer<typeof workspaceSchema>;
 
-export type Flow = z.infer<typeof flowSchema>;
-export type FlowEdge = z.infer<typeof edgeSchema>;
+export type Module = z.infer<typeof moduleSchema>;
 
 export type UserMessageRawContent = z.infer<typeof userMessageRawContentSchema>;
 export type AssistantMessageRawContent = z.infer<
   typeof assistantMessageRawContentSchema
->;
-export type FlowInputSchemaMessage = z.infer<
-  typeof flowInputSchemaMessageSchema
->;
-export type FlowOutputSchemaMessage = z.infer<
-  typeof flowOutputSchemaMessageSchema
 >;
 export type MessageRawContent = z.infer<typeof messageRawContentSchema>;
 export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
 export type Conversation = z.infer<typeof conversationSchema>;
 
 export type Resource = z.infer<typeof resourceSchema>;
+export type FuncResource = z.infer<typeof funcResourceSchema>;
 
 export type Integration = z.infer<typeof integrationSchema>;
 export type IntegrationType = z.infer<typeof integrationTypeSchema>;
-export type IntegrationUtility = z.infer<typeof integrationUtilitySchema>;
+export type IntegrationHelperFunction = z.infer<
+  typeof integrationHelperFunctionSchema
+>;
 
 export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;
 
 export type RawContent = z.infer<typeof rawContentSchema>;
-export type Dependency = z.infer<typeof dependencySchema>;
+export type NpmDependency = z.infer<typeof npmDependencySchema>;
 export type Func = z.infer<typeof funcSchema>;
 export type TestRun = z.infer<typeof testRunSchema>;
 

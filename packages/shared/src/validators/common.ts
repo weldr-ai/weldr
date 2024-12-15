@@ -109,14 +109,16 @@ export const functionReferenceSchema = z.object({
 export const databaseReferenceSchema = z.object({
   id: z.string().describe("The ID of the database"),
   name: z.string().describe("The name of the database"),
-  utils: z
+  helperFunctions: z
     .object({
-      id: z.string().describe("The ID of the utility"),
-      name: z.string().describe("The name of the utility"),
-      description: z.string().describe("The description of the utility"),
+      id: z.string().describe("The ID of the helper function"),
+      name: z.string().describe("The name of the helper function"),
+      description: z
+        .string()
+        .describe("The description of the helper function"),
     })
     .array()
-    .describe("The utilities of the database"),
+    .describe("The helper functions of the database"),
 });
 
 export const databaseTableReferenceSchema = z.object({
@@ -158,17 +160,17 @@ export const databaseColumnReferenceSchema = z.object({
     .describe("The table of the column"),
 });
 
-export const utilityFunctionReferenceSchema = z.object({
-  id: z.string().min(1).describe("The ID of the utility function"),
-  name: z.string().min(1).describe("The name of the utility function"),
+export const integrationHelperFunctionReferenceSchema = z.object({
+  id: z.string().min(1).describe("The ID of the helper function"),
+  name: z.string().min(1).describe("The name of the helper function"),
   description: z
     .string()
     .min(1)
-    .describe("The description of the utility function"),
-  docs: z.string().min(1).describe("The documentation of the utility function"),
+    .describe("The description of the helper function"),
+  docs: z.string().min(1).describe("The documentation of the helper function"),
 });
 
-export const dependencySchema = z.object({
+export const npmDependencySchema = z.object({
   name: z.string().describe("The name of the npm package"),
   version: z.string().optional().describe("The version of the npm package"),
 });
@@ -199,7 +201,7 @@ export const rawContentFunctionReferenceSchema = z.object({
 export const rawContentDatabaseReferenceSchema = z.object({
   type: z.literal("reference"),
   referenceType: z.literal("database"),
-  ...databaseReferenceSchema.omit({ utils: true }).shape,
+  ...databaseReferenceSchema.omit({ helperFunctions: true }).shape,
 });
 
 export const rawContentDatabaseTableReferenceSchema = z.object({
@@ -243,71 +245,6 @@ export const rawContentSchema = z
   .union([rawContentTextElementSchema, rawContentReferenceElementSchema])
   .array();
 
-const flowInputRawContentSchema = z
-  .union([
-    rawContentTextElementSchema,
-    rawContentVariableReferenceSchema,
-    rawContentDatabaseReferenceSchema,
-    rawContentDatabaseTableReferenceSchema,
-    rawContentDatabaseColumnReferenceSchema,
-  ])
-  .array();
-
-const outputRawContentSchema = z
-  .union([rawContentTextElementSchema, rawContentVariableReferenceSchema])
-  .array();
-
-export const flowInputSchemaMessageSchema = z.object({
-  message: z.discriminatedUnion("type", [
-    z
-      .object({
-        type: z.literal("message"),
-        content: flowInputRawContentSchema,
-      })
-      .describe("The message of the inputs requirements gathering"),
-    z.object({
-      type: z.literal("end"),
-      content: z.object({
-        description: flowInputRawContentSchema.describe(
-          "The description of the inputs schema. Must consist of text and reference parts. The reference parts must be used when mentioning a reference in the description.",
-        ),
-        inputSchema: z.string().describe(
-          `The JSON schema for the inputs of the flow. Must follow these rules:
-            - Property names must be in camelCase.
-            - Schema should be valid according to JSON Schema specification.
-            - Properties should have clear, descriptive names that indicate their purpose.
-            - Schema must be divided into body, query parameters and path parameters.`,
-        ),
-      }),
-    }),
-  ]),
-});
-
-export const flowOutputSchemaMessageSchema = z.object({
-  message: z.discriminatedUnion("type", [
-    z.object({
-      type: z.literal("message"),
-      content: outputRawContentSchema,
-    }),
-    z.object({
-      type: z.literal("end"),
-      content: z.object({
-        description: outputRawContentSchema.describe(
-          "The description of the output schema. Must consist of text and reference parts. The reference parts must be used when mentioning a reference in the description.",
-        ),
-        outputSchema: z.string().describe(
-          `The JSON schema for the output of the flow. Must follow these rules:
-          - Schema must have \`title\` property. It should be a descriptive noun like 'Customer' or 'Order' that represents the data and it is like a TypeScript type name. If no descriptive title applies, use \`undefined\` as the title value.
-          - Properties must have \`$ref\` property to specify input sources. Always include the \`$ref\` property. You will find it in the context.
-          - Property names must be in camelCase.
-          - Schema should be valid according to JSON Schema specification.
-          - Properties should have clear, descriptive names that indicate their purpose.`,
-        ),
-      }),
-    }),
-  ]),
-});
-
 export const funcRequirementsMessageSchema = z.object({
   message: z.discriminatedUnion("type", [
     z
@@ -324,7 +261,6 @@ export const funcRequirementsMessageSchema = z.object({
             .string()
             .describe(
               `The JSON schema for the input of the function. Must follow these rules:
-                - Properties must have \`$ref\` property to specify input sources. Always include the \`$ref\` property. You will find it in the context.
                 - Property names must be in camelCase.
                 - Schema should be valid according to JSON Schema specification.
                 - Properties should have clear, descriptive names that indicate their purpose.
@@ -381,13 +317,6 @@ export const funcRequirementsMessageSchema = z.object({
                     .describe("The tables of the database"),
                 }),
               ]),
-              utilities: utilityFunctionReferenceSchema
-                .omit({ docs: true })
-                .array()
-                .optional()
-                .describe(
-                  "The list of utilities that the resource provides and can be used to implement the function",
-                ),
             })
             .array()
             .optional()
@@ -399,7 +328,7 @@ export const funcRequirementsMessageSchema = z.object({
             `The logical steps of the function. Must be a clear, step-by-step description of what the function does. Each step should be concise but complete, focusing on one specific operation. Include:
                 - Data transformations and calculations.
                 - Database operations (queries, updates, etc.).
-                - Specify the utilities that are used.
+                - Specify the helper functions that are used.
                 - External service calls.
                 - Business logic and conditional flows.
                 - Return value preparation.`,
@@ -419,49 +348,67 @@ export const funcRequirementsMessageSchema = z.object({
               - Whether to retry operations and how many times.
               - Input validation errors can be ignored as inputs are validated separately.`,
           ),
-          extraUsedUtilities: z
-            .object({
-              local: z
-                .string()
-                .array()
-                .optional()
-                .describe(
-                  "The list of local utilities that are used in the function.",
-                ),
-              imported: z
-                .string()
-                .array()
-                .optional()
-                .describe(
-                  "The list of imported utilities that are used in the function.",
-                ),
-            })
-            .optional()
-            .describe(
-              "The list of utilities that are used in the function but not listed in the `resources` section.",
-            ),
-          dependencies: dependencySchema
+          helperFunctionIds: z
+            .string()
             .array()
             .optional()
             .describe(
-              `The npm dependencies of the function.
+              "The IDs of the helper functions to use in the implementation.",
+            ),
+          internalGraphEdges: z
+            .array(
+              z.object({
+                targetFuncId: z
+                  .string()
+                  .describe(
+                    "The ID of the target function. This is the function that will take the output of the source function as input.",
+                  ),
+                sourceFuncId: z
+                  .string()
+                  .describe(
+                    "The ID of the source function. This is the function that will provide the output to the target function.",
+                  ),
+                connections: z
+                  .array(
+                    z.object({
+                      sourceOutput: z
+                        .string()
+                        .describe(
+                          "The output of the source function. This is the name of the output property that will be passed to the target function.",
+                        ),
+                      targetInput: z
+                        .string()
+                        .describe(
+                          "The input of the target function. This is the name of the input property that will be passed to the target function.",
+                        ),
+                    }),
+                  )
+                  .describe(
+                    "The connections between the source and target function. This is the list of inputs and outputs that are passed between the source and target function.",
+                  ),
+              }),
+            )
+            .optional()
+            .describe(
+              "The internal graph of the function of how the helper functions are connected to each other.",
+            ),
+          npmDependencies: npmDependencySchema
+            .array()
+            .optional()
+            .describe(
+              `The npm dependencies that the Typescript function will use in the implementation.
               # Guidelines:
                 - Don't include dependencies for SDKs that can be done with a simple HTTP request for external APIs.
                 - Don't worry about specifying dependencies for the database provider.
                 - Don't worry about the version of the packages.
                 - Don't hallucinate non-existent dependencies.
-                - If the task is simple, don't include unnecessary dependencies.
                 - Must be a valid npm package name.
-                - Include @types packages if they are needed.
                 - Don't use suspicious packages.
-                - Don't use packages that are not necessary for the function to work.
                 - Don't use packages that are not maintained anymore.
                 - Don't use packages that have been deprecated recently.
                 - Don't use packages with known security vulnerabilities.
-                - Don't use packages that are only used for development or testing.
                 - Don't use packages that are not popular.
-                - Don't use packages that are not well-documented.
-                - Don't use packages that are not maintained by a reputable organization.`,
+                - Don't use packages that are not well-documented.`,
             ),
         }),
       })

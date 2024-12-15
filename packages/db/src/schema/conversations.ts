@@ -7,7 +7,7 @@ import { relations } from "drizzle-orm";
 import { jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 
-export const roles = pgEnum("roles", ["user", "assistant"]);
+export const messageRoles = pgEnum("message_roles", ["user", "assistant"]);
 
 export const conversations = pgTable("conversations", {
   id: text("id")
@@ -27,7 +27,7 @@ export const conversationMessages = pgTable("conversation_messages", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
-  role: roles("role").notNull(),
+  role: messageRoles("role").notNull(),
   content: text("content").notNull(),
   rawContent: jsonb("raw_content")
     .$type<UserMessageRawContent | AssistantMessageRawContent>()

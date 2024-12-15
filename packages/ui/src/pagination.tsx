@@ -14,6 +14,7 @@ function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
     <nav
       aria-label="pagination"
       className={cn("mx-auto flex w-full justify-center", className)}
+      // biome-ignore lint/a11y/noRedundantRoles: <explanation>
       role="navigation"
       {...props}
     />
@@ -124,9 +125,9 @@ PaginationEllipsis.displayName = "PaginationEllipsis";
 export {
   Pagination,
   PaginationContent,
-  PaginationLink,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationNext,
   PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
 };

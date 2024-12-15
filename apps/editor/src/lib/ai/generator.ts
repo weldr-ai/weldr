@@ -4,28 +4,20 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { auth } from "@integramind/auth";
 import type {
   AssistantMessageRawContent,
-  FlowInputSchemaMessage,
-  FlowOutputSchemaMessage,
   FuncRequirementsMessage,
 } from "@integramind/shared/types";
-import {
-  flowInputSchemaMessageSchema,
-  flowOutputSchemaMessageSchema,
-  funcRequirementsMessageSchema,
-} from "@integramind/shared/validators/common";
+import { funcRequirementsMessageSchema } from "@integramind/shared/validators/common";
 import { type CoreMessage, streamObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
-  FLOW_INPUT_SCHEMA_AGENT_PROMPT,
-  FLOW_OUTPUT_SCHEMA_AGENT_PROMPT,
   FUNC_DEVELOPER_PROMPT,
   FUNC_REQUIREMENTS_AGENT_PROMPT,
   getGenerateFuncCodePrompt,
 } from "~/lib/ai/prompts";
 import { api } from "../trpc/server";
-import { assistantMessageRawContentToText, flattenInputSchema } from "../utils";
+import { assistantMessageRawContentToText } from "../utils";
 import { generateCode } from "./helpers";
 
 const openai = createOpenAI({
@@ -81,6 +73,9 @@ export async function generateFunc({
           `[generateFunc] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
         );
         console.log(`[generateFunc] Error: ${JSON.stringify(error, null, 2)}`);
+        console.log(
+          `[generateFunc] Object: ${JSON.stringify(object, null, 2)}`,
+        );
 
         if (object?.message?.type === "message") {
           console.log(
@@ -124,70 +119,23 @@ export async function generateFunc({
             ? JSON.parse(object.message.content.outputSchema)
             : undefined;
 
-          const flattenedInputSchema = flattenInputSchema({
-            id: funcId,
-            schema: inputSchema,
-          });
+          const internalGraphEdges = object.message.content.internalGraphEdges;
 
-          const edges: {
-            local: Set<string>;
-            imported: Set<string>;
-          } = {
-            local: new Set(),
-            imported: new Set(),
-          };
-
-          for (const input of flattenedInputSchema) {
-            const isLocal = input.refUri.match(
-              /^\/schemas\/local\/([^\/]+)\/output\/properties\/([^\/]+)$/,
-            );
-
-            const isImported = input.refUri.match(
-              /^\/schemas\/imported\/([^\/]+)\/output\/properties\/([^\/]+)$/,
-            );
-
-            if (isLocal?.[1]) {
-              edges.local.add(isLocal[1]);
-            } else if (isImported?.[1]) {
-              edges.imported.add(isImported[1]);
-            }
+          if (internalGraphEdges && internalGraphEdges.length > 0) {
+            await api.funcInternalGraph.addEdges({
+              funcId,
+              edges: internalGraphEdges,
+            });
           }
 
-          console.log("[generateFunc] Creating edges", edges);
-
-          const edgesData = [
-            ...Array.from(edges.local).map((id) => ({
-              type: "consumes" as const,
-              flowId: funcData.flowId,
-              localSourceId: id,
-              targetId: funcId,
-            })),
-            ...Array.from(edges.imported).map((id) => ({
-              type: "consumes" as const,
-              flowId: funcData.flowId,
-              importedSourceId: id,
-              targetId: funcId,
-            })),
-            ...(object.message.content.extraUsedUtilities?.local ?? []).map(
-              (id) => ({
-                type: "requires" as const,
-                flowId: funcData.flowId,
-                localSourceId: id,
-                targetId: funcId,
-              }),
-            ),
-            ...(object.message.content.extraUsedUtilities?.imported ?? []).map(
-              (id) => ({
-                type: "requires" as const,
-                flowId: funcData.flowId,
-                importedSourceId: id,
-                targetId: funcId,
-              }),
-            ),
-          ];
-
-          if (edgesData.length > 0) {
-            await api.edges.createBulk(edgesData);
+          if (
+            object.message.content.helperFunctionIds &&
+            object.message.content.helperFunctionIds.length > 0
+          ) {
+            await api.funcDependencies.createBulk({
+              funcId,
+              dependencyFuncIds: object.message.content.helperFunctionIds,
+            });
           }
 
           const generatedFuncCodePrompt = await getGenerateFuncCodePrompt({
@@ -201,13 +149,10 @@ export async function generateFunc({
             logicalSteps: assistantMessageRawContentToText(
               object.message.content.logicalSteps,
             ),
-            usedLocalUtilitiesIds:
-              object.message.content.extraUsedUtilities?.local,
-            usedImportedUtilitiesIds:
-              object.message.content.extraUsedUtilities?.imported,
+            helperFunctionIds: object.message.content.helperFunctionIds,
             edgeCases: object.message.content.edgeCases,
             errorHandling: object.message.content.errorHandling,
-            dependencies: object.message.content.dependencies as
+            npmDependencies: object.message.content.npmDependencies as
               | {
                   name: string;
                   version: string;
@@ -234,7 +179,7 @@ export async function generateFunc({
               edgeCases: object.message.content.edgeCases,
               errorHandling: object.message.content.errorHandling,
               logicalSteps: object.message.content.logicalSteps,
-              dependencies: object.message.content.dependencies,
+              npmDependencies: object.message.content.npmDependencies,
               code,
             },
           });
@@ -259,254 +204,6 @@ export async function generateFunc({
     }
 
     console.log(`[generateFunc] Stream completed for func ${funcId}`);
-    stream.done();
-  })();
-
-  return stream.value;
-}
-
-export async function generateFlowInputSchema({
-  flowId,
-  conversationId,
-  messages,
-}: {
-  flowId: string;
-  conversationId: string;
-  messages: CoreMessage[];
-}) {
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    redirect("/auth/sign-in");
-  }
-
-  const flowData = await api.flows.byId({
-    id: flowId,
-  });
-
-  if (!flowData.name) {
-    return {
-      status: "error",
-      message: "Flow name is required",
-    };
-  }
-
-  console.log(`[generateFlowInputsSchemas] Starting for flow ${flowId}`);
-  const stream = createStreamableValue<FlowInputSchemaMessage>();
-
-  (async () => {
-    console.log(
-      "[generateFlowInputsSchemas] Streaming response for input schema",
-    );
-    const { partialObjectStream } = streamObject({
-      model: openai("gpt-4o"),
-      system: FLOW_INPUT_SCHEMA_AGENT_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: `I want to create inputs for flow ${flowData.name} (ID: ${flowId})`,
-        },
-        ...messages,
-      ],
-      schema: flowInputSchemaMessageSchema,
-      onFinish: ({ usage, object, error }) => {
-        console.log(
-          `[generateFlowInputsSchemas] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
-        );
-        console.log(
-          `[generateFlowInputsSchemas] Error: ${JSON.stringify(error, null, 2)}`,
-        );
-
-        if (object?.message?.type === "message") {
-          console.log(
-            "[generateFlowInputsSchemas] Adding message to conversation",
-          );
-          api.conversations.addMessage({
-            role: "assistant",
-            content: assistantMessageRawContentToText(object.message.content),
-            rawContent: object.message.content,
-            conversationId,
-          });
-        }
-
-        if (object?.message?.type === "end") {
-          console.log(
-            `[generateFlowInputsSchemas] Processing final input schema for flow ${flowId}`,
-          );
-
-          const description: AssistantMessageRawContent = [
-            {
-              type: "text",
-              value: "Generating the following input schema: ",
-            },
-            ...object.message.content.description,
-          ];
-
-          api.conversations.addMessage({
-            role: "assistant",
-            content: assistantMessageRawContentToText(description),
-            rawContent: description,
-            conversationId,
-          });
-
-          console.log(
-            `[generateFlowInputsSchemas] Updating flow ${flowId} with generated input schema`,
-          );
-
-          api.flows.update({
-            where: { id: flowId },
-            payload: {
-              inputSchema: JSON.parse(object.message.content.inputSchema),
-            },
-          });
-
-          api.conversations.addMessage({
-            role: "assistant",
-            content: "Your input schema has been built successfully!",
-            rawContent: [
-              {
-                type: "text",
-                value: "Your input schema has been built successfully!",
-              },
-            ],
-            conversationId,
-          });
-        }
-      },
-    });
-
-    for await (const partialObject of partialObjectStream) {
-      stream.update(partialObject as FlowInputSchemaMessage);
-    }
-
-    console.log(
-      `[generateFlowInputsSchemas] Stream completed for flow ${flowId}`,
-    );
-
-    stream.done();
-  })();
-
-  return stream.value;
-}
-
-export async function generateFlowOutputSchema({
-  flowId,
-  messages,
-  conversationId,
-}: {
-  flowId: string;
-  messages: CoreMessage[];
-  conversationId: string;
-}) {
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    redirect("/auth/sign-in");
-  }
-
-  const flowData = await api.flows.byId({
-    id: flowId,
-  });
-
-  if (!flowData.name) {
-    return {
-      status: "error",
-      message: "Flow name is required",
-    };
-  }
-
-  console.log(`[generateFlowOutputSchema] Starting for flow ${flowId}`);
-  const stream = createStreamableValue<FlowOutputSchemaMessage>();
-
-  (async () => {
-    console.log(
-      `[generateFlowOutputSchema] Streaming response for flow ${flowId}`,
-    );
-    const { partialObjectStream } = streamObject({
-      model: openai("gpt-4o"),
-      system: FLOW_OUTPUT_SCHEMA_AGENT_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: `I want to create outputs for flow ${flowData.name} (ID: ${flowId})`,
-        },
-        ...messages,
-      ],
-      schema: flowOutputSchemaMessageSchema,
-      onFinish: ({ usage, object, error }) => {
-        console.log(
-          `[generateFlowOutputSchema] Completed with usage: ${usage.promptTokens} prompt, ${usage.completionTokens} completion, ${usage.totalTokens} total`,
-        );
-        console.log(
-          `[generateFlowOutputSchema] Error: ${JSON.stringify(error, null, 2)}`,
-        );
-
-        if (object?.message?.type === "message") {
-          console.log(
-            "[generateFlowOutputSchema] Adding message to conversation",
-          );
-
-          api.conversations.addMessage({
-            role: "assistant",
-            content: assistantMessageRawContentToText(object.message.content),
-            rawContent: object.message.content,
-            conversationId,
-          });
-        }
-
-        if (object?.message?.type === "end") {
-          console.log(
-            `[generateFlowOutputSchema] Processing final output schema for flow ${flowId}`,
-          );
-          const description: AssistantMessageRawContent = [
-            {
-              type: "text",
-              value: "Generating the following output schema: ",
-            },
-            ...object.message.content.description,
-          ];
-
-          api.conversations.addMessage({
-            role: "assistant",
-            content: assistantMessageRawContentToText(description),
-            rawContent: description,
-            conversationId,
-          });
-
-          console.log(
-            `[generateFlowOutputSchema] Updating flow ${flowId} with generated output schema`,
-          );
-
-          api.flows.update({
-            where: { id: flowId },
-            payload: {
-              outputSchema: JSON.parse(object.message.content.outputSchema),
-            },
-          });
-
-          api.conversations.addMessage({
-            role: "assistant",
-            content: "Your output schema has been built successfully!",
-            rawContent: [
-              {
-                type: "text",
-                value: "Your output schema has been built successfully!",
-              },
-            ],
-            conversationId,
-          });
-        }
-      },
-    });
-
-    for await (const partialObject of partialObjectStream) {
-      stream.update(partialObject as FlowOutputSchemaMessage);
-    }
-
-    console.log(
-      `[generateFlowOutputSchema] Stream completed for flow ${flowId}`,
-    );
-
     stream.done();
   })();
 

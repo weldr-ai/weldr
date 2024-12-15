@@ -15,7 +15,7 @@ import {
 const router = createRouter();
 
 router.post(
-  "/workspaces",
+  "/apps",
   eventHandler(async (event) => {
     if (event.headers.get("content-type") !== "application/json") {
       setResponseStatus(event, 415);
@@ -23,7 +23,7 @@ router.post(
     }
 
     const validationSchema = z.object({
-      workspaceId: z.string(),
+      appId: z.string(),
     });
 
     const body = await readValidatedBody(event, validationSchema.safeParse);
@@ -33,10 +33,10 @@ router.post(
       return { message: "Invalid request body" };
     }
 
-    const { workspaceId } = body.data;
+    const { appId } = body.data;
 
     try {
-      const flyApp = await createFlyApp(workspaceId);
+      const flyApp = await createFlyApp(appId);
 
       if (!flyApp) {
         setResponseStatus(event, 500);
@@ -44,14 +44,14 @@ router.post(
       }
 
       await createDockerImage({
-        workspaceId,
+        appId,
         dockerImageName: "integramind/engine",
         outputTag: "engine",
       });
 
-      const executorMachine = await createFlyMachine(
-        workspaceId,
-        `registry.fly.io/${workspaceId}:engine`,
+      const engineMachine = await createFlyMachine(
+        appId,
+        `registry.fly.io/${appId}:engine`,
         {
           guest: {
             cpus: 1,
@@ -60,27 +60,27 @@ router.post(
         },
       );
 
-      if (!executorMachine) {
+      if (!engineMachine) {
         setResponseStatus(event, 500);
-        await deleteFlyApp(workspaceId);
+        await deleteFlyApp(appId);
         return { message: "Failed to create new App" };
       }
 
       setResponseStatus(event, 201);
       return {
-        executorMachineId: executorMachine.id,
+        engineMachineId: engineMachine.id,
       };
     } catch (error) {
       console.error(error);
       setResponseStatus(event, 500);
-      await deleteFlyApp(workspaceId);
+      await deleteFlyApp(appId);
       return { message: "Failed to create Fly app" };
     }
   }),
 );
 
 router.delete(
-  "/workspaces/:workspaceId",
+  "/apps/:appId",
   eventHandler(async (event) => {
     if (event.headers.get("content-type") !== "application/json") {
       setResponseStatus(event, 415);
@@ -88,7 +88,7 @@ router.delete(
     }
 
     const validationSchema = z.object({
-      workspaceId: z.string(),
+      appId: z.string(),
     });
 
     const body = await readValidatedBody(event, validationSchema.safeParse);
@@ -98,17 +98,17 @@ router.delete(
       return { message: "Invalid request body" };
     }
 
-    const { workspaceId } = body.data;
+    const { appId } = body.data;
 
     try {
-      await deleteFlyApp(workspaceId);
+      await deleteFlyApp(appId);
 
       setResponseStatus(event, 200);
-      return { message: "Workspace deleted" };
+      return { message: "App deleted" };
     } catch (error) {
       console.error(error);
       setResponseStatus(event, 500);
-      return { message: "Failed to delete workspace" };
+      return { message: "Failed to delete app" };
     }
   }),
 );

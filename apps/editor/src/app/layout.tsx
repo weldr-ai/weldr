@@ -31,12 +31,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }): Promise<JSX.Element> {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body
         className={cn(
           "flex min-h-screen w-full flex-col bg-background font-sans antialiased",
           poppins.variable,
         )}
+        suppressHydrationWarning
       >
         <ThemeProvider
           attribute="class"
