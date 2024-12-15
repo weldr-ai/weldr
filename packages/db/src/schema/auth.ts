@@ -3,6 +3,7 @@ import { relations } from "drizzle-orm";
 import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { conversationMessages, conversations } from "./conversations";
+import { endpoints } from "./endpoints";
 import { environmentVariables } from "./environment-variables";
 import { flows } from "./flows";
 import { funcs } from "./funcs";
@@ -30,6 +31,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   environmentVariables: many(environmentVariables),
   conversations: many(conversations),
   conversationsMessages: many(conversationMessages),
+  endpoints: many(endpoints),
 }));
 
 export const sessions = pgTable("sessions", {

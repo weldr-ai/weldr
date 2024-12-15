@@ -6,6 +6,7 @@ export default {
   schema: [
     "./src/schema/auth.ts",
     "./src/schema/conversations.ts",
+    "./src/schema/endpoints.ts",
     "./src/schema/flows.ts",
     "./src/schema/integrations.ts",
     "./src/schema/funcs.ts",
