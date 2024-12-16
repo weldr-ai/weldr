@@ -1,5 +1,5 @@
 import superjson from "superjson";
-import type { Dependency, Utility } from "..";
+import type { Dependency, Module } from "..";
 import {
   createLibraries,
   createTemporaryDirectory,
@@ -20,7 +20,7 @@ interface MockRequestOptions {
 interface ExecuteEndpointOptions {
   request: MockRequestOptions;
   code: string;
-  utilities?: Utility[];
+  modules?: Module[];
   dependencies?: Dependency[];
   environmentVariablesMap?: Record<string, string>;
   testEnv?: { key: string; value: string }[];
@@ -39,7 +39,7 @@ async function createIndexFile({
 export async function executeEndpoint({
   request,
   code,
-  utilities,
+  modules,
   dependencies,
   environmentVariablesMap,
   testEnv,
@@ -59,9 +59,9 @@ export async function executeEndpoint({
   }
 
   // Create utilities
-  if (utilities && utilities.length > 0) {
+  if (modules && modules.length > 0) {
     console.log("[executeEndpoint] Setting up utilities...");
-    await createLibraries({ tempDir, utilities, environmentVariablesMap });
+    await createLibraries({ tempDir, modules, environmentVariablesMap });
   }
 
   // Write test environment variables

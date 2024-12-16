@@ -48,7 +48,7 @@ export const engineRouter = {
       const resourceIds = func.resources?.map((resource) => resource.id);
 
       const npmDependencies: NpmDependency[] = func.npmDependencies ?? [];
-      const modules: { path: string; code: string }[] = [];
+      const modules: { path: string; content: string }[] = [];
 
       if (resourceIds && resourceIds.length > 0) {
         const result = await ctx.db.query.resources.findMany({
@@ -74,14 +74,14 @@ export const engineRouter = {
         modules.push(
           ...result.flatMap((resource) =>
             resource.integration.modules.reduce<
-              { path: string; code: string }[]
+              { path: string; content: string }[]
             >(
               (acc, module) =>
                 acc.concat(
-                  module.funcs.reduce<{ path: string; code: string }[]>(
+                  module.funcs.reduce<{ path: string; content: string }[]>(
                     (funcAcc, func) => {
                       if (module.path && func.code) {
-                        funcAcc.push({ path: module.path, code: func.code });
+                        funcAcc.push({ path: module.path, content: func.code });
                       }
                       return funcAcc;
                     },
@@ -170,6 +170,8 @@ export const engineRouter = {
             ? testEnvironmentVariablesData
             : undefined,
       };
+
+      console.log(JSON.stringify(requestBody, null, 2));
 
       try {
         const executionResult = await ofetch<{

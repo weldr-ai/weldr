@@ -1,4 +1,3 @@
-import { createServer } from "node:http";
 import {
   createApp,
   createRouter,
@@ -7,12 +6,13 @@ import {
   setResponseStatus,
   toNodeListener,
 } from "h3";
+import { createServer } from "node:http";
 import { z } from "zod";
 import { executeEndpoint } from "./lib/endpoints-executor";
 import { executeFunction } from "./lib/functions-executor";
 
-export interface Utility {
-  filePath: string;
+export interface Module {
+  path: string;
   content: string;
 }
 
@@ -55,9 +55,9 @@ router.post(
         })
         .array()
         .optional(),
-      utilities: z
+      modules: z
         .object({
-          filePath: z.string(),
+          path: z.string(),
           content: z.string(),
         })
         .array()
@@ -71,6 +71,8 @@ router.post(
 
     const body = await readValidatedBody(event, validationSchema.safeParse);
 
+    console.log(JSON.stringify(body, null, 2));
+
     if (body.error) {
       setResponseStatus(event, 400);
       return { message: "Invalid request body" };
@@ -82,7 +84,7 @@ router.post(
       functionArgs,
       hasInput,
       dependencies,
-      utilities,
+      modules,
       environmentVariablesMap,
       testEnv,
     } = body.data;
@@ -91,7 +93,7 @@ router.post(
       code,
       functionName,
       functionArgs: functionArgs as { name: string; value: unknown },
-      utilities,
+      modules,
       dependencies,
       hasInput,
       environmentVariablesMap,
@@ -129,9 +131,9 @@ router.post(
         })
         .array()
         .optional(),
-      utilities: z
+      modules: z
         .object({
-          filePath: z.string(),
+          path: z.string(),
           content: z.string(),
         })
         .array()
@@ -153,7 +155,7 @@ router.post(
     const {
       code,
       request,
-      utilities,
+      modules,
       dependencies,
       environmentVariablesMap,
       testEnv,
@@ -162,7 +164,7 @@ router.post(
     const output = await executeEndpoint({
       code,
       request,
-      utilities,
+      modules,
       dependencies,
       environmentVariablesMap,
       testEnv,

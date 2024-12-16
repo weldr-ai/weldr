@@ -1,10 +1,10 @@
+import Handlebars from "handlebars";
 import { exec as exec_ } from "node:child_process";
 import fs from "node:fs/promises";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import Handlebars from "handlebars";
-import type { Dependency, Utility } from "..";
+import type { Dependency, Module } from "..";
 
 export const exec = promisify(exec_);
 
@@ -67,34 +67,34 @@ export async function writeTestEnvFile({
 
 export async function createLibraries({
   tempDir,
-  utilities,
+  modules,
   environmentVariablesMap,
 }: {
   tempDir: string;
-  utilities: Utility[];
+  modules: Module[];
   environmentVariablesMap?: Record<string, string>;
 }) {
-  const groupedUtilities = utilities.reduce(
-    (acc, utility) => {
-      const key = utility.filePath;
+  const groupedModules = modules.reduce(
+    (acc, module) => {
+      const key = module.path;
       if (!acc[key]) {
         acc[key] = [];
       }
-      acc[key].push(utility);
+      acc[key].push(module);
       return acc;
     },
-    {} as Record<string, Utility[]>,
+    {} as Record<string, Module[]>,
   );
 
-  for (const [utilityPath, lib] of Object.entries(groupedUtilities)) {
+  for (const [modulePath, lib] of Object.entries(groupedModules)) {
     if (!lib || lib.length === 0) continue;
 
-    const utilityDir = path.join(tempDir, "lib", path.dirname(utilityPath));
+    const moduleDir = path.join(tempDir, "lib", path.dirname(modulePath));
 
-    console.log(`[createLibraries] Creating directory: ${utilityDir}`);
-    await fs.mkdir(utilityDir, { recursive: true });
+    console.log(`[createLibraries] Creating directory: ${moduleDir}`);
+    await fs.mkdir(moduleDir, { recursive: true });
 
-    const fullPath = path.join(tempDir, "lib", utilityPath);
+    const fullPath = path.join(tempDir, "lib", modulePath);
     console.log(`[createLibraries] Creating file: ${fullPath}`);
 
     const template = lib.map(({ content }) => content).join("\n");

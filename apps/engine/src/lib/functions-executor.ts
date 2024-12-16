@@ -1,8 +1,8 @@
+import Handlebars from "handlebars";
 import fs from "node:fs/promises";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import Handlebars from "handlebars";
-import type { Dependency, Utility } from "../index";
+import type { Dependency, Module } from "../index";
 import {
   createLibraries,
   createTemporaryDirectory,
@@ -19,7 +19,7 @@ interface ExecuteFunctionOptions {
   hasInput: boolean;
   functionName: string;
   functionArgs?: Record<string, unknown>;
-  utilities?: Utility[];
+  modules?: Module[];
   dependencies?: Dependency[];
   environmentVariablesMap?: Record<string, string>;
   testEnv?: { key: string; value: string }[];
@@ -67,7 +67,7 @@ export async function executeFunction({
   functionName,
   functionArgs,
   hasInput,
-  utilities,
+  modules,
   dependencies,
   environmentVariablesMap,
   testEnv,
@@ -93,9 +93,9 @@ export async function executeFunction({
   }
 
   // Create utilities
-  if (utilities && utilities.length > 0) {
+  if (modules && modules.length > 0) {
     console.log("[executeFunction] Setting up utilities...");
-    await createLibraries({ tempDir, utilities, environmentVariablesMap });
+    await createLibraries({ tempDir, modules, environmentVariablesMap });
   }
 
   // Write test environment variables

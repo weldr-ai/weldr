@@ -61,7 +61,177 @@ export function EndpointView({
   const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
 
   const [messages, setMessages] = useState<ConversationMessage[]>(
-    endpoint.conversation?.messages ?? [],
+    endpoint.conversation?.messages && endpoint.conversation.messages.length > 0
+      ? endpoint.conversation.messages
+      : [
+          {
+            role: "user",
+            content:
+              "I want to create an endpoint that calculates how many stocks a user can buy with their balance. I want to use getStocksCount and getStockPrice functions.",
+            rawContent: [
+              {
+                type: "text",
+                value:
+                  "I want to create an endpoint that calculates how many stocks a user can buy with their balance. I want to use ",
+              },
+              {
+                type: "reference",
+                referenceType: "function",
+                name: "getStocksCount",
+              },
+              {
+                type: "text",
+                value: " and ",
+              },
+              {
+                type: "reference",
+                referenceType: "function",
+                name: "getStockPrice",
+              },
+              {
+                type: "text",
+                value: " functions.",
+              },
+            ],
+            createdAt: new Date("2024-01-01T10:00:00Z"),
+          },
+          {
+            role: "assistant",
+            content:
+              "I'll help you create an endpoint that calculates the number of stocks a user can buy based on their balance. We'll use the getStocksCount and getStockPrice functions. What inputs would you like the endpoint to accept?",
+            rawContent: [
+              {
+                type: "text",
+                value:
+                  "I'll help you create an endpoint that calculates the number of stocks a user can buy based on their balance. We'll use the ",
+              },
+              {
+                type: "reference",
+                referenceType: "function",
+                name: "getStocksCount",
+              },
+              {
+                type: "text",
+                value: " and ",
+              },
+              {
+                type: "reference",
+                referenceType: "function",
+                name: "getStockPrice",
+              },
+              {
+                type: "text",
+                value:
+                  " functions. What inputs would you like the endpoint to accept?",
+              },
+            ],
+            createdAt: new Date("2024-01-01T10:01:00Z"),
+          },
+          {
+            role: "user",
+            content:
+              "The endpoint should accept a username to look up their balance and a stock ticker symbol.",
+            rawContent: [
+              {
+                type: "text",
+                value:
+                  "The endpoint should accept a username to look up their balance and a stock ticker symbol.",
+              },
+            ],
+            createdAt: new Date("2024-01-01T10:02:00Z"),
+          },
+          {
+            role: "assistant",
+            content:
+              "I'll design the endpoint with the following specifications:\n\n1. HTTP Method: POST\n2. Path: /calculate-buyable-stocks\n3. Input parameters:\n   - username (string)\n   - ticker (string)\n\nThe endpoint will:\n1. Use getStockPrice to get the current price of the stock\n2. Use getStocksCount to get the user's balance\n3. Calculate the maximum number of stocks they can buy by dividing their balance by the stock price\n\nDoes this approach sound good to you?",
+            rawContent: [
+              {
+                type: "text",
+                value:
+                  "I'll design the endpoint with the following specifications:\n\n1. HTTP Method: POST\n2. Path: /calculate-buyable-stocks\n3. Input parameters:\n   - username (string)\n   - ticker (string)\n\nThe endpoint will:\n1. Use ",
+              },
+              {
+                type: "reference",
+                referenceType: "function",
+                name: "getStockPrice",
+              },
+              {
+                type: "text",
+                value: " to get the current price of the stock\n2. Use ",
+              },
+              {
+                type: "reference",
+                referenceType: "function",
+                name: "getStocksCount",
+              },
+              {
+                type: "text",
+                value:
+                  " to get the user's balance\n3. Calculate the maximum number of stocks they can buy by dividing their balance by the stock price\n\nDoes this approach sound good to you?",
+              },
+            ],
+            createdAt: new Date("2024-01-01T10:03:00Z"),
+          },
+          {
+            role: "user",
+            content: "Yes, that sounds perfect! Please generate the endpoint.",
+            rawContent: [
+              {
+                type: "text",
+                value:
+                  "Yes, that sounds perfect! Please generate the endpoint.",
+              },
+            ],
+            createdAt: new Date("2024-01-01T10:04:00Z"),
+          },
+          {
+            role: "assistant",
+            content:
+              "Generating the following endpoint: POST /calculate-buyable-stocks that accepts username and ticker parameters. The endpoint will use getStocksCount to fetch the user's balance and getStockPrice to get the current stock price, then calculate the maximum number of stocks that can be purchased.",
+            rawContent: [
+              {
+                type: "text",
+                value: "Generating the following endpoint: ",
+              },
+              {
+                type: "text",
+                value:
+                  "POST /calculate-buyable-stocks that accepts username and ticker parameters. The endpoint will use ",
+              },
+              {
+                type: "reference",
+                referenceType: "function",
+                name: "getStocksCount",
+              },
+              {
+                type: "text",
+                value: " to fetch the user's balance and ",
+              },
+              {
+                type: "reference",
+                referenceType: "function",
+                name: "getStockPrice",
+              },
+              {
+                type: "text",
+                value:
+                  " to get the current stock price, then calculate the maximum number of stocks that can be purchased.",
+              },
+            ],
+            createdAt: new Date("2024-01-01T10:05:00Z"),
+          },
+          {
+            role: "assistant",
+            content: "Your endpoint has been built successfully!",
+            rawContent: [
+              {
+                type: "text",
+                value: "Your endpoint has been built successfully!",
+              },
+            ],
+            createdAt: new Date("2024-01-01T10:06:00Z"),
+          },
+        ],
   );
 
   const [userMessageContent, setUserMessageContent] = useState<string | null>(
@@ -307,47 +477,49 @@ export function EndpointView({
   return (
     <ResizablePanelGroup direction="horizontal" className="flex size-full">
       <ResizablePanel defaultSize={60} minSize={30}>
-        <div className="flex h-full flex-col p-4">
-          <ScrollArea className="flex-grow mb-4" ref={scrollAreaRef}>
-            <MessageList
-              messages={messages}
-              isThinking={isThinking}
-              isGenerating={isGeneratingCode}
-            />
-            <div ref={chatHistoryEndRef} />
-          </ScrollArea>
+        <div className="flex h-full flex-col p-8">
+          <div className="flex flex-col h-full border bg-muted rounded-md p-4">
+            <ScrollArea className="flex-grow mb-4" ref={scrollAreaRef}>
+              <MessageList
+                messages={messages}
+                isThinking={isThinking}
+                isGenerating={isGeneratingCode}
+              />
+              <div ref={chatHistoryEndRef} />
+            </ScrollArea>
 
-          <div className="relative">
-            <Editor
-              className="h-full"
-              id={endpoint.id}
-              references={references}
-              editorRef={editorRef}
-              placeholder="Chat about your endpoint..."
-              onChange={onChatChange}
-              onSubmit={async () => {
-                if (userMessageContent && !isGenerating) {
-                  await handleOnSubmit();
-                }
-              }}
-            />
-            <Button
-              type="submit"
-              disabled={!userMessageContent || isGenerating}
-              size="sm"
-              className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
-            >
-              Send
-              <span className="ml-1">
-                <span className="px-1 py-0.5 bg-white/20 rounded-sm disabled:text-muted-foreground">
-                  {typeof window !== "undefined" &&
-                  window.navigator?.userAgent.toLowerCase().includes("mac")
-                    ? "⌘"
-                    : "Ctrl"}
-                  ⏎
+            <div className="relative">
+              <Editor
+                className="h-full"
+                id={endpoint.id}
+                references={references}
+                editorRef={editorRef}
+                placeholder="Chat about your endpoint..."
+                onChange={onChatChange}
+                onSubmit={async () => {
+                  if (userMessageContent && !isGenerating) {
+                    await handleOnSubmit();
+                  }
+                }}
+              />
+              <Button
+                type="submit"
+                disabled={!userMessageContent || isGenerating}
+                size="sm"
+                className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
+              >
+                Send
+                <span className="ml-1">
+                  <span className="px-1 py-0.5 bg-white/20 rounded-sm disabled:text-muted-foreground">
+                    {typeof window !== "undefined" &&
+                    window.navigator?.userAgent.toLowerCase().includes("mac")
+                      ? "⌘"
+                      : "Ctrl"}
+                    ⏎
+                  </span>
                 </span>
-              </span>
-            </Button>
+              </Button>
+            </div>
           </div>
         </div>
       </ResizablePanel>
@@ -372,6 +544,48 @@ export function EndpointView({
                         [endpoint.httpMethod.toLowerCase()]: {
                           summary: endpoint.name,
                           description: endpoint.description,
+                          requestBody: {
+                            required: true,
+                            content: {
+                              "application/json": {
+                                schema: {
+                                  type: "object",
+                                  required: ["username", "ticker"],
+                                  properties: {
+                                    username: {
+                                      type: "string",
+                                      description: "Username of the account",
+                                    },
+                                    ticker: {
+                                      type: "string",
+                                      description: "Stock ticker symbol",
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          },
+                          responses: {
+                            "200": {
+                              description: "Successful response",
+                              content: {
+                                "application/json": {
+                                  schema: {
+                                    type: "object",
+                                    properties: {
+                                      count: {
+                                        type: "integer",
+                                        description: "Number of stocks",
+                                      },
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                            "400": {
+                              description: "Bad request",
+                            },
+                          },
                         },
                       },
                     },
