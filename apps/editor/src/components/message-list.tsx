@@ -130,7 +130,20 @@ function MessageItem({ message }: { message: ConversationMessage }) {
 }
 
 function TestRunItem({ testRun }: { testRun: TestRun }) {
-  const stdout = testRun.stdout ? SuperJSON.parse(testRun.stdout) : undefined;
+  const stdout = testRun.stdout
+    ? (() => {
+        // Find the JSON part of the output using regex
+        const jsonMatch = testRun.stdout?.match(/\{.*\}/s);
+        if (!jsonMatch) return undefined;
+
+        try {
+          return SuperJSON.parse(jsonMatch[0]);
+        } catch (e) {
+          console.error("Failed to parse JSON:", e);
+          return undefined;
+        }
+      })()
+    : undefined;
 
   return (
     <div className="flex w-full items-start">
@@ -140,8 +153,10 @@ function TestRunItem({ testRun }: { testRun: TestRun }) {
       <div className="flex ml-3 w-full h-48 bg-background rounded-md">
         <ScrollArea className="w-full max-h-48 px-1 py-2">
           <pre>
-            {testRun.stderr && <p className="text-red-500">{testRun.stderr}</p>}
-            {testRun.stdout && <JsonViewer data={stdout} />}
+            {testRun.stderr && (
+              <p className="text-xs text-red-500">{testRun.stderr}</p>
+            )}
+            {testRun.stdout && <JsonViewer data={stdout ?? {}} />}
           </pre>
         </ScrollArea>
       </div>
