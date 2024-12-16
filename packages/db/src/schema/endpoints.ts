@@ -4,19 +4,22 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
+import { conversations } from "./conversations";
+import { funcs } from "./funcs";
 import { workspaces } from "./workspaces";
 
 export const httpMethods = pgEnum("http_methods", [
-  "GET",
-  "POST",
-  "PUT",
-  "DELETE",
-  "PATCH",
+  "get",
+  "post",
+  "put",
+  "delete",
+  "patch",
 ]);
 
 export const endpoints = pgTable(
@@ -29,12 +32,15 @@ export const endpoints = pgTable(
     description: text("description"),
     httpMethod: httpMethods("http_method").notNull(),
     path: text("path").notNull(),
-    routeHandler: text("route_handler"),
+    code: jsonb("code"),
     openApiSpec: jsonb("open_api_spec"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date())
+      .notNull(),
+    conversationId: text("conversation_id")
+      .references(() => conversations.id)
       .notNull(),
     userId: text("user_id")
       .references(() => users.id)
@@ -57,4 +63,24 @@ export const endpointsRelations = relations(endpoints, ({ one, many }) => ({
     fields: [endpoints.workspaceId],
     references: [workspaces.id],
   }),
+  conversation: one(conversations, {
+    fields: [endpoints.conversationId],
+    references: [conversations.id],
+  }),
+  funcs: many(funcs),
 }));
+
+export const endpointFuncs = pgTable(
+  "endpoint_funcs",
+  {
+    endpointId: text("endpoint_id")
+      .references(() => endpoints.id)
+      .notNull(),
+    funcId: text("func_id")
+      .references(() => funcs.id)
+      .notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.endpointId, table.funcId] }),
+  }),
+);

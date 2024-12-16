@@ -1,50 +1,106 @@
 import { and, eq } from "@integramind/db";
-import { endpoints } from "@integramind/db/schema";
+import { conversations, endpoints } from "@integramind/db/schema";
 import {
   insertEndpointSchema,
   updateEndpointSchema,
 } from "@integramind/shared/validators/endpoints";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
-import { protectedProcedure } from "src/trpc";
 import { z } from "zod";
+import { protectedProcedure } from "../trpc";
 
 export const endpointsRouter = {
   create: protectedProcedure
     .input(insertEndpointSchema)
     .mutation(async ({ ctx, input }) => {
-      const workspace = await ctx.db.query.workspaces.findFirst({
-        where: (workspaces, { eq }) =>
-          and(
-            eq(workspaces.id, input.workspaceId),
-            eq(workspaces.userId, ctx.session.user.id),
-          ),
-      });
+      try {
+        const result = await ctx.db.transaction(async (tx) => {
+          const workspace = await tx.query.workspaces.findFirst({
+            where: (workspaces, { eq }) =>
+              and(
+                eq(workspaces.id, input.workspaceId),
+                eq(workspaces.userId, ctx.session.user.id),
+              ),
+          });
 
-      if (!workspace) {
+          if (!workspace) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Workspace not found",
+            });
+          }
+
+          const conversation = await tx
+            .insert(conversations)
+            .values({
+              userId: ctx.session.user.id,
+            })
+            .returning({ id: conversations.id });
+
+          if (!conversation[0]) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create conversation",
+            });
+          }
+
+          const result = await tx
+            .insert(endpoints)
+            .values({
+              ...input,
+              userId: ctx.session.user.id,
+              workspaceId: workspace.id,
+              conversationId: conversation[0].id,
+            })
+            .returning({ id: endpoints.id });
+
+          if (!result[0]) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create endpoint",
+            });
+          }
+
+          return result[0];
+        });
+        return result;
+      } catch (error) {
+        console.error(error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Workspace not found",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create endpoint",
         });
       }
-
+    }),
+  byId: protectedProcedure
+    .input(z.object({ id: z.string().cuid2() }))
+    .query(async ({ ctx, input }) => {
       try {
-        const result = await ctx.db
-          .insert(endpoints)
-          .values({
-            ...input,
-            userId: ctx.session.user.id,
-            workspaceId: workspace.id,
-          })
-          .returning({ id: endpoints.id });
+        const endpoint = await ctx.db.query.endpoints.findFirst({
+          where: (endpoints, { eq }) =>
+            and(
+              eq(endpoints.id, input.id),
+              eq(endpoints.userId, ctx.session.user.id),
+            ),
+          with: {
+            conversation: {
+              with: {
+                messages: true,
+              },
+            },
+          },
+        });
 
-        if (!result[0]) {
+        if (!endpoint) {
           throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to create endpoint",
+            code: "NOT_FOUND",
+            message: "Endpoint not found",
           });
         }
 
-        return result[0];
+        return endpoint;
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {
@@ -53,40 +109,10 @@ export const endpointsRouter = {
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create endpoint",
+          message: "Failed to get endpoint",
         });
       }
     }),
-  byId: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
-    try {
-      const endpoint = await ctx.db.query.endpoints.findFirst({
-        where: (endpoints, { eq }) =>
-          and(
-            eq(endpoints.id, input),
-            eq(endpoints.userId, ctx.session.user.id),
-          ),
-      });
-
-      if (!endpoint) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Endpoint not found",
-        });
-      }
-
-      return endpoint;
-    } catch (error) {
-      console.error(error);
-      if (error instanceof TRPCError) {
-        throw error;
-      }
-
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to get endpoint",
-      });
-    }
-  }),
   list: protectedProcedure
     .input(z.object({ workspaceId: z.string().cuid2() }))
     .query(async ({ ctx, input }) => {

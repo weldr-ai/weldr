@@ -8,10 +8,10 @@ import type { CanvasEdge, CanvasNode, CanvasNodeData } from "~/types";
 export default async function ModulePage({
   params,
 }: {
-  params: Promise<{ moduleId: string }>;
+  params: Promise<{ moduleId: string; workspaceId: string }>;
 }): Promise<JSX.Element | undefined> {
   try {
-    const { moduleId } = await params;
+    const { moduleId, workspaceId } = await params;
     const module = await api.modules.byId({
       id: moduleId,
     });
@@ -34,6 +34,7 @@ export default async function ModulePage({
       <div className="flex size-full">
         <Canvas
           moduleId={moduleId}
+          workspaceId={workspaceId}
           initialNodes={initialNodes}
           initialEdges={initialEdges}
         />

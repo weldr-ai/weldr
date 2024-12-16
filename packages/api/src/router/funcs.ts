@@ -235,4 +235,18 @@ export const funcsRouter = {
 
       return result;
     }),
+  byWorkspaceId: protectedProcedure
+    .input(z.object({ workspaceId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.funcs.findMany({
+        where: eq(funcs.workspaceId, input.workspaceId),
+        with: {
+          module: true,
+        },
+      });
+
+      return result.filter((func) =>
+        Boolean(func.name && func.code && func.description),
+      );
+    }),
 } satisfies TRPCRouterRecord;

@@ -1,5 +1,5 @@
 {
-  "id": "83a26d96-5572-42b1-a95e-9f238aa76da9",
+  "id": "c682be3a-17b6-4996-86f9-978242642a94",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -404,6 +404,55 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.endpoint_funcs": {
+      "name": "endpoint_funcs",
+      "schema": "",
+      "columns": {
+        "endpoint_id": {
+          "name": "endpoint_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "func_id": {
+          "name": "func_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "endpoint_funcs_endpoint_id_endpoints_id_fk": {
+          "name": "endpoint_funcs_endpoint_id_endpoints_id_fk",
+          "tableFrom": "endpoint_funcs",
+          "tableTo": "endpoints",
+          "columnsFrom": ["endpoint_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "endpoint_funcs_func_id_funcs_id_fk": {
+          "name": "endpoint_funcs_func_id_funcs_id_fk",
+          "tableFrom": "endpoint_funcs",
+          "tableTo": "funcs",
+          "columnsFrom": ["func_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "endpoint_funcs_endpoint_id_func_id_pk": {
+          "name": "endpoint_funcs_endpoint_id_func_id_pk",
+          "columns": ["endpoint_id", "func_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.endpoints": {
       "name": "endpoints",
       "schema": "",
@@ -439,9 +488,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "route_handler": {
-          "name": "route_handler",
-          "type": "text",
+        "code": {
+          "name": "code",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -465,6 +514,12 @@
           "notNull": true,
           "default": "now()"
         },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "user_id": {
           "name": "user_id",
           "type": "text",
@@ -480,6 +535,15 @@
       },
       "indexes": {},
       "foreignKeys": {
+        "endpoints_conversation_id_conversations_id_fk": {
+          "name": "endpoints_conversation_id_conversations_id_fk",
+          "tableFrom": "endpoints",
+          "tableTo": "conversations",
+          "columnsFrom": ["conversation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "endpoints_user_id_users_id_fk": {
           "name": "endpoints_user_id_users_id_fk",
           "tableFrom": "endpoints",
@@ -800,6 +864,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {
@@ -849,6 +919,15 @@
           "tableFrom": "funcs",
           "tableTo": "modules",
           "columnsFrom": ["module_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "funcs_workspace_id_workspaces_id_fk": {
+          "name": "funcs_workspace_id_workspaces_id_fk",
+          "tableFrom": "funcs",
+          "tableTo": "workspaces",
+          "columnsFrom": ["workspace_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1503,7 +1582,7 @@
     "public.http_methods": {
       "name": "http_methods",
       "schema": "public",
-      "values": ["GET", "POST", "PUT", "DELETE", "PATCH"]
+      "values": ["get", "post", "put", "delete", "patch"]
     },
     "public.integration_category": {
       "name": "integration_category",

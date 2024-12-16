@@ -15,6 +15,7 @@ import type {
   messageRawContentSchema,
   userMessageRawContentSchema,
 } from "../validators/conversations";
+import type { endpointSchema } from "../validators/endpoints";
 import type { environmentVariableSchema } from "../validators/environment-variables";
 import type { funcResourceSchema, funcSchema } from "../validators/funcs";
 import type {
@@ -63,6 +64,7 @@ export type Conversation = z.infer<typeof conversationSchema>;
 
 export type Resource = z.infer<typeof resourceSchema>;
 export type FuncResource = z.infer<typeof funcResourceSchema>;
+export type Endpoint = z.infer<typeof endpointSchema>;
 
 export type Integration = z.infer<typeof integrationSchema>;
 export type IntegrationType = z.infer<typeof integrationTypeSchema>;

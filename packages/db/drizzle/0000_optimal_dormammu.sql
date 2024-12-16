@@ -1,5 +1,5 @@
 CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant');--> statement-breakpoint
-CREATE TYPE "public"."http_methods" AS ENUM('GET', 'POST', 'PUT', 'DELETE', 'PATCH');--> statement-breakpoint
+CREATE TYPE "public"."http_methods" AS ENUM('get', 'post', 'put', 'delete', 'patch');--> statement-breakpoint
 CREATE TYPE "public"."integration_category" AS ENUM('database');--> statement-breakpoint
 CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "accounts" (
@@ -65,16 +65,23 @@ CREATE TABLE IF NOT EXISTS "conversations" (
 	"user_id" text NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "endpoint_funcs" (
+	"endpoint_id" text NOT NULL,
+	"func_id" text NOT NULL,
+	CONSTRAINT "endpoint_funcs_endpoint_id_func_id_pk" PRIMARY KEY("endpoint_id","func_id")
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "endpoints" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
 	"http_method" "http_methods" NOT NULL,
 	"path" text NOT NULL,
-	"route_handler" text,
+	"code" jsonb,
 	"open_api_spec" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"conversation_id" text NOT NULL,
 	"user_id" text NOT NULL,
 	"workspace_id" text NOT NULL,
 	CONSTRAINT "endpoints_workspace_id_path_http_method_unique" UNIQUE("workspace_id","path","http_method")
@@ -123,7 +130,8 @@ CREATE TABLE IF NOT EXISTS "funcs" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"user_id" text,
 	"conversation_id" text,
-	"module_id" text NOT NULL
+	"module_id" text NOT NULL,
+	"workspace_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "resource_environment_variables" (
@@ -226,6 +234,24 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "endpoint_funcs" ADD CONSTRAINT "endpoint_funcs_endpoint_id_endpoints_id_fk" FOREIGN KEY ("endpoint_id") REFERENCES "public"."endpoints"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "endpoint_funcs" ADD CONSTRAINT "endpoint_funcs_func_id_funcs_id_fk" FOREIGN KEY ("func_id") REFERENCES "public"."funcs"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "endpoints" ADD CONSTRAINT "endpoints_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "endpoints" ADD CONSTRAINT "endpoints_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -269,6 +295,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "funcs" ADD CONSTRAINT "funcs_module_id_modules_id_fk" FOREIGN KEY ("module_id") REFERENCES "public"."modules"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "funcs" ADD CONSTRAINT "funcs_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

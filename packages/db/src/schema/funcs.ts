@@ -20,6 +20,7 @@ import { conversations } from "./conversations";
 import { funcInternalGraph } from "./func-internal-graph";
 import { modules } from "./modules";
 import { testRuns } from "./test-runs";
+import { workspaces } from "./workspaces";
 
 export const funcs = pgTable(
   "funcs",
@@ -52,6 +53,9 @@ export const funcs = pgTable(
     moduleId: text("module_id")
       .references(() => modules.id, { onDelete: "cascade" })
       .notNull(),
+    workspaceId: text("workspace_id")
+      .references(() => workspaces.id, { onDelete: "cascade" })
+      .notNull(),
   },
   (t) => ({
     uniqueName: uniqueIndex("unique_name").on(t.name, t.moduleId),
@@ -62,6 +66,10 @@ export const funcRelations = relations(funcs, ({ one, many }) => ({
   module: one(modules, {
     fields: [funcs.moduleId],
     references: [modules.id],
+  }),
+  workspace: one(workspaces, {
+    fields: [funcs.workspaceId],
+    references: [workspaces.id],
   }),
   conversation: one(conversations, {
     fields: [funcs.conversationId],

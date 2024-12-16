@@ -135,6 +135,7 @@ export const workspacesRouter = {
                 },
               },
             },
+            endpoints: true,
             modules: true,
           },
         });

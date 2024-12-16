@@ -45,6 +45,7 @@ export const funcSchema = z.object({
   conversationId: z.string().nullable(),
   moduleId: z.string(),
   canRun: z.boolean().optional(),
+  workspaceId: z.string(),
   conversation: conversationSchema,
   testRuns: testRunSchema.array(),
   funcDependencies: funcDependencySchema.array(),
@@ -56,6 +57,7 @@ export const insertFuncSchema = z.object({
   moduleId: z.string(),
   positionX: z.number(),
   positionY: z.number(),
+  workspaceId: z.string(),
 });
 
 export const updateFuncSchema = z.object({

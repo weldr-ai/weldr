@@ -28,11 +28,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
+import { cn } from "@integramind/ui/utils";
 import Link from "next/link";
 import { useState } from "react";
 import { useCommandCenterStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
 import { AccountDropdownMenu } from "./account-dropdown-menu";
+import { CreateEndpointDialog } from "./create-endpoint-dialog";
 import { CreateModuleDialog } from "./create-module-dialog";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
@@ -40,9 +42,11 @@ import { DeleteAlertDialog } from "./delete-alert-dialog";
 export function Sidebar({
   workspace,
   initialModules,
+  initialEndpoints,
 }: {
   workspace: RouterOutputs["workspaces"]["byId"];
   initialModules: RouterOutputs["modules"]["list"];
+  initialEndpoints: RouterOutputs["endpoints"]["list"];
 }) {
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
   const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
@@ -56,6 +60,15 @@ export function Sidebar({
     },
     {
       initialData: initialModules,
+    },
+  );
+
+  const { data: endpoints } = api.endpoints.list.useQuery(
+    {
+      workspaceId: workspace.id,
+    },
+    {
+      initialData: initialEndpoints,
     },
   );
 
@@ -174,14 +187,48 @@ export function Sidebar({
               align="start"
               className="bg-muted border w-56"
             >
-              <DropdownMenuLabel className="text-xs">API</DropdownMenuLabel>
+              <DropdownMenuLabel className="flex items-center justify-between text-xs p-0.5">
+                API Endpoints
+                <CreateEndpointDialog size="icon" />
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <ScrollArea className="h-48">
-                <div className="flex items-center justify-center h-48">
-                  <p className="text-xs text-muted-foreground">
-                    No API endpoints found
-                  </p>
-                </div>
+                {endpoints && endpoints.length > 0 ? (
+                  endpoints.map((endpoint) => (
+                    <Link
+                      key={endpoint.id}
+                      href={`/workspaces/${workspace.id}/endpoints/${endpoint.id}`}
+                    >
+                      <DropdownMenuItem className="text-xs">
+                        <span
+                          className={cn(
+                            "text-xs rounded-sm px-1.5 py-0.5 mr-2",
+                            {
+                              "bg-primary/20 text-primary":
+                                endpoint.httpMethod === "get",
+                              "bg-success/20 text-success":
+                                endpoint.httpMethod === "post",
+                              "bg-destructive/20 text-destructive":
+                                endpoint.httpMethod === "delete",
+                              "bg-warning/20 text-warning":
+                                endpoint.httpMethod === "put" ||
+                                endpoint.httpMethod === "patch",
+                            },
+                          )}
+                        >
+                          {endpoint.httpMethod}
+                        </span>
+                        {endpoint.name}
+                      </DropdownMenuItem>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center h-48">
+                    <p className="text-xs text-muted-foreground">
+                      No API endpoints found
+                    </p>
+                  </div>
+                )}
               </ScrollArea>
             </DropdownMenuContent>
           </DropdownMenu>
