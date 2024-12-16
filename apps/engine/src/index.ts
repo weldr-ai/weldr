@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import {
   createApp,
   createRouter,
@@ -6,7 +7,6 @@ import {
   setResponseStatus,
   toNodeListener,
 } from "h3";
-import { createServer } from "node:http";
 import { z } from "zod";
 import { executeEndpoint } from "./lib/endpoints-executor";
 import { executeFunction } from "./lib/functions-executor";

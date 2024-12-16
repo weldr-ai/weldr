@@ -167,6 +167,21 @@ export const endpointsRouter = {
     .input(z.object({ id: z.string().cuid2() }))
     .mutation(async ({ ctx, input }) => {
       try {
+        const endpoint = await ctx.db.query.endpoints.findFirst({
+          where: (endpoints, { eq }) =>
+            and(
+              eq(endpoints.id, input.id),
+              eq(endpoints.userId, ctx.session.user.id),
+            ),
+        });
+
+        if (!endpoint) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Endpoint not found",
+          });
+        }
+
         await ctx.db
           .delete(endpoints)
           .where(
@@ -175,6 +190,10 @@ export const endpointsRouter = {
               eq(endpoints.userId, ctx.session.user.id),
             ),
           );
+
+        await ctx.db
+          .delete(conversations)
+          .where(eq(conversations.id, endpoint.conversationId));
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {

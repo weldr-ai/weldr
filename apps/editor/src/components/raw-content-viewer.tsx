@@ -6,11 +6,13 @@ import { ReferenceBadge } from "./editor/reference-badge";
 
 export function RawContentViewer({
   rawContent,
+  className,
 }: {
   rawContent: RawContent;
+  className?: string;
 }) {
   return (
-    <div className="text-sm select-text cursor-text">
+    <div className={cn("text-sm select-text cursor-text", className)}>
       {rawContent.map((item, idx) => (
         <span
           key={nanoid()}

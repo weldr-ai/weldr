@@ -1,9 +1,9 @@
-import Handlebars from "handlebars";
 import { exec as exec_ } from "node:child_process";
 import fs from "node:fs/promises";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import Handlebars from "handlebars";
 import type { Dependency, Module } from "..";
 
 export const exec = promisify(exec_);

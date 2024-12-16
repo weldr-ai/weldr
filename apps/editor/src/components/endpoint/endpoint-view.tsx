@@ -476,57 +476,55 @@ export function EndpointView({
 
   return (
     <ResizablePanelGroup direction="horizontal" className="flex size-full">
-      <ResizablePanel defaultSize={60} minSize={30}>
-        <div className="flex h-full flex-col p-8">
-          <div className="flex flex-col h-full border bg-muted rounded-md p-4">
-            <ScrollArea className="flex-grow mb-4" ref={scrollAreaRef}>
-              <MessageList
-                messages={messages}
-                isThinking={isThinking}
-                isGenerating={isGeneratingCode}
-              />
-              <div ref={chatHistoryEndRef} />
-            </ScrollArea>
+      <ResizablePanel defaultSize={50} minSize={30}>
+        <div className="flex h-full flex-col p-4">
+          <ScrollArea className="flex-grow mb-4" ref={scrollAreaRef}>
+            <MessageList
+              messages={messages}
+              isThinking={isThinking}
+              isGenerating={isGeneratingCode}
+            />
+            <div ref={chatHistoryEndRef} />
+          </ScrollArea>
 
-            <div className="relative">
-              <Editor
-                className="h-full"
-                id={endpoint.id}
-                references={references}
-                editorRef={editorRef}
-                placeholder="Chat about your endpoint..."
-                onChange={onChatChange}
-                onSubmit={async () => {
-                  if (userMessageContent && !isGenerating) {
-                    await handleOnSubmit();
-                  }
-                }}
-              />
-              <Button
-                type="submit"
-                disabled={!userMessageContent || isGenerating}
-                size="sm"
-                className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
-              >
-                Send
-                <span className="ml-1">
-                  <span className="px-1 py-0.5 bg-white/20 rounded-sm disabled:text-muted-foreground">
-                    {typeof window !== "undefined" &&
-                    window.navigator?.userAgent.toLowerCase().includes("mac")
-                      ? "⌘"
-                      : "Ctrl"}
-                    ⏎
-                  </span>
+          <div className="relative">
+            <Editor
+              className="h-full"
+              id={endpoint.id}
+              references={references}
+              editorRef={editorRef}
+              placeholder="Chat about your endpoint..."
+              onChange={onChatChange}
+              onSubmit={async () => {
+                if (userMessageContent && !isGenerating) {
+                  await handleOnSubmit();
+                }
+              }}
+            />
+            <Button
+              type="submit"
+              disabled={!userMessageContent || isGenerating}
+              size="sm"
+              className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
+            >
+              Send
+              <span className="ml-1">
+                <span className="px-1 py-0.5 bg-white/20 rounded-sm disabled:text-muted-foreground">
+                  {typeof window !== "undefined" &&
+                  window.navigator?.userAgent.toLowerCase().includes("mac")
+                    ? "⌘"
+                    : "Ctrl"}
+                  ⏎
                 </span>
-              </Button>
-            </div>
+              </span>
+            </Button>
           </div>
         </div>
       </ResizablePanel>
 
       <ResizableHandle withHandle />
 
-      <ResizablePanel defaultSize={40} minSize={30}>
+      <ResizablePanel defaultSize={50} minSize={30}>
         <ScrollArea className="h-full p-4">
           <OpenApiEndpointDocs
             spec={

@@ -196,14 +196,14 @@ export const funcsRouter = {
       }
 
       await ctx.db
-        .delete(conversations)
-        .where(eq(conversations.id, func.conversationId));
-
-      await ctx.db
         .delete(funcs)
         .where(
           and(eq(funcs.id, func.id), eq(funcs.userId, ctx.session.user.id)),
         );
+
+      await ctx.db
+        .delete(conversations)
+        .where(eq(conversations.id, func.conversationId));
     }),
   createTestRun: protectedProcedure
     .input(
