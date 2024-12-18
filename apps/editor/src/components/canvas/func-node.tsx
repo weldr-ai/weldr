@@ -81,12 +81,7 @@ import { generateFunc } from "~/lib/ai/generator";
 import { useResources } from "~/lib/context/resources";
 import { useFlowBuilderStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
-import {
-  assistantMessageRawContentToText,
-  getResourceReferences,
-  jsonSchemaToTreeData,
-  userMessageRawContentToText,
-} from "~/lib/utils";
+import { getResourceReferences, jsonSchemaToTreeData } from "~/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "~/types";
 import type { ReferenceNode } from "../editor/plugins/reference/node";
 import MessageList from "../message-list";
@@ -227,6 +222,7 @@ export const FuncNode = memo(
         const children = (
           root.getChildren()[0] as ParagraphNode
         )?.getChildren();
+        const text = root.getTextContent();
 
         const userMessageRawContent = children?.reduce((acc, child) => {
           if (child.__type === "text") {
@@ -248,10 +244,9 @@ export const FuncNode = memo(
           return acc;
         }, [] as UserMessageRawContent);
 
-        const chat = userMessageRawContentToText(userMessageRawContent);
-        console.log(chat);
-        setUserMessageContent(chat);
+        console.log(text);
         setUserMessageRawContent(userMessageRawContent);
+        setUserMessageContent(text);
       });
     }
 
@@ -311,7 +306,6 @@ export const FuncNode = memo(
         conversationId: string;
       } = {
         role: "user",
-        content: userMessageContent,
         rawContent: userMessageRawContent,
         conversationId: data.conversationId,
         createdAt: new Date(),
@@ -321,15 +315,16 @@ export const FuncNode = memo(
 
       setMessages(newMessages);
 
-      await addMessage.mutateAsync(newMessageUser);
+      await addMessage.mutateAsync({
+        role: "user",
+        rawContent: userMessageRawContent,
+        conversationId: data.conversationId,
+        funcId: data.id,
+      });
 
       const result = await generateFunc({
         funcId: data.id,
         conversationId: data.conversationId,
-        messages: newMessages.map((message) => ({
-          role: message.role,
-          content: message.content,
-        })),
       });
 
       if (
@@ -349,16 +344,12 @@ export const FuncNode = memo(
       )) {
         newAssistantMessage = {
           role: "assistant",
-          content: "",
           rawContent: [],
           createdAt: new Date(),
         };
 
         if (content?.message?.content && content.message.type === "message") {
           setIsThinking(false);
-          newAssistantMessage.content = assistantMessageRawContentToText(
-            content.message.content,
-          );
           newAssistantMessage.rawContent = content.message.content;
         }
 
@@ -376,8 +367,6 @@ export const FuncNode = memo(
             },
             ...content.message.content.description,
           ];
-          newAssistantMessage.content =
-            assistantMessageRawContentToText(rawContent);
           newAssistantMessage.rawContent = rawContent;
         }
 
@@ -407,7 +396,6 @@ export const FuncNode = memo(
               value: "Your function has been built successfully!",
             },
           ],
-          content: "Your function has been built successfully!",
           createdAt: new Date(),
         };
 
@@ -445,14 +433,11 @@ export const FuncNode = memo(
           type: "reference",
           referenceType: "function",
           id: func.id,
-          name: func.name,
-          inputSchema: JSON.stringify(func.inputSchema),
-          outputSchema: JSON.stringify(func.outputSchema),
-          description: func.description,
-          logicalSteps: assistantMessageRawContentToText(func.logicalSteps),
-          edgeCases: func.edgeCases,
-          errorHandling: func.errorHandling,
-          scope: "local",
+          name:
+            data.moduleId === func.module.id
+              ? func.name
+              : `${func.module.name}.${func.name}`,
+          moduleName: func.module.name,
         });
 
         return acc;

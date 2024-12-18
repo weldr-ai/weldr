@@ -1,12 +1,14 @@
 "use client";
 
-import type { RouterOutputs } from "@integramind/api";
 import { createContext, useContext } from "react";
 
 export const ResourcesContext = createContext<
-  (RouterOutputs["projects"]["byId"]["resources"][0] & {
+  {
+    id: string;
+    name: string;
+    integrationType: "postgres" | "mysql";
     metadata?: unknown;
-  })[]
+  }[]
 >([]);
 
 export function useResources() {
@@ -18,9 +20,12 @@ export function ResourcesProvider({
   resources,
 }: {
   children: React.ReactNode;
-  resources: (RouterOutputs["projects"]["byId"]["resources"][0] & {
+  resources: {
+    id: string;
+    name: string;
+    integrationType: "postgres" | "mysql";
     metadata?: unknown;
-  })[];
+  }[];
 }) {
   return (
     <ResourcesContext.Provider value={resources}>

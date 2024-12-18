@@ -1,6 +1,5 @@
 import { eq } from "@integramind/db";
 import { funcDependencies, funcs, modules } from "@integramind/db/schema";
-import type { Func } from "@integramind/shared/types";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
@@ -86,9 +85,21 @@ export const funcDependenciesRouter = {
       }
 
       // Get all functions except those that would create cycles
-      const availableFunctions = (await ctx.db.query.funcs.findMany({
+      const availableFunctions = await ctx.db.query.funcs.findMany({
         where: eq(funcs.userId, ctx.session.user.id),
-      })) as Func[];
+        columns: {
+          documentation: false,
+          code: false,
+        },
+        with: {
+          module: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
 
       return availableFunctions.filter(
         (f) =>
@@ -99,7 +110,6 @@ export const funcDependenciesRouter = {
           f.logicalSteps &&
           f.edgeCases &&
           f.errorHandling &&
-          f.code &&
           !dependencyChain.has(f.id) && // Can't create cycles
           !existingDeps.some((d) => d.dependencyFuncId === f.id), // Not already a dependency
       );
@@ -110,7 +120,11 @@ export const funcDependenciesRouter = {
       const module = await ctx.db.query.modules.findFirst({
         where: eq(modules.id, input.id),
         with: {
-          funcs: true,
+          funcs: {
+            columns: {
+              id: true,
+            },
+          },
         },
       });
 
@@ -126,8 +140,18 @@ export const funcDependenciesRouter = {
       const funcDependencies = await ctx.db.query.funcDependencies.findMany({
         where: (table, { inArray }) => inArray(table.funcId, moduleFuncIds),
         with: {
-          func: true,
-          dependencyFunc: true,
+          func: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+          dependencyFunc: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
         },
       });
 

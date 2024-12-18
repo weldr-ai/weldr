@@ -114,6 +114,19 @@ export const projectsRouter = {
                 secretId: false,
               },
             },
+            endpoints: {
+              columns: {
+                id: true,
+                name: true,
+                httpMethod: true,
+              },
+            },
+            modules: {
+              columns: {
+                id: true,
+                name: true,
+              },
+            },
             resources: {
               columns: {
                 id: true,
@@ -121,19 +134,9 @@ export const projectsRouter = {
                 description: true,
               },
               with: {
-                integration: {
-                  with: {
-                    modules: {
-                      with: {
-                        funcs: true,
-                      },
-                    },
-                  },
-                },
+                integration: true,
               },
             },
-            endpoints: true,
-            modules: true,
           },
         });
 

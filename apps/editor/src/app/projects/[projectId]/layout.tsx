@@ -1,6 +1,3 @@
-import type { RouterOutputs } from "@integramind/api";
-import type { DbConfig } from "@integramind/shared/integrations/postgres";
-import { getDatabaseStructure } from "@integramind/shared/integrations/postgres/helpers";
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
@@ -20,52 +17,19 @@ export default async function ProjectLayout({
     const { projectId } = await params;
     const project = await api.projects.byId({ id: projectId });
     const projects = await api.projects.list();
-    const resources = project.resources;
-
-    const resourcesWithMetadata: (RouterOutputs["projects"]["byId"]["resources"][0] & {
-      metadata: unknown;
-    })[] = [];
-
-    for (const resource of resources) {
-      const temp = {
-        ...resource,
-        metadata: {},
-      };
-
-      switch (resource.integration.type) {
-        case "postgres": {
-          const environmentVariables =
-            await api.environmentVariables.byResourceId({
-              resourceId: resource.id,
-            });
-
-          const config = environmentVariables.reduce(
-            (acc: DbConfig, { key, value }: { key: string; value: string }) => {
-              const mapping: Record<string, keyof typeof acc> = {
-                POSTGRES_HOST: "host",
-                POSTGRES_PORT: "port",
-                POSTGRES_DB: "database",
-                POSTGRES_USER: "user",
-                POSTGRES_PASSWORD: "password",
-              };
-              // @ts-ignore
-              acc[mapping[key]] = value;
-              return acc;
-            },
-            {} as DbConfig,
-          );
-
-          const databaseStructure = await getDatabaseStructure(config);
-          temp.metadata = databaseStructure;
-          break;
-        }
-      }
-
-      resourcesWithMetadata.push(temp);
-    }
+    const resourcesWithMetadata = await api.resources.listWithMetadata({
+      projectId,
+    });
 
     return (
-      <ResourcesProvider resources={resourcesWithMetadata}>
+      <ResourcesProvider
+        resources={resourcesWithMetadata.map((resource) => ({
+          id: resource.id,
+          name: resource.name,
+          integrationType: resource.integration.type,
+          metadata: resource.metadata,
+        }))}
+      >
         <div className="flex h-screen bg-background">
           <div className="sticky top-0 h-screen dark:bg-muted z-50">
             <Sidebar

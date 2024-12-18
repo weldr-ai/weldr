@@ -82,24 +82,17 @@ export function ReferencesPlugin({
   const inputOptions: ReferenceOption[] = useMemo(() => {
     return references.reduce((acc, reference) => {
       switch (reference.referenceType) {
-        case "variable": {
-          acc.push(
-            new ReferenceOption({
-              reference,
-              options: {
-                keywords: [reference.name, "variable"],
-                onSelect: () => {},
-              },
-            }),
-          );
-          break;
-        }
         case "function": {
           acc.push(
             new ReferenceOption({
               reference,
               options: {
-                keywords: [reference.name, "function"],
+                keywords: [
+                  reference.name,
+                  reference.moduleName,
+                  "function",
+                  "helper",
+                ],
                 onSelect: () => {},
               },
             }),

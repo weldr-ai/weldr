@@ -72,12 +72,21 @@ export const modulesRouter = {
           ),
           with: {
             funcs: {
+              columns: {
+                code: false,
+                documentation: false,
+              },
               with: {
                 conversation: {
                   with: {
-                    messages: true,
+                    messages: {
+                      columns: {
+                        content: false,
+                      },
+                    },
                   },
                 },
+                module: true,
                 internalGraph: true,
                 testRuns: true,
               },
@@ -97,8 +106,18 @@ export const modulesRouter = {
         const funcDependencies = await ctx.db.query.funcDependencies.findMany({
           where: (table, { inArray }) => inArray(table.funcId, moduleFuncIds),
           with: {
-            func: true,
-            dependencyFunc: true,
+            func: {
+              columns: {
+                code: false,
+                documentation: false,
+              },
+            },
+            dependencyFunc: {
+              columns: {
+                code: false,
+                documentation: false,
+              },
+            },
           },
         });
 
@@ -122,7 +141,7 @@ export const modulesRouter = {
           ...module,
           funcs: module.funcs.map((func) => ({
             ...func,
-            canRun: Boolean(func.name && func.description && func.code),
+            canRun: Boolean(func.name && func.description),
           })),
           edges,
         };
@@ -146,6 +165,10 @@ export const modulesRouter = {
             eq(modules.userId, ctx.session.user.id),
             eq(modules.projectId, input.projectId),
           ),
+          columns: {
+            id: true,
+            name: true,
+          },
         });
         return modulesResult;
       } catch (error) {

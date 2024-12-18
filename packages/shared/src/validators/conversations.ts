@@ -6,17 +6,11 @@ import {
   functionReferenceSchema,
   rawContentReferenceElementSchema,
   rawContentTextElementSchema,
-  variableReferenceSchema,
 } from "./common";
 
 export const userMessageRawContentReferenceElementSchema = z.discriminatedUnion(
   "referenceType",
   [
-    z.object({
-      type: z.literal("reference"),
-      referenceType: z.literal("variable"),
-      ...variableReferenceSchema.shape,
-    }),
     z.object({
       type: z.literal("reference"),
       referenceType: z.literal("function"),
@@ -69,7 +63,7 @@ export const messageRawContentSchema = z
 export const conversationMessageSchema = z.object({
   id: z.string().optional(),
   role: z.enum(["user", "assistant"]),
-  content: z.string(),
+  content: z.string().optional(),
   rawContent: messageRawContentSchema,
   createdAt: z.date().optional(),
 });

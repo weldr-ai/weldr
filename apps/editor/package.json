@@ -16,6 +16,7 @@
     "@hookform/resolvers": "^3.3.4",
     "@integramind/api": "workspace:*",
     "@integramind/auth": "workspace:*",
+    "@integramind/db": "workspace:*",
     "@integramind/shared": "workspace:*",
     "@integramind/ui": "workspace:*",
     "@lexical/react": "^0.16.0",

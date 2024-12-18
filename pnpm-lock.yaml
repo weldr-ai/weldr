@@ -102,6 +102,9 @@ importers:
       '@integramind/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@integramind/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@integramind/shared':
         specifier: workspace:*
         version: link:../../packages/shared

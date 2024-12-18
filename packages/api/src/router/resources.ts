@@ -6,7 +6,11 @@ import {
   resourceEnvironmentVariables,
   resources,
 } from "@integramind/db/schema";
-import { testConnection } from "@integramind/shared/integrations/postgres/helpers";
+import {
+  getDatabaseStructure,
+  testConnection,
+} from "@integramind/shared/integrations/postgres/helpers";
+import type { DbConfig } from "@integramind/shared/integrations/postgres/index";
 import {
   insertResourceSchema,
   updateResourceSchema,
@@ -365,5 +369,97 @@ export const resourcesRouter = {
         .where(eq(resources.id, input.where.id));
 
       return result;
+    }),
+  listWithMetadata: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const resourcesResult = await ctx.db.query.resources.findMany({
+        where: and(
+          eq(resources.projectId, input.projectId),
+          eq(resources.userId, ctx.session.user.id),
+        ),
+        with: {
+          integration: {
+            columns: {
+              type: true,
+            },
+          },
+        },
+      });
+
+      const resourcesWithMetadata: ((typeof resourcesResult)[number] & {
+        metadata: unknown;
+      })[] = [];
+
+      for (const resource of resourcesResult) {
+        const temp = {
+          ...resource,
+          metadata: {},
+        };
+
+        switch (resource.integration.type) {
+          case "postgres": {
+            const resourceEnvironmentVariablesRes =
+              await ctx.db.query.resourceEnvironmentVariables.findMany({
+                where: eq(resourceEnvironmentVariables.resourceId, resource.id),
+                with: {
+                  environmentVariable: true,
+                },
+              });
+
+            const environmentVariables = await Promise.all(
+              resourceEnvironmentVariablesRes.map(async (item) => {
+                const secret = (
+                  await ctx.db.execute(
+                    sql`select decrypted_secret from vault.decrypted_secrets where id=${item.environmentVariable.secretId}`,
+                  )
+                ).rows[0];
+
+                if (!secret) {
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Secret not found",
+                  });
+                }
+
+                return {
+                  key: item.environmentVariable.key,
+                  value: secret.decrypted_secret,
+                } as {
+                  key: string;
+                  value: string;
+                };
+              }),
+            );
+
+            const config = environmentVariables.reduce(
+              (
+                acc: DbConfig,
+                { key, value }: { key: string; value: string },
+              ) => {
+                const mapping: Record<string, keyof typeof acc> = {
+                  POSTGRES_HOST: "host",
+                  POSTGRES_PORT: "port",
+                  POSTGRES_DB: "database",
+                  POSTGRES_USER: "user",
+                  POSTGRES_PASSWORD: "password",
+                };
+                // @ts-ignore
+                acc[mapping[key]] = value;
+                return acc;
+              },
+              {} as DbConfig,
+            );
+
+            const databaseStructure = await getDatabaseStructure(config);
+            temp.metadata = databaseStructure;
+            break;
+          }
+        }
+
+        resourcesWithMetadata.push(temp);
+      }
+
+      return resourcesWithMetadata;
     }),
 } satisfies TRPCRouterRecord;

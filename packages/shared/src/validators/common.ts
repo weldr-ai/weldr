@@ -11,55 +11,6 @@ export const dataTypeSchema = z.enum([
   "null",
 ]);
 
-export const responsesSchema = z.record(
-  z.string().regex(/^[0-9]{3}$/),
-  z.object({
-    description: z.string(),
-    content: z
-      .record(
-        z.object({
-          schema: z.object({
-            type: z.enum([
-              "string",
-              "number",
-              "integer",
-              "boolean",
-              "array",
-              "object",
-            ]),
-            properties: z
-              .record(
-                z.object({
-                  type: z.enum([
-                    "string",
-                    "number",
-                    "integer",
-                    "boolean",
-                    "array",
-                    "object",
-                  ]),
-                  description: z.string().optional(),
-                }),
-              )
-              .optional(),
-            items: z
-              .object({
-                type: z.enum([
-                  "string",
-                  "number",
-                  "integer",
-                  "boolean",
-                  "object",
-                ]),
-              })
-              .optional(),
-          }),
-        }),
-      )
-      .optional(),
-  }),
-);
-
 export const jsonSchemaPropertySchema = z.object({
   $ref: z.string().optional(),
   type: dataTypeSchema,
@@ -84,67 +35,23 @@ export const jsonSchema: z.ZodType<JsonSchema> = jsonSchemaPropertySchema.and(
 export const inputSchema = jsonSchema;
 export const outputSchema = jsonSchema;
 
-export const variableReferenceSchema = z.object({
-  name: z.string().describe("The name of the variable. Must be in camelCase."),
-  dataType: dataTypeSchema.describe("The data type of the variable"),
-  refUri: z.string().describe("The URI of the variable reference"),
-  required: z.boolean().describe("Whether the variable is required"),
-  properties: z.record(z.string(), jsonSchema).optional(),
-  itemsType: jsonSchema.optional(),
-  sourceFuncId: z.string().optional(),
-});
-
 export const functionReferenceSchema = z.object({
   id: z.string().describe("The ID of the function"),
   name: z.string().describe("The name of the function"),
-  inputSchema: z.string().describe("The input schema of the function"),
-  outputSchema: z.string().describe("The output schema of the function"),
-  description: z.string().describe("The description of the function"),
-  logicalSteps: z.string().describe("The logical steps of the function"),
-  edgeCases: z.string().describe("The edge cases of the function"),
-  errorHandling: z.string().describe("The error handling of the function"),
-  scope: z.enum(["local", "imported"]),
+  moduleName: z.string().describe("The name of the module"),
 });
 
 export const databaseReferenceSchema = z.object({
   id: z.string().describe("The ID of the database"),
   name: z.string().describe("The name of the database"),
-  helperFunctions: z
-    .object({
-      id: z.string().describe("The ID of the helper function"),
-      name: z.string().describe("The name of the helper function"),
-      description: z
-        .string()
-        .describe("The description of the helper function"),
-    })
-    .array()
-    .describe("The helper functions of the database"),
+  databaseType: z
+    .enum(["postgres", "mysql"])
+    .describe("The type of the database"),
 });
 
 export const databaseTableReferenceSchema = z.object({
   name: z.string().min(1).describe("The name of the table"),
-  database: databaseReferenceSchema.describe("The database of the table"),
-  columns: z
-    .object({
-      name: z.string().min(1).describe("The name of the column"),
-      dataType: z.string().min(1).describe("The SQL data type of the column"),
-    })
-    .array()
-    .describe("The columns of the table"),
-  relationships: z
-    .object({
-      columnName: z.string().min(1).describe("The name of the column"),
-      referencedTable: z
-        .string()
-        .min(1)
-        .describe("The name of the referenced table"),
-      referencedColumn: z
-        .string()
-        .min(1)
-        .describe("The name of the referenced column"),
-    })
-    .array()
-    .optional(),
+  databaseId: z.string().min(1).describe("The ID of the database"),
 });
 
 export const databaseColumnReferenceSchema = z.object({
@@ -154,20 +61,8 @@ export const databaseColumnReferenceSchema = z.object({
       "When referencing a database column, the name must follow the pattern '[TABLE_NAME].[COLUMN_NAME]' (e.g. 'users.email', 'orders.status').",
     ),
   dataType: z.string().describe("The SQL data type of the column"),
-  database: databaseReferenceSchema.describe("The database of the column"),
-  table: databaseTableReferenceSchema
-    .omit({ database: true })
-    .describe("The table of the column"),
-});
-
-export const integrationHelperFunctionReferenceSchema = z.object({
-  id: z.string().min(1).describe("The ID of the helper function"),
-  name: z.string().min(1).describe("The name of the helper function"),
-  description: z
-    .string()
-    .min(1)
-    .describe("The description of the helper function"),
-  docs: z.string().min(1).describe("The documentation of the helper function"),
+  databaseId: z.string().min(1).describe("The ID of the database"),
+  tableName: z.string().min(1).describe("The name of the table"),
 });
 
 export const npmDependencySchema = z.object({
@@ -183,13 +78,8 @@ export const rawContentTextElementSchema = z.object({
 export const rawContentVariableReferenceSchema = z.object({
   type: z.literal("reference"),
   referenceType: z.literal("variable"),
-  ...variableReferenceSchema.omit({
-    refUri: true,
-    properties: true,
-    itemsType: true,
-    sourceFuncId: true,
-    required: true,
-  }).shape,
+  name: z.string().describe("The name of the variable. Must be in camelCase."),
+  dataType: dataTypeSchema.describe("The data type of the variable"),
 });
 
 export const rawContentFunctionReferenceSchema = z.object({
@@ -201,23 +91,22 @@ export const rawContentFunctionReferenceSchema = z.object({
 export const rawContentDatabaseReferenceSchema = z.object({
   type: z.literal("reference"),
   referenceType: z.literal("database"),
-  ...databaseReferenceSchema.omit({ helperFunctions: true }).shape,
+  ...databaseReferenceSchema.shape,
 });
 
 export const rawContentDatabaseTableReferenceSchema = z.object({
   type: z.literal("reference"),
   referenceType: z.literal("database-table"),
   ...databaseTableReferenceSchema.omit({
-    database: true,
-    columns: true,
-    relationships: true,
+    databaseId: true,
   }).shape,
 });
 
 export const rawContentDatabaseColumnReferenceSchema = z.object({
   type: z.literal("reference"),
   referenceType: z.literal("database-column"),
-  ...databaseColumnReferenceSchema.omit({ database: true, table: true }).shape,
+  ...databaseColumnReferenceSchema.omit({ databaseId: true, tableName: true })
+    .shape,
 });
 
 export const rawContentReferenceElementSchema = z.discriminatedUnion(

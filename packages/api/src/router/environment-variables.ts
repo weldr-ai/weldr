@@ -1,9 +1,5 @@
-import { and, eq, sql } from "@integramind/db";
-import {
-  environmentVariables,
-  resourceEnvironmentVariables,
-  secrets,
-} from "@integramind/db/schema";
+import { and, eq } from "@integramind/db";
+import { environmentVariables, secrets } from "@integramind/db/schema";
 import { insertEnvironmentVariableSchema } from "@integramind/shared/validators/environment-variables";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
@@ -78,47 +74,6 @@ export const environmentVariablesRouter = {
           secretId: false,
         },
       });
-    }),
-  byResourceId: protectedProcedure
-    .input(
-      z.object({
-        resourceId: z.string(),
-      }),
-    )
-    .query(async ({ input, ctx }) => {
-      const result = await ctx.db.query.resourceEnvironmentVariables.findMany({
-        where: eq(resourceEnvironmentVariables.resourceId, input.resourceId),
-        with: {
-          environmentVariable: true,
-        },
-      });
-
-      const environmentVariables = await Promise.all(
-        result.map(async (item) => {
-          const secret = (
-            await ctx.db.execute(
-              sql`select decrypted_secret from vault.decrypted_secrets where id=${item.environmentVariable.secretId}`,
-            )
-          ).rows[0];
-
-          if (!secret) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Secret not found",
-            });
-          }
-
-          return {
-            key: item.environmentVariable.key,
-            value: secret.decrypted_secret,
-          } as {
-            key: string;
-            value: string;
-          };
-        }),
-      );
-
-      return environmentVariables;
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))

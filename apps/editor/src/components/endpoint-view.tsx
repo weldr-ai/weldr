@@ -29,10 +29,6 @@ import { Editor } from "~/components/editor";
 import MessageList from "~/components/message-list";
 import { generateFunc } from "~/lib/ai/generator";
 import { api } from "~/lib/trpc/client";
-import {
-  assistantMessageRawContentToText,
-  userMessageRawContentToText,
-} from "~/lib/utils";
 import type { ReferenceNode } from "./editor/plugins/reference/node";
 import OpenApiEndpointDocs from "./openapi-endpoint-docs";
 
@@ -60,179 +56,19 @@ export function EndpointView({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
 
-  const [messages, setMessages] = useState<ConversationMessage[]>(
-    endpoint.conversation?.messages && endpoint.conversation.messages.length > 0
-      ? endpoint.conversation.messages
-      : [
-          {
-            role: "user",
-            content:
-              "I want to create an endpoint that calculates how many stocks a user can buy with their balance. I want to use getStocksCount and getStockPrice functions.",
-            rawContent: [
-              {
-                type: "text",
-                value:
-                  "I want to create an endpoint that calculates how many stocks a user can buy with their balance. I want to use ",
-              },
-              {
-                type: "reference",
-                referenceType: "function",
-                name: "getStocksCount",
-              },
-              {
-                type: "text",
-                value: " and ",
-              },
-              {
-                type: "reference",
-                referenceType: "function",
-                name: "getStockPrice",
-              },
-              {
-                type: "text",
-                value: " functions.",
-              },
-            ],
-            createdAt: new Date("2024-01-01T10:00:00Z"),
-          },
-          {
-            role: "assistant",
-            content:
-              "I'll help you create an endpoint that calculates the number of stocks a user can buy based on their balance. We'll use the getStocksCount and getStockPrice functions. What inputs would you like the endpoint to accept?",
-            rawContent: [
-              {
-                type: "text",
-                value:
-                  "I'll help you create an endpoint that calculates the number of stocks a user can buy based on their balance. We'll use the ",
-              },
-              {
-                type: "reference",
-                referenceType: "function",
-                name: "getStocksCount",
-              },
-              {
-                type: "text",
-                value: " and ",
-              },
-              {
-                type: "reference",
-                referenceType: "function",
-                name: "getStockPrice",
-              },
-              {
-                type: "text",
-                value:
-                  " functions. What inputs would you like the endpoint to accept?",
-              },
-            ],
-            createdAt: new Date("2024-01-01T10:01:00Z"),
-          },
-          {
-            role: "user",
-            content:
-              "The endpoint should accept a username to look up their balance and a stock ticker symbol.",
-            rawContent: [
-              {
-                type: "text",
-                value:
-                  "The endpoint should accept a username to look up their balance and a stock ticker symbol.",
-              },
-            ],
-            createdAt: new Date("2024-01-01T10:02:00Z"),
-          },
-          {
-            role: "assistant",
-            content:
-              "I'll design the endpoint with the following specifications:\n\n1. HTTP Method: POST\n2. Path: /calculate-buyable-stocks\n3. Input parameters:\n   - username (string)\n   - ticker (string)\n\nThe endpoint will:\n1. Use getStockPrice to get the current price of the stock\n2. Use getStocksCount to get the user's balance\n3. Calculate the maximum number of stocks they can buy by dividing their balance by the stock price\n\nDoes this approach sound good to you?",
-            rawContent: [
-              {
-                type: "text",
-                value:
-                  "I'll design the endpoint with the following specifications:\n\n1. HTTP Method: POST\n2. Path: /calculate-buyable-stocks\n3. Input parameters:\n   - username (string)\n   - ticker (string)\n\nThe endpoint will:\n1. Use ",
-              },
-              {
-                type: "reference",
-                referenceType: "function",
-                name: "getStockPrice",
-              },
-              {
-                type: "text",
-                value: " to get the current price of the stock\n2. Use ",
-              },
-              {
-                type: "reference",
-                referenceType: "function",
-                name: "getStocksCount",
-              },
-              {
-                type: "text",
-                value:
-                  " to get the user's balance\n3. Calculate the maximum number of stocks they can buy by dividing their balance by the stock price\n\nDoes this approach sound good to you?",
-              },
-            ],
-            createdAt: new Date("2024-01-01T10:03:00Z"),
-          },
-          {
-            role: "user",
-            content: "Yes, that sounds perfect! Please generate the endpoint.",
-            rawContent: [
-              {
-                type: "text",
-                value:
-                  "Yes, that sounds perfect! Please generate the endpoint.",
-              },
-            ],
-            createdAt: new Date("2024-01-01T10:04:00Z"),
-          },
-          {
-            role: "assistant",
-            content:
-              "Generating the following endpoint: POST /calculate-buyable-stocks that accepts username and ticker parameters. The endpoint will use getStocksCount to fetch the user's balance and getStockPrice to get the current stock price, then calculate the maximum number of stocks that can be purchased.",
-            rawContent: [
-              {
-                type: "text",
-                value: "Generating the following endpoint: ",
-              },
-              {
-                type: "text",
-                value:
-                  "POST /calculate-buyable-stocks that accepts username and ticker parameters. The endpoint will use ",
-              },
-              {
-                type: "reference",
-                referenceType: "function",
-                name: "getStocksCount",
-              },
-              {
-                type: "text",
-                value: " to fetch the user's balance and ",
-              },
-              {
-                type: "reference",
-                referenceType: "function",
-                name: "getStockPrice",
-              },
-              {
-                type: "text",
-                value:
-                  " to get the current stock price, then calculate the maximum number of stocks that can be purchased.",
-              },
-            ],
-            createdAt: new Date("2024-01-01T10:05:00Z"),
-          },
-          {
-            role: "assistant",
-            content: "Your endpoint has been built successfully!",
-            rawContent: [
-              {
-                type: "text",
-                value: "Your endpoint has been built successfully!",
-              },
-            ],
-            createdAt: new Date("2024-01-01T10:06:00Z"),
-          },
-        ],
-  );
+  const [messages, setMessages] = useState<ConversationMessage[]>([
+    {
+      role: "assistant",
+      rawContent: [
+        {
+          type: "text",
+          value: "Hey, I'm your endpoint builder. How can I help you?",
+        },
+      ],
+      createdAt: new Date(),
+    },
+    ...(endpoint.conversation?.messages ?? []),
+  ]);
 
   const [userMessageContent, setUserMessageContent] = useState<string | null>(
     null,
@@ -244,6 +80,7 @@ export function EndpointView({
   function onChatChange(editorState: EditorState) {
     editorState.read(async () => {
       const root = $getRoot();
+      const text = root.getTextContent();
       const children = (root.getChildren()[0] as ParagraphNode)?.getChildren();
 
       const userMessageRawContent = children?.reduce((acc, child) => {
@@ -266,9 +103,7 @@ export function EndpointView({
         return acc;
       }, [] as UserMessageRawContent);
 
-      const chat = userMessageRawContentToText(userMessageRawContent);
-      console.log(chat);
-      setUserMessageContent(chat);
+      setUserMessageContent(text);
       setUserMessageRawContent(userMessageRawContent);
     });
   }
@@ -298,7 +133,6 @@ export function EndpointView({
       conversationId: string;
     } = {
       role: "user",
-      content: userMessageContent,
       rawContent: userMessageRawContent,
       conversationId: endpoint.conversationId,
       createdAt: new Date(),
@@ -308,15 +142,15 @@ export function EndpointView({
 
     setMessages(newMessages);
 
-    await addMessage.mutateAsync(newMessageUser);
+    await addMessage.mutateAsync({
+      role: "user",
+      conversationId: endpoint.conversationId,
+      rawContent: userMessageRawContent,
+    });
 
     const result = await generateFunc({
       funcId: endpoint.id,
       conversationId: endpoint.conversationId,
-      messages: newMessages.map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
     });
 
     if (
@@ -336,16 +170,12 @@ export function EndpointView({
     )) {
       newAssistantMessage = {
         role: "assistant",
-        content: "",
         rawContent: [],
         createdAt: new Date(),
       };
 
       if (content?.message?.content && content.message.type === "message") {
         setIsThinking(false);
-        newAssistantMessage.content = assistantMessageRawContentToText(
-          content.message.content,
-        );
         newAssistantMessage.rawContent = content.message.content;
       }
 
@@ -363,8 +193,6 @@ export function EndpointView({
           },
           ...content.message.content.description,
         ];
-        newAssistantMessage.content =
-          assistantMessageRawContentToText(rawContent);
         newAssistantMessage.rawContent = rawContent;
       }
 
@@ -394,7 +222,6 @@ export function EndpointView({
             value: "Your endpoint has been built successfully!",
           },
         ],
-        content: "Your endpoint has been built successfully!",
         createdAt: new Date(),
       };
 
@@ -455,14 +282,8 @@ export function EndpointView({
         type: "reference",
         referenceType: "function",
         id: func.id,
-        name: func.name,
-        inputSchema: JSON.stringify(func.inputSchema),
-        outputSchema: JSON.stringify(func.outputSchema),
-        description: func.description,
-        logicalSteps: assistantMessageRawContentToText(func.logicalSteps),
-        edgeCases: func.edgeCases,
-        errorHandling: func.errorHandling,
-        scope: "local",
+        name: `${func.module.name}.${func.name}`,
+        moduleName: func.module.name,
       });
 
       return acc;

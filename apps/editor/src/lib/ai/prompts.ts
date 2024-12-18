@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { NpmDependency } from "@integramind/shared/types";
+import { pascalToKebabCase } from "@integramind/shared/utils";
 import type { funcResourceSchema } from "@integramind/shared/validators/funcs";
 import type { z } from "zod";
 import { api } from "../trpc/server";
@@ -367,6 +368,7 @@ async function getCustomerById({ customerId }: { customerId: number }): Promise<
 - Don't hallucinate.`;
 
 export const getGenerateFuncCodePrompt = async ({
+  currentModuleId,
   name,
   description,
   inputSchema,
@@ -378,6 +380,7 @@ export const getGenerateFuncCodePrompt = async ({
   helperFunctionIds,
   npmDependencies,
 }: {
+  currentModuleId: string;
   name: string;
   description: string;
   inputSchema: string | undefined;
@@ -448,12 +451,20 @@ ${helperFunctions.length > 0 ? "## Helper functions to use" : ""}
 
 ${
   helperFunctions && helperFunctions.length > 0
-    ? `The following external functions can be imported from the \`@/lib/[function-name in kebab-case].ts\` file:\n${helperFunctions
+    ? `Available helper functions:\n${helperFunctions
         .map((helperFunction) => {
+          const importInfo =
+            helperFunction.moduleId !== currentModuleId
+              ? `Import from: \`@/lib/${pascalToKebabCase(helperFunction.module.name)}\`\n`
+              : "Available in current module\n";
+
           return `- ${helperFunction.name}
-Description: ${helperFunction.description}
+${importInfo}Description: ${helperFunction.description}
 ${helperFunction.inputSchema ? `Input Schema: ${JSON.stringify(helperFunction.inputSchema)}` : ""}
-${helperFunction.outputSchema ? `Output Schema: ${JSON.stringify(helperFunction.outputSchema)}` : ""}`;
+${helperFunction.outputSchema ? `Output Schema: ${JSON.stringify(helperFunction.outputSchema)}` : ""}
+${helperFunction.logicalSteps ? `Logical Steps: ${helperFunction.logicalSteps}` : ""}
+${helperFunction.edgeCases ? `Edge Cases: ${helperFunction.edgeCases}` : ""}
+${helperFunction.errorHandling ? `Error Handling: ${helperFunction.errorHandling}` : ""}`;
         })
         .join("\n\n")}`
     : ""

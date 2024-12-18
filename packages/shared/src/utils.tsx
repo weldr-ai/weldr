@@ -38,35 +38,12 @@ export function formDataToStructuredObject(
   return result;
 }
 
-export function toCamelCase(str: string): string {
-  if (!str) {
-    return "";
-  }
-
-  const trimmedStr = str.trim();
-
-  if (isCamelCase(trimmedStr)) {
-    return trimmedStr;
-  }
-
-  return trimmedStr
-    .toLowerCase()
-    .split(/[\s-_]+/)
-    .map((word, index) =>
-      index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1),
-    )
-    .join("");
-}
-
-function isCamelCase(str: string): boolean {
-  return /^[a-z][a-zA-Z]*$/.test(str);
-}
-
-export function toSnakeCase(str: string): string {
+export function pascalToKebabCase(str: string): string {
   return str
-    .replace(/([a-z])([A-Z])/g, "$1_$2")
-    .toLowerCase()
-    .replace(/\s+/g, "_");
+    .replace(/([A-Z])/g, (match, p1, offset) =>
+      offset > 0 ? `-${p1.toLowerCase()}` : p1.toLowerCase(),
+    )
+    .toLowerCase();
 }
 
 export function getDataTypeIcon(type: DataType) {

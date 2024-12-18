@@ -2,6 +2,8 @@
 
 import { createOpenAI } from "@ai-sdk/openai";
 import { auth } from "@integramind/auth";
+import { and, db, eq } from "@integramind/db";
+import { conversations } from "@integramind/db/schema";
 import type {
   AssistantMessageRawContent,
   FuncRequirementsMessage,
@@ -28,11 +30,9 @@ const openai = createOpenAI({
 export async function generateFunc({
   funcId,
   conversationId,
-  messages,
 }: {
   funcId: string;
   conversationId: string;
-  messages: CoreMessage[];
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
 
@@ -53,6 +53,34 @@ export async function generateFunc({
     };
   }
 
+  const conversation = await db.query.conversations.findFirst({
+    where: and(
+      eq(conversations.id, conversationId),
+      eq(conversations.userId, session.user.id),
+    ),
+    with: {
+      messages: true,
+    },
+  });
+
+  if (!conversation) {
+    return {
+      status: "error",
+      message: "Conversation not found",
+    };
+  }
+
+  const messages = [
+    {
+      role: "user",
+      content: `You are implementing a function called ${funcData?.name} and it has ID: ${funcId}.`,
+    },
+    ...conversation.messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    })),
+  ] as CoreMessage[];
+
   const stream = createStreamableValue<FuncRequirementsMessage>();
 
   (async () => {
@@ -60,13 +88,7 @@ export async function generateFunc({
     const { partialObjectStream } = streamObject({
       model: openai("gpt-4o-2024-11-20"),
       system: FUNC_REQUIREMENTS_AGENT_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: `You are implementing a function called ${funcData?.name} and it has ID: ${funcId}.`,
-        },
-        ...messages,
-      ],
+      messages,
       schema: funcRequirementsMessageSchema,
       onFinish: async ({ usage, object, error }) => {
         console.log(
@@ -139,6 +161,7 @@ export async function generateFunc({
           }
 
           const generatedFuncCodePrompt = await getGenerateFuncCodePrompt({
+            currentModuleId: funcData.moduleId,
             name: funcData?.name ?? "",
             description: assistantMessageRawContentToText(
               object.message.content.description,

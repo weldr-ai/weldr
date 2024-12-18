@@ -84,10 +84,17 @@ export const endpointsRouter = {
               eq(endpoints.id, input.id),
               eq(endpoints.userId, ctx.session.user.id),
             ),
+          columns: {
+            code: false,
+          },
           with: {
             conversation: {
               with: {
-                messages: true,
+                messages: {
+                  columns: {
+                    content: false,
+                  },
+                },
               },
             },
           },
@@ -117,15 +124,17 @@ export const endpointsRouter = {
     .input(z.object({ projectId: z.string().cuid2() }))
     .query(async ({ ctx, input }) => {
       try {
-        return await ctx.db
-          .select()
-          .from(endpoints)
-          .where(
-            and(
-              eq(endpoints.userId, ctx.session.user.id),
-              eq(endpoints.projectId, input.projectId),
-            ),
-          );
+        return await ctx.db.query.endpoints.findMany({
+          where: and(
+            eq(endpoints.userId, ctx.session.user.id),
+            eq(endpoints.projectId, input.projectId),
+          ),
+          columns: {
+            id: true,
+            name: true,
+            httpMethod: true,
+          },
+        });
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {

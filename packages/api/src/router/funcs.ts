@@ -8,7 +8,6 @@ import {
 } from "@integramind/db/schema";
 
 import { type SQL, and, eq, inArray } from "@integramind/db";
-import type { Func } from "@integramind/shared/types";
 import {
   insertFuncSchema,
   updateFuncSchema,
@@ -89,21 +88,68 @@ export const funcsRouter = {
           eq(funcs.userId, ctx.session.user.id),
           inArray(funcs.id, input.ids),
         ),
+        columns: {
+          code: false,
+          documentation: false,
+        },
+        with: {
+          module: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+          conversation: {
+            with: {
+              messages: {
+                columns: {
+                  content: false,
+                },
+              },
+            },
+          },
+        },
       });
 
       return result.map((func) => ({
         ...func,
-        canRun: Boolean(func.name && func.code && func.description),
-      })) as Func[];
+        canRun: Boolean(func.name && func.description),
+      }));
     }),
   byId: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.funcs.findFirst({
         where: and(
           eq(funcs.id, input.id),
           eq(funcs.userId, ctx.session.user.id),
         ),
+        columns: {
+          code: false,
+          documentation: false,
+        },
+        with: {
+          module: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+          testRuns: true,
+          conversation: {
+            with: {
+              messages: {
+                columns: {
+                  content: false,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!result) {
@@ -115,8 +161,8 @@ export const funcsRouter = {
 
       return {
         ...result,
-        canRun: Boolean(result.name && result.code && result.description),
-      } as Func;
+        canRun: Boolean(result.name && result.description),
+      };
     }),
   update: protectedProcedure
     .input(updateFuncSchema)
@@ -240,13 +286,20 @@ export const funcsRouter = {
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.funcs.findMany({
         where: eq(funcs.projectId, input.projectId),
+        columns: {
+          code: false,
+          documentation: false,
+        },
         with: {
-          module: true,
+          module: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
         },
       });
 
-      return result.filter((func) =>
-        Boolean(func.name && func.code && func.description),
-      );
+      return result.filter((func) => Boolean(func.name && func.description));
     }),
 } satisfies TRPCRouterRecord;
