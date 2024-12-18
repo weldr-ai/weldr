@@ -10,7 +10,7 @@ import {
 import { users } from "./auth";
 import { environmentVariables } from "./environment-variables";
 import { integrations } from "./integrations";
-import { workspaces } from "./workspaces";
+import { projects } from "./projects";
 
 export const resources = pgTable(
   "resources",
@@ -25,8 +25,8 @@ export const resources = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
-    workspaceId: text("workspace_id")
-      .references(() => workspaces.id, { onDelete: "cascade" })
+    projectId: text("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
     integrationId: text("integration_id")
       .references(() => integrations.id, { onDelete: "cascade" })
@@ -36,14 +36,14 @@ export const resources = pgTable(
       .notNull(),
   },
   (t) => ({
-    uniqueNameInWorkspace: unique().on(t.name, t.workspaceId),
+    uniqueNameInProject: unique().on(t.name, t.projectId),
   }),
 );
 
 export const resourcesRelations = relations(resources, ({ one }) => ({
-  workspace: one(workspaces, {
-    fields: [resources.workspaceId],
-    references: [workspaces.id],
+  project: one(projects, {
+    fields: [resources.projectId],
+    references: [projects.id],
   }),
   user: one(users, {
     fields: [resources.userId],

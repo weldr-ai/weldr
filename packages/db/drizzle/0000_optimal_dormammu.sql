@@ -83,8 +83,8 @@ CREATE TABLE IF NOT EXISTS "endpoints" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"conversation_id" text NOT NULL,
 	"user_id" text NOT NULL,
-	"workspace_id" text NOT NULL,
-	CONSTRAINT "endpoints_workspace_id_path_http_method_unique" UNIQUE("workspace_id","path","http_method")
+	"project_id" text NOT NULL,
+	CONSTRAINT "endpoints_project_id_path_http_method_unique" UNIQUE("project_id","path","http_method")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "modules" (
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS "modules" (
 	"path" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"workspace_id" text,
+	"project_id" text,
 	"user_id" text,
 	"integration_id" text
 );
@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS "funcs" (
 	"user_id" text,
 	"conversation_id" text,
 	"module_id" text NOT NULL,
-	"workspace_id" text NOT NULL
+	"project_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "resource_environment_variables" (
@@ -147,13 +147,13 @@ CREATE TABLE IF NOT EXISTS "resources" (
 	"description" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"workspace_id" text NOT NULL,
+	"project_id" text NOT NULL,
 	"integration_id" text NOT NULL,
 	"user_id" text NOT NULL,
-	CONSTRAINT "resources_name_workspace_id_unique" UNIQUE("name","workspace_id")
+	CONSTRAINT "resources_name_project_id_unique" UNIQUE("name","project_id")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "workspaces" (
+CREATE TABLE IF NOT EXISTS "projects" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"subdomain" text NOT NULL,
@@ -162,7 +162,7 @@ CREATE TABLE IF NOT EXISTS "workspaces" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"user_id" text NOT NULL,
-	CONSTRAINT "workspaces_subdomain_unique" UNIQUE("subdomain")
+	CONSTRAINT "projects_subdomain_unique" UNIQUE("subdomain")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "environment_variables" (
@@ -171,9 +171,9 @@ CREATE TABLE IF NOT EXISTS "environment_variables" (
 	"secret_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"workspace_id" text NOT NULL,
+	"project_id" text NOT NULL,
 	"user_id" text NOT NULL,
-	CONSTRAINT "unique_key" UNIQUE("workspace_id","key")
+	CONSTRAINT "unique_key" UNIQUE("project_id","key")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "test_runs" (
@@ -258,13 +258,13 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "endpoints" ADD CONSTRAINT "endpoints_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "endpoints" ADD CONSTRAINT "endpoints_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "modules" ADD CONSTRAINT "modules_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "modules" ADD CONSTRAINT "modules_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -300,7 +300,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "funcs" ADD CONSTRAINT "funcs_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "funcs" ADD CONSTRAINT "funcs_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -318,7 +318,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "resources" ADD CONSTRAINT "resources_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "resources" ADD CONSTRAINT "resources_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -336,7 +336,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "workspaces" ADD CONSTRAINT "workspaces_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -348,7 +348,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

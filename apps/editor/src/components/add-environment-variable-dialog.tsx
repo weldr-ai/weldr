@@ -28,8 +28,8 @@ import type { z } from "zod";
 import { api } from "~/lib/trpc/client";
 
 export default function AddEnvironmentVariableDialog({
-  workspaceId,
-}: { workspaceId: string }) {
+  projectId,
+}: { projectId: string }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const form = useForm<z.infer<typeof insertEnvironmentVariableSchema>>({
@@ -38,7 +38,7 @@ export default function AddEnvironmentVariableDialog({
     defaultValues: {
       key: "",
       value: "",
-      workspaceId,
+      projectId,
     },
   });
 
@@ -70,7 +70,7 @@ export default function AddEnvironmentVariableDialog({
     createEnvironmentVariable.mutate({
       value: data.value,
       key: data.key,
-      workspaceId,
+      projectId,
     });
   };
 
@@ -86,7 +86,7 @@ export default function AddEnvironmentVariableDialog({
         <DialogHeader>
           <DialogTitle>Add Environment Variable</DialogTitle>
           <DialogDescription>
-            Add a new environment variable to your workspace.
+            Add a new environment variable to your project.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

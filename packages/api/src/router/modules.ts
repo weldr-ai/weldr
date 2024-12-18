@@ -1,5 +1,5 @@
 import { and, db, eq } from "@integramind/db";
-import { modules, workspaces } from "@integramind/db/schema";
+import { modules, projects } from "@integramind/db/schema";
 import {
   insertModuleSchema,
   updateModuleSchema,
@@ -13,19 +13,19 @@ export const modulesRouter = {
     .input(insertModuleSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        const { workspaceId, ...rest } = input;
+        const { projectId, ...rest } = input;
 
-        const workspace = await db.query.workspaces.findFirst({
+        const project = await db.query.projects.findFirst({
           where: and(
-            eq(workspaces.id, workspaceId),
-            eq(workspaces.userId, ctx.session.user.id),
+            eq(projects.id, projectId),
+            eq(projects.userId, ctx.session.user.id),
           ),
         });
 
-        if (!workspace) {
+        if (!project) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Workspace not found",
+            message: "Project not found",
           });
         }
 
@@ -35,7 +35,7 @@ export const modulesRouter = {
             .values({
               ...rest,
               userId: ctx.session.user.id,
-              workspaceId,
+              projectId,
             })
             .returning({
               id: modules.id,
@@ -138,13 +138,13 @@ export const modulesRouter = {
       }
     }),
   list: protectedProcedure
-    .input(z.object({ workspaceId: z.string() }))
+    .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
         const modulesResult = await db.query.modules.findMany({
           where: and(
             eq(modules.userId, ctx.session.user.id),
-            eq(modules.workspaceId, input.workspaceId),
+            eq(modules.projectId, input.projectId),
           ),
         });
         return modulesResult;

@@ -17,18 +17,18 @@ import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 import { DeleteAlertDialog } from "../delete-alert-dialog";
 
 export function EnvSection({
-  workspace,
-}: { workspace: RouterOutputs["workspaces"]["byId"] }) {
+  project,
+}: { project: RouterOutputs["projects"]["byId"] }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const apiUtils = api.useUtils();
 
   const { data: environmentVariables } = api.environmentVariables.list.useQuery(
     {
-      resourceId: workspace.id,
+      projectId: project.id,
     },
     {
-      initialData: workspace.environmentVariables,
+      initialData: project.environmentVariables,
     },
   );
 
@@ -53,10 +53,10 @@ export function EnvSection({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Environment Variables</span>
-          <AddEnvironmentVariableDialog workspaceId={workspace.id} />
+          <AddEnvironmentVariableDialog projectId={project.id} />
         </CardTitle>
         <CardDescription>
-          Manage your workspace environment variables
+          Manage your project environment variables
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -35,7 +35,7 @@ export function CreateEndpointForm({
   setCreateEndpointDialogOpen?: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const { workspaceId } = useParams<{ workspaceId: string }>();
+  const { projectId } = useParams<{ projectId: string }>();
 
   const apiUtils = api.useUtils();
 
@@ -50,7 +50,7 @@ export function CreateEndpointForm({
         setCreateEndpointDialogOpen(false);
       }
       await apiUtils.endpoints.list.invalidate();
-      router.push(`/workspaces/${workspaceId}/endpoints/${data.id}`);
+      router.push(`/projects/${projectId}/endpoints/${data.id}`);
     },
     onError: (error) => {
       toast({
@@ -70,7 +70,7 @@ export function CreateEndpointForm({
       description: "",
       httpMethod: "get",
       path: "/",
-      workspaceId,
+      projectId,
     },
   });
 

@@ -1,4 +1,4 @@
-import { EndpointView } from "~/components/endpoint/endpoint-view";
+import { EndpointView } from "~/components/endpoint-view";
 import { api } from "~/lib/trpc/server";
 
 interface EndpointPageProps {

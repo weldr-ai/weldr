@@ -33,8 +33,8 @@ import {
   assistantMessageRawContentToText,
   userMessageRawContentToText,
 } from "~/lib/utils";
-import type { ReferenceNode } from "../editor/plugins/reference/node";
-import OpenApiEndpointDocs from "../openapi-endpoint-docs";
+import type { ReferenceNode } from "./editor/plugins/reference/node";
+import OpenApiEndpointDocs from "./openapi-endpoint-docs";
 
 export function EndpointView({
   initialData,
@@ -433,8 +433,8 @@ export function EndpointView({
     scrollToBottom();
   }, [scrollToBottom]);
 
-  const { data: funcs } = api.funcs.byWorkspaceId.useQuery({
-    workspaceId: endpoint.workspaceId,
+  const { data: funcs } = api.funcs.byProjectId.useQuery({
+    projectId: endpoint.projectId,
   });
 
   const helperFunctionReferences = funcs?.reduce(

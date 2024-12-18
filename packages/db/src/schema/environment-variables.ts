@@ -2,8 +2,8 @@ import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { users } from "./auth";
+import { projects } from "./projects";
 import { secrets } from "./vault";
-import { workspaces } from "./workspaces";
 
 export const environmentVariables = pgTable(
   "environment_variables",
@@ -20,24 +20,24 @@ export const environmentVariables = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
-    workspaceId: text("workspace_id")
-      .references(() => workspaces.id, { onDelete: "cascade" })
+    projectId: text("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
   },
   (t) => ({
-    uniqueKey: unique("unique_key").on(t.workspaceId, t.key),
+    uniqueKey: unique("unique_key").on(t.projectId, t.key),
   }),
 );
 
 export const environmentVariablesRelations = relations(
   environmentVariables,
   ({ one }) => ({
-    workspace: one(workspaces, {
-      fields: [environmentVariables.workspaceId],
-      references: [workspaces.id],
+    project: one(projects, {
+      fields: [environmentVariables.projectId],
+      references: [projects.id],
     }),
     user: one(users, {
       fields: [environmentVariables.userId],

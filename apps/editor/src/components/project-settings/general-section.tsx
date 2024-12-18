@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { RouterOutputs } from "@integramind/api";
-import { updateWorkspaceSchema } from "@integramind/shared/validators/workspaces";
+import { updateProjectSchema } from "@integramind/shared/validators/projects";
 import { Button } from "@integramind/ui/button";
 import {
   Card,
@@ -28,14 +28,14 @@ import type { z } from "zod";
 import { api } from "~/lib/trpc/client";
 
 export function GeneralSection({
-  workspace,
-}: { workspace: RouterOutputs["workspaces"]["byId"] }) {
+  project,
+}: { project: RouterOutputs["projects"]["byId"] }) {
   const router = useRouter();
   const apiUtils = api.useUtils();
 
-  const updateWorkspace = api.workspaces.update.useMutation({
+  const updateProject = api.projects.update.useMutation({
     onSuccess: () => {
-      apiUtils.workspaces.byId.invalidate();
+      apiUtils.projects.byId.invalidate();
       router.refresh();
     },
     onError: (error) => {
@@ -48,23 +48,23 @@ export function GeneralSection({
     },
   });
 
-  const form = useForm<z.infer<typeof updateWorkspaceSchema>>({
+  const form = useForm<z.infer<typeof updateProjectSchema>>({
     mode: "onChange",
-    resolver: zodResolver(updateWorkspaceSchema),
+    resolver: zodResolver(updateProjectSchema),
     defaultValues: {
       where: {
-        id: workspace.id,
+        id: project.id,
       },
       payload: {
-        name: workspace.name,
-        description: workspace.description ?? "",
-        subdomain: workspace.subdomain,
+        name: project.name,
+        description: project.description ?? "",
+        subdomain: project.subdomain,
       },
     },
   });
 
-  async function onSubmit(data: z.infer<typeof updateWorkspaceSchema>) {
-    const result = await updateWorkspace.mutateAsync(data);
+  async function onSubmit(data: z.infer<typeof updateProjectSchema>) {
+    const result = await updateProject.mutateAsync(data);
     form.reset({
       where: {
         id: result.id,
@@ -81,9 +81,7 @@ export function GeneralSection({
     <Card>
       <CardHeader>
         <CardTitle>General</CardTitle>
-        <CardDescription>
-          Manage your workspace general settings
-        </CardDescription>
+        <CardDescription>Manage your project general settings</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -93,7 +91,7 @@ export function GeneralSection({
               name="payload.name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Workspace Name</FormLabel>
+                  <FormLabel>Project Name</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Enter name" />
                   </FormControl>
@@ -137,12 +135,12 @@ export function GeneralSection({
                 type="submit"
                 size="sm"
                 disabled={
-                  updateWorkspace.isPending ||
+                  updateProject.isPending ||
                   !form.formState.isValid ||
                   !form.formState.isDirty
                 }
               >
-                {updateWorkspace.isPending && (
+                {updateProject.isPending && (
                   <Loader2Icon className="size-3.5 mr-2 animate-spin" />
                 )}
                 Update

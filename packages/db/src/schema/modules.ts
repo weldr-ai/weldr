@@ -5,7 +5,7 @@ import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { funcs } from "./funcs";
 import { integrations } from "./integrations";
-import { workspaces } from "./workspaces";
+import { projects } from "./projects";
 
 export const modules = pgTable("modules", {
   id: text("id")
@@ -19,7 +19,7 @@ export const modules = pgTable("modules", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-  workspaceId: text("workspace_id").references(() => workspaces.id, {
+  projectId: text("project_id").references(() => projects.id, {
     onDelete: "cascade",
   }),
   userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
@@ -34,9 +34,9 @@ export const modulesRelations = relations(modules, ({ many, one }) => ({
     fields: [modules.userId],
     references: [users.id],
   }),
-  workspace: one(workspaces, {
-    fields: [modules.workspaceId],
-    references: [workspaces.id],
+  project: one(projects, {
+    fields: [modules.projectId],
+    references: [projects.id],
   }),
   integration: one(integrations, {
     fields: [modules.integrationId],

@@ -27,7 +27,7 @@ export function AddResourceDialog({
 }: {
   integration: Pick<Integration, "id" | "name" | "type">;
   env: Pick<EnvironmentVariable, "id" | "key">[];
-  resource?: RouterOutputs["workspaces"]["byId"]["resources"][number];
+  resource?: RouterOutputs["projects"]["byId"]["resources"][number];
 }) {
   const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
 

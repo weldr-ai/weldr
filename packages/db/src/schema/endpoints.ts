@@ -12,7 +12,7 @@ import {
 import { users } from "./auth";
 import { conversations } from "./conversations";
 import { funcs } from "./funcs";
-import { workspaces } from "./workspaces";
+import { projects } from "./projects";
 
 export const httpMethods = pgEnum("http_methods", [
   "get",
@@ -45,23 +45,19 @@ export const endpoints = pgTable(
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),
-    workspaceId: text("workspace_id")
-      .references(() => workspaces.id)
+    projectId: text("project_id")
+      .references(() => projects.id)
       .notNull(),
   },
   (table) => ({
-    uniqueEndpoint: unique().on(
-      table.workspaceId,
-      table.path,
-      table.httpMethod,
-    ),
+    uniqueEndpoint: unique().on(table.projectId, table.path, table.httpMethod),
   }),
 );
 
 export const endpointsRelations = relations(endpoints, ({ one, many }) => ({
-  workspace: one(workspaces, {
-    fields: [endpoints.workspaceId],
-    references: [workspaces.id],
+  project: one(projects, {
+    fields: [endpoints.projectId],
+    references: [projects.id],
   }),
   conversation: one(conversations, {
     fields: [endpoints.conversationId],

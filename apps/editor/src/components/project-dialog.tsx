@@ -15,15 +15,15 @@ import {
 } from "@integramind/ui/command";
 
 import type { RouterOutputs } from "@integramind/api";
-import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
+import { CreateProjectDialog } from "~/components/create-project-dialog";
 import { useCommandCenterStore } from "~/lib/store";
 
-export function WorkspacesDialog({
-  workspaces,
-}: { workspaces: RouterOutputs["workspaces"]["list"] }) {
+export function ProjectsDialog({
+  projects,
+}: { projects: RouterOutputs["projects"]["list"] }) {
   const router = useRouter();
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
-  const [createWorkspaceDialogOpen, setCreateWorkspaceDialogOpen] =
+  const [createProjectDialogOpen, setCreateProjectDialogOpen] =
     useState<boolean>(false);
 
   return (
@@ -31,18 +31,18 @@ export function WorkspacesDialog({
       <Command className="fixed left-1/2 top-1/2 z-50 h-[350px] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border duration-200 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5">
         <CommandInput
           className="border-none ring-0"
-          placeholder="Search workspaces..."
+          placeholder="Search projects..."
         />
         <CommandList>
-          <CommandEmpty>No workspaces found.</CommandEmpty>
+          <CommandEmpty>No projects found.</CommandEmpty>
           <CommandGroup className="py-2">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Workspaces</span>
+              <span className="text-xs text-muted-foreground">Projects</span>
               <Button
                 className="size-6 rounded-sm bg-muted"
                 onClick={() => {
                   setCommandCenterOpen(false);
-                  setCreateWorkspaceDialogOpen(true);
+                  setCreateProjectDialogOpen(true);
                 }}
                 variant="outline"
                 size="icon"
@@ -51,27 +51,27 @@ export function WorkspacesDialog({
               </Button>
             </div>
             <div className="grid w-full grid-cols-3 gap-2">
-              {workspaces.map((workspace) => (
+              {projects.map((project) => (
                 <CommandItem
-                  key={workspace.id}
-                  value={workspace.name}
+                  key={project.id}
+                  value={project.name}
                   className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-lg text-center"
                   onSelect={() => {
                     setCommandCenterOpen(false);
-                    router.replace(`/workspaces/${workspace.id}`);
+                    router.replace(`/projects/${project.id}`);
                   }}
                 >
                   <Boxes className="mb-2 size-24" />
-                  {workspace.name}
+                  {project.name}
                 </CommandItem>
               ))}
             </div>
           </CommandGroup>
         </CommandList>
       </Command>
-      <CreateWorkspaceDialog
-        open={createWorkspaceDialogOpen}
-        setOpen={setCreateWorkspaceDialogOpen}
+      <CreateProjectDialog
+        open={createProjectDialogOpen}
+        setOpen={setCreateProjectDialogOpen}
       />
     </>
   );

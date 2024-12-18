@@ -10,9 +10,9 @@ import { IntegrationsSection } from "./integrations-section";
 
 type Tab = "general" | "integrations" | "env";
 
-export function WorkspaceSettings({
-  workspace,
-}: { workspace: RouterOutputs["workspaces"]["byId"] }) {
+export function ProjectSettings({
+  project,
+}: { project: RouterOutputs["projects"]["byId"] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -69,15 +69,15 @@ export function WorkspaceSettings({
 
       <div className="flex-1">
         <TabsContent value="general" className="space-y-4 mt-0">
-          <GeneralSection workspace={workspace} />
+          <GeneralSection project={project} />
         </TabsContent>
 
         <TabsContent value="integrations" className="mt-0">
-          <IntegrationsSection workspace={workspace} />
+          <IntegrationsSection project={project} />
         </TabsContent>
 
         <TabsContent value="env" className="mt-0">
-          <EnvSection workspace={workspace} />
+          <EnvSection project={project} />
         </TabsContent>
       </div>
     </Tabs>

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@integramind/auth";
 import { headers } from "next/headers";
 
-export default async function WorkspacesLayout({
+export default async function ProjectsLayout({
   children,
 }: {
   children: React.ReactNode;

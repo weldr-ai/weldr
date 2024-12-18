@@ -12,14 +12,14 @@ import { LogoIcon } from "@integramind/ui/icons/logo-icon";
 import { BoxesIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
 import { useCommandCenterStore } from "~/lib/store";
-import { CreateWorkspaceDialog } from "./create-workspace-dialog";
+import { CreateProjectDialog } from "./create-project-dialog";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 
 export function Navbar() {
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
   const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
     useState<boolean>(false);
-  const [createWorkspaceDialogOpen, setCreateWorkspaceDialogOpen] =
+  const [createProjectDialogOpen, setCreateProjectDialogOpen] =
     useState<boolean>(false);
 
   return (
@@ -36,10 +36,10 @@ export function Navbar() {
         <DropdownMenuContent className="w-56" align="start" side="right">
           <DropdownMenuItem
             className="text-xs"
-            onClick={() => setCreateWorkspaceDialogOpen(true)}
+            onClick={() => setCreateProjectDialogOpen(true)}
           >
             <PlusIcon className="mr-3 size-4 text-muted-foreground" />
-            Create Workspace
+            Create Project
           </DropdownMenuItem>
           <DropdownMenuItem
             className="flex items-center justify-between text-xs"
@@ -47,7 +47,7 @@ export function Navbar() {
           >
             <div className="flex gap-3">
               <BoxesIcon className="size-4 text-muted-foreground" />
-              <span>View All Workspaces</span>
+              <span>View All Projects</span>
             </div>
             <span className="text-muted-foreground">cmd+k</span>
           </DropdownMenuItem>
@@ -60,9 +60,9 @@ export function Navbar() {
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
-        <CreateWorkspaceDialog
-          open={createWorkspaceDialogOpen}
-          setOpen={setCreateWorkspaceDialogOpen}
+        <CreateProjectDialog
+          open={createProjectDialogOpen}
+          setOpen={setCreateProjectDialogOpen}
         />
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}

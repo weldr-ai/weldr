@@ -14,18 +14,18 @@ export const endpointsRouter = {
     .mutation(async ({ ctx, input }) => {
       try {
         const result = await ctx.db.transaction(async (tx) => {
-          const workspace = await tx.query.workspaces.findFirst({
-            where: (workspaces, { eq }) =>
+          const project = await tx.query.projects.findFirst({
+            where: (projects, { eq }) =>
               and(
-                eq(workspaces.id, input.workspaceId),
-                eq(workspaces.userId, ctx.session.user.id),
+                eq(projects.id, input.projectId),
+                eq(projects.userId, ctx.session.user.id),
               ),
           });
 
-          if (!workspace) {
+          if (!project) {
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: "Workspace not found",
+              message: "Project not found",
             });
           }
 
@@ -48,7 +48,7 @@ export const endpointsRouter = {
             .values({
               ...input,
               userId: ctx.session.user.id,
-              workspaceId: workspace.id,
+              projectId: project.id,
               conversationId: conversation[0].id,
             })
             .returning({ id: endpoints.id });
@@ -114,7 +114,7 @@ export const endpointsRouter = {
       }
     }),
   list: protectedProcedure
-    .input(z.object({ workspaceId: z.string().cuid2() }))
+    .input(z.object({ projectId: z.string().cuid2() }))
     .query(async ({ ctx, input }) => {
       try {
         return await ctx.db
@@ -123,7 +123,7 @@ export const endpointsRouter = {
           .where(
             and(
               eq(endpoints.userId, ctx.session.user.id),
-              eq(endpoints.workspaceId, input.workspaceId),
+              eq(endpoints.projectId, input.projectId),
             ),
           );
       } catch (error) {

@@ -15,7 +15,7 @@ export const environmentVariablesRouter = {
     .mutation(async ({ input, ctx }) => {
       const isUnique = await ctx.db.query.environmentVariables.findFirst({
         where: and(
-          eq(environmentVariables.workspaceId, input.workspaceId),
+          eq(environmentVariables.projectId, input.projectId),
           eq(environmentVariables.key, input.key),
         ),
       });
@@ -70,26 +70,12 @@ export const environmentVariablesRouter = {
       return environmentVariable;
     }),
   list: protectedProcedure
-    .input(z.object({ resourceId: z.string() }))
+    .input(z.object({ projectId: z.string() }))
     .query(async ({ input, ctx }) => {
       return ctx.db.query.environmentVariables.findMany({
-        where: eq(environmentVariables.workspaceId, input.resourceId),
+        where: eq(environmentVariables.projectId, input.projectId),
         columns: {
           secretId: false,
-        },
-      });
-    }),
-  resourceEnvironmentVariables: protectedProcedure
-    .input(z.object({ resourceId: z.string() }))
-    .query(async ({ input, ctx }) => {
-      return ctx.db.query.resourceEnvironmentVariables.findMany({
-        where: eq(resourceEnvironmentVariables.resourceId, input.resourceId),
-        with: {
-          environmentVariable: {
-            columns: {
-              key: true,
-            },
-          },
         },
       });
     }),

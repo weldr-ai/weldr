@@ -24,7 +24,7 @@ export const endpointSchema = z.object({
   openApiSpec: z.record(z.string(), z.unknown()).optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  workspaceId: z.string().cuid2(),
+  projectId: z.string().cuid2(),
   funcs: z.array(funcSchema),
   conversationId: z.string().cuid2(),
   conversation: conversationSchema,
@@ -35,7 +35,7 @@ export const insertEndpointSchema = z.object({
   description: z.string().optional(),
   httpMethod: httpMethods,
   path: endpointPathSchema,
-  workspaceId: z.string().cuid2(),
+  projectId: z.string().cuid2(),
 });
 
 export const updateEndpointSchema = z.object({

@@ -1,5 +1,5 @@
 {
-  "id": "c682be3a-17b6-4996-86f9-978242642a94",
+  "id": "51ad3e39-0f27-46a8-8d34-9c76d3019c3c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -526,8 +526,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "workspace_id": {
-          "name": "workspace_id",
+        "project_id": {
+          "name": "project_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -553,11 +553,11 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "endpoints_workspace_id_workspaces_id_fk": {
-          "name": "endpoints_workspace_id_workspaces_id_fk",
+        "endpoints_project_id_projects_id_fk": {
+          "name": "endpoints_project_id_projects_id_fk",
           "tableFrom": "endpoints",
-          "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
+          "tableTo": "projects",
+          "columnsFrom": ["project_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -565,10 +565,10 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "endpoints_workspace_id_path_http_method_unique": {
-          "name": "endpoints_workspace_id_path_http_method_unique",
+        "endpoints_project_id_path_http_method_unique": {
+          "name": "endpoints_project_id_path_http_method_unique",
           "nullsNotDistinct": false,
-          "columns": ["workspace_id", "path", "http_method"]
+          "columns": ["project_id", "path", "http_method"]
         }
       },
       "policies": {},
@@ -617,8 +617,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "workspace_id": {
-          "name": "workspace_id",
+        "project_id": {
+          "name": "project_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -638,11 +638,11 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "modules_workspace_id_workspaces_id_fk": {
-          "name": "modules_workspace_id_workspaces_id_fk",
+        "modules_project_id_projects_id_fk": {
+          "name": "modules_project_id_projects_id_fk",
           "tableFrom": "modules",
-          "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
+          "tableTo": "projects",
+          "columnsFrom": ["project_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -865,8 +865,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "workspace_id": {
-          "name": "workspace_id",
+        "project_id": {
+          "name": "project_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -923,11 +923,11 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "funcs_workspace_id_workspaces_id_fk": {
-          "name": "funcs_workspace_id_workspaces_id_fk",
+        "funcs_project_id_projects_id_fk": {
+          "name": "funcs_project_id_projects_id_fk",
           "tableFrom": "funcs",
-          "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
+          "tableTo": "projects",
+          "columnsFrom": ["project_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1030,8 +1030,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "workspace_id": {
-          "name": "workspace_id",
+        "project_id": {
+          "name": "project_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1051,11 +1051,11 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "resources_workspace_id_workspaces_id_fk": {
-          "name": "resources_workspace_id_workspaces_id_fk",
+        "resources_project_id_projects_id_fk": {
+          "name": "resources_project_id_projects_id_fk",
           "tableFrom": "resources",
-          "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
+          "tableTo": "projects",
+          "columnsFrom": ["project_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1081,18 +1081,18 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "resources_name_workspace_id_unique": {
-          "name": "resources_name_workspace_id_unique",
+        "resources_name_project_id_unique": {
+          "name": "resources_name_project_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["name", "workspace_id"]
+          "columns": ["name", "project_id"]
         }
       },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.workspaces": {
-      "name": "workspaces",
+    "public.projects": {
+      "name": "projects",
       "schema": "",
       "columns": {
         "id": {
@@ -1148,9 +1148,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "workspaces_user_id_users_id_fk": {
-          "name": "workspaces_user_id_users_id_fk",
-          "tableFrom": "workspaces",
+        "projects_user_id_users_id_fk": {
+          "name": "projects_user_id_users_id_fk",
+          "tableFrom": "projects",
           "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
@@ -1160,8 +1160,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "workspaces_subdomain_unique": {
-          "name": "workspaces_subdomain_unique",
+        "projects_subdomain_unique": {
+          "name": "projects_subdomain_unique",
           "nullsNotDistinct": false,
           "columns": ["subdomain"]
         }
@@ -1206,8 +1206,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "workspace_id": {
-          "name": "workspace_id",
+        "project_id": {
+          "name": "project_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1231,11 +1231,11 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "environment_variables_workspace_id_workspaces_id_fk": {
-          "name": "environment_variables_workspace_id_workspaces_id_fk",
+        "environment_variables_project_id_projects_id_fk": {
+          "name": "environment_variables_project_id_projects_id_fk",
           "tableFrom": "environment_variables",
-          "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
+          "tableTo": "projects",
+          "columnsFrom": ["project_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1255,7 +1255,7 @@
         "unique_key": {
           "name": "unique_key",
           "nullsNotDistinct": false,
-          "columns": ["workspace_id", "key"]
+          "columns": ["project_id", "key"]
         }
       },
       "policies": {},

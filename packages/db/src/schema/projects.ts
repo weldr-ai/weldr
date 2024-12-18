@@ -8,7 +8,7 @@ import { environmentVariables } from "./environment-variables";
 import { modules } from "./modules";
 import { resources } from "./resources";
 
-export const workspaces = pgTable("workspaces", {
+export const projects = pgTable("projects", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
@@ -26,13 +26,13 @@ export const workspaces = pgTable("workspaces", {
     .notNull(),
 });
 
-export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
+export const projectRelations = relations(projects, ({ many, one }) => ({
   resources: many(resources),
   modules: many(modules),
   endpoints: many(endpoints),
   environmentVariables: many(environmentVariables),
   user: one(users, {
-    fields: [workspaces.userId],
+    fields: [projects.userId],
     references: [users.id],
   }),
 }));

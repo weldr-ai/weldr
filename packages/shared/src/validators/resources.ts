@@ -8,7 +8,7 @@ export const resourceSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   userId: z.string(),
-  workspaceId: z.string(),
+  projectId: z.string(),
   integrationId: z.string(),
   integration: integrationSchema,
 });
@@ -24,8 +24,8 @@ export const insertResourceSchema = z.object({
         "Must start with a letter and can only contain letters and numbers",
     }),
   description: z.string().optional(),
-  workspaceId: z.string().min(1, {
-    message: "Workspace is required.",
+  projectId: z.string().min(1, {
+    message: "Project is required.",
   }),
   integrationId: z.string().min(1, {
     message: "Integration is required.",

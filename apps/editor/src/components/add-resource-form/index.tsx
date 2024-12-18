@@ -19,7 +19,7 @@ export function AddResourceForm({
 }: {
   integration: Pick<Integration, "id" | "name" | "type">;
   env: Pick<EnvironmentVariable, "key">[];
-  resource?: RouterOutputs["workspaces"]["byId"]["resources"][number];
+  resource?: RouterOutputs["projects"]["byId"]["resources"][number];
   resourceEnvironmentVariables?: {
     mapTo: string;
     userKey: string;

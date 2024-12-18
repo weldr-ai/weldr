@@ -24,9 +24,9 @@ import type {
   integrationTypeSchema,
 } from "../validators/integrations";
 import type { moduleSchema } from "../validators/modules";
+import type { projectSchema } from "../validators/projects";
 import type { resourceSchema } from "../validators/resources";
 import type { testRunSchema } from "../validators/test-runs";
-import type { workspaceSchema } from "../validators/workspaces";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
 
@@ -50,7 +50,7 @@ export interface FlatInputSchema {
 export type InputSchema = z.infer<typeof inputSchema>;
 export type OutputSchema = z.infer<typeof outputSchema>;
 
-export type Workspace = z.infer<typeof workspaceSchema>;
+export type Project = z.infer<typeof projectSchema>;
 
 export type Module = z.infer<typeof moduleSchema>;
 

@@ -51,12 +51,12 @@ const edgeTypes = {
 
 export function Canvas({
   moduleId,
-  workspaceId,
+  projectId,
   initialNodes,
   initialEdges,
 }: {
   moduleId: string;
-  workspaceId: string;
+  projectId: string;
   initialNodes: CanvasNode[];
   initialEdges: CanvasEdge[];
 }) {
@@ -156,12 +156,12 @@ export function Canvas({
       await createFunc.mutateAsync({
         id: newNodeId,
         moduleId,
-        workspaceId,
+        projectId,
         positionX: Math.floor(position.x),
         positionY: Math.floor(position.y),
       });
     },
-    [createFunc, moduleId, setNodes, screenToFlowPosition, workspaceId],
+    [createFunc, moduleId, setNodes, screenToFlowPosition, projectId],
   );
 
   const onNodeDragStop = useCallback(

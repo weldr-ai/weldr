@@ -15,7 +15,7 @@ import {
 const router = createRouter();
 
 router.post(
-  "/apps",
+  "/projects",
   eventHandler(async (event) => {
     if (event.headers.get("content-type") !== "application/json") {
       setResponseStatus(event, 415);
@@ -23,7 +23,7 @@ router.post(
     }
 
     const validationSchema = z.object({
-      appId: z.string(),
+      projectId: z.string(),
     });
 
     const body = await readValidatedBody(event, validationSchema.safeParse);
@@ -33,10 +33,10 @@ router.post(
       return { message: "Invalid request body" };
     }
 
-    const { appId } = body.data;
+    const { projectId } = body.data;
 
     try {
-      const flyApp = await createFlyApp(appId);
+      const flyApp = await createFlyApp(projectId);
 
       if (!flyApp) {
         setResponseStatus(event, 500);
@@ -44,14 +44,14 @@ router.post(
       }
 
       await createDockerImage({
-        appId,
+        projectId,
         dockerImageName: "integramind/engine",
         outputTag: "engine",
       });
 
       const engineMachine = await createFlyMachine(
-        appId,
-        `registry.fly.io/${appId}:engine`,
+        projectId,
+        `registry.fly.io/${projectId}:engine`,
         {
           guest: {
             cpus: 1,
@@ -62,7 +62,7 @@ router.post(
 
       if (!engineMachine) {
         setResponseStatus(event, 500);
-        await deleteFlyApp(appId);
+        await deleteFlyApp(projectId);
         return { message: "Failed to create new App" };
       }
 
@@ -73,14 +73,14 @@ router.post(
     } catch (error) {
       console.error(error);
       setResponseStatus(event, 500);
-      await deleteFlyApp(appId);
+      await deleteFlyApp(projectId);
       return { message: "Failed to create Fly app" };
     }
   }),
 );
 
 router.delete(
-  "/apps/:appId",
+  "/projects/:projectId",
   eventHandler(async (event) => {
     if (event.headers.get("content-type") !== "application/json") {
       setResponseStatus(event, 415);
@@ -88,7 +88,7 @@ router.delete(
     }
 
     const validationSchema = z.object({
-      appId: z.string(),
+      projectId: z.string(),
     });
 
     const body = await readValidatedBody(event, validationSchema.safeParse);
@@ -98,10 +98,10 @@ router.delete(
       return { message: "Invalid request body" };
     }
 
-    const { appId } = body.data;
+    const { projectId } = body.data;
 
     try {
-      await deleteFlyApp(appId);
+      await deleteFlyApp(projectId);
 
       setResponseStatus(event, 200);
       return { message: "App deleted" };

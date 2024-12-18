@@ -9,20 +9,20 @@ import { Sidebar } from "~/components/sidebar";
 import { ResourcesProvider } from "~/lib/context/resources";
 import { api } from "~/lib/trpc/server";
 
-export default async function WorkspacesLayout({
+export default async function ProjectLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ workspaceId: string }>;
+  params: Promise<{ projectId: string }>;
 }): Promise<JSX.Element> {
   try {
-    const { workspaceId } = await params;
-    const workspace = await api.workspaces.byId({ id: workspaceId });
-    const workspaces = await api.workspaces.list();
-    const resources = workspace.resources;
+    const { projectId } = await params;
+    const project = await api.projects.byId({ id: projectId });
+    const projects = await api.projects.list();
+    const resources = project.resources;
 
-    const resourcesWithMetadata: (RouterOutputs["workspaces"]["byId"]["resources"][0] & {
+    const resourcesWithMetadata: (RouterOutputs["projects"]["byId"]["resources"][0] & {
       metadata: unknown;
     })[] = [];
 
@@ -69,9 +69,9 @@ export default async function WorkspacesLayout({
         <div className="flex h-screen bg-background">
           <div className="sticky top-0 h-screen dark:bg-muted z-50">
             <Sidebar
-              workspace={workspace}
-              initialModules={workspace.modules}
-              initialEndpoints={workspace.endpoints}
+              project={project}
+              initialModules={project.modules}
+              initialEndpoints={project.endpoints}
             />
           </div>
           <main className="flex-1 dark:bg-muted py-2.5 pr-2.5">
@@ -80,7 +80,7 @@ export default async function WorkspacesLayout({
             </div>
           </main>
         </div>
-        <CommandCenter workspaces={workspaces} />
+        <CommandCenter projects={projects} />
       </ResourcesProvider>
     );
   } catch (error) {

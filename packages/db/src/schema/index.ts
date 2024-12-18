@@ -7,7 +7,7 @@ export * from "./func-internal-graph";
 export * from "./funcs";
 export * from "./integrations";
 export * from "./modules";
+export * from "./projects";
 export * from "./resources";
 export * from "./test-runs";
 export * from "./vault";
-export * from "./workspaces";

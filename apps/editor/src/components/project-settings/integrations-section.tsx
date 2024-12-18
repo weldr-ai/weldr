@@ -164,13 +164,13 @@ const comingSoonIntegrations = [
 ];
 
 export function IntegrationsSection({
-  workspace,
-}: { workspace: RouterOutputs["workspaces"]["byId"] }) {
+  project,
+}: { project: RouterOutputs["projects"]["byId"] }) {
   const { resolvedTheme } = useTheme();
   const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
 
-  const groupedResources = workspace.resources.reduce<
-    Record<string, RouterOutputs["workspaces"]["byId"]["resources"]>
+  const groupedResources = project.resources.reduce<
+    Record<string, RouterOutputs["projects"]["byId"]["resources"]>
   >(
     (acc, resource) => {
       if (resource.integration.type) {
@@ -181,7 +181,7 @@ export function IntegrationsSection({
       }
       return acc;
     },
-    {} as Record<string, RouterOutputs["workspaces"]["byId"]["resources"]>,
+    {} as Record<string, RouterOutputs["projects"]["byId"]["resources"]>,
   );
 
   const { data: integrations } = api.integrations.list.useQuery();
@@ -243,12 +243,12 @@ export function IntegrationsSection({
                         key={resource.id}
                         integration={integration}
                         resource={resource}
-                        env={workspace.environmentVariables}
+                        env={project.environmentVariables}
                       />
                     ))}
                     <AddResourceDialog
                       integration={integration}
-                      env={workspace.environmentVariables}
+                      env={project.environmentVariables}
                     />
                   </div>
                 </div>

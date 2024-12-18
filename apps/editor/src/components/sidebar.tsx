@@ -2,17 +2,16 @@
 
 import {
   AppWindowIcon,
+  BoltIcon,
   BoxesIcon,
   DatabaseIcon,
   PackageIcon,
   PlusIcon,
-  RefreshCcwIcon,
-  SettingsIcon,
-  TrashIcon,
+  WorkflowIcon,
 } from "lucide-react";
 
 import type { RouterOutputs } from "@integramind/api";
-import { Button } from "@integramind/ui/button";
+import { Button, buttonVariants } from "@integramind/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,27 +35,27 @@ import { api } from "~/lib/trpc/client";
 import { AccountDropdownMenu } from "./account-dropdown-menu";
 import { CreateEndpointDialog } from "./create-endpoint-dialog";
 import { CreateModuleDialog } from "./create-module-dialog";
-import { CreateWorkspaceDialog } from "./create-workspace-dialog";
+import { CreateProjectDialog } from "./create-project-dialog";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 
 export function Sidebar({
-  workspace,
+  project,
   initialModules,
   initialEndpoints,
 }: {
-  workspace: RouterOutputs["workspaces"]["byId"];
+  project: RouterOutputs["projects"]["byId"];
   initialModules: RouterOutputs["modules"]["list"];
   initialEndpoints: RouterOutputs["endpoints"]["list"];
 }) {
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
   const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
     useState<boolean>(false);
-  const [createWorkspaceDialogOpen, setCreateWorkspaceDialogOpen] =
+  const [createProjectDialogOpen, setCreateProjectDialogOpen] =
     useState<boolean>(false);
 
   const { data: modules } = api.modules.list.useQuery(
     {
-      workspaceId: workspace.id,
+      projectId: project.id,
     },
     {
       initialData: initialModules,
@@ -65,7 +64,7 @@ export function Sidebar({
 
   const { data: endpoints } = api.endpoints.list.useQuery(
     {
-      workspaceId: workspace.id,
+      projectId: project.id,
     },
     {
       initialData: initialEndpoints,
@@ -82,45 +81,28 @@ export function Sidebar({
               <span className="sr-only">IntegraMind</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" side="right">
-            <DropdownMenuItem className="text-xs">
-              <Link
-                href={`/workspaces/${workspace.id}/settings`}
-                className="flex items-center justify-start w-full"
-              >
-                <SettingsIcon className="mr-3 size-4 text-muted-foreground" />
-                Workspace Settings
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-xs"
-              onClick={() => setCreateWorkspaceDialogOpen(true)}
-            >
-              <PlusIcon className="mr-3 size-4 text-muted-foreground" />
-              Create Workspace
-            </DropdownMenuItem>
+          <DropdownMenuContent className="w-56" align="start" side="right">
             <DropdownMenuItem
               className="flex items-center justify-between text-xs"
               onClick={() => setCommandCenterOpen(true)}
             >
               <div className="flex gap-3">
                 <BoxesIcon className="size-4 text-muted-foreground" />
-                <span>View All Workspaces</span>
+                <span>View All Projects</span>
               </div>
               <span className="text-muted-foreground">cmd+k</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="text-xs text-destructive hover:text-destructive/90 focus:text-destructive/90"
-              onClick={() => setDeleteAlertDialogOpen(true)}
+              className="text-xs"
+              onClick={() => setCreateProjectDialogOpen(true)}
             >
-              <TrashIcon className="mr-3 size-4" />
-              Delete
+              <PlusIcon className="mr-3 size-4 text-muted-foreground" />
+              Create Project
             </DropdownMenuItem>
           </DropdownMenuContent>
-          <CreateWorkspaceDialog
-            open={createWorkspaceDialogOpen}
-            setOpen={setCreateWorkspaceDialogOpen}
+          <CreateProjectDialog
+            open={createProjectDialogOpen}
+            setOpen={setCreateProjectDialogOpen}
           />
           <DeleteAlertDialog
             open={deleteAlertDialogOpen}
@@ -197,7 +179,7 @@ export function Sidebar({
                   endpoints.map((endpoint) => (
                     <Link
                       key={endpoint.id}
-                      href={`/workspaces/${workspace.id}/endpoints/${endpoint.id}`}
+                      href={`/projects/${project.id}/endpoints/${endpoint.id}`}
                     >
                       <DropdownMenuItem className="text-xs">
                         <span
@@ -238,7 +220,7 @@ export function Sidebar({
               <DropdownMenuTrigger asChild>
                 <TooltipTrigger asChild>
                   <Button size="icon" variant="ghost">
-                    <RefreshCcwIcon className="size-5" />
+                    <WorkflowIcon className="size-5" />
                   </Button>
                 </TooltipTrigger>
               </DropdownMenuTrigger>
@@ -299,7 +281,7 @@ export function Sidebar({
                   modules.map((module) => (
                     <Link
                       key={module.id}
-                      href={`/workspaces/${workspace.id}/modules/${module.id}`}
+                      href={`/projects/${project.id}/modules/${module.id}`}
                     >
                       <DropdownMenuItem className="text-xs">
                         {module.name}
@@ -328,6 +310,23 @@ export function Sidebar({
               className="bg-muted border relative -top-2"
             >
               <p>Database</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href={`/projects/${project.id}/settings`}
+                className={buttonVariants({ variant: "ghost", size: "icon" })}
+              >
+                <BoltIcon className="size-5" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              className="bg-muted border relative -top-2"
+            >
+              <p>Settings</p>
             </TooltipContent>
           </Tooltip>
         </div>

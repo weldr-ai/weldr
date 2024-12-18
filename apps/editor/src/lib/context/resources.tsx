@@ -4,7 +4,7 @@ import type { RouterOutputs } from "@integramind/api";
 import { createContext, useContext } from "react";
 
 export const ResourcesContext = createContext<
-  (RouterOutputs["workspaces"]["byId"]["resources"][0] & {
+  (RouterOutputs["projects"]["byId"]["resources"][0] & {
     metadata?: unknown;
   })[]
 >([]);
@@ -18,7 +18,7 @@ export function ResourcesProvider({
   resources,
 }: {
   children: React.ReactNode;
-  resources: (RouterOutputs["workspaces"]["byId"]["resources"][0] & {
+  resources: (RouterOutputs["projects"]["byId"]["resources"][0] & {
     metadata?: unknown;
   })[];
 }) {

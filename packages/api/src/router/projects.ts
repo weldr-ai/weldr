@@ -1,47 +1,44 @@
 import { and, eq } from "@integramind/db";
+import { projects, resourceEnvironmentVariables } from "@integramind/db/schema";
 import {
-  resourceEnvironmentVariables,
-  workspaces,
-} from "@integramind/db/schema";
-import {
-  insertWorkspaceSchema,
-  updateWorkspaceSchema,
-} from "@integramind/shared/validators/workspaces";
+  insertProjectSchema,
+  updateProjectSchema,
+} from "@integramind/shared/validators/projects";
 import { createId } from "@paralleldrive/cuid2";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
-export const workspacesRouter = {
+export const projectsRouter = {
   create: protectedProcedure
-    .input(insertWorkspaceSchema)
+    .input(insertProjectSchema)
     .mutation(async ({ ctx, input }) => {
       try {
         return await ctx.db.transaction(async (tx) => {
-          const workspaceId = createId();
+          const projectId = createId();
 
           const response = await ofetch<{ engineMachineId: string }>(
-            `${process.env.DEPLOYER_API_URL}/apps`,
+            `${process.env.DEPLOYER_API_URL}/projects`,
             {
               method: "POST",
               retry: 3,
               retryDelay: 1000,
               body: {
-                appId: workspaceId,
+                projectId,
               },
               async onRequestError({ request, options, error }) {
                 console.log("[fetch request error]", request, error);
                 throw new TRPCError({
                   code: "INTERNAL_SERVER_ERROR",
-                  message: "Failed to create workspace",
+                  message: "Failed to create project",
                 });
               },
               async onResponseError({ request, response, options }) {
                 console.log("[fetch response error]", request, response);
                 throw new TRPCError({
                   code: "INTERNAL_SERVER_ERROR",
-                  message: "Failed to create workspace",
+                  message: "Failed to create project",
                 });
               },
             },
@@ -50,32 +47,32 @@ export const workspacesRouter = {
           if (!response.engineMachineId) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create workspace",
+              message: "Failed to create project",
             });
           }
 
-          const workspace = (
+          const project = (
             await tx
-              .insert(workspaces)
+              .insert(projects)
               .values({
-                id: workspaceId,
+                id: projectId,
                 name: input.name,
                 subdomain: input.subdomain,
                 description: input.description,
                 userId: ctx.session.user.id,
                 engineMachineId: response.engineMachineId,
               })
-              .returning({ id: workspaces.id })
+              .returning({ id: projects.id })
           )[0];
 
-          if (!workspace) {
+          if (!project) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create workspace",
+              message: "Failed to create project",
             });
           }
 
-          return workspace;
+          return project;
         });
       } catch (error) {
         console.error(error);
@@ -84,21 +81,21 @@ export const workspacesRouter = {
         }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create workspace",
+          message: "Failed to create project",
         });
       }
     }),
   list: protectedProcedure.query(async ({ ctx }) => {
     try {
-      const result = await ctx.db.query.workspaces.findMany({
-        where: eq(workspaces.userId, ctx.session.user.id),
+      const result = await ctx.db.query.projects.findMany({
+        where: eq(projects.userId, ctx.session.user.id),
       });
       return result;
     } catch (error) {
       console.error(error);
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to list workspaces",
+        message: "Failed to list projects",
       });
     }
   }),
@@ -106,10 +103,10 @@ export const workspacesRouter = {
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        const workspace = await ctx.db.query.workspaces.findFirst({
+        const project = await ctx.db.query.projects.findFirst({
           where: and(
-            eq(workspaces.id, input.id),
-            eq(workspaces.userId, ctx.session.user.id),
+            eq(projects.id, input.id),
+            eq(projects.userId, ctx.session.user.id),
           ),
           with: {
             environmentVariables: {
@@ -140,15 +137,15 @@ export const workspacesRouter = {
           },
         });
 
-        if (!workspace) {
+        if (!project) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Workspace not found",
+            message: "Project not found",
           });
         }
 
         const resourceEnvs = await Promise.all(
-          workspace.resources.map(async (resource) => {
+          project.resources.map(async (resource) => {
             const data =
               await ctx.db.query.resourceEnvironmentVariables.findMany({
                 where: eq(resourceEnvironmentVariables.resourceId, resource.id),
@@ -172,7 +169,7 @@ export const workspacesRouter = {
         );
 
         const result = {
-          ...workspace,
+          ...project,
           resources: resourceEnvs,
         };
 
@@ -184,22 +181,22 @@ export const workspacesRouter = {
         }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to get workspace",
+          message: "Failed to get project",
         });
       }
     }),
   update: protectedProcedure
-    .input(updateWorkspaceSchema)
+    .input(updateProjectSchema)
     .mutation(async ({ ctx, input }) => {
       try {
         const result = (
           await ctx.db
-            .update(workspaces)
+            .update(projects)
             .set(input.payload)
             .where(
               and(
-                eq(workspaces.id, input.where.id),
-                eq(workspaces.userId, ctx.session.user.id),
+                eq(projects.id, input.where.id),
+                eq(projects.userId, ctx.session.user.id),
               ),
             )
             .returning()
@@ -208,7 +205,7 @@ export const workspacesRouter = {
         if (!result) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Workspace not found",
+            message: "Project not found",
           });
         }
 
@@ -220,7 +217,7 @@ export const workspacesRouter = {
         }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update workspace",
+          message: "Failed to update project",
         });
       }
     }),
@@ -228,42 +225,45 @@ export const workspacesRouter = {
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const workspace = await ctx.db.query.workspaces.findFirst({
+        const project = await ctx.db.query.projects.findFirst({
           where: and(
-            eq(workspaces.id, input.id),
-            eq(workspaces.userId, ctx.session.user.id),
+            eq(projects.id, input.id),
+            eq(projects.userId, ctx.session.user.id),
           ),
         });
 
-        if (!workspace) {
+        if (!project) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Workspace not found",
+            message: "Project not found",
           });
         }
 
-        const response = await ofetch(`${process.env.DEPLOYER_API_URL}/apps`, {
-          method: "DELETE",
-          retry: 3,
-          retryDelay: 1000,
-          body: {
-            workspaceId: input.id,
+        const response = await ofetch(
+          `${process.env.DEPLOYER_API_URL}/projects`,
+          {
+            method: "DELETE",
+            retry: 3,
+            retryDelay: 1000,
+            body: {
+              projectId: input.id,
+            },
           },
-        });
+        );
 
         if (response.status !== 200) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to delete workspace",
+            message: "Failed to delete project",
           });
         }
 
         await ctx.db
-          .delete(workspaces)
+          .delete(projects)
           .where(
             and(
-              eq(workspaces.id, input.id),
-              eq(workspaces.userId, ctx.session.user.id),
+              eq(projects.id, input.id),
+              eq(projects.userId, ctx.session.user.id),
             ),
           );
       } catch (error) {
@@ -273,7 +273,7 @@ export const workspacesRouter = {
         }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete workspace",
+          message: "Failed to delete project",
         });
       }
     }),

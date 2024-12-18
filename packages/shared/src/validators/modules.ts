@@ -8,7 +8,7 @@ export const moduleSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   userId: z.string().nullable(),
-  workspaceId: z.string().nullable(),
+  projectId: z.string().nullable(),
   funcs: funcSchema.array(),
 });
 
@@ -26,8 +26,8 @@ export const insertModuleSchema = z.object({
         "Name can only contain letters and numbers, no spaces or special characters.",
     }),
   description: z.string().optional(),
-  workspaceId: z.string().min(1, {
-    message: "Workspace is required.",
+  projectId: z.string().min(1, {
+    message: "Project is required.",
   }),
 });
 

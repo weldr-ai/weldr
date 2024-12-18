@@ -7,8 +7,8 @@ import { endpoints } from "./endpoints";
 import { environmentVariables } from "./environment-variables";
 import { funcs } from "./funcs";
 import { modules } from "./modules";
+import { projects } from "./projects";
 import { resources } from "./resources";
-import { workspaces } from "./workspaces";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -24,7 +24,7 @@ export const users = pgTable("users", {
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
-  workspaces: many(workspaces),
+  projects: many(projects),
   modules: many(modules),
   funcs: many(funcs),
   resources: many(resources),

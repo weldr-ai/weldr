@@ -15,17 +15,17 @@ import {
 } from "@integramind/ui/command";
 
 import type { RouterOutputs } from "@integramind/api";
-import { CreateWorkspaceDialog } from "~/components/create-workspace-dialog";
+import { CreateProjectDialog } from "~/components/create-project-dialog";
 import { useCommandCenterStore } from "~/lib/store";
 
-// TODO: the command center should be a complete center to navigate the workspace quickly
+// TODO: the command center should be a complete center to navigate the project quickly
 export function CommandCenter({
-  workspaces,
-}: { workspaces: RouterOutputs["workspaces"]["list"] }) {
+  projects,
+}: { projects: RouterOutputs["projects"]["list"] }) {
   const router = useRouter();
   const commandCenterOpen = useCommandCenterStore((state) => state.open);
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
-  const [createWorkspaceDialogOpen, setCreateWorkspaceDialogOpen] =
+  const [createProjectDialogOpen, setCreateProjectDialogOpen] =
     useState<boolean>(false);
 
   useEffect(() => {
@@ -47,16 +47,16 @@ export function CommandCenter({
       >
         <CommandInput
           className="border-none ring-0"
-          placeholder="Search workspaces..."
+          placeholder="Search projects..."
         />
         <CommandList className="h-96 w-[500px]">
           <div className="flex items-center justify-between pt-2 px-3">
-            <span className="text-xs text-muted-foreground">Workspaces</span>
+            <span className="text-xs text-muted-foreground">Projects</span>
             <Button
               className="size-6 rounded-sm bg-muted"
               onClick={() => {
                 setCommandCenterOpen(false);
-                setCreateWorkspaceDialogOpen(true);
+                setCreateProjectDialogOpen(true);
               }}
               variant="outline"
               size="icon"
@@ -64,30 +64,30 @@ export function CommandCenter({
               <PlusIcon className="size-3 text-muted-foreground" />
             </Button>
           </div>
-          <CommandEmpty>No workspaces found.</CommandEmpty>
+          <CommandEmpty>No projects found.</CommandEmpty>
           <CommandGroup>
             <div className="grid w-full grid-cols-3 gap-2">
-              {workspaces.map((workspace) => (
+              {projects.map((project) => (
                 <CommandItem
-                  key={workspace.id}
-                  value={workspace.name}
+                  key={project.id}
+                  value={project.name}
                   className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-lg text-center"
                   onSelect={() => {
                     setCommandCenterOpen(false);
-                    router.replace(`/workspaces/${workspace.id}`);
+                    router.replace(`/projects/${project.id}`);
                   }}
                 >
                   <BoxesIcon className="mb-2 size-24" />
-                  {workspace.name}
+                  {project.name}
                 </CommandItem>
               ))}
             </div>
           </CommandGroup>
         </CommandList>
       </CommandDialog>
-      <CreateWorkspaceDialog
-        open={createWorkspaceDialogOpen}
-        setOpen={setCreateWorkspaceDialogOpen}
+      <CreateProjectDialog
+        open={createProjectDialogOpen}
+        setOpen={setCreateProjectDialogOpen}
       />
     </>
   );

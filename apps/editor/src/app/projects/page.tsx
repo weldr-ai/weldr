@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function WorkspacesPage(): JSX.Element {
+export default function ProjectsPage(): JSX.Element {
   return redirect("/");
 }

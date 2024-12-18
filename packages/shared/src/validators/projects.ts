@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { environmentVariableSchema } from "./environment-variables";
 
-export const workspaceSchema = z.object({
+export const projectSchema = z.object({
   id: z.string(),
   name: z.string(),
   subdomain: z.string(),
@@ -12,7 +12,7 @@ export const workspaceSchema = z.object({
   environmentVariables: environmentVariableSchema.array(),
 });
 
-export const insertWorkspaceSchema = z.object({
+export const insertProjectSchema = z.object({
   name: z.string().transform((name) => name.replace(/\s+/g, " ").trim()),
   subdomain: z
     .string()
@@ -23,7 +23,7 @@ export const insertWorkspaceSchema = z.object({
   description: z.string().optional(),
 });
 
-export const updateWorkspaceSchema = z.object({
+export const updateProjectSchema = z.object({
   where: z.object({
     id: z.string(),
   }),

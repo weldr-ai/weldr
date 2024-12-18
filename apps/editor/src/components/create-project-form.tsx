@@ -19,14 +19,14 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
-import { insertWorkspaceSchema } from "@integramind/shared/validators/workspaces";
+import { insertProjectSchema } from "@integramind/shared/validators/projects";
 import { api } from "~/lib/trpc/client";
 
-export function CreateWorkspaceForm() {
+export function CreateProjectForm() {
   const router = useRouter();
-  const form = useForm<z.infer<typeof insertWorkspaceSchema>>({
+  const form = useForm<z.infer<typeof insertProjectSchema>>({
     mode: "onChange",
-    resolver: zodResolver(insertWorkspaceSchema),
+    resolver: zodResolver(insertProjectSchema),
     defaultValues: {
       name: "",
       subdomain: "",
@@ -36,15 +36,15 @@ export function CreateWorkspaceForm() {
 
   const apiUtils = api.useUtils();
 
-  const createWorkspaceMutation = api.workspaces.create.useMutation({
+  const createProjectMutation = api.projects.create.useMutation({
     onSuccess: async (data) => {
       toast({
         title: "Success",
-        description: "Workspace created successfully.",
+        description: "Project created successfully.",
         duration: 2000,
       });
-      await apiUtils.workspaces.list.invalidate();
-      router.push(`/workspaces/${data.id}`);
+      await apiUtils.projects.list.invalidate();
+      router.push(`/projects/${data.id}`);
     },
     onError: (error) => {
       toast({
@@ -66,7 +66,7 @@ export function CreateWorkspaceForm() {
             <FormItem>
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter workspace name" {...field} />
+                <Input placeholder="Enter project name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -102,7 +102,7 @@ export function CreateWorkspaceForm() {
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="Enter workspace description"
+                  placeholder="Enter project description"
                   value={field.value ?? ""}
                 />
               </FormControl>
@@ -114,17 +114,17 @@ export function CreateWorkspaceForm() {
           <Button
             type="button"
             aria-disabled={
-              !form.formState.isValid || createWorkspaceMutation.isPending
+              !form.formState.isValid || createProjectMutation.isPending
             }
             disabled={
-              !form.formState.isValid || createWorkspaceMutation.isPending
+              !form.formState.isValid || createProjectMutation.isPending
             }
             onClick={async (e) => {
               e.preventDefault();
-              await createWorkspaceMutation.mutateAsync(form.getValues());
+              await createProjectMutation.mutateAsync(form.getValues());
             }}
           >
-            {createWorkspaceMutation.isPending && (
+            {createProjectMutation.isPending && (
               <Loader2Icon className="mr-1 size-3 animate-spin" />
             )}
             Create

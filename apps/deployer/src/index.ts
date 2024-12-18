@@ -1,9 +1,9 @@
 import { createServer } from "node:http";
 import { createApp, toNodeListener } from "h3";
-import apps from "./routers/apps";
+import projects from "./routers/projects";
 
 export const app = createApp();
-app.use(apps);
+app.use(projects);
 
 createServer(toNodeListener(app)).listen(
   `${Number(process.env.DEPLOYER_PORT ?? 3000)}`,

@@ -14,13 +14,13 @@ interface FlyApp {
   };
 }
 
-export async function createFlyApp(appId: string): Promise<FlyApp> {
+export async function createFlyApp(projectId: string): Promise<FlyApp> {
   const response = await axios.post(
     `${process.env.FLY_API_HOSTNAME}/v1/apps`,
     {
-      app_name: appId,
+      app_name: projectId,
       org_slug: process.env.FLY_ORG_SLUG,
-      network: `${appId}-network`,
+      network: `${projectId}-network`,
     },
     {
       headers: {
@@ -38,21 +38,21 @@ export async function createFlyApp(appId: string): Promise<FlyApp> {
   return response.data;
 }
 
-export async function allocateFlyIp(appId: string) {
-  await exec(`fly ips allocate-v4 -a ${appId} --yes`);
+export async function allocateFlyIp(projectId: string) {
+  await exec(`fly ips allocate-v4 -a ${projectId} --yes`);
 }
 
 export async function createEnvironmentVariable(
-  appId: string,
+  projectId: string,
   key: string,
   value: string,
 ) {
-  await exec(`fly secrets set ${key}=${value} -a ${appId}`);
+  await exec(`fly secrets set ${key}=${value} -a ${projectId}`);
 }
 
-export async function getFlyApp(appId: string) {
+export async function getFlyApp(projectId: string) {
   const response = await axios.get<FlyApp>(
-    `${process.env.FLY_API_HOSTNAME}/v1/apps/${appId}`,
+    `${process.env.FLY_API_HOSTNAME}/v1/apps/${projectId}`,
     {
       headers: {
         Authorization: `Bearer ${process.env.FLY_API_KEY}`,
@@ -68,9 +68,9 @@ export async function getFlyApp(appId: string) {
   return response.data;
 }
 
-export async function deleteFlyApp(appId: string, force = false) {
+export async function deleteFlyApp(projectId: string, force = false) {
   const response = await axios.delete(
-    `${process.env.FLY_API_HOSTNAME}/v1/apps/${appId}?force=${force}`,
+    `${process.env.FLY_API_HOSTNAME}/v1/apps/${projectId}?force=${force}`,
     {
       headers: {
         Authorization: `Bearer ${process.env.FLY_API_KEY}`,
@@ -87,26 +87,26 @@ export async function deleteFlyApp(appId: string, force = false) {
 }
 
 export async function createDockerImage({
-  appId,
+  projectId,
   dockerImageName,
   outputTag,
 }: {
-  appId: string;
+  projectId: string;
   dockerImageName: string;
   outputTag: string;
 }) {
   try {
     await exec(
-      `docker tag ${dockerImageName}:latest registry.fly.io/${appId}:${outputTag}`,
+      `docker tag ${dockerImageName}:latest registry.fly.io/${projectId}:${outputTag}`,
     );
-    await exec(`docker push registry.fly.io/${appId}:${outputTag}`);
+    await exec(`docker push registry.fly.io/${projectId}:${outputTag}`);
   } catch (error) {
     throw new Error(`An error occurred while pushing Docker image: ${error}`);
   }
 }
 
 export async function createFlyMachine(
-  appId: string,
+  projectId: string,
   image: string,
   config?: {
     guest?: {
@@ -149,7 +149,7 @@ export async function createFlyMachine(
   };
 
   const response = await axios.post(
-    `${process.env.FLY_API_HOSTNAME}/v1/apps/${appId}/machines`,
+    `${process.env.FLY_API_HOSTNAME}/v1/apps/${projectId}/machines`,
     data,
     { headers },
   );

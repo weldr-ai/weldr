@@ -469,7 +469,7 @@ export function userMessageRawContentToText(
 }
 
 export function getResourceReferences(
-  resources: (RouterOutputs["workspaces"]["byId"]["resources"][0] & {
+  resources: (RouterOutputs["projects"]["byId"]["resources"][0] & {
     metadata?: unknown;
   })[],
   notInclude: (
@@ -484,7 +484,7 @@ export function getResourceReferences(
   >[] = [];
 
   const getHelperFunctions = (
-    modules: RouterOutputs["workspaces"]["byId"]["resources"][0]["integration"]["modules"],
+    modules: RouterOutputs["projects"]["byId"]["resources"][0]["integration"]["modules"],
   ) => {
     return (
       modules?.reduce(

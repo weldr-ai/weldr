@@ -2,9 +2,9 @@ import { and, db, eq, sql } from "@integramind/db";
 import {
   environmentVariables,
   integrations,
+  projects,
   resourceEnvironmentVariables,
   resources,
-  workspaces,
 } from "@integramind/db/schema";
 import { testConnection } from "@integramind/shared/integrations/postgres/helpers";
 import {
@@ -19,14 +19,14 @@ export const resourcesRouter = {
   create: protectedProcedure
     .input(insertResourceSchema)
     .mutation(async ({ ctx, input }) => {
-      const workspace = await ctx.db.query.workspaces.findFirst({
-        where: eq(workspaces.id, input.workspaceId),
+      const project = await ctx.db.query.projects.findFirst({
+        where: eq(projects.id, input.projectId),
       });
 
-      if (!workspace) {
+      if (!project) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Workspace not found",
+          message: "Project not found",
         });
       }
 
@@ -108,7 +108,7 @@ export const resourcesRouter = {
       const doesExist = await ctx.db.query.resources.findFirst({
         where: and(
           eq(resources.name, input.name),
-          eq(resources.workspaceId, input.workspaceId),
+          eq(resources.projectId, input.projectId),
         ),
       });
 
@@ -127,7 +127,7 @@ export const resourcesRouter = {
               .values({
                 name: input.name,
                 description: input.description,
-                workspaceId: input.workspaceId,
+                projectId: input.projectId,
                 userId: ctx.session.user.id,
                 integrationId: input.integrationId,
               })
@@ -174,11 +174,11 @@ export const resourcesRouter = {
       return result;
     }),
   list: protectedProcedure
-    .input(z.object({ workspaceId: z.string() }))
+    .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       return await ctx.db.query.resources.findMany({
         where: and(
-          eq(resources.workspaceId, input.workspaceId),
+          eq(resources.projectId, input.projectId),
           eq(resources.userId, ctx.session.user.id),
         ),
         columns: {

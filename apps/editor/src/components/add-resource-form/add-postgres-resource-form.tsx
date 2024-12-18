@@ -62,12 +62,12 @@ export function AddPostgresResourceForm({
     mapTo: string;
     userKey: string;
   }[];
-  resource?: RouterOutputs["workspaces"]["byId"]["resources"][number];
+  resource?: RouterOutputs["projects"]["byId"]["resources"][number];
 }) {
-  const { workspaceId } = useParams<{ workspaceId: string }>();
+  const { projectId } = useParams<{ projectId: string }>();
 
   const defaultValues = {
-    workspaceId,
+    projectId,
     integrationId: postgresIntegration.id,
     name: resource?.name ?? "",
     description: resource?.description ?? "",
@@ -173,7 +173,7 @@ export function AddPostgresResourceForm({
                       ))}
                     </SelectContent>
                   </Select>
-                  <AddEnvironmentVariableDialog workspaceId={workspaceId} />
+                  <AddEnvironmentVariableDialog projectId={projectId} />
                 </div>
               </FormControl>
               <FormMessage />
@@ -204,7 +204,7 @@ export function AddPostgresResourceForm({
                       ))}
                     </SelectContent>
                   </Select>
-                  <AddEnvironmentVariableDialog workspaceId={workspaceId} />
+                  <AddEnvironmentVariableDialog projectId={projectId} />
                 </div>
               </FormControl>
               <FormMessage />
@@ -235,7 +235,7 @@ export function AddPostgresResourceForm({
                       ))}
                     </SelectContent>
                   </Select>
-                  <AddEnvironmentVariableDialog workspaceId={workspaceId} />
+                  <AddEnvironmentVariableDialog projectId={projectId} />
                 </div>
               </FormControl>
               <FormMessage />
@@ -266,7 +266,7 @@ export function AddPostgresResourceForm({
                       ))}
                     </SelectContent>
                   </Select>
-                  <AddEnvironmentVariableDialog workspaceId={workspaceId} />
+                  <AddEnvironmentVariableDialog projectId={projectId} />
                 </div>
               </FormControl>
               <FormMessage />
@@ -297,7 +297,7 @@ export function AddPostgresResourceForm({
                       ))}
                     </SelectContent>
                   </Select>
-                  <AddEnvironmentVariableDialog workspaceId={workspaceId} />
+                  <AddEnvironmentVariableDialog projectId={projectId} />
                 </div>
               </FormControl>
               <FormMessage />
@@ -323,7 +323,7 @@ export function AddPostgresResourceForm({
         />
         <FormField
           control={form.control}
-          name="workspaceId"
+          name="projectId"
           render={({ field }) => <Input {...field} className="hidden" />}
         />
         <FormField

@@ -4,24 +4,24 @@ import { redirect } from "next/navigation";
 import { api } from "~/lib/trpc/server";
 
 import { TRPCError } from "@trpc/server";
-import { WorkspaceSettings } from "~/components/workspace-settings";
+import { ProjectSettings } from "~/components/project-settings";
 
-export default async function WorkspaceSettingsPage({
+export default async function ProjectSettingsPage({
   params,
 }: {
-  params: Promise<{ workspaceId: string }>;
+  params: Promise<{ projectId: string }>;
 }): Promise<JSX.Element> {
   try {
-    const { workspaceId } = await params;
-    const workspace = await api.workspaces.byId({ id: workspaceId });
+    const { projectId } = await params;
+    const project = await api.projects.byId({ id: projectId });
     return (
       <div className="flex-1 p-6 bg-background rounded-md">
         <div className="flex flex-col">
           <div className="mb-6">
-            <h1 className="text-2xl font-medium">{workspace.name}</h1>
-            <p className="text-muted-foreground">Workspace Settings</p>
+            <h1 className="text-2xl font-medium">{project.name}</h1>
+            <p className="text-muted-foreground">Project Settings</p>
           </div>
-          <WorkspaceSettings workspace={workspace} />
+          <ProjectSettings project={project} />
         </div>
       </div>
     );

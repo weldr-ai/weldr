@@ -28,7 +28,7 @@ export function CreateModuleForm({
   setCreateModuleDialogOpen?: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const { workspaceId } = useParams<{ workspaceId: string }>();
+  const { projectId } = useParams<{ projectId: string }>();
 
   const apiUtils = api.useUtils();
 
@@ -43,7 +43,7 @@ export function CreateModuleForm({
         setCreateModuleDialogOpen(false);
       }
       await apiUtils.modules.list.invalidate();
-      router.push(`/workspaces/${workspaceId}/modules/${data.id}`);
+      router.push(`/projects/${projectId}/modules/${data.id}`);
     },
     onError: (error) => {
       toast({
@@ -61,7 +61,7 @@ export function CreateModuleForm({
     defaultValues: {
       name: "",
       description: "",
-      workspaceId,
+      projectId,
     },
   });
 
@@ -104,7 +104,7 @@ export function CreateModuleForm({
         />
         <FormField
           control={form.control}
-          name="workspaceId"
+          name="projectId"
           render={({ field }) => <Input {...field} className="hidden" />}
         />
         <div className="flex w-full justify-end">

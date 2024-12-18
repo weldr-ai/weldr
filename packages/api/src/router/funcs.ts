@@ -235,11 +235,11 @@ export const funcsRouter = {
 
       return result;
     }),
-  byWorkspaceId: protectedProcedure
-    .input(z.object({ workspaceId: z.string() }))
+  byProjectId: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.funcs.findMany({
-        where: eq(funcs.workspaceId, input.workspaceId),
+        where: eq(funcs.projectId, input.projectId),
         with: {
           module: true,
         },

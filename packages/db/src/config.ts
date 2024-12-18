@@ -11,7 +11,7 @@ export default {
     "./src/schema/integrations.ts",
     "./src/schema/funcs.ts",
     "./src/schema/resources.ts",
-    "./src/schema/workspaces.ts",
+    "./src/schema/projects.ts",
     "./src/schema/environment-variables.ts",
     "./src/schema/test-runs.ts",
     "./src/schema/func-dependencies.ts",
