@@ -253,8 +253,8 @@ export function JsonSchemaForm({
               </SelectTrigger>
               <SelectContent>
                 {schema.enum.map((option) => (
-                  <SelectItem key={option} value={String(option)}>
-                    {option}
+                  <SelectItem key={String(option)} value={String(option)}>
+                    {String(option)}
                   </SelectItem>
                 ))}
               </SelectContent>

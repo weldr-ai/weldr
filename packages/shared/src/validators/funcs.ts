@@ -1,11 +1,6 @@
 import { z } from "zod";
 import { databaseTableSchema } from "../integrations/postgres";
-import {
-  inputSchema,
-  npmDependencySchema,
-  outputSchema,
-  rawContentSchema,
-} from "./common";
+import { jsonSchema, npmDependencySchema, rawContentSchema } from "./common";
 import { conversationSchema } from "./conversations";
 import { funcDependencySchema } from "./func-dependencies";
 import { funcInternalGraphConnectionSchema } from "./func-internal-graph";
@@ -29,8 +24,8 @@ export const funcSchema = z.object({
   updatedAt: z.date(),
   positionX: z.number().default(0),
   positionY: z.number().default(0),
-  inputSchema: inputSchema.optional(),
-  outputSchema: outputSchema.optional(),
+  inputSchema: jsonSchema.optional(),
+  outputSchema: jsonSchema.optional(),
   testInput: z.unknown().optional(),
   description: z.string().optional(),
   rawDescription: rawContentSchema.optional(),
@@ -81,8 +76,8 @@ export const updateFuncSchema = z.object({
     positionX: z.number().optional(),
     positionY: z.number().optional(),
     testInput: z.unknown().optional(),
-    inputSchema: inputSchema.optional(),
-    outputSchema: outputSchema.optional(),
+    inputSchema: jsonSchema.optional(),
+    outputSchema: jsonSchema.optional(),
     description: z.string().optional(),
     rawDescription: rawContentSchema.optional(),
     code: z.string().optional(),

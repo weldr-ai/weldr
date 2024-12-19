@@ -2,10 +2,7 @@ import type { z } from "zod";
 import type {
   dataTypeSchema,
   funcRequirementsMessageSchema,
-  inputSchema,
-  jsonSchemaPropertySchema,
   npmDependencySchema,
-  outputSchema,
   rawContentSchema,
 } from "../validators/common";
 import type {
@@ -30,11 +27,67 @@ import type { testRunSchema } from "../validators/test-runs";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
 
-export type JsonSchemaProperty = z.infer<typeof jsonSchemaPropertySchema>;
-export type JsonSchema = JsonSchemaProperty & {
+export interface JsonSchema {
+  // Basic schema properties
+  type?:
+    | "string"
+    | "number"
+    | "integer"
+    | "boolean"
+    | "object"
+    | "array"
+    | "null";
+  title?: string;
+  description?: string;
+
+  // For objects
+  required?: string[];
   properties?: Record<string, JsonSchema>;
-  items?: JsonSchema;
-};
+  additionalProperties?: boolean | JsonSchema;
+
+  // For arrays
+  items?: JsonSchema | JsonSchema[];
+  minItems?: number;
+  maxItems?: number;
+  uniqueItems?: boolean;
+
+  // String validations
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  format?: string;
+
+  // Number validations
+  minimum?: number;
+  maximum?: number;
+  exclusiveMinimum?: number;
+  exclusiveMaximum?: number;
+  multipleOf?: number;
+
+  // Combiners
+  oneOf?: JsonSchema[];
+  anyOf?: JsonSchema[];
+  allOf?: JsonSchema[];
+  not?: JsonSchema;
+
+  // Conditionals
+  if?: JsonSchema;
+  then?: JsonSchema;
+  else?: JsonSchema;
+
+  // Enum
+  enum?: (string | number | boolean | null)[];
+
+  // Schema metadata
+  $id?: string;
+  $schema?: string;
+  $ref?: string;
+  definitions?: Record<string, JsonSchema>;
+
+  // Misc
+  default?: unknown;
+  examples?: unknown[];
+}
 
 export interface FlatInputSchema {
   path: string;
@@ -46,9 +99,6 @@ export interface FlatInputSchema {
   itemsType?: JsonSchema;
   sourceFuncId?: string;
 }
-
-export type InputSchema = z.infer<typeof inputSchema>;
-export type OutputSchema = z.infer<typeof outputSchema>;
 
 export type Project = z.infer<typeof projectSchema>;
 

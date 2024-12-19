@@ -15,7 +15,15 @@ export function jsonSchemaToTreeData(
     return [];
   }
 
-  function jsonSchemaToTree(schema: JsonSchema, name = "root"): TreeDataItem {
+  function jsonSchemaToTree(
+    schema: JsonSchema | JsonSchema[],
+    name = "root",
+  ): TreeDataItem {
+    if (Array.isArray(schema)) {
+      // biome-ignore lint/style/noNonNullAssertion: <explanation>
+      return jsonSchemaToTree(schema[0]!, name);
+    }
+
     const treeItem: TreeDataItem = {
       id: `${name}`,
       name,
@@ -33,7 +41,11 @@ export function jsonSchemaToTreeData(
         name: schema.title ?? "items",
         type: "array",
         icon: getDataTypeIcon("array"),
-        children: [jsonSchemaToTree(schema.items, schema.title ?? "item")],
+        children: Array.isArray(schema.items)
+          ? schema.items.map((item, index) =>
+              jsonSchemaToTree(item, `item${index + 1}`),
+            )
+          : [jsonSchemaToTree(schema.items, "item")],
       };
       treeItem.children = [arrayItem];
     }

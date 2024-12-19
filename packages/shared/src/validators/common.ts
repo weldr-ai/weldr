@@ -11,29 +11,75 @@ export const dataTypeSchema = z.enum([
   "null",
 ]);
 
-export const jsonSchemaPropertySchema = z.object({
-  $ref: z.string().optional(),
-  type: dataTypeSchema,
-  title: z.string().optional(),
-  description: z.string().optional(),
-  required: z.array(z.string()).optional(),
-  minimum: z.number().optional(),
-  maximum: z.number().optional(),
-  minLength: z.number().optional(),
-  maxLength: z.number().optional(),
-  enum: z.any().array().optional(),
-  format: z.string().optional(),
-});
-
-export const jsonSchema: z.ZodType<JsonSchema> = jsonSchemaPropertySchema.and(
+export const jsonSchema: z.ZodType<JsonSchema> = z.lazy(() =>
   z.object({
-    properties: z.record(z.lazy(() => jsonSchema)).optional(),
-    items: z.lazy(() => jsonSchema).optional(),
+    // Basic schema properties
+    type: z
+      .enum([
+        "string",
+        "number",
+        "integer",
+        "boolean",
+        "object",
+        "array",
+        "null",
+      ])
+      .optional(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+
+    // For objects
+    required: z.array(z.string()).optional(),
+    properties: z.record(jsonSchema).optional(),
+    additionalProperties: z.union([z.boolean(), jsonSchema]).optional(),
+
+    // For arrays
+    items: z.union([jsonSchema, z.array(jsonSchema)]).optional(),
+    minItems: z.number().int().positive().optional(),
+    maxItems: z.number().int().positive().optional(),
+    uniqueItems: z.boolean().optional(),
+
+    // String validations
+    minLength: z.number().int().nonnegative().optional(),
+    maxLength: z.number().int().nonnegative().optional(),
+    pattern: z.string().optional(),
+    format: z.string().optional(),
+
+    // Number validations
+    minimum: z.number().optional(),
+    maximum: z.number().optional(),
+    exclusiveMinimum: z.number().optional(),
+    exclusiveMaximum: z.number().optional(),
+    multipleOf: z.number().positive().optional(),
+
+    // Combiners
+    oneOf: z.array(jsonSchema).optional(),
+    anyOf: z.array(jsonSchema).optional(),
+    allOf: z.array(jsonSchema).optional(),
+    not: jsonSchema.optional(),
+
+    // Conditionals
+    if: jsonSchema.optional(),
+    // biome-ignore lint/suspicious/noThenProperty: <explanation>
+    then: jsonSchema.optional(),
+    else: jsonSchema.optional(),
+
+    // Enum
+    enum: z
+      .array(z.union([z.string(), z.number(), z.boolean(), z.null()]))
+      .optional(),
+
+    // Schema metadata
+    $id: z.string().optional(),
+    $schema: z.string().optional(),
+    $ref: z.string().optional(),
+    definitions: z.record(jsonSchema).optional(),
+
+    // Misc
+    default: z.any().optional(),
+    examples: z.array(z.any()).optional(),
   }),
 );
-
-export const inputSchema = jsonSchema;
-export const outputSchema = jsonSchema;
 
 export const functionReferenceSchema = z.object({
   id: z.string().describe("The ID of the function"),
