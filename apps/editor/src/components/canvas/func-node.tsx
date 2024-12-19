@@ -548,17 +548,18 @@ export const FuncNode = memo(
                             variant="ghost"
                             size="icon"
                             disabled={
-                              !data.rawDescription || !data.name || isRunning
+                              !data.rawDescription ||
+                              !data.name ||
+                              isRunning ||
+                              (data.inputSchema && !data.testInput) === true
                             }
                             onClick={async () => {
                               setIsRunning(true);
                               await executeFunc.mutateAsync({
                                 funcId: data.id,
-                                hasInput: data.inputSchema !== undefined,
-                                input: data.testInput as Record<
-                                  string,
-                                  unknown
-                                >,
+                                input: data.testInput
+                                  ? (data.testInput as Record<string, unknown>)
+                                  : undefined,
                               });
                               setIsRunning(false);
                             }}

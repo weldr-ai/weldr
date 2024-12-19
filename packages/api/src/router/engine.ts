@@ -17,7 +17,6 @@ export const engineRouter = {
     .input(
       z.object({
         funcId: z.string(),
-        hasInput: z.boolean(),
         input: z.record(z.any()).optional(),
       }),
     )
@@ -158,9 +157,8 @@ export const engineRouter = {
       }
 
       const requestBody = {
-        hasInput: input.hasInput,
         functionName: func.name,
-        functionArgs: input.hasInput ? input.input : undefined,
+        functionArgs: input.input,
         code: func.code,
         modules,
         dependencies: npmDependencies,
@@ -180,12 +178,30 @@ export const engineRouter = {
           method: "POST",
           body: JSON.stringify(requestBody),
           async onRequestError({ request, options, error }) {
+            console.log(
+              `[engineRouter.executeFunc] onRequestError: ${JSON.stringify(
+                error,
+                null,
+                2,
+              )}
+              options: ${JSON.stringify(options, null, 2)}
+              request: ${JSON.stringify(request, null, 2)}`,
+            );
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to execute function",
             });
           },
           async onResponseError({ request, response, options }) {
+            console.log(
+              `[engineRouter.executeFunc] onResponseError: ${JSON.stringify(
+                response,
+                null,
+                2,
+              )}
+              options: ${JSON.stringify(options, null, 2)}
+              request: ${JSON.stringify(request, null, 2)}`,
+            );
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to execute function",
@@ -194,7 +210,7 @@ export const engineRouter = {
         });
 
         await ctx.db.insert(testRuns).values({
-          input: input.hasInput ? input.input : undefined,
+          input: input.input,
           stdout: executionResult.output.stdout,
           stderr: executionResult.output.stderr,
           funcId: input.funcId,

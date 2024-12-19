@@ -44,7 +44,6 @@ router.post(
     const validationSchema = z.object({
       code: z.string(),
       functionName: z.string(),
-      hasInput: z.boolean().default(false),
       functionArgs: z
         .union([z.null(), z.undefined(), z.record(z.string(), z.unknown())])
         .optional(),
@@ -82,7 +81,6 @@ router.post(
       code,
       functionName,
       functionArgs,
-      hasInput,
       dependencies,
       modules,
       environmentVariablesMap,
@@ -95,7 +93,6 @@ router.post(
       functionArgs: functionArgs as { name: string; value: unknown },
       modules,
       dependencies,
-      hasInput,
       environmentVariablesMap,
       testEnv,
     });

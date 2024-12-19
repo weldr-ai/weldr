@@ -16,7 +16,6 @@ const __dirname = dirname(__filename);
 
 interface ExecuteFunctionOptions {
   code: string;
-  hasInput: boolean;
   functionName: string;
   functionArgs?: Record<string, unknown>;
   modules?: Module[];
@@ -66,7 +65,6 @@ export async function executeFunction({
   code,
   functionName,
   functionArgs,
-  hasInput,
   modules,
   dependencies,
   environmentVariablesMap,
@@ -76,6 +74,8 @@ export async function executeFunction({
 
   // Create temporary directory
   const tempDir = await createTemporaryDirectory();
+
+  const hasInput = functionArgs !== undefined;
 
   // Create index.ts file
   await createIndexFile({
