@@ -6,9 +6,12 @@ import { Poppins } from "next/font/google";
 import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
 
+import { auth } from "@integramind/auth";
+import { AuthProvider } from "@integramind/auth/provider";
 import { ThemeProvider } from "@integramind/ui/theme-provider";
 import { TooltipProvider } from "@integramind/ui/tooltip";
 import { ReactFlowProvider } from "@xyflow/react";
+import { headers } from "next/headers";
 import { QueryProvider } from "~/components/query-client-provider";
 import { TRPCReactProvider } from "~/lib/trpc/client";
 
@@ -30,6 +33,8 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }): Promise<JSX.Element> {
+  const session = await auth.api.getSession({ headers: await headers() });
+
   return (
     <html lang="en">
       <body
@@ -39,23 +44,25 @@ export default async function RootLayout({
         )}
         suppressHydrationWarning
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <ReactFlowProvider>
-            <TRPCReactProvider>
-              <QueryProvider>
-                <TooltipProvider delayDuration={200}>
-                  {children}
-                  <Toaster />
-                </TooltipProvider>
-              </QueryProvider>
-            </TRPCReactProvider>
-          </ReactFlowProvider>
-        </ThemeProvider>
+        <AuthProvider user={session?.user ?? null}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ReactFlowProvider>
+              <TRPCReactProvider>
+                <QueryProvider>
+                  <TooltipProvider delayDuration={200}>
+                    {children}
+                    <Toaster />
+                  </TooltipProvider>
+                </QueryProvider>
+              </TRPCReactProvider>
+            </ReactFlowProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

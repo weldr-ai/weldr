@@ -1,6 +1,8 @@
+import { useAuth } from "@integramind/auth/provider";
 import type { ConversationMessage, TestRun } from "@integramind/shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
 import { ScrollArea } from "@integramind/ui/scroll-area";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import SuperJSON from "superjson";
 import { JsonViewer } from "./json-viewer";
@@ -108,14 +110,21 @@ export default function MessageList({
 }
 
 function MessageItem({ message }: { message: ConversationMessage }) {
+  const { user } = useAuth();
+
   return (
     <div className="flex w-full items-start" key={message.id}>
       <Avatar className="size-6 rounded-md">
         {message.role === "user" ? (
           <>
-            <AvatarImage src={undefined} alt="User" />
+            <AvatarImage src={user?.image ?? undefined} alt="User" />
             <AvatarFallback>
-              <div className="size-full bg-gradient-to-br from-rose-500 via-amber-600 to-blue-500" />
+              <Image
+                src={`${process.env.NEXT_PUBLIC_EDITOR_BASE_URL}/api/avatars/${user?.email}`}
+                alt="User"
+                width={32}
+                height={32}
+              />
             </AvatarFallback>
           </>
         ) : (

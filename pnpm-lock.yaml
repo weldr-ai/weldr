@@ -189,6 +189,9 @@ importers:
       superjson:
         specifier: ^2.2.1
         version: 2.2.1
+      tinycolor2:
+        specifier: ^1.6.0
+        version: 1.6.0
       zod:
         specifier: ^3.23.8
         version: 3.23.8

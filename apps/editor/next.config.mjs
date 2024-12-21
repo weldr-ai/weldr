@@ -18,6 +18,14 @@ const config = {
     "@integramind/ui",
   ],
 
+  images: {
+    remotePatterns: [
+      {
+        hostname: "localhost",
+      },
+    ],
+  },
+
   /** We already do linting and typechecking as separate tasks in CI */
   typescript: { ignoreBuildErrors: true },
 };
