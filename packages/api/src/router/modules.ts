@@ -73,8 +73,8 @@ export const modulesRouter = {
           with: {
             funcs: {
               columns: {
-                code: false,
-                documentation: false,
+                docs: false,
+                npmDependencies: false,
               },
               with: {
                 conversation: {
@@ -109,13 +109,15 @@ export const modulesRouter = {
             func: {
               columns: {
                 code: false,
-                documentation: false,
+                docs: false,
+                npmDependencies: false,
               },
             },
             dependencyFunc: {
               columns: {
                 code: false,
-                documentation: false,
+                docs: false,
+                npmDependencies: false,
               },
             },
           },
@@ -141,7 +143,8 @@ export const modulesRouter = {
           ...module,
           funcs: module.funcs.map((func) => ({
             ...func,
-            canRun: Boolean(func.name && func.description),
+            code: undefined,
+            canRun: Boolean(func.name && func.code),
           })),
           edges,
         };

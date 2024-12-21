@@ -80,18 +80,11 @@ export const funcsRouter = {
         });
       }
     }),
-  byIds: protectedProcedure
+  byIdsWithSecrets: protectedProcedure
     .input(z.object({ ids: z.string().array() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.funcs.findMany({
-        where: and(
-          eq(funcs.userId, ctx.session.user.id),
-          inArray(funcs.id, input.ids),
-        ),
-        columns: {
-          code: false,
-          documentation: false,
-        },
+        where: and(inArray(funcs.id, input.ids)),
         with: {
           module: {
             columns: {
@@ -113,7 +106,8 @@ export const funcsRouter = {
 
       return result.map((func) => ({
         ...func,
-        canRun: Boolean(func.name && func.description),
+        code: undefined,
+        canRun: Boolean(func.name && func.code),
       }));
     }),
   byId: protectedProcedure
@@ -129,8 +123,8 @@ export const funcsRouter = {
           eq(funcs.userId, ctx.session.user.id),
         ),
         columns: {
-          code: false,
-          documentation: false,
+          docs: false,
+          npmDependencies: false,
         },
         with: {
           module: {
@@ -161,7 +155,8 @@ export const funcsRouter = {
 
       return {
         ...result,
-        canRun: Boolean(result.name && result.description),
+        code: undefined,
+        canRun: Boolean(result.name && result.code),
       };
     }),
   update: protectedProcedure
@@ -288,7 +283,8 @@ export const funcsRouter = {
         where: eq(funcs.projectId, input.projectId),
         columns: {
           code: false,
-          documentation: false,
+          docs: false,
+          npmDependencies: false,
         },
         with: {
           module: {
@@ -300,6 +296,6 @@ export const funcsRouter = {
         },
       });
 
-      return result.filter((func) => Boolean(func.name && func.description));
+      return result.filter((func) => Boolean(func.name && func.rawDescription));
     }),
 } satisfies TRPCRouterRecord;

@@ -87,12 +87,12 @@ export const functionReferenceSchema = z.object({
   moduleName: z.string().describe("The name of the module"),
 });
 
-export const databaseReferenceSchema = z.object({
-  id: z.string().describe("The ID of the database"),
-  name: z.string().describe("The name of the database"),
-  databaseType: z
+export const resourceReferenceSchema = z.object({
+  id: z.string().describe("The ID of the resource"),
+  name: z.string().describe("The name of the resource"),
+  resourceType: z
     .enum(["postgres", "mysql"])
-    .describe("The type of the database"),
+    .describe("The type of the resource"),
 });
 
 export const databaseTableReferenceSchema = z.object({
@@ -112,13 +112,17 @@ export const databaseColumnReferenceSchema = z.object({
 });
 
 export const npmDependencySchema = z.object({
+  type: z.enum(["development", "production"]),
   name: z.string().describe("The name of the npm package"),
   version: z.string().optional().describe("The version of the npm package"),
+  reason: z.string().describe("The reason for the npm package"),
 });
 
 export const rawContentTextElementSchema = z.object({
   type: z.literal("text"),
-  value: z.string().describe("The value of the text"),
+  value: z
+    .string()
+    .describe("The value of the text. Should be valid markdown."),
 });
 
 export const rawContentVariableReferenceSchema = z.object({
@@ -134,10 +138,10 @@ export const rawContentFunctionReferenceSchema = z.object({
   name: z.string().describe("The name of the function"),
 });
 
-export const rawContentDatabaseReferenceSchema = z.object({
+export const rawContentResourceReferenceSchema = z.object({
   type: z.literal("reference"),
-  referenceType: z.literal("database"),
-  ...databaseReferenceSchema.shape,
+  referenceType: z.literal("resource"),
+  ...resourceReferenceSchema.shape,
 });
 
 export const rawContentDatabaseTableReferenceSchema = z.object({
@@ -164,8 +168,8 @@ export const rawContentReferenceElementSchema = z.discriminatedUnion(
     rawContentFunctionReferenceSchema.describe(
       "The function reference part of a message or description. Must be used when mentioning a function in a message or description.",
     ),
-    rawContentDatabaseReferenceSchema.describe(
-      "The database reference part of a message or description. Must be used when mentioning a database in a message or description.",
+    rawContentResourceReferenceSchema.describe(
+      "The resource reference part of a message or description. Must be used when mentioning a resource in a message or description.",
     ),
     rawContentDatabaseTableReferenceSchema.describe(
       "The database-table reference part of a message or description. Must be used when mentioning a database table in a message or description.",
@@ -192,34 +196,78 @@ export const funcRequirementsMessageSchema = z.object({
       .object({
         type: z.literal("end"),
         content: z.object({
-          inputSchema: z
+          description: rawContentSchema.describe(
+            "Comprehensive description of the function that includes: its main purpose, and any key features/capabilities. Should explain both WHAT it does and WHY it exists.",
+          ),
+          inputSchema: z.string().describe(
+            `JSON schema for input structure including:
+             - Required and optional properties
+             - Types and formats for fields
+             - Valid ranges/enums
+             - Nested structures
+             - Validation rules
+
+             Properties must:
+             - Use camelCase
+             - Be descriptive (e.g., 'userId' not 'id')
+             - Have root type: 'object'
+             - Follow JSON Schema spec
+             - Include descriptions`,
+          ),
+          outputSchema: z.string().describe(
+            `JSON schema for output structure including:
+             - Required and optional properties
+             - Types and formats for fields
+             - Valid ranges/enums
+             - Nested structures
+             - Validation rules
+
+             Properties must:
+             - Use camelCase
+             - Be descriptive (e.g., 'userId' not 'id')
+             - Have root type: 'object'
+             - Follow JSON Schema spec
+             - Include descriptions`,
+          ),
+          signature: z
             .string()
             .describe(
-              `The JSON schema for the input of the function. Must follow these rules:
-                - Property names must be in camelCase.
-                - Schema should be valid according to JSON Schema specification.
-                - Properties should have clear, descriptive names that indicate their purpose.
-                - Must be of type object.`,
-            )
-            .optional(),
-          outputSchema: z
+              "Complete function signature including type annotations and generics if used. Should match the exact implementation syntax of the target language.",
+            ),
+          parameters: z
             .string()
             .describe(
-              `The JSON schema for the output of the function. Must follow these rules:
-                - Schema must have \`title\` property. It should be a descriptive noun like 'Customer' or 'Order' that represents the data and it is like a TypeScript type name. If no descriptive title applies, use \`undefined\` as the title value.
-                - Property names must be in camelCase.
-                - Schema should be valid according to JSON Schema specification.
-                - Properties should have clear, descriptive names that indicate their purpose.
-                - Must be of type object.`,
+              "Detailed specification of each parameter including: type, format, validation rules, acceptable values, default values if any, and relationship to other parameters. Should explain any complex object structures or special handling requirements.",
+            ),
+          returns: z
+            .string()
+            .describe(
+              "Specification of the return value including: type structure, and any conditional return formats based on input or processing state.",
+            ),
+          behavior: rawContentSchema.describe(
+            "Step-by-step description of function behavior including: data validation, business logic, transformations, calculations, external service calls, error handling, and success/failure paths. Should detail edge cases and performance considerations. Must be valid markdown-like list. Use references for all the variables, functions, resources, etc.",
+          ),
+          errors: z
+            .string()
+            .describe(
+              "List of all possible error messages (not error types) that the function can throw, with conditions that trigger each error, and any specific error handling requirements. Must be valid markdown list. Note: If the function does not throw any errors, this section can be omitted.",
             )
             .optional(),
+          examples: z
+            .string()
+            .describe(
+              "Multiple representative examples showing: typical usage patterns, edge cases, error scenarios, and complex use cases. Each example should include complete input values and expected output or error response.",
+            ),
           resources: z
             .object({
               id: z.string().describe("The ID of the resource"),
               name: z.string().describe("The name of the resource"),
+              type: z
+                .enum(["postgres", "mysql"])
+                .describe("The type of the resource"),
               metadata: z.discriminatedUnion("type", [
                 z.object({
-                  type: z.literal("database"),
+                  type: z.literal("postgres"),
                   tables: z
                     .object({
                       name: z.string().describe("The name of the table"),
@@ -256,33 +304,6 @@ export const funcRequirementsMessageSchema = z.object({
             .array()
             .optional()
             .describe("The list of resources used in the function."),
-          description: rawContentSchema.describe(
-            "The description of the function.",
-          ),
-          logicalSteps: rawContentSchema.describe(
-            `The logical steps of the function. Must be a clear, step-by-step description of what the function does. Each step should be concise but complete, focusing on one specific operation. Include:
-                - Data transformations and calculations.
-                - Database operations (queries, updates, etc.).
-                - Specify the helper functions that are used.
-                - External service calls.
-                - Business logic and conditional flows.
-                - Return value preparation.`,
-          ),
-          edgeCases: z.string().describe(
-            `The edge cases of the function. Must include:
-              - Business logic edge cases (e.g. special conditions that require different handling).
-              - Resource-related edge cases (e.g. missing or invalid resources).
-              - Any other scenarios that require special handling.`,
-          ),
-          errorHandling: z.string().describe(
-            `The error handling of the function. Must include:
-              - How to handle database errors (e.g. connection issues, query failures).
-              - How to handle external service errors (e.g. API timeouts, failed requests).
-              - How to handle unexpected runtime errors.
-              - What error messages to return to the user.
-              - Whether to retry operations and how many times.
-              - Input validation errors can be ignored as inputs are validated separately.`,
-          ),
           helperFunctionIds: z
             .string()
             .array()
@@ -325,9 +346,12 @@ export const funcRequirementsMessageSchema = z.object({
             )
             .optional()
             .describe(
-              "The internal graph of the function of how the helper functions are connected to each other.",
+              "The internal graph of the function of how the user-defined helper functions are connected to each other.",
             ),
           npmDependencies: npmDependencySchema
+            .omit({
+              version: true,
+            })
             .array()
             .optional()
             .describe(

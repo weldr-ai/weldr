@@ -57,13 +57,27 @@ export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gather
 {
   "type": "end",
   "content": {
-    "inputs": "{\"type\": \"object\", \"required\": [], \"properties\": {\"[inputFieldName1]\": {\"type\": \"[dataType]\"}, \"[inputFieldName2]\": {\"type\": \"[dataType]\"}}}",
-    "outputs": "{\"title\": \"[descriptive title]\", \"type\": \"object\", \"required\": [], \"properties\": {\"[outputFieldName1]\": {\"type\": \"[dataType]\"}, \"[outputFieldName2]\": {\"type\": \"[dataType]\"}}}",
+    "inputSchema": "{\"type\": \"object\", \"required\": [], \"properties\": {\"[inputFieldName1]\": {\"type\": \"[dataType]\"}, \"[inputFieldName2]\": {\"type\": \"[dataType]\"}}}",
+    "outputSchema": "{\"type\": \"object\", \"required\": [], \"properties\": {\"[outputFieldName1]\": {\"type\": \"[dataType]\"}, \"[outputFieldName2]\": {\"type\": \"[dataType]\"}}}",
     "description": [
       { "type": "text", "value": "This function filters data from " },
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
       { "type": "text", "value": " based on provided inputs and returns filtered results." }
     ],
+    "signature": "[Function signature]",
+    "parameters": "[Function parameters]",
+    "returns": "[Function return value]",
+    "behavior": [
+      { "type": "text", "value": "1. Validate input parameters\n" },
+      { "type": "text", "value": "2. Query " },
+      { "type": "reference", "referenceType": "database-table", "name": "customers" },
+      { "type": "text", "value": " table using " },
+      { "type": "reference", "referenceType": "function", "name": "query" },
+      { "type": "text", "value": "\n3. Process the returned data\n" },
+      { "type": "text", "value": "4. Return formatted results" }
+    ],
+    "errors": "[Error handling strategies (markdown list)]",
+    "examples": "[Examples of the function]",
     "resources": [
       {
         "id": "[resourceId]",
@@ -77,13 +91,10 @@ export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gather
         ]
       }
     ],
-    "logicalSteps": [
-      { "type": "text", "value": "1. Define all the required types. 2. Use the " },
-      { "type": "reference", "referenceType": "utility-function", "name": "[utilityName]" },
-      { "type": "text", "value": " utility to query the database with the specified filters. 3. Sort and structure results. 4. Return the final output." }
+    "helperFunctionIds": [
+      "[Helper function id]",
+      ...
     ],
-    "edgeCases": "[Description of edge cases]",
-    "errorHandling": "[Error handling strategies]",
     "npmDependencies": [NPM dependencies]
   }
 }
@@ -92,36 +103,9 @@ export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gather
 # Examples
 
 **User Prompt:**
+
 ## Context
-Value of the input variable \`customerId\`
-Type: integer
-Is optional: true
-
-Value of the input variable \`firstName\`
-Type: string
-Is optional: true
-
-Value of the input variable \`lastName\`
-Type: string
-Is optional: true
-
-Value of the input variable \`email\`
-Type: string
-Is optional: true
-
-Value of the input variable \`phone\`
-Type: string
-Is optional: true
-
-Value of the input variable \`address\`
-Type: string
-Is optional: true
-
-Database \`CRM\` (ID: iwwj97jcoae613735mkzjtj2)
-Helper Functions:
-- \`query\` (ID: adluv5r0hxfp6230dvuqxdvd)
-  Description: Executes a SQL query with parameters and returns the result.
-
+Postgres database \`CRM\` (ID: iwwj97jcoae613735mkzjtj2)
 Table \`customers\`
 Columns:
 - \`customer_id\` (integer)
@@ -131,8 +115,59 @@ Columns:
 - \`phone\` (text)
 - \`address\` (text)
 
+**Helper Functions:**
+- \`query\` (ID: adluv5r0hxfp6230dvuqxdvd)
+A type-safe function that executes a PostgreSQL query with parameterized values to prevent SQL injection. Takes a SQL query string with numbered placeholders ($1, $2) and an array of values to safely insert into those placeholders.
+
+**Signature:**
+function query<T extends QueryResultRow>(
+  text: string,
+  params: unknown[]
+): Promise<QueryResult<T>>
+
+**Parameters:**
+- text: SQL query string with $1, $2, etc. as parameter placeholders
+- params: Array of parameter values that will be safely interpolated into the query
+
+**Returns:**
+Promise that resolves to QueryResult<T> containing:
+- rows: Array of query result rows with type T
+- rowCount: Number of rows affected/returned
+- command: The SQL command that was executed
+
+**Behavior:**
+1. Validates that database connection pool exists
+2. Prepares the parameterized query
+3. Executes query with provided parameters
+4. Returns query results
+
+**Errors:**
+"Database connection failed" - When pool cannot connect to database
+"Invalid query parameters" - When params don't match query placeholders
+"Query execution failed" - When query syntax is invalid or execution fails
+
+**Examples:**
+// Select users by status
+const result = await query<User>(
+  "SELECT * FROM users WHERE status = $1",
+  ["active"]
+);
+
+// Insert new record
+const inserted = await query(
+  "INSERT INTO logs (message, level) VALUES ($1, $2) RETURNING *",
+  ["Login successful", "info"]
+);
+
+// Handle errors
+try {
+  const result = await query("INVALID SQL");
+} catch (error) {
+  // Handle "Query execution failed" error
+}
+
 ## Request
-I want to filter the customers table using any of these input fields: customerId, firstName, lastName, email, phone, and address.
+I want to filter the customers table based on any combination of optional filter fields: customerId, firstName, lastName, email, phone, and address.
 
 **Agent Response Example: Initial Clarification**
 \`\`\`json
@@ -149,8 +184,8 @@ I want to filter the customers table using any of these input fields: customerId
 {
   "type": "end",
   "content": {
-    "inputs": "{\"type\": \"object\", \"required\": [], \"properties\": {\"customerId\": {\"type\": \"integer\"}, \"firstName\": {\"type\": \"string\"}, \"lastName\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"phone\": {\"type\": \"string\"}, \"address\": {\"type\": \"string\"}}}",
-    "outputs": "{\"title\": \"Customer\", \"type\": \"array\", \"items\": {\"type\": \"object\", \"required\": [\"customerId\", \"firstName\", \"lastName\", \"email\", \"phone\", \"address\"], \"properties\": {\"customerId\": {\"type\": \"integer\"}, \"firstName\": {\"type\": \"string\"}, \"lastName\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"phone\": {\"type\": \"string\"}, \"address\": {\"type\": \"string\"}}}}",
+    "inputSchema": "{\"type\": \"object\", \"required\": [], \"properties\": {\"customerId\": {\"type\": \"integer\"}, \"firstName\": {\"type\": \"string\"}, \"lastName\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"phone\": {\"type\": \"string\"}, \"address\": {\"type\": \"string\"}}}",
+    "outputSchema": "{\"title\": \"Customer\", \"type\": \"array\", \"items\": {\"type\": \"object\", \"required\": [\"customerId\", \"firstName\", \"lastName\", \"email\", \"phone\", \"address\"], \"properties\": {\"customerId\": {\"type\": \"integer\"}, \"firstName\": {\"type\": \"string\"}, \"lastName\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"phone\": {\"type\": \"string\"}, \"address\": {\"type\": \"string\"}}}}",
     "description": [
       { "type": "text", "value": "This function filters the " },
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
@@ -170,12 +205,24 @@ I want to filter the customers table using any of these input fields: customerId
       { "type": "reference", "referenceType": "variable", "name": "address", "dataType": "string" },
       { "type": "text", "value": ". Returns all matching records." }
     ],
+    "signature": "async function filterCustomers(filters: FilterCustomersInput): Promise<FilterCustomersResult>",
+    "parameters": "filters: {\n  customerId?: number;    // Optional customer ID filter\n  firstName?: string;    // Optional first name filter\n  lastName?: string;     // Optional last name filter\n  email?: string;        // Optional email filter\n  phone?: string;        // Optional phone filter\n  address?: string;      // Optional address filter\n}",
+    "returns": "Promise<FilterCustomersResult> where FilterCustomersResult = {\n  customerId: number;\n  firstName: string;\n  lastName: string;\n  email: string;\n  phone: string;\n  address: string;\n}[]",
+    "behavior": [
+      { "type": "text", "value": "The function filters " },
+      { "type": "reference", "referenceType": "database-table", "name": "customers" },
+      { "type": "text", "value": " based on provided criteria:\n\n1. Input Handling\n   - All filter parameters are optional\n   - Empty/undefined filters are ignored\n   - String filters use case-insensitive partial matching\n\n2. Query Building\n   - Constructs SQL query with WHERE clauses for provided filters\n   - Uses parameterized queries for security\n   - Combines multiple filters with AND logic\n\n3. Results\n   - Returns array of matching " },
+      { "type": "reference", "referenceType": "database-table", "name": "customers" },
+      { "type": "text", "value": " records\n   - Returns empty array if no matches found\n   - Maintains original column casing from database" }
+    ],
+    "errors": "- \`Failed to connect to database\`: Thrown when the database connection cannot be established\n- \`Database query failed: {error}\`: Thrown when the database query execution fails\n- \`Invalid customerId: must be a positive integer\`: Thrown when the customerId parameter is not a positive integer\n- \`Invalid firstName: must be a string\`: Thrown when the firstName parameter is not a valid string\n- \`Invalid lastName: must be a string\`: Thrown when the lastName parameter is not a valid string\n- \`Invalid email: must be a string\`: Thrown when the email parameter is not a valid string\n- \`Invalid phone: must be a string\`: Thrown when the phone parameter is not a valid string\n- \`Invalid address: must be a string\`: Thrown when the address parameter is not a valid string",
+    "examples": "// Example 1: Filter by customer ID\nconst result1 = await filterCustomers({ customerId: 123 });\n// Returns:\n// [{\n//   customerId: 123,\n//   firstName: 'John',\n//   lastName: 'Smith', \n//   email: 'john.smith@email.com',\n//   phone: '555-0123',\n//   address: '123 Main St'\n// }]\n\n// Example 2: Filter by partial name match (case-insensitive)\nconst result2 = await filterCustomers({ firstName: 'jo', lastName: 'sm' });\n// Returns:\n// [{\n//   customerId: 123,\n//   firstName: 'John',\n//   lastName: 'Smith',\n//   email: 'john.smith@email.com', \n//   phone: '555-0123',\n//   address: '123 Main St'\n// },\n// {\n//   customerId: 456,\n//   firstName: 'Joseph',\n//   lastName: 'Smalls',\n//   email: 'joe.smalls@email.com',\n//   phone: '555-4567',\n//   address: '789 Oak Rd'\n// }]\n\n// Example 3: No matches found\nconst result3 = await filterCustomers({ email: 'nonexistent@email.com' });\n// Returns: []\n\n// Example 4: Invalid input throws error\ntry {\n  const result4 = await filterCustomers({ customerId: -1 });\n} catch (error) {\n  // Error: Invalid customerId: must be a positive integer\n}\n\n// Example 5: Complex filter combining multiple fields\nconst result5 = await filterCustomers({\n  lastName: 'Smith',\n  address: 'Main St',\n  phone: '555'\n});\n// Returns:\n// [{\n//   customerId: 123,\n//   firstName: 'John', \n//   lastName: 'Smith',\n//   email: 'john.smith@email.com',\n//   phone: '555-0123',\n//   address: '123 Main St'\n// }]",
     "resources": [
       {
         "id": "iwwj97jcoae613735mkzjtj2",
         "name": "CRM",
         "metadata": {
-          "type": "database",
+          "type": "postgres",
           "tables": [
             {
               "name": "customers",
@@ -192,27 +239,6 @@ I want to filter the customers table using any of these input fields: customerId
         },
       }
     ],
-    "logicalSteps": [
-      { "type": "text", "value": "1. Check if any filter parameters are provided\n2. Build a dynamic SQL query with WHERE clauses only for provided filters:\n- Add " },
-      { "type": "reference", "referenceType": "variable", "name": "customerId", "dataType": "integer" },
-      { "type": "text", "value": " exact match if provided\n- Add " },
-      { "type": "reference", "referenceType": "variable", "name": "firstName", "dataType": "string" },
-      { "type": "text", "value": " pattern match if provided\n- Add " },
-      { "type": "reference", "referenceType": "variable", "name": "lastName", "dataType": "string" },
-      { "type": "text", "value": " pattern match if provided\n- Add " },
-      { "type": "reference", "referenceType": "variable", "name": "email", "dataType": "string" },
-      { "type": "text", "value": " pattern match if provided\n- Add " },
-      { "type": "reference", "referenceType": "variable", "name": "phone", "dataType": "string" },
-      { "type": "text", "value": " pattern match if provided\n- Add " },
-      { "type": "reference", "referenceType": "variable", "name": "address", "dataType": "string" },
-      { "type": "text", "value": " pattern match if provided\n3. Use the " },
-      { "type": "reference", "referenceType": "database", "name": "CRM" },
-      { "type": "text", "value": "'s " },
-      { "type": "reference", "referenceType": "function", "name": "query" },
-      { "type": "text", "value": " utility to execute the SQL query with proper parameter binding\n4. Return the filtered customer records array" }
-    ],
-    "edgeCases": "Handle scenarios with no filter parameters provided. Handle cases with no matching records.",
-    "errorHandling": "If database query fails, log the error and return a user-friendly message. No retry mechanism for now.",
     "helperFunctionIds": ["adluv5r0hxfp6230dvuqxdvd"],
   }
 }
@@ -224,139 +250,161 @@ I want to filter the customers table using any of these input fields: customerId
 - If something is clear enough, just move on the don't ask the user.
 - Don't ask too detailed question if everything is clear.`;
 
-export const FUNC_DEVELOPER_PROMPT = `Implement the function as per given guidelines, utilizing the provided imports, type definitions, logical steps, and handling of edge cases appropriately.
+export const FUNC_DEVELOPER_PROMPT = `Implement a TypeScript function according to the specifications provided in the guidelines.
+
+Use the provided input and output schemas to define TypeScript types and implement the function signature. Incorporate detailed instructions for implementing logic such as database or API queries, and error handling. Handle all specified edge cases with precision, including correctness for scenarios like empty datasets or invalid inputs. The function code should be exported using the \`export\` keyword, excluding default exports. Utilize Node version 20 or above.
 
 # Steps
 
-1. **Define TypeScript Types** based on the provided input and output schemas.
-2. **Declare the Function Signature** and outline parameter definitions and return types.
-3. **Use or Define Helper Functions** to ensure clean, readable code (if needed).
-4. **Implement Logic** as per the detailed instructions provided, such as database or API queries and error handling.
-5. **Handle All Edge Cases** precisely as specified. Confirm correctness for scenarios such as empty datasets or invalid inputs.
-6. **Return Completed Code** as a textual TypeScript snippet with all necessary imports and definitions.
+1. **Define TypeScript Types:**
+   - Use the input and output schemas to define TypeScript types.
+
+2. **Declare Function Signature:**
+   - Specify parameter definitions and return types.
+
+3. **Implement Function Logic:**
+   - Implement as per detailed logic instructions involving database or API operations.
+   - Use provided helper functions if specified.
+
+4. **Handle Errors and Edge Cases:**
+   - Address specified edge cases and incorporate necessary error handling.
+
+5. **Ensure Export Compliance:**
+   - Export the function using the \`export\` keyword, skipping default exports.
+
+6. **Node Compliance:**
+   - Confirm compatibility with Node version 20 or above.
 
 # Output Format
 
-- Provide TypeScript code as **plain text**.
-- It should include:
-  - Import statements (only if explicitly provided).
-  - Complete interface/type definitions relating to inputs and outputs.
-  - Function implementation matching the requirements, with appropriate try-catch handling for errors.
-
-**Do not use any additional formatting (such as Markdown code blocks). Only provide syntactically correct, runnable TypeScript code.**
+- Return the complete TypeScript code as plain text.
+- Include:
+  - Necessary import statements (if explicitly provided).
+  - Comprehensive interface/type definitions for inputs and outputs.
+  - Full implementation respecting the guidelines, with try-catch for error management.
+- Refrain from using any additional formatting like Markdown code blocks.
 
 # Examples
 
-## Input Example:
+**User Prompt:**
 
-### Task Request:
-Implement a function called \`getCustomerById\`.
-This function gets the customer by id from the table customers table in the database CRM based on input field input customerId (integer).
-
-### Input JSON Schema
-{
-  "type": "object",
-  "properties": {
-    "customerId": {
-      "type": "integer"
-    }
-  },
-  "required": ["customerId"]
-}
-
-### Output JSON Schema
-{
-  "type": "object",
-  "title": "Customer",
-  "properties": {
-    "id": { "type": "integer" },
-    "firstName": { "type": "string" },
-    "lastName": { "type": "string" },
-    "email": { "type": "string" },
-    "phone": { "type": "string" },
-    "address": { "type": "string" }
-  }
-}
-
-### Logical Steps
-- Use the \`query\` utility to get the customer by id.
-- Return the customer if found, otherwise return \`undefined\`.
-
-### Edge Cases
-- Handle scenarios where the customer is not found.
-
-### Error Handling
-- If the query fails, log the error and throw a user-friendly message.
-
-### Resources
-CRM of type Postgres database with the following tables:
-- customers, with columns, customer_id (integer), first_name (text), last_name (text), email (text), phone (text), address (text)
-
+## Context
 ### Helper Functions Provided
 
-#### query
-Executes a SQL query with parameters and returns the result.
+- \`formatCurrency\`
+Import from: \`@/lib/formatting\`
 
-Documentation:
+Docs:
+A utility function that formats numbers as currency strings according to specified locale and currency code.
+
+**Signature:**
+function formatCurrency(
+  amount: number,
+  currencyCode: string,
+  locale?: string
+): string
+
 **Parameters:**
-- \`text\` *(string)*: The SQL query text
-- \`params\` *(unknown[])*: Array of parameter values to use in the query
+- amount: Number to format as currency
+- currencyCode: ISO 4217 currency code (e.g., 'USD', 'EUR', 'GBP')
+- locale: Optional locale string (defaults to 'en-US')
 
 **Returns:**
-- \`Promise<QueryResult<T>>\`: Resolves to the query result
+String representation of the currency value formatted according to locale rules
 
-**Example:**
-\`\`\`typescript
-import { query } from "./lib/db";
+**Behavior:**
+1. Validates input amount is a finite number
+2. Validates currency code is valid ISO 4217
+3. Formats number using Intl.NumberFormat
+4. Returns formatted string
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
+**Errors:**
+"Invalid amount" - When amount is not a finite number
+"Invalid currency code" - When currency code is not valid
+"Invalid locale" - When provided locale is not supported
 
-const rows = await query<User>(
-  "SELECT * FROM users WHERE id = $1",
-  [1],
-);
+**Examples:**
+formatCurrency(1234.56, 'USD')
+// Returns: "$1,234.56"
 
-const user = rows.rows[0];
-console.log(user);
-// Output: { id: 1, name: 'John Doe', email: 'john.doe@example.com' }
-\`\`\`
+formatCurrency(1234.56, 'EUR', 'de-DE')
+// Returns: "1.234,56 €"
 
-## Expected Output Example:
+formatCurrency(1234.56, 'JPY')
+// Returns: "¥1,235"
 
-\`\`\`typescript
-import { query } from "./lib/db"
+### Request
+Implement a function called \`calculatePortfolioMetrics\` that has the following specifications:
 
-interface Customer {
-  customerId: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-}
+This function analyzes an array of investment transactions and calculates key portfolio metrics.
 
-async function getCustomerById({ customerId }: { customerId: number }): Promise<Customer | undefined> {
-  try {
-    const result = await query<Customer>(
-      "SELECT customer_id as \"customerId\", first_name as \"firstName\", last_name as \"lastName\", email, phone, address FROM customers WHERE customer_id = $1",
-      [customerId]
-    );
+**Signature:**
+function calculatePortfolioMetrics(transactions: Transaction[]): PortfolioMetrics
 
-    if (result.rows.length === 0) {
-      return undefined;
-    }
+**Parameters:**
+- \`transactions\` *(Transaction[])*: Array of transaction objects with properties:
+  - \`type\` ('buy' | 'sell'): Transaction type
+  - \`amount\` (number): Transaction amount
+  - \`price\` (number): Price per unit
+  - \`timestamp\` (string): ISO 8601 date string
+  - \`symbol\` (string): Stock symbol
 
-    return result.rows[0];
-  } catch (error) {
-    console.error("Error fetching customer:", error);
-    throw new Error("Failed to retrieve customer information");
+**Returns:**
+- \`PortfolioMetrics\` object with properties:
+  - \`totalValue\` (number): Current portfolio value
+  - \`totalGainLoss\` (number): Total realized gains/losses
+  - \`biggestPosition\` (string): Symbol with largest current position
+  - \`transactions\` (TransactionSummary[]): Daily transaction summaries
+
+**Behavior:**
+1. Input Validation
+   - Verify all transaction objects have required fields
+   - Ensure amounts and prices are positive numbers
+   - Validate timestamp format
+
+2. Calculations
+   - Calculate daily position changes
+   - Track running portfolio value
+   - Compute realized gains/losses
+   - Determine largest position
+
+3. Results
+   - Sort transactions chronologically
+   - Group transactions by day
+   - Format currency values
+   - Calculate summary metrics
+
+**Errors:**
+- \`Invalid transaction format\`: When transaction objects are malformed
+- \`Invalid numerical value\`: When amount or price is not a positive number
+- \`Invalid date format\`: When timestamp is not valid ISO 8601
+- \`Empty transaction list\`: When input array is empty
+
+**Examples:**
+// Example input
+const transactions = [
+  {
+    type: 'buy',
+    amount: 100,
+    price: 50.25,
+    timestamp: '2024-01-01T10:30:00Z',
+    symbol: 'AAPL'
   }
-}
-\`\`\`
+];
+
+// Example usage
+const metrics = calculatePortfolioMetrics(transactions);
+// Returns: {
+//   totalValue: 5025.00,
+//   totalGainLoss: 0,
+//   biggestPosition: 'AAPL',
+//   transactions: [{
+//     date: '2024-01-01',
+//     symbol: 'AAPL',
+//     netAmount: 100,
+//     value: 5025.00
+//   }]
+// }
 
 # Note
 
@@ -370,107 +418,78 @@ async function getCustomerById({ customerId }: { customerId: number }): Promise<
 export const getGenerateFuncCodePrompt = async ({
   currentModuleId,
   name,
-  description,
-  inputSchema,
-  outputSchema,
-  logicalSteps,
-  edgeCases,
-  errorHandling,
+  docs,
   resources,
   helperFunctionIds,
   npmDependencies,
 }: {
   currentModuleId: string;
   name: string;
-  description: string;
-  inputSchema: string | undefined;
-  outputSchema: string | undefined;
-  logicalSteps: string;
-  edgeCases: string;
-  errorHandling: string;
+  docs: string;
   resources?: z.infer<typeof funcResourceSchema>[];
   helperFunctionIds: string[] | undefined;
   npmDependencies: NpmDependency[] | undefined;
 }) => {
-  const helperFunctions = await api.funcs.byIds({
+  const helperFunctions = await api.funcs.byIdsWithSecrets({
     ids: helperFunctionIds ?? [],
   });
 
-  return `Implement a TypeScript function based on the given requirements and specifications. Don't use any external libraries, unless we explicitly tell you to use them. The function will run in a Node.js environment. The node version is 20 or above. You can safely use web APIs like the fetch API.
-
-## Task Request
-Implement a function called \`${name}\`.
-- **Description**: ${description}
-
-## Input and Output Schemas
-- **Input JSON Schema**: ${inputSchema ?? "Has no input"}
-- **Output JSON Schema**: ${outputSchema ?? "Has no output"}
-
-## Steps
-
-- **Logical Steps**:
-  - ${logicalSteps}
-
-- **Edge Cases**:
-  - ${edgeCases}
-
-- **Error Handling**:
-  - ${errorHandling}
-
-${
-  npmDependencies && npmDependencies.length > 0
-    ? `## NPM Dependencies\n${npmDependencies.map((dep) => `- ${dep.name} (version: ${dep.version})`).join("\n")}`
-    : ""
-}
-
+  return `## Context
 ${
   resources && resources.length > 0
-    ? `## Resources\n${resources
+    ? `### Resources\n${resources
         .map((resource) => {
           switch (resource.metadata.type) {
-            case "database": {
+            case "postgres": {
               const tables = resource.metadata.tables
                 .map(
                   (table) =>
-                    `- ${table.name}, with columns, ${table.columns
-                      .map((column) => `${column.name} (${column.dataType})`)
-                      .join(", ")}`,
+                    `- Table \`${table.name}\`
+                     - Columns:
+                       ${table.columns
+                         .map(
+                           (column) =>
+                             ` - \`${column.name}\` (${column.dataType})`,
+                         )
+                         .join("\n")}`,
                 )
                 .join("\n");
-              return `- ${resource.name} of type ${resource.metadata.type} with the following tables:\n${tables}`;
+              return `- Postgres database \`${resource.name}\`\n${tables}`;
             }
             default:
-              return `- ${resource.name} of type ${resource.metadata.type}`;
+              throw new Error("Invalid resource type");
           }
         })
         .join("\n\n")}`
     : ""
 }
 
-${helperFunctions.length > 0 ? "## Helper functions to use" : ""}
-
 ${
   helperFunctions && helperFunctions.length > 0
-    ? `Available helper functions:\n${helperFunctions
+    ? `### Helper Functions\n${helperFunctions
         .map((helperFunction) => {
           const importInfo =
             helperFunction.moduleId !== currentModuleId
-              ? `Import from: \`@/lib/${pascalToKebabCase(helperFunction.module.name)}\`\n`
-              : "Available in current module\n";
-
-          return `- ${helperFunction.name}
-${importInfo}Description: ${helperFunction.description}
-${helperFunction.inputSchema ? `Input Schema: ${JSON.stringify(helperFunction.inputSchema)}` : ""}
-${helperFunction.outputSchema ? `Output Schema: ${JSON.stringify(helperFunction.outputSchema)}` : ""}
-${helperFunction.logicalSteps ? `Logical Steps: ${helperFunction.logicalSteps}` : ""}
-${helperFunction.edgeCases ? `Edge Cases: ${helperFunction.edgeCases}` : ""}
-${helperFunction.errorHandling ? `Error Handling: ${helperFunction.errorHandling}` : ""}`;
+              ? `Available in \`@/lib/${pascalToKebabCase(helperFunction.module.name)}\`\n`
+              : "Available in current module can be used directly\n";
+          return `- \`${helperFunction.name}\`
+How to import: ${importInfo}
+Docs:\n${helperFunction.docs}`;
         })
         .join("\n\n")}`
     : ""
 }
 
+${
+  npmDependencies && npmDependencies.length > 0
+    ? `### NPM Dependencies\n${npmDependencies.map((dep) => `- ${dep.name}`).join("\n")}`
+    : ""
+}
+
+## Request
+Implement a function called \`${name}\` that has the following specifications:
+${JSON.stringify(docs)}
+
 # Remember:
-- Provide the completed TypeScript function implementation, adhering to the outlined requirements and utilizing any specified helper functions or resources.
-- The function inputs and outputs must be objects that adhere to the provided input and output JSON Schemas and all the properties must have the same names as the ones in the JSON Schemas.`;
+- Provide the completed TypeScript function implementation, adhering to the outlined requirements and utilizing any specified helper functions or resources.`;
 };

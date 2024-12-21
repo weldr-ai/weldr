@@ -1,11 +1,11 @@
 import { z } from "zod";
 import {
   databaseColumnReferenceSchema,
-  databaseReferenceSchema,
   databaseTableReferenceSchema,
   functionReferenceSchema,
   rawContentReferenceElementSchema,
   rawContentTextElementSchema,
+  resourceReferenceSchema,
 } from "./common";
 
 export const userMessageRawContentReferenceElementSchema = z.discriminatedUnion(
@@ -18,8 +18,8 @@ export const userMessageRawContentReferenceElementSchema = z.discriminatedUnion(
     }),
     z.object({
       type: z.literal("reference"),
-      referenceType: z.literal("database"),
-      ...databaseReferenceSchema.shape,
+      referenceType: z.literal("resource"),
+      ...resourceReferenceSchema.shape,
     }),
     z.object({
       type: z.literal("reference"),

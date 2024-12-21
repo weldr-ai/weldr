@@ -266,15 +266,7 @@ export function EndpointView({
 
   const helperFunctionReferences = funcs?.reduce(
     (acc, func) => {
-      if (
-        !func.name ||
-        !func.description ||
-        !func.edgeCases ||
-        !func.errorHandling ||
-        !func.logicalSteps ||
-        !func.inputSchema ||
-        !func.outputSchema
-      ) {
+      if (!func.name || !func.inputSchema || !func.outputSchema) {
         return acc;
       }
 

@@ -35,7 +35,7 @@ export const engineRouter = {
         });
       }
 
-      const canRun = Boolean(func.name && func.code && func.description);
+      const canRun = Boolean(func.name && func.code);
 
       if (!canRun) {
         throw new TRPCError({

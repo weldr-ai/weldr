@@ -2,7 +2,7 @@ import "server-only";
 
 import { Pool } from "pg";
 import type { DataType } from "../../types";
-import type { DatabaseStructure, DatabaseTable, DbConfig } from "./index";
+import type { DatabaseStructure, DatabaseTable, DbConfig } from "../types";
 
 // @ts-ignore
 function pgTypeToJsonSchemaType(pgType: string): DataType {

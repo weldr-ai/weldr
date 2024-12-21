@@ -99,16 +99,33 @@ export function ReferencesPlugin({
           );
           break;
         }
-        case "database": {
-          acc.push(
-            new ReferenceOption({
-              reference,
-              options: {
-                keywords: [reference.name, "database"],
-                onSelect: () => {},
-              },
-            }),
-          );
+        case "resource": {
+          switch (reference.resourceType) {
+            case "postgres":
+              acc.push(
+                new ReferenceOption({
+                  reference,
+                  options: {
+                    keywords: [reference.name, "resource", "postgres"],
+                    onSelect: () => {},
+                  },
+                }),
+              );
+              break;
+            case "mysql":
+              acc.push(
+                new ReferenceOption({
+                  reference,
+                  options: {
+                    keywords: [reference.name, "resource", "mysql"],
+                    onSelect: () => {},
+                  },
+                }),
+              );
+              break;
+            default:
+              break;
+          }
           break;
         }
         case "database-table": {

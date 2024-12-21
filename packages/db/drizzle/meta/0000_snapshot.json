@@ -1,5 +1,5 @@
 {
-  "id": "51ad3e39-0f27-46a8-8d34-9c76d3019c3c",
+  "id": "6d291489-b003-42f8-9303-b1b132a30202",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -773,21 +773,27 @@
           "primaryKey": false,
           "notNull": false
         },
-        "test_input": {
-          "name": "test_input",
+        "raw_description": {
+          "name": "raw_description",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
-        "description": {
-          "name": "description",
+        "behavior": {
+          "name": "behavior",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "errors": {
+          "name": "errors",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "raw_description": {
-          "name": "raw_description",
-          "type": "jsonb",
+        "docs": {
+          "name": "docs",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -797,21 +803,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "logical_steps": {
-          "name": "logical_steps",
+        "npm_dependencies": {
+          "name": "npm_dependencies",
           "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "edge_cases": {
-          "name": "edge_cases",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "error_handling": {
-          "name": "error_handling",
-          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -821,14 +815,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "documentation": {
-          "name": "documentation",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "npm_dependencies": {
-          "name": "npm_dependencies",
+        "test_input": {
+          "name": "test_input",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false

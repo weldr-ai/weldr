@@ -74,6 +74,7 @@ import { TreeView } from "@integramind/ui/tree-view";
 import { createId } from "@paralleldrive/cuid2";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
+import ReactMarkdown from "react-markdown";
 import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
 import { Editor } from "~/components/editor";
 import { TestInputDialog } from "~/components/test-input-dialog";
@@ -419,12 +420,9 @@ export const FuncNode = memo(
       (acc, func) => {
         if (
           !func.name ||
-          !func.description ||
-          !func.edgeCases ||
-          !func.errorHandling ||
-          !func.logicalSteps ||
-          !func.inputSchema ||
-          !func.outputSchema
+          !func.rawDescription ||
+          !func.behavior ||
+          !func.errors
         ) {
           return acc;
         }
@@ -730,7 +728,7 @@ export const FuncNode = memo(
                 {data.rawDescription ? (
                   <ScrollArea className="size-full">
                     <div className="max-h-[500px] space-y-2">
-                      <div className="space-y-1">
+                      <div className="flex flex-col space-y-1">
                         <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
                           Description:
                         </span>
@@ -777,29 +775,29 @@ export const FuncNode = memo(
                       </div>
                       <div className="space-y-1">
                         <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
-                          Logical Steps:
+                          Behavior:
                         </span>
-                        <div className="text-sm select-text cursor-text">
-                          <RawContentViewer
-                            rawContent={data.logicalSteps ?? []}
-                          />
+                        <div className="prose select-text cursor-text text-sm prose-ol:marker:text-foreground prose-code:text-primary text-foreground prose-ul:my-0 prose-ol:my-0 prose-li:my-0 [&_ol]:marker:text-foreground [&_ol]:text-foreground">
+                          <RawContentViewer rawContent={data.behavior ?? []} />
                         </div>
                       </div>
                       <div className="space-y-1">
                         <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
-                          Edge Cases:
+                          Errors:
                         </span>
-                        <p className="text-sm select-text cursor-text">
-                          {data.edgeCases}
-                        </p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
-                          Error Handling:
-                        </span>
-                        <p className="text-sm select-text cursor-text">
-                          {data.errorHandling}
-                        </p>
+                        <div className="prose select-text cursor-text text-sm prose-code:text-primary text-foreground prose-ul:my-0 prose-ol:my-0 prose-li:my-0">
+                          <ReactMarkdown
+                            components={{
+                              code: ({ children }) => (
+                                <span className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-xs text-accent-foreground text-destructive">
+                                  {children}
+                                </span>
+                              ),
+                            }}
+                          >
+                            {data.errors}
+                          </ReactMarkdown>
+                        </div>
                       </div>
                     </div>
                   </ScrollArea>

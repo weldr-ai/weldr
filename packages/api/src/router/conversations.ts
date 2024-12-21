@@ -11,9 +11,8 @@ import { getDatabaseStructure } from "@integramind/shared/integrations/postgres/
 import type {
   DatabaseStructure,
   DbConfig,
-} from "@integramind/shared/integrations/postgres/index";
+} from "@integramind/shared/integrations/types";
 import type { UserMessageRawContent } from "@integramind/shared/types";
-import { pascalToKebabCase } from "@integramind/shared/utils";
 import {
   assistantMessageRawContentSchema,
   userMessageRawContentSchema,
@@ -29,10 +28,8 @@ interface ResolvedFuncReference {
   referenceType: "function";
   id: string;
   name: string;
-  description: string;
-  documentation: string;
+  docs: string;
   moduleName: string;
-  scope: "imported" | "local";
 }
 
 interface ResolvedDatabaseReference {
@@ -44,8 +41,7 @@ interface ResolvedDatabaseReference {
   helperFunctions: {
     id: string;
     name: string;
-    description: string;
-    documentation: string;
+    docs: string;
   }[];
 }
 
@@ -232,8 +228,8 @@ async function resolveRawContent(
             references.push(resolvedReference);
             break;
           }
-          case "database": {
-            const key = `db-${element.id}`;
+          case "resource": {
+            const key = `resource-${element.id}`;
             if (resolvedReferencesCache.has(key)) {
               // biome-ignore lint/style/noNonNullAssertion: <explanation>
               references.push(resolvedReferencesCache.get(key)!);
@@ -242,7 +238,7 @@ async function resolveRawContent(
             const resolvedReference = await resolveResourceReference({
               resourceId: element.id,
               resourceName: element.name,
-              resourceType: element.databaseType,
+              resourceType: element.resourceType,
               ctx,
             });
             resolvedReferencesCache.set(key, resolvedReference);
@@ -299,6 +295,7 @@ function userMessageRawContentToText(
 ): string {
   const context: string[] = [];
   const seenElements = new Map<string, boolean>();
+  const helperFunctions: string[] = [];
 
   const getElementKey = (element: ResolvedRawContent): string => {
     if (element.type === "text") return element.value;
@@ -348,11 +345,15 @@ function userMessageRawContentToText(
                   referenceType: "database" as const,
                   databaseType: "postgres" as const,
                 };
-                context.push(referenceToText(dbInfo, seenElements));
+                const { text, helpers } = referenceToText(dbInfo, seenElements);
+                if (text) context.push(text);
+                if (helpers) helperFunctions.push(...helpers);
               }
             }
 
-            context.push(referenceToText(element, seenElements));
+            const { text, helpers } = referenceToText(element, seenElements);
+            if (text) context.push(text);
+            if (helpers) helperFunctions.push(...helpers);
           }
           return `${acc}${element.name}`;
         }
@@ -360,60 +361,55 @@ function userMessageRawContentToText(
     }, "")
     .trim();
 
-  return `${
-    context.length > 0
-      ? `## Context\n${context.filter(Boolean).join("\n\n")}\n\n`
-      : ""
-  }## Request\n${text}`;
+  const sections = [];
+  if (context.length > 0) {
+    sections.push("## Context", context.filter(Boolean).join("\n\n"));
+  }
+  if (helperFunctions.length > 0) {
+    sections.push(helperFunctions.join("\n"));
+  }
+  sections.push("## Request", text);
+
+  return sections.join("\n\n");
 }
 
 function referenceToText(
   reference: ResolvedReference,
   seenElements: Map<string, boolean>,
-): string {
+): { text: string; helpers?: string[] } {
   switch (reference.referenceType) {
     case "function": {
-      return [
-        `### Function \`${reference.name}\` (ID: ${reference.id})`,
-        ...(reference.scope === "imported"
-          ? [
-              `***Scope:*** imported from @/lib/${pascalToKebabCase(
-                reference.moduleName,
-              )}`,
-            ]
-          : []),
-        ...(reference.scope === "local"
-          ? ["***Scope:*** Local (available in current module)"]
-          : []),
-        "***Documentation:***",
-        `${reference.documentation}`,
-      ].join("\n");
+      return {
+        text: "",
+        helpers: [
+          `### Function \`${reference.name}\` (ID: ${reference.id})`,
+          `${reference.docs}`,
+        ],
+      };
     }
 
     case "database": {
-      return [
-        `### ${
-          reference.databaseType === "postgres" ? "PostgreSQL" : "MySQL"
-        } Database \`${reference.name}\` (ID: ${reference.id})`,
-        ...(reference.helperFunctions.length > 0
-          ? [
-              "***Helper Functions:***",
-              ...reference.helperFunctions.map(
-                (util) =>
-                  `- \`${util.name}\` (ID: ${util.id})\n` +
-                  `  Description: ${util.description}`,
-              ),
-            ]
-          : []),
-      ].join("\n");
+      const text = `### ${
+        reference.databaseType === "postgres" ? "PostgreSQL" : "MySQL"
+      } Database \`${reference.name}\` (ID: ${reference.id})`;
+
+      const helpers =
+        reference.helperFunctions.length > 0
+          ? reference.helperFunctions.map(
+              (util) =>
+                `### Function \`${util.name}\` (ID: ${util.id})\n${util.docs}`,
+            )
+          : undefined;
+
+      return { text, helpers };
     }
 
     case "database-table": {
       const parts = [
-        `### Table \`${reference.name}\``,
+        `- Table \`${reference.name}\``,
         ...(reference.columns?.length > 0
           ? [
-              "***Columns:***",
+              "  - Columns:",
               ...reference.columns.map(
                 (col) => `- \`${col.name}\` (${col.dataType})`,
               ),
@@ -421,7 +417,7 @@ function referenceToText(
           : []),
         ...(reference.relationships && reference.relationships.length > 0
           ? [
-              "***Relationships:***",
+              "  - Relationships:",
               ...reference.relationships.map(
                 (rel) =>
                   `- \`${rel.columnName}\` -> \`${rel.referencedTable}\`.\`${rel.referencedColumn}\``,
@@ -430,19 +426,19 @@ function referenceToText(
           : []),
       ];
 
-      return parts.join("\n");
+      return { text: parts.join("\n") };
     }
 
     case "database-column": {
       const tableKey = `db-table-${reference.table.name}-${reference.database.id}`;
-      if (seenElements.has(tableKey)) return "";
+      if (seenElements.has(tableKey)) return { text: "" };
       seenElements.set(tableKey, true);
 
       const parts = [
-        `### Table \`${reference.table.name}\``,
+        `- Table \`${reference.table.name}\``,
         ...(reference.table.columns.length > 0
           ? [
-              "***Columns:***",
+              "  - Columns:",
               ...reference.table.columns.map(
                 (col) => `- \`${col.name}\` (${col.dataType})`,
               ),
@@ -451,7 +447,7 @@ function referenceToText(
         ...(reference.table.relationships &&
         reference.table.relationships.length > 0
           ? [
-              "***Relationships:***",
+              "  - Relationships:",
               ...reference.table.relationships.map(
                 (rel) =>
                   `- \`${rel.columnName}\` -> \`${rel.referencedTable}\`.\`${rel.referencedColumn}\``,
@@ -460,11 +456,11 @@ function referenceToText(
           : []),
       ];
 
-      return parts.join("\n");
+      return { text: parts.join("\n") };
     }
 
     default: {
-      return "";
+      return { text: "" };
     }
   }
 }
@@ -500,7 +496,7 @@ async function resolveFuncReference(
     });
   }
 
-  if (!func.name || !func.description || !func.documentation) {
+  if (!func.name || !func.docs) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Function is missing required fields",
@@ -512,10 +508,8 @@ async function resolveFuncReference(
     referenceType: "function",
     id: func.id,
     name: func.name,
-    description: func.description,
-    documentation: func.documentation,
+    docs: func.docs,
     moduleName: func.module.name,
-    scope: func.moduleId === currentModuleId ? "local" : "imported",
   };
 }
 
@@ -688,7 +682,7 @@ async function getResourceHelperFunctions(
   const helperFunctions = resourceResult.integration.modules
     .flatMap((module) =>
       module.funcs.map((func) => {
-        if (func.name && func.description && func.documentation) {
+        if (func.name && func.docs) {
           return {
             ...func,
             moduleName: module.name,
@@ -700,7 +694,7 @@ async function getResourceHelperFunctions(
 
   return helperFunctions
     .map((func) => {
-      if (!func.name || !func.description || !func.documentation) {
+      if (!func.name || !func.docs) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Function is missing required fields",
@@ -710,8 +704,7 @@ async function getResourceHelperFunctions(
       return {
         id: func.id,
         name: func.name,
-        description: func.description,
-        documentation: func.documentation,
+        docs: func.docs,
       };
     })
     .filter((func) => func !== undefined);

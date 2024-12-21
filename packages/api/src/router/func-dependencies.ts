@@ -88,8 +88,9 @@ export const funcDependenciesRouter = {
       const availableFunctions = await ctx.db.query.funcs.findMany({
         where: eq(funcs.userId, ctx.session.user.id),
         columns: {
-          documentation: false,
+          docs: false,
           code: false,
+          npmDependencies: false,
         },
         with: {
           module: {
@@ -105,11 +106,7 @@ export const funcDependenciesRouter = {
         (f) =>
           f.id !== input.funcId && // Can't depend on itself
           f.name &&
-          f.description &&
           f.rawDescription &&
-          f.logicalSteps &&
-          f.edgeCases &&
-          f.errorHandling &&
           !dependencyChain.has(f.id) && // Can't create cycles
           !existingDeps.some((d) => d.dependencyFuncId === f.id), // Not already a dependency
       );

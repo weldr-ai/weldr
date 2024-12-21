@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { databaseTableSchema } from "../integrations/postgres";
+import { databaseTableSchema } from "../integrations/types";
 import { jsonSchema, npmDependencySchema, rawContentSchema } from "./common";
 import { conversationSchema } from "./conversations";
 import { funcDependencySchema } from "./func-dependencies";
@@ -11,7 +11,7 @@ export const funcResourceSchema = z.object({
   name: z.string(),
   metadata: z.discriminatedUnion("type", [
     z.object({
-      type: z.literal("database"),
+      type: z.literal("postgres"),
       tables: databaseTableSchema.array(),
     }),
   ]),
@@ -27,13 +27,11 @@ export const funcSchema = z.object({
   inputSchema: jsonSchema.optional(),
   outputSchema: jsonSchema.optional(),
   testInput: z.unknown().optional(),
-  description: z.string().optional(),
   rawDescription: rawContentSchema.optional(),
+  behavior: rawContentSchema.optional(),
+  errors: z.string().optional(),
+  docs: z.string().optional(),
   code: z.string().optional(),
-  documentation: z.string().optional(),
-  logicalSteps: rawContentSchema.optional(),
-  edgeCases: z.string().optional(),
-  errorHandling: z.string().optional(),
   resources: funcResourceSchema.array().optional().nullable(),
   npmDependencies: npmDependencySchema.array().optional().nullable(),
   userId: z.string().nullable(),
@@ -78,13 +76,11 @@ export const updateFuncSchema = z.object({
     testInput: z.unknown().optional(),
     inputSchema: jsonSchema.optional(),
     outputSchema: jsonSchema.optional(),
-    description: z.string().optional(),
     rawDescription: rawContentSchema.optional(),
+    behavior: rawContentSchema.optional(),
+    errors: z.string().optional(),
+    docs: z.string().optional(),
     code: z.string().optional(),
-    documentation: z.string().optional(),
-    logicalSteps: rawContentSchema.optional(),
-    edgeCases: z.string().optional(),
-    errorHandling: z.string().optional(),
     resources: funcResourceSchema.array().optional().nullable(),
     npmDependencies: npmDependencySchema.array().optional().nullable(),
   }),

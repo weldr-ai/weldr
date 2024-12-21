@@ -13,7 +13,6 @@ import { ZodError } from "zod";
 import type { Session } from "@integramind/auth";
 import { auth } from "@integramind/auth";
 import { db } from "@integramind/db";
-import type { inferProcedureOutput } from "@trpc/server";
 
 /**
  * 1. CONTEXT
@@ -94,72 +93,17 @@ export const publicProcedure = t.procedure;
  * @see https://trpc.io/docs/procedures
  */
 
-// Type for objects that might contain sensitive data
-type SensitiveData = {
-  code?: string;
-  documentation?: string;
-  content?: string;
-};
-
-// Type guard to check if an object contains sensitive data
-const hasSensitiveData = (obj: unknown): obj is SensitiveData => {
-  if (!obj || typeof obj !== "object") return false;
-  return "code" in obj || "documentation" in obj || "content" in obj;
-};
-
-// Type-safe sanitize function
-const sanitizeData = <T>(obj: T, seen = new WeakSet()): T => {
-  if (!obj || typeof obj !== "object") return obj;
-  if (seen.has(obj as object)) return obj;
-  if (obj instanceof Date) return obj;
-  seen.add(obj as object);
-
-  if (Array.isArray(obj)) {
-    return obj.map((item) => sanitizeData(item, seen)) as T;
-  }
-
-  if (hasSensitiveData(obj)) {
-    const clean = { ...obj };
-    if ("code" in clean) clean.code = undefined;
-    if ("documentation" in clean) clean.documentation = undefined;
-    if ("content" in clean) clean.content = undefined;
-    return clean as T;
-  }
-
-  const clean = { ...obj };
-  for (const key in clean) {
-    if (Object.prototype.hasOwnProperty.call(clean, key)) {
-      clean[key] = sanitizeData(clean[key], seen);
-    }
-  }
-
-  return clean as T;
-};
-
-// Middleware that sanitizes the response
-const sanitize = t.middleware(async ({ ctx, next }) => {
-  const result = await next();
-  return sanitizeData(result);
-});
-
-// Protected procedure that includes auth and sanitization
-export const protectedProcedure = t.procedure
-  .use(async ({ ctx, next }) => {
-    if (!ctx.session?.user) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "You must be logged in to access this resource",
-      });
-    }
-    return next({
-      ctx: {
-        ...ctx,
-        session: { ...ctx.session, user: ctx.session.user },
-      },
+export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "You must be logged in to access this resource",
     });
-  })
-  .use(sanitize);
-
-export type ProtectedProcedureOutput<
-  TProcedure extends (...args: unknown[]) => Promise<unknown>,
-> = inferProcedureOutput<TProcedure>;
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      session: { ...ctx.session, user: ctx.session.user },
+    },
+  });
+});

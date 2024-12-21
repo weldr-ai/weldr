@@ -10,7 +10,7 @@ import {
   getDatabaseStructure,
   testConnection,
 } from "@integramind/shared/integrations/postgres/helpers";
-import type { DbConfig } from "@integramind/shared/integrations/postgres/index";
+import type { DbConfig } from "@integramind/shared/integrations/types";
 import {
   insertResourceSchema,
   updateResourceSchema,

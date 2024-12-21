@@ -1,4 +1,4 @@
-import type { DatabaseStructure } from "@integramind/shared/integrations/postgres/index";
+import type { DatabaseStructure } from "@integramind/shared/integrations/types";
 import type {
   AssistantMessageRawContent,
   JsonSchema,
@@ -90,8 +90,8 @@ export function getResourceReferences(
       id: resource.id,
       type: "reference",
       name: resource.name,
-      referenceType: "database",
-      databaseType: resource.integrationType,
+      referenceType: "resource",
+      resourceType: resource.integrationType,
     });
 
     if (

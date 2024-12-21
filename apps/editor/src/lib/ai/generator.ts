@@ -160,28 +160,38 @@ export async function generateFunc({
             });
           }
 
-          const generatedFuncCodePrompt = await getGenerateFuncCodePrompt({
-            currentModuleId: funcData.moduleId,
-            name: funcData?.name ?? "",
+          const docs = await compileDocs({
             description: assistantMessageRawContentToText(
               object.message.content.description,
             ),
-            inputSchema: JSON.stringify(inputSchema),
-            outputSchema: JSON.stringify(outputSchema),
-            resources: object.message.content.resources,
-            logicalSteps: assistantMessageRawContentToText(
-              object.message.content.logicalSteps,
+            signature: object.message.content.signature,
+            parameters: object.message.content.parameters,
+            returns: object.message.content.returns,
+            behavior: assistantMessageRawContentToText(
+              object.message.content.behavior,
             ),
+            errors: object.message.content.errors,
+            examples: object.message.content.examples,
+          });
+
+          const generatedFuncCodePrompt = await getGenerateFuncCodePrompt({
+            currentModuleId: funcData.moduleId,
+            name: funcData?.name ?? "",
+            docs,
+            resources: object.message.content.resources,
             helperFunctionIds: object.message.content.helperFunctionIds,
-            edgeCases: object.message.content.edgeCases,
-            errorHandling: object.message.content.errorHandling,
             npmDependencies: object.message.content.npmDependencies as
               | {
                   name: string;
-                  version: string;
+                  type: "development" | "production";
+                  reason: string;
                 }[]
               | undefined,
           });
+
+          console.log(
+            `[generateFunc] Generated func code prompt: ${generatedFuncCodePrompt}`,
+          );
 
           const code = await generateCode({
             funcId,
@@ -195,13 +205,10 @@ export async function generateFunc({
               inputSchema,
               outputSchema,
               rawDescription: object.message.content.description,
-              description: assistantMessageRawContentToText(
-                object.message.content.description,
-              ),
+              behavior: object.message.content.behavior,
+              errors: object.message.content.errors,
+              docs,
               resources: object.message.content.resources,
-              edgeCases: object.message.content.edgeCases,
-              errorHandling: object.message.content.errorHandling,
-              logicalSteps: object.message.content.logicalSteps,
               npmDependencies: object.message.content.npmDependencies,
               code,
             },
@@ -231,4 +238,39 @@ export async function generateFunc({
   })();
 
   return stream.value;
+}
+
+async function compileDocs({
+  description,
+  signature,
+  parameters,
+  returns,
+  behavior,
+  errors,
+  examples,
+}: {
+  description: string;
+  signature: string;
+  parameters: string;
+  returns: string;
+  behavior: string;
+  errors: string | undefined;
+  examples: string;
+}) {
+  return `${description}
+
+**Signature:**
+${signature}
+
+**Parameters:**
+${parameters}
+
+**Returns:**
+${returns}
+
+**Behavior:**
+${behavior}${errors ? `\n\n**Errors:**\n${errors}` : ""}
+
+**Examples:**
+${examples}`;
 }
