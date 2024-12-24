@@ -25,7 +25,7 @@ export const endpointPathSchema = z
 
 export const endpointSchema = z.object({
   id: z.string().cuid2(),
-  name: z.string().min(1),
+  name: z.string().min(1).trim(),
   description: z.string().optional(),
   httpMethod: httpMethodsSchema,
   path: endpointPathSchema,
@@ -51,7 +51,14 @@ export const updateEndpointSchema = z.object({
     id: z.string(),
   }),
   payload: z.object({
-    name: z.string().min(1).optional(),
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .regex(/^[^\s].*$/, {
+        message: "Name can't start with whitespace",
+      })
+      .trim()
+      .optional(),
     description: z.string().optional(),
     httpMethod: httpMethodsSchema.optional(),
     path: endpointPathSchema.optional(),

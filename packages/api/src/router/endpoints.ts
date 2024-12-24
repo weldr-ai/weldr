@@ -151,15 +151,27 @@ export const endpointsRouter = {
     .input(updateEndpointSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        await ctx.db
-          .update(endpoints)
-          .set(input.payload)
-          .where(
-            and(
-              eq(endpoints.id, input.where.id),
-              eq(endpoints.userId, ctx.session.user.id),
-            ),
-          );
+        const result = (
+          await ctx.db
+            .update(endpoints)
+            .set(input.payload)
+            .where(
+              and(
+                eq(endpoints.id, input.where.id),
+                eq(endpoints.userId, ctx.session.user.id),
+              ),
+            )
+            .returning()
+        )[0];
+
+        if (!result) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Failed to update endpoint",
+          });
+        }
+
+        return result;
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {

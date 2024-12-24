@@ -47,7 +47,7 @@ import {
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import type { z } from "zod";
 
 import { DeleteAlertDialog } from "@/components/delete-alert-dialog";
 import { Editor } from "@/components/editor";
@@ -67,6 +67,7 @@ import type {
   UserMessageRawContent,
 } from "@integramind/shared/types";
 import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
+import { updateFuncSchema } from "@integramind/shared/validators/funcs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +82,7 @@ import {
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
 import { TreeView } from "@integramind/ui/tree-view";
+import { toast } from "@integramind/ui/use-toast";
 import { createId } from "@paralleldrive/cuid2";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
@@ -88,20 +90,6 @@ import ReactMarkdown from "react-markdown";
 import type { ReferenceNode } from "../../editor/plugins/reference/node";
 import MessageList from "../../message-list";
 import { RawContentViewer } from "../../raw-content-viewer";
-
-const validationSchema = z.object({
-  name: z
-    .string()
-    .min(1, {
-      message: "Name is required",
-    })
-    .regex(/^[a-z]/, {
-      message: "Name must start with a small letter",
-    })
-    .regex(/^[a-z][a-zA-Z0-9]*$/, {
-      message: "Can only contain letters and numbers",
-    }),
-});
 
 export const FuncNode = memo(
   ({
@@ -136,9 +124,16 @@ export const FuncNode = memo(
     const apiUtils = api.useUtils();
 
     const updateFunc = api.funcs.update.useMutation({
-      onSuccess: async () => {
+      onSuccess: async (data) => {
         await apiUtils.funcs.byId.invalidate({ id: data.id });
         updateNodeData(data.id, data);
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
       },
     });
 
@@ -151,21 +146,22 @@ export const FuncNode = memo(
       },
     });
 
-    const deleteFunc = api.funcs.delete.useMutation({
-      onSuccess: async () => {
-        await apiUtils.modules.byId.invalidate({ id: data.moduleId });
-      },
-    });
+    const deleteFunc = api.funcs.delete.useMutation();
 
     const addMessage = api.conversations.addMessage.useMutation();
 
     const editorRef = useRef<LexicalEditor>(null);
 
-    const form = useForm<z.infer<typeof validationSchema>>({
+    const form = useForm<z.infer<typeof updateFuncSchema>>({
       mode: "onChange",
-      resolver: zodResolver(validationSchema),
+      resolver: zodResolver(updateFuncSchema),
       defaultValues: {
-        name: data.name ?? "",
+        where: {
+          id: data.id,
+        },
+        payload: {
+          name: data.name ?? "",
+        },
       },
     });
 
@@ -173,7 +169,7 @@ export const FuncNode = memo(
       if (data.name) {
         return;
       }
-      form.setError("name", {
+      form.setError("payload.name", {
         type: "required",
         message: "Name is required",
       });
@@ -459,13 +455,13 @@ export const FuncNode = memo(
     const debouncedUpdate = useMemo(
       () =>
         debounce(
-          async (values: z.infer<typeof validationSchema>) => {
+          async (values: z.infer<typeof updateFuncSchema>) => {
             await updateFunc.mutateAsync({
               where: {
                 id: data.id,
               },
               payload: {
-                name: values.name,
+                name: values.payload.name,
               },
             });
           },
@@ -475,7 +471,7 @@ export const FuncNode = memo(
       [data.id, updateFunc],
     );
 
-    const onFormChange = (values: z.infer<typeof validationSchema>) => {
+    const onFormChange = (values: z.infer<typeof updateFuncSchema>) => {
       debouncedUpdate(values);
     };
 
@@ -636,7 +632,7 @@ export const FuncNode = memo(
                     <form onChange={form.handleSubmit(onFormChange)}>
                       <FormField
                         control={form.control}
-                        name="name"
+                        name="payload.name"
                         render={({ field }) => (
                           <FormItem className="space-y-0">
                             <FormControl>

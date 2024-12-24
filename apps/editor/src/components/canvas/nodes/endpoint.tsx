@@ -6,7 +6,7 @@ import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
 import { generateFunc } from "@/lib/ai/generator";
 import { useFlowBuilderStore } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
-import type { CanvasNodeProps } from "@/types";
+import type { CanvasNode, CanvasNodeProps } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { RouterOutputs } from "@integramind/api";
 import type {
@@ -16,10 +16,7 @@ import type {
   UserMessageRawContent,
 } from "@integramind/shared/types";
 import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
-import {
-  endpointPathSchema,
-  httpMethodsSchema,
-} from "@integramind/shared/validators/endpoints";
+import { updateEndpointSchema } from "@integramind/shared/validators/endpoints";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 import {
@@ -56,6 +53,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@integramind/ui/select";
+import { toast } from "@integramind/ui/use-toast";
 import { cn } from "@integramind/ui/utils";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
@@ -72,15 +70,7 @@ import type { OpenAPIV3 } from "openapi-types";
 import { debounce } from "perfect-debounce";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type UseFormReturn, useForm } from "react-hook-form";
-import { z } from "zod";
-
-const validationSchema = z.object({
-  name: z.string().min(1, {
-    message: "Name is required",
-  }),
-  path: endpointPathSchema,
-  httpMethod: httpMethodsSchema,
-});
+import type { z } from "zod";
 
 export const EndpointNode = memo(
   ({
@@ -100,14 +90,26 @@ export const EndpointNode = memo(
 
     const data = fetchedData;
 
-    const { deleteElements, fitBounds } = useReactFlow();
+    const { deleteElements, fitBounds, updateNodeData } =
+      useReactFlow<CanvasNode>();
+
     const apiUtils = api.useUtils();
 
-    const deleteEndpoint = api.endpoints.delete.useMutation({
-      onSuccess: async () => {
-        await apiUtils.projects.byId.invalidate({ id: data.projectId });
+    const updateEndpoint = api.endpoints.update.useMutation({
+      onSuccess: async (data) => {
+        await apiUtils.endpoints.byId.invalidate({ id: data.id });
+        updateNodeData(data.id, data);
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
       },
     });
+
+    const deleteEndpoint = api.endpoints.delete.useMutation();
 
     const addMessage = api.conversations.addMessage.useMutation();
 
@@ -327,43 +329,42 @@ export const EndpointNode = memo(
 
     const showEdges = useFlowBuilderStore((state) => state.showEdges);
 
-    const updateEndpoint = api.endpoints.update.useMutation({
-      onSuccess: async () => {
-        await apiUtils.endpoints.byId.invalidate({ id: data.id });
-      },
-    });
-
-    const form = useForm<z.infer<typeof validationSchema>>({
+    const form = useForm<z.infer<typeof updateEndpointSchema>>({
       mode: "onChange",
-      resolver: zodResolver(validationSchema),
+      resolver: zodResolver(updateEndpointSchema),
       defaultValues: {
-        name: data.name ?? "",
-        path: data.path ?? "",
-        httpMethod:
-          (data.httpMethod?.toLowerCase() as
-            | "get"
-            | "post"
-            | "put"
-            | "delete"
-            | "patch") ?? undefined,
+        where: {
+          id: data.id,
+        },
+        payload: {
+          name: data.name ?? "",
+          path: data.path ?? "",
+          httpMethod:
+            (data.httpMethod?.toLowerCase() as
+              | "get"
+              | "post"
+              | "put"
+              | "delete"
+              | "patch") ?? undefined,
+        },
       },
     });
 
     useEffect(() => {
       if (!data.name) {
-        form.setError("name", {
+        form.setError("payload.name", {
           message: "Name is required",
         });
       }
 
       if (!data.path) {
-        form.setError("path", {
+        form.setError("payload.path", {
           message: "Path is required",
         });
       }
 
       if (!data.httpMethod) {
-        form.setError("httpMethod", {
+        form.setError("payload.httpMethod", {
           message: "HTTP Method is required",
         });
       }
@@ -372,10 +373,10 @@ export const EndpointNode = memo(
     const debouncedUpdate = useMemo(
       () =>
         debounce(
-          async (values: z.infer<typeof validationSchema>) => {
+          async (values: z.infer<typeof updateEndpointSchema>) => {
             await updateEndpoint.mutateAsync({
               where: { id: data.id },
-              payload: values,
+              payload: values.payload,
             });
           },
           500,
@@ -384,7 +385,7 @@ export const EndpointNode = memo(
       [data.id, updateEndpoint],
     );
 
-    const onFormChange = (values: z.infer<typeof validationSchema>) => {
+    const onFormChange = (values: z.infer<typeof updateEndpointSchema>) => {
       debouncedUpdate(values);
     };
 
@@ -490,78 +491,83 @@ export const EndpointNode = memo(
                     </div>
                   </div>
                   <Form {...form}>
-                    <form onChange={form.handleSubmit(onFormChange)}>
-                      <div className="flex w-full flex-col gap-0">
-                        <FormField
-                          control={form.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem className="flex w-full space-y-0">
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  autoComplete="off"
-                                  className="h-8 w-full border-none p-0 text-base shadow-none focus-visible:ring-0 dark:bg-muted"
-                                  placeholder="Enter endpoint name"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="path"
-                          render={({ field }) => (
-                            <FormItem className="flex-1 space-y-0">
-                              <FormControl>
-                                <div className="flex flex-col">
-                                  <div className="flex items-center gap-2">
-                                    <MethodBadgeSelect
-                                      form={form}
-                                      value={data.httpMethod}
-                                      onValueChange={async (value) => {
-                                        await updateEndpoint.mutateAsync({
-                                          where: { id: data.id },
-                                          payload: {
-                                            httpMethod: value as
-                                              | "get"
-                                              | "post"
-                                              | "put"
-                                              | "delete"
-                                              | "patch",
-                                          },
-                                        });
-                                      }}
-                                    />
-                                    <Input
-                                      {...field}
-                                      autoComplete="off"
-                                      className="h-8 border-none p-0 text-xs shadow-none focus-visible:ring-0 dark:bg-muted"
-                                      placeholder="/api/v1/resource"
-                                    />
-                                  </div>
-                                  <div className="flex flex-col gap-1 text-destructive text-xs">
-                                    {form.formState.errors.path && (
-                                      <span>
-                                        {form.formState.errors.path.message}
-                                      </span>
-                                    )}
-                                    {form.formState.errors.httpMethod && (
-                                      <span>
-                                        {
-                                          form.formState.errors.httpMethod
-                                            .message
-                                        }
-                                      </span>
-                                    )}
-                                  </div>
+                    <form
+                      className="w-full"
+                      onChange={form.handleSubmit(onFormChange)}
+                    >
+                      <FormField
+                        control={form.control}
+                        name="payload.name"
+                        render={({ field }) => (
+                          <FormItem className="w-full space-y-0">
+                            <FormControl>
+                              <Input
+                                {...field}
+                                autoComplete="off"
+                                className="h-8 w-full border-none p-0 text-base shadow-none focus-visible:ring-0 dark:bg-muted"
+                                placeholder="Enter endpoint name"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="payload.path"
+                        render={({ field }) => (
+                          <FormItem className="w-full flex-1 space-y-0">
+                            <FormControl>
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                  <MethodBadgeSelect
+                                    form={form}
+                                    value={data.httpMethod}
+                                    onValueChange={async (value) => {
+                                      await updateEndpoint.mutateAsync({
+                                        where: { id: data.id },
+                                        payload: {
+                                          httpMethod: value as
+                                            | "get"
+                                            | "post"
+                                            | "put"
+                                            | "delete"
+                                            | "patch",
+                                        },
+                                      });
+                                    }}
+                                  />
+                                  <Input
+                                    {...field}
+                                    autoComplete="off"
+                                    className="h-8 border-none p-0 text-xs shadow-none focus-visible:ring-0 dark:bg-muted"
+                                    placeholder="/api/v1/resource"
+                                  />
                                 </div>
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                                <div className="flex flex-col gap-1 text-destructive text-xs">
+                                  {form.formState.errors.payload?.path && (
+                                    <span>
+                                      {
+                                        form.formState.errors.payload?.path
+                                          .message
+                                      }
+                                    </span>
+                                  )}
+                                  {form.formState.errors.payload
+                                    ?.httpMethod && (
+                                    <span>
+                                      {
+                                        form.formState.errors.payload
+                                          ?.httpMethod.message
+                                      }
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     </form>
                   </Form>
                 </div>
@@ -742,7 +748,7 @@ const MethodBadgeSelect = ({
 }: {
   value?: string | null;
   onValueChange: (value: string) => void;
-  form: UseFormReturn<z.infer<typeof validationSchema>>;
+  form: UseFormReturn<z.infer<typeof updateEndpointSchema>>;
 }) => {
   const [isSelecting, setIsSelecting] = useState(false);
 
@@ -762,7 +768,7 @@ const MethodBadgeSelect = ({
   return (
     <FormField
       control={form.control}
-      name="httpMethod"
+      name="payload.httpMethod"
       render={({ field }) => (
         <FormItem>
           <FormControl>

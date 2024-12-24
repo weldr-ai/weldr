@@ -31,11 +31,9 @@ export function GeneralSection({
   project,
 }: { project: RouterOutputs["projects"]["byId"] }) {
   const router = useRouter();
-  const apiUtils = api.useUtils();
 
   const updateProject = api.projects.update.useMutation({
     onSuccess: () => {
-      apiUtils.projects.byId.invalidate();
       router.refresh();
     },
     onError: (error) => {

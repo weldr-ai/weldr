@@ -69,7 +69,6 @@ export const updateFuncSchema = z.object({
       .regex(/^[a-z][a-zA-Z0-9]*$/, {
         message: "Can only contain letters and numbers",
       })
-      .nullable()
       .optional(),
     positionX: z.number().optional(),
     positionY: z.number().optional(),
