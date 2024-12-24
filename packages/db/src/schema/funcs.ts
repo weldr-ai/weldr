@@ -28,8 +28,6 @@ export const funcs = pgTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     name: text("name"),
-    positionX: integer("position_x").default(0),
-    positionY: integer("position_y").default(0),
     inputSchema: jsonb("input_schema").$type<JsonSchema>(),
     outputSchema: jsonb("output_schema").$type<JsonSchema>(),
     rawDescription: jsonb("raw_description").$type<RawContent>(),
@@ -40,6 +38,8 @@ export const funcs = pgTable(
     npmDependencies: jsonb("npm_dependencies").$type<NpmDependency[]>(),
     resources: jsonb("resources").$type<FuncResource[]>(),
     testInput: jsonb("test_input").$type<unknown>(),
+    positionX: integer("position_x").default(0),
+    positionY: integer("position_y").default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -50,9 +50,9 @@ export const funcs = pgTable(
     moduleId: text("module_id")
       .references(() => modules.id, { onDelete: "cascade" })
       .notNull(),
-    projectId: text("project_id")
-      .references(() => projects.id, { onDelete: "cascade" })
-      .notNull(),
+    projectId: text("project_id").references(() => projects.id, {
+      onDelete: "cascade",
+    }),
   },
   (t) => ({
     uniqueName: uniqueIndex("unique_name").on(t.name, t.moduleId),

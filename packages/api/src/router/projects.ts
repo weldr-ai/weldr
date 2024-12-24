@@ -116,17 +116,45 @@ export const projectsRouter = {
             },
             endpoints: {
               columns: {
-                id: true,
-                name: true,
-                httpMethod: true,
+                code: false,
+              },
+              with: {
+                conversation: {
+                  with: {
+                    messages: {
+                      columns: {
+                        content: false,
+                      },
+                    },
+                  },
+                },
               },
             },
-            modules: {
+            funcs: {
               columns: {
-                id: true,
-                name: true,
+                docs: false,
+                npmDependencies: false,
+              },
+              with: {
+                module: {
+                  columns: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                testRuns: true,
+                conversation: {
+                  with: {
+                    messages: {
+                      columns: {
+                        content: false,
+                      },
+                    },
+                  },
+                },
               },
             },
+            modules: true,
             resources: {
               columns: {
                 id: true,
@@ -173,6 +201,11 @@ export const projectsRouter = {
 
         const result = {
           ...project,
+          funcs: project.funcs.map((func) => ({
+            ...func,
+            code: undefined,
+            canRun: Boolean(func.code),
+          })),
           resources: resourceEnvs,
         };
 
@@ -223,6 +256,108 @@ export const projectsRouter = {
           message: "Failed to update project",
         });
       }
+    }),
+  nodes: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const project = await ctx.db.query.projects.findFirst({
+        where: and(
+          eq(projects.id, input.id),
+          eq(projects.userId, ctx.session.user.id),
+        ),
+        with: {
+          endpoints: {
+            columns: {
+              code: false,
+            },
+            with: {
+              conversation: {
+                with: {
+                  messages: {
+                    columns: {
+                      content: false,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          funcs: {
+            columns: {
+              docs: false,
+              npmDependencies: false,
+            },
+            with: {
+              module: {
+                columns: {
+                  id: true,
+                  name: true,
+                },
+              },
+              testRuns: true,
+              conversation: {
+                with: {
+                  messages: {
+                    columns: {
+                      content: false,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          modules: true,
+        },
+      });
+
+      if (!project) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Project not found",
+        });
+      }
+
+      const result = [];
+
+      for (const endpoint of project.endpoints) {
+        result.push({
+          type: "endpoint",
+          id: endpoint.id,
+          dragHandle: ".drag-handle",
+          position: { x: endpoint.positionX ?? 0, y: endpoint.positionY ?? 0 },
+          data: endpoint,
+        });
+      }
+
+      for (const module of project.modules) {
+        result.push({
+          type: "module",
+          id: module.id,
+          dragHandle: ".drag-handle",
+          position: { x: module.positionX ?? 0, y: module.positionY ?? 0 },
+          width: module.width ?? 600,
+          height: module.height ?? 400,
+          data: module,
+        });
+      }
+
+      for (const func of project.funcs) {
+        result.push({
+          type: "func",
+          id: func.id,
+          dragHandle: ".drag-handle",
+          parentId: func.moduleId,
+          extent: "parent",
+          position: { x: func.positionX ?? 0, y: func.positionY ?? 0 },
+          data: {
+            ...func,
+            code: undefined,
+            canRun: Boolean(func.code),
+          },
+        });
+      }
+
+      return result;
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))

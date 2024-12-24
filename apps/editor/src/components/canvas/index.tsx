@@ -1,29 +1,28 @@
 "use client";
 
 import { createId } from "@paralleldrive/cuid2";
-import type { ColorMode, Edge, Node as ReactFlowNode } from "@xyflow/react";
+import type { ColorMode, Node as ReactFlowNode } from "@xyflow/react";
 import {
   Background,
-  MiniMap,
   Panel,
   ReactFlow,
   SmoothStepEdge,
-  useEdgesState,
   useNodesState,
   useReactFlow,
   useViewport,
 } from "@xyflow/react";
 import {
-  EyeIcon,
-  EyeOffIcon,
+  AppWindowIcon,
+  ComponentIcon,
   FunctionSquareIcon,
   MinusIcon,
+  PackageIcon,
   PlusIcon,
 } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 
-import type { CanvasEdge, CanvasNode, CanvasNodeData } from "~/types";
+import type { CanvasNode, CanvasNodeData } from "~/types";
 
 import "@xyflow/react/dist/base.css";
 import "~/styles/flow-builder.css";
@@ -37,12 +36,15 @@ import {
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
 import { toast } from "@integramind/ui/use-toast";
-import { useFlowBuilderStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
-import { FuncNode } from "./func-node";
+import { EndpointNode } from "./nodes/endpoint";
+import { FuncNode } from "./nodes/func";
+import { ModuleNode } from "./nodes/module";
 
 const nodeTypes = {
   func: FuncNode,
+  module: ModuleNode,
+  endpoint: EndpointNode,
 };
 
 const edgeTypes = {
@@ -50,55 +52,51 @@ const edgeTypes = {
 };
 
 export function Canvas({
-  moduleId,
   projectId,
   initialNodes,
-  initialEdges,
 }: {
-  moduleId: string;
   projectId: string;
   initialNodes: CanvasNode[];
-  initialEdges: CanvasEdge[];
 }) {
-  const showEdges = useFlowBuilderStore((state) => state.showEdges);
-  const toggleEdges = useFlowBuilderStore((state) => state.toggleEdges);
-  const { data: edgesData } = api.funcDependencies.byModuleId.useQuery(
-    {
-      id: moduleId,
-    },
-    {
-      initialData: initialEdges.map((edge) => ({
-        source: edge.source,
-        target: edge.target,
-      })),
-    },
-  );
+  // const showEdges = useFlowBuilderStore((state) => state.showEdges);
+  // const toggleEdges = useFlowBuilderStore((state) => state.toggleEdges);
+  // const { data: edgesData } = api.funcDependencies.byModuleId.useQuery(
+  //   {
+  //     id: moduleId,
+  //   },
+  //   {
+  //     initialData: initialEdges.map((edge) => ({
+  //       source: edge.source,
+  //       target: edge.target,
+  //     })),
+  //   },
+  // );
 
-  const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
+  const { screenToFlowPosition, zoomIn, zoomOut, fitView, updateNodeData } =
+    useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();
   const [nodes, setNodes, onNodesChange] =
     useNodesState<CanvasNode>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(
-    showEdges ? [] : [],
-  );
 
-  useEffect(() => {
-    setEdges(
-      edgesData.map((edge) => ({
-        id: `${edge.source}-${edge.target}`,
-        source: edge.source,
-        target: edge.target,
-      })) as Edge[],
-    );
-  }, [edgesData, setEdges]);
-  const apiUtils = api.useUtils();
+  // const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(
+  //   showEdges ? [] : [],
+  // );
+
+  // useEffect(() => {
+  //   setEdges(
+  //     edgesData.map((edge) => ({
+  //       id: `${edge.source}-${edge.target}`,
+  //       source: edge.source,
+  //       target: edge.target,
+  //     })) as Edge[],
+  //   );
+  // }, [edgesData, setEdges]);
 
   const createFunc = api.funcs.create.useMutation({
-    onSuccess: () => {
-      apiUtils.modules.byId.invalidate({
-        id: moduleId,
-      });
+    onSuccess: (data) => {
+      updateNodeData(data.id, data);
+      console.log(nodes);
     },
     onError: (error) => {
       toast({
@@ -110,11 +108,53 @@ export function Canvas({
   });
 
   const updateFunc = api.funcs.update.useMutation({
-    onSuccess: () => {
-      apiUtils.modules.byId.invalidate({
-        id: moduleId,
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
       });
     },
+  });
+
+  const createModule = api.modules.create.useMutation({
+    onSuccess: (data) => {
+      updateNodeData(data.id, data);
+      console.log(nodes);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateModule = api.modules.update.useMutation({
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createEndpoint = api.endpoints.create.useMutation({
+    onSuccess: (data) => {
+      updateNodeData(data.id, data);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateEndpoint = api.endpoints.update.useMutation({
     onError: (error) => {
       toast({
         title: "Error",
@@ -138,30 +178,121 @@ export function Canvas({
         y: event.clientY,
       });
 
+      const type = event.dataTransfer.getData("type") as
+        | "page"
+        | "component"
+        | "func"
+        | "module"
+        | "endpoint";
+
       const newNodeId = createId();
+      let newNode: CanvasNode;
 
-      setNodes((nodes) =>
-        nodes.concat({
-          id: newNodeId,
-          type: "func",
-          position: { x: Math.floor(position.x), y: Math.floor(position.y) },
-          data: {
+      switch (type) {
+        case "func": {
+          const intersectingModule = findIntersectingModule(position);
+          if (!intersectingModule) {
+            toast({
+              title: "Error",
+              description: "Functions must be dropped inside a module",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          if (!intersectingModule.data.name) {
+            toast({
+              title: "Error",
+              description: "Module must have a name",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          newNode = {
             id: newNodeId,
-            moduleId: moduleId,
-            conversation: {},
-          } as CanvasNodeData,
-        }),
-      );
+            type: "func",
+            parentId: intersectingModule.id,
+            extent: "parent",
+            dragHandle: ".drag-handle",
+            position: {
+              x: Math.floor(position.x - intersectingModule.position.x),
+              y: Math.floor(position.y - intersectingModule.position.y),
+            },
+            data: {
+              id: newNodeId,
+              projectId,
+              moduleId: intersectingModule.id,
+              conversation: {},
+            },
+          } as CanvasNode;
+          setNodes((nodes) => nodes.concat(newNode));
+          await createFunc.mutateAsync({
+            id: newNodeId,
+            projectId,
+            positionX: Math.floor(position.x),
+            positionY: Math.floor(position.y),
+            moduleId: intersectingModule.id,
+          });
+          break;
+        }
+        case "module": {
+          newNode = {
+            id: newNodeId,
+            type: "module",
+            dragHandle: ".drag-handle",
+            position: { x: Math.floor(position.x), y: Math.floor(position.y) },
+            data: {
+              id: newNodeId,
+              projectId,
+            },
+          } as CanvasNode;
 
-      await createFunc.mutateAsync({
-        id: newNodeId,
-        moduleId,
-        projectId,
-        positionX: Math.floor(position.x),
-        positionY: Math.floor(position.y),
-      });
+          setNodes((nodes) => nodes.concat(newNode));
+          await createModule.mutateAsync({
+            id: newNodeId,
+            projectId,
+            positionX: Math.floor(position.x),
+            positionY: Math.floor(position.y),
+          });
+          break;
+        }
+        case "endpoint":
+          {
+            newNode = {
+              id: newNodeId,
+              type: "endpoint",
+              dragHandle: ".drag-handle",
+              position: {
+                x: Math.floor(position.x),
+                y: Math.floor(position.y),
+              },
+              data: {
+                id: newNodeId,
+                projectId,
+                conversation: {},
+              } as CanvasNodeData,
+            } as CanvasNode;
+            await createEndpoint.mutateAsync({
+              id: newNodeId,
+              projectId,
+              positionX: Math.floor(position.x),
+              positionY: Math.floor(position.y),
+            });
+          }
+          break;
+      }
+
+      setNodes((nodes) => nodes.concat(newNode));
     },
-    [createFunc, moduleId, setNodes, screenToFlowPosition, projectId],
+    [
+      createEndpoint,
+      createFunc,
+      createModule,
+      setNodes,
+      screenToFlowPosition,
+      projectId,
+    ],
   );
 
   const onNodeDragStop = useCallback(
@@ -170,7 +301,7 @@ export function Canvas({
       node: ReactFlowNode,
       _nodes: ReactFlowNode[],
     ) => {
-      await updateFunc.mutateAsync({
+      const updatedData = {
         where: {
           id: node.id,
         },
@@ -178,13 +309,41 @@ export function Canvas({
           positionX: Math.floor(node.position.x),
           positionY: Math.floor(node.position.y),
         },
-      });
+      };
+
+      if (node.type === "func") {
+        await updateFunc.mutateAsync(updatedData);
+      }
+
+      if (node.type === "module") {
+        await updateModule.mutateAsync(updatedData);
+      }
+
+      if (node.type === "endpoint") {
+        await updateEndpoint.mutateAsync(updatedData);
+      }
     },
-    [updateFunc],
+    [updateEndpoint, updateFunc, updateModule],
   );
 
-  const onDragStart = (event: React.DragEvent<HTMLDivElement>) => {
+  const onDragStart = (
+    event: React.DragEvent<HTMLDivElement>,
+    type: "page" | "component" | "func" | "module" | "endpoint",
+  ) => {
     event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("type", type);
+  };
+
+  const findIntersectingModule = (position: { x: number; y: number }) => {
+    const module = nodes.find(
+      (n) =>
+        n.type === "module" &&
+        position.x >= n.position.x &&
+        position.x <= n.position.x + (n.width ?? 600) &&
+        position.y >= n.position.y &&
+        position.y <= n.position.y + (n.height ?? 400),
+    );
+    return module;
   };
 
   return (
@@ -192,8 +351,6 @@ export function Canvas({
       className="rounded-md"
       nodes={nodes}
       onNodesChange={onNodesChange}
-      edges={edges}
-      onEdgesChange={onEdgesChange}
       edgeTypes={edgeTypes}
       onDrop={onDrop}
       onNodeDragStop={onNodeDragStop}
@@ -201,31 +358,24 @@ export function Canvas({
       deleteKeyCode={null}
       nodeTypes={nodeTypes}
       panOnScroll={true}
-      maxZoom={1}
+      maxZoom={2}
+      minZoom={0.1}
       fitView={true}
+      fitViewOptions={{
+        maxZoom: 1,
+      }}
       colorMode={resolvedTheme as ColorMode}
     >
       <Background
         className="bg-muted dark:bg-background"
         color="hsl(var(--background))"
       />
-      <MiniMap
-        className="bottom-12"
-        bgColor="hsl(var(--background))"
-        nodeColor="hsl(var(--accent))"
-        maskColor="hsl(var(--accent))"
-        position="bottom-right"
-        style={{
-          height: 110,
-          width: 176,
-        }}
-      />
       <Panel
         position="bottom-right"
-        className="flex flex-row items-center rounded-full border bg-background dark:bg-muted p-0.5 space-x-0.5"
+        className="flex items-center bg-background dark:bg-muted rounded-md gap-1 p-1 border"
       >
         <Button
-          className="rounded-full"
+          className="rounded-md size-8"
           variant="ghost"
           size="icon"
           onClick={() => {
@@ -235,16 +385,18 @@ export function Canvas({
           <MinusIcon className="size-4" />
         </Button>
         <Button
-          className="w-[94px] rounded-full text-xs"
+          className="rounded-md text-xs h-8"
           variant="ghost"
           onClick={() => {
-            fitView();
+            fitView({
+              maxZoom: 1,
+            });
           }}
         >
           {`${Math.floor(viewPort.zoom * 100)}%`}
         </Button>
         <Button
-          className="rounded-full"
+          className="rounded-md size-8"
           variant="ghost"
           size="icon"
           onClick={() => {
@@ -256,17 +408,46 @@ export function Canvas({
       </Panel>
       <Panel
         position="bottom-center"
-        className="flex items-center bg-background dark:bg-muted rounded-full gap-0.5 p-0.5 border"
+        className="flex items-center bg-background dark:bg-muted rounded-md gap-1 p-1 border"
       >
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className="inline-flex items-center text-xs justify-center h-9 px-2 rounded-full hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
-              onDragStart={onDragStart}
+              className="inline-flex items-center text-xs justify-center size-8 px-2 rounded-md hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              onDragStart={(event) => onDragStart(event, "page")}
               draggable
             >
-              <FunctionSquareIcon className="size-4 mr-2" />
-              Function
+              <AppWindowIcon className="size-4" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-muted border">
+            <p>Page</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className="inline-flex items-center text-xs justify-center size-8 px-2 rounded-md hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              onDragStart={(event) => onDragStart(event, "component")}
+              draggable
+            >
+              <ComponentIcon className="size-4" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-muted border">
+            <p>UI Component</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className="inline-flex items-center text-xs justify-center size-8 px-2 rounded-md hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              onDragStart={(event) => onDragStart(event, "func")}
+              draggable
+            >
+              <FunctionSquareIcon className="size-4" />
             </div>
           </TooltipTrigger>
           <TooltipContent side="top" className="bg-muted border">
@@ -274,7 +455,37 @@ export function Canvas({
           </TooltipContent>
         </Tooltip>
 
-        <div className="h-9 border-l" />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className="inline-flex items-center text-xs justify-center size-8 px-2 rounded-md hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              onDragStart={(event) => onDragStart(event, "module")}
+              draggable
+            >
+              <PackageIcon className="size-4" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-muted border">
+            <p>Module</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className="inline-flex items-center text-xs justify-center size-8 px-2 rounded-md hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              onDragStart={(event) => onDragStart(event, "endpoint")}
+              draggable
+            >
+              <span className="size-4 font-semibold">API</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-muted border">
+            <p>Endpoint</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* <div className="h-9 border-l" />
 
         <Tooltip>
           <TooltipTrigger asChild>
@@ -294,7 +505,7 @@ export function Canvas({
           <TooltipContent side="top" className="bg-muted border">
             <p>Show edges</p>
           </TooltipContent>
-        </Tooltip>
+        </Tooltip> */}
       </Panel>
     </ReactFlow>
   );

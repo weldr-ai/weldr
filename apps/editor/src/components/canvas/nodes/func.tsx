@@ -49,6 +49,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import type { RouterOutputs } from "@integramind/api";
 import type {
   AssistantMessageRawContent,
   ConversationMessage,
@@ -84,9 +85,9 @@ import { useFlowBuilderStore } from "~/lib/store";
 import { api } from "~/lib/trpc/client";
 import { getResourceReferences, jsonSchemaToTreeData } from "~/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "~/types";
-import type { ReferenceNode } from "../editor/plugins/reference/node";
-import MessageList from "../message-list";
-import { RawContentViewer } from "../raw-content-viewer";
+import type { ReferenceNode } from "../../editor/plugins/reference/node";
+import MessageList from "../../message-list";
+import { RawContentViewer } from "../../raw-content-viewer";
 
 const validationSchema = z.object({
   name: z
@@ -114,7 +115,7 @@ export const FuncNode = memo(
         id: _data.id,
       },
       {
-        initialData: _data,
+        initialData: _data as RouterOutputs["funcs"]["byId"],
       },
     );
 
@@ -129,13 +130,15 @@ export const FuncNode = memo(
       },
     );
 
-    const { deleteElements, fitBounds } = useReactFlow<CanvasNode>();
+    const { deleteElements, fitBounds, updateNodeData } =
+      useReactFlow<CanvasNode>();
 
     const apiUtils = api.useUtils();
 
     const updateFunc = api.funcs.update.useMutation({
       onSuccess: async () => {
         await apiUtils.funcs.byId.invalidate({ id: data.id });
+        updateNodeData(data.id, data);
       },
     });
 
@@ -245,7 +248,6 @@ export const FuncNode = memo(
           return acc;
         }, [] as UserMessageRawContent);
 
-        console.log(text);
         setUserMessageRawContent(userMessageRawContent);
         setUserMessageContent(text);
       });
@@ -422,7 +424,8 @@ export const FuncNode = memo(
           !func.name ||
           !func.rawDescription ||
           !func.behavior ||
-          !func.errors
+          !func.errors ||
+          !func.module.name
         ) {
           return acc;
         }
@@ -453,6 +456,29 @@ export const FuncNode = memo(
       [resources, helperFunctionReferences],
     );
 
+    const debouncedUpdate = useMemo(
+      () =>
+        debounce(
+          async (values: z.infer<typeof validationSchema>) => {
+            await updateFunc.mutateAsync({
+              where: {
+                id: data.id,
+              },
+              payload: {
+                name: values.name,
+              },
+            });
+          },
+          500,
+          { trailing: false },
+        ),
+      [data.id, updateFunc],
+    );
+
+    const onFormChange = (values: z.infer<typeof validationSchema>) => {
+      debouncedUpdate(values);
+    };
+
     return (
       <>
         <ExpandableCard>
@@ -462,7 +488,6 @@ export const FuncNode = memo(
                 <Card
                   className={cn(
                     "drag-handle flex h-[84px] w-[256px] cursor-grab flex-col items-start justify-center gap-2 px-5 py-4 dark:bg-muted",
-                    "hover:shadow-lg hover:shadow-black",
                     {
                       "border-primary": selected,
                     },
@@ -471,9 +496,9 @@ export const FuncNode = memo(
                     fitBounds(
                       {
                         x: positionAbsoluteX,
-                        y: positionAbsoluteY,
+                        y: positionAbsoluteY - 100,
                         width: 200,
-                        height: 700,
+                        height: 800,
                       },
                       {
                         duration: 500,
@@ -490,17 +515,13 @@ export const FuncNode = memo(
                       <CircleAlertIcon className="size-4 text-destructive" />
                     )}
                   </div>
-                  <span className="text-sm">{data.name ?? "new_function"}</span>
+                  <span className="text-sm">{data.name ?? "newFunction"}</span>
                 </Card>
               </ExpandableCardTrigger>
             </ContextMenuTrigger>
             <ContextMenuContent>
               <ContextMenuLabel className="text-xs">Function</ContextMenuLabel>
               <ContextMenuSeparator />
-              <ContextMenuItem className="text-xs">
-                <PlayCircleIcon className="mr-3 size-4 text-muted-foreground" />
-                Run with previous functions
-              </ContextMenuItem>
               <ContextMenuItem className="flex items-center justify-between text-xs">
                 <Link
                   className="flex items-center"
@@ -522,7 +543,7 @@ export const FuncNode = memo(
               </ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
-          <ExpandableCardContent className="nowheel flex h-[600px] w-[60vw] flex-col p-0 -left-[calc(60vw-650px)]">
+          <ExpandableCardContent className="nowheel flex h-[600px] w-[60vw] flex-col -left-[calc(60vw-650px)]">
             <ResizablePanelGroup
               direction="horizontal"
               className="flex size-full"
@@ -612,57 +633,25 @@ export const FuncNode = memo(
                     </div>
                   </div>
                   <Form {...form}>
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              autoComplete="off"
-                              className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
-                              placeholder="function_name"
-                              onChange={(e) => {
-                                field.onChange(e);
-                                debounce(
-                                  async () => {
-                                    const isValid =
-                                      validationSchema.shape.name.safeParse(
-                                        e.target.value,
-                                      ).success;
-                                    if (isValid) {
-                                      await updateFunc.mutateAsync({
-                                        where: {
-                                          id: data.id,
-                                        },
-                                        payload: {
-                                          name: e.target.value,
-                                        },
-                                      });
-                                    }
-
-                                    if (e.target.value.length === 0) {
-                                      await updateFunc.mutateAsync({
-                                        where: {
-                                          id: data.id,
-                                        },
-                                        payload: {
-                                          name: null,
-                                        },
-                                      });
-                                    }
-                                  },
-                                  500,
-                                  { trailing: false },
-                                )();
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <form onChange={form.handleSubmit(onFormChange)}>
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem className="space-y-0">
+                            <FormControl>
+                              <Input
+                                {...field}
+                                autoComplete="off"
+                                className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
+                                placeholder="Enter function name"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </form>
                   </Form>
                 </ExpandableCardHeader>
                 <div className="flex flex-col h-[calc(100dvh-492px)] p-4">
@@ -789,7 +778,7 @@ export const FuncNode = memo(
                           <ReactMarkdown
                             components={{
                               code: ({ children }) => (
-                                <span className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-xs text-accent-foreground text-destructive">
+                                <span className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-xs text-destructive">
                                   {children}
                                 </span>
                               ),

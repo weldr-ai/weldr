@@ -54,15 +54,15 @@ function SchemaField({
       <div className="flex-1 space-y-1">
         <div className="flex flex-col gap-2">
           <div className="flex items-baseline gap-2">
-            <span className="font-mono text-sm">{name}</span>
-            <span className="text-sm text-muted-foreground font-mono">
+            <span className="font-mono text-xs">{name}</span>
+            <span className="text-xs text-muted-foreground font-mono">
               {renderType()}
             </span>
             {required && (
-              <span className="text-sm text-destructive">required</span>
+              <span className="text-xs text-destructive">required</span>
             )}
             {schema.description && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {schema.description}
               </span>
             )}
@@ -142,26 +142,25 @@ export default function OpenApiEndpointDocs({
     <div className="w-full font-[system-ui] space-y-6">
       {/* Header */}
       <div className="space-y-1">
-        <h1 className="text-2xl font-medium">{operation.summary || path}</h1>
+        <h1 className="font-medium">{operation.summary || path}</h1>
         <p className="text-muted-foreground">{operation.description}</p>
       </div>
 
       {/* Method and Path */}
       <div className="flex items-center space-x-2">
         <Badge
-          className={cn("text-xs uppercase font-bold", {
+          className={cn("text-xs uppercase font-bold px-1.5 py-0.5", {
             "bg-primary/30 hover:bg-primary/30 text-primary": method === "get",
             "bg-success/30 hover:bg-success/30 text-success": method === "post",
-            "bg-warning/30 hover:bg-warning/30 text-warning": method === "put",
+            "bg-warning/30 hover:bg-warning/30 text-warning":
+              method === "put" || method === "patch",
             "bg-destructive/30 hover:bg-destructive/30 text-destructive":
               method === "delete",
-            "bg-purple-500/30 hover:bg-purple-500/30 text-purple-500":
-              method === "patch",
           })}
         >
           {method}
         </Badge>
-        <span className="font-mono text-sm">{path}</span>
+        <span className="font-mono text-xs">{path}</span>
       </div>
 
       {hasContent ? (
@@ -169,7 +168,7 @@ export default function OpenApiEndpointDocs({
           {/* Parameters */}
           {hasParameters && (
             <div className="space-y-2">
-              <span className="text-xl">Parameters</span>
+              <span>Parameters</span>
               <div className="space-y-2">
                 {operation.parameters?.map((param) => {
                   const parameter = param as OpenAPIV3.ParameterObject;
@@ -180,19 +179,19 @@ export default function OpenApiEndpointDocs({
                     >
                       <div className="flex-1 space-y-1">
                         <div className="flex items-baseline gap-2">
-                          <span className="font-mono text-sm">
+                          <span className="font-mono text-xs">
                             {parameter.name}
                           </span>
-                          <span className="text-sm text-muted-foreground font-mono">
+                          <span className="text-xs text-muted-foreground font-mono">
                             {parameter.in}
                           </span>
                           {parameter.required && (
-                            <span className="text-sm text-destructive">
+                            <span className="text-xs text-destructive">
                               required
                             </span>
                           )}
                           {parameter.description && (
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-xs text-muted-foreground">
                               {parameter.description}
                             </span>
                           )}
@@ -208,9 +207,9 @@ export default function OpenApiEndpointDocs({
           {/* Request Body */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-xl">Body</span>
+              <span>Body</span>
               {parsedRequestBody && (
-                <span className="items-center justify-center text-sm text-muted-foreground rounded-full bg-muted px-2 py-0.5">
+                <span className="items-center justify-center text-xs text-muted-foreground rounded-full bg-muted px-2 py-0.5">
                   application/json
                 </span>
               )}
@@ -232,7 +231,7 @@ export default function OpenApiEndpointDocs({
 
           {/* Responses */}
           <div className="space-y-2">
-            <span className="text-xl">Responses</span>
+            <span>Responses</span>
             {hasResponses && (
               <Accordion type="multiple">
                 {Object.entries(operation.responses).map(([code, response]) => {
@@ -250,14 +249,14 @@ export default function OpenApiEndpointDocs({
                     >
                       <AccordionTrigger className="hover:no-underline">
                         <div className="flex items-center space-x-4">
-                          <span className="font-mono text-sm">{code}</span>
-                          <span className="text-sm">
+                          <span className="font-mono text-xs">{code}</span>
+                          <span className="text-xs">
                             {responseObj.description}
                           </span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="space-y-2">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {responseObj.description}
                         </p>
                         <div>

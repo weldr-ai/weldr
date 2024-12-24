@@ -43,7 +43,7 @@
     "inquirer": "^9.2.22",
     "lint-staged": "^15.2.5",
     "turbo": "^2.0.14",
-    "typescript": "^5.5.3"
+    "typescript": "^5.7.2"
   },
   "config": {
     "commitizen": {

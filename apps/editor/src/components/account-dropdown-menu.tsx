@@ -33,11 +33,11 @@ export function AccountDropdownMenu() {
       <DropdownMenuTrigger asChild>
         <Button size="icon" variant="ghost" className="size-8">
           <Avatar className="size-8 rounded-md">
-            <AvatarImage src={user?.image ?? undefined} alt="User" />
+            <AvatarImage src={user?.image ?? undefined} alt="Avatar" />
             <AvatarFallback>
               <Image
                 src={`${process.env.NEXT_PUBLIC_EDITOR_BASE_URL}/api/avatars/${user?.email}`}
-                alt="User"
+                alt="Avatar"
                 width={32}
                 height={32}
               />

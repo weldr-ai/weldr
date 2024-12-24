@@ -1,23 +1,71 @@
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
-import { api } from "~/lib/trpc/server";
 
-export default async function ProjectPage({
+import { Canvas } from "~/components/canvas";
+import { api } from "~/lib/trpc/server";
+import type { CanvasNode } from "~/types";
+
+export default async function ModulePage({
   params,
 }: {
   params: Promise<{ projectId: string }>;
-}): Promise<JSX.Element> {
+}): Promise<JSX.Element | undefined> {
   try {
     const { projectId } = await params;
-    const project = await api.projects.byId({ id: projectId });
+
+    const project = await api.projects.byId({
+      id: projectId,
+    });
+
+    // const initialEdges: CanvasEdge[] = nodes.edges.map((edge) => ({
+    //   id: `${edge.source}-${edge.target}`,
+    //   source: edge.source,
+    //   target: edge.target,
+    // }));
+
+    const initialNodes: CanvasNode[] = [];
+
+    for (const endpoint of project.endpoints) {
+      initialNodes.push({
+        type: "endpoint",
+        id: endpoint.id,
+        dragHandle: ".drag-handle",
+        position: { x: endpoint.positionX ?? 0, y: endpoint.positionY ?? 0 },
+        data: endpoint,
+      });
+    }
+
+    for (const module of project.modules) {
+      initialNodes.push({
+        type: "module",
+        id: module.id,
+        dragHandle: ".drag-handle",
+        position: { x: module.positionX ?? 0, y: module.positionY ?? 0 },
+        width: module.width ?? 600,
+        height: module.height ?? 400,
+        data: module,
+      });
+    }
+
+    for (const func of project.funcs) {
+      initialNodes.push({
+        type: "func",
+        id: func.id,
+        parentId: func.moduleId,
+        extent: "parent",
+        dragHandle: ".drag-handle",
+        position: { x: func.positionX ?? 0, y: func.positionY ?? 0 },
+        data: func,
+      });
+    }
+
     return (
       <div className="flex size-full">
-        <div className="flex size-full flex-col items-center justify-center gap-2 bg-[#F0F0F3] dark:bg-background rounded-md shadow">
-          <h1 className="text-2xl font-medium">{project.name}</h1>
-          <span className="text-muted-foreground">
-            Build • Automate • Accelerate
-          </span>
-        </div>
+        <Canvas
+          projectId={projectId}
+          initialNodes={initialNodes}
+          // initialEdges={initialEdges}
+        />
       </div>
     );
   } catch (error) {

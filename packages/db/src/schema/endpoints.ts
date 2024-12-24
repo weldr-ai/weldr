@@ -1,6 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -28,12 +29,14 @@ export const endpoints = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => createId()),
-    name: text("name").notNull(),
+    name: text("name"),
     description: text("description"),
-    httpMethod: httpMethods("http_method").notNull(),
-    path: text("path").notNull(),
+    httpMethod: httpMethods("http_method"),
+    path: text("path"),
     code: jsonb("code"),
     openApiSpec: jsonb("open_api_spec"),
+    positionX: integer("position_x").default(0),
+    positionY: integer("position_y").default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

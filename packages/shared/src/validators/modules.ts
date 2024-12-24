@@ -3,7 +3,7 @@ import { funcSchema } from "./funcs";
 
 export const moduleSchema = z.object({
   id: z.string(),
-  name: z.string(),
+  name: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -13,22 +13,10 @@ export const moduleSchema = z.object({
 });
 
 export const insertModuleSchema = z.object({
-  name: z
-    .string()
-    .min(1, {
-      message: "Name is required.",
-    })
-    .regex(/^[A-Z]/, {
-      message: "Name must start with a capital letter.",
-    })
-    .regex(/^[A-Za-z0-9]+$/, {
-      message:
-        "Name can only contain letters and numbers, no spaces or special characters.",
-    }),
-  description: z.string().optional(),
-  projectId: z.string().min(1, {
-    message: "Project is required.",
-  }),
+  id: z.string().cuid2(),
+  positionX: z.number(),
+  positionY: z.number(),
+  projectId: z.string().cuid2(),
 });
 
 export const updateModuleSchema = z.object({
@@ -41,7 +29,15 @@ export const updateModuleSchema = z.object({
       .min(1, {
         message: "Name is required.",
       })
+      .regex(/^[A-Z][a-zA-Z0-9]*$/, {
+        message:
+          "Name must start with a capital letter and contain only letters and numbers.",
+      })
       .optional(),
     description: z.string().optional(),
+    positionX: z.number().optional(),
+    positionY: z.number().optional(),
+    width: z.number().optional(),
+    height: z.number().optional(),
   }),
 });

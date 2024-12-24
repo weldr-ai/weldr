@@ -70,28 +70,6 @@ export const modulesRouter = {
             eq(modules.id, input.id),
             eq(modules.userId, ctx.session.user.id),
           ),
-          with: {
-            funcs: {
-              columns: {
-                docs: false,
-                npmDependencies: false,
-              },
-              with: {
-                conversation: {
-                  with: {
-                    messages: {
-                      columns: {
-                        content: false,
-                      },
-                    },
-                  },
-                },
-                module: true,
-                internalGraph: true,
-                testRuns: true,
-              },
-            },
-          },
         });
 
         if (!module) {
@@ -101,53 +79,7 @@ export const modulesRouter = {
           });
         }
 
-        const moduleFuncIds = module.funcs.map((f) => f.id);
-
-        const funcDependencies = await ctx.db.query.funcDependencies.findMany({
-          where: (table, { inArray }) => inArray(table.funcId, moduleFuncIds),
-          with: {
-            func: {
-              columns: {
-                code: false,
-                docs: false,
-                npmDependencies: false,
-              },
-            },
-            dependencyFunc: {
-              columns: {
-                code: false,
-                docs: false,
-                npmDependencies: false,
-              },
-            },
-          },
-        });
-
-        const edges = funcDependencies.reduce(
-          (acc, dep) => {
-            if (
-              moduleFuncIds.includes(dep.dependencyFunc.id) &&
-              moduleFuncIds.includes(dep.func.id)
-            ) {
-              acc.push({
-                source: dep.func.id,
-                target: dep.dependencyFunc.id,
-              });
-            }
-            return acc;
-          },
-          [] as { source: string; target: string }[],
-        );
-
-        return {
-          ...module,
-          funcs: module.funcs.map((func) => ({
-            ...func,
-            code: undefined,
-            canRun: Boolean(func.name && func.code),
-          })),
-          edges,
-        };
+        return module;
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {
@@ -198,11 +130,27 @@ export const modulesRouter = {
           ),
         });
 
-        if (!module) {
+        if (!module || !module.projectId) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Module not found",
           });
+        }
+
+        if (payload.name) {
+          const existingModule = await db.query.modules.findFirst({
+            where: and(
+              eq(modules.projectId, module.projectId),
+              eq(modules.name, payload.name),
+            ),
+          });
+
+          if (existingModule && existingModule.id !== module.id) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "Module name must be unique",
+            });
+          }
         }
 
         const updatedModule = (

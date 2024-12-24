@@ -496,7 +496,7 @@ async function resolveFuncReference(
     });
   }
 
-  if (!func.name || !func.docs) {
+  if (!func.name || !func.docs || !func.module.name) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Function is missing required fields",

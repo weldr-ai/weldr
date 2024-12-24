@@ -470,7 +470,8 @@ ${
         .map((helperFunction) => {
           const importInfo =
             helperFunction.moduleId !== currentModuleId
-              ? `Available in \`@/lib/${pascalToKebabCase(helperFunction.module.name)}\`\n`
+              ? // FIXME: This is a temporary fix to make the prompt work.
+                `Available in \`@/lib/${pascalToKebabCase(helperFunction.module.name ?? "")}\`\n`
               : "Available in current module can be used directly\n";
           return `- \`${helperFunction.name}\`
 How to import: ${importInfo}

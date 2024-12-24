@@ -46,11 +46,11 @@ export const funcSchema = z.object({
 });
 
 export const insertFuncSchema = z.object({
-  id: z.string(),
-  moduleId: z.string(),
+  id: z.string().cuid2(),
   positionX: z.number(),
   positionY: z.number(),
-  projectId: z.string(),
+  moduleId: z.string().cuid2(),
+  projectId: z.string().cuid2(),
 });
 
 export const updateFuncSchema = z.object({

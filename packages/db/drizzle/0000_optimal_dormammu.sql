@@ -73,12 +73,14 @@ CREATE TABLE IF NOT EXISTS "endpoint_funcs" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "endpoints" (
 	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
+	"name" text,
 	"description" text,
-	"http_method" "http_methods" NOT NULL,
-	"path" text NOT NULL,
+	"http_method" "http_methods",
+	"path" text,
 	"code" jsonb,
 	"open_api_spec" jsonb,
+	"position_x" integer DEFAULT 0,
+	"position_y" integer DEFAULT 0,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"conversation_id" text NOT NULL,
@@ -89,14 +91,19 @@ CREATE TABLE IF NOT EXISTS "endpoints" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "modules" (
 	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
+	"name" text,
 	"description" text,
 	"path" text,
+	"position_x" integer DEFAULT 0,
+	"position_y" integer DEFAULT 0,
+	"width" integer DEFAULT 600,
+	"height" integer DEFAULT 400,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"project_id" text,
 	"user_id" text,
-	"integration_id" text
+	"integration_id" text,
+	CONSTRAINT "modules_project_id_name_unique" UNIQUE("project_id","name")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "integrations" (
@@ -112,8 +119,6 @@ CREATE TABLE IF NOT EXISTS "integrations" (
 CREATE TABLE IF NOT EXISTS "funcs" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text,
-	"position_x" integer DEFAULT 0,
-	"position_y" integer DEFAULT 0,
 	"input_schema" jsonb,
 	"output_schema" jsonb,
 	"raw_description" jsonb,
@@ -124,12 +129,14 @@ CREATE TABLE IF NOT EXISTS "funcs" (
 	"npm_dependencies" jsonb,
 	"resources" jsonb,
 	"test_input" jsonb,
+	"position_x" integer DEFAULT 0,
+	"position_y" integer DEFAULT 0,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"user_id" text,
 	"conversation_id" text,
 	"module_id" text NOT NULL,
-	"project_id" text NOT NULL
+	"project_id" text
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "resource_environment_variables" (

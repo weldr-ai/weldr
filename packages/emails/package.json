@@ -13,12 +13,15 @@
   "dependencies": {
     "@react-email/components": "0.0.28",
     "react-email": "3.0.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
     "@integramind/tsconfig": "workspace:*",
     "@integramind/tailwind-config": "workspace:*",
-    "tailwindcss": "3.4.11"
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "tailwindcss": "3.4.11",
+    "typescript": "^5.7.2"
   }
 }

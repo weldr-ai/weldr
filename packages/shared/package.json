@@ -23,6 +23,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@integramind/tsconfig": "workspace:*"
+    "@integramind/tsconfig": "workspace:*",
+    "typescript": "^5.7.2"
   }
 }
