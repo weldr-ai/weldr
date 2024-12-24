@@ -12,11 +12,11 @@ import { useCallback, useMemo, useState } from "react";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
 
+import { $createReferenceNode } from "@/components/editor/plugins/reference/node";
 import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import { nanoid } from "nanoid";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";
-import { $createReferenceNode } from "~/components/editor/plugins/reference/node";
 import { ReferenceBadge } from "../../reference-badge";
 
 export class ReferenceOption extends MenuOption {
@@ -228,7 +228,7 @@ export function ReferencesPlugin({
                     >
                       <ReferenceBadge
                         reference={option.reference}
-                        className="border-none p-0 bg-transparent"
+                        className="border-none bg-transparent p-0"
                       />
                     </div>
                   ))}
@@ -238,7 +238,7 @@ export function ReferencesPlugin({
             anchorElementRef.current,
           )
         ) : (
-          <div className="absolute left-3 bottom-full mb-2 flex min-w-48 rounded-md border bg-muted p-2 text-xs">
+          <div className="absolute bottom-full left-3 mb-2 flex min-w-48 rounded-md border bg-muted p-2 text-xs">
             No references found.
           </div>
         )

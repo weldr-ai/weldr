@@ -46,9 +46,9 @@ export const JsonViewer = ({
     const suffix = isObj ? "}" : "]";
 
     return (
-      <div className="w-full h-full">
+      <div className="h-full w-full">
         <div
-          className="flex w-full items-center cursor-pointer hover:bg-accent rounded px-1"
+          className="flex w-full cursor-pointer items-center rounded px-1 hover:bg-accent"
           onClick={() => setIsExpanded(!isExpanded)}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -89,7 +89,7 @@ export const JsonViewer = ({
   const renderObject = () => {
     const entries = Object.entries(data as Record<string, unknown>);
     const content = entries.map(([key, value], index) => (
-      <div key={nanoid()} className="flex ml-6">
+      <div key={nanoid()} className="ml-6 flex">
         <span className="text-warning">"{key}"</span>
         <span className="mr-1">:</span>
         <JsonViewer
@@ -117,6 +117,6 @@ export const JsonViewer = ({
   };
 
   return (
-    <div className="flex w-full h-full font-mono text-xs">{renderValue()}</div>
+    <div className="flex h-full w-full font-mono text-xs">{renderValue()}</div>
   );
 };

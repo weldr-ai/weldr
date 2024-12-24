@@ -164,7 +164,7 @@ export default function SignUp() {
                           size="icon"
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-1 top-1 size-7"
+                          className="absolute top-1 right-1 size-7"
                         >
                           {showPassword ? (
                             <EyeOffIcon className="size-3" />
@@ -197,7 +197,7 @@ export default function SignUp() {
                           size="icon"
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-1 top-1 size-7"
+                          className="absolute top-1 right-1 size-7"
                         >
                           {showPassword ? (
                             <EyeOffIcon className="size-3" />
@@ -225,7 +225,7 @@ export default function SignUp() {
               </Button>
             </Form>
           </form>
-          <div className="flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground md:flex-row md:gap-0">
+          <div className="flex flex-col items-center justify-between gap-2 text-muted-foreground text-xs md:flex-row md:gap-0">
             <div>
               Have an account?{" "}
               <Link

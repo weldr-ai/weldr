@@ -23,7 +23,7 @@ export function Features() {
         <Badge className="rounded-full border border-primary bg-background text-primary">
           Features
         </Badge>
-        <h2 className="text-center text-2xl font-semibold leading-snug md:max-w-3xl md:text-4xl">
+        <h2 className="text-center font-semibold text-2xl leading-snug md:max-w-3xl md:text-4xl">
           Making programming accessible to everyone
         </h2>
       </div>
@@ -59,7 +59,7 @@ export function Features() {
             </div>
           </div>
           <div className="space-y-2 lg:h-28 lg:space-y-4 xl:h-36">
-            <h3 className="text-xl font-semibold lg:text-3xl">
+            <h3 className="font-semibold text-xl lg:text-3xl">
               No Code, Just English!
             </h3>
             <p className="max-w-lg text-sm">
@@ -70,16 +70,16 @@ export function Features() {
         </div>
         <div className="col-span-1 flex flex-col justify-center gap-4 rounded-xl p-6 shadow-none md:border lg:gap-8 lg:p-8">
           <div className="dark flex h-[250px] w-full flex-col items-center justify-center rounded-xl bg-background p-10 lg:h-[300px]">
-            <div className="flex h-16 w-full items-center justify-center rounded-xl border border-pink-500 text-center text-sm text-pink-500 md:text-base">
+            <div className="flex h-16 w-full items-center justify-center rounded-xl border border-pink-500 text-center text-pink-500 text-sm md:text-base">
               When order is placed
             </div>
             <div className="h-16 border-l" />
-            <div className="flex h-16 w-full items-center justify-center rounded-xl border border-blue-500 text-center text-sm text-blue-500 md:text-base">
+            <div className="flex h-16 w-full items-center justify-center rounded-xl border border-blue-500 text-center text-blue-500 text-sm md:text-base">
               Generate and send invoice
             </div>
           </div>
           <div className="space-y-2 lg:h-28 lg:space-y-4 xl:h-36">
-            <h3 className="text-xl font-semibold lg:text-3xl">Maintainable</h3>
+            <h3 className="font-semibold text-xl lg:text-3xl">Maintainable</h3>
             <p className="max-w-lg text-sm">
               IntegraMind&apos;s programming paradigm is designed to be
               maintainable, so users can easily build and modify their flows.
@@ -95,7 +95,7 @@ export function Features() {
             </div>
           </div>
           <div className="space-y-2 lg:h-28 lg:space-y-4 xl:h-36">
-            <h3 className="text-xl font-semibold lg:text-3xl">
+            <h3 className="font-semibold text-xl lg:text-3xl">
               Instant Deployment
             </h3>
             <p className="max-w-lg text-sm">
@@ -119,7 +119,7 @@ export function Features() {
             </div>
           </div>
           <div className="space-y-2 md:space-y-4 lg:h-28 xl:h-36">
-            <h3 className="text-xl font-semibold lg:text-3xl">Customizable</h3>
+            <h3 className="font-semibold text-xl lg:text-3xl">Customizable</h3>
             <p className="max-w-lg text-sm">
               IntegraMind provides few primitives that you can compose to build
               anything you want.
@@ -128,12 +128,12 @@ export function Features() {
         </div>
         <div className="col-span-1 flex flex-col justify-center gap-4 rounded-xl p-6 shadow-none md:border lg:gap-8 lg:p-8">
           <div className="dark flex h-[250px] w-full items-center justify-center rounded-xl bg-background p-10 lg:h-[300px]">
-            <span className="text-9xl font-black text-muted-foreground">
+            <span className="font-black text-9xl text-muted-foreground">
               UX
             </span>
           </div>
           <div className="space-y-2 lg:h-28 lg:space-y-4 xl:h-36">
-            <h3 className="text-xl font-semibold lg:text-3xl">Intuitive</h3>
+            <h3 className="font-semibold text-xl lg:text-3xl">Intuitive</h3>
             <p className="max-w-lg text-sm">
               No learning curve, no complicated interface. IntegraMind is built
               with emphasis on simplicity and ease of use.
@@ -158,7 +158,7 @@ export function Features() {
             </div>
           </div>
           <div className="space-y-2 lg:h-28 lg:space-y-4 xl:h-36">
-            <h3 className="text-xl font-semibold lg:text-3xl">Integrations</h3>
+            <h3 className="font-semibold text-xl lg:text-3xl">Integrations</h3>
             <p className="max-w-lg text-sm">
               Out of the box integrations with popular tools.
             </p>
@@ -167,19 +167,19 @@ export function Features() {
       </div>
       <div className="relative z-10 hidden flex-col items-center justify-center xl:flex">
         <Image
-          className="object-fit z-0 w-full rounded-xl"
+          className="z-0 w-full rounded-xl object-fit"
           src="/integrations.svg"
           width={500}
           height={500}
           alt=""
         />
         <div className="absolute top-28 flex flex-col items-center justify-center gap-6">
-          <h2 className="max-w-3xl text-center text-4xl font-semibold leading-snug">
+          <h2 className="max-w-3xl text-center font-semibold text-4xl leading-snug">
             Integrations
           </h2>
           <p>Out of the box integrations with popular tools.</p>
         </div>
-        <div className="absolute -left-2.5 top-[50px] flex size-full items-center justify-center gap-4">
+        <div className="-left-2.5 absolute top-[50px] flex size-full items-center justify-center gap-4">
           <div className="flex size-14 items-center justify-center rounded-xl border bg-background p-4">
             <NotionIcon />
           </div>

@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem } from "@integramind/ui/form";
 import { Input } from "@integramind/ui/input";
 import { toast } from "@integramind/ui/use-toast";
 
-import { joinWaitlist } from "~/lib/actions/waitlist";
+import { joinWaitlist } from "@/lib/actions/waitlist";
 
 export function JoinWaitlistForm({
   variant = "default",
@@ -81,7 +81,7 @@ export function JoinWaitlistForm({
         />
         <SubmitButton
           variant={variant}
-          className="rounded-full md:absolute md:right-1 md:top-1 md:h-8"
+          className="rounded-full md:absolute md:top-1 md:right-1 md:h-8"
         />
       </form>
     </Form>

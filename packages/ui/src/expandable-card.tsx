@@ -80,7 +80,7 @@ const ExpandableCardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("text-muted-foreground text-sm", className)}
     {...props}
   />
 ));
@@ -110,7 +110,7 @@ const ExpandableCardContent = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "absolute -left-[128px] top-0 z-10 w-[600px] cursor-default rounded-lg border bg-card text-card-foreground shadow",
+        "-left-[128px] absolute top-0 z-10 w-[600px] cursor-default rounded-lg border bg-card text-card-foreground shadow",
         className,
         {
           hidden: !open,

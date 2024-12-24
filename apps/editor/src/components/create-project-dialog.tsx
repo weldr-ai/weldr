@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@integramind/ui/dialog";
 
-import { CreateProjectForm } from "~/components/create-project-form";
+import { CreateProjectForm } from "@/components/create-project-form";
 
 export function CreateProjectDialog({
   open,

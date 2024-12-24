@@ -1,16 +1,16 @@
 "use client";
 
+import {
+  getParameterFields,
+  getRequestBodySchema,
+  parseOpenApiSpec,
+} from "@/lib/openapi-utils";
 import { Button } from "@integramind/ui/button";
 import { Input } from "@integramind/ui/input";
 import { Label } from "@integramind/ui/label";
 import { Textarea } from "@integramind/ui/textarea";
 import type { OpenAPIV3 } from "openapi-types";
 import { useState } from "react";
-import {
-  getParameterFields,
-  getRequestBodySchema,
-  parseOpenApiSpec,
-} from "~/lib/openapi-utils";
 
 interface OpenApiRendererProps {
   spec: OpenAPIV3.Document;
@@ -36,13 +36,13 @@ export function OpenApiRenderer({ spec }: OpenApiRendererProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-2xl font-bold">
+      <h2 className="font-bold text-2xl">
         {operation.summary || "API Endpoint"}
       </h2>
 
       {parameters.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold">Parameters</h3>
+          <h3 className="font-semibold text-xl">Parameters</h3>
           {parameters.map(
             (param, index) =>
               "name" in param && (
@@ -64,7 +64,7 @@ export function OpenApiRenderer({ spec }: OpenApiRendererProps) {
 
       {requestBodySchema && (
         <div className="space-y-2">
-          <h3 className="text-xl font-semibold">Request Body</h3>
+          <h3 className="font-semibold text-xl">Request Body</h3>
           <Textarea
             placeholder="Enter JSON request body"
             value={bodyValue}

@@ -31,10 +31,10 @@ export function ProjectSettings({
   );
 
   return (
-    <Tabs defaultValue={activeTab} className="flex-1 flex gap-4">
-      <TabsList className="flex flex-col h-fit w-[230px] p-2.5 gap-2">
+    <Tabs defaultValue={activeTab} className="flex flex-1 gap-4">
+      <TabsList className="flex h-fit w-[230px] flex-col gap-2 p-2.5">
         <TabsTrigger
-          className="justify-start w-full"
+          className="w-full justify-start"
           value="general"
           onClick={() => {
             setActiveTab("general");
@@ -44,7 +44,7 @@ export function ProjectSettings({
           General
         </TabsTrigger>
         <TabsTrigger
-          className="justify-start w-full"
+          className="w-full justify-start"
           value="integrations"
           onClick={() => {
             setActiveTab("integrations");
@@ -56,7 +56,7 @@ export function ProjectSettings({
           Integrations
         </TabsTrigger>
         <TabsTrigger
-          className="justify-start w-full"
+          className="w-full justify-start"
           value="env"
           onClick={() => {
             setActiveTab("env");
@@ -68,7 +68,7 @@ export function ProjectSettings({
       </TabsList>
 
       <div className="flex-1">
-        <TabsContent value="general" className="space-y-4 mt-0">
+        <TabsContent value="general" className="mt-0 space-y-4">
           <GeneralSection project={project} />
         </TabsContent>
 

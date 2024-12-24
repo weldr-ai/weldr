@@ -22,10 +22,10 @@ import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 import { Loader2Icon } from "lucide-react";
 
+import { api } from "@/lib/trpc/client";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { api } from "~/lib/trpc/client";
 
 export function GeneralSection({
   project,
@@ -108,7 +108,7 @@ export function GeneralSection({
                   <FormControl>
                     <div className="relative">
                       <Input placeholder="Enter subdomain" {...field} />
-                      <span className="absolute right-2.5 top-[9px] text-xs text-muted-foreground">
+                      <span className="absolute top-[9px] right-2.5 text-muted-foreground text-xs">
                         .integramind.app
                       </span>
                     </div>
@@ -141,7 +141,7 @@ export function GeneralSection({
                 }
               >
                 {updateProject.isPending && (
-                  <Loader2Icon className="size-3.5 mr-2 animate-spin" />
+                  <Loader2Icon className="mr-2 size-3.5 animate-spin" />
                 )}
                 Update
               </Button>

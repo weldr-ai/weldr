@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
 
+import { api } from "@/lib/trpc/server";
 import { redirect } from "next/navigation";
-import { api } from "~/lib/trpc/server";
 
+import { ProjectSettings } from "@/components/project-settings";
 import { buttonVariants } from "@integramind/ui/button";
 import { cn } from "@integramind/ui/utils";
 import { TRPCError } from "@trpc/server";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
-import { ProjectSettings } from "~/components/project-settings";
 
 export default async function ProjectSettingsPage({
   params,
@@ -20,7 +20,7 @@ export default async function ProjectSettingsPage({
     const project = await api.projects.byId({ id: projectId });
 
     return (
-      <div className="flex-1 p-6 bg-background rounded-md">
+      <div className="flex-1 rounded-md bg-background p-6">
         <div className="flex flex-col">
           <div className="mb-6">
             <Link
@@ -30,10 +30,10 @@ export default async function ProjectSettingsPage({
                 "p-0 text-muted-foreground",
               )}
             >
-              <ArrowLeftIcon className="size-3 mr-1" />
+              <ArrowLeftIcon className="mr-1 size-3" />
               Back
             </Link>
-            <h1 className="text-2xl font-medium">{project.name}</h1>
+            <h1 className="font-medium text-2xl">{project.name}</h1>
             <p className="text-muted-foreground">Project Settings</p>
           </div>
           <ProjectSettings project={project} />

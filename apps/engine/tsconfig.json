@@ -1,48 +1,13 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@integramind/tsconfig/node.json",
   "compilerOptions": {
-    // Language and Environment
-    "lib": ["ESNext"],
-    "target": "ESNext",
-
-    // Modules
-    "module": "ESNext",
-    "moduleDetection": "force",
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-
-    // JavaScript Support
-    "allowJs": true,
-    "checkJs": true,
-
-    // Interop Constraints
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-
-    // Projects
-    "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo",
-    "disableSourceOfProjectReferenceRedirect": true,
-
-    // Type Checking
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
-
-    // Output & Emit
-    "noEmit": true,
-    "declaration": false,
-    "declarationMap": false,
-    "emitDeclarationOnly": false,
-
-    // Editor Support
-    "noErrorTruncation": true,
-
-    // Completeness
-    "skipLibCheck": true
+    "baseUrl": ".",
+    "outDir": "dist",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"
   },
-  "exclude": ["node_modules", "build", "dist", "temp"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "temp"]
 }

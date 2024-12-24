@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 
-import { JoinWaitlistForm } from "~/components/join-waitlist-form";
-import { FlipWords } from "~/components/ui/flip-words";
+import { JoinWaitlistForm } from "@/components/join-waitlist-form";
+import { FlipWords } from "@/components/ui/flip-words";
 
 export function Hero() {
   return (
@@ -12,7 +12,7 @@ export function Hero() {
       className="flex size-full flex-col items-center justify-center gap-10"
     >
       <div className="absolute inset-0 z-0 size-full bg-[linear-gradient(to_right,#1111130d_1px,transparent_1px),linear-gradient(to_bottom,#1111130d_1px,transparent_1px)] bg-[size:128px_128px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_50%,transparent_100%)]" />
-      <div className="z-10 flex h-36 flex-col items-center justify-center gap-2 text-4xl font-semibold md:gap-4 lg:text-6xl">
+      <div className="z-10 flex h-36 flex-col items-center justify-center gap-2 font-semibold text-4xl md:gap-4 lg:text-6xl">
         <span>Build Custom</span>
         <FlipWords
           className="text-center text-primary"

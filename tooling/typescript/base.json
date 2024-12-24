@@ -6,8 +6,7 @@
 
     "module": "ESNext",
     "moduleDetection": "force",
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "moduleResolution": "Bundler",
     "verbatimModuleSyntax": true,
 
     "allowJs": true,
@@ -28,6 +27,9 @@
     "noUnusedLocals": true,
 
     "noEmit": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
 
     "skipLibCheck": true
   },

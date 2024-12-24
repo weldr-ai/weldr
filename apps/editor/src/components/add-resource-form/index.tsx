@@ -2,12 +2,12 @@
 
 import { toast } from "@integramind/ui/use-toast";
 
+import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@integramind/api";
 import type {
   EnvironmentVariable,
   Integration,
 } from "@integramind/shared/types";
-import { api } from "~/lib/trpc/client";
 import { AddPostgresResourceForm } from "./add-postgres-resource-form";
 
 export function AddResourceForm({

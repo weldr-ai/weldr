@@ -118,7 +118,7 @@ export function RawContentViewer({
   return (
     <div
       className={cn(
-        "prose prose-p:my-0 prose-headings:my-0 prose-ul:my-0 prose-ol:my-0 text-foreground text-sm select-text cursor-text",
+        "prose prose-headings:my-0 prose-ol:my-0 prose-p:my-0 prose-ul:my-0 cursor-text select-text text-foreground text-sm",
         className,
       )}
     >

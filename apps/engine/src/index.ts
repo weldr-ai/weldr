@@ -1,4 +1,6 @@
 import { createServer } from "node:http";
+import { executeEndpoint } from "@/lib/endpoints-executor";
+import { executeFunction } from "@/lib/functions-executor";
 import {
   createApp,
   createRouter,
@@ -8,8 +10,6 @@ import {
   toNodeListener,
 } from "h3";
 import { z } from "zod";
-import { executeEndpoint } from "./lib/endpoints-executor";
-import { executeFunction } from "./lib/functions-executor";
 
 export interface Module {
   path: string;

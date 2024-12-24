@@ -1,15 +1,15 @@
 import fs from "node:fs/promises";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import Handlebars from "handlebars";
-import type { Dependency, Module } from "../index";
+import type { Dependency, Module } from "@/index";
 import {
   createLibraries,
   createTemporaryDirectory,
   exec,
   installDependencies,
   writeTestEnvFile,
-} from "./utils";
+} from "@/lib/utils";
+import Handlebars from "handlebars";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

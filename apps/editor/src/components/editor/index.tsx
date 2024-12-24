@@ -64,13 +64,13 @@ export function Editor({ ...props }: EditorProps) {
           contentEditable={
             <ContentEditable
               className={cn(
-                "size-full cursor-text min-h-[100px] h-full flex-col overflow-y-auto rounded-lg border border-input bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                "size-full h-full min-h-[100px] cursor-text flex-col overflow-y-auto rounded-lg border border-input bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
                 props.className,
               )}
             />
           }
           placeholder={
-            <div className="pointer-events-none absolute px-2.5 py-2 text-sm text-muted-foreground">
+            <div className="pointer-events-none absolute px-2.5 py-2 text-muted-foreground text-sm">
               {props.placeholder ?? "Start typing..."}
             </div>
           }

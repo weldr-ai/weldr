@@ -13,12 +13,12 @@ import {
   DialogTrigger,
 } from "@integramind/ui/dialog";
 
+import { AddResourceForm } from "@/components/add-resource-form";
 import type { RouterOutputs } from "@integramind/api";
 import type {
   EnvironmentVariable,
   Integration,
 } from "@integramind/shared/types";
-import { AddResourceForm } from "~/components/add-resource-form";
 
 export function AddResourceDialog({
   integration,

@@ -125,7 +125,7 @@ const TreeView = React.forwardRef<HTMLDivElement, TreeProps>(
     }, [data]);
 
     return (
-      <div className={cn("overflow-hidden relative", className)}>
+      <div className={cn("relative overflow-hidden", className)}>
         <TreeItem
           data={data}
           ref={ref}
@@ -241,12 +241,12 @@ const TreeNode = ({
             isOpen={value.includes(item.id)}
             default={defaultNodeIcon}
           />
-          <span className="text-sm truncate">{item.name}</span>
+          <span className="truncate text-sm">{item.name}</span>
           <TreeActions isSelected={selectedItemId === item.id}>
             {item.actions}
           </TreeActions>
         </AccordionTrigger>
-        <AccordionContent className="ml-7 pl-2 border-l">
+        <AccordionContent className="ml-7 border-l pl-2">
           <TreeItem
             data={item.children ? item.children : item}
             selectedItemId={selectedItemId}
@@ -289,7 +289,7 @@ const TreeLeaf = React.forwardRef<
         ref={ref}
         className={cn(
           isFlat ? "ml-0" : "ml-5",
-          "flex text-left items-center py-0.5 cursor-pointer before:right-1",
+          "flex cursor-pointer items-center py-0.5 text-left before:right-1",
           treeVariants(),
           className,
           selectedItemId === item.id && selectedTreeVariants(),
@@ -305,7 +305,7 @@ const TreeLeaf = React.forwardRef<
           isSelected={selectedItemId === item.id}
           default={defaultLeafIcon}
         />
-        <span className="flex-grow text-sm truncate">{item.name}</span>
+        <span className="flex-grow truncate text-sm">{item.name}</span>
         <TreeActions isSelected={selectedItemId === item.id}>
           {item.actions}
         </TreeActions>
@@ -322,12 +322,12 @@ const AccordionTrigger = React.forwardRef<
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        "flex flex-1 w-full items-center py-2 transition-all first:[&[data-state=open]>svg]:rotate-90",
+        "flex w-full flex-1 items-center py-2 transition-all first:[&[data-state=open]>svg]:rotate-90",
         className,
       )}
       {...props}
     >
-      <ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-200 text-accent-foreground/50 mr-1" />
+      <ChevronRight className="mr-1 h-4 w-4 shrink-0 text-accent-foreground/50 transition-transform duration-200" />
       {children}
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
@@ -346,7 +346,7 @@ const AccordionContent = React.forwardRef<
     )}
     {...props}
   >
-    <div className="pb-1 pt-0">{children}</div>
+    <div className="pt-0 pb-1">{children}</div>
   </AccordionPrimitive.Content>
 ));
 AccordionContent.displayName = AccordionPrimitive.Content.displayName;
@@ -386,7 +386,7 @@ const TreeIcon = ({
   return Icon ? (
     <Icon
       className={cn(
-        "size-4 shrink-0 mr-2 text-primary",
+        "mr-2 size-4 shrink-0 text-primary",
         typeof item.icon === "object" ? item.icon.className : "",
       )}
     />

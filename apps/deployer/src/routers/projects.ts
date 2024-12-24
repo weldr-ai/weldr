@@ -1,16 +1,16 @@
 import {
+  createDockerImage,
+  createFlyApp,
+  createFlyMachine,
+  deleteFlyApp,
+} from "@/lib/fly-client";
+import {
   createRouter,
   eventHandler,
   readValidatedBody,
   setResponseStatus,
 } from "h3";
 import { z } from "zod";
-import {
-  createDockerImage,
-  createFlyApp,
-  createFlyMachine,
-  deleteFlyApp,
-} from "../utils/fly-client";
 
 const router = createRouter();
 

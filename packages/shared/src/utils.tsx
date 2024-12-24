@@ -69,5 +69,5 @@ export function getDataTypeIcon(type: DataType) {
 
 export function renderDataTypeIcon(type: DataType) {
   const Icon = getDataTypeIcon(type);
-  return <Icon className="size-4 shrink-0 mr-2 text-primary" />;
+  return <Icon className="mr-2 size-4 shrink-0 text-primary" />;
 }

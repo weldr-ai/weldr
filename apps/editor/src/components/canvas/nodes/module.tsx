@@ -1,3 +1,6 @@
+import { DeleteAlertDialog } from "@/components/delete-alert-dialog";
+import { api } from "@/lib/trpc/client";
+import type { CanvasNode, CanvasNodeProps } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { RouterOutputs } from "@integramind/api";
 import { updateModuleSchema } from "@integramind/shared/validators/modules";
@@ -38,9 +41,6 @@ import { debounce } from "perfect-debounce";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import { api } from "~/lib/trpc/client";
-import type { CanvasNode, CanvasNodeProps } from "~/types";
 
 export const ModuleNode = memo(
   ({
@@ -173,13 +173,13 @@ export const ModuleNode = memo(
               })}
               style={{ height: size.height, width: size.width }}
             >
-              <CardHeader className="p-4 border-b">
+              <CardHeader className="border-b p-4">
                 <div className="flex gap-2">
                   <PackageIcon className="size-4 text-primary" />
-                  <span className="text-xs text-muted-foreground">Module</span>
+                  <span className="text-muted-foreground text-xs">Module</span>
                   <button
                     type="button"
-                    className="ml-auto text-xs text-muted-foreground hover:text-foreground"
+                    className="ml-auto text-muted-foreground text-xs hover:text-foreground"
                     onClick={() => setShowDescription(!showDescription)}
                   >
                     {showDescription ? "Hide" : "Show"} Description
@@ -196,7 +196,7 @@ export const ModuleNode = memo(
                             <Input
                               {...field}
                               autoComplete="off"
-                              className="h-8 w-full border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
+                              className="h-8 w-full border-none p-0 text-base shadow-none focus-visible:ring-0 dark:bg-muted"
                               placeholder="Enter module name"
                             />
                           </FormControl>
@@ -214,7 +214,7 @@ export const ModuleNode = memo(
                               <Textarea
                                 {...field}
                                 autoComplete="off"
-                                className="min-h-8 w-full text-muted-foreground text-sm border-none shadow-none dark:bg-muted p-0 focus-visible:ring-0"
+                                className="min-h-8 w-full border-none p-0 text-muted-foreground text-sm shadow-none focus-visible:ring-0 dark:bg-muted"
                                 placeholder="Enter module description"
                               />
                             </FormControl>
@@ -244,7 +244,7 @@ export const ModuleNode = memo(
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
-              className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+              className="flex text-destructive text-xs hover:text-destructive focus:text-destructive/90"
               onClick={() => setDeleteAlertDialogOpen(true)}
             >
               <TrashIcon className="mr-3 size-4" />

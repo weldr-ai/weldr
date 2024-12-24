@@ -1,9 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
-import { Canvas } from "~/components/canvas";
-import { api } from "~/lib/trpc/server";
-import type { CanvasNode } from "~/types";
+import { Canvas } from "@/components/canvas";
+import { api } from "@/lib/trpc/server";
+import type { CanvasNode } from "@/types";
 
 export default async function ModulePage({
   params,

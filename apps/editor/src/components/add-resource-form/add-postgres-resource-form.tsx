@@ -18,6 +18,7 @@ import {
 import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 
+import type { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@integramind/api";
 import type {
   EnvironmentVariable,
@@ -31,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@integramind/ui/select";
-import type { api } from "~/lib/trpc/client";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 
 const validationSchema = insertResourceSchema

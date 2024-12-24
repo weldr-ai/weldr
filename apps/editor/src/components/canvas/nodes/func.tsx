@@ -49,6 +49,15 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { DeleteAlertDialog } from "@/components/delete-alert-dialog";
+import { Editor } from "@/components/editor";
+import { TestInputDialog } from "@/components/test-input-dialog";
+import { generateFunc } from "@/lib/ai/generator";
+import { useResources } from "@/lib/context/resources";
+import { useFlowBuilderStore } from "@/lib/store";
+import { api } from "@/lib/trpc/client";
+import { getResourceReferences, jsonSchemaToTreeData } from "@/lib/utils";
+import type { CanvasNode, CanvasNodeProps } from "@/types";
 import type { RouterOutputs } from "@integramind/api";
 import type {
   AssistantMessageRawContent,
@@ -76,15 +85,6 @@ import { createId } from "@paralleldrive/cuid2";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
 import ReactMarkdown from "react-markdown";
-import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import { Editor } from "~/components/editor";
-import { TestInputDialog } from "~/components/test-input-dialog";
-import { generateFunc } from "~/lib/ai/generator";
-import { useResources } from "~/lib/context/resources";
-import { useFlowBuilderStore } from "~/lib/store";
-import { api } from "~/lib/trpc/client";
-import { getResourceReferences, jsonSchemaToTreeData } from "~/lib/utils";
-import type { CanvasNode, CanvasNodeProps } from "~/types";
 import type { ReferenceNode } from "../../editor/plugins/reference/node";
 import MessageList from "../../message-list";
 import { RawContentViewer } from "../../raw-content-viewer";
@@ -535,7 +535,7 @@ export const FuncNode = memo(
               </ContextMenuItem>
               <ContextMenuSeparator />
               <ContextMenuItem
-                className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                className="flex text-destructive text-xs hover:text-destructive focus:text-destructive/90"
                 onClick={() => setDeleteAlertDialogOpen(true)}
               >
                 <TrashIcon className="mr-3 size-4" />
@@ -543,7 +543,7 @@ export const FuncNode = memo(
               </ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
-          <ExpandableCardContent className="nowheel flex h-[600px] w-[60vw] flex-col -left-[calc(60vw-650px)]">
+          <ExpandableCardContent className="nowheel -left-[calc(60vw-650px)] flex h-[600px] w-[60vw] flex-col">
             <ResizablePanelGroup
               direction="horizontal"
               className="flex size-full"
@@ -553,7 +553,7 @@ export const FuncNode = memo(
                 minSize={20}
                 className="flex flex-col"
               >
-                <ExpandableCardHeader className="flex flex-col items-start justify-start p-4 border-b">
+                <ExpandableCardHeader className="flex flex-col items-start justify-start border-b p-4">
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2 text-xs">
                       <FunctionSquareIcon className="size-4 text-primary" />
@@ -586,7 +586,7 @@ export const FuncNode = memo(
                             <PlayCircleIcon className="size-3.5" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent className="bg-muted border">
+                        <TooltipContent className="border bg-muted">
                           <span className="text-success">Run</span>
                         </TooltipContent>
                       </Tooltip>
@@ -622,7 +622,7 @@ export const FuncNode = memo(
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                            className="flex text-destructive text-xs hover:text-destructive focus:text-destructive/90"
                             onClick={() => setDeleteAlertDialogOpen(true)}
                           >
                             <TrashIcon className="mr-3 size-4" />
@@ -643,7 +643,7 @@ export const FuncNode = memo(
                               <Input
                                 {...field}
                                 autoComplete="off"
-                                className="h-8 border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
+                                className="h-8 border-none p-0 text-base shadow-none focus-visible:ring-0 dark:bg-muted"
                                 placeholder="Enter function name"
                               />
                             </FormControl>
@@ -654,9 +654,9 @@ export const FuncNode = memo(
                     </form>
                   </Form>
                 </ExpandableCardHeader>
-                <div className="flex flex-col h-[calc(100dvh-492px)] p-4">
+                <div className="flex h-[calc(100dvh-492px)] flex-col p-4">
                   <ScrollArea
-                    className="flex-grow w-full mb-2"
+                    className="mb-2 w-full flex-grow"
                     ref={scrollAreaRef}
                   >
                     <MessageList
@@ -693,11 +693,11 @@ export const FuncNode = memo(
                           !userMessageContent || isGenerating || !data.name
                         }
                         size="sm"
-                        className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
+                        className="absolute right-2 bottom-2 disabled:bg-muted-foreground"
                       >
                         Send
                         <span className="ml-1">
-                          <span className="px-1 py-0.5 bg-white/20 rounded-sm disabled:text-muted-foreground">
+                          <span className="rounded-sm bg-white/20 px-1 py-0.5 disabled:text-muted-foreground">
                             {typeof window !== "undefined" &&
                             window.navigator?.userAgent
                               .toLowerCase()
@@ -718,7 +718,7 @@ export const FuncNode = memo(
                   <ScrollArea className="size-full">
                     <div className="max-h-[500px] space-y-2">
                       <div className="flex flex-col space-y-1">
-                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                        <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
                           Description:
                         </span>
                         <RawContentViewer
@@ -727,7 +727,7 @@ export const FuncNode = memo(
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center justify-between pr-2">
-                          <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
                             Input:
                           </span>
                           <TestInputDialog
@@ -753,7 +753,7 @@ export const FuncNode = memo(
                         />
                       </div>
                       <div className="space-y-1">
-                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                        <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
                           Output:
                         </span>
                         <TreeView
@@ -763,22 +763,22 @@ export const FuncNode = memo(
                         />
                       </div>
                       <div className="space-y-1">
-                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                        <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
                           Behavior:
                         </span>
-                        <div className="prose select-text cursor-text text-sm prose-ol:marker:text-foreground prose-code:text-primary text-foreground prose-ul:my-0 prose-ol:my-0 prose-li:my-0 [&_ol]:marker:text-foreground [&_ol]:text-foreground">
+                        <div className="prose prose-li:my-0 prose-ol:my-0 prose-ul:my-0 cursor-text select-text prose-code:text-primary text-foreground text-sm prose-ol:marker:text-foreground [&_ol]:text-foreground [&_ol]:marker:text-foreground">
                           <RawContentViewer rawContent={data.behavior ?? []} />
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <span className="text-sm select-text cursor-text font-semibold text-muted-foreground">
+                        <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
                           Errors:
                         </span>
-                        <div className="prose select-text cursor-text text-sm prose-code:text-primary text-foreground prose-ul:my-0 prose-ol:my-0 prose-li:my-0">
+                        <div className="prose prose-li:my-0 prose-ol:my-0 prose-ul:my-0 cursor-text select-text prose-code:text-primary text-foreground text-sm">
                           <ReactMarkdown
                             components={{
                               code: ({ children }) => (
-                                <span className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-xs text-destructive">
+                                <span className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-destructive text-xs">
                                   {children}
                                 </span>
                               ),
@@ -791,8 +791,8 @@ export const FuncNode = memo(
                     </div>
                   </ScrollArea>
                 ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <span className="text-sm text-muted-foreground">
+                  <div className="flex h-full items-center justify-center">
+                    <span className="text-muted-foreground text-sm">
                       Function is not implemented yet. Chat with Integrator to
                       build it.
                     </span>
@@ -804,7 +804,7 @@ export const FuncNode = memo(
         </ExpandableCard>
         <Handle
           className={cn(
-            "border rounded-full bg-background p-1",
+            "rounded-full border bg-background p-1",
             showEdges ? "" : "opacity-0",
           )}
           type="target"
@@ -813,7 +813,7 @@ export const FuncNode = memo(
         />
         <Handle
           className={cn(
-            "border rounded-full bg-background p-1",
+            "rounded-full border bg-background p-1",
             showEdges ? "" : "opacity-0",
           )}
           type="source"

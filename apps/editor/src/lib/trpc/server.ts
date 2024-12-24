@@ -7,7 +7,7 @@ import { cache } from "react";
 import type { AppRouter } from "@integramind/api";
 import { createCaller, createTRPCContext } from "@integramind/api";
 
-import { createQueryClient } from "~/lib/trpc/react-query";
+import { createQueryClient } from "@/lib/trpc/react-query";
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when

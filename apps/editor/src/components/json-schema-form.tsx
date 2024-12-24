@@ -317,7 +317,7 @@ export function JsonSchemaForm({
         if (!schema.properties) return null;
         return (
           <Card className="mt-2">
-            <CardContent className="pt-6 space-y-4">
+            <CardContent className="space-y-4 pt-6">
               {Object.entries(schema.properties).map(([key, prop]) => (
                 <div key={key}>
                   {renderFieldWrapper(key, prop, `${path}.${key}`)}
@@ -388,7 +388,7 @@ export function JsonSchemaForm({
               className="mt-2"
               disabled={isDisabled}
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Add Item
             </Button>
           </div>
@@ -414,10 +414,10 @@ export function JsonSchemaForm({
           <div className="space-y-1">
             <Label>
               {schema.title || name}
-              {schema.required && <span className="text-red-500 ml-1">*</span>}
+              {schema.required && <span className="ml-1 text-red-500">*</span>}
             </Label>
             {schema.description && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {schema.description}
               </p>
             )}

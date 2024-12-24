@@ -14,7 +14,7 @@ export function UseCases() {
         <Badge className="rounded-full border border-primary bg-background text-primary">
           Use Cases
         </Badge>
-        <h2 className="text-center text-2xl font-semibold leading-snug md:max-w-3xl md:text-4xl">
+        <h2 className="text-center font-semibold text-2xl leading-snug md:max-w-3xl md:text-4xl">
           Empower your team with effortless automation and more!
         </h2>
       </div>
@@ -37,7 +37,7 @@ export function UseCases() {
               className="min-h-72 w-full space-y-10 rounded-xl border p-10"
             >
               <div className="flex w-full flex-col items-center justify-center gap-4 text-center">
-                <h3 className="text-3xl font-semibold">Backend APIs</h3>
+                <h3 className="font-semibold text-3xl">Backend APIs</h3>
                 <p className="max-w-xl">
                   Create custom APIs that integrate with other systems and
                   frontend applications
@@ -71,7 +71,7 @@ export function UseCases() {
               className="min-h-72 w-full space-y-10 rounded-xl border p-10"
             >
               <div className="flex w-full flex-col items-center justify-center gap-4">
-                <h3 className="text-3xl font-semibold">Workflows</h3>
+                <h3 className="font-semibold text-3xl">Workflows</h3>
                 <p className="max-w-xl text-center">
                   Create custom workflows that to automate repetitive tasks and
                   streamline your business processes
@@ -96,7 +96,7 @@ export function UseCases() {
               className="w-full space-y-10 rounded-xl border p-10"
             >
               <div className="flex w-full flex-col items-center justify-center gap-4">
-                <h3 className="text-3xl font-semibold">Data Pipelines</h3>
+                <h3 className="font-semibold text-3xl">Data Pipelines</h3>
                 <p className="max-w-xl text-center">
                   Create custom data pipelines that extract, transform, and load
                   data from various sources
@@ -118,7 +118,7 @@ export function UseCases() {
           <div className="grid w-full grid-cols-1 gap-8 lg:grid-cols-3">
             <div className="flex size-full flex-col items-center justify-center gap-6 rounded-xl p-6 md:border">
               <div className="flex w-full flex-col items-center justify-center gap-4 text-center">
-                <h3 className="text-2xl font-semibold">Backend APIs</h3>
+                <h3 className="font-semibold text-2xl">Backend APIs</h3>
                 <p className="text-sm">
                   Create custom APIs that integrate with other systems and
                   frontend applications
@@ -149,7 +149,7 @@ export function UseCases() {
             </div>
             <div className="flex size-full flex-col items-center justify-center gap-6 rounded-xl p-6 md:border">
               <div className="flex w-full flex-col items-center justify-center gap-4 text-center">
-                <h3 className="text-2xl font-semibold">Workflows</h3>
+                <h3 className="font-semibold text-2xl">Workflows</h3>
                 <p className="text-sm">
                   Create custom workflows that to automate repetitive tasks and
                   streamline your business processes
@@ -171,7 +171,7 @@ export function UseCases() {
             </div>
             <div className="flex size-full flex-col items-center justify-center gap-6 rounded-xl p-6 md:border">
               <div className="flex w-full flex-col items-center justify-center gap-4 text-center">
-                <h3 className="text-2xl font-semibold">Data Pipelines</h3>
+                <h3 className="font-semibold text-2xl">Data Pipelines</h3>
                 <p className="text-sm">
                   Create custom data pipelines that extract, transform, and load
                   data from various sources

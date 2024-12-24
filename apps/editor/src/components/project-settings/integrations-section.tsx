@@ -1,5 +1,6 @@
 "use client";
 
+import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@integramind/api";
 import { Badge } from "@integramind/ui/badge";
 import { Button } from "@integramind/ui/button";
@@ -38,7 +39,6 @@ import { StripeIcon } from "@integramind/ui/icons/stripe-icon";
 import { TwilioIcon } from "@integramind/ui/icons/twilio-icon";
 import { useTheme } from "@integramind/ui/theme-provider";
 import { useState } from "react";
-import { api } from "~/lib/trpc/client";
 import { AddResourceDialog } from "../add-resource-dialog";
 
 const comingSoonIntegrations = [
@@ -204,14 +204,14 @@ export function IntegrationsSection({
                 <Button
                   key={integration.id}
                   variant="outline"
-                  className="size-80 w-full flex flex-col justify-between items-start p-6 gap-4"
+                  className="flex size-80 w-full flex-col items-start justify-between gap-4 p-6"
                 >
                   <div className="flex flex-col items-start gap-4">
                     <div className="flex flex-col items-start gap-4">
                       {integration.type === "postgres" ? (
                         <PostgresIcon className="size-10" />
                       ) : null}
-                      <span className="text-lg font-semibold">
+                      <span className="font-semibold text-lg">
                         {integration.name}
                       </span>
                     </div>
@@ -236,7 +236,7 @@ export function IntegrationsSection({
                     {integration.description}
                   </DialogDescription>
                 </DialogHeader>
-                <div className="flex flex-col overflow-y-auto gap-4">
+                <div className="flex flex-col gap-4 overflow-y-auto">
                   <div className="flex flex-col gap-4">
                     {groupedResources[integration.type]?.map((resource) => (
                       <AddResourceDialog
@@ -260,7 +260,7 @@ export function IntegrationsSection({
               key={integration.id}
               disabled
               variant="outline"
-              className="size-80 w-full flex flex-col justify-between items-start p-6 gap-4"
+              className="flex size-80 w-full flex-col items-start justify-between gap-4 p-6"
             >
               <div className="flex flex-col items-start gap-4">
                 <div className="flex flex-col items-start gap-4">
@@ -270,9 +270,9 @@ export function IntegrationsSection({
                         theme: resolvedTheme === "dark" ? "dark" : "light",
                       })
                     : null}
-                  <span className="flex items-center text-lg font-semibold">
+                  <span className="flex items-center font-semibold text-lg">
                     {integration.name}
-                    <span className="ml-2 text-xs text-muted-foreground">
+                    <span className="ml-2 text-muted-foreground text-xs">
                       (Coming Soon)
                     </span>
                   </span>

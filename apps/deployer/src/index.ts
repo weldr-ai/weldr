@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
+import projects from "@/routers/projects";
 import { createApp, toNodeListener } from "h3";
-import projects from "./routers/projects";
 
 export const app = createApp();
 app.use(projects);

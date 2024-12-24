@@ -16,7 +16,7 @@ export function FAQs() {
         <Badge className="rounded-full border border-primary bg-background text-primary">
           FAQs
         </Badge>
-        <h2 className="text-center text-2xl font-semibold leading-snug md:max-w-3xl md:text-4xl">
+        <h2 className="text-center font-semibold text-2xl leading-snug md:max-w-3xl md:text-4xl">
           Frequently Asked Questions
         </h2>
       </div>

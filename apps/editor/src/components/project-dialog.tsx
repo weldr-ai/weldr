@@ -14,9 +14,9 @@ import {
   CommandList,
 } from "@integramind/ui/command";
 
+import { CreateProjectDialog } from "@/components/create-project-dialog";
+import { useCommandCenterStore } from "@/lib/store";
 import type { RouterOutputs } from "@integramind/api";
-import { CreateProjectDialog } from "~/components/create-project-dialog";
-import { useCommandCenterStore } from "~/lib/store";
 
 export function ProjectsDialog({
   projects,
@@ -28,7 +28,7 @@ export function ProjectsDialog({
 
   return (
     <>
-      <Command className="fixed left-1/2 top-1/2 z-50 h-[350px] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border duration-200 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5">
+      <Command className="-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 h-[350px] max-w-lg rounded-lg border duration-200 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5">
         <CommandInput
           className="border-none ring-0"
           placeholder="Search projects..."
@@ -37,7 +37,7 @@ export function ProjectsDialog({
           <CommandEmpty>No projects found.</CommandEmpty>
           <CommandGroup className="py-2">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Projects</span>
+              <span className="text-muted-foreground text-xs">Projects</span>
               <Button
                 className="size-6 rounded-sm bg-muted"
                 onClick={() => {

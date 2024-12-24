@@ -124,7 +124,7 @@ export default function SignIn() {
                       <FormLabel>Password</FormLabel>
                       <Link
                         href="/auth/forgot-password"
-                        className="text-xs text-primary hover:underline"
+                        className="text-primary text-xs hover:underline"
                       >
                         Forgot password?
                       </Link>
@@ -138,7 +138,7 @@ export default function SignIn() {
                           type={showPassword ? "text" : "password"}
                         />
                         <Button
-                          className="absolute right-1 top-1 size-7"
+                          className="absolute top-1 right-1 size-7"
                           variant="ghost"
                           size="icon"
                           type="button"
@@ -190,7 +190,7 @@ export default function SignIn() {
               </Button>
             </form>
           </Form>
-          <div className="flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground md:flex-row md:gap-0">
+          <div className="flex flex-col items-center justify-between gap-2 text-muted-foreground text-xs md:flex-row md:gap-0">
             <div>
               No account?{" "}
               <Link

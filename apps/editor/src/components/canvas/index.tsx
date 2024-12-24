@@ -22,13 +22,14 @@ import {
 import type React from "react";
 import { useCallback } from "react";
 
-import type { CanvasNode, CanvasNodeData } from "~/types";
+import type { CanvasNode, CanvasNodeData } from "@/types";
 
+import "@/styles/flow-builder.css";
 import "@xyflow/react/dist/base.css";
-import "~/styles/flow-builder.css";
 
 import { Button } from "@integramind/ui/button";
 
+import { api } from "@/lib/trpc/client";
 import { useTheme } from "@integramind/ui/theme-provider";
 import {
   Tooltip,
@@ -36,7 +37,6 @@ import {
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
 import { toast } from "@integramind/ui/use-toast";
-import { api } from "~/lib/trpc/client";
 import { EndpointNode } from "./nodes/endpoint";
 import { FuncNode } from "./nodes/func";
 import { ModuleNode } from "./nodes/module";
@@ -372,10 +372,10 @@ export function Canvas({
       />
       <Panel
         position="bottom-right"
-        className="flex items-center bg-background dark:bg-muted rounded-md gap-1 p-1 border"
+        className="flex items-center gap-1 rounded-md border bg-background p-1 dark:bg-muted"
       >
         <Button
-          className="rounded-md size-8"
+          className="size-8 rounded-md"
           variant="ghost"
           size="icon"
           onClick={() => {
@@ -385,7 +385,7 @@ export function Canvas({
           <MinusIcon className="size-4" />
         </Button>
         <Button
-          className="rounded-md text-xs h-8"
+          className="h-8 rounded-md text-xs"
           variant="ghost"
           onClick={() => {
             fitView({
@@ -396,7 +396,7 @@ export function Canvas({
           {`${Math.floor(viewPort.zoom * 100)}%`}
         </Button>
         <Button
-          className="rounded-md size-8"
+          className="size-8 rounded-md"
           variant="ghost"
           size="icon"
           onClick={() => {
@@ -408,19 +408,19 @@ export function Canvas({
       </Panel>
       <Panel
         position="bottom-center"
-        className="flex items-center bg-background dark:bg-muted rounded-md gap-1 p-1 border"
+        className="flex items-center gap-1 rounded-md border bg-background p-1 dark:bg-muted"
       >
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className="inline-flex items-center text-xs justify-center size-8 px-2 rounded-md hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              className="inline-flex size-8 items-center justify-center rounded-md px-2 text-xs hover:cursor-grab hover:bg-accent hover:text-accent-foreground"
               onDragStart={(event) => onDragStart(event, "page")}
               draggable
             >
               <AppWindowIcon className="size-4" />
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border">
+          <TooltipContent side="top" className="border bg-muted">
             <p>Page</p>
           </TooltipContent>
         </Tooltip>
@@ -428,14 +428,14 @@ export function Canvas({
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className="inline-flex items-center text-xs justify-center size-8 px-2 rounded-md hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              className="inline-flex size-8 items-center justify-center rounded-md px-2 text-xs hover:cursor-grab hover:bg-accent hover:text-accent-foreground"
               onDragStart={(event) => onDragStart(event, "component")}
               draggable
             >
               <ComponentIcon className="size-4" />
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border">
+          <TooltipContent side="top" className="border bg-muted">
             <p>UI Component</p>
           </TooltipContent>
         </Tooltip>
@@ -443,14 +443,14 @@ export function Canvas({
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className="inline-flex items-center text-xs justify-center size-8 px-2 rounded-md hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              className="inline-flex size-8 items-center justify-center rounded-md px-2 text-xs hover:cursor-grab hover:bg-accent hover:text-accent-foreground"
               onDragStart={(event) => onDragStart(event, "func")}
               draggable
             >
               <FunctionSquareIcon className="size-4" />
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border">
+          <TooltipContent side="top" className="border bg-muted">
             <p>Function</p>
           </TooltipContent>
         </Tooltip>
@@ -458,14 +458,14 @@ export function Canvas({
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className="inline-flex items-center text-xs justify-center size-8 px-2 rounded-md hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              className="inline-flex size-8 items-center justify-center rounded-md px-2 text-xs hover:cursor-grab hover:bg-accent hover:text-accent-foreground"
               onDragStart={(event) => onDragStart(event, "module")}
               draggable
             >
               <PackageIcon className="size-4" />
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border">
+          <TooltipContent side="top" className="border bg-muted">
             <p>Module</p>
           </TooltipContent>
         </Tooltip>
@@ -473,14 +473,14 @@ export function Canvas({
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className="inline-flex items-center text-xs justify-center size-8 px-2 rounded-md hover:bg-accent hover:text-accent-foreground hover:cursor-grab"
+              className="inline-flex size-8 items-center justify-center rounded-md px-2 text-xs hover:cursor-grab hover:bg-accent hover:text-accent-foreground"
               onDragStart={(event) => onDragStart(event, "endpoint")}
               draggable
             >
               <span className="size-4 font-semibold">API</span>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border">
+          <TooltipContent side="top" className="border bg-muted">
             <p>Endpoint</p>
           </TooltipContent>
         </Tooltip>

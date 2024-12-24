@@ -1,5 +1,6 @@
 "use client";
 
+import { api } from "@/lib/trpc/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertEnvironmentVariableSchema } from "@integramind/shared/validators/environment-variables";
 import { Button } from "@integramind/ui/button";
@@ -25,7 +26,6 @@ import { Loader2Icon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { api } from "~/lib/trpc/client";
 
 export default function AddEnvironmentVariableDialog({
   projectId,
@@ -78,7 +78,7 @@ export default function AddEnvironmentVariableDialog({
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <PlusIcon className="size-4 mr-2" />
+          <PlusIcon className="mr-2 size-4" />
           Add Variable
         </Button>
       </DialogTrigger>

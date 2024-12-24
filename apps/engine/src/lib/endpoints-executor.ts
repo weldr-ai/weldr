@@ -1,12 +1,12 @@
-import superjson from "superjson";
-import type { Dependency, Module } from "..";
+import type { Dependency, Module } from "@/index.ts";
 import {
   createLibraries,
   createTemporaryDirectory,
   exec,
   installDependencies,
   writeTestEnvFile,
-} from "./utils";
+} from "@/lib/utils";
+import superjson from "superjson";
 
 interface MockRequestOptions {
   method?: string;

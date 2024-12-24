@@ -9,7 +9,7 @@ import superjson from "superjson";
 
 import type { AppRouter } from "@integramind/api";
 
-import { createQueryClient } from "~/lib/trpc/react-query";
+import { createQueryClient } from "@/lib/trpc/react-query";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 

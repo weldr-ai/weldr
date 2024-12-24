@@ -1,10 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
-import { CommandCenter } from "~/components/command-center";
-import { Sidebar } from "~/components/sidebar";
-import { ResourcesProvider } from "~/lib/context/resources";
-import { api } from "~/lib/trpc/server";
+import { CommandCenter } from "@/components/command-center";
+import { Sidebar } from "@/components/sidebar";
+import { ResourcesProvider } from "@/lib/context/resources";
+import { api } from "@/lib/trpc/server";
 
 export default async function ProjectLayout({
   children,
@@ -31,15 +31,15 @@ export default async function ProjectLayout({
         }))}
       >
         <div className="flex h-screen bg-background">
-          <div className="sticky top-0 h-screen dark:bg-muted z-50">
+          <div className="sticky top-0 z-50 h-screen dark:bg-muted">
             <Sidebar
               project={project}
               initialModules={project.modules}
               initialEndpoints={project.endpoints}
             />
           </div>
-          <main className="flex-1 dark:bg-muted py-2.5 pr-2.5">
-            <div className="h-full rounded-md border overflow-auto bg-background">
+          <main className="flex-1 py-2.5 pr-2.5 dark:bg-muted">
+            <div className="h-full overflow-auto rounded-md border bg-background">
               {children}
             </div>
           </main>

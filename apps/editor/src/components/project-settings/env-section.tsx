@@ -1,5 +1,6 @@
 "use client";
 
+import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@integramind/api";
 import { Button } from "@integramind/ui/button";
 import {
@@ -12,7 +13,6 @@ import {
 import { toast } from "@integramind/ui/use-toast";
 import { Trash2Icon } from "lucide-react";
 import { useState } from "react";
-import { api } from "~/lib/trpc/client";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 import { DeleteAlertDialog } from "../delete-alert-dialog";
 

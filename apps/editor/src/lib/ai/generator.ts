@@ -1,5 +1,10 @@
 "use server";
 
+import {
+  FUNC_DEVELOPER_PROMPT,
+  FUNC_REQUIREMENTS_AGENT_PROMPT,
+  getGenerateFuncCodePrompt,
+} from "@/lib/ai/prompts";
 import { createOpenAI } from "@ai-sdk/openai";
 import { auth } from "@integramind/auth";
 import { and, db, eq } from "@integramind/db";
@@ -13,11 +18,6 @@ import { type CoreMessage, streamObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import {
-  FUNC_DEVELOPER_PROMPT,
-  FUNC_REQUIREMENTS_AGENT_PROMPT,
-  getGenerateFuncCodePrompt,
-} from "~/lib/ai/prompts";
 import { api } from "../trpc/server";
 import { assistantMessageRawContentToText } from "../utils";
 import { generateCode } from "./helpers";

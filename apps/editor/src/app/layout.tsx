@@ -6,14 +6,14 @@ import { Poppins } from "next/font/google";
 import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
 
+import { QueryProvider } from "@/components/query-client-provider";
+import { TRPCReactProvider } from "@/lib/trpc/client";
 import { auth } from "@integramind/auth";
 import { AuthProvider } from "@integramind/auth/provider";
 import { ThemeProvider } from "@integramind/ui/theme-provider";
 import { TooltipProvider } from "@integramind/ui/tooltip";
 import { ReactFlowProvider } from "@xyflow/react";
 import { headers } from "next/headers";
-import { QueryProvider } from "~/components/query-client-provider";
-import { TRPCReactProvider } from "~/lib/trpc/client";
 
 const poppins = Poppins({
   subsets: ["latin"],

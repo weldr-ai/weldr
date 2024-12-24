@@ -19,8 +19,8 @@ import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
 import { toast } from "@integramind/ui/use-toast";
 
+import { api } from "@/lib/trpc/client";
 import { insertProjectSchema } from "@integramind/shared/validators/projects";
-import { api } from "~/lib/trpc/client";
 
 export function CreateProjectForm() {
   const router = useRouter();
@@ -81,7 +81,7 @@ export function CreateProjectForm() {
               <FormControl>
                 <div className="relative">
                   <Input placeholder="Enter subdomain" {...field} />
-                  <span className="absolute right-2.5 top-[9px] text-xs text-muted-foreground">
+                  <span className="absolute top-[9px] right-2.5 text-muted-foreground text-xs">
                     .integramind.app
                   </span>
                 </div>

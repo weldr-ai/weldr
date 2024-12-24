@@ -1,4 +1,4 @@
-import { JoinWaitlistForm } from "~/components/join-waitlist-form";
+import { JoinWaitlistForm } from "@/components/join-waitlist-form";
 
 export function CTA() {
   return (

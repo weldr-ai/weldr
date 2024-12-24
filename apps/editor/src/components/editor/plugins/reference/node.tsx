@@ -9,9 +9,9 @@ import type {
 import { DecoratorNode } from "lexical";
 import type { ReactNode } from "react";
 
+import { ReferenceBadge } from "@/components/editor/reference-badge";
 import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import type { z } from "zod";
-import { ReferenceBadge } from "~/components/editor/reference-badge";
 
 export type SerializedReferenceNode = Spread<
   z.infer<typeof userMessageRawContentReferenceElementSchema>,

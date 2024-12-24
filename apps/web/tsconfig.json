@@ -1,21 +1,12 @@
 {
-  "extends": "@integramind/tsconfig/base.json",
+  "extends": "@integramind/tsconfig/next.json",
   "compilerOptions": {
-    "traceResolution": true,
-    "lib": ["es2022", "dom", "dom.iterable"],
-    "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "@/*": ["./src/*"]
     },
-    "plugins": [{ "name": "next" }],
-    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json",
-    "module": "esnext"
+    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"
   },
-  "include": [
-    ".",
-    ".next/types/**/*.ts",
-    "../../packages/ui/src/icons/linkedin-icon.tsx"
-  ],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }

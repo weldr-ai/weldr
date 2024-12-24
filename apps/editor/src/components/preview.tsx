@@ -26,7 +26,7 @@ export function Preview() {
                 <AppWindowIcon className="size-5" />
               </Button>
               <Button size="icon" variant="ghost">
-                <span className="text-[11px] font-bold">API</span>
+                <span className="font-bold text-[11px]">API</span>
               </Button>
               <Button size="icon" variant="ghost">
                 <WorkflowIcon className="size-5" />
@@ -47,7 +47,7 @@ export function Preview() {
 
       <main className="flex min-h-full w-full py-2.5 pr-2.5">
         <div className="flex size-full flex-col items-center justify-center gap-2 rounded-lg border bg-background">
-          <h1 className="text-2xl font-medium">IntegraMind</h1>
+          <h1 className="font-medium text-2xl">IntegraMind</h1>
           <span className="text-muted-foreground">
             Build • Automate • Accelerate
           </span>

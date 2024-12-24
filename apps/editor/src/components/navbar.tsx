@@ -1,5 +1,6 @@
 "use client";
 
+import { useCommandCenterStore } from "@/lib/store";
 import { Button } from "@integramind/ui/button";
 import {
   DropdownMenu,
@@ -11,7 +12,6 @@ import {
 import { LogoIcon } from "@integramind/ui/icons/logo-icon";
 import { BoxesIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
-import { useCommandCenterStore } from "~/lib/store";
 import { CreateProjectDialog } from "./create-project-dialog";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 
@@ -23,9 +23,9 @@ export function Navbar() {
     useState<boolean>(false);
 
   return (
-    <div className="flex items-center justify-center h-14 border-b">
+    <div className="flex h-14 items-center justify-center border-b">
       <DropdownMenu>
-        <div className="flex items-center justify-center size-14 border-r">
+        <div className="flex size-14 items-center justify-center border-r">
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
               <LogoIcon className="size-10" />
@@ -53,7 +53,7 @@ export function Navbar() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-xs text-destructive hover:text-destructive/90 focus:text-destructive/90"
+            className="text-destructive text-xs hover:text-destructive/90 focus:text-destructive/90"
             onClick={() => setDeleteAlertDialogOpen(true)}
           >
             <TrashIcon className="mr-3 size-4" />

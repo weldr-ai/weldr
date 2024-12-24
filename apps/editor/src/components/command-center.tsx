@@ -14,9 +14,9 @@ import {
   CommandList,
 } from "@integramind/ui/command";
 
+import { CreateProjectDialog } from "@/components/create-project-dialog";
+import { useCommandCenterStore } from "@/lib/store";
 import type { RouterOutputs } from "@integramind/api";
-import { CreateProjectDialog } from "~/components/create-project-dialog";
-import { useCommandCenterStore } from "~/lib/store";
 
 // TODO: the command center should be a complete center to navigate the project quickly
 export function CommandCenter({
@@ -50,8 +50,8 @@ export function CommandCenter({
           placeholder="Search projects..."
         />
         <CommandList className="h-96 w-[500px]">
-          <div className="flex items-center justify-between pt-2 px-3">
-            <span className="text-xs text-muted-foreground">Projects</span>
+          <div className="flex items-center justify-between px-3 pt-2">
+            <span className="text-muted-foreground text-xs">Projects</span>
             <Button
               className="size-6 rounded-sm bg-muted"
               onClick={() => {

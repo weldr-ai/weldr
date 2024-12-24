@@ -113,7 +113,7 @@ export default function ForgotPasswordPage() {
               </Button>
             </form>
           </Form>
-          <div className="flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground md:flex-row md:gap-0">
+          <div className="flex flex-col items-center justify-between gap-2 text-muted-foreground text-xs md:flex-row md:gap-0">
             <div>
               Remember your password?{" "}
               <Link

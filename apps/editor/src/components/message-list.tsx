@@ -59,7 +59,7 @@ export default function MessageList({
   );
 
   return (
-    <div className="flex flex-col w-full gap-4">
+    <div className="flex w-full flex-col gap-4">
       {allMessages.map((message, index) => {
         if (message.type === "message") {
           if (!message.rawContent.length) return null;
@@ -75,7 +75,7 @@ export default function MessageList({
           <Avatar className="size-6 rounded-md">
             <AvatarImage src="/logo-solid.svg" alt="Integrator" />
           </Avatar>
-          <span className="ml-3 text-sm text-muted-foreground">
+          <span className="ml-3 text-muted-foreground text-sm">
             Thinking
             <TypingDots />
           </span>
@@ -87,7 +87,7 @@ export default function MessageList({
           <Avatar className="size-6 rounded-md">
             <AvatarImage src="/logo-solid.svg" alt="Integrator" />
           </Avatar>
-          <span className="ml-3 text-sm text-muted-foreground">
+          <span className="ml-3 text-muted-foreground text-sm">
             Building
             <TypingDots />
           </span>
@@ -99,7 +99,7 @@ export default function MessageList({
           <Avatar className="size-6 rounded-md">
             <AvatarImage src="/logo-solid.svg" alt="Integrator" />
           </Avatar>
-          <span className="ml-3 text-sm text-muted-foreground">
+          <span className="ml-3 text-muted-foreground text-sm">
             Running your function
             <TypingDots />
           </span>
@@ -159,11 +159,11 @@ function TestRunItem({ testRun }: { testRun: TestRun }) {
       <Avatar className="size-6 rounded-md">
         <AvatarImage src="/logo-solid.svg" alt="Integrator" />
       </Avatar>
-      <div className="flex ml-3 w-full h-48 bg-background rounded-md">
-        <ScrollArea className="w-full max-h-48 px-1 py-2">
+      <div className="ml-3 flex h-48 w-full rounded-md bg-background">
+        <ScrollArea className="max-h-48 w-full px-1 py-2">
           <pre>
             {testRun.stderr && (
-              <p className="text-xs text-red-500">{testRun.stderr}</p>
+              <p className="text-red-500 text-xs">{testRun.stderr}</p>
             )}
             {testRun.stdout && <JsonViewer data={stdout ?? {}} />}
           </pre>

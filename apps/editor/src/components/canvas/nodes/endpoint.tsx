@@ -1,3 +1,12 @@
+import { DeleteAlertDialog } from "@/components/delete-alert-dialog";
+import { Editor } from "@/components/editor";
+import type { ReferenceNode } from "@/components/editor/plugins/reference/node";
+import MessageList from "@/components/message-list";
+import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
+import { generateFunc } from "@/lib/ai/generator";
+import { useFlowBuilderStore } from "@/lib/store";
+import { api } from "@/lib/trpc/client";
+import type { CanvasNodeProps } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { RouterOutputs } from "@integramind/api";
 import type {
@@ -64,15 +73,6 @@ import { debounce } from "perfect-debounce";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type UseFormReturn, useForm } from "react-hook-form";
 import { z } from "zod";
-import { DeleteAlertDialog } from "~/components/delete-alert-dialog";
-import { Editor } from "~/components/editor";
-import type { ReferenceNode } from "~/components/editor/plugins/reference/node";
-import MessageList from "~/components/message-list";
-import OpenApiEndpointDocs from "~/components/openapi-endpoint-docs";
-import { generateFunc } from "~/lib/ai/generator";
-import { useFlowBuilderStore } from "~/lib/store";
-import { api } from "~/lib/trpc/client";
-import type { CanvasNodeProps } from "~/types";
 
 const validationSchema = z.object({
   name: z.string().min(1, {
@@ -419,7 +419,7 @@ export const EndpointNode = memo(
                     <div className="flex items-center gap-2 text-xs">
                       <span
                         className={cn(
-                          "text-xs uppercase font-bold px-1.5 py-0.5 rounded-sm",
+                          "rounded-sm px-1.5 py-0.5 font-bold text-xs uppercase",
                           {
                             "bg-primary/30 text-primary":
                               data.httpMethod === "get",
@@ -429,7 +429,7 @@ export const EndpointNode = memo(
                               data.httpMethod === "put",
                             "bg-destructive/30 text-destructive":
                               data.httpMethod === "delete",
-                            "text-primary text-xs font-semibold p-0":
+                            "p-0 font-semibold text-primary text-xs":
                               !data.httpMethod,
                           },
                         )}
@@ -462,7 +462,7 @@ export const EndpointNode = memo(
               </ContextMenuItem>
               <ContextMenuSeparator />
               <ContextMenuItem
-                className="flex text-xs text-destructive hover:text-destructive focus:text-destructive/90"
+                className="flex text-destructive text-xs hover:text-destructive focus:text-destructive/90"
                 onClick={() => setDeleteAlertDialogOpen(true)}
               >
                 <TrashIcon className="mr-3 size-4" />
@@ -470,7 +470,7 @@ export const EndpointNode = memo(
               </ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
-          <ExpandableCardContent className="nowheel flex h-[600px] w-[60vw] flex-col -left-[calc(60vw-650px)]">
+          <ExpandableCardContent className="nowheel -left-[calc(60vw-650px)] flex h-[600px] w-[60vw] flex-col">
             <ResizablePanelGroup
               direction="horizontal"
               className="flex size-full"
@@ -480,10 +480,10 @@ export const EndpointNode = memo(
                 minSize={30}
                 className="flex flex-col"
               >
-                <div className="flex flex-col items-start justify-start p-4 border-b">
+                <div className="flex flex-col items-start justify-start border-b p-4">
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="text-primary text-xs font-semibold">
+                      <span className="font-semibold text-primary text-xs">
                         API
                       </span>
                       <span className="text-muted-foreground">Endpoint</span>
@@ -491,7 +491,7 @@ export const EndpointNode = memo(
                   </div>
                   <Form {...form}>
                     <form onChange={form.handleSubmit(onFormChange)}>
-                      <div className="flex flex-col gap-0 w-full">
+                      <div className="flex w-full flex-col gap-0">
                         <FormField
                           control={form.control}
                           name="name"
@@ -501,7 +501,7 @@ export const EndpointNode = memo(
                                 <Input
                                   {...field}
                                   autoComplete="off"
-                                  className="h-8 w-full border-none shadow-none dark:bg-muted p-0 text-base focus-visible:ring-0"
+                                  className="h-8 w-full border-none p-0 text-base shadow-none focus-visible:ring-0 dark:bg-muted"
                                   placeholder="Enter endpoint name"
                                 />
                               </FormControl>
@@ -537,11 +537,11 @@ export const EndpointNode = memo(
                                     <Input
                                       {...field}
                                       autoComplete="off"
-                                      className="h-8 border-none shadow-none dark:bg-muted p-0 text-xs focus-visible:ring-0"
+                                      className="h-8 border-none p-0 text-xs shadow-none focus-visible:ring-0 dark:bg-muted"
                                       placeholder="/api/v1/resource"
                                     />
                                   </div>
-                                  <div className="flex flex-col gap-1 text-xs text-destructive">
+                                  <div className="flex flex-col gap-1 text-destructive text-xs">
                                     {form.formState.errors.path && (
                                       <span>
                                         {form.formState.errors.path.message}
@@ -565,8 +565,8 @@ export const EndpointNode = memo(
                     </form>
                   </Form>
                 </div>
-                <div className="flex flex-col h-[calc(100dvh-492px)] p-4">
-                  <ScrollArea className="flex-grow mb-4" ref={scrollAreaRef}>
+                <div className="flex h-[calc(100dvh-492px)] flex-col p-4">
+                  <ScrollArea className="mb-4 flex-grow" ref={scrollAreaRef}>
                     <MessageList
                       messages={messages}
                       isThinking={isThinking}
@@ -593,11 +593,11 @@ export const EndpointNode = memo(
                       type="submit"
                       disabled={!userMessageContent || isGenerating}
                       size="sm"
-                      className="absolute bottom-2 right-2 disabled:bg-muted-foreground"
+                      className="absolute right-2 bottom-2 disabled:bg-muted-foreground"
                     >
                       Send
                       <span className="ml-1">
-                        <span className="px-1 py-0.5 bg-white/20 rounded-sm disabled:text-muted-foreground">
+                        <span className="rounded-sm bg-white/20 px-1 py-0.5 disabled:text-muted-foreground">
                           {typeof window !== "undefined" &&
                           window.navigator?.userAgent
                             .toLowerCase()
@@ -617,8 +617,8 @@ export const EndpointNode = memo(
               <ResizablePanel defaultSize={50} minSize={30}>
                 <ScrollArea className="h-full p-4">
                   {!data.httpMethod || !data.path || !data.name ? (
-                    <div className="flex items-center justify-center h-full">
-                      <span className="text-sm text-muted-foreground">
+                    <div className="flex h-full items-center justify-center">
+                      <span className="text-muted-foreground text-sm">
                         Develop your endpoint to see summary
                       </span>
                     </div>
@@ -698,7 +698,7 @@ export const EndpointNode = memo(
         </ExpandableCard>
         <Handle
           className={cn(
-            "border rounded-full bg-background p-1",
+            "rounded-full border bg-background p-1",
             showEdges ? "" : "opacity-0",
           )}
           type="target"
@@ -707,7 +707,7 @@ export const EndpointNode = memo(
         />
         <Handle
           className={cn(
-            "border rounded-full bg-background p-1",
+            "rounded-full border bg-background p-1",
             showEdges ? "" : "opacity-0",
           )}
           type="source"
@@ -747,15 +747,15 @@ const MethodBadgeSelect = ({
   const [isSelecting, setIsSelecting] = useState(false);
 
   const badgeClassNames = (methodValue?: string) =>
-    cn("uppercase font-bold px-1.5 py-0.5", {
-      "bg-primary/30 hover:bg-primary/40 text-primary":
+    cn("px-1.5 py-0.5 font-bold uppercase", {
+      "bg-primary/30 text-primary hover:bg-primary/40":
         methodValue?.toLowerCase() === "get",
-      "bg-success/30 hover:bg-success/40 text-success":
+      "bg-success/30 text-success hover:bg-success/40":
         methodValue?.toLowerCase() === "post",
-      "bg-warning/30 hover:bg-warning/40 text-warning":
+      "bg-warning/30 text-warning hover:bg-warning/40":
         methodValue?.toLowerCase() === "put" ||
         methodValue?.toLowerCase() === "patch",
-      "bg-destructive/30 hover:bg-destructive/40 text-destructive":
+      "bg-destructive/30 text-destructive hover:bg-destructive/40":
         methodValue?.toLowerCase() === "delete",
     });
 
@@ -781,10 +781,10 @@ const MethodBadgeSelect = ({
                 showIcon={false}
                 onClick={() => setIsSelecting(true)}
                 className={cn(
-                  "h-full px-2.5 py-0.5 rounded-sm border-none shadow-none focus:ring-0 text-xs items-center justify-center",
+                  "h-full items-center justify-center rounded-sm border-none px-2.5 py-0.5 text-xs shadow-none focus:ring-0",
                   value
                     ? badgeClassNames(value)
-                    : "bg-accent rounded-sm text-muted-foreground hover:bg-accent/80",
+                    : "rounded-sm bg-accent text-muted-foreground hover:bg-accent/80",
                 )}
               >
                 <SelectValue className="text-xs" placeholder="HTTP METHOD" />

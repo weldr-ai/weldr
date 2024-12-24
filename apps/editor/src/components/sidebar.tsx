@@ -2,6 +2,7 @@
 
 import { BoltIcon, BoxesIcon, Layers3Icon, PlusIcon } from "lucide-react";
 
+import { useCommandCenterStore } from "@/lib/store";
 import type { RouterOutputs } from "@integramind/api";
 import { Button, buttonVariants } from "@integramind/ui/button";
 import {
@@ -18,7 +19,6 @@ import {
 } from "@integramind/ui/tooltip";
 import Link from "next/link";
 import { useState } from "react";
-import { useCommandCenterStore } from "~/lib/store";
 import { AccountDropdownMenu } from "./account-dropdown-menu";
 import { CreateProjectDialog } from "./create-project-dialog";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
@@ -39,8 +39,8 @@ export function Sidebar({
     useState<boolean>(false);
 
   return (
-    <div className="flex flex-col w-14 size-full">
-      <div className="flex items-center justify-center h-14 border-b">
+    <div className="flex size-full w-14 flex-col">
+      <div className="flex h-14 items-center justify-center border-b">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -80,7 +80,7 @@ export function Sidebar({
           />
         </DropdownMenu>
       </div>
-      <div className="flex flex-col py-2.5 h-[calc(100dvh-56px)] items-center justify-between">
+      <div className="flex h-[calc(100dvh-56px)] flex-col items-center justify-between py-2.5">
         <div className="flex flex-col items-center space-y-2">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -90,7 +90,7 @@ export function Sidebar({
             </TooltipTrigger>
             <TooltipContent
               side="right"
-              className="bg-muted border relative -top-2"
+              className="-top-2 relative border bg-muted"
             >
               <p>Layers</p>
             </TooltipContent>
@@ -107,7 +107,7 @@ export function Sidebar({
             </TooltipTrigger>
             <TooltipContent
               side="right"
-              className="bg-muted border relative -top-2"
+              className="-top-2 relative border bg-muted"
             >
               <p>Settings</p>
             </TooltipContent>

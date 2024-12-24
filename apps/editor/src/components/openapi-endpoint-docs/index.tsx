@@ -1,6 +1,12 @@
 "use client";
 
 import {
+  type ParsedSchema,
+  getResponseSchema,
+  parseOpenApiEndpoint,
+  parseSchema,
+} from "@/lib/openapi-utils";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -12,12 +18,6 @@ import { cn } from "@integramind/ui/utils";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import type { OpenAPIV3 } from "openapi-types";
 import { useState } from "react";
-import {
-  type ParsedSchema,
-  getResponseSchema,
-  parseOpenApiEndpoint,
-  parseSchema,
-} from "~/lib/openapi-utils";
 
 interface OpenApiEndpointDocsProps {
   spec: OpenAPIV3.Document;
@@ -50,34 +50,34 @@ function SchemaField({
     (schema.type === "array" && schema.items);
 
   return (
-    <div className="flex items-baseline py-2 border-b last:border-0">
+    <div className="flex items-baseline border-b py-2 last:border-0">
       <div className="flex-1 space-y-1">
         <div className="flex flex-col gap-2">
           <div className="flex items-baseline gap-2">
             <span className="font-mono text-xs">{name}</span>
-            <span className="text-xs text-muted-foreground font-mono">
+            <span className="font-mono text-muted-foreground text-xs">
               {renderType()}
             </span>
             {required && (
-              <span className="text-xs text-destructive">required</span>
+              <span className="text-destructive text-xs">required</span>
             )}
             {schema.description && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-muted-foreground text-xs">
                 {schema.description}
               </span>
             )}
           </div>
           {hasChildren && (
-            <div className="flex justify-start items-center gap-2 text-xs">
+            <div className="flex items-center justify-start gap-2 text-xs">
               <Button
                 variant="outline"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="text-muted-foreground hover:text-foreground rounded-full"
+                className="rounded-full text-muted-foreground hover:text-foreground"
               >
                 {isExpanded ? (
-                  <MinusIcon className="size-3 mr-1" />
+                  <MinusIcon className="mr-1 size-3" />
                 ) : (
-                  <PlusIcon className="size-3 mr-1" />
+                  <PlusIcon className="mr-1 size-3" />
                 )}
                 {isExpanded ? "Hide" : "Show"} Child Attributes
               </Button>
@@ -139,7 +139,7 @@ export default function OpenApiEndpointDocs({
   const hasContent = parsedRequestBody || hasResponses || hasParameters;
 
   return (
-    <div className="w-full font-[system-ui] space-y-6">
+    <div className="w-full space-y-6 font-[system-ui]">
       {/* Header */}
       <div className="space-y-1">
         <h1 className="font-medium">{operation.summary || path}</h1>
@@ -149,12 +149,12 @@ export default function OpenApiEndpointDocs({
       {/* Method and Path */}
       <div className="flex items-center space-x-2">
         <Badge
-          className={cn("text-xs uppercase font-bold px-1.5 py-0.5", {
-            "bg-primary/30 hover:bg-primary/30 text-primary": method === "get",
-            "bg-success/30 hover:bg-success/30 text-success": method === "post",
-            "bg-warning/30 hover:bg-warning/30 text-warning":
+          className={cn("px-1.5 py-0.5 font-bold text-xs uppercase", {
+            "bg-primary/30 text-primary hover:bg-primary/30": method === "get",
+            "bg-success/30 text-success hover:bg-success/30": method === "post",
+            "bg-warning/30 text-warning hover:bg-warning/30":
               method === "put" || method === "patch",
-            "bg-destructive/30 hover:bg-destructive/30 text-destructive":
+            "bg-destructive/30 text-destructive hover:bg-destructive/30":
               method === "delete",
           })}
         >
@@ -175,23 +175,23 @@ export default function OpenApiEndpointDocs({
                   return (
                     <div
                       key={parameter.name}
-                      className="flex items-baseline py-2 border-b last:border-0"
+                      className="flex items-baseline border-b py-2 last:border-0"
                     >
                       <div className="flex-1 space-y-1">
                         <div className="flex items-baseline gap-2">
                           <span className="font-mono text-xs">
                             {parameter.name}
                           </span>
-                          <span className="text-xs text-muted-foreground font-mono">
+                          <span className="font-mono text-muted-foreground text-xs">
                             {parameter.in}
                           </span>
                           {parameter.required && (
-                            <span className="text-xs text-destructive">
+                            <span className="text-destructive text-xs">
                               required
                             </span>
                           )}
                           {parameter.description && (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-muted-foreground text-xs">
                               {parameter.description}
                             </span>
                           )}
@@ -206,10 +206,10 @@ export default function OpenApiEndpointDocs({
 
           {/* Request Body */}
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span>Body</span>
               {parsedRequestBody && (
-                <span className="items-center justify-center text-xs text-muted-foreground rounded-full bg-muted px-2 py-0.5">
+                <span className="items-center justify-center rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
                   application/json
                 </span>
               )}
@@ -256,7 +256,7 @@ export default function OpenApiEndpointDocs({
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="space-y-2">
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                           {responseObj.description}
                         </p>
                         <div>
