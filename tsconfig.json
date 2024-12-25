@@ -1,0 +1,36 @@
+{
+  "extends": "@integramind/tsconfig/base.json",
+  "files": [],
+  "references": [
+    {
+      "path": "apps/web"
+    },
+    {
+      "path": "apps/editor"
+    },
+    {
+      "path": "apps/deployer"
+    },
+    {
+      "path": "apps/engine"
+    },
+    {
+      "path": "packages/api"
+    },
+    {
+      "path": "packages/shared"
+    },
+    {
+      "path": "packages/ui"
+    },
+    {
+      "path": "packages/db"
+    },
+    {
+      "path": "packages/emails"
+    },
+    {
+      "path": "packages/auth"
+    }
+  ]
+}

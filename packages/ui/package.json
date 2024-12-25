@@ -5,10 +5,10 @@
   "type": "module",
   "exports": {
     "./*": "./src/*.tsx",
+    "./hooks/*": "./src/hooks/*.ts",
     "./icons/*": "./src/icons/*.tsx",
-    "./use-toast": "./src/use-toast.ts",
-    "./utils": "./src/utils.ts",
-    "./globals.css": "./src/styles/globals.css"
+    "./styles/globals.css": "./src/styles/globals.css",
+    "./utils": "./src/utils.ts"
   },
   "scripts": {
     "add-component": "pnpm dlx shadcn-ui add",

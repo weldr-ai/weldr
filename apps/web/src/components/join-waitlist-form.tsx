@@ -10,8 +10,8 @@ import type { z } from "zod";
 import { insertWaitlistSchema } from "@integramind/db/schema";
 import { Button } from "@integramind/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@integramind/ui/form";
+import { toast } from "@integramind/ui/hooks/use-toast";
 import { Input } from "@integramind/ui/input";
-import { toast } from "@integramind/ui/use-toast";
 
 import { joinWaitlist } from "@/lib/actions/waitlist";
 

@@ -39,6 +39,7 @@ import {
   FormItem,
   FormMessage,
 } from "@integramind/ui/form";
+import { toast } from "@integramind/ui/hooks/use-toast";
 import { Input } from "@integramind/ui/input";
 import {
   ResizableHandle,
@@ -53,7 +54,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@integramind/ui/select";
-import { toast } from "@integramind/ui/use-toast";
 import { cn } from "@integramind/ui/utils";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";

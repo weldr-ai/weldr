@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@integramind/ui/card";
-import { toast } from "@integramind/ui/use-toast";
+import { toast } from "@integramind/ui/hooks/use-toast";
 import { Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";

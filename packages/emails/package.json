@@ -8,17 +8,19 @@
   },
   "scripts": {
     "dev": "email dev -p 3004 --dir ./src/templates",
-    "export": "email export"
+    "export": "email export",
+    "clean": "git clean -xdf .turbo node_modules dist",
+    "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
     "@react-email/components": "0.0.28",
-    "react-email": "3.0.2",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "react-email": "3.0.2"
   },
   "devDependencies": {
-    "@integramind/tsconfig": "workspace:*",
     "@integramind/tailwind-config": "workspace:*",
+    "@integramind/tsconfig": "workspace:*",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "tailwindcss": "3.4.11",

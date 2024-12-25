@@ -3,10 +3,10 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "dev": "NODE_ENV=development pnpm with-env tsx --watch src/index.ts",
-    "start": "npx --yes listhen -w --open dist/index.js --port 3000",
-    "preview": "tsup src/index.ts --format esm --dts --minify && cp -r src/templates dist/templates && npx --yes listhen --open dist/index.js --port 3000",
-    "build": "tsup src/index.ts --format esm --dts --minify && cp -r src/templates dist/templates",
+    "build": "node esbuild.config.js",
+    "dev": "pnpm with-env tsx --watch src/index.ts",
+    "start": "npx --yes listhen --open dist/index.js --port 3000",
+    "preview": "pnpm run build && npx --yes listhen --open dist/index.js --port 3000",
     "clean": "git clean -xdf .turbo node_modules dist src/temp",
     "check-types": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
@@ -20,8 +20,8 @@
   "devDependencies": {
     "@types/node": "^22.2.0",
     "dotenv": "^16.4.5",
-    "tsup": "^8.2.4",
-    "tsx": "^4.19.2",
+    "esbuild": "^0.24.2",
+    "esbuild-plugin-copy": "^2.1.1",
     "typescript": "^5.7.2"
   },
   "packageManager": "pnpm@9.12.3"

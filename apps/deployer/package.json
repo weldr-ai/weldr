@@ -4,24 +4,25 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "build": "node esbuild.config.js",
     "dev": "pnpm with-env tsx --watch src/index.ts",
-    "start": "pnpm with-env npx --yes listhen -w --open dist/index.js --port 3000",
-    "preview": "pnpm with-env tsup src/index.ts --format esm --dts --minify && cp -r src/templates dist/templates && npx --yes listhen --open dist/index.js --port 3000",
-    "build": "pnpm with-env tsup src/index.ts --format esm --dts --minify && cp -r src/templates dist/templates",
+    "start": "npx --yes listhen --open dist/index.js --port 3000",
+    "preview": "pnpm run build && npx --yes listhen --open dist/index.js --port 3000",
     "clean": "git clean -xdf .turbo node_modules dist",
     "check-types": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
+    "axios": "^1.7.7",
     "h3": "^1.12.0",
-    "zod": "^3.23.8",
-    "axios": "^1.7.7"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@integramind/tsconfig": "workspace:*",
     "@types/node": "^22.2.0",
     "dotenv-cli": "^7.4.1",
-    "tsup": "^8.2.4",
+    "esbuild": "^0.24.2",
+    "esbuild-plugin-copy": "^2.1.1",
     "tsx": "^4.19.2"
   },
   "packageManager": "pnpm@9.12.3"

@@ -1,4 +1,4 @@
-import type { DatabaseStructure } from "@integramind/shared/integrations/types";
+import type { DatabaseStructure } from "@integramind/shared/integrations/postgres/types";
 import type {
   AssistantMessageRawContent,
   JsonSchema,

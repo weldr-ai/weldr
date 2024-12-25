@@ -1,5 +1,3 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
@@ -76,13 +74,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@integramind/ui/dropdown-menu";
+import { toast } from "@integramind/ui/hooks/use-toast";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
 import { TreeView } from "@integramind/ui/tree-view";
-import { toast } from "@integramind/ui/use-toast";
 import { createId } from "@paralleldrive/cuid2";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";

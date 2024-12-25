@@ -1,6 +1,7 @@
+import "server-only";
+
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
-import "server-only";
 
 const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,

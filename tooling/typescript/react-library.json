@@ -3,10 +3,6 @@
   "extends": "./base.json",
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
-    "jsx": "preserve",
-    "declaration": false,
-    "declarationMap": false
-  },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "dist"]
+    "jsx": "preserve"
+  }
 }

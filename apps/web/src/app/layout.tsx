@@ -1,4 +1,4 @@
-import "@integramind/ui/globals.css";
+import "@integramind/ui/styles/globals.css";
 
 import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";

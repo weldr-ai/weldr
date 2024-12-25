@@ -24,8 +24,3 @@ export const databaseTableSchema = z.object({
   columns: databaseTableColumnSchema.array(),
   relationships: databaseRelationshipSchema.array().optional(),
 });
-
-export type DbConfig = z.infer<typeof dbConfigSchema>;
-export type DatabaseStructure = z.infer<typeof databaseTableSchema>[];
-export type DatabaseTable = z.infer<typeof databaseTableSchema>;
-export type DatabaseRelationship = z.infer<typeof databaseRelationshipSchema>;

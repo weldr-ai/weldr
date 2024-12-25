@@ -30,13 +30,13 @@ import "@xyflow/react/dist/base.css";
 import { Button } from "@integramind/ui/button";
 
 import { api } from "@/lib/trpc/client";
+import { toast } from "@integramind/ui/hooks/use-toast";
 import { useTheme } from "@integramind/ui/theme-provider";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
-import { toast } from "@integramind/ui/use-toast";
 import { EndpointNode } from "./nodes/endpoint";
 import { FuncNode } from "./nodes/func";
 import { ModuleNode } from "./nodes/module";

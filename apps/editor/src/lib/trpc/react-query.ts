@@ -1,4 +1,4 @@
-import { toast } from "@integramind/ui/use-toast";
+import { toast } from "@integramind/ui/hooks/use-toast";
 import {
   QueryCache,
   QueryClient,

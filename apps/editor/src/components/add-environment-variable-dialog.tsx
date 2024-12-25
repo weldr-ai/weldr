@@ -20,8 +20,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@integramind/ui/form";
+import { toast } from "@integramind/ui/hooks/use-toast";
 import { Input } from "@integramind/ui/input";
-import { toast } from "@integramind/ui/use-toast";
 import { Loader2Icon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { databaseTableSchema } from "../integrations/types";
+import { databaseTableSchema } from "../integrations/postgres/validators";
 import { jsonSchema, npmDependencySchema, rawContentSchema } from "./common";
 import { conversationSchema } from "./conversations";
 import { funcDependencySchema } from "./func-dependencies";

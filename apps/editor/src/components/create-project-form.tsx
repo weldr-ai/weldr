@@ -15,9 +15,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@integramind/ui/form";
+import { toast } from "@integramind/ui/hooks/use-toast";
 import { Input } from "@integramind/ui/input";
 import { Textarea } from "@integramind/ui/textarea";
-import { toast } from "@integramind/ui/use-toast";
 
 import { api } from "@/lib/trpc/client";
 import { insertProjectSchema } from "@integramind/shared/validators/projects";

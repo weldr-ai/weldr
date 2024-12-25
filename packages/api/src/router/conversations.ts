@@ -7,11 +7,11 @@ import {
   resourceEnvironmentVariables,
   resources,
 } from "@integramind/db/schema";
-import { getDatabaseStructure } from "@integramind/shared/integrations/postgres/helpers";
+import { getDatabaseStructure } from "@integramind/shared/integrations/postgres";
 import type {
   DatabaseStructure,
   DbConfig,
-} from "@integramind/shared/integrations/types";
+} from "@integramind/shared/integrations/postgres/types";
 import type { UserMessageRawContent } from "@integramind/shared/types";
 import {
   assistantMessageRawContentSchema,

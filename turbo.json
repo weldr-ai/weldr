@@ -10,7 +10,8 @@
         "!.next/cache/**",
         "next-env.d.ts",
         ".output/**",
-        ".vercel/output/**"
+        ".vercel/output/**",
+        "dist/**"
       ]
     },
     "dev": {
@@ -22,7 +23,7 @@
       "cache": false
     },
     "check-types": {
-      "dependsOn": ["^check-types"],
+      "dependsOn": ["^build", "^check-types"],
       "outputs": ["node_modules/.cache/tsbuildinfo.json"]
     },
     "clean": {
@@ -32,6 +33,7 @@
       "cache": false
     },
     "start": {
+      "dependsOn": ["^build"],
       "cache": false
     },
     "preview": {

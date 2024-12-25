@@ -16,11 +16,16 @@
     "@integramind/db": "workspace:*",
     "@integramind/emails": "workspace:*",
     "better-auth": "0.8.9-beta.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "resend": "^3.3.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@integramind/tsconfig": "workspace:*",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "esbuild": "^0.24.2",
     "typescript": "^5.7.2"
   }
 }

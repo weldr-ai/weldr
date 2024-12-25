@@ -1,4 +1,4 @@
-import "@integramind/ui/globals.css";
+import "@integramind/ui/styles/globals.css";
 
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
@@ -8,6 +8,7 @@ import { cn } from "@integramind/ui/utils";
 
 import { QueryProvider } from "@/components/query-client-provider";
 import { TRPCReactProvider } from "@/lib/trpc/client";
+import { HydrateClient } from "@/lib/trpc/server";
 import { auth } from "@integramind/auth";
 import { AuthProvider } from "@integramind/auth/provider";
 import { ThemeProvider } from "@integramind/ui/theme-provider";
@@ -44,25 +45,27 @@ export default async function RootLayout({
         )}
         suppressHydrationWarning
       >
-        <AuthProvider user={session?.user ?? null}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <ReactFlowProvider>
-              <TRPCReactProvider>
-                <QueryProvider>
-                  <TooltipProvider delayDuration={200}>
-                    {children}
-                    <Toaster />
-                  </TooltipProvider>
-                </QueryProvider>
-              </TRPCReactProvider>
-            </ReactFlowProvider>
-          </ThemeProvider>
-        </AuthProvider>
+        <TRPCReactProvider>
+          <QueryProvider>
+            <HydrateClient>
+              <AuthProvider user={session?.user ?? null}>
+                <ThemeProvider
+                  attribute="class"
+                  defaultTheme="system"
+                  enableSystem
+                  disableTransitionOnChange
+                >
+                  <ReactFlowProvider>
+                    <TooltipProvider delayDuration={200}>
+                      {children}
+                      <Toaster />
+                    </TooltipProvider>
+                  </ReactFlowProvider>
+                </ThemeProvider>
+              </AuthProvider>
+            </HydrateClient>
+          </QueryProvider>
+        </TRPCReactProvider>
       </body>
     </html>
   );

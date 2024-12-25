@@ -1,6 +1,6 @@
 "use client";
 
-import { toast } from "@integramind/ui/use-toast";
+import { toast } from "@integramind/ui/hooks/use-toast";
 
 import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@integramind/api";
