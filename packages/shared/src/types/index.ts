@@ -20,7 +20,6 @@ import type {
   integrationSchema,
   integrationTypeSchema,
 } from "../validators/integrations";
-import type { moduleSchema } from "../validators/modules";
 import type { projectSchema } from "../validators/projects";
 import type { resourceSchema } from "../validators/resources";
 import type { testRunSchema } from "../validators/test-runs";
@@ -101,8 +100,6 @@ export interface FlatInputSchema {
 }
 
 export type Project = z.infer<typeof projectSchema>;
-
-export type Module = z.infer<typeof moduleSchema>;
 
 export type UserMessageRawContent = z.infer<typeof userMessageRawContentSchema>;
 export type AssistantMessageRawContent = z.infer<

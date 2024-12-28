@@ -136,12 +136,6 @@ export const projectsRouter = {
                 npmDependencies: false,
               },
               with: {
-                module: {
-                  columns: {
-                    id: true,
-                    name: true,
-                  },
-                },
                 testRuns: true,
                 conversation: {
                   with: {
@@ -154,7 +148,6 @@ export const projectsRouter = {
                 },
               },
             },
-            modules: true,
             resources: {
               columns: {
                 id: true,
@@ -288,12 +281,6 @@ export const projectsRouter = {
               npmDependencies: false,
             },
             with: {
-              module: {
-                columns: {
-                  id: true,
-                  name: true,
-                },
-              },
               testRuns: true,
               conversation: {
                 with: {
@@ -306,7 +293,6 @@ export const projectsRouter = {
               },
             },
           },
-          modules: true,
         },
       });
 
@@ -329,25 +315,11 @@ export const projectsRouter = {
         });
       }
 
-      for (const module of project.modules) {
-        result.push({
-          type: "module",
-          id: module.id,
-          dragHandle: ".drag-handle",
-          position: { x: module.positionX ?? 0, y: module.positionY ?? 0 },
-          width: module.width ?? 600,
-          height: module.height ?? 400,
-          data: module,
-        });
-      }
-
       for (const func of project.funcs) {
         result.push({
           type: "func",
           id: func.id,
           dragHandle: ".drag-handle",
-          parentId: func.moduleId,
-          extent: "parent",
           position: { x: func.positionX ?? 0, y: func.positionY ?? 0 },
           data: {
             ...func,

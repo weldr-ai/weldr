@@ -22,8 +22,10 @@ export function ReferenceBadge({ reference, className }: ReferenceBadgeProps) {
         renderDataTypeIcon(reference.dataType)
       ) : reference.referenceType === "resource" ? (
         <>
-          {reference.resourceType === "postgres" && (
+          {reference.resourceType === "postgres" ? (
             <PostgresIcon className="mr-1 size-3 text-primary" />
+          ) : (
+            <></>
           )}
         </>
       ) : reference.referenceType === "database-column" ? (

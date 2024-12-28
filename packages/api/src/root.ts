@@ -6,7 +6,6 @@ import { funcDependenciesRouter } from "./router/func-dependencies";
 import { funcInternalGraphRouter } from "./router/func-internal-graph";
 import { funcsRouter } from "./router/funcs";
 import { integrationsRouter } from "./router/integrations";
-import { modulesRouter } from "./router/modules";
 import { projectsRouter } from "./router/projects";
 import { resourcesRouter } from "./router/resources";
 import { testRunsRouter } from "./router/test-runs";
@@ -19,7 +18,6 @@ export const appRouter = createTRPCRouter({
   resources: resourcesRouter,
   projects: projectsRouter,
   endpoints: endpointsRouter,
-  modules: modulesRouter,
   engine: engineRouter,
   conversations: conversationsRouter,
   integrations: integrationsRouter,

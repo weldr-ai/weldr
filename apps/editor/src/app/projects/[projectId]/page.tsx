@@ -5,7 +5,7 @@ import { Canvas } from "@/components/canvas";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
 
-export default async function ModulePage({
+export default async function ProjectPage({
   params,
 }: {
   params: Promise<{ projectId: string }>;
@@ -16,12 +16,6 @@ export default async function ModulePage({
     const project = await api.projects.byId({
       id: projectId,
     });
-
-    // const initialEdges: CanvasEdge[] = nodes.edges.map((edge) => ({
-    //   id: `${edge.source}-${edge.target}`,
-    //   source: edge.source,
-    //   target: edge.target,
-    // }));
 
     const initialNodes: CanvasNode[] = [];
 
@@ -35,24 +29,10 @@ export default async function ModulePage({
       });
     }
 
-    for (const module of project.modules) {
-      initialNodes.push({
-        type: "module",
-        id: module.id,
-        dragHandle: ".drag-handle",
-        position: { x: module.positionX ?? 0, y: module.positionY ?? 0 },
-        width: module.width ?? 600,
-        height: module.height ?? 400,
-        data: module,
-      });
-    }
-
     for (const func of project.funcs) {
       initialNodes.push({
         type: "func",
         id: func.id,
-        parentId: func.moduleId,
-        extent: "parent",
         dragHandle: ".drag-handle",
         position: { x: func.positionX ?? 0, y: func.positionY ?? 0 },
         data: func,

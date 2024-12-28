@@ -84,7 +84,6 @@ export const jsonSchema: z.ZodType<JsonSchema> = z.lazy(() =>
 export const functionReferenceSchema = z.object({
   id: z.string().describe("The ID of the function"),
   name: z.string().describe("The name of the function"),
-  moduleName: z.string().describe("The name of the module"),
 });
 
 export const resourceReferenceSchema = z.object({
@@ -259,15 +258,14 @@ export const funcRequirementsMessageSchema = z.object({
               "Multiple representative examples showing: typical usage patterns, edge cases, error scenarios, and complex use cases. Each example should include complete input values and expected output or error response.",
             ),
           resources: z
-            .object({
-              id: z.string().describe("The ID of the resource"),
-              name: z.string().describe("The name of the resource"),
-              type: z
-                .enum(["postgres", "mysql"])
-                .describe("The type of the resource"),
-              metadata: z.discriminatedUnion("type", [
-                z.object({
-                  type: z.literal("postgres"),
+            .discriminatedUnion("type", [
+              z
+                .object({
+                  id: z.string().describe("The ID of the resource"),
+                  name: z.string().describe("The name of the resource"),
+                  type: z
+                    .literal("postgres")
+                    .describe("The type of the resource"),
                   tables: z
                     .object({
                       name: z.string().describe("The name of the table"),
@@ -298,12 +296,14 @@ export const funcRequirementsMessageSchema = z.object({
                     })
                     .array()
                     .describe("The tables of the database"),
-                }),
-              ]),
-            })
+                })
+                .describe("The resource of the postgres database"),
+            ])
             .array()
             .optional()
-            .describe("The list of resources used in the function."),
+            .describe(
+              "The list of resources used in the function. PLEASE NOTE THAT RESOURCES WILL BE STATED IN THE CONTEXT. DON'T HALLUCINATE RESOURCES.",
+            ),
           helperFunctionIds: z
             .string()
             .array()

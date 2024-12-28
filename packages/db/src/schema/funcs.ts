@@ -17,7 +17,7 @@ import {
 import { users } from "./auth";
 import { conversations } from "./conversations";
 import { funcInternalGraph } from "./func-internal-graph";
-import { modules } from "./modules";
+import { integrations } from "./integrations";
 import { projects } from "./projects";
 import { testRuns } from "./test-runs";
 
@@ -47,23 +47,19 @@ export const funcs = pgTable(
       .notNull(),
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
     conversationId: text("conversation_id").references(() => conversations.id),
-    moduleId: text("module_id")
-      .references(() => modules.id, { onDelete: "cascade" })
-      .notNull(),
     projectId: text("project_id").references(() => projects.id, {
+      onDelete: "cascade",
+    }),
+    integrationId: text("integration_id").references(() => integrations.id, {
       onDelete: "cascade",
     }),
   },
   (t) => ({
-    uniqueName: uniqueIndex("unique_name").on(t.name, t.moduleId),
+    uniqueName: uniqueIndex("unique_name").on(t.name, t.projectId),
   }),
 );
 
 export const funcRelations = relations(funcs, ({ one, many }) => ({
-  module: one(modules, {
-    fields: [funcs.moduleId],
-    references: [modules.id],
-  }),
   project: one(projects, {
     fields: [funcs.projectId],
     references: [projects.id],

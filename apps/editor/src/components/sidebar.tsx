@@ -25,12 +25,8 @@ import { DeleteAlertDialog } from "./delete-alert-dialog";
 
 export function Sidebar({
   project,
-  initialModules,
-  initialEndpoints,
 }: {
   project: RouterOutputs["projects"]["byId"];
-  initialModules: RouterOutputs["modules"]["list"];
-  initialEndpoints: RouterOutputs["endpoints"]["list"];
 }) {
   const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
   const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =

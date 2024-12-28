@@ -1,7 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import { pgEnum, pgTable, text } from "drizzle-orm/pg-core";
-import { modules } from "./modules";
+import { funcs } from "./funcs";
 import { resources } from "./resources";
 
 export const integrationTypes = pgEnum("integration_type", [
@@ -29,5 +29,5 @@ export const integrations = pgTable("integrations", {
 
 export const integrationsRelations = relations(integrations, ({ many }) => ({
   resources: many(resources),
-  modules: many(modules),
+  funcs: many(funcs),
 }));

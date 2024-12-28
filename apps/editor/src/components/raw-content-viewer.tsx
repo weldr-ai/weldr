@@ -25,10 +25,7 @@ export function RawContentViewer({
         text += item.value;
       } else {
         const placeholder = `:::REF${references.length}:::`;
-        references.push({
-          referenceType: item.referenceType,
-          name: item.name,
-        });
+        references.push(item);
         text += placeholder;
       }
     }

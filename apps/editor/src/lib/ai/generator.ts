@@ -175,7 +175,6 @@ export async function generateFunc({
           });
 
           const generatedFuncCodePrompt = await getGenerateFuncCodePrompt({
-            currentModuleId: funcData.moduleId,
             name: funcData?.name ?? "",
             docs,
             resources: object.message.content.resources,

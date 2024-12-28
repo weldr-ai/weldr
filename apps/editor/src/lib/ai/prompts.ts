@@ -1,12 +1,11 @@
 import "server-only";
 
-import { db, eq, inArray } from "@integramind/db";
-import { funcs, modules } from "@integramind/db/schema";
+import { db, inArray } from "@integramind/db";
+import { funcs } from "@integramind/db/schema";
 import type { NpmDependency } from "@integramind/shared/types";
 import { pascalToKebabCase } from "@integramind/shared/utils";
 import type { funcResourceSchema } from "@integramind/shared/validators/funcs";
 import type { z } from "zod";
-import { getDeclarationNames } from "../utils";
 
 export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gathering agent specializing in defining detailed specifications for functions through interactive dialogue. Your task is to assist users in clarifying their requirements, and ultimately provide a structured summary of the function specifications.
 
@@ -47,7 +46,7 @@ export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gather
   "type": "message",
   "content": [
     { "type": "text", "value": "[Introductory statement or question]" },
-    { "type": "reference", "referenceType": "[input/database/database-table/database-column]", "id": "[resourceId]", "name": "[resourceName]" },
+    { "type": "reference", "referenceType": "[input/resource/database-table/database-column]", "id": "[resourceId]", "name": "[resourceName]" },
     { "type": "text", "value": "[Additional clarification or prompt]" }
   ]
 }
@@ -107,17 +106,21 @@ export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gather
 **User Prompt:**
 
 ## Context
-Postgres database \`CRM\` (ID: iwwj97jcoae613735mkzjtj2)
-Table \`customers\`
-Columns:
-- \`customer_id\` (integer)
-- \`first_name\` (text)
-- \`last_name\` (text)
-- \`email\` (text)
-- \`phone\` (text)
-- \`address\` (text)
 
-**Helper Functions:**
+### Resources
+
+- Postgres database \`CRM\` (ID: iwwj97jcoae613735mkzjtj2)
+  - Table \`customers\`
+    - Columns:
+      - \`customer_id\` (integer)
+      - \`first_name\` (text)
+      - \`last_name\` (text)
+      - \`email\` (text)
+      - \`phone\` (text)
+      - \`address\` (text)
+
+### Helper Functions
+
 - \`query\` (ID: adluv5r0hxfp6230dvuqxdvd)
 A type-safe function that executes a PostgreSQL query with parameterized values to prevent SQL injection. Takes a SQL query string with numbered placeholders ($1, $2) and an array of values to safely insert into those placeholders.
 
@@ -192,7 +195,7 @@ I want to filter the customers table based on any combination of optional filter
       { "type": "text", "value": "This function filters the " },
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
       { "type": "text", "value": " table in the " },
-      { "type": "reference", "referenceType": "database", "name": "CRM" },
+      { "type": "reference", "referenceType": "resource", "name": "CRM" },
       { "type": "text", "value": " database based on any combination of optional filter fields: " },
       { "type": "reference", "referenceType": "variable", "name": "customerId", "dataType": "integer" },
       { "type": "text", "value": ", " },
@@ -258,23 +261,27 @@ Use the provided input and output schemas to define TypeScript types and impleme
 
 # Steps
 
-1. **Define TypeScript Types:**
+1. **Import any helper functions and resources:**
+   - Import any helper functions and resources explicitly stated within the requirements.
+   - Never assume the presence of any other helper functions, files, or imports.
+
+2. **Define TypeScript Types:**
    - When defining types for inputs or outputs, make sure to name them after the function name followed by \`Input\` or \`Result\`.
 
-2. **Declare Function Signature:**
+3. **Declare Function Signature:**
    - Specify parameter definitions and return types.
 
-3. **Implement Function Logic:**
+4. **Implement Function Logic:**
    - Implement as per detailed logic instructions involving database or API operations.
    - Use provided helper functions if specified.
 
-4. **Handle Errors and Edge Cases:**
+5. **Handle Errors and Edge Cases:**
    - Address specified edge cases and incorporate necessary error handling.
 
-5. **Ensure Export Compliance:**
+6. **Ensure Export Compliance:**
    - Export the function using the \`export\` keyword, skipping default exports.
 
-6. **Node Compliance:**
+7. **Node Compliance:**
    - Confirm compatibility with Node version 20 or above.
 
 # Output Format
@@ -411,7 +418,6 @@ const metrics = calculatePortfolioMetrics(transactions);
 # Note
 
 - Provide the completed TypeScript function implementation, adhering to the outlined requirements and utilizing any specified helper functions or resources.
-- Make sure to not override any of the declarations in the current module.
 - Only use the resources, helper functions, and imports explicitly stated within the requirements. Never assume the presence of any other helper functions, files, or imports.
 - You can only use node.js standard library, unless we explicitly tell you to use something else.
 - You should only return the code as a string. No extra comments or formatting.
@@ -420,14 +426,12 @@ const metrics = calculatePortfolioMetrics(transactions);
 - Don't hallucinate.`;
 
 export const getGenerateFuncCodePrompt = async ({
-  currentModuleId,
   name,
   docs,
   resources,
   helperFunctionIds,
   npmDependencies,
 }: {
-  currentModuleId: string;
   name: string;
   docs: string;
   resources?: z.infer<typeof funcResourceSchema>[];
@@ -436,39 +440,16 @@ export const getGenerateFuncCodePrompt = async ({
 }) => {
   const helperFunctions = await db.query.funcs.findMany({
     where: inArray(funcs.id, helperFunctionIds ?? []),
-    with: {
-      module: {
-        columns: {
-          id: true,
-          name: true,
-        },
-      },
-    },
   });
-
-  let moduleFile = "";
-
-  const module = await db.query.modules.findFirst({
-    where: eq(modules.id, currentModuleId),
-    with: {
-      funcs: true,
-    },
-  });
-
-  for (const func of module?.funcs ?? []) {
-    moduleFile += func.code ?? "";
-  }
-
-  const declarationNames = getDeclarationNames(moduleFile);
 
   return `## Context
 ${
   resources && resources.length > 0
     ? `### Resources\n${resources
         .map((resource) => {
-          switch (resource.metadata.type) {
+          switch (resource.type) {
             case "postgres": {
-              const tables = resource.metadata.tables
+              const tables = resource.tables
                 .map(
                   (table) =>
                     `- Table \`${table.name}\`
@@ -495,13 +476,10 @@ ${
   helperFunctions && helperFunctions.length > 0
     ? `### Helper Functions\n${helperFunctions
         .map((helperFunction) => {
-          if (!helperFunction.module.name) {
-            throw new Error("Helper function module name is required");
+          if (!helperFunction.name) {
+            throw new Error("Helper function name is required");
           }
-          const importInfo =
-            helperFunction.moduleId !== currentModuleId
-              ? `Available in \`@/lib/${pascalToKebabCase(helperFunction.module.name)}\`\n`
-              : "Available in current module can be used directly\n";
+          const importInfo = `Available in \`@/lib/${pascalToKebabCase(helperFunction.name)}\`\n`;
           return `- \`${helperFunction.name}\`
 How to import: ${importInfo}
 Docs:\n${helperFunction.docs}`;
@@ -515,10 +493,6 @@ ${
     ? `### NPM Dependencies\n${npmDependencies.map((dep) => `- ${dep.name}`).join("\n")}`
     : ""
 }
-
-## Current Declarations
-Here are all the declarations in the current module:
-${declarationNames.map((name) => `- \`${name}\``).join("\n")}
 
 ## Request
 Implement a function called \`${name}\` that has the following specifications:

@@ -242,6 +242,7 @@ export const FuncNode = memo(
           return acc;
         }, [] as UserMessageRawContent);
 
+        console.log(userMessageRawContent);
         setUserMessageRawContent(userMessageRawContent);
         setUserMessageContent(text);
       });
@@ -396,7 +397,6 @@ export const FuncNode = memo(
           createdAt: new Date(),
         };
 
-        await apiUtils.modules.byId.invalidate({ id: data.moduleId });
         await apiUtils.funcs.byId.invalidate({ id: data.id });
         await apiUtils.funcDependencies.available.invalidate();
         setMessages([...newMessages, funcBuiltSuccessfullyMessage]);
@@ -418,8 +418,7 @@ export const FuncNode = memo(
           !func.name ||
           !func.rawDescription ||
           !func.behavior ||
-          !func.errors ||
-          !func.module.name
+          !func.errors
         ) {
           return acc;
         }
@@ -428,11 +427,7 @@ export const FuncNode = memo(
           type: "reference",
           referenceType: "function",
           id: func.id,
-          name:
-            data.moduleId === func.module.id
-              ? func.name
-              : `${func.module.name}.${func.name}`,
-          moduleName: func.module.name,
+          name: func.name,
         });
 
         return acc;

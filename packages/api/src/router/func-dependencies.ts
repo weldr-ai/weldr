@@ -1,5 +1,5 @@
 import { eq } from "@integramind/db";
-import { funcDependencies, funcs, modules } from "@integramind/db/schema";
+import { funcDependencies, funcs, projects } from "@integramind/db/schema";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
@@ -92,14 +92,6 @@ export const funcDependenciesRouter = {
           code: false,
           npmDependencies: false,
         },
-        with: {
-          module: {
-            columns: {
-              id: true,
-              name: true,
-            },
-          },
-        },
       });
 
       return availableFunctions.filter(
@@ -111,11 +103,11 @@ export const funcDependenciesRouter = {
           !existingDeps.some((d) => d.dependencyFuncId === f.id), // Not already a dependency
       );
     }),
-  byModuleId: protectedProcedure
+  byProjectId: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const module = await ctx.db.query.modules.findFirst({
-        where: eq(modules.id, input.id),
+      const project = await ctx.db.query.projects.findFirst({
+        where: eq(projects.id, input.id),
         with: {
           funcs: {
             columns: {
@@ -125,17 +117,17 @@ export const funcDependenciesRouter = {
         },
       });
 
-      if (!module) {
+      if (!project) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Module not found",
+          message: "Project not found",
         });
       }
 
-      const moduleFuncIds = module.funcs.map((f) => f.id);
+      const projectFuncIds = project.funcs.map((f) => f.id);
 
       const funcDependencies = await ctx.db.query.funcDependencies.findMany({
-        where: (table, { inArray }) => inArray(table.funcId, moduleFuncIds),
+        where: (table, { inArray }) => inArray(table.funcId, projectFuncIds),
         with: {
           func: {
             columns: {
@@ -155,8 +147,8 @@ export const funcDependenciesRouter = {
       return funcDependencies.reduce(
         (acc, dep) => {
           if (
-            moduleFuncIds.includes(dep.dependencyFunc.id) &&
-            moduleFuncIds.includes(dep.func.id)
+            projectFuncIds.includes(dep.dependencyFunc.id) &&
+            projectFuncIds.includes(dep.func.id)
           ) {
             acc.push({
               source: dep.func.id,

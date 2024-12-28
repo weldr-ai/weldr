@@ -7,6 +7,7 @@ import {
   testRuns,
 } from "@integramind/db/schema";
 import type { Func, NpmDependency } from "@integramind/shared/types";
+import { pascalToKebabCase } from "@integramind/shared/utils";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";
@@ -55,14 +56,11 @@ export const engineRouter = {
           with: {
             integration: {
               with: {
-                modules: {
-                  with: {
-                    funcs: {
-                      columns: {
-                        code: true,
-                        npmDependencies: true,
-                      },
-                    },
+                funcs: {
+                  columns: {
+                    name: true,
+                    code: true,
+                    npmDependencies: true,
                   },
                 },
               },
@@ -70,37 +68,22 @@ export const engineRouter = {
           },
         });
 
-        modules.push(
-          ...result.flatMap((resource) =>
-            resource.integration.modules.reduce<
-              { path: string; content: string }[]
-            >(
-              (acc, module) =>
-                acc.concat(
-                  module.funcs.reduce<{ path: string; content: string }[]>(
-                    (funcAcc, func) => {
-                      if (module.path && func.code) {
-                        funcAcc.push({ path: module.path, content: func.code });
-                      }
-                      return funcAcc;
-                    },
-                    [],
-                  ),
-                ),
-              [],
-            ),
-          ),
-        );
+        for (const resource of result) {
+          for (const func of resource.integration.funcs) {
+            if (func.name && func.code) {
+              modules.push({
+                path: pascalToKebabCase(func.name),
+                content: func.code,
+              });
+            }
+          }
+        }
 
-        npmDependencies.push(
-          ...result.flatMap((resource) =>
-            resource.integration.modules.flatMap((module) =>
-              module.funcs.flatMap(
-                (func) => (func.npmDependencies ?? []) as NpmDependency[],
-              ),
-            ),
-          ),
-        );
+        for (const func of result.flatMap(
+          (resource) => resource.integration.funcs,
+        )) {
+          npmDependencies.push(...(func.npmDependencies ?? []));
+        }
       }
 
       const environmentVariablesMap: Record<string, string> = {};

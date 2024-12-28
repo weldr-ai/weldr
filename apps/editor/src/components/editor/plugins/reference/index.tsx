@@ -87,12 +87,7 @@ export function ReferencesPlugin({
             new ReferenceOption({
               reference,
               options: {
-                keywords: [
-                  reference.name,
-                  reference.moduleName,
-                  "function",
-                  "helper",
-                ],
+                keywords: [reference.name, "function", "helper"],
                 onSelect: () => {},
               },
             }),

@@ -1,11 +1,6 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
-import {
-  conversations,
-  funcs,
-  modules,
-  testRuns,
-} from "@integramind/db/schema";
+import { conversations, funcs, testRuns } from "@integramind/db/schema";
 
 import { type SQL, and, eq } from "@integramind/db";
 import {
@@ -34,17 +29,6 @@ export const funcsRouter = {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to create conversation",
-            });
-          }
-
-          const module = await tx.query.modules.findFirst({
-            where: eq(modules.id, input.moduleId),
-          });
-
-          if (!module) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Module not found",
             });
           }
 
@@ -97,12 +81,6 @@ export const funcsRouter = {
           npmDependencies: false,
         },
         with: {
-          module: {
-            columns: {
-              id: true,
-              name: true,
-            },
-          },
           testRuns: true,
           conversation: {
             with: {
@@ -151,12 +129,12 @@ export const funcsRouter = {
       if (input.payload.name) {
         let isUnique = false;
 
-        if (existingFunc.moduleId) {
+        if (existingFunc.projectId) {
           isUnique =
             (await ctx.db.query.funcs.findFirst({
               where: and(
                 eq(funcs.name, input.payload.name),
-                eq(funcs.moduleId, existingFunc.moduleId),
+                eq(funcs.projectId, existingFunc.projectId),
               ),
             })) !== undefined;
         }
@@ -164,30 +142,36 @@ export const funcsRouter = {
         if (isUnique && existingFunc.id !== input.where.id) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Function name already exists in this module",
+            message: "Function name already exists in this project",
           });
         }
       }
 
-      const updatedFunc = await ctx.db
-        .update(funcs)
-        .set(input.payload)
-        .where(
-          and(
-            eq(funcs.id, existingFunc.id),
-            eq(funcs.userId, ctx.session.user.id),
-          ),
-        )
-        .returning({ id: funcs.id });
+      const updatedFunc = (
+        await ctx.db
+          .update(funcs)
+          .set(input.payload)
+          .where(
+            and(
+              eq(funcs.id, existingFunc.id),
+              eq(funcs.userId, ctx.session.user.id),
+            ),
+          )
+          .returning()
+      )[0];
 
-      if (!updatedFunc[0]) {
+      if (!updatedFunc) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to update function",
         });
       }
 
-      return updatedFunc[0];
+      return {
+        ...updatedFunc,
+        code: undefined,
+        canRun: Boolean(updatedFunc.name && updatedFunc.code),
+      };
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -255,14 +239,6 @@ export const funcsRouter = {
           code: false,
           docs: false,
           npmDependencies: false,
-        },
-        with: {
-          module: {
-            columns: {
-              id: true,
-              name: true,
-            },
-          },
         },
       });
 

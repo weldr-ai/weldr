@@ -29,15 +29,14 @@ interface ResolvedFuncReference {
   id: string;
   name: string;
   docs: string;
-  moduleName: string;
 }
 
 interface ResolvedDatabaseReference {
   type: "reference";
-  referenceType: "database";
+  referenceType: "resource";
   id: string;
   name: string;
-  databaseType: "postgres" | "mysql";
+  resourceType: "postgres" | "mysql";
   helperFunctions: {
     id: string;
     name: string;
@@ -143,14 +142,9 @@ export const conversationsRouter = {
       }
 
       if (input.role === "user") {
-        let currentModuleId: string | null = null;
-
         if (input.funcId) {
           const funcResult = await ctx.db.query.funcs.findFirst({
             where: eq(funcs.id, input.funcId),
-            columns: {
-              moduleId: true,
-            },
           });
 
           if (!funcResult) {
@@ -159,13 +153,10 @@ export const conversationsRouter = {
               message: "Function not found",
             });
           }
-
-          currentModuleId = funcResult.moduleId;
         }
 
         const resolvedRawContent = await resolveRawContent(
           input.rawContent,
-          currentModuleId,
           ctx,
         );
 
@@ -183,7 +174,6 @@ export const conversationsRouter = {
 
 async function resolveRawContent(
   rawMessageContent: UserMessageRawContent,
-  currentModuleId: string | null,
   ctx: {
     db: typeof db;
     session: Session;
@@ -219,11 +209,7 @@ async function resolveRawContent(
               references.push(resolvedReferencesCache.get(element.id)!);
               break;
             }
-            const resolvedReference = await resolveFuncReference(
-              element,
-              currentModuleId,
-              ctx,
-            );
+            const resolvedReference = await resolveFuncReference(element, ctx);
             resolvedReferencesCache.set(element.id, resolvedReference);
             references.push(resolvedReference);
             break;
@@ -304,8 +290,8 @@ function userMessageRawContentToText(
       case "function": {
         return `function-${element.id}`;
       }
-      case "database": {
-        return `db-${element.id}`;
+      case "resource": {
+        return `resource-${element.id}`;
       }
       case "database-table": {
         return `db-table-${element.name}-${element.database.id}`;
@@ -342,8 +328,8 @@ function userMessageRawContentToText(
                 const dbInfo = {
                   ...element.database,
                   type: "reference" as const,
-                  referenceType: "database" as const,
-                  databaseType: "postgres" as const,
+                  referenceType: "resource" as const,
+                  resourceType: "postgres" as const,
                 };
                 const { text, helpers } = referenceToText(dbInfo, seenElements);
                 if (text) context.push(text);
@@ -388,9 +374,9 @@ function referenceToText(
       };
     }
 
-    case "database": {
+    case "resource": {
       const text = `### ${
-        reference.databaseType === "postgres" ? "PostgreSQL" : "MySQL"
+        reference.resourceType === "postgres" ? "PostgreSQL" : "MySQL"
       } Database \`${reference.name}\` (ID: ${reference.id})`;
 
       const helpers =
@@ -472,21 +458,12 @@ async function resolveFuncReference(
     type: "reference";
     referenceType: "function";
   },
-  currentModuleId: string | null,
   ctx: {
     db: typeof db;
   },
 ): Promise<ResolvedFuncReference> {
   const func = await ctx.db.query.funcs.findFirst({
     where: eq(funcs.id, reference.id),
-    with: {
-      module: {
-        columns: {
-          id: true,
-          name: true,
-        },
-      },
-    },
   });
 
   if (!func) {
@@ -496,7 +473,7 @@ async function resolveFuncReference(
     });
   }
 
-  if (!func.name || !func.docs || !func.module.name) {
+  if (!func.name || !func.docs) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Function is missing required fields",
@@ -509,7 +486,6 @@ async function resolveFuncReference(
     id: func.id,
     name: func.name,
     docs: func.docs,
-    moduleName: func.module.name,
   };
 }
 
@@ -532,8 +508,8 @@ async function resolveResourceReference({
     id: resourceId,
     type: "reference",
     name: resourceName,
-    referenceType: "database",
-    databaseType: resourceType,
+    referenceType: "resource",
+    resourceType: resourceType,
     helperFunctions,
   };
 }
@@ -573,19 +549,20 @@ async function resolveResourceTableReference({
 
   return {
     type: "reference",
-    name: resource.name,
+    name: tableName,
     referenceType: "database-table",
     database: {
       id: resourceId,
       name: resource.name,
-      databaseType: resource.metadata.type,
+      resourceType: resource.metadata.type,
       helperFunctions,
     },
     columns:
-      resource.metadata.tables.find((table) => table.name === tableName)
-        ?.columns ?? [],
+      resource.metadata.tables.find(
+        (table) => table.name === tableName.split(".")[1],
+      )?.columns ?? [],
     relationships: resource.metadata.tables.find(
-      (table) => table.name === tableName,
+      (table) => table.name === tableName.split(".")[1],
     )?.relationships,
   };
 }
@@ -633,18 +610,20 @@ async function resolveResourceColumnReference({
     name: columnName,
     dataType: columnDataType,
     table: {
-      name: tableName,
+      // biome-ignore lint/style/noNonNullAssertion: <explanation>
+      name: tableName.split(".")[1]!,
       columns:
-        resource.metadata.tables.find((table) => table.name === tableName)
-          ?.columns ?? [],
+        resource.metadata.tables.find(
+          (table) => table.name === tableName.split(".")[1],
+        )?.columns ?? [],
       relationships: resource.metadata.tables.find(
-        (table) => table.name === tableName,
+        (table) => table.name === tableName.split(".")[1],
       )?.relationships,
     },
     database: {
       id: resourceId,
       name: resource.name,
-      databaseType: resource.metadata.type,
+      resourceType: resource.metadata.type,
       helperFunctions,
     },
   };
@@ -662,11 +641,7 @@ async function getResourceHelperFunctions(
     with: {
       integration: {
         with: {
-          modules: {
-            with: {
-              funcs: true,
-            },
-          },
+          funcs: true,
         },
       },
     },
@@ -679,17 +654,12 @@ async function getResourceHelperFunctions(
     });
   }
 
-  const helperFunctions = resourceResult.integration.modules
-    .flatMap((module) =>
-      module.funcs.map((func) => {
-        if (func.name && func.docs) {
-          return {
-            ...func,
-            moduleName: module.name,
-          };
-        }
-      }),
-    )
+  const helperFunctions = resourceResult.integration.funcs
+    .map((func) => {
+      if (func.name && func.docs) {
+        return func;
+      }
+    })
     .filter((func) => func !== undefined);
 
   return helperFunctions

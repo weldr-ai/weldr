@@ -1,5 +1,5 @@
 {
-  "id": "d2cfd6c4-f555-40e5-8f3d-f3dadb733918",
+  "id": "ccaa2f42-d48a-45bb-87aa-c9f623323e61",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -589,137 +589,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.modules": {
-      "name": "modules",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "path": {
-          "name": "path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "position_x": {
-          "name": "position_x",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 0
-        },
-        "position_y": {
-          "name": "position_y",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 0
-        },
-        "width": {
-          "name": "width",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 600
-        },
-        "height": {
-          "name": "height",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 400
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "integration_id": {
-          "name": "integration_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "modules_project_id_projects_id_fk": {
-          "name": "modules_project_id_projects_id_fk",
-          "tableFrom": "modules",
-          "tableTo": "projects",
-          "columnsFrom": ["project_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "modules_user_id_users_id_fk": {
-          "name": "modules_user_id_users_id_fk",
-          "tableFrom": "modules",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "modules_integration_id_integrations_id_fk": {
-          "name": "modules_integration_id_integrations_id_fk",
-          "tableFrom": "modules",
-          "tableTo": "integrations",
-          "columnsFrom": ["integration_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "modules_project_id_name_unique": {
-          "name": "modules_project_id_name_unique",
-          "nullsNotDistinct": false,
-          "columns": ["project_id", "name"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.integrations": {
       "name": "integrations",
       "schema": "",
@@ -895,14 +764,14 @@
           "primaryKey": false,
           "notNull": false
         },
-        "module_id": {
-          "name": "module_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "project_id": {
           "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "integration_id": {
+          "name": "integration_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -919,7 +788,7 @@
               "nulls": "last"
             },
             {
-              "expression": "module_id",
+              "expression": "project_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -950,20 +819,20 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "funcs_module_id_modules_id_fk": {
-          "name": "funcs_module_id_modules_id_fk",
-          "tableFrom": "funcs",
-          "tableTo": "modules",
-          "columnsFrom": ["module_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "funcs_project_id_projects_id_fk": {
           "name": "funcs_project_id_projects_id_fk",
           "tableFrom": "funcs",
           "tableTo": "projects",
           "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "funcs_integration_id_integrations_id_fk": {
+          "name": "funcs_integration_id_integrations_id_fk",
+          "tableFrom": "funcs",
+          "tableTo": "integrations",
+          "columnsFrom": ["integration_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"

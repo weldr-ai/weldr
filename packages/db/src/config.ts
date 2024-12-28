@@ -7,7 +7,6 @@ export default {
     "./src/schema/auth.ts",
     "./src/schema/conversations.ts",
     "./src/schema/endpoints.ts",
-    "./src/schema/modules.ts",
     "./src/schema/integrations.ts",
     "./src/schema/funcs.ts",
     "./src/schema/resources.ts",

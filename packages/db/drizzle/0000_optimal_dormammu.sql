@@ -89,23 +89,6 @@ CREATE TABLE IF NOT EXISTS "endpoints" (
 	CONSTRAINT "endpoints_project_id_path_http_method_unique" UNIQUE("project_id","path","http_method")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "modules" (
-	"id" text PRIMARY KEY NOT NULL,
-	"name" text,
-	"description" text,
-	"path" text,
-	"position_x" integer DEFAULT 0,
-	"position_y" integer DEFAULT 0,
-	"width" integer DEFAULT 600,
-	"height" integer DEFAULT 400,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"project_id" text,
-	"user_id" text,
-	"integration_id" text,
-	CONSTRAINT "modules_project_id_name_unique" UNIQUE("project_id","name")
-);
---> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "integrations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"type" "integration_type" NOT NULL,
@@ -135,8 +118,8 @@ CREATE TABLE IF NOT EXISTS "funcs" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"user_id" text,
 	"conversation_id" text,
-	"module_id" text NOT NULL,
-	"project_id" text
+	"project_id" text,
+	"integration_id" text
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "resource_environment_variables" (
@@ -269,24 +252,6 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "modules" ADD CONSTRAINT "modules_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "modules" ADD CONSTRAINT "modules_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "modules" ADD CONSTRAINT "modules_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "funcs" ADD CONSTRAINT "funcs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -299,13 +264,13 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "funcs" ADD CONSTRAINT "funcs_module_id_modules_id_fk" FOREIGN KEY ("module_id") REFERENCES "public"."modules"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "funcs" ADD CONSTRAINT "funcs_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "funcs" ADD CONSTRAINT "funcs_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "funcs" ADD CONSTRAINT "funcs_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -400,7 +365,7 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_name" ON "funcs" USING btree ("name","module_id");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "unique_name" ON "funcs" USING btree ("name","project_id");--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "unique_dependency" ON "func_dependencies" USING btree ("func_id","dependency_func_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "func_idx" ON "func_dependencies" USING btree ("func_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "dependency_idx" ON "func_dependencies" USING btree ("dependency_func_id");--> statement-breakpoint

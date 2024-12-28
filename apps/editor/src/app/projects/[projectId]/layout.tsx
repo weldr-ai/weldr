@@ -32,11 +32,7 @@ export default async function ProjectLayout({
       >
         <div className="flex h-screen bg-background">
           <div className="sticky top-0 z-50 h-screen dark:bg-muted">
-            <Sidebar
-              project={project}
-              initialModules={project.modules}
-              initialEndpoints={project.endpoints}
-            />
+            <Sidebar project={project} />
           </div>
           <main className="flex-1 py-2.5 pr-2.5 dark:bg-muted">
             <div className="h-full overflow-auto rounded-md border bg-background">

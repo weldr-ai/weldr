@@ -6,7 +6,6 @@ import { conversationMessages, conversations } from "./conversations";
 import { endpoints } from "./endpoints";
 import { environmentVariables } from "./environment-variables";
 import { funcs } from "./funcs";
-import { modules } from "./modules";
 import { projects } from "./projects";
 import { resources } from "./resources";
 
@@ -25,7 +24,6 @@ export const users = pgTable("users", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   projects: many(projects),
-  modules: many(modules),
   funcs: many(funcs),
   resources: many(resources),
   environmentVariables: many(environmentVariables),

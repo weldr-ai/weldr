@@ -6,16 +6,14 @@ import { funcDependencySchema } from "./func-dependencies";
 import { funcInternalGraphConnectionSchema } from "./func-internal-graph";
 import { testRunSchema } from "./test-runs";
 
-export const funcResourceSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  metadata: z.discriminatedUnion("type", [
-    z.object({
-      type: z.literal("postgres"),
-      tables: databaseTableSchema.array(),
-    }),
-  ]),
-});
+export const funcResourceSchema = z.discriminatedUnion("type", [
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    type: z.literal("postgres"),
+    tables: databaseTableSchema.array(),
+  }),
+]);
 
 export const funcSchema = z.object({
   id: z.string(),
@@ -36,7 +34,6 @@ export const funcSchema = z.object({
   npmDependencies: npmDependencySchema.array().optional().nullable(),
   userId: z.string().nullable(),
   conversationId: z.string().nullable(),
-  moduleId: z.string(),
   canRun: z.boolean().optional(),
   projectId: z.string(),
   conversation: conversationSchema,
@@ -49,7 +46,6 @@ export const insertFuncSchema = z.object({
   id: z.string().cuid2(),
   positionX: z.number(),
   positionY: z.number(),
-  moduleId: z.string().cuid2(),
   projectId: z.string().cuid2(),
 });
 

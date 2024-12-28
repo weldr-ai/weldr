@@ -8,7 +8,6 @@ interface PrimarySidebarState {
     | "endpoints"
     | "workflows"
     | "functions"
-    | "modules"
     | null;
 }
 
@@ -20,7 +19,6 @@ interface PrimarySidebarAction {
       | "endpoints"
       | "workflows"
       | "functions"
-      | "modules"
       | null,
   ) => void;
 }
