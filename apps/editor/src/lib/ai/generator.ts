@@ -257,6 +257,14 @@ async function compileDocs({
   errors: string | undefined;
   examples: string;
 }) {
+  const convertMarkdownListToDocBlock = (markdownList: string) => {
+    return `* ${markdownList
+      .replace(/^-\s+`([^`]+)`:\s+(.+)$/gm, "@throws {Error} $2")
+      .replace(/^-\s+(.+)$/gm, "@throws {Error} $1")
+      .split("\n")
+      .join("\n* ")}`;
+  };
+
   return `${description}
 
 **Signature:**
@@ -269,7 +277,7 @@ ${parameters}
 ${returns}
 
 **Behavior:**
-${behavior}${errors ? `\n\n**Errors:**\n${errors}` : ""}
+${behavior}${errors ? `\n\n**Errors:**\n${convertMarkdownListToDocBlock(errors)}` : ""}
 
 **Examples:**
 ${examples}`;

@@ -7,7 +7,7 @@ import {
   testRuns,
 } from "@integramind/db/schema";
 
-import { type SQL, and, eq, inArray } from "@integramind/db";
+import { type SQL, and, eq } from "@integramind/db";
 import {
   insertFuncSchema,
   updateFuncSchema,
@@ -79,36 +79,6 @@ export const funcsRouter = {
           message: "Failed to create function",
         });
       }
-    }),
-  byIdsWithSecrets: protectedProcedure
-    .input(z.object({ ids: z.string().array() }))
-    .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query.funcs.findMany({
-        where: and(inArray(funcs.id, input.ids)),
-        with: {
-          module: {
-            columns: {
-              id: true,
-              name: true,
-            },
-          },
-          conversation: {
-            with: {
-              messages: {
-                columns: {
-                  content: false,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      return result.map((func) => ({
-        ...func,
-        code: undefined,
-        canRun: Boolean(func.name && func.code),
-      }));
     }),
   byId: protectedProcedure
     .input(

@@ -1,10 +1,12 @@
 import "server-only";
 
+import { db, eq, inArray } from "@integramind/db";
+import { funcs, modules } from "@integramind/db/schema";
 import type { NpmDependency } from "@integramind/shared/types";
 import { pascalToKebabCase } from "@integramind/shared/utils";
 import type { funcResourceSchema } from "@integramind/shared/validators/funcs";
 import type { z } from "zod";
-import { api } from "../trpc/server";
+import { getDeclarationNames } from "../utils";
 
 export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gathering agent specializing in defining detailed specifications for functions through interactive dialogue. Your task is to assist users in clarifying their requirements, and ultimately provide a structured summary of the function specifications.
 
@@ -64,9 +66,9 @@ export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gather
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
       { "type": "text", "value": " based on provided inputs and returns filtered results." }
     ],
-    "signature": "[Function signature]",
-    "parameters": "[Function parameters]",
-    "returns": "[Function return value]",
+    "signature": "[Function signature (valid TypeScript code block)]",
+    "parameters": "[Function parameters (valid TypeScript code block)]",
+    "returns": "[Function return value (valid TypeScript code block)]",
     "behavior": [
       { "type": "text", "value": "1. Validate input parameters\n" },
       { "type": "text", "value": "2. Query " },
@@ -77,7 +79,7 @@ export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gather
       { "type": "text", "value": "4. Return formatted results" }
     ],
     "errors": "[Error handling strategies (markdown list)]",
-    "examples": "[Examples of the function]",
+    "examples": "[Examples of the function (valid TypeScript code block)]",
     "resources": [
       {
         "id": "[resourceId]",
@@ -206,8 +208,8 @@ I want to filter the customers table based on any combination of optional filter
       { "type": "text", "value": ". Returns all matching records." }
     ],
     "signature": "async function filterCustomers(filters: FilterCustomersInput): Promise<FilterCustomersResult>",
-    "parameters": "filters: {\n  customerId?: number;    // Optional customer ID filter\n  firstName?: string;    // Optional first name filter\n  lastName?: string;     // Optional last name filter\n  email?: string;        // Optional email filter\n  phone?: string;        // Optional phone filter\n  address?: string;      // Optional address filter\n}",
-    "returns": "Promise<FilterCustomersResult> where FilterCustomersResult = {\n  customerId: number;\n  firstName: string;\n  lastName: string;\n  email: string;\n  phone: string;\n  address: string;\n}[]",
+    "parameters": "/**\n * @param filters - The filter criteria\n * @type {FilterCustomersInput} - Filter parameters object\n */\nfilters: FilterCustomersInput = {\n  customerId?: number;    // Optional customer ID filter\n  firstName?: string;    // Optional first name filter\n  lastName?: string;     // Optional last name filter\n  email?: string;        // Optional email filter\n  phone?: string;        // Optional phone filter\n  address?: string;      // Optional address filter\n}",
+    "returns": "/**\n * @returns {Promise<FilterCustomersResult>} Array of customer records matching the filter criteria\n * @typedef {Object} FilterCustomersResult\n * @property {number} customerId - Unique identifier of the customer\n * @property {string} firstName - Customer's first name\n * @property {string} lastName - Customer's last name \n * @property {string} email - Customer's email address\n * @property {string} phone - Customer's phone number\n * @property {string} address - Customer's physical address\n */\nPromise<FilterCustomersResult> where FilterCustomersResult = {\n  customerId: number;\n  firstName: string;\n  lastName: string;\n  email: string;\n  phone: string;\n  address: string;\n}[]",
     "behavior": [
       { "type": "text", "value": "The function filters " },
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
@@ -215,8 +217,8 @@ I want to filter the customers table based on any combination of optional filter
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
       { "type": "text", "value": " records\n   - Returns empty array if no matches found\n   - Maintains original column casing from database" }
     ],
-    "errors": "- \`Failed to connect to database\`: Thrown when the database connection cannot be established\n- \`Database query failed: {error}\`: Thrown when the database query execution fails\n- \`Invalid customerId: must be a positive integer\`: Thrown when the customerId parameter is not a positive integer\n- \`Invalid firstName: must be a string\`: Thrown when the firstName parameter is not a valid string\n- \`Invalid lastName: must be a string\`: Thrown when the lastName parameter is not a valid string\n- \`Invalid email: must be a string\`: Thrown when the email parameter is not a valid string\n- \`Invalid phone: must be a string\`: Thrown when the phone parameter is not a valid string\n- \`Invalid address: must be a string\`: Thrown when the address parameter is not a valid string",
-    "examples": "// Example 1: Filter by customer ID\nconst result1 = await filterCustomers({ customerId: 123 });\n// Returns:\n// [{\n//   customerId: 123,\n//   firstName: 'John',\n//   lastName: 'Smith', \n//   email: 'john.smith@email.com',\n//   phone: '555-0123',\n//   address: '123 Main St'\n// }]\n\n// Example 2: Filter by partial name match (case-insensitive)\nconst result2 = await filterCustomers({ firstName: 'jo', lastName: 'sm' });\n// Returns:\n// [{\n//   customerId: 123,\n//   firstName: 'John',\n//   lastName: 'Smith',\n//   email: 'john.smith@email.com', \n//   phone: '555-0123',\n//   address: '123 Main St'\n// },\n// {\n//   customerId: 456,\n//   firstName: 'Joseph',\n//   lastName: 'Smalls',\n//   email: 'joe.smalls@email.com',\n//   phone: '555-4567',\n//   address: '789 Oak Rd'\n// }]\n\n// Example 3: No matches found\nconst result3 = await filterCustomers({ email: 'nonexistent@email.com' });\n// Returns: []\n\n// Example 4: Invalid input throws error\ntry {\n  const result4 = await filterCustomers({ customerId: -1 });\n} catch (error) {\n  // Error: Invalid customerId: must be a positive integer\n}\n\n// Example 5: Complex filter combining multiple fields\nconst result5 = await filterCustomers({\n  lastName: 'Smith',\n  address: 'Main St',\n  phone: '555'\n});\n// Returns:\n// [{\n//   customerId: 123,\n//   firstName: 'John', \n//   lastName: 'Smith',\n//   email: 'john.smith@email.com',\n//   phone: '555-0123',\n//   address: '123 Main St'\n// }]",
+    "errors": "- \`Failed to connect to database\`: Thrown when the database connection cannot be established\n- \`Database query failed\`: Thrown when the database query execution fails\n- \`Invalid customerId: must be a positive integer\`: Thrown when the customerId parameter is not a positive integer\n- \`Invalid firstName: must be a string\`: Thrown when the firstName parameter is not a valid string\n- \`Invalid lastName: must be a string\`: Thrown when the lastName parameter is not a valid string\n- \`Invalid email: must be a string\`: Thrown when the email parameter is not a valid string\n- \`Invalid phone: must be a string\`: Thrown when the phone parameter is not a valid string\n- \`Invalid address: must be a string\`: Thrown when the address parameter is not a valid string",
+    "examples": "/**\n * @example\n * // Filter by customer ID\n * const result1 = await filterCustomers({ customerId: 123 });\n * // Returns:\n * // [{\n * //   customerId: 123,\n * //   firstName: 'John',\n * //   lastName: 'Smith', \n * //   email: 'john.smith@email.com',\n * //   phone: '555-0123',\n * //   address: '123 Main St'\n * // }]\n *\n * @example\n * // Filter by partial name match (case-insensitive)\n * const result2 = await filterCustomers({ firstName: 'jo', lastName: 'sm' });\n * // Returns:\n * // [{\n * //   customerId: 123,\n * //   firstName: 'John',\n * //   lastName: 'Smith',\n * //   email: 'john.smith@email.com', \n * //   phone: '555-0123',\n * //   address: '123 Main St'\n * // },\n * // {\n * //   customerId: 456,\n * //   firstName: 'Joseph',\n * //   lastName: 'Smalls',\n * //   email: 'joe.smalls@email.com',\n * //   phone: '555-4567',\n * //   address: '789 Oak Rd'\n * // }]\n *\n * @example\n * // No matches found\n * const result3 = await filterCustomers({ email: 'nonexistent@email.com' });\n * // Returns: []\n *\n * @example\n * // Invalid input throws error\n * try {\n *   const result4 = await filterCustomers({ customerId: -1 });\n * } catch (error) {\n *   // Error: Invalid customerId: must be a positive integer\n * }\n *\n * @example\n * // Complex filter combining multiple fields\n * const result5 = await filterCustomers({\n *   lastName: 'Smith',\n *   address: 'Main St',\n *   phone: '555'\n * });\n * // Returns:\n * // [{\n * //   customerId: 123,\n * //   firstName: 'John', \n * //   lastName: 'Smith',\n * //   email: 'john.smith@email.com',\n * //   phone: '555-0123',\n * //   address: '123 Main St'\n * // }]\n */",
     "resources": [
       {
         "id": "iwwj97jcoae613735mkzjtj2",
@@ -257,7 +259,7 @@ Use the provided input and output schemas to define TypeScript types and impleme
 # Steps
 
 1. **Define TypeScript Types:**
-   - Use the input and output schemas to define TypeScript types.
+   - When defining types for inputs or outputs, make sure to name them after the function name followed by \`Input\` or \`Result\`.
 
 2. **Declare Function Signature:**
    - Specify parameter definitions and return types.
@@ -408,6 +410,8 @@ const metrics = calculatePortfolioMetrics(transactions);
 
 # Note
 
+- Provide the completed TypeScript function implementation, adhering to the outlined requirements and utilizing any specified helper functions or resources.
+- Make sure to not override any of the declarations in the current module.
 - Only use the resources, helper functions, and imports explicitly stated within the requirements. Never assume the presence of any other helper functions, files, or imports.
 - You can only use node.js standard library, unless we explicitly tell you to use something else.
 - You should only return the code as a string. No extra comments or formatting.
@@ -430,9 +434,32 @@ export const getGenerateFuncCodePrompt = async ({
   helperFunctionIds: string[] | undefined;
   npmDependencies: NpmDependency[] | undefined;
 }) => {
-  const helperFunctions = await api.funcs.byIdsWithSecrets({
-    ids: helperFunctionIds ?? [],
+  const helperFunctions = await db.query.funcs.findMany({
+    where: inArray(funcs.id, helperFunctionIds ?? []),
+    with: {
+      module: {
+        columns: {
+          id: true,
+          name: true,
+        },
+      },
+    },
   });
+
+  let moduleFile = "";
+
+  const module = await db.query.modules.findFirst({
+    where: eq(modules.id, currentModuleId),
+    with: {
+      funcs: true,
+    },
+  });
+
+  for (const func of module?.funcs ?? []) {
+    moduleFile += func.code ?? "";
+  }
+
+  const declarationNames = getDeclarationNames(moduleFile);
 
   return `## Context
 ${
@@ -468,10 +495,12 @@ ${
   helperFunctions && helperFunctions.length > 0
     ? `### Helper Functions\n${helperFunctions
         .map((helperFunction) => {
+          if (!helperFunction.module.name) {
+            throw new Error("Helper function module name is required");
+          }
           const importInfo =
             helperFunction.moduleId !== currentModuleId
-              ? // FIXME: This is a temporary fix to make the prompt work.
-                `Available in \`@/lib/${pascalToKebabCase(helperFunction.module.name ?? "")}\`\n`
+              ? `Available in \`@/lib/${pascalToKebabCase(helperFunction.module.name)}\`\n`
               : "Available in current module can be used directly\n";
           return `- \`${helperFunction.name}\`
 How to import: ${importInfo}
@@ -487,10 +516,11 @@ ${
     : ""
 }
 
+## Current Declarations
+Here are all the declarations in the current module:
+${declarationNames.map((name) => `- \`${name}\``).join("\n")}
+
 ## Request
 Implement a function called \`${name}\` that has the following specifications:
-${JSON.stringify(docs)}
-
-# Remember:
-- Provide the completed TypeScript function implementation, adhering to the outlined requirements and utilizing any specified helper functions or resources.`;
+${JSON.stringify(docs)}`;
 };

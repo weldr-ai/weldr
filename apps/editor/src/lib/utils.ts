@@ -6,6 +6,7 @@ import type {
 import { getDataTypeIcon } from "@integramind/shared/utils";
 import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import type { TreeDataItem } from "@integramind/ui/tree-view";
+import * as ts from "typescript";
 import type { z } from "zod";
 
 export function jsonSchemaToTreeData(
@@ -123,4 +124,29 @@ export function getResourceReferences(
   }
 
   return references;
+}
+
+export function getDeclarationNames(code: string): string[] {
+  const node = ts.createSourceFile("", code, ts.ScriptTarget.Latest);
+  const names: string[] = [];
+
+  for (const statement of node.statements) {
+    if (ts.isVariableStatement(statement)) {
+      for (const decl of statement.declarationList.declarations) {
+        if (decl.name && ts.isIdentifier(decl.name)) {
+          names.push(decl.name.text);
+        }
+      }
+    } else if (ts.isFunctionDeclaration(statement) && statement.name) {
+      names.push(statement.name.text);
+    } else if (ts.isClassDeclaration(statement) && statement.name) {
+      names.push(statement.name.text);
+    } else if (ts.isInterfaceDeclaration(statement)) {
+      names.push(statement.name.text);
+    } else if (ts.isTypeAliasDeclaration(statement)) {
+      names.push(statement.name.text);
+    }
+  }
+
+  return names;
 }
