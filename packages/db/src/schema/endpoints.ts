@@ -1,3 +1,4 @@
+import type { OpenApiEndpointSpec } from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
@@ -19,8 +20,8 @@ export const httpMethods = pgEnum("http_methods", [
   "get",
   "post",
   "put",
-  "delete",
   "patch",
+  "delete",
 ]);
 
 export const endpoints = pgTable(
@@ -29,12 +30,13 @@ export const endpoints = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => createId()),
-    name: text("name"),
+    title: text("title"),
+    summary: text("summary"),
     description: text("description"),
-    httpMethod: httpMethods("http_method"),
+    method: httpMethods("method"),
     path: text("path"),
     code: jsonb("code"),
-    openApiSpec: jsonb("open_api_spec"),
+    openApiSpec: jsonb("open_api_spec").$type<OpenApiEndpointSpec>(),
     positionX: integer("position_x").default(0),
     positionY: integer("position_y").default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -53,7 +55,7 @@ export const endpoints = pgTable(
       .notNull(),
   },
   (table) => ({
-    uniqueEndpoint: unique().on(table.projectId, table.path, table.httpMethod),
+    uniqueEndpoint: unique().on(table.projectId, table.path, table.method),
   }),
 );
 

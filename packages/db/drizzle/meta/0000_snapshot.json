@@ -1,5 +1,5 @@
 {
-  "id": "ccaa2f42-d48a-45bb-87aa-c9f623323e61",
+  "id": "69cfe9d6-568a-44db-9225-08f90ccf9108",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -463,8 +463,14 @@
           "primaryKey": true,
           "notNull": true
         },
-        "name": {
-          "name": "name",
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "summary": {
+          "name": "summary",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -475,8 +481,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "http_method": {
-          "name": "http_method",
+        "method": {
+          "name": "method",
           "type": "http_methods",
           "typeSchema": "public",
           "primaryKey": false,
@@ -579,10 +585,10 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "endpoints_project_id_path_http_method_unique": {
-          "name": "endpoints_project_id_path_http_method_unique",
+        "endpoints_project_id_path_method_unique": {
+          "name": "endpoints_project_id_path_method_unique",
           "nullsNotDistinct": false,
-          "columns": ["project_id", "path", "http_method"]
+          "columns": ["project_id", "path", "method"]
         }
       },
       "policies": {},
@@ -706,8 +712,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "npm_dependencies": {
-          "name": "npm_dependencies",
+        "packages": {
+          "name": "packages",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -1487,7 +1493,7 @@
     "public.http_methods": {
       "name": "http_methods",
       "schema": "public",
-      "values": ["get", "post", "put", "delete", "patch"]
+      "values": ["get", "post", "put", "patch", "delete"]
     },
     "public.integration_category": {
       "name": "integration_category",

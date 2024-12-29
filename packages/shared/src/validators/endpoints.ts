@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { conversationSchema } from "./conversations";
 import { funcSchema } from "./funcs";
+import { openApiEndpointSpecSchema } from "./openapi";
 
 export const httpMethodsSchema = z.enum([
   "get",
@@ -25,12 +26,13 @@ export const endpointPathSchema = z
 
 export const endpointSchema = z.object({
   id: z.string().cuid2(),
-  name: z.string().min(1).trim(),
+  title: z.string().min(1).trim(),
+  summary: z.string().optional(),
   description: z.string().optional(),
-  httpMethod: httpMethodsSchema,
+  method: httpMethodsSchema,
   path: endpointPathSchema,
   code: z.string().optional(),
-  openApiSpec: z.record(z.string(), z.unknown()).optional(),
+  openApiSpec: openApiEndpointSpecSchema.optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   projectId: z.string().cuid2(),
@@ -51,19 +53,20 @@ export const updateEndpointSchema = z.object({
     id: z.string(),
   }),
   payload: z.object({
-    name: z
+    title: z
       .string()
-      .min(1, { message: "Name is required" })
+      .min(1, { message: "Title is required" })
       .regex(/^[^\s].*$/, {
-        message: "Name can't start with whitespace",
+        message: "Title can't start with whitespace",
       })
       .trim()
       .optional(),
+    summary: z.string().optional(),
     description: z.string().optional(),
-    httpMethod: httpMethodsSchema.optional(),
+    method: httpMethodsSchema.optional(),
     path: endpointPathSchema.optional(),
     code: z.string().optional(),
-    openApiSpec: z.record(z.string(), z.unknown()).optional(),
+    openApiSpec: openApiEndpointSpecSchema.optional(),
     routeHandler: z.string().optional(),
     funcs: z.array(funcSchema).optional(),
     positionX: z.number().optional(),

@@ -179,7 +179,7 @@ export async function generateFunc({
             docs,
             resources: object.message.content.resources,
             helperFunctionIds: object.message.content.helperFunctionIds,
-            npmDependencies: object.message.content.npmDependencies as
+            packages: object.message.content.packages as
               | {
                   name: string;
                   type: "development" | "production";
@@ -208,7 +208,7 @@ export async function generateFunc({
               errors: object.message.content.errors,
               docs,
               resources: object.message.content.resources,
-              npmDependencies: object.message.content.npmDependencies,
+              packages: object.message.content.packages,
               code,
             },
           });

@@ -90,7 +90,7 @@ export const funcDependenciesRouter = {
         columns: {
           docs: false,
           code: false,
-          npmDependencies: false,
+          packages: false,
         },
       });
 

@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { databaseTableSchema } from "../integrations/postgres/validators";
-import { jsonSchema, npmDependencySchema, rawContentSchema } from "./common";
+import { packageSchema, rawContentSchema } from "./common";
 import { conversationSchema } from "./conversations";
 import { funcDependencySchema } from "./func-dependencies";
 import { funcInternalGraphConnectionSchema } from "./func-internal-graph";
+import { jsonSchema } from "./json-schema";
 import { testRunSchema } from "./test-runs";
 
 export const funcResourceSchema = z.discriminatedUnion("type", [
@@ -31,7 +32,7 @@ export const funcSchema = z.object({
   docs: z.string().optional(),
   code: z.string().optional(),
   resources: funcResourceSchema.array().optional().nullable(),
-  npmDependencies: npmDependencySchema.array().optional().nullable(),
+  packages: packageSchema.array().optional().nullable(),
   userId: z.string().nullable(),
   conversationId: z.string().nullable(),
   canRun: z.boolean().optional(),
@@ -77,6 +78,6 @@ export const updateFuncSchema = z.object({
     docs: z.string().optional(),
     code: z.string().optional(),
     resources: funcResourceSchema.array().optional().nullable(),
-    npmDependencies: npmDependencySchema.array().optional().nullable(),
+    packages: packageSchema.array().optional().nullable(),
   }),
 });

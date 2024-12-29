@@ -337,10 +337,10 @@ export const EndpointNode = memo(
           id: data.id,
         },
         payload: {
-          name: data.name ?? "",
+          title: data.title ?? "",
           path: data.path ?? "",
-          httpMethod:
-            (data.httpMethod?.toLowerCase() as
+          method:
+            (data.method?.toLowerCase() as
               | "get"
               | "post"
               | "put"
@@ -351,9 +351,9 @@ export const EndpointNode = memo(
     });
 
     useEffect(() => {
-      if (!data.name) {
-        form.setError("payload.name", {
-          message: "Name is required",
+      if (!data.title) {
+        form.setError("payload.title", {
+          message: "Title is required",
         });
       }
 
@@ -363,12 +363,12 @@ export const EndpointNode = memo(
         });
       }
 
-      if (!data.httpMethod) {
-        form.setError("payload.httpMethod", {
+      if (!data.method) {
+        form.setError("payload.method", {
           message: "HTTP Method is required",
         });
       }
-    }, [form, data.name, data.path, data.httpMethod]);
+    }, [form, data.title, data.path, data.method]);
 
     const debouncedUpdate = useMemo(
       () =>
@@ -422,20 +422,18 @@ export const EndpointNode = memo(
                         className={cn(
                           "rounded-sm px-1.5 py-0.5 font-bold text-xs uppercase",
                           {
-                            "bg-primary/30 text-primary":
-                              data.httpMethod === "get",
+                            "bg-primary/30 text-primary": data.method === "get",
                             "bg-success/30 text-success":
-                              data.httpMethod === "post",
-                            "bg-warning/30 text-warning":
-                              data.httpMethod === "put",
+                              data.method === "post",
+                            "bg-warning/30 text-warning": data.method === "put",
                             "bg-destructive/30 text-destructive":
-                              data.httpMethod === "delete",
+                              data.method === "delete",
                             "p-0 font-semibold text-primary text-xs":
-                              !data.httpMethod,
+                              !data.method,
                           },
                         )}
                       >
-                        {data.httpMethod?.toUpperCase() ?? "API"}
+                        {data.method?.toUpperCase() ?? "API"}
                       </span>
                       <span className="text-muted-foreground">Endpoint</span>
                     </div>
@@ -443,7 +441,9 @@ export const EndpointNode = memo(
                       <CircleAlertIcon className="size-4 text-destructive" />
                     )}
                   </div>
-                  <span className="text-sm">{data.name ?? "newEndpoint"}</span>
+                  <span className="text-sm">
+                    {data.title ?? "New Endpoint"}
+                  </span>
                 </Card>
               </ExpandableCardTrigger>
             </ContextMenuTrigger>
@@ -497,7 +497,7 @@ export const EndpointNode = memo(
                     >
                       <FormField
                         control={form.control}
-                        name="payload.name"
+                        name="payload.title"
                         render={({ field }) => (
                           <FormItem className="w-full space-y-0">
                             <FormControl>
@@ -522,12 +522,12 @@ export const EndpointNode = memo(
                                 <div className="flex items-center gap-2">
                                   <MethodBadgeSelect
                                     form={form}
-                                    value={data.httpMethod}
+                                    value={data.method}
                                     onValueChange={async (value) => {
                                       await updateEndpoint.mutateAsync({
                                         where: { id: data.id },
                                         payload: {
-                                          httpMethod: value as
+                                          method: value as
                                             | "get"
                                             | "post"
                                             | "put"
@@ -553,12 +553,11 @@ export const EndpointNode = memo(
                                       }
                                     </span>
                                   )}
-                                  {form.formState.errors.payload
-                                    ?.httpMethod && (
+                                  {form.formState.errors.payload?.method && (
                                     <span>
                                       {
-                                        form.formState.errors.payload
-                                          ?.httpMethod.message
+                                        form.formState.errors.payload?.method
+                                          .message
                                       }
                                     </span>
                                   )}
@@ -622,7 +621,7 @@ export const EndpointNode = memo(
 
               <ResizablePanel defaultSize={50} minSize={30}>
                 <ScrollArea className="h-full p-4">
-                  {!data.httpMethod || !data.path || !data.name ? (
+                  {!data.method || !data.path || !data.title ? (
                     <div className="flex h-full items-center justify-center">
                       <span className="text-muted-foreground text-sm">
                         Develop your endpoint to see summary
@@ -631,69 +630,65 @@ export const EndpointNode = memo(
                   ) : (
                     <OpenApiEndpointDocs
                       spec={
-                        data.openApiSpec &&
-                        Object.keys(data.openApiSpec).length > 0
-                          ? (data.openApiSpec as OpenAPIV3.Document)
-                          : ({
-                              openapi: "3.0.0",
-                              info: {
-                                title: "Sample API",
-                                version: "1.0.0",
-                              },
-                              paths: {
-                                [data.path]: {
-                                  [data.httpMethod.toLowerCase()]: {
-                                    summary: data.name,
-                                    description: data.description,
-                                    requestBody: {
-                                      required: true,
-                                      content: {
-                                        "application/json": {
-                                          schema: {
-                                            type: "object",
-                                            required: ["username", "ticker"],
-                                            properties: {
-                                              username: {
-                                                type: "string",
-                                                description:
-                                                  "Username of the account",
-                                              },
-                                              ticker: {
-                                                type: "string",
-                                                description:
-                                                  "Stock ticker symbol",
-                                              },
-                                            },
+                        {
+                          openapi: "3.0.0",
+                          info: {
+                            title: "Sample API",
+                            version: "1.0.0",
+                          },
+                          paths: {
+                            [data.path]: {
+                              [data.method.toLowerCase()]: data.openApiSpec ?? {
+                                title: data.title,
+                                summary: data.summary,
+                                description: data.description,
+                                requestBody: {
+                                  required: true,
+                                  content: {
+                                    "application/json": {
+                                      schema: {
+                                        type: "object",
+                                        required: ["username", "ticker"],
+                                        properties: {
+                                          username: {
+                                            type: "string",
+                                            description:
+                                              "Username of the account",
+                                          },
+                                          ticker: {
+                                            type: "string",
+                                            description: "Stock ticker symbol",
                                           },
                                         },
-                                      },
-                                    },
-                                    responses: {
-                                      "200": {
-                                        description: "Successful response",
-                                        content: {
-                                          "application/json": {
-                                            schema: {
-                                              type: "object",
-                                              properties: {
-                                                count: {
-                                                  type: "integer",
-                                                  description:
-                                                    "Number of stocks",
-                                                },
-                                              },
-                                            },
-                                          },
-                                        },
-                                      },
-                                      "400": {
-                                        description: "Bad request",
                                       },
                                     },
                                   },
                                 },
+                                responses: {
+                                  "200": {
+                                    description: "Successful response",
+                                    content: {
+                                      "application/json": {
+                                        schema: {
+                                          type: "object",
+                                          properties: {
+                                            count: {
+                                              type: "integer",
+                                              description: "Number of stocks",
+                                            },
+                                          },
+                                        },
+                                      },
+                                    },
+                                  },
+                                  "400": {
+                                    description: "Bad request",
+                                  },
+                                },
                               },
-                            } as OpenAPIV3.Document)
+                            },
+                          },
+                        } as OpenAPIV3.Document
                       }
                     />
                   )}
@@ -768,7 +763,7 @@ const MethodBadgeSelect = ({
   return (
     <FormField
       control={form.control}
-      name="payload.httpMethod"
+      name="payload.method"
       render={({ field }) => (
         <FormItem>
           <FormControl>

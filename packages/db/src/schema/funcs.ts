@@ -1,7 +1,7 @@
 import type {
   FuncResource,
   JsonSchema,
-  NpmDependency,
+  Package,
   RawContent,
 } from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
@@ -35,7 +35,7 @@ export const funcs = pgTable(
     errors: text("errors"),
     docs: text("docs"),
     code: text("code"),
-    npmDependencies: jsonb("npm_dependencies").$type<NpmDependency[]>(),
+    packages: jsonb("packages").$type<Package[]>(),
     resources: jsonb("resources").$type<FuncResource[]>(),
     testInput: jsonb("test_input").$type<unknown>(),
     positionX: integer("position_x").default(0),

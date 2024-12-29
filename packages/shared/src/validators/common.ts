@@ -1,85 +1,5 @@
 import { z } from "zod";
-import type { JsonSchema } from "../types";
-
-export const dataTypeSchema = z.enum([
-  "string",
-  "number",
-  "integer",
-  "boolean",
-  "array",
-  "object",
-  "null",
-]);
-
-export const jsonSchema: z.ZodType<JsonSchema> = z.lazy(() =>
-  z.object({
-    // Basic schema properties
-    type: z
-      .enum([
-        "string",
-        "number",
-        "integer",
-        "boolean",
-        "object",
-        "array",
-        "null",
-      ])
-      .optional(),
-    title: z.string().optional(),
-    description: z.string().optional(),
-
-    // For objects
-    required: z.array(z.string()).optional(),
-    properties: z.record(jsonSchema).optional(),
-    additionalProperties: z.union([z.boolean(), jsonSchema]).optional(),
-
-    // For arrays
-    items: z.union([jsonSchema, z.array(jsonSchema)]).optional(),
-    minItems: z.number().int().positive().optional(),
-    maxItems: z.number().int().positive().optional(),
-    uniqueItems: z.boolean().optional(),
-
-    // String validations
-    minLength: z.number().int().nonnegative().optional(),
-    maxLength: z.number().int().nonnegative().optional(),
-    pattern: z.string().optional(),
-    format: z.string().optional(),
-
-    // Number validations
-    minimum: z.number().optional(),
-    maximum: z.number().optional(),
-    exclusiveMinimum: z.number().optional(),
-    exclusiveMaximum: z.number().optional(),
-    multipleOf: z.number().positive().optional(),
-
-    // Combiners
-    oneOf: z.array(jsonSchema).optional(),
-    anyOf: z.array(jsonSchema).optional(),
-    allOf: z.array(jsonSchema).optional(),
-    not: jsonSchema.optional(),
-
-    // Conditionals
-    if: jsonSchema.optional(),
-    // biome-ignore lint/suspicious/noThenProperty: <explanation>
-    then: jsonSchema.optional(),
-    else: jsonSchema.optional(),
-
-    // Enum
-    enum: z
-      .array(z.union([z.string(), z.number(), z.boolean(), z.null()]))
-      .optional(),
-
-    // Schema metadata
-    $id: z.string().optional(),
-    $schema: z.string().optional(),
-    $ref: z.string().optional(),
-    definitions: z.record(jsonSchema).optional(),
-
-    // Misc
-    default: z.any().optional(),
-    examples: z.array(z.any()).optional(),
-  }),
-);
+import { dataTypeSchema } from "./json-schema";
 
 export const functionReferenceSchema = z.object({
   id: z.string().describe("The ID of the function"),
@@ -110,7 +30,7 @@ export const databaseColumnReferenceSchema = z.object({
   tableName: z.string().min(1).describe("The name of the table"),
 });
 
-export const npmDependencySchema = z.object({
+export const packageSchema = z.object({
   type: z.enum(["development", "production"]),
   name: z.string().describe("The name of the npm package"),
   version: z.string().optional().describe("The version of the npm package"),
@@ -199,34 +119,40 @@ export const funcRequirementsMessageSchema = z.object({
             "Comprehensive description of the function that includes: its main purpose, and any key features/capabilities. Should explain both WHAT it does and WHY it exists.",
           ),
           inputSchema: z.string().describe(
-            `JSON schema for input structure including:
-             - Required and optional properties
-             - Types and formats for fields
-             - Valid ranges/enums
-             - Nested structures
-             - Validation rules
+            `JSON schema for input structure following JSON Schema 2020-12 spec including:
+             - Required and optional properties using "$schema": "https://json-schema.org/draft/2020-12/schema"
+             - Types and formats for fields with proper "type" and "format" keywords
+             - Valid ranges/enums using "minimum", "maximum", "enum", "pattern" etc.
+             - Nested structures with "properties", "items", "additionalProperties"
+             - Validation rules using keywords like "minLength", "maxLength", "required"
+             - Schema metadata with "$id", "title", "description"
 
              Properties must:
-             - Use camelCase
-             - Be descriptive (e.g., 'userId' not 'id')
-             - Have root type: 'object'
-             - Follow JSON Schema spec
-             - Include descriptions`,
+             - Use camelCase naming convention
+             - Be descriptive
+             - Have root type: 'object' with "type": "object"
+             - Follow JSON Schema 2020-12 specification
+             - Include descriptions using "description" keyword for all properties
+             - Use appropriate formats (e.g., "date-time", "email", "uri")
+             - Define proper "contentMediaType" and "contentEncoding" where applicable`,
           ),
           outputSchema: z.string().describe(
-            `JSON schema for output structure including:
-             - Required and optional properties
-             - Types and formats for fields
-             - Valid ranges/enums
-             - Nested structures
-             - Validation rules
+            `JSON schema for output structure following JSON Schema 2020-12 spec including:
+             - Required and optional properties using "$schema": "https://json-schema.org/draft/2020-12/schema"
+             - Types and formats for fields with proper "type" and "format" keywords
+             - Valid ranges/enums using "minimum", "maximum", "enum", "pattern" etc.
+             - Nested structures with "properties", "items", "additionalProperties"
+             - Validation rules using keywords like "minLength", "maxLength", "required"
+             - Schema metadata with "$id", "title", "description"
 
              Properties must:
-             - Use camelCase
-             - Be descriptive (e.g., 'userId' not 'id')
-             - Have root type: 'object'
-             - Follow JSON Schema spec
-             - Include descriptions`,
+             - Use camelCase naming convention
+             - Be descriptive
+             - Have root type: 'object' with "type": "object"
+             - Follow JSON Schema 2020-12 specification
+             - Include descriptions using "description" keyword for all properties
+             - Use appropriate formats (e.g., "date-time", "email", "uri")
+             - Define proper "contentMediaType" and "contentEncoding" where applicable`,
           ),
           signature: z
             .string()
@@ -348,7 +274,7 @@ export const funcRequirementsMessageSchema = z.object({
             .describe(
               "The internal graph of the function of how the user-defined helper functions are connected to each other.",
             ),
-          npmDependencies: npmDependencySchema
+          packages: packageSchema
             .omit({
               version: true,
             })

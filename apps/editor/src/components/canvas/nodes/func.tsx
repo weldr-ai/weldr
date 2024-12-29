@@ -54,7 +54,7 @@ import { generateFunc } from "@/lib/ai/generator";
 import { useResources } from "@/lib/context/resources";
 import { useFlowBuilderStore } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
-import { getResourceReferences, jsonSchemaToTreeData } from "@/lib/utils";
+import { getResourceReferences } from "@/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
 import type { RouterOutputs } from "@integramind/api";
 import type {
@@ -80,7 +80,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@integramind/ui/tooltip";
-import { TreeView } from "@integramind/ui/tree-view";
+import { TreeView, schemaToTreeData } from "@integramind/ui/tree-view";
 import { createId } from "@paralleldrive/cuid2";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import { debounce } from "perfect-debounce";
@@ -736,9 +736,7 @@ export const FuncNode = memo(
                           />
                         </div>
                         <TreeView
-                          data={jsonSchemaToTreeData(
-                            data.inputSchema ?? undefined,
-                          )}
+                          data={schemaToTreeData(data.inputSchema ?? {})}
                         />
                       </div>
                       <div className="space-y-1">
@@ -746,9 +744,7 @@ export const FuncNode = memo(
                           Output:
                         </span>
                         <TreeView
-                          data={jsonSchemaToTreeData(
-                            data.outputSchema ?? undefined,
-                          )}
+                          data={schemaToTreeData(data.outputSchema ?? {})}
                         />
                       </div>
                       <div className="space-y-1">

@@ -78,7 +78,7 @@ export const funcsRouter = {
         ),
         columns: {
           docs: false,
-          npmDependencies: false,
+          packages: false,
         },
         with: {
           testRuns: true,
@@ -238,7 +238,7 @@ export const funcsRouter = {
         columns: {
           code: false,
           docs: false,
-          npmDependencies: false,
+          packages: false,
         },
       });
 

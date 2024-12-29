@@ -1,60 +1,7 @@
 import type { DatabaseStructure } from "@integramind/shared/integrations/postgres/types";
-import type {
-  AssistantMessageRawContent,
-  JsonSchema,
-} from "@integramind/shared/types";
-import { getDataTypeIcon } from "@integramind/shared/utils";
+import type { AssistantMessageRawContent } from "@integramind/shared/types";
 import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
-import type { TreeDataItem } from "@integramind/ui/tree-view";
 import type { z } from "zod";
-
-export function jsonSchemaToTreeData(
-  schema: JsonSchema | undefined = undefined,
-): TreeDataItem[] {
-  if (!schema) {
-    return [];
-  }
-
-  function jsonSchemaToTree(
-    schema: JsonSchema | JsonSchema[],
-    name = "root",
-  ): TreeDataItem {
-    if (Array.isArray(schema)) {
-      // biome-ignore lint/style/noNonNullAssertion: <explanation>
-      return jsonSchemaToTree(schema[0]!, name);
-    }
-
-    const treeItem: TreeDataItem = {
-      id: `${name}`,
-      name,
-      type: schema.type ?? "null",
-      icon: getDataTypeIcon(schema.type ?? "null"),
-    };
-
-    if (schema.type === "object" && schema.properties) {
-      treeItem.children = Object.entries(schema.properties).map(
-        ([key, value]) => jsonSchemaToTree(value, key),
-      );
-    } else if (schema.type === "array" && schema.items) {
-      const arrayItem: TreeDataItem = {
-        id: `${name}-items`,
-        name: schema.title ?? "items",
-        type: "array",
-        icon: getDataTypeIcon("array"),
-        children: Array.isArray(schema.items)
-          ? schema.items.map((item, index) =>
-              jsonSchemaToTree(item, `item${index + 1}`),
-            )
-          : [jsonSchemaToTree(schema.items, "item")],
-      };
-      treeItem.children = [arrayItem];
-    }
-
-    return treeItem;
-  }
-
-  return jsonSchemaToTree(schema).children ?? [];
-}
 
 export function assistantMessageRawContentToText(
   rawMessageContent: AssistantMessageRawContent = [],

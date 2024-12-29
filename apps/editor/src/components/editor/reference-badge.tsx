@@ -1,7 +1,6 @@
-import { renderDataTypeIcon } from "@integramind/shared/utils";
 import type { rawContentReferenceElementSchema } from "@integramind/shared/validators/common";
 import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
-import { cn } from "@integramind/ui/utils";
+import { cn, renderDataTypeIcon } from "@integramind/ui/utils";
 import { ColumnsIcon, FunctionSquareIcon, TableIcon } from "lucide-react";
 import type { z } from "zod";
 
@@ -12,7 +11,7 @@ interface ReferenceBadgeProps {
 
 export function ReferenceBadge({ reference, className }: ReferenceBadgeProps) {
   return (
-    <div
+    <span
       className={cn(
         "inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-accent-foreground text-xs",
         className,
@@ -38,6 +37,6 @@ export function ReferenceBadge({ reference, className }: ReferenceBadgeProps) {
         <></>
       )}
       {reference.name}
-    </div>
+    </span>
   );
 }

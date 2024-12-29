@@ -6,8 +6,8 @@ import {
   resources,
   testRuns,
 } from "@integramind/db/schema";
-import type { Func, NpmDependency } from "@integramind/shared/types";
-import { pascalToKebabCase } from "@integramind/shared/utils";
+import type { Package } from "@integramind/shared/types";
+import { toKebabCase } from "@integramind/shared/utils";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";
@@ -22,12 +22,12 @@ export const engineRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const func = (await ctx.db.query.funcs.findFirst({
+      const func = await ctx.db.query.funcs.findFirst({
         where: and(
           eq(funcs.id, input.funcId),
           eq(funcs.userId, ctx.session.user.id),
         ),
-      })) as Omit<Func, "testRuns" | "conversation"> | undefined;
+      });
 
       if (!func) {
         throw new TRPCError({
@@ -47,7 +47,7 @@ export const engineRouter = {
 
       const resourceIds = func.resources?.map((resource) => resource.id);
 
-      const npmDependencies: NpmDependency[] = func.npmDependencies ?? [];
+      const packages: Package[] = func.packages ?? [];
       const modules: { path: string; content: string }[] = [];
 
       if (resourceIds && resourceIds.length > 0) {
@@ -60,7 +60,7 @@ export const engineRouter = {
                   columns: {
                     name: true,
                     code: true,
-                    npmDependencies: true,
+                    packages: true,
                   },
                 },
               },
@@ -72,7 +72,7 @@ export const engineRouter = {
           for (const func of resource.integration.funcs) {
             if (func.name && func.code) {
               modules.push({
-                path: pascalToKebabCase(func.name),
+                path: toKebabCase(func.name),
                 content: func.code,
               });
             }
@@ -82,7 +82,7 @@ export const engineRouter = {
         for (const func of result.flatMap(
           (resource) => resource.integration.funcs,
         )) {
-          npmDependencies.push(...(func.npmDependencies ?? []));
+          packages.push(...(func.packages ?? []));
         }
       }
 
@@ -144,7 +144,7 @@ export const engineRouter = {
         functionArgs: input.input,
         code: func.code,
         modules,
-        dependencies: npmDependencies,
+        packages,
         environmentVariablesMap,
         testEnv:
           process.env.NODE_ENV === "development"

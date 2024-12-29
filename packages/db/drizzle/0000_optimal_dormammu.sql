@@ -1,5 +1,5 @@
 CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant');--> statement-breakpoint
-CREATE TYPE "public"."http_methods" AS ENUM('get', 'post', 'put', 'delete', 'patch');--> statement-breakpoint
+CREATE TYPE "public"."http_methods" AS ENUM('get', 'post', 'put', 'patch', 'delete');--> statement-breakpoint
 CREATE TYPE "public"."integration_category" AS ENUM('database');--> statement-breakpoint
 CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "accounts" (
@@ -73,9 +73,10 @@ CREATE TABLE IF NOT EXISTS "endpoint_funcs" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "endpoints" (
 	"id" text PRIMARY KEY NOT NULL,
-	"name" text,
+	"title" text,
+	"summary" text,
 	"description" text,
-	"http_method" "http_methods",
+	"method" "http_methods",
 	"path" text,
 	"code" jsonb,
 	"open_api_spec" jsonb,
@@ -86,7 +87,7 @@ CREATE TABLE IF NOT EXISTS "endpoints" (
 	"conversation_id" text NOT NULL,
 	"user_id" text NOT NULL,
 	"project_id" text NOT NULL,
-	CONSTRAINT "endpoints_project_id_path_http_method_unique" UNIQUE("project_id","path","http_method")
+	CONSTRAINT "endpoints_project_id_path_method_unique" UNIQUE("project_id","path","method")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "integrations" (
@@ -109,7 +110,7 @@ CREATE TABLE IF NOT EXISTS "funcs" (
 	"errors" text,
 	"docs" text,
 	"code" text,
-	"npm_dependencies" jsonb,
+	"packages" jsonb,
 	"resources" jsonb,
 	"test_input" jsonb,
 	"position_x" integer DEFAULT 0,

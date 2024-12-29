@@ -1,8 +1,8 @@
+import type { JSONSchema7 } from "json-schema";
 import type { z } from "zod";
 import type {
-  dataTypeSchema,
   funcRequirementsMessageSchema,
-  npmDependencySchema,
+  packageSchema,
   rawContentSchema,
 } from "../validators/common";
 import type {
@@ -20,84 +20,15 @@ import type {
   integrationSchema,
   integrationTypeSchema,
 } from "../validators/integrations";
+import type { dataTypeSchema } from "../validators/json-schema";
+import type { openApiEndpointSpecSchema } from "../validators/openapi";
 import type { projectSchema } from "../validators/projects";
 import type { resourceSchema } from "../validators/resources";
 import type { testRunSchema } from "../validators/test-runs";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
 
-export interface JsonSchema {
-  // Basic schema properties
-  type?:
-    | "string"
-    | "number"
-    | "integer"
-    | "boolean"
-    | "object"
-    | "array"
-    | "null";
-  title?: string;
-  description?: string;
-
-  // For objects
-  required?: string[];
-  properties?: Record<string, JsonSchema>;
-  additionalProperties?: boolean | JsonSchema;
-
-  // For arrays
-  items?: JsonSchema | JsonSchema[];
-  minItems?: number;
-  maxItems?: number;
-  uniqueItems?: boolean;
-
-  // String validations
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  format?: string;
-
-  // Number validations
-  minimum?: number;
-  maximum?: number;
-  exclusiveMinimum?: number;
-  exclusiveMaximum?: number;
-  multipleOf?: number;
-
-  // Combiners
-  oneOf?: JsonSchema[];
-  anyOf?: JsonSchema[];
-  allOf?: JsonSchema[];
-  not?: JsonSchema;
-
-  // Conditionals
-  if?: JsonSchema;
-  then?: JsonSchema;
-  else?: JsonSchema;
-
-  // Enum
-  enum?: (string | number | boolean | null)[];
-
-  // Schema metadata
-  $id?: string;
-  $schema?: string;
-  $ref?: string;
-  definitions?: Record<string, JsonSchema>;
-
-  // Misc
-  default?: unknown;
-  examples?: unknown[];
-}
-
-export interface FlatInputSchema {
-  path: string;
-  type: DataType;
-  required: boolean;
-  description?: string;
-  refUri: string;
-  properties?: Record<string, JsonSchema>;
-  itemsType?: JsonSchema;
-  sourceFuncId?: string;
-}
+export type JsonSchema = JSONSchema7;
 
 export type Project = z.infer<typeof projectSchema>;
 
@@ -112,6 +43,7 @@ export type Conversation = z.infer<typeof conversationSchema>;
 export type Resource = z.infer<typeof resourceSchema>;
 export type FuncResource = z.infer<typeof funcResourceSchema>;
 export type Endpoint = z.infer<typeof endpointSchema>;
+export type OpenApiEndpointSpec = z.infer<typeof openApiEndpointSpecSchema>;
 
 export type Integration = z.infer<typeof integrationSchema>;
 export type IntegrationType = z.infer<typeof integrationTypeSchema>;
@@ -122,7 +54,7 @@ export type IntegrationHelperFunction = z.infer<
 export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;
 
 export type RawContent = z.infer<typeof rawContentSchema>;
-export type NpmDependency = z.infer<typeof npmDependencySchema>;
+export type Package = z.infer<typeof packageSchema>;
 export type Func = z.infer<typeof funcSchema>;
 export type TestRun = z.infer<typeof testRunSchema>;
 

@@ -8,7 +8,7 @@
     "./hooks/*": "./src/hooks/*.ts",
     "./icons/*": "./src/icons/*.tsx",
     "./styles/globals.css": "./src/styles/globals.css",
-    "./utils": "./src/utils.ts"
+    "./utils": "./src/utils.tsx"
   },
   "scripts": {
     "add-component": "pnpm dlx shadcn-ui add",
@@ -51,6 +51,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.0.0",
     "input-otp": "^1.2.3",
+    "json-schema": "^0.4.0",
     "lucide-react": "^0.363.0",
     "next-themes": "^0.3.0",
     "react": "18.3.1",

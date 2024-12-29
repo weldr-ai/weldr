@@ -2,9 +2,10 @@
 
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { cva } from "class-variance-authority";
+import type { JSONSchema7, JSONSchema7Definition } from "json-schema";
 import { ChevronRight } from "lucide-react";
 import React from "react";
-import { cn } from "./utils";
+import { cn, getDataTypeIcon } from "./utils";
 
 const treeVariants = cva(
   "group hover:before:opacity-100 before:absolute before:rounded-lg before:left-0 before:w-full before:opacity-0 before:h-[2rem] before:-z-10",
@@ -23,6 +24,11 @@ interface TreeDataItem {
     | "boolean"
     | "object"
     | "null";
+  description?: string;
+  constraints?: string[];
+  required?: boolean;
+  enum?: (string | number | boolean | null)[];
+  format?: string;
   icon?:
     | React.ElementType
     | {
@@ -44,6 +50,159 @@ interface TreeDataItem {
   children?: TreeDataItem[];
   actions?: React.ReactNode;
   onClick?: () => void;
+}
+
+function isJSONSchema7(schema: JSONSchema7Definition): schema is JSONSchema7 {
+  return typeof schema !== "boolean";
+}
+
+// Helper function to convert JSON schema to TreeDataItem
+export function schemaToTreeData(
+  schema: JSONSchema7,
+  name = "root",
+  required = false,
+): TreeDataItem[] {
+  // Create the root item first
+  const root = createTreeItem(schema, name, required);
+  // Return root's children or empty array
+  return root.children || [];
+}
+
+// Helper function to create a single tree item
+function createTreeItem(
+  schema: JSONSchema7Definition,
+  name: string,
+  required: boolean,
+): TreeDataItem {
+  // Handle boolean schema
+  if (typeof schema === "boolean") {
+    return {
+      id: crypto.randomUUID(),
+      name,
+      type: "boolean",
+      required,
+      icon: getDataTypeIcon("boolean"),
+    };
+  }
+
+  const item: TreeDataItem = {
+    id: crypto.randomUUID(),
+    name,
+    type: (schema.type as TreeDataItem["type"]) || "object",
+    required,
+    icon: getDataTypeIcon((schema.type as TreeDataItem["type"]) || "object"),
+  };
+
+  if (schema.$ref) {
+    item.description = `Reference: ${schema.$ref}`;
+    return item;
+  }
+
+  if (schema.description) {
+    item.description = schema.description;
+  }
+
+  if (schema.enum) {
+    item.enum = schema.enum as (string | number | boolean | null)[];
+  }
+
+  if (schema.format) {
+    item.format = schema.format;
+  }
+
+  // Add constraints based on schema properties
+  const constraints: string[] = [];
+  if (schema.minimum !== undefined) constraints.push(`min: ${schema.minimum}`);
+  if (schema.maximum !== undefined) constraints.push(`max: ${schema.maximum}`);
+  if (schema.minLength !== undefined)
+    constraints.push(`minLength: ${schema.minLength}`);
+  if (schema.maxLength !== undefined)
+    constraints.push(`maxLength: ${schema.maxLength}`);
+  if (schema.pattern) constraints.push(`pattern: ${schema.pattern}`);
+  if (schema.format) constraints.push(`format: ${schema.format}`);
+  if (schema.minItems !== undefined)
+    constraints.push(`minItems: ${schema.minItems}`);
+  if (schema.maxItems !== undefined)
+    constraints.push(`maxItems: ${schema.maxItems}`);
+  if (schema.uniqueItems) constraints.push("uniqueItems");
+  if (constraints.length > 0) {
+    item.constraints = constraints;
+  }
+
+  const children: TreeDataItem[] = [];
+
+  // Handle nested properties for objects
+  if (schema.properties) {
+    children.push(
+      ...Object.entries(schema.properties).map(([propName, propSchema]) =>
+        createTreeItem(
+          propSchema,
+          propName,
+          Array.isArray(schema.required) && schema.required.includes(propName),
+        ),
+      ),
+    );
+  }
+
+  // Handle additional properties
+  if (
+    schema.additionalProperties &&
+    typeof schema.additionalProperties !== "boolean"
+  ) {
+    children.push(
+      createTreeItem(
+        schema.additionalProperties,
+        "additionalProperties",
+        false,
+      ),
+    );
+  }
+
+  // Handle array items
+  if (schema.items) {
+    if (Array.isArray(schema.items)) {
+      children.push(
+        ...schema.items.map(
+          (itemSchema: JSONSchema7Definition, index: number) =>
+            createTreeItem(itemSchema, `[${index}]`, false),
+        ),
+      );
+    } else if (isJSONSchema7(schema.items)) {
+      children.push(createTreeItem(schema.items, "items", false));
+    }
+  }
+
+  // Handle combinations
+  if (schema.allOf) {
+    children.push(
+      ...schema.allOf.map((s: JSONSchema7Definition, i: number) =>
+        createTreeItem(s, `allOf[${i}]`, false),
+      ),
+    );
+  }
+  if (schema.anyOf) {
+    children.push(
+      ...schema.anyOf.map((s: JSONSchema7Definition, i: number) =>
+        createTreeItem(s, `anyOf[${i}]`, false),
+      ),
+    );
+  }
+  if (schema.oneOf) {
+    children.push(
+      ...schema.oneOf.map((s: JSONSchema7Definition, i: number) =>
+        createTreeItem(s, `oneOf[${i}]`, false),
+      ),
+    );
+  }
+  if (schema.not && isJSONSchema7(schema.not)) {
+    children.push(createTreeItem(schema.not, "not", false));
+  }
+
+  if (children.length > 0) {
+    item.children = children;
+  }
+
+  return item;
 }
 
 type TreeProps = React.HTMLAttributes<HTMLDivElement> & {
@@ -69,6 +228,7 @@ const TreeView = React.forwardRef<HTMLDivElement, TreeProps>(
     },
     ref,
   ) => {
+    console.log(data);
     const [selectedItemId, setSelectedItemId] = React.useState<
       string | undefined
     >(initialSelectedItemId);
@@ -124,10 +284,18 @@ const TreeView = React.forwardRef<HTMLDivElement, TreeProps>(
       return checkFlat(data);
     }, [data]);
 
+    // If data is a single item with name "root", render its children instead
+    const renderData = React.useMemo(() => {
+      if (!Array.isArray(data) && data.name === "root" && data.children) {
+        return data.children;
+      }
+      return data;
+    }, [data]);
+
     return (
       <div className={cn("relative overflow-hidden", className)}>
         <TreeItem
-          data={data}
+          data={renderData}
           ref={ref}
           selectedItemId={selectedItemId}
           handleSelectChange={handleSelectChange}
@@ -289,7 +457,7 @@ const TreeLeaf = React.forwardRef<
         ref={ref}
         className={cn(
           isFlat ? "ml-0" : "ml-5",
-          "flex cursor-pointer items-center py-0.5 text-left before:right-1",
+          "flex cursor-pointer flex-col py-0.5 text-left before:right-1",
           treeVariants(),
           className,
           selectedItemId === item.id && selectedTreeVariants(),
@@ -300,15 +468,45 @@ const TreeLeaf = React.forwardRef<
         }}
         {...props}
       >
-        <TreeIcon
-          item={item}
-          isSelected={selectedItemId === item.id}
-          default={defaultLeafIcon}
-        />
-        <span className="flex-grow truncate text-sm">{item.name}</span>
-        <TreeActions isSelected={selectedItemId === item.id}>
-          {item.actions}
-        </TreeActions>
+        <div className="flex items-center">
+          <TreeIcon
+            item={item}
+            isSelected={selectedItemId === item.id}
+            default={defaultLeafIcon}
+          />
+          <div className="flex flex-grow items-center gap-2">
+            <span className="truncate text-sm">
+              {item.name}
+              {item.required && <span className="text-destructive">*</span>}
+            </span>
+            {item.type && (
+              <span className="text-muted-foreground text-xs">
+                {item.type}
+                {item.format && ` (${item.format})`}
+              </span>
+            )}
+          </div>
+          <TreeActions isSelected={selectedItemId === item.id}>
+            {item.actions}
+          </TreeActions>
+        </div>
+        <div className="ml-6">
+          {item.description && (
+            <div className="truncate text-muted-foreground text-xs">
+              {item.description}
+            </div>
+          )}
+          {item.constraints && item.constraints.length > 0 && (
+            <div className="truncate text-muted-foreground text-xs">
+              {item.constraints.join(", ")}
+            </div>
+          )}
+          {item.enum && (
+            <div className="truncate text-muted-foreground text-xs">
+              enum: [{item.enum.map(String).join(", ")}]
+            </div>
+          )}
+        </div>
       </div>
     );
   },
@@ -363,36 +561,34 @@ const TreeIcon = ({
   default?: React.ElementType;
 }) => {
   let Icon = defaultIcon;
+  let iconClassName = "";
+
   if (isSelected && item.selectedIcon) {
     if (typeof item.selectedIcon === "object" && item.selectedIcon.element) {
       Icon = item.selectedIcon.element;
+      iconClassName = item.selectedIcon.className || "";
     } else {
       Icon = item.selectedIcon as React.ElementType;
     }
   } else if (isOpen && item.openIcon) {
     if (typeof item.openIcon === "object" && item.openIcon.element) {
       Icon = item.openIcon.element;
+      iconClassName = item.openIcon.className || "";
     } else {
       Icon = item.openIcon as React.ElementType;
     }
   } else if (item.icon) {
     if (typeof item.icon === "object" && item.icon.element) {
       Icon = item.icon.element;
+      iconClassName = item.icon.className || "";
     } else {
       Icon = item.icon as React.ElementType;
     }
   }
 
   return Icon ? (
-    <Icon
-      className={cn(
-        "mr-2 size-4 shrink-0 text-primary",
-        typeof item.icon === "object" ? item.icon.className : "",
-      )}
-    />
-  ) : (
-    <></>
-  );
+    <Icon className={cn("mr-2 size-4 shrink-0 text-primary", iconClassName)} />
+  ) : null;
 };
 
 const TreeActions = ({

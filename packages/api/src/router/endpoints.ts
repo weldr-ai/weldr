@@ -131,8 +131,10 @@ export const endpointsRouter = {
           ),
           columns: {
             id: true,
-            name: true,
-            httpMethod: true,
+            title: true,
+            summary: true,
+            method: true,
+            path: true,
           },
         });
       } catch (error) {

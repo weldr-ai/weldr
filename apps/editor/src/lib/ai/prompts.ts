@@ -2,8 +2,8 @@ import "server-only";
 
 import { db, inArray } from "@integramind/db";
 import { funcs } from "@integramind/db/schema";
-import type { NpmDependency } from "@integramind/shared/types";
-import { pascalToKebabCase } from "@integramind/shared/utils";
+import type { Package } from "@integramind/shared/types";
+import { toKebabCase } from "@integramind/shared/utils";
 import type { funcResourceSchema } from "@integramind/shared/validators/funcs";
 import type { z } from "zod";
 
@@ -96,7 +96,7 @@ export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gather
       "[Helper function id]",
       ...
     ],
-    "npmDependencies": [NPM dependencies]
+    "packages": [Packages]
   }
 }
 \`\`\`
@@ -430,13 +430,13 @@ export const getGenerateFuncCodePrompt = async ({
   docs,
   resources,
   helperFunctionIds,
-  npmDependencies,
+  packages,
 }: {
   name: string;
   docs: string;
   resources?: z.infer<typeof funcResourceSchema>[];
   helperFunctionIds: string[] | undefined;
-  npmDependencies: NpmDependency[] | undefined;
+  packages: Package[] | undefined;
 }) => {
   const helperFunctions = await db.query.funcs.findMany({
     where: inArray(funcs.id, helperFunctionIds ?? []),
@@ -479,7 +479,7 @@ ${
           if (!helperFunction.name) {
             throw new Error("Helper function name is required");
           }
-          const importInfo = `Available in \`@/lib/${pascalToKebabCase(helperFunction.name)}\`\n`;
+          const importInfo = `Available in \`@/lib/${toKebabCase(helperFunction.name)}\`\n`;
           return `- \`${helperFunction.name}\`
 How to import: ${importInfo}
 Docs:\n${helperFunction.docs}`;
@@ -489,8 +489,8 @@ Docs:\n${helperFunction.docs}`;
 }
 
 ${
-  npmDependencies && npmDependencies.length > 0
-    ? `### NPM Dependencies\n${npmDependencies.map((dep) => `- ${dep.name}`).join("\n")}`
+  packages && packages.length > 0
+    ? `### Packages\n${packages.map((dep) => `- ${dep.name}`).join("\n")}`
     : ""
 }
 

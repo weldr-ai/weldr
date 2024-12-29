@@ -1,0 +1,146 @@
+import { z } from "zod";
+import { jsonSchema } from "./json-schema";
+
+// HTTP Methods supported by the endpoint
+export const httpMethodSchema = z
+  .enum(["get", "put", "post", "delete", "patch"])
+  .describe("The HTTP method for the endpoint");
+
+// Where parameters can be located in the request
+export const parameterInSchema = z
+  .enum([
+    "query", // In the URL query string
+    "header", // In HTTP headers
+    "path", // In the URL path
+    "cookie", // In cookies
+  ])
+  .describe("Specifies where the parameter is located in the request");
+
+// Parameter Object - Describes a single parameter
+export const parameterObjectSchema = z.object({
+  name: z
+    .string()
+    .describe("The name of the parameter (e.g., 'userId', 'sortBy')"),
+  in: parameterInSchema,
+  description: z
+    .string()
+    .optional()
+    .describe("A detailed explanation of the parameter's purpose and usage"),
+  required: z
+    .boolean()
+    .optional()
+    .describe("Whether this parameter is mandatory (defaults to false)"),
+  schema: jsonSchema.describe(
+    "JSON Schema defining the type and validation rules for the parameter",
+  ),
+});
+
+// Request Body Object - Describes the request payload
+export const requestBodyObjectSchema = z.object({
+  description: z
+    .string()
+    .optional()
+    .describe("A detailed explanation of the request body"),
+  required: z
+    .boolean()
+    .optional()
+    .describe("Whether the request body is required (defaults to false)"),
+  content: z
+    .record(
+      z.object({
+        schema: jsonSchema.describe(
+          "JSON Schema defining the structure and validation rules for this content type",
+        ),
+        example: z
+          .any()
+          .optional()
+          .describe(
+            "An example of a valid request payload for this content type",
+          ),
+      }),
+    )
+    .describe(
+      "Request body specifications for different content types (e.g., application/json)",
+    ),
+});
+
+// Response Object - Describes possible responses
+export const responseObjectSchema = z.object({
+  description: z
+    .string()
+    .describe("A detailed explanation of when this response is returned"),
+  content: z
+    .record(
+      z.object({
+        schema: jsonSchema.describe(
+          "JSON Schema defining the structure of the response for this content type",
+        ),
+        example: z
+          .any()
+          .optional()
+          .describe("An example of a response payload for this content type"),
+      }),
+    )
+    .optional()
+    .describe(
+      "Response specifications for different content types (e.g., application/json)",
+    ),
+});
+
+// Security Requirement Object - Describes required security schemes
+export const securityRequirementSchema = z
+  .record(z.array(z.string()))
+  .describe(
+    "Security schemes required for this endpoint, with arrays of required scopes",
+  );
+
+// OpenAPI Endpoint Schema - Complete endpoint specification
+export const openApiEndpointSpecSchema = z.object({
+  method: httpMethodSchema,
+  path: z
+    .string()
+    .describe("The URL path pattern (e.g., '/users/{userId}/posts')"),
+  title: z
+    .string()
+    .describe(
+      "A human-friendly name for the endpoint (e.g., 'Create User', 'List Orders')",
+    ),
+  summary: z
+    .string()
+    .optional()
+    .describe("A short summary of what the operation does (1-2 lines)"),
+  description: z
+    .string()
+    .optional()
+    .describe(
+      "A verbose explanation of the operation's behavior. Can include markdown formatting and detailed information about edge cases, notes, and examples.",
+    ),
+  tags: z
+    .array(z.string())
+    .optional()
+    .describe(
+      "Tags for organizing and categorizing the endpoint (e.g., ['users', 'admin'])",
+    ),
+  parameters: z
+    .array(parameterObjectSchema)
+    .optional()
+    .describe("List of parameters that can be used with this endpoint"),
+  requestBody: requestBodyObjectSchema
+    .optional()
+    .describe(
+      "Specification of the request body, if this endpoint accepts one",
+    ),
+  responses: z
+    .record(responseObjectSchema)
+    .describe(
+      "Possible responses indexed by HTTP status code (e.g., '200', '400', '404')",
+    ),
+  deprecated: z
+    .boolean()
+    .optional()
+    .describe("Whether this endpoint is deprecated and should be avoided"),
+  security: z
+    .array(securityRequirementSchema)
+    .optional()
+    .describe("Security requirements for this specific endpoint"),
+});
