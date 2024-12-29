@@ -26,9 +26,7 @@ export const endpointPathSchema = z
 
 export const endpointSchema = z.object({
   id: z.string().cuid2(),
-  title: z.string().min(1).trim(),
-  summary: z.string().optional(),
-  description: z.string().optional(),
+  summary: z.string().min(1).trim(),
   method: httpMethodsSchema,
   path: endpointPathSchema,
   code: z.string().optional(),
@@ -53,16 +51,14 @@ export const updateEndpointSchema = z.object({
     id: z.string(),
   }),
   payload: z.object({
-    title: z
+    summary: z
       .string()
-      .min(1, { message: "Title is required" })
+      .min(1, { message: "Summary is required" })
       .regex(/^[^\s].*$/, {
-        message: "Title can't start with whitespace",
+        message: "Summary can't start with whitespace",
       })
       .trim()
       .optional(),
-    summary: z.string().optional(),
-    description: z.string().optional(),
     method: httpMethodsSchema.optional(),
     path: endpointPathSchema.optional(),
     code: z.string().optional(),

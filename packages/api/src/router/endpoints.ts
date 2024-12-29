@@ -131,7 +131,6 @@ export const endpointsRouter = {
           ),
           columns: {
             id: true,
-            title: true,
             summary: true,
             method: true,
             path: true,

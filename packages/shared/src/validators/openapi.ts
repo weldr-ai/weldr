@@ -100,11 +100,6 @@ export const openApiEndpointSpecSchema = z.object({
   path: z
     .string()
     .describe("The URL path pattern (e.g., '/users/{userId}/posts')"),
-  title: z
-    .string()
-    .describe(
-      "A human-friendly name for the endpoint (e.g., 'Create User', 'List Orders')",
-    ),
   summary: z
     .string()
     .optional()
@@ -135,10 +130,6 @@ export const openApiEndpointSpecSchema = z.object({
     .describe(
       "Possible responses indexed by HTTP status code (e.g., '200', '400', '404')",
     ),
-  deprecated: z
-    .boolean()
-    .optional()
-    .describe("Whether this endpoint is deprecated and should be avoided"),
   security: z
     .array(securityRequirementSchema)
     .optional()

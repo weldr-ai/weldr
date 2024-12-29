@@ -337,7 +337,7 @@ export const EndpointNode = memo(
           id: data.id,
         },
         payload: {
-          title: data.title ?? "",
+          summary: data.summary ?? "",
           path: data.path ?? "",
           method:
             (data.method?.toLowerCase() as
@@ -351,9 +351,9 @@ export const EndpointNode = memo(
     });
 
     useEffect(() => {
-      if (!data.title) {
-        form.setError("payload.title", {
-          message: "Title is required",
+      if (!data.summary) {
+        form.setError("payload.summary", {
+          message: "Summary is required",
         });
       }
 
@@ -368,7 +368,7 @@ export const EndpointNode = memo(
           message: "HTTP Method is required",
         });
       }
-    }, [form, data.title, data.path, data.method]);
+    }, [form, data.summary, data.path, data.method]);
 
     const debouncedUpdate = useMemo(
       () =>
@@ -442,7 +442,7 @@ export const EndpointNode = memo(
                     )}
                   </div>
                   <span className="text-sm">
-                    {data.title ?? "New Endpoint"}
+                    {data.summary ?? "New Endpoint"}
                   </span>
                 </Card>
               </ExpandableCardTrigger>
@@ -497,7 +497,7 @@ export const EndpointNode = memo(
                     >
                       <FormField
                         control={form.control}
-                        name="payload.title"
+                        name="payload.summary"
                         render={({ field }) => (
                           <FormItem className="w-full space-y-0">
                             <FormControl>
@@ -621,7 +621,7 @@ export const EndpointNode = memo(
 
               <ResizablePanel defaultSize={50} minSize={30}>
                 <ScrollArea className="h-full p-4">
-                  {!data.method || !data.path || !data.title ? (
+                  {!data.method || !data.path || !data.summary ? (
                     <div className="flex h-full items-center justify-center">
                       <span className="text-muted-foreground text-sm">
                         Develop your endpoint to see summary
@@ -638,53 +638,9 @@ export const EndpointNode = memo(
                           },
                           paths: {
                             [data.path]: {
-                              [data.method.toLowerCase()]: data.openApiSpec ?? {
-                                title: data.title,
+                              [data.method.toLowerCase()]: {
                                 summary: data.summary,
-                                description: data.description,
-                                requestBody: {
-                                  required: true,
-                                  content: {
-                                    "application/json": {
-                                      schema: {
-                                        type: "object",
-                                        required: ["username", "ticker"],
-                                        properties: {
-                                          username: {
-                                            type: "string",
-                                            description:
-                                              "Username of the account",
-                                          },
-                                          ticker: {
-                                            type: "string",
-                                            description: "Stock ticker symbol",
-                                          },
-                                        },
-                                      },
-                                    },
-                                  },
-                                },
-                                responses: {
-                                  "200": {
-                                    description: "Successful response",
-                                    content: {
-                                      "application/json": {
-                                        schema: {
-                                          type: "object",
-                                          properties: {
-                                            count: {
-                                              type: "integer",
-                                              description: "Number of stocks",
-                                            },
-                                          },
-                                        },
-                                      },
-                                    },
-                                  },
-                                  "400": {
-                                    description: "Bad request",
-                                  },
-                                },
+                                ...data.openApiSpec,
                               },
                             },
                           },

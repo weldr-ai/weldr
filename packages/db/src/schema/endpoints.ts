@@ -30,9 +30,7 @@ export const endpoints = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => createId()),
-    title: text("title"),
     summary: text("summary"),
-    description: text("description"),
     method: httpMethods("method"),
     path: text("path"),
     code: jsonb("code"),

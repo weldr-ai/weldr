@@ -1,12 +1,6 @@
 "use client";
 
 import {
-  type ParsedSchema,
-  getResponseSchema,
-  parseOpenApiEndpoint,
-  parseSchema,
-} from "@/lib/openapi-utils";
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -18,6 +12,12 @@ import { cn } from "@integramind/ui/utils";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import type { OpenAPIV3 } from "openapi-types";
 import { useState } from "react";
+import {
+  type ParsedSchema,
+  getResponseSchema,
+  parseOpenApiEndpoint,
+  parseSchema,
+} from "./utils";
 
 interface OpenApiEndpointDocsProps {
   spec: OpenAPIV3.Document;
@@ -126,6 +126,12 @@ export default function OpenApiEndpointDocs({
       ]?.schema
     : undefined;
 
+  const requestBodyExample = operation.requestBody
+    ? (operation.requestBody as OpenAPIV3.RequestBodyObject).content[
+        "application/json"
+      ]?.example
+    : undefined;
+
   const parsedRequestBody = requestBodySchema
     ? parseSchema(requestBodySchema as OpenAPIV3.SchemaObject)
     : undefined;
@@ -135,15 +141,44 @@ export default function OpenApiEndpointDocs({
     : false;
 
   const hasParameters = operation.parameters && operation.parameters.length > 0;
-
+  const hasSecurity = operation.security && operation.security.length > 0;
   const hasContent = parsedRequestBody || hasResponses || hasParameters;
+
+  // Group parameters by their location (in)
+  const groupedParameters = operation.parameters?.reduce(
+    (acc, param) => {
+      const parameter = param as OpenAPIV3.ParameterObject;
+      const location = parameter.in;
+      if (!acc[location]) {
+        acc[location] = [];
+      }
+      acc[location].push(parameter);
+      return acc;
+    },
+    {} as Record<string, OpenAPIV3.ParameterObject[]>,
+  );
 
   return (
     <div className="w-full space-y-6 font-[system-ui]">
       {/* Header */}
       <div className="space-y-1">
-        <h1 className="font-medium">{operation.summary || path}</h1>
-        <p className="text-muted-foreground">{operation.description}</p>
+        <div className="flex items-center gap-2">
+          <h1 className="font-medium">{operation.summary || path}</h1>
+          {operation.tags && operation.tags.length > 0 && (
+            <div className="flex gap-1">
+              {operation.tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+        {operation.description && (
+          <p className="whitespace-pre-wrap text-muted-foreground">
+            {operation.description}
+          </p>
+        )}
       </div>
 
       {/* Method and Path */}
@@ -167,55 +202,68 @@ export default function OpenApiEndpointDocs({
         <>
           {/* Parameters */}
           {hasParameters && (
-            <div className="space-y-2">
-              <span>Parameters</span>
-              <div className="space-y-2">
-                {operation.parameters?.map((param) => {
-                  const parameter = param as OpenAPIV3.ParameterObject;
-                  return (
-                    <div
-                      key={parameter.name}
-                      className="flex items-baseline border-b py-2 last:border-0"
-                    >
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-baseline gap-2">
-                          <span className="font-mono text-xs">
-                            {parameter.name}
-                          </span>
-                          <span className="font-mono text-muted-foreground text-xs">
-                            {parameter.in}
-                          </span>
-                          {parameter.required && (
-                            <span className="text-destructive text-xs">
-                              required
-                            </span>
-                          )}
-                          {parameter.description && (
-                            <span className="text-muted-foreground text-xs">
-                              {parameter.description}
-                            </span>
-                          )}
+            <div className="space-y-4">
+              <span className="font-medium">Parameters</span>
+              <Accordion type="multiple" className="w-full">
+                {Object.entries(groupedParameters || {}).map(
+                  ([location, params]) => (
+                    <AccordionItem key={location} value={location}>
+                      <AccordionTrigger className="text-sm">
+                        {location.charAt(0).toUpperCase() + location.slice(1)}{" "}
+                        Parameters
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-2">
+                          {params.map((parameter) => (
+                            <div
+                              key={parameter.name}
+                              className="flex items-baseline border-b py-2 last:border-0"
+                            >
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="font-mono text-xs">
+                                    {parameter.name}
+                                  </span>
+                                  <span className="font-mono text-muted-foreground text-xs">
+                                    {
+                                      (
+                                        parameter.schema as OpenAPIV3.SchemaObject
+                                      )?.type
+                                    }
+                                  </span>
+                                  {parameter.required && (
+                                    <span className="text-destructive text-xs">
+                                      required
+                                    </span>
+                                  )}
+                                  {parameter.description && (
+                                    <span className="text-muted-foreground text-xs">
+                                      {parameter.description}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ),
+                )}
+              </Accordion>
             </div>
           )}
 
           {/* Request Body */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span>Body</span>
-              {parsedRequestBody && (
+          {parsedRequestBody && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Body</span>
                 <span className="items-center justify-center rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
                   application/json
                 </span>
-              )}
-            </div>
-            {parsedRequestBody &&
-              Object.entries(parsedRequestBody.properties || {}).map(
+              </div>
+              {Object.entries(parsedRequestBody.properties || {}).map(
                 ([key, value]) => (
                   <SchemaField
                     key={key}
@@ -227,11 +275,20 @@ export default function OpenApiEndpointDocs({
                   />
                 ),
               )}
-          </div>
+              {requestBodyExample && (
+                <div className="mt-4">
+                  <span className="font-medium text-sm">Example:</span>
+                  <pre className="mt-2 rounded-lg bg-muted p-4 text-xs">
+                    {JSON.stringify(requestBodyExample, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Responses */}
           <div className="space-y-2">
-            <span>Responses</span>
+            <span className="font-medium">Responses</span>
             {hasResponses && (
               <Accordion type="multiple">
                 {Object.entries(operation.responses).map(([code, response]) => {
@@ -240,6 +297,8 @@ export default function OpenApiEndpointDocs({
                     ? parseSchema(responseSchema as OpenAPIV3.SchemaObject)
                     : undefined;
                   const responseObj = response as OpenAPIV3.ResponseObject;
+                  const example =
+                    responseObj.content?.["application/json"]?.example;
 
                   return (
                     <AccordionItem
@@ -255,7 +314,7 @@ export default function OpenApiEndpointDocs({
                           </span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="space-y-2">
+                      <AccordionContent className="space-y-4">
                         <p className="text-muted-foreground text-xs">
                           {responseObj.description}
                         </p>
@@ -275,6 +334,16 @@ export default function OpenApiEndpointDocs({
                               ),
                             )}
                         </div>
+                        {example && (
+                          <div>
+                            <span className="font-medium text-sm">
+                              Example:
+                            </span>
+                            <pre className="mt-2 rounded-lg bg-muted p-4 text-xs">
+                              {JSON.stringify(example, null, 2)}
+                            </pre>
+                          </div>
+                        )}
                       </AccordionContent>
                     </AccordionItem>
                   );
@@ -282,6 +351,40 @@ export default function OpenApiEndpointDocs({
               </Accordion>
             )}
           </div>
+
+          {/* Security */}
+          {hasSecurity && (
+            <div className="space-y-2">
+              <span className="font-medium">Security</span>
+              <div className="space-y-2">
+                {operation.security?.map((requirement) => (
+                  <div
+                    key={Object.keys(requirement).join("-")}
+                    className="rounded-lg border p-4"
+                  >
+                    {Object.entries(requirement).map(([scheme, scopes]) => (
+                      <div key={scheme} className="space-y-1">
+                        <span className="font-medium text-sm">{scheme}</span>
+                        {scopes.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {scopes.map((scope) => (
+                              <Badge
+                                key={scope}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                {scope}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div className="py-8 text-center text-muted-foreground">

@@ -73,9 +73,7 @@ CREATE TABLE IF NOT EXISTS "endpoint_funcs" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "endpoints" (
 	"id" text PRIMARY KEY NOT NULL,
-	"title" text,
 	"summary" text,
-	"description" text,
 	"method" "http_methods",
 	"path" text,
 	"code" jsonb,
