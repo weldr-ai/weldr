@@ -1,5 +1,5 @@
 {
-  "id": "92e33e78-3f40-4c2a-a592-22b11f44bc6e",
+  "id": "aa11969c-c9bf-4932-ac5d-38d13151f836",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -463,8 +463,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "summary": {
-          "name": "summary",
+        "path": {
+          "name": "path",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -476,20 +476,26 @@
           "primaryKey": false,
           "notNull": false
         },
-        "path": {
-          "name": "path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "code": {
           "name": "code",
-          "type": "jsonb",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "open_api_spec": {
           "name": "open_api_spec",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resources": {
+          "name": "resources",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "packages": {
+          "name": "packages",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -1224,18 +1230,25 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.func_dependencies": {
-      "name": "func_dependencies",
+    "public.dependencies": {
+      "name": "dependencies",
       "schema": "",
       "columns": {
-        "func_id": {
-          "name": "func_id",
+        "dependent_type": {
+          "name": "dependent_type",
+          "type": "dependent_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dependent_id": {
+          "name": "dependent_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "dependency_func_id": {
-          "name": "dependency_func_id",
+        "dependency_id": {
+          "name": "dependency_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1253,13 +1266,19 @@
           "name": "unique_dependency",
           "columns": [
             {
-              "expression": "func_id",
+              "expression": "dependent_type",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "dependency_func_id",
+              "expression": "dependent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "dependency_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1274,7 +1293,7 @@
           "name": "func_idx",
           "columns": [
             {
-              "expression": "func_id",
+              "expression": "dependent_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1289,7 +1308,7 @@
           "name": "dependency_idx",
           "columns": [
             {
-              "expression": "dependency_func_id",
+              "expression": "dependency_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1302,164 +1321,11 @@
         }
       },
       "foreignKeys": {
-        "func_dependencies_func_id_funcs_id_fk": {
-          "name": "func_dependencies_func_id_funcs_id_fk",
-          "tableFrom": "func_dependencies",
+        "dependencies_dependency_id_funcs_id_fk": {
+          "name": "dependencies_dependency_id_funcs_id_fk",
+          "tableFrom": "dependencies",
           "tableTo": "funcs",
-          "columnsFrom": ["func_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "func_dependencies_dependency_func_id_funcs_id_fk": {
-          "name": "func_dependencies_dependency_func_id_funcs_id_fk",
-          "tableFrom": "func_dependencies",
-          "tableTo": "funcs",
-          "columnsFrom": ["dependency_func_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.func_internal_graph": {
-      "name": "func_internal_graph",
-      "schema": "",
-      "columns": {
-        "func_id": {
-          "name": "func_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "func_internal_graph_func_id_funcs_id_fk": {
-          "name": "func_internal_graph_func_id_funcs_id_fk",
-          "tableFrom": "func_internal_graph",
-          "tableTo": "funcs",
-          "columnsFrom": ["func_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "func_internal_graph_func_id_unique": {
-          "name": "func_internal_graph_func_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["func_id"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.func_internal_graph_edges": {
-      "name": "func_internal_graph_edges",
-      "schema": "",
-      "columns": {
-        "source_func_id": {
-          "name": "source_func_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_func_id": {
-          "name": "target_func_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "connections": {
-          "name": "connections",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "unique_source_target": {
-          "name": "unique_source_target",
-          "columns": [
-            {
-              "expression": "source_func_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "target_func_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "internal_conn_source_idx": {
-          "name": "internal_conn_source_idx",
-          "columns": [
-            {
-              "expression": "source_func_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "internal_conn_target_idx": {
-          "name": "internal_conn_target_idx",
-          "columns": [
-            {
-              "expression": "target_func_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "func_internal_graph_edges_source_func_id_funcs_id_fk": {
-          "name": "func_internal_graph_edges_source_func_id_funcs_id_fk",
-          "tableFrom": "func_internal_graph_edges",
-          "tableTo": "funcs",
-          "columnsFrom": ["source_func_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "func_internal_graph_edges_target_func_id_funcs_id_fk": {
-          "name": "func_internal_graph_edges_target_func_id_funcs_id_fk",
-          "tableFrom": "func_internal_graph_edges",
-          "tableTo": "funcs",
-          "columnsFrom": ["target_func_id"],
+          "columnsFrom": ["dependency_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1492,6 +1358,11 @@
       "name": "integration_type",
       "schema": "public",
       "values": ["postgres", "mysql"]
+    },
+    "public.dependent_type": {
+      "name": "dependent_type",
+      "schema": "public",
+      "values": ["function", "endpoint"]
     }
   },
   "schemas": {},

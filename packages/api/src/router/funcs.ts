@@ -101,9 +101,9 @@ export const funcsRouter = {
         });
       }
 
+      const { code: _, ...rest } = result;
       return {
-        ...result,
-        code: undefined,
+        ...rest,
         canRun: Boolean(result.name && result.code),
       };
     }),
@@ -167,9 +167,9 @@ export const funcsRouter = {
         });
       }
 
+      const { code, docs, packages, ...rest } = updatedFunc;
       return {
-        ...updatedFunc,
-        code: undefined,
+        ...rest,
         canRun: Boolean(updatedFunc.name && updatedFunc.code),
       };
     }),

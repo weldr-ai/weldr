@@ -1,8 +1,8 @@
 import type {
-  FuncResource,
   JsonSchema,
   Package,
   RawContent,
+  RequirementResource,
 } from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
@@ -16,7 +16,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { conversations } from "./conversations";
-import { funcInternalGraph } from "./func-internal-graph";
 import { integrations } from "./integrations";
 import { projects } from "./projects";
 import { testRuns } from "./test-runs";
@@ -36,7 +35,7 @@ export const funcs = pgTable(
     docs: text("docs"),
     code: text("code"),
     packages: jsonb("packages").$type<Package[]>(),
-    resources: jsonb("resources").$type<FuncResource[]>(),
+    resources: jsonb("resources").$type<RequirementResource[]>(),
     testInput: jsonb("test_input").$type<unknown>(),
     positionX: integer("position_x").default(0),
     positionY: integer("position_y").default(0),
@@ -73,5 +72,4 @@ export const funcRelations = relations(funcs, ({ one, many }) => ({
     fields: [funcs.userId],
     references: [users.id],
   }),
-  internalGraph: one(funcInternalGraph),
 }));

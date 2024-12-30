@@ -1,4 +1,8 @@
-import type { OpenApiEndpointSpec } from "@integramind/shared/types";
+import type {
+  OpenApiEndpointSpec,
+  Package,
+  RequirementResource,
+} from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
@@ -30,11 +34,12 @@ export const endpoints = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => createId()),
-    summary: text("summary"),
-    method: httpMethods("method"),
     path: text("path"),
-    code: jsonb("code"),
+    method: httpMethods("method"),
+    code: text("code"),
     openApiSpec: jsonb("open_api_spec").$type<OpenApiEndpointSpec>(),
+    resources: jsonb("resources").$type<RequirementResource[]>(),
+    packages: jsonb("packages").$type<Package[]>(),
     positionX: integer("position_x").default(0),
     positionY: integer("position_y").default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),

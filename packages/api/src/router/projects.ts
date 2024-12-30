@@ -194,11 +194,13 @@ export const projectsRouter = {
 
         const result = {
           ...project,
-          funcs: project.funcs.map((func) => ({
-            ...func,
-            code: undefined,
-            canRun: Boolean(func.code),
-          })),
+          funcs: project.funcs.map((func) => {
+            const { code, ...rest } = func;
+            return {
+              ...rest,
+              canRun: Boolean(func.code),
+            };
+          }),
           resources: resourceEnvs,
         };
 
@@ -316,14 +318,14 @@ export const projectsRouter = {
       }
 
       for (const func of project.funcs) {
+        const { code: _, ...rest } = func;
         result.push({
           type: "func",
           id: func.id,
           dragHandle: ".drag-handle",
           position: { x: func.positionX ?? 0, y: func.positionY ?? 0 },
           data: {
-            ...func,
-            code: undefined,
+            ...rest,
             canRun: Boolean(func.code),
           },
         });

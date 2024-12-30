@@ -86,6 +86,7 @@ export const endpointsRouter = {
             ),
           columns: {
             code: false,
+            packages: false,
           },
           with: {
             conversation: {
@@ -131,7 +132,6 @@ export const endpointsRouter = {
           ),
           columns: {
             id: true,
-            summary: true,
             method: true,
             path: true,
           },

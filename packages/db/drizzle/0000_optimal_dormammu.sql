@@ -2,6 +2,7 @@ CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant');--> statement-
 CREATE TYPE "public"."http_methods" AS ENUM('get', 'post', 'put', 'patch', 'delete');--> statement-breakpoint
 CREATE TYPE "public"."integration_category" AS ENUM('database');--> statement-breakpoint
 CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');--> statement-breakpoint
+CREATE TYPE "public"."dependent_type" AS ENUM('function', 'endpoint');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -73,11 +74,12 @@ CREATE TABLE IF NOT EXISTS "endpoint_funcs" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "endpoints" (
 	"id" text PRIMARY KEY NOT NULL,
-	"summary" text,
-	"method" "http_methods",
 	"path" text,
-	"code" jsonb,
+	"method" "http_methods",
+	"code" text,
 	"open_api_spec" jsonb,
+	"resources" jsonb,
+	"packages" jsonb,
 	"position_x" integer DEFAULT 0,
 	"position_y" integer DEFAULT 0,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -172,21 +174,10 @@ CREATE TABLE IF NOT EXISTS "test_runs" (
 	"func_id" text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "func_dependencies" (
-	"func_id" text NOT NULL,
-	"dependency_func_id" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "func_internal_graph" (
-	"func_id" text NOT NULL,
-	CONSTRAINT "func_internal_graph_func_id_unique" UNIQUE("func_id")
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "func_internal_graph_edges" (
-	"source_func_id" text NOT NULL,
-	"target_func_id" text NOT NULL,
-	"connections" jsonb NOT NULL,
+CREATE TABLE IF NOT EXISTS "dependencies" (
+	"dependent_type" "dependent_type" NOT NULL,
+	"dependent_id" text NOT NULL,
+	"dependency_id" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -335,39 +326,12 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "func_dependencies" ADD CONSTRAINT "func_dependencies_func_id_funcs_id_fk" FOREIGN KEY ("func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "func_dependencies" ADD CONSTRAINT "func_dependencies_dependency_func_id_funcs_id_fk" FOREIGN KEY ("dependency_func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "func_internal_graph" ADD CONSTRAINT "func_internal_graph_func_id_funcs_id_fk" FOREIGN KEY ("func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "func_internal_graph_edges" ADD CONSTRAINT "func_internal_graph_edges_source_func_id_funcs_id_fk" FOREIGN KEY ("source_func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "func_internal_graph_edges" ADD CONSTRAINT "func_internal_graph_edges_target_func_id_funcs_id_fk" FOREIGN KEY ("target_func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_dependency_id_funcs_id_fk" FOREIGN KEY ("dependency_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "unique_name" ON "funcs" USING btree ("name","project_id");--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_dependency" ON "func_dependencies" USING btree ("func_id","dependency_func_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "func_idx" ON "func_dependencies" USING btree ("func_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "dependency_idx" ON "func_dependencies" USING btree ("dependency_func_id");--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_source_target" ON "func_internal_graph_edges" USING btree ("source_func_id","target_func_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "internal_conn_source_idx" ON "func_internal_graph_edges" USING btree ("source_func_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "internal_conn_target_idx" ON "func_internal_graph_edges" USING btree ("target_func_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "unique_dependency" ON "dependencies" USING btree ("dependent_type","dependent_id","dependency_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "func_idx" ON "dependencies" USING btree ("dependent_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dependency_idx" ON "dependencies" USING btree ("dependency_id");

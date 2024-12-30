@@ -1,4 +1,3 @@
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 import {
@@ -15,14 +14,6 @@ import {
   ExpandableCardHeader,
   ExpandableCardTrigger,
 } from "@integramind/ui/expandable-card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -44,7 +35,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
 import { DeleteAlertDialog } from "@/components/delete-alert-dialog";
@@ -65,7 +55,6 @@ import type {
   UserMessageRawContent,
 } from "@integramind/shared/types";
 import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
-import { updateFuncSchema } from "@integramind/shared/validators/funcs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,7 +72,6 @@ import {
 import { TreeView, schemaToTreeData } from "@integramind/ui/tree-view";
 import { createId } from "@paralleldrive/cuid2";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
-import { debounce } from "perfect-debounce";
 import ReactMarkdown from "react-markdown";
 import type { ReferenceNode } from "../../editor/plugins/reference/node";
 import MessageList from "../../message-list";
@@ -150,29 +138,6 @@ export const FuncNode = memo(
 
     const editorRef = useRef<LexicalEditor>(null);
 
-    const form = useForm<z.infer<typeof updateFuncSchema>>({
-      mode: "onChange",
-      resolver: zodResolver(updateFuncSchema),
-      defaultValues: {
-        where: {
-          id: data.id,
-        },
-        payload: {
-          name: data.name ?? "",
-        },
-      },
-    });
-
-    useEffect(() => {
-      if (data.name) {
-        return;
-      }
-      form.setError("payload.name", {
-        type: "required",
-        message: "Name is required",
-      });
-    }, [form.setError, data.name]);
-
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
@@ -189,12 +154,12 @@ export const FuncNode = memo(
           id: createId(),
           role: "assistant",
           content:
-            "Hi there! I'm Integrator, your AI assistant. What does your function do?",
+            "Hi there! I'm IntegraMind, your AI assistant. What does your function do?",
           rawContent: [
             {
               type: "text",
               value:
-                "Hi there! I'm Integrator, your AI assistant. What does your function do?",
+                "Hi there! I'm IntegraMind, your AI assistant. What does your function do?",
             },
           ],
         },
@@ -320,10 +285,7 @@ export const FuncNode = memo(
         funcId: data.id,
       });
 
-      const result = await generateFunc({
-        funcId: data.id,
-        conversationId: data.conversationId,
-      });
+      const result = await generateFunc(data.id);
 
       if (
         typeof result === "object" &&
@@ -398,7 +360,23 @@ export const FuncNode = memo(
         };
 
         await apiUtils.funcs.byId.invalidate({ id: data.id });
-        await apiUtils.funcDependencies.available.invalidate();
+        await apiUtils.dependencies.available.invalidate();
+        updateNodeData(data.id, {
+          ...data,
+          name: funcRequirementsMessageObject.message.content.name,
+          rawDescription:
+            funcRequirementsMessageObject.message.content.description,
+          behavior: funcRequirementsMessageObject.message.content.behavior,
+          inputSchema: JSON.parse(
+            funcRequirementsMessageObject.message.content.inputSchema,
+          ),
+          outputSchema: JSON.parse(
+            funcRequirementsMessageObject.message.content.outputSchema,
+          ),
+          errors: funcRequirementsMessageObject.message.content.errors,
+          resources: funcRequirementsMessageObject.message.content.resources,
+          canRun: true,
+        });
         setMessages([...newMessages, funcBuiltSuccessfullyMessage]);
       }
 
@@ -408,18 +386,14 @@ export const FuncNode = memo(
     };
 
     const resources = useResources();
-    const availableHelperFunctions = api.funcDependencies.available.useQuery({
-      funcId: data.id,
+    const availableHelperFunctions = api.dependencies.available.useQuery({
+      dependentType: "function",
+      dependentId: data.id,
     });
 
     const helperFunctionReferences = availableHelperFunctions.data?.reduce(
       (acc, func) => {
-        if (
-          !func.name ||
-          !func.rawDescription ||
-          !func.behavior ||
-          !func.errors
-        ) {
+        if (!func.name || !func.rawDescription) {
           return acc;
         }
 
@@ -444,29 +418,6 @@ export const FuncNode = memo(
       ],
       [resources, helperFunctionReferences],
     );
-
-    const debouncedUpdate = useMemo(
-      () =>
-        debounce(
-          async (values: z.infer<typeof updateFuncSchema>) => {
-            await updateFunc.mutateAsync({
-              where: {
-                id: data.id,
-              },
-              payload: {
-                name: values.payload.name,
-              },
-            });
-          },
-          500,
-          { trailing: false },
-        ),
-      [data.id, updateFunc],
-    );
-
-    const onFormChange = (values: z.infer<typeof updateFuncSchema>) => {
-      debouncedUpdate(values);
-    };
 
     return (
       <>
@@ -504,7 +455,9 @@ export const FuncNode = memo(
                       <CircleAlertIcon className="size-4 text-destructive" />
                     )}
                   </div>
-                  <span className="text-sm">{data.name ?? "newFunction"}</span>
+                  <span className="text-sm">
+                    {data.name ?? "Unimplemented Function"}
+                  </span>
                 </Card>
               </ExpandableCardTrigger>
             </ContextMenuTrigger>
@@ -542,7 +495,7 @@ export const FuncNode = memo(
                 minSize={20}
                 className="flex flex-col"
               >
-                <ExpandableCardHeader className="flex flex-col items-start justify-start border-b p-4">
+                <ExpandableCardHeader className="flex flex-col items-start justify-start gap-1 border-b p-4">
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2 text-xs">
                       <FunctionSquareIcon className="size-4 text-primary" />
@@ -621,29 +574,15 @@ export const FuncNode = memo(
                       </DropdownMenu>
                     </div>
                   </div>
-                  <Form {...form}>
-                    <form onChange={form.handleSubmit(onFormChange)}>
-                      <FormField
-                        control={form.control}
-                        name="payload.name"
-                        render={({ field }) => (
-                          <FormItem className="space-y-0">
-                            <FormControl>
-                              <Input
-                                {...field}
-                                autoComplete="off"
-                                className="h-8 border-none p-0 text-base shadow-none focus-visible:ring-0 dark:bg-muted"
-                                placeholder="Enter function name"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </form>
-                  </Form>
+                  <h3
+                    className={cn("text-sm", {
+                      "text-destructive": !data.canRun,
+                    })}
+                  >
+                    {data.name ?? "Unimplemented Function"}
+                  </h3>
                 </ExpandableCardHeader>
-                <div className="flex h-[calc(100dvh-492px)] flex-col p-4">
+                <div className="flex h-[calc(100dvh-482px)] flex-col p-4">
                   <ScrollArea
                     className="mb-2 w-full flex-grow"
                     ref={scrollAreaRef}
@@ -664,7 +603,7 @@ export const FuncNode = memo(
                         editorRef={editorRef}
                         references={references}
                         rawMessage={userMessageRawContent}
-                        placeholder="Create, refine, or fix your function with Integrator..."
+                        placeholder="Create, refine, or fix your function with IntegraMind..."
                         onChange={onChatChange}
                         onSubmit={async () => {
                           if (
@@ -777,9 +716,8 @@ export const FuncNode = memo(
                   </ScrollArea>
                 ) : (
                   <div className="flex h-full items-center justify-center">
-                    <span className="text-muted-foreground text-sm">
-                      Function is not implemented yet. Chat with Integrator to
-                      build it.
+                    <span className="text-center text-muted-foreground text-sm">
+                      Chat with IntegraMind to build the function
                     </span>
                   </div>
                 )}

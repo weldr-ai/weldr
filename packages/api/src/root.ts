@@ -1,9 +1,8 @@
 import { conversationsRouter } from "./router/conversations";
+import { dependenciesRouter } from "./router/dependencies";
 import { endpointsRouter } from "./router/endpoints";
 import { engineRouter } from "./router/engine";
 import { environmentVariablesRouter } from "./router/environment-variables";
-import { funcDependenciesRouter } from "./router/func-dependencies";
-import { funcInternalGraphRouter } from "./router/func-internal-graph";
 import { funcsRouter } from "./router/funcs";
 import { integrationsRouter } from "./router/integrations";
 import { projectsRouter } from "./router/projects";
@@ -14,7 +13,7 @@ import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
   funcs: funcsRouter,
-  funcDependencies: funcDependenciesRouter,
+  dependencies: dependenciesRouter,
   resources: resourcesRouter,
   projects: projectsRouter,
   endpoints: endpointsRouter,
@@ -23,7 +22,6 @@ export const appRouter = createTRPCRouter({
   integrations: integrationsRouter,
   environmentVariables: environmentVariablesRouter,
   testRuns: testRunsRouter,
-  funcInternalGraph: funcInternalGraphRouter,
 });
 
 // export type definition of API

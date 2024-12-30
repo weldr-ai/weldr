@@ -35,6 +35,23 @@ export const parameterObjectSchema = z.object({
   ),
 });
 
+// Content Type Media Types
+export const contentTypeSchema = z
+  .enum([
+    "application/json",
+    "application/xml",
+    "application/x-www-form-urlencoded",
+    "multipart/form-data",
+    "text/plain",
+    "text/html",
+    "application/octet-stream",
+    "application/pdf",
+    "image/png",
+    "image/jpeg",
+    "image/gif",
+  ])
+  .describe("Common HTTP content types");
+
 // Request Body Object - Describes the request payload
 export const requestBodyObjectSchema = z.object({
   description: z
@@ -47,6 +64,7 @@ export const requestBodyObjectSchema = z.object({
     .describe("Whether the request body is required (defaults to false)"),
   content: z
     .record(
+      contentTypeSchema,
       z.object({
         schema: jsonSchema.describe(
           "JSON Schema defining the structure and validation rules for this content type",
@@ -71,6 +89,7 @@ export const responseObjectSchema = z.object({
     .describe("A detailed explanation of when this response is returned"),
   content: z
     .record(
+      contentTypeSchema,
       z.object({
         schema: jsonSchema.describe(
           "JSON Schema defining the structure of the response for this content type",

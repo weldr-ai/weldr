@@ -1,14 +1,13 @@
-import { db, eq } from "@integramind/db";
-import { funcDependencies } from "@integramind/db/schema";
+import { db } from "@integramind/db";
 
 export async function wouldCreateCycle({
-  funcId,
-  dependencyFuncId,
+  dependentId,
+  dependencyId,
 }: {
-  funcId: string;
-  dependencyFuncId: string;
+  dependentId: string;
+  dependencyId: string;
 }): Promise<boolean> {
-  if (funcId === dependencyFuncId) {
+  if (dependentId === dependencyId) {
     return true;
   }
 
@@ -16,19 +15,23 @@ export async function wouldCreateCycle({
   const recursionStack = new Set<string>();
 
   async function dfs(currentId: string): Promise<boolean> {
-    if (currentId === funcId) {
+    if (currentId === dependentId) {
       return true;
     }
 
     visited.add(currentId);
     recursionStack.add(currentId);
 
-    const deps = await db.query.funcDependencies.findMany({
-      where: eq(funcDependencies.funcId, currentId),
+    const deps = await db.query.dependencies.findMany({
+      where: (table, { and, eq }) =>
+        and(
+          eq(table.dependentId, currentId),
+          eq(table.dependentType, "function"), // Only follow function dependencies
+        ),
     });
 
     for (const dep of deps) {
-      const nextId = dep.dependencyFuncId;
+      const nextId = dep.dependencyId;
 
       if (!visited.has(nextId)) {
         if (await dfs(nextId)) {
@@ -43,5 +46,5 @@ export async function wouldCreateCycle({
     return false;
   }
 
-  return await dfs(dependencyFuncId);
+  return await dfs(dependencyId);
 }

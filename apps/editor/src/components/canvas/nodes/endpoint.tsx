@@ -3,20 +3,18 @@ import { Editor } from "@/components/editor";
 import type { ReferenceNode } from "@/components/editor/plugins/reference/node";
 import MessageList from "@/components/message-list";
 import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
-import { generateFunc } from "@/lib/ai/generator";
+import { generateEndpoint } from "@/lib/ai/generator";
 import { useFlowBuilderStore } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
-import { zodResolver } from "@hookform/resolvers/zod";
 import type { RouterOutputs } from "@integramind/api";
 import type {
   AssistantMessageRawContent,
   ConversationMessage,
-  FuncRequirementsMessage,
+  EndpointRequirementsMessage,
   UserMessageRawContent,
 } from "@integramind/shared/types";
 import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
-import { updateEndpointSchema } from "@integramind/shared/validators/endpoints";
 import { Button } from "@integramind/ui/button";
 import { Card } from "@integramind/ui/card";
 import {
@@ -33,27 +31,11 @@ import {
   ExpandableCardTrigger,
 } from "@integramind/ui/expandable-card";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@integramind/ui/form";
-import { toast } from "@integramind/ui/hooks/use-toast";
-import { Input } from "@integramind/ui/input";
-import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@integramind/ui/resizable";
 import { ScrollArea } from "@integramind/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@integramind/ui/select";
 import { cn } from "@integramind/ui/utils";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
@@ -67,10 +49,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { OpenAPIV3 } from "openapi-types";
-import { debounce } from "perfect-debounce";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type UseFormReturn, useForm } from "react-hook-form";
-import type { z } from "zod";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 export const EndpointNode = memo(
   ({
@@ -94,20 +73,6 @@ export const EndpointNode = memo(
       useReactFlow<CanvasNode>();
 
     const apiUtils = api.useUtils();
-
-    const updateEndpoint = api.endpoints.update.useMutation({
-      onSuccess: async (data) => {
-        await apiUtils.endpoints.byId.invalidate({ id: data.id });
-        updateNodeData(data.id, data);
-      },
-      onError: (error) => {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      },
-    });
 
     const deleteEndpoint = api.endpoints.delete.useMutation();
 
@@ -214,10 +179,7 @@ export const EndpointNode = memo(
         rawContent: userMessageRawContent,
       });
 
-      const result = await generateFunc({
-        funcId: data.id,
-        conversationId: data.conversationId,
-      });
+      const result = await generateEndpoint(data.id);
 
       if (
         typeof result === "object" &&
@@ -232,7 +194,7 @@ export const EndpointNode = memo(
       let newAssistantMessage: ConversationMessage | null = null;
 
       for await (const content of readStreamableValue(
-        result as StreamableValue<FuncRequirementsMessage>,
+        result as StreamableValue<EndpointRequirementsMessage>,
       )) {
         newAssistantMessage = {
           role: "assistant",
@@ -248,16 +210,15 @@ export const EndpointNode = memo(
         // if end message, start generating code
         if (
           content?.message?.type === "end" &&
-          content?.message?.content?.description
+          content?.message?.content?.openApiSpec
         ) {
           setIsThinking(false);
           setIsGeneratingCode(true);
           const rawContent: AssistantMessageRawContent = [
             {
               type: "text",
-              value: "Generating the following endpoint: ",
+              value: `Generating the following endpoint: ${content.message.content.openApiSpec.description}`,
             },
-            ...content.message.content.description,
           ];
           newAssistantMessage.rawContent = rawContent;
         }
@@ -273,14 +234,14 @@ export const EndpointNode = memo(
         newMessages.push(newAssistantMessage);
       }
 
-      const funcRequirementsMessageObject = JSON.parse(
+      const endpointRequirementsMessageObject = JSON.parse(
         newAssistantMessageStr,
-      ) as FuncRequirementsMessage;
+      ) as EndpointRequirementsMessage;
 
       // if code generation is set, disable it and refetch the updated endpoint metadata
-      if (funcRequirementsMessageObject.message.type === "end") {
+      if (endpointRequirementsMessageObject.message.type === "end") {
         setIsGeneratingCode(false);
-        const funcBuiltSuccessfullyMessage: ConversationMessage = {
+        const endpointBuiltSuccessfullyMessage: ConversationMessage = {
           role: "assistant",
           rawContent: [
             {
@@ -292,7 +253,65 @@ export const EndpointNode = memo(
         };
 
         await apiUtils.endpoints.byId.invalidate({ id: data.id });
-        setMessages([...newMessages, funcBuiltSuccessfullyMessage]);
+        updateNodeData(data.id, {
+          ...endpointRequirementsMessageObject.message.content,
+          openApiSpec: {
+            ...endpointRequirementsMessageObject.message.content.openApiSpec,
+            parameters:
+              endpointRequirementsMessageObject.message.content.openApiSpec.parameters?.map(
+                (parameter) => ({
+                  ...parameter,
+                  schema:
+                    typeof parameter.schema === "string"
+                      ? JSON.parse(parameter.schema)
+                      : parameter.schema,
+                }),
+              ),
+            requestBody: endpointRequirementsMessageObject.message.content
+              .openApiSpec.requestBody?.content
+              ? {
+                  ...endpointRequirementsMessageObject.message.content
+                    .openApiSpec.requestBody,
+                  content: Object.fromEntries(
+                    Object.entries(
+                      endpointRequirementsMessageObject.message.content
+                        .openApiSpec.requestBody.content,
+                    ).map(([key, value]) => [
+                      key,
+                      {
+                        ...(value || {}),
+                        schema:
+                          typeof value?.schema === "string"
+                            ? JSON.parse(value.schema)
+                            : value?.schema,
+                      },
+                    ]),
+                  ),
+                }
+              : undefined,
+            responses: Object.fromEntries(
+              Object.entries(
+                endpointRequirementsMessageObject.message.content.openApiSpec
+                  .responses,
+              ).map(([key, value]) => [
+                key,
+                {
+                  description: value.description || "No description provided",
+                  content: Object.fromEntries(
+                    Object.entries(value.content || {}).map(([key, value]) => [
+                      key,
+                      {
+                        schema: JSON.parse(value.schema),
+                        example: value.example,
+                      },
+                    ]),
+                  ),
+                },
+              ]),
+            ),
+          },
+        });
+        setMessages([...newMessages, endpointBuiltSuccessfullyMessage]);
       }
 
       setUserMessageContent(null);
@@ -328,66 +347,6 @@ export const EndpointNode = memo(
     }, [scrollToBottom]);
 
     const showEdges = useFlowBuilderStore((state) => state.showEdges);
-
-    const form = useForm<z.infer<typeof updateEndpointSchema>>({
-      mode: "onChange",
-      resolver: zodResolver(updateEndpointSchema),
-      defaultValues: {
-        where: {
-          id: data.id,
-        },
-        payload: {
-          summary: data.summary ?? "",
-          path: data.path ?? "",
-          method:
-            (data.method?.toLowerCase() as
-              | "get"
-              | "post"
-              | "put"
-              | "delete"
-              | "patch") ?? undefined,
-        },
-      },
-    });
-
-    useEffect(() => {
-      if (!data.summary) {
-        form.setError("payload.summary", {
-          message: "Summary is required",
-        });
-      }
-
-      if (!data.path) {
-        form.setError("payload.path", {
-          message: "Path is required",
-        });
-      }
-
-      if (!data.method) {
-        form.setError("payload.method", {
-          message: "HTTP Method is required",
-        });
-      }
-    }, [form, data.summary, data.path, data.method]);
-
-    const debouncedUpdate = useMemo(
-      () =>
-        debounce(
-          async (values: z.infer<typeof updateEndpointSchema>) => {
-            await updateEndpoint.mutateAsync({
-              where: { id: data.id },
-              payload: values.payload,
-            });
-          },
-          500,
-          { trailing: false },
-        ),
-      [data.id, updateEndpoint],
-    );
-
-    const onFormChange = (values: z.infer<typeof updateEndpointSchema>) => {
-      debouncedUpdate(values);
-    };
 
     return (
       <>
@@ -442,7 +401,7 @@ export const EndpointNode = memo(
                     )}
                   </div>
                   <span className="text-sm">
-                    {data.summary ?? "New Endpoint"}
+                    {data.openApiSpec?.summary ?? "Unimplemented Endpoint"}
                   </span>
                 </Card>
               </ExpandableCardTrigger>
@@ -481,7 +440,7 @@ export const EndpointNode = memo(
                 minSize={30}
                 className="flex flex-col"
               >
-                <div className="flex flex-col items-start justify-start border-b p-4">
+                <div className="flex flex-col items-start justify-start gap-2 border-b p-4">
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2 text-xs">
                       <span className="font-semibold text-primary text-xs">
@@ -490,87 +449,15 @@ export const EndpointNode = memo(
                       <span className="text-muted-foreground">Endpoint</span>
                     </div>
                   </div>
-                  <Form {...form}>
-                    <form
-                      className="w-full"
-                      onChange={form.handleSubmit(onFormChange)}
-                    >
-                      <FormField
-                        control={form.control}
-                        name="payload.summary"
-                        render={({ field }) => (
-                          <FormItem className="w-full space-y-0">
-                            <FormControl>
-                              <Input
-                                {...field}
-                                autoComplete="off"
-                                className="h-8 w-full border-none p-0 text-base shadow-none focus-visible:ring-0 dark:bg-muted"
-                                placeholder="Enter endpoint name"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="payload.path"
-                        render={({ field }) => (
-                          <FormItem className="w-full flex-1 space-y-0">
-                            <FormControl>
-                              <div className="flex flex-col">
-                                <div className="flex items-center gap-2">
-                                  <MethodBadgeSelect
-                                    form={form}
-                                    value={data.method}
-                                    onValueChange={async (value) => {
-                                      await updateEndpoint.mutateAsync({
-                                        where: { id: data.id },
-                                        payload: {
-                                          method: value as
-                                            | "get"
-                                            | "post"
-                                            | "put"
-                                            | "delete"
-                                            | "patch",
-                                        },
-                                      });
-                                    }}
-                                  />
-                                  <Input
-                                    {...field}
-                                    autoComplete="off"
-                                    className="h-8 border-none p-0 text-xs shadow-none focus-visible:ring-0 dark:bg-muted"
-                                    placeholder="/api/v1/resource"
-                                  />
-                                </div>
-                                <div className="flex flex-col gap-1 text-destructive text-xs">
-                                  {form.formState.errors.payload?.path && (
-                                    <span>
-                                      {
-                                        form.formState.errors.payload?.path
-                                          .message
-                                      }
-                                    </span>
-                                  )}
-                                  {form.formState.errors.payload?.method && (
-                                    <span>
-                                      {
-                                        form.formState.errors.payload?.method
-                                          .message
-                                      }
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </form>
-                  </Form>
+                  <h3
+                    className={cn("text-sm", {
+                      "text-destructive": !data.openApiSpec,
+                    })}
+                  >
+                    {data.openApiSpec?.summary ?? "Unimplemented Endpoint"}
+                  </h3>
                 </div>
-                <div className="flex h-[calc(100dvh-492px)] flex-col p-4">
+                <div className="flex h-[calc(100dvh-392px)] flex-col p-4">
                   <ScrollArea className="mb-4 flex-grow" ref={scrollAreaRef}>
                     <MessageList
                       messages={messages}
@@ -620,9 +507,9 @@ export const EndpointNode = memo(
               <ResizableHandle withHandle />
 
               <ResizablePanel defaultSize={50} minSize={30}>
-                <ScrollArea className="h-full p-4">
-                  {!data.method || !data.path || !data.summary ? (
-                    <div className="flex h-full items-center justify-center">
+                <ScrollArea className="h-[calc(100dvh-398px)] p-4">
+                  {!data.openApiSpec ? (
+                    <div className="flex h-[calc(100dvh-432px)] items-center justify-center">
                       <span className="text-muted-foreground text-sm">
                         Develop your endpoint to see summary
                       </span>
@@ -637,11 +524,8 @@ export const EndpointNode = memo(
                             version: "1.0.0",
                           },
                           paths: {
-                            [data.path]: {
-                              [data.method.toLowerCase()]: {
-                                summary: data.summary,
-                                ...data.openApiSpec,
-                              },
+                            [data.openApiSpec.path]: {
+                              [data.openApiSpec.method]: data.openApiSpec,
                             },
                           },
                         } as OpenAPIV3.Document
@@ -691,72 +575,3 @@ export const EndpointNode = memo(
     );
   },
 );
-
-const MethodBadgeSelect = ({
-  value,
-  onValueChange,
-  form,
-}: {
-  value?: string | null;
-  onValueChange: (value: string) => void;
-  form: UseFormReturn<z.infer<typeof updateEndpointSchema>>;
-}) => {
-  const [isSelecting, setIsSelecting] = useState(false);
-
-  const badgeClassNames = (methodValue?: string) =>
-    cn("px-1.5 py-0.5 font-bold uppercase", {
-      "bg-primary/30 text-primary hover:bg-primary/40":
-        methodValue?.toLowerCase() === "get",
-      "bg-success/30 text-success hover:bg-success/40":
-        methodValue?.toLowerCase() === "post",
-      "bg-warning/30 text-warning hover:bg-warning/40":
-        methodValue?.toLowerCase() === "put" ||
-        methodValue?.toLowerCase() === "patch",
-      "bg-destructive/30 text-destructive hover:bg-destructive/40":
-        methodValue?.toLowerCase() === "delete",
-    });
-
-  return (
-    <FormField
-      control={form.control}
-      name="payload.method"
-      render={({ field }) => (
-        <FormItem>
-          <FormControl>
-            <Select
-              {...field}
-              open={isSelecting}
-              value={value?.toLowerCase() || ""}
-              onValueChange={(v) => {
-                field.onChange(v);
-                onValueChange(v);
-                setIsSelecting(false);
-              }}
-              onOpenChange={setIsSelecting}
-            >
-              <SelectTrigger
-                showIcon={false}
-                onClick={() => setIsSelecting(true)}
-                className={cn(
-                  "h-full items-center justify-center rounded-sm border-none px-2.5 py-0.5 text-xs shadow-none focus:ring-0",
-                  value
-                    ? badgeClassNames(value)
-                    : "rounded-sm bg-accent text-muted-foreground hover:bg-accent/80",
-                )}
-              >
-                <SelectValue className="text-xs" placeholder="HTTP METHOD" />
-              </SelectTrigger>
-              <SelectContent className="w-14">
-                <SelectItem value="get">GET</SelectItem>
-                <SelectItem value="post">POST</SelectItem>
-                <SelectItem value="put">PUT</SelectItem>
-                <SelectItem value="delete">DELETE</SelectItem>
-                <SelectItem value="patch">PATCH</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormControl>
-        </FormItem>
-      )}
-    />
-  );
-};

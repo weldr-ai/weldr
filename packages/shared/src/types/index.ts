@@ -1,9 +1,9 @@
 import type { JSONSchema7 } from "json-schema";
 import type { z } from "zod";
 import type {
-  funcRequirementsMessageSchema,
   packageSchema,
   rawContentSchema,
+  requirementResourceSchema,
 } from "../validators/common";
 import type {
   assistantMessageRawContentSchema,
@@ -12,9 +12,15 @@ import type {
   messageRawContentSchema,
   userMessageRawContentSchema,
 } from "../validators/conversations";
-import type { endpointSchema } from "../validators/endpoints";
+import type {
+  endpointRequirementsMessageSchema,
+  endpointSchema,
+} from "../validators/endpoints";
 import type { environmentVariableSchema } from "../validators/environment-variables";
-import type { funcResourceSchema, funcSchema } from "../validators/funcs";
+import type {
+  funcRequirementsMessageSchema,
+  funcSchema,
+} from "../validators/funcs";
 import type {
   integrationHelperFunctionSchema,
   integrationSchema,
@@ -41,7 +47,7 @@ export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
 export type Conversation = z.infer<typeof conversationSchema>;
 
 export type Resource = z.infer<typeof resourceSchema>;
-export type FuncResource = z.infer<typeof funcResourceSchema>;
+export type RequirementResource = z.infer<typeof requirementResourceSchema>;
 export type Endpoint = z.infer<typeof endpointSchema>;
 export type OpenApiEndpointSpec = z.infer<typeof openApiEndpointSpecSchema>;
 
@@ -60,6 +66,9 @@ export type TestRun = z.infer<typeof testRunSchema>;
 
 export type FuncRequirementsMessage = z.infer<
   typeof funcRequirementsMessageSchema
+>;
+export type EndpointRequirementsMessage = z.infer<
+  typeof endpointRequirementsMessageSchema
 >;
 
 export type BaseFormState<

@@ -20,7 +20,7 @@ import {
 } from "./utils";
 
 interface OpenApiEndpointDocsProps {
-  spec: OpenAPIV3.Document;
+  spec: OpenAPIV3.Document | null;
 }
 
 function SchemaField({
@@ -118,6 +118,14 @@ function SchemaField({
 export default function OpenApiEndpointDocs({
   spec,
 }: OpenApiEndpointDocsProps) {
+  if (!spec) {
+    return (
+      <div className="flex h-[calc(100dvh-432px)] items-center justify-center text-center text-muted-foreground text-xs">
+        Chat with IntegraMind to generate the endpoint
+      </div>
+    );
+  }
+
   const { path, method, operation } = parseOpenApiEndpoint(spec);
 
   const requestBodySchema = operation.requestBody
