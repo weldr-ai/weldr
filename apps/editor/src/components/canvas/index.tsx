@@ -62,10 +62,12 @@ export function Canvas({
   const [nodes, setNodes, onNodesChange] =
     useNodesState<CanvasNode>(initialNodes);
 
+  const apiUtils = api.useUtils();
+
   const createFunc = api.funcs.create.useMutation({
     onSuccess: (data) => {
       updateNodeData(data.id, data);
-      console.log(nodes);
+      apiUtils.funcs.byId.invalidate({ id: data.id });
     },
     onError: (error) => {
       toast({
@@ -89,6 +91,7 @@ export function Canvas({
   const createEndpoint = api.endpoints.create.useMutation({
     onSuccess: (data) => {
       updateNodeData(data.id, data);
+      apiUtils.endpoints.byId.invalidate({ id: data.id });
     },
     onError: (error) => {
       toast({

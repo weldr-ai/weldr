@@ -54,6 +54,7 @@ import type {
   JsonSchema,
   UserMessageRawContent,
 } from "@integramind/shared/types";
+import { toTitle } from "@integramind/shared/utils";
 import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import {
   DropdownMenu,
@@ -111,7 +112,6 @@ export const FuncNode = memo(
 
     const updateFunc = api.funcs.update.useMutation({
       onSuccess: async (data) => {
-        await apiUtils.funcs.byId.invalidate({ id: data.id });
         updateNodeData(data.id, data);
       },
       onError: (error) => {
@@ -144,7 +144,7 @@ export const FuncNode = memo(
     const showEdges = useFlowBuilderStore((state) => state.showEdges);
     const [isThinking, setIsThinking] = useState<boolean>(false);
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
-    const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
+    const [isBuilding, setIsBuilding] = useState<boolean>(false);
     const [isRunning, setIsRunning] = useState<boolean>(false);
     const [testInput, setTestInput] = useState<unknown>(data.testInput ?? {});
 
@@ -207,7 +207,6 @@ export const FuncNode = memo(
           return acc;
         }, [] as UserMessageRawContent);
 
-        console.log(userMessageRawContent);
         setUserMessageRawContent(userMessageRawContent);
         setUserMessageContent(text);
       });
@@ -319,7 +318,7 @@ export const FuncNode = memo(
           content?.message?.content?.description
         ) {
           setIsThinking(false);
-          setIsGeneratingCode(true);
+          setIsBuilding(true);
           const rawContent: AssistantMessageRawContent = [
             {
               type: "text",
@@ -347,7 +346,7 @@ export const FuncNode = memo(
 
       // if code generation is set, disable it and refetch the updated function metadata
       if (funcRequirementsMessageObject.message.type === "end") {
-        setIsGeneratingCode(false);
+        setIsBuilding(false);
         const funcBuiltSuccessfullyMessage: ConversationMessage = {
           role: "assistant",
           rawContent: [
@@ -456,7 +455,7 @@ export const FuncNode = memo(
                     )}
                   </div>
                   <span className="text-sm">
-                    {data.name ?? "Unimplemented Function"}
+                    {data.name ? toTitle(data.name) : "Unimplemented Function"}
                   </span>
                 </Card>
               </ExpandableCardTrigger>
@@ -579,7 +578,7 @@ export const FuncNode = memo(
                       "text-destructive": !data.canRun,
                     })}
                   >
-                    {data.name ?? "Unimplemented Function"}
+                    {data.name ? toTitle(data.name) : "Unimplemented Function"}
                   </h3>
                 </ExpandableCardHeader>
                 <div className="flex h-[calc(100dvh-482px)] flex-col p-4">
@@ -592,7 +591,7 @@ export const FuncNode = memo(
                       testRuns={testRuns}
                       isThinking={isThinking}
                       isRunning={isRunning}
-                      isGenerating={isGeneratingCode}
+                      isBuilding={isBuilding}
                     />
                     <div ref={chatHistoryEndRef} />
                   </ScrollArea>
@@ -606,20 +605,14 @@ export const FuncNode = memo(
                         placeholder="Create, refine, or fix your function with IntegraMind..."
                         onChange={onChatChange}
                         onSubmit={async () => {
-                          if (
-                            userMessageContent &&
-                            !isGenerating &&
-                            data.name
-                          ) {
+                          if (userMessageContent && !isGenerating) {
                             await handleOnSubmit();
                           }
                         }}
                       />
                       <Button
                         type="submit"
-                        disabled={
-                          !userMessageContent || isGenerating || !data.name
-                        }
+                        disabled={!userMessageContent || isGenerating}
                         size="sm"
                         className="absolute right-2 bottom-2 disabled:bg-muted-foreground"
                       >

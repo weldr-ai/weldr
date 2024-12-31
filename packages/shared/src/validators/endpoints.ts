@@ -5,7 +5,8 @@ import {
   requirementResourceSchema,
 } from "./common";
 import { conversationSchema } from "./conversations";
-import { funcSchema } from "./funcs";
+import { dependencySchema } from "./dependencies";
+import { integrationTypeSchema } from "./integrations";
 import {
   contentTypeSchema,
   httpMethodSchema,
@@ -39,13 +40,15 @@ export const endpointSchema = z.object({
   code: z.string().optional(),
   method: httpMethodSchema.optional(),
   path: endpointPathSchema.optional(),
+  summary: z.string().optional(),
+  description: z.string().optional(),
   openApiSpec: openApiEndpointSpecSchema.optional(),
   resources: requirementResourceSchema.array().optional(),
   packages: packageSchema.array().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   projectId: z.string().cuid2(),
-  funcs: z.array(funcSchema),
+  dependencies: dependencySchema.array(),
   conversationId: z.string().cuid2(),
   conversation: conversationSchema,
 });
@@ -65,11 +68,11 @@ export const updateEndpointSchema = z.object({
     method: httpMethodSchema.optional(),
     path: endpointPathSchema.optional(),
     code: z.string().optional(),
+    summary: z.string().optional(),
+    description: z.string().optional(),
     openApiSpec: openApiEndpointSpecSchema.optional(),
     resources: requirementResourceSchema.array().optional(),
     packages: packageSchema.array().optional(),
-    routeHandler: z.string().optional(),
-    funcs: z.array(funcSchema).optional(),
     positionX: z.number().optional(),
     positionY: z.number().optional(),
   }),
@@ -264,7 +267,9 @@ export const endpointRequirementsMessageSchema = z.object({
             .array()
             .optional()
             .describe(
-              "The list of resources used in the function. PLEASE NOTE THAT RESOURCES WILL BE STATED IN THE CONTEXT. DON'T HALLUCINATE RESOURCES.",
+              `The list of resources used in the function. Here is a list of valid resources: ${Object.values(
+                integrationTypeSchema.options,
+              ).join(", ")}`,
             ),
           packages: packageSchema
             .omit({

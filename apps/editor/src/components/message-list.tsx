@@ -30,13 +30,13 @@ export default function MessageList({
   testRuns,
   isRunning,
   isThinking,
-  isGenerating,
+  isBuilding,
 }: {
   messages: ConversationMessage[];
   testRuns?: TestRun[];
   isRunning?: boolean;
   isThinking: boolean;
-  isGenerating?: boolean;
+  isBuilding?: boolean;
 }) {
   const testRunList: (TestRun & { type: "test-run" })[] = (testRuns ?? []).map(
     (testRun) => ({
@@ -82,7 +82,7 @@ export default function MessageList({
         </div>
       )}
 
-      {isGenerating && (
+      {isBuilding && (
         <div key="generating" className="flex items-start">
           <Avatar className="size-6 rounded-md">
             <AvatarImage src="/logo-solid.svg" alt="Integrator" />

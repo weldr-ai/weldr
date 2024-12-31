@@ -2,7 +2,7 @@ import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
 import { conversations, funcs, testRuns } from "@integramind/db/schema";
 
-import { type SQL, and, eq } from "@integramind/db";
+import { and, eq } from "@integramind/db";
 import {
   insertFuncSchema,
   updateFuncSchema,
@@ -22,7 +22,7 @@ export const funcsRouter = {
               .values({
                 userId: ctx.session.user.id,
               })
-              .returning({ id: conversations.id })
+              .returning()
           )[0];
 
           if (!conversation) {
@@ -48,10 +48,17 @@ export const funcsRouter = {
             });
           }
 
-          return result[0];
+          return {
+            ...result[0],
+            conversationId: conversation.id,
+          };
         });
 
-        return result;
+        const { code, docs, packages, ...rest } = result;
+        return {
+          ...rest,
+          testRuns: [],
+        };
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {
@@ -110,13 +117,11 @@ export const funcsRouter = {
   update: protectedProcedure
     .input(updateFuncSchema)
     .mutation(async ({ ctx, input }) => {
-      const where: SQL[] = [
-        eq(funcs.id, input.where.id),
-        eq(funcs.userId, ctx.session.user.id),
-      ];
-
       const existingFunc = await ctx.db.query.funcs.findFirst({
-        where: and(...where),
+        where: and(
+          eq(funcs.id, input.where.id),
+          eq(funcs.userId, ctx.session.user.id),
+        ),
       });
 
       if (!existingFunc || !existingFunc.conversationId) {
@@ -126,18 +131,16 @@ export const funcsRouter = {
         });
       }
 
-      if (input.payload.name) {
+      if (input.payload.name && existingFunc.projectId) {
         let isUnique = false;
 
-        if (existingFunc.projectId) {
-          isUnique =
-            (await ctx.db.query.funcs.findFirst({
-              where: and(
-                eq(funcs.name, input.payload.name),
-                eq(funcs.projectId, existingFunc.projectId),
-              ),
-            })) !== undefined;
-        }
+        isUnique =
+          (await ctx.db.query.funcs.findFirst({
+            where: and(
+              eq(funcs.name, input.payload.name),
+              eq(funcs.projectId, existingFunc.projectId),
+            ),
+          })) !== undefined;
 
         if (isUnique && existingFunc.id !== input.where.id) {
           throw new TRPCError({

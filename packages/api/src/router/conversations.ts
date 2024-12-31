@@ -348,11 +348,14 @@ function userMessageRawContentToText(
     .trim();
 
   const sections = [];
+  if (context.length > 0 || helperFunctions.length > 0) {
+    sections.push("## Context\n");
+  }
   if (context.length > 0) {
-    sections.push("## Context", context.filter(Boolean).join("\n\n"));
+    sections.push(context.filter(Boolean).join("\n\n"));
   }
   if (helperFunctions.length > 0) {
-    sections.push(helperFunctions.join("\n"));
+    sections.push(helperFunctions.join("\n\n"));
   }
   sections.push("## Request", text);
 
@@ -368,7 +371,7 @@ function referenceToText(
       return {
         text: "",
         helpers: [
-          `### Function \`${reference.name}\` (ID: ${reference.id})`,
+          `### Helper Function \`${reference.name}\` (ID: ${reference.id})`,
           `${reference.docs}`,
         ],
       };

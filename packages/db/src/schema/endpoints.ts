@@ -10,7 +10,6 @@ import {
   jsonb,
   pgEnum,
   pgTable,
-  primaryKey,
   text,
   timestamp,
   unique,
@@ -36,6 +35,7 @@ export const endpoints = pgTable(
       .$defaultFn(() => createId()),
     path: text("path"),
     method: httpMethods("method"),
+    summary: text("summary"),
     code: text("code"),
     openApiSpec: jsonb("open_api_spec").$type<OpenApiEndpointSpec>(),
     resources: jsonb("resources").$type<RequirementResource[]>(),
@@ -73,18 +73,3 @@ export const endpointsRelations = relations(endpoints, ({ one, many }) => ({
   }),
   funcs: many(funcs),
 }));
-
-export const endpointFuncs = pgTable(
-  "endpoint_funcs",
-  {
-    endpointId: text("endpoint_id")
-      .references(() => endpoints.id)
-      .notNull(),
-    funcId: text("func_id")
-      .references(() => funcs.id)
-      .notNull(),
-  },
-  (table) => ({
-    pk: primaryKey({ columns: [table.endpointId, table.funcId] }),
-  }),
-);

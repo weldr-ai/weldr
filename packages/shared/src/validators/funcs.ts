@@ -6,6 +6,7 @@ import {
 } from "./common";
 import { conversationSchema } from "./conversations";
 import { dependencySchema } from "./dependencies";
+import { integrationTypeSchema } from "./integrations";
 import { jsonSchema } from "./json-schema";
 import { testRunSchema } from "./test-runs";
 
@@ -202,7 +203,9 @@ export const funcRequirementsMessageSchema = z.object({
             .array()
             .optional()
             .describe(
-              "The list of resources used in the function. PLEASE NOTE THAT RESOURCES WILL BE STATED IN THE CONTEXT. DON'T HALLUCINATE RESOURCES.",
+              `The list of resources used in the function. Here is a list of valid resources: ${Object.values(
+                integrationTypeSchema.options,
+              ).join(", ")}`,
             ),
           helperFunctionIds: z
             .string()

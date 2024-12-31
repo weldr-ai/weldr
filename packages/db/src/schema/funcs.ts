@@ -72,4 +72,8 @@ export const funcRelations = relations(funcs, ({ one, many }) => ({
     fields: [funcs.userId],
     references: [users.id],
   }),
+  integration: one(integrations, {
+    fields: [funcs.integrationId],
+    references: [integrations.id],
+  }),
 }));

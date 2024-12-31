@@ -66,16 +66,11 @@ CREATE TABLE IF NOT EXISTS "conversations" (
 	"user_id" text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "endpoint_funcs" (
-	"endpoint_id" text NOT NULL,
-	"func_id" text NOT NULL,
-	CONSTRAINT "endpoint_funcs_endpoint_id_func_id_pk" PRIMARY KEY("endpoint_id","func_id")
-);
---> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "endpoints" (
 	"id" text PRIMARY KEY NOT NULL,
 	"path" text,
 	"method" "http_methods",
+	"summary" text,
 	"code" text,
 	"open_api_spec" jsonb,
 	"resources" jsonb,
@@ -207,18 +202,6 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "conversations" ADD CONSTRAINT "conversations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "endpoint_funcs" ADD CONSTRAINT "endpoint_funcs_endpoint_id_endpoints_id_fk" FOREIGN KEY ("endpoint_id") REFERENCES "public"."endpoints"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "endpoint_funcs" ADD CONSTRAINT "endpoint_funcs_func_id_funcs_id_fk" FOREIGN KEY ("func_id") REFERENCES "public"."funcs"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

@@ -10,8 +10,8 @@ import {
 } from "@/lib/ai/prompts";
 import { createOpenAI } from "@ai-sdk/openai";
 import { auth } from "@integramind/auth";
-import { and, db, eq } from "@integramind/db";
-import { conversations, endpoints } from "@integramind/db/schema";
+import { and, db, eq, not } from "@integramind/db";
+import { conversations, endpoints, funcs } from "@integramind/db/schema";
 import type {
   AssistantMessageRawContent,
   EndpointRequirementsMessage,
@@ -45,12 +45,27 @@ export async function generateFunc(funcId: string) {
     id: funcId,
   });
 
-  if (!funcData.name || !funcData.conversationId) {
+  if (!funcData.conversationId || !funcData.projectId) {
     return {
       status: "error",
       message: "Function name or conversation ID is required",
     };
   }
+
+  const existingFuncs = await db.query.funcs.findMany({
+    where: and(
+      eq(funcs.projectId, funcData.projectId),
+      eq(funcs.userId, session.user.id),
+      not(eq(funcs.id, funcId)),
+    ),
+    columns: {
+      name: true,
+    },
+  });
+
+  const implementedFuncs = existingFuncs.filter(
+    (existingFunc) => existingFunc.name,
+  );
 
   const conversation = await db.query.conversations.findFirst({
     where: and(
@@ -69,16 +84,28 @@ export async function generateFunc(funcId: string) {
     };
   }
 
+  console.log(
+    `[generateFunc] Implemented funcs: ${JSON.stringify(implementedFuncs, null, 2)}`,
+  );
+
   const messages = [
     {
       role: "user",
-      content: `You are implementing a function called ${funcData.name} and it has ID: ${funcId}.`,
+      content: `The function you are generating should not have the same name as any of the following functions:\n${
+        implementedFuncs.length > 0
+          ? implementedFuncs
+              .map((existingFunc) => `- \`${existingFunc.name}\``)
+              .join("\n")
+          : "No other functions implemented yet"
+      }`,
     },
     ...conversation.messages.map((message) => ({
       role: message.role,
       content: message.content,
     })),
   ] as CoreMessage[];
+
+  console.log(`[generateFunc] Messages: ${JSON.stringify(messages, null, 2)}`);
 
   const stream = createStreamableValue<FuncRequirementsMessage>();
 
@@ -192,14 +219,14 @@ export async function generateFunc(funcId: string) {
             where: { id: funcId },
             payload: {
               name: object.message.content.name,
-              inputSchema,
-              outputSchema,
               rawDescription: object.message.content.description,
               behavior: object.message.content.behavior,
-              errors: object.message.content.errors,
-              docs,
-              resources: object.message.content.resources,
               packages: object.message.content.packages,
+              errors: object.message.content.errors,
+              resources: object.message.content.resources,
+              inputSchema,
+              outputSchema,
+              docs,
               code,
             },
           });
@@ -231,8 +258,17 @@ export async function generateFunc(funcId: string) {
 }
 
 export async function generateEndpoint(endpointId: string) {
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session) {
+    redirect("/auth/sign-in");
+  }
+
   const endpoint = await db.query.endpoints.findFirst({
-    where: eq(endpoints.id, endpointId),
+    where: and(
+      eq(endpoints.id, endpointId),
+      eq(endpoints.userId, session.user.id),
+    ),
   });
 
   if (!endpoint) {
@@ -241,6 +277,26 @@ export async function generateEndpoint(endpointId: string) {
       message: "Endpoint not found",
     };
   }
+
+  const existingEndpoints = await db.query.endpoints.findMany({
+    where: and(
+      eq(endpoints.projectId, endpoint.projectId),
+      eq(endpoints.userId, session.user.id),
+      not(eq(endpoints.id, endpointId)),
+    ),
+    columns: {
+      summary: true,
+      path: true,
+      method: true,
+    },
+  });
+
+  const implementedEndpoints = existingEndpoints.filter(
+    (existingEndpoint) =>
+      existingEndpoint.summary &&
+      existingEndpoint.path &&
+      existingEndpoint.method,
+  );
 
   const conversation = await db.query.conversations.findFirst({
     where: eq(conversations.id, endpoint.conversationId),
@@ -256,10 +312,25 @@ export async function generateEndpoint(endpointId: string) {
     };
   }
 
-  const messages = conversation.messages.map((message) => ({
-    role: message.role,
-    content: message.content,
-  })) as CoreMessage[];
+  const messages = [
+    {
+      role: "user",
+      content: `The application has the following endpoints implemented: ${
+        implementedEndpoints.length > 0
+          ? implementedEndpoints
+              .map(
+                (implementedEndpoint) =>
+                  `${implementedEndpoint.method} ${implementedEndpoint.path} - ${implementedEndpoint.summary}`,
+              )
+              .join("\n")
+          : "No other endpoints implemented yet"
+      }`,
+    },
+    ...conversation.messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    })),
+  ] as CoreMessage[];
 
   const stream = createStreamableValue<EndpointRequirementsMessage>();
 
@@ -399,11 +470,14 @@ export async function generateEndpoint(endpointId: string) {
           api.endpoints.update({
             where: { id: endpointId },
             payload: {
-              ...object.message.content.openApiSpec,
+              summary: object.message.content.openApiSpec.summary,
+              path: object.message.content.openApiSpec.path,
+              method: object.message.content.openApiSpec.method,
+              description: object.message.content.openApiSpec.description,
+              packages: object.message.content.packages,
+              resources: object.message.content.resources,
               openApiSpec,
               code,
-              resources: object.message.content.resources,
-              packages: object.message.content.packages,
             },
           });
 
@@ -431,6 +505,8 @@ export async function generateEndpoint(endpointId: string) {
     );
     stream.done();
   })();
+
+  return stream.value;
 }
 
 async function compileDocs({

@@ -1,5 +1,5 @@
 {
-  "id": "aa11969c-c9bf-4932-ac5d-38d13151f836",
+  "id": "cb60f42e-bc95-4af6-92bf-64e0b64b522c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -404,55 +404,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.endpoint_funcs": {
-      "name": "endpoint_funcs",
-      "schema": "",
-      "columns": {
-        "endpoint_id": {
-          "name": "endpoint_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "func_id": {
-          "name": "func_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "endpoint_funcs_endpoint_id_endpoints_id_fk": {
-          "name": "endpoint_funcs_endpoint_id_endpoints_id_fk",
-          "tableFrom": "endpoint_funcs",
-          "tableTo": "endpoints",
-          "columnsFrom": ["endpoint_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "endpoint_funcs_func_id_funcs_id_fk": {
-          "name": "endpoint_funcs_func_id_funcs_id_fk",
-          "tableFrom": "endpoint_funcs",
-          "tableTo": "funcs",
-          "columnsFrom": ["func_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "endpoint_funcs_endpoint_id_func_id_pk": {
-          "name": "endpoint_funcs_endpoint_id_func_id_pk",
-          "columns": ["endpoint_id", "func_id"]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.endpoints": {
       "name": "endpoints",
       "schema": "",
@@ -473,6 +424,12 @@
           "name": "method",
           "type": "http_methods",
           "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },

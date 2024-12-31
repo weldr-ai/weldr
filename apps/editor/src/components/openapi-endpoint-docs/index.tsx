@@ -51,16 +51,18 @@ function SchemaField({
 
   return (
     <div className="flex items-baseline border-b py-2 last:border-0">
-      <div className="flex-1 space-y-1">
+      <div className="flex-1">
         <div className="flex flex-col gap-2">
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-xs">{name}</span>
-            <span className="font-mono text-muted-foreground text-xs">
-              {renderType()}
-            </span>
-            {required && (
-              <span className="text-destructive text-xs">required</span>
-            )}
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs">{name}</span>
+              <span className="text-muted-foreground text-xs">
+                {renderType()}
+              </span>
+              {required && (
+                <span className="text-destructive text-xs">required</span>
+              )}
+            </div>
             {schema.description && (
               <span className="text-muted-foreground text-xs">
                 {schema.description}
@@ -167,72 +169,73 @@ export default function OpenApiEndpointDocs({
   );
 
   return (
-    <div className="w-full space-y-6 font-[system-ui]">
+    <div className="w-full space-y-2">
       {/* Header */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <h1 className="font-medium">{operation.summary || path}</h1>
-          {operation.tags && operation.tags.length > 0 && (
-            <div className="flex gap-1">
-              {operation.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
+      <div className="flex flex-col items-start gap-2">
+        {/* Method and Path */}
+        <div className="flex items-center space-x-2">
+          <Badge
+            className={cn("px-1.5 py-0.5 font-semibold text-xs uppercase", {
+              "bg-primary/30 text-primary hover:bg-primary/30":
+                method === "get",
+              "bg-success/30 text-success hover:bg-success/30":
+                method === "post",
+              "bg-warning/30 text-warning hover:bg-warning/30":
+                method === "put" || method === "patch",
+              "bg-destructive/30 text-destructive hover:bg-destructive/30":
+                method === "delete",
+            })}
+          >
+            {method}
+          </Badge>
+          <span className="text-xs">{path}</span>
         </div>
         {operation.description && (
-          <p className="whitespace-pre-wrap text-muted-foreground">
+          <p className="whitespace-pre-wrap text-muted-foreground text-xs">
             {operation.description}
           </p>
         )}
-      </div>
-
-      {/* Method and Path */}
-      <div className="flex items-center space-x-2">
-        <Badge
-          className={cn("px-1.5 py-0.5 font-bold text-xs uppercase", {
-            "bg-primary/30 text-primary hover:bg-primary/30": method === "get",
-            "bg-success/30 text-success hover:bg-success/30": method === "post",
-            "bg-warning/30 text-warning hover:bg-warning/30":
-              method === "put" || method === "patch",
-            "bg-destructive/30 text-destructive hover:bg-destructive/30":
-              method === "delete",
-          })}
-        >
-          {method}
-        </Badge>
-        <span className="font-mono text-xs">{path}</span>
+        {operation.tags && operation.tags.length > 0 && (
+          <div className="flex gap-1">
+            {operation.tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex h-full items-center justify-center rounded-md border bg-muted px-1 py-0.5 font-semibold text-muted-foreground text-xs"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {hasContent ? (
-        <>
+        <div className="space-y-4">
           {/* Parameters */}
           {hasParameters && (
-            <div className="space-y-4">
-              <span className="font-medium">Parameters</span>
+            <div>
+              <span className="font-semibold">Parameters</span>
               <Accordion type="multiple" className="w-full">
                 {Object.entries(groupedParameters || {}).map(
                   ([location, params]) => (
                     <AccordionItem key={location} value={location}>
-                      <AccordionTrigger className="text-sm">
+                      <AccordionTrigger className="py-2 text-xs hover:no-underline">
                         {location.charAt(0).toUpperCase() + location.slice(1)}{" "}
                         Parameters
                       </AccordionTrigger>
-                      <AccordionContent>
+                      <AccordionContent className="p-0">
                         <div className="space-y-2">
                           {params.map((parameter) => (
                             <div
                               key={parameter.name}
                               className="flex items-baseline border-b py-2 last:border-0"
                             >
-                              <div className="flex-1 space-y-1">
+                              <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
-                                  <span className="font-mono text-xs">
+                                  <span className="text-xs">
                                     {parameter.name}
                                   </span>
-                                  <span className="font-mono text-muted-foreground text-xs">
+                                  <span className="text-muted-foreground text-xs">
                                     {
                                       (
                                         parameter.schema as OpenAPIV3.SchemaObject
@@ -244,12 +247,12 @@ export default function OpenApiEndpointDocs({
                                       required
                                     </span>
                                   )}
-                                  {parameter.description && (
-                                    <span className="text-muted-foreground text-xs">
-                                      {parameter.description}
-                                    </span>
-                                  )}
                                 </div>
+                                {parameter.description && (
+                                  <span className="text-muted-foreground text-xs">
+                                    {parameter.description}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -264,9 +267,9 @@ export default function OpenApiEndpointDocs({
 
           {/* Request Body */}
           {parsedRequestBody && (
-            <div className="space-y-2">
+            <div>
               <div className="flex items-center justify-between">
-                <span className="font-medium">Body</span>
+                <span className="font-semibold">Body</span>
                 <span className="items-center justify-center rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
                   application/json
                 </span>
@@ -285,7 +288,7 @@ export default function OpenApiEndpointDocs({
               )}
               {requestBodyExample && (
                 <div className="mt-4">
-                  <span className="font-medium text-sm">Example:</span>
+                  <span className="font-semibold text-sm">Example:</span>
                   <pre className="mt-2 rounded-lg bg-muted p-4 text-xs">
                     {JSON.stringify(requestBodyExample, null, 2)}
                   </pre>
@@ -295,9 +298,9 @@ export default function OpenApiEndpointDocs({
           )}
 
           {/* Responses */}
-          <div className="space-y-2">
-            <span className="font-medium">Responses</span>
-            {hasResponses && (
+          {hasResponses && (
+            <div>
+              <span className="font-semibold">Responses</span>
               <Accordion type="multiple">
                 {Object.entries(operation.responses).map(([code, response]) => {
                   const responseSchema = getResponseSchema(operation, code);
@@ -314,15 +317,13 @@ export default function OpenApiEndpointDocs({
                       value={code}
                       className="last:border-0"
                     >
-                      <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center space-x-4">
-                          <span className="font-mono text-xs">{code}</span>
-                          <span className="text-xs">
-                            {responseObj.description}
-                          </span>
+                      <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                        <div className="flex items-center space-x-2 text-xs">
+                          <span>{code}</span>
+                          <span>{responseObj.description}</span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="space-y-4">
+                      <AccordionContent className="p-0">
                         <p className="text-muted-foreground text-xs">
                           {responseObj.description}
                         </p>
@@ -344,7 +345,7 @@ export default function OpenApiEndpointDocs({
                         </div>
                         {example && (
                           <div>
-                            <span className="font-medium text-sm">
+                            <span className="font-semibold text-sm">
                               Example:
                             </span>
                             <pre className="mt-2 rounded-lg bg-muted p-4 text-xs">
@@ -357,13 +358,13 @@ export default function OpenApiEndpointDocs({
                   );
                 })}
               </Accordion>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Security */}
           {hasSecurity && (
-            <div className="space-y-2">
-              <span className="font-medium">Security</span>
+            <div>
+              <span className="font-semibold">Security</span>
               <div className="space-y-2">
                 {operation.security?.map((requirement) => (
                   <div
@@ -371,8 +372,8 @@ export default function OpenApiEndpointDocs({
                     className="rounded-lg border p-4"
                   >
                     {Object.entries(requirement).map(([scheme, scopes]) => (
-                      <div key={scheme} className="space-y-1">
-                        <span className="font-medium text-sm">{scheme}</span>
+                      <div key={scheme}>
+                        <span className="font-semibold text-sm">{scheme}</span>
                         {scopes.length > 0 && (
                           <div className="flex flex-wrap gap-1">
                             {scopes.map((scope) => (
@@ -393,7 +394,7 @@ export default function OpenApiEndpointDocs({
               </div>
             </div>
           )}
-        </>
+        </div>
       ) : (
         <div className="py-8 text-center text-muted-foreground">
           This endpoint has not been fully defined yet

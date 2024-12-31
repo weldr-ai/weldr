@@ -29,14 +29,16 @@ export const endpointsRouter = {
             });
           }
 
-          const conversation = await tx
-            .insert(conversations)
-            .values({
-              userId: ctx.session.user.id,
-            })
-            .returning({ id: conversations.id });
+          const conversation = (
+            await tx
+              .insert(conversations)
+              .values({
+                userId: ctx.session.user.id,
+              })
+              .returning()
+          )[0];
 
-          if (!conversation[0]) {
+          if (!conversation) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to create conversation",
@@ -49,9 +51,9 @@ export const endpointsRouter = {
               ...input,
               userId: ctx.session.user.id,
               projectId: project.id,
-              conversationId: conversation[0].id,
+              conversationId: conversation.id,
             })
-            .returning({ id: endpoints.id });
+            .returning();
 
           if (!result[0]) {
             throw new TRPCError({
@@ -60,9 +62,17 @@ export const endpointsRouter = {
             });
           }
 
-          return result[0];
+          return {
+            ...result[0],
+            conversation: {
+              ...conversation,
+              messages: [],
+            },
+          };
         });
-        return result;
+
+        const { code, packages, ...rest } = result;
+        return rest;
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {
@@ -134,6 +144,7 @@ export const endpointsRouter = {
             id: true,
             method: true,
             path: true,
+            summary: true,
           },
         });
       } catch (error) {

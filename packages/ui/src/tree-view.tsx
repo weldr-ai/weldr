@@ -228,7 +228,6 @@ const TreeView = React.forwardRef<HTMLDivElement, TreeProps>(
     },
     ref,
   ) => {
-    console.log(data);
     const [selectedItemId, setSelectedItemId] = React.useState<
       string | undefined
     >(initialSelectedItemId);

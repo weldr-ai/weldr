@@ -4,8 +4,10 @@ import type { ReferenceNode } from "@/components/editor/plugins/reference/node";
 import MessageList from "@/components/message-list";
 import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
 import { generateEndpoint } from "@/lib/ai/generator";
+import { useResources } from "@/lib/context/resources";
 import { useFlowBuilderStore } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
+import { getResourceReferences } from "@/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
 import type { RouterOutputs } from "@integramind/api";
 import type {
@@ -49,7 +51,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { OpenAPIV3 } from "openapi-types";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { z } from "zod";
 
 export const EndpointNode = memo(
   ({
@@ -84,7 +87,7 @@ export const EndpointNode = memo(
       useState<boolean>(false);
     const [isThinking, setIsThinking] = useState<boolean>(false);
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
-    const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
+    const [isBuilding, setIsBuilding] = useState<boolean>(false);
 
     const [messages, setMessages] = useState<ConversationMessage[]>([
       {
@@ -95,7 +98,6 @@ export const EndpointNode = memo(
             value: "Hey, I'm your endpoint builder. How can I help you?",
           },
         ],
-        createdAt: new Date(),
       },
       ...(data.conversation?.messages ?? []),
     ]);
@@ -213,7 +215,7 @@ export const EndpointNode = memo(
           content?.message?.content?.openApiSpec
         ) {
           setIsThinking(false);
-          setIsGeneratingCode(true);
+          setIsBuilding(true);
           const rawContent: AssistantMessageRawContent = [
             {
               type: "text",
@@ -240,7 +242,7 @@ export const EndpointNode = memo(
 
       // if code generation is set, disable it and refetch the updated endpoint metadata
       if (endpointRequirementsMessageObject.message.type === "end") {
-        setIsGeneratingCode(false);
+        setIsBuilding(false);
         const endpointBuiltSuccessfullyMessage: ConversationMessage = {
           role: "assistant",
           rawContent: [
@@ -255,6 +257,7 @@ export const EndpointNode = memo(
         await apiUtils.endpoints.byId.invalidate({ id: data.id });
         updateNodeData(data.id, {
           ...endpointRequirementsMessageObject.message.content,
+          ...endpointRequirementsMessageObject.message.content.openApiSpec,
           openApiSpec: {
             ...endpointRequirementsMessageObject.message.content.openApiSpec,
             parameters:
@@ -311,6 +314,7 @@ export const EndpointNode = memo(
             ),
           },
         });
+
         setMessages([...newMessages, endpointBuiltSuccessfullyMessage]);
       }
 
@@ -347,6 +351,40 @@ export const EndpointNode = memo(
     }, [scrollToBottom]);
 
     const showEdges = useFlowBuilderStore((state) => state.showEdges);
+
+    const resources = useResources();
+    const availableHelperFunctions = api.dependencies.available.useQuery({
+      dependentType: "function",
+      dependentId: data.id,
+    });
+
+    const helperFunctionReferences = availableHelperFunctions.data?.reduce(
+      (acc, func) => {
+        if (!func.name || !func.rawDescription) {
+          return acc;
+        }
+
+        acc.push({
+          type: "reference",
+          referenceType: "function",
+          id: func.id,
+          name: func.name,
+        });
+
+        return acc;
+      },
+      [] as z.infer<typeof userMessageRawContentReferenceElementSchema>[],
+    );
+
+    const references: z.infer<
+      typeof userMessageRawContentReferenceElementSchema
+    >[] = useMemo(
+      () => [
+        ...getResourceReferences(resources),
+        ...(helperFunctionReferences ?? []),
+      ],
+      [resources, helperFunctionReferences],
+    );
 
     return (
       <>
@@ -400,7 +438,7 @@ export const EndpointNode = memo(
                       <CircleAlertIcon className="size-4 text-destructive" />
                     )}
                   </div>
-                  <span className="text-sm">
+                  <span className="w-full truncate text-start text-sm">
                     {data.openApiSpec?.summary ?? "Unimplemented Endpoint"}
                   </span>
                 </Card>
@@ -436,8 +474,8 @@ export const EndpointNode = memo(
               className="flex size-full"
             >
               <ResizablePanel
-                defaultSize={50}
-                minSize={30}
+                defaultSize={65}
+                minSize={20}
                 className="flex flex-col"
               >
                 <div className="flex flex-col items-start justify-start gap-2 border-b p-4">
@@ -457,12 +495,12 @@ export const EndpointNode = memo(
                     {data.openApiSpec?.summary ?? "Unimplemented Endpoint"}
                   </h3>
                 </div>
-                <div className="flex h-[calc(100dvh-392px)] flex-col p-4">
+                <div className="flex h-[calc(100dvh-474px)] flex-col p-4">
                   <ScrollArea className="mb-4 flex-grow" ref={scrollAreaRef}>
                     <MessageList
                       messages={messages}
                       isThinking={isThinking}
-                      isGenerating={isGeneratingCode}
+                      isBuilding={isBuilding}
                     />
                     <div ref={chatHistoryEndRef} />
                   </ScrollArea>
@@ -471,7 +509,7 @@ export const EndpointNode = memo(
                     <Editor
                       className="h-full"
                       id={data.id}
-                      references={[]}
+                      references={references}
                       editorRef={editorRef}
                       placeholder="Chat about your endpoint..."
                       onChange={onChatChange}
@@ -506,7 +544,7 @@ export const EndpointNode = memo(
 
               <ResizableHandle withHandle />
 
-              <ResizablePanel defaultSize={50} minSize={30}>
+              <ResizablePanel defaultSize={35} minSize={20}>
                 <ScrollArea className="h-[calc(100dvh-398px)] p-4">
                   {!data.openApiSpec ? (
                     <div className="flex h-[calc(100dvh-432px)] items-center justify-center">
