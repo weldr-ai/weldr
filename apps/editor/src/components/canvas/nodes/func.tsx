@@ -163,10 +163,7 @@ export const FuncNode = memo(
             },
           ],
         },
-        ...(data.conversation?.messages ?? []).sort(
-          (a, b) =>
-            (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
-        ),
+        ...(data.conversation?.messages ?? []),
       ],
       [data.conversation],
     );

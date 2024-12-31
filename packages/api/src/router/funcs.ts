@@ -97,6 +97,9 @@ export const funcsRouter = {
                 columns: {
                   content: false,
                 },
+                orderBy: (funcsMessages, { asc }) => [
+                  asc(funcsMessages.createdAt),
+                ],
               },
             },
           },

@@ -308,7 +308,28 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "conversation_messages_user_id_idx" ON "conversation_messages" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "conversation_messages_conversation_id_idx" ON "conversation_messages" USING btree ("conversation_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "conversation_messages_created_at_idx" ON "conversation_messages" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "conversations_user_id_idx" ON "conversations" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "conversations_created_at_idx" ON "conversations" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "endpoints_project_id_idx" ON "endpoints" USING btree ("project_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "endpoints_user_id_idx" ON "endpoints" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "endpoints_conversation_id_idx" ON "endpoints" USING btree ("conversation_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "endpoints_created_at_idx" ON "endpoints" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "unique_name" ON "funcs" USING btree ("name","project_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "funcs_project_id_idx" ON "funcs" USING btree ("project_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "funcs_user_id_idx" ON "funcs" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "funcs_conversation_id_idx" ON "funcs" USING btree ("conversation_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "funcs_integration_id_idx" ON "funcs" USING btree ("integration_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "funcs_created_at_idx" ON "funcs" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "resources_project_id_idx" ON "resources" USING btree ("project_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "resources_user_id_idx" ON "resources" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "resources_integration_id_idx" ON "resources" USING btree ("integration_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "resources_created_at_idx" ON "resources" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "projects_user_id_idx" ON "projects" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "projects_subdomain_idx" ON "projects" USING btree ("subdomain");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "projects_created_at_idx" ON "projects" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "unique_dependency" ON "dependencies" USING btree ("dependent_type","dependent_id","dependency_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "func_idx" ON "dependencies" USING btree ("dependent_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "dependency_idx" ON "dependencies" USING btree ("dependency_id");

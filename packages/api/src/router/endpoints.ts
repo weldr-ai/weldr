@@ -109,6 +109,9 @@ export const endpointsRouter = {
                   columns: {
                     content: false,
                   },
+                  orderBy: (endpointsMessages, { asc }) => [
+                    asc(endpointsMessages.createdAt),
+                  ],
                 },
               },
             },

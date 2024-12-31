@@ -1,6 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
+  index,
   pgTable,
   primaryKey,
   text,
@@ -37,6 +38,10 @@ export const resources = pgTable(
   },
   (t) => ({
     uniqueNameInProject: unique().on(t.name, t.projectId),
+    projectIdIdx: index("resources_project_id_idx").on(t.projectId),
+    userIdIdx: index("resources_user_id_idx").on(t.userId),
+    integrationIdIdx: index("resources_integration_id_idx").on(t.integrationId),
+    createdAtIdx: index("resources_created_at_idx").on(t.createdAt),
   }),
 );
 

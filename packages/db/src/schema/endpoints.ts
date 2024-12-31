@@ -6,6 +6,7 @@ import type {
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -59,6 +60,12 @@ export const endpoints = pgTable(
   },
   (table) => ({
     uniqueEndpoint: unique().on(table.projectId, table.path, table.method),
+    projectIdIdx: index("endpoints_project_id_idx").on(table.projectId),
+    userIdIdx: index("endpoints_user_id_idx").on(table.userId),
+    conversationIdIdx: index("endpoints_conversation_id_idx").on(
+      table.conversationId,
+    ),
+    createdAtIdx: index("endpoints_created_at_idx").on(table.createdAt),
   }),
 );
 

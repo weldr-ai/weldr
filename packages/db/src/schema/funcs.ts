@@ -7,6 +7,7 @@ import type {
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
+  index,
   integer,
   jsonb,
   pgTable,
@@ -55,6 +56,11 @@ export const funcs = pgTable(
   },
   (t) => ({
     uniqueName: uniqueIndex("unique_name").on(t.name, t.projectId),
+    projectIdIdx: index("funcs_project_id_idx").on(t.projectId),
+    userIdIdx: index("funcs_user_id_idx").on(t.userId),
+    conversationIdIdx: index("funcs_conversation_id_idx").on(t.conversationId),
+    integrationIdIdx: index("funcs_integration_id_idx").on(t.integrationId),
+    createdAtIdx: index("funcs_created_at_idx").on(t.createdAt),
   }),
 );
 

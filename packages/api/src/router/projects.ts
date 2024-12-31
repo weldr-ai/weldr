@@ -127,6 +127,9 @@ export const projectsRouter = {
                       columns: {
                         content: false,
                       },
+                      orderBy: (funcsMessages, { asc }) => [
+                        asc(funcsMessages.createdAt),
+                      ],
                     },
                   },
                 },
@@ -146,6 +149,9 @@ export const projectsRouter = {
                       columns: {
                         content: false,
                       },
+                      orderBy: (funcsMessages, { asc }) => [
+                        asc(funcsMessages.createdAt),
+                      ],
                     },
                   },
                 },
@@ -285,6 +291,9 @@ export const projectsRouter = {
                     columns: {
                       content: false,
                     },
+                    orderBy: (funcsMessages, { asc }) => [
+                      asc(funcsMessages.createdAt),
+                    ],
                   },
                 },
               },
@@ -304,6 +313,9 @@ export const projectsRouter = {
                     columns: {
                       content: false,
                     },
+                    orderBy: (funcsMessages, { asc }) => [
+                      asc(funcsMessages.createdAt),
+                    ],
                   },
                 },
               },
