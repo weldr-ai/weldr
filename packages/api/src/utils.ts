@@ -1,4 +1,5 @@
-import { db } from "@integramind/db";
+import { db, eq } from "@integramind/db";
+import { dependencies, endpoints, funcs } from "@integramind/db/schema";
 
 export async function wouldCreateCycle({
   dependentId,
@@ -47,4 +48,60 @@ export async function wouldCreateCycle({
   }
 
   return await dfs(dependencyId);
+}
+
+export async function haveMissingDependencies(
+  funcId: string,
+): Promise<boolean> {
+  const deps = await db.query.dependencies.findMany({
+    where: eq(dependencies.dependentId, funcId),
+  });
+
+  for (const dep of deps) {
+    const func = await db.query.funcs.findFirst({
+      where: eq(funcs.id, dep.dependencyId),
+    });
+
+    if (!func) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export async function isFunctionReady({
+  id,
+}: {
+  id: string;
+}): Promise<boolean> {
+  const func = await db.query.funcs.findFirst({
+    where: eq(funcs.id, id),
+  });
+
+  if (!func) {
+    return false;
+  }
+
+  const hasMissingDeps = await haveMissingDependencies(id);
+
+  return Boolean(func.code && !hasMissingDeps);
+}
+
+export async function isEndpointReady({
+  id,
+}: {
+  id: string;
+}): Promise<boolean> {
+  const endpoint = await db.query.endpoints.findFirst({
+    where: eq(endpoints.id, id),
+  });
+
+  if (!endpoint) {
+    return false;
+  }
+
+  const hasMissingDeps = await haveMissingDependencies(id);
+
+  return Boolean(endpoint.code && !hasMissingDeps);
 }

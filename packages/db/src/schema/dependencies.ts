@@ -17,11 +17,7 @@ export const dependencies = pgTable(
   {
     dependentType: dependentType("dependent_type").notNull(),
     dependentId: text("dependent_id").notNull(),
-    dependencyId: text("dependency_id")
-      .references(() => funcs.id, {
-        onDelete: "cascade",
-      })
-      .notNull(),
+    dependencyId: text("dependency_id").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => ({

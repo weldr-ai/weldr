@@ -12,6 +12,7 @@ import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
+import { isFunctionReady } from "../utils";
 
 export const engineRouter = {
   executeFunc: protectedProcedure
@@ -36,7 +37,7 @@ export const engineRouter = {
         });
       }
 
-      const canRun = Boolean(func.name && func.code);
+      const canRun = await isFunctionReady({ id: func.id });
 
       if (!canRun) {
         throw new TRPCError({

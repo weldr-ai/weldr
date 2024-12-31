@@ -7,6 +7,7 @@ import {
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
+import { isEndpointReady } from "../utils";
 
 export const endpointsRouter = {
   create: protectedProcedure
@@ -72,7 +73,10 @@ export const endpointsRouter = {
         });
 
         const { code, packages, ...rest } = result;
-        return rest;
+        return {
+          ...rest,
+          canRun: await isEndpointReady({ id: result.id }),
+        };
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {
@@ -118,7 +122,10 @@ export const endpointsRouter = {
           });
         }
 
-        return endpoint;
+        return {
+          ...endpoint,
+          canRun: await isEndpointReady({ id: endpoint.id }),
+        };
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {
@@ -183,7 +190,11 @@ export const endpointsRouter = {
           });
         }
 
-        return result;
+        const { code, packages, ...rest } = result;
+        return {
+          ...rest,
+          canRun: await isEndpointReady({ id: result.id }),
+        };
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {

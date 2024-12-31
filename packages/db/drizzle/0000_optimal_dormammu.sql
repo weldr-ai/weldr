@@ -308,12 +308,6 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_dependency_id_funcs_id_fk" FOREIGN KEY ("dependency_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "unique_name" ON "funcs" USING btree ("name","project_id");--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "unique_dependency" ON "dependencies" USING btree ("dependent_type","dependent_id","dependency_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "func_idx" ON "dependencies" USING btree ("dependent_id");--> statement-breakpoint

@@ -1,29 +1,11 @@
-import { eq } from "@integramind/db";
+import { and, eq } from "@integramind/db";
 import { dependencies, funcs, projects } from "@integramind/db/schema";
-import { insertDependencySchema } from "@integramind/shared/validators/dependencies";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 import { wouldCreateCycle } from "../utils";
 
 export const dependenciesRouter = {
-  create: protectedProcedure
-    .input(insertDependencySchema)
-    .mutation(async ({ ctx, input }) => {
-      if (
-        input.dependentType === "function" &&
-        (await wouldCreateCycle({
-          dependentId: input.dependentId,
-          dependencyId: input.dependencyId,
-        }))
-      ) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "The provided dependencies will cause a circular dependency",
-        });
-      }
-      await ctx.db.insert(dependencies).values(input).onConflictDoNothing();
-    }),
   createBulk: protectedProcedure
     .input(
       z.object({
@@ -33,6 +15,16 @@ export const dependenciesRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // First delete all existing dependencies
+      await ctx.db
+        .delete(dependencies)
+        .where(
+          and(
+            eq(dependencies.dependentId, input.dependentId),
+            eq(dependencies.dependentType, input.dependentType),
+          ),
+        );
+
       if (input.dependentType === "function") {
         for (const dep of input.dependencyIds) {
           const isCyclic = await wouldCreateCycle({

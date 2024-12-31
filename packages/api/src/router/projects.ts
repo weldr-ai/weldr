@@ -9,6 +9,7 @@ import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
+import { isEndpointReady, isFunctionReady } from "../utils";
 
 export const projectsRouter = {
   create: protectedProcedure
@@ -117,6 +118,7 @@ export const projectsRouter = {
             endpoints: {
               columns: {
                 code: false,
+                packages: false,
               },
               with: {
                 conversation: {
@@ -134,6 +136,7 @@ export const projectsRouter = {
               columns: {
                 docs: false,
                 packages: false,
+                code: false,
               },
               with: {
                 testRuns: true,
@@ -194,13 +197,22 @@ export const projectsRouter = {
 
         const result = {
           ...project,
-          funcs: project.funcs.map((func) => {
-            const { code, ...rest } = func;
-            return {
-              ...rest,
-              canRun: Boolean(func.code),
-            };
-          }),
+          funcs: await Promise.all(
+            project.funcs.map(async (func) => {
+              return {
+                ...func,
+                canRun: await isFunctionReady({ id: func.id }),
+              };
+            }),
+          ),
+          endpoints: await Promise.all(
+            project.endpoints.map(async (endpoint) => {
+              return {
+                ...endpoint,
+                canRun: await isEndpointReady({ id: endpoint.id }),
+              };
+            }),
+          ),
           resources: resourceEnvs,
         };
 
@@ -264,6 +276,7 @@ export const projectsRouter = {
           endpoints: {
             columns: {
               code: false,
+              packages: false,
             },
             with: {
               conversation: {
@@ -281,6 +294,7 @@ export const projectsRouter = {
             columns: {
               docs: false,
               packages: false,
+              code: false,
             },
             with: {
               testRuns: true,
@@ -313,20 +327,22 @@ export const projectsRouter = {
           id: endpoint.id,
           dragHandle: ".drag-handle",
           position: { x: endpoint.positionX ?? 0, y: endpoint.positionY ?? 0 },
-          data: endpoint,
+          data: {
+            ...endpoint,
+            canRun: await isEndpointReady({ id: endpoint.id }),
+          },
         });
       }
 
       for (const func of project.funcs) {
-        const { code: _, ...rest } = func;
         result.push({
           type: "func",
           id: func.id,
           dragHandle: ".drag-handle",
           position: { x: func.positionX ?? 0, y: func.positionY ?? 0 },
           data: {
-            ...rest,
-            canRun: Boolean(func.code),
+            ...func,
+            canRun: await isFunctionReady({ id: func.id }),
           },
         });
       }

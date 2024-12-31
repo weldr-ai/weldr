@@ -51,6 +51,7 @@ export const endpointSchema = z.object({
   dependencies: dependencySchema.array(),
   conversationId: z.string().cuid2(),
   conversation: conversationSchema,
+  canRun: z.boolean().default(false),
 });
 
 export const insertEndpointSchema = z.object({

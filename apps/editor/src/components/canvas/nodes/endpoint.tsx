@@ -434,7 +434,7 @@ export const EndpointNode = memo(
                       </span>
                       <span className="text-muted-foreground">Endpoint</span>
                     </div>
-                    {!data.openApiSpec && (
+                    {!data.canRun && (
                       <CircleAlertIcon className="size-4 text-destructive" />
                     )}
                   </div>

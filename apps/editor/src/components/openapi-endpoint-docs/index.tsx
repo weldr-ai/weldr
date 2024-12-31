@@ -64,9 +64,9 @@ function SchemaField({
               )}
             </div>
             {schema.description && (
-              <span className="text-muted-foreground text-xs">
+              <p className="text-muted-foreground text-xs">
                 {schema.description}
-              </span>
+              </p>
             )}
           </div>
           {hasChildren && (
@@ -200,7 +200,7 @@ export default function OpenApiEndpointDocs({
             {operation.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex h-full items-center justify-center rounded-md border bg-muted px-1 py-0.5 font-semibold text-muted-foreground text-xs"
+                className="inline-flex h-full items-center justify-center rounded-md border px-1.5 py-0.5 font-semibold text-[10px]"
               >
                 {tag}
               </span>
@@ -249,9 +249,9 @@ export default function OpenApiEndpointDocs({
                                   )}
                                 </div>
                                 {parameter.description && (
-                                  <span className="text-muted-foreground text-xs">
+                                  <p className="text-muted-foreground text-xs">
                                     {parameter.description}
-                                  </span>
+                                  </p>
                                 )}
                               </div>
                             </div>
@@ -270,7 +270,7 @@ export default function OpenApiEndpointDocs({
             <div>
               <div className="flex items-center justify-between">
                 <span className="font-semibold">Body</span>
-                <span className="items-center justify-center rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
+                <span className="items-center justify-center rounded-full border px-1.5 py-0.5 text-[10px]">
                   application/json
                 </span>
               </div>
@@ -287,7 +287,7 @@ export default function OpenApiEndpointDocs({
                 ),
               )}
               {requestBodyExample && (
-                <div className="mt-4">
+                <div className="mt-2">
                   <span className="font-semibold text-sm">Example:</span>
                   <pre className="mt-2 rounded-lg bg-muted p-4 text-xs">
                     {JSON.stringify(requestBodyExample, null, 2)}

@@ -9,6 +9,7 @@ import {
 } from "@integramind/shared/validators/funcs";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
+import { isFunctionReady } from "../utils";
 
 export const funcsRouter = {
   create: protectedProcedure
@@ -86,6 +87,7 @@ export const funcsRouter = {
         columns: {
           docs: false,
           packages: false,
+          code: false,
         },
         with: {
           testRuns: true,
@@ -108,10 +110,9 @@ export const funcsRouter = {
         });
       }
 
-      const { code: _, ...rest } = result;
       return {
-        ...rest,
-        canRun: Boolean(result.name && result.code),
+        ...result,
+        canRun: await isFunctionReady({ id: result.id }),
       };
     }),
   update: protectedProcedure
@@ -173,7 +174,7 @@ export const funcsRouter = {
       const { code, docs, packages, ...rest } = updatedFunc;
       return {
         ...rest,
-        canRun: Boolean(updatedFunc.name && updatedFunc.code),
+        canRun: await isFunctionReady({ id: updatedFunc.id }),
       };
     }),
   delete: protectedProcedure

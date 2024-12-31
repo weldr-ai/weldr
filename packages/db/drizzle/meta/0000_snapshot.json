@@ -1,5 +1,5 @@
 {
-  "id": "cb60f42e-bc95-4af6-92bf-64e0b64b522c",
+  "id": "a26f257a-8804-4e74-bbbc-5b8c09a44777",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1277,17 +1277,7 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "dependencies_dependency_id_funcs_id_fk": {
-          "name": "dependencies_dependency_id_funcs_id_fk",
-          "tableFrom": "dependencies",
-          "tableTo": "funcs",
-          "columnsFrom": ["dependency_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
