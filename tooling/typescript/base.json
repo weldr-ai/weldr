@@ -27,10 +27,6 @@
     "noUnusedLocals": true,
 
     "noEmit": true,
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-
     "skipLibCheck": true
   },
   "exclude": ["node_modules", "build", "dist", ".next", ".expo"]

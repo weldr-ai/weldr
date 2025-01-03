@@ -1,7 +1,0 @@
-import superjson from "superjson";
-import { testEndpoint } from "./utils";
-
-const handler = {{ handler }};
-const result = await testEndpoint(handler, {{ options }});
-const jsonString = superjson.stringify(result);
-console.log(jsonString);

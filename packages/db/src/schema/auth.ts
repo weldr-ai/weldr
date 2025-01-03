@@ -78,12 +78,5 @@ export const waitlist = pgTable("waitlist", {
 
 export const waitlistSchema = createSelectSchema(waitlist);
 export const insertWaitlistSchema = createInsertSchema(waitlist, {
-  email: (schema) =>
-    schema.email
-      .email("Enter a valid email address")
-      .trim()
-      .min(1, {
-        message: "Email is required.",
-      })
-      .transform((email) => email.toLowerCase()),
+  email: (schema) => schema.trim().toLowerCase().email(),
 });
