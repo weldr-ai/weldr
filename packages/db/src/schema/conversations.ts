@@ -1,5 +1,6 @@
 import type {
   AssistantMessageRawContent,
+  TestExecutionMessageRawContent,
   UserMessageRawContent,
 } from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
@@ -13,6 +14,8 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
+import { endpointVersions } from "./endpoints";
+import { funcVersions } from "./funcs";
 
 export const messageRoles = pgEnum("message_roles", ["user", "assistant"]);
 
@@ -46,15 +49,17 @@ export const conversationMessages = pgTable(
     role: messageRoles("role").notNull(),
     content: text("content").notNull(),
     rawContent: jsonb("raw_content")
-      .$type<UserMessageRawContent | AssistantMessageRawContent>()
+      .$type<
+        | UserMessageRawContent
+        | AssistantMessageRawContent
+        | TestExecutionMessageRawContent
+      >()
       .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     conversationId: text("conversation_id")
       .references(() => conversations.id, { onDelete: "cascade" })
       .notNull(),
-    userId: text("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
   },
   (t) => ({
     userIdIdx: index("conversation_messages_user_id_idx").on(t.userId),
@@ -71,6 +76,14 @@ export const conversationMessageRelations = relations(
     conversation: one(conversations, {
       fields: [conversationMessages.conversationId],
       references: [conversations.id],
+    }),
+    funcVersion: one(funcVersions, {
+      fields: [conversationMessages.id],
+      references: [funcVersions.messageId],
+    }),
+    endpointVersion: one(endpointVersions, {
+      fields: [conversationMessages.id],
+      references: [endpointVersions.messageId],
     }),
   }),
 );

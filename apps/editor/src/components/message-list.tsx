@@ -1,7 +1,19 @@
 import { useAuth } from "@integramind/auth/provider";
-import type { ConversationMessage, TestRun } from "@integramind/shared/types";
+import type {
+  ConversationMessage,
+  RawContent,
+  TestExecutionMessageRawContent,
+} from "@integramind/shared/types";
+import { testExecutionMessageRawContentSchema } from "@integramind/shared/validators/conversations";
 import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
+import { Button } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@integramind/ui/tooltip";
+import { HistoryIcon } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import SuperJSON from "superjson";
@@ -26,48 +38,29 @@ const TypingDots = () => {
 };
 
 export default function MessageList({
+  currentVersionId,
   messages,
-  testRuns,
   isRunning,
   isThinking,
   isBuilding,
 }: {
+  currentVersionId: string | undefined | null;
   messages: ConversationMessage[];
-  testRuns?: TestRun[];
   isRunning?: boolean;
   isThinking: boolean;
   isBuilding?: boolean;
 }) {
-  const testRunList: (TestRun & { type: "test-run" })[] = (testRuns ?? []).map(
-    (testRun) => ({
-      ...testRun,
-      type: "test-run",
-    }),
-  );
-
-  const messageList: (ConversationMessage & { type: "message" })[] =
-    messages.map((message) => ({
-      ...message,
-      type: "message",
-    }));
-
-  const allMessages: (
-    | (ConversationMessage & { type: "message" })
-    | (TestRun & { type: "test-run" })
-  )[] = [...messageList, ...testRunList].sort(
-    (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
-  );
-
   return (
     <div className="flex w-full flex-col gap-4">
-      {allMessages.map((message, index) => {
-        if (message.type === "message") {
-          if (!message.rawContent.length) return null;
-          return (
-            <MessageItem key={`${message.id ?? index}`} message={message} />
-          );
-        }
-        return <TestRunItem key={`${message.id ?? index}`} testRun={message} />;
+      {messages.map((message, index) => {
+        if (!message.rawContent) return null;
+        return (
+          <MessageItem
+            key={`${message.id ?? index}`}
+            message={message}
+            currentVersionId={currentVersionId}
+          />
+        );
       })}
 
       {isThinking && (
@@ -109,8 +102,18 @@ export default function MessageList({
   );
 }
 
-function MessageItem({ message }: { message: ConversationMessage }) {
+function MessageItem({
+  message,
+  currentVersionId,
+}: {
+  message: ConversationMessage;
+  currentVersionId: string | undefined | null;
+}) {
   const { user } = useAuth();
+
+  const isTestExecution = testExecutionMessageRawContentSchema.safeParse(
+    message.rawContent,
+  ).success;
 
   return (
     <div className="flex w-full items-start" key={message.id}>
@@ -131,18 +134,82 @@ function MessageItem({ message }: { message: ConversationMessage }) {
           <AvatarImage src="/logo-solid.svg" alt="Integrator" />
         )}
       </Avatar>
-      <div className="ml-3">
-        <RawContentViewer rawContent={message.rawContent ?? []} />
+      <div className="ml-3 space-y-1">
+        {isTestExecution ? (
+          <TestExecutionItem
+            testExecution={message.rawContent as TestExecutionMessageRawContent}
+          />
+        ) : (
+          <RawContentViewer
+            rawContent={(message.rawContent ?? []) as RawContent}
+          />
+        )}
+        {message.funcVersion && (
+          <div className="group flex h-7 items-center gap-2">
+            <div className="inline-flex h-7 items-center justify-center rounded-md border border-success bg-success/10 px-2 py-1 text-success text-xs">
+              {`#${message.funcVersion.versionNumber} `}
+              {message.funcVersion.versionTitle}
+            </div>
+            {message.funcVersion.id !== currentVersionId && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="hidden size-7 group-hover:flex"
+                  >
+                    <HistoryIcon className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="border bg-muted text-xs"
+                >
+                  Revert
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        )}
+        {message.endpointVersion && (
+          <div className="group flex h-7 items-center gap-2">
+            <div className="inline-flex h-7 items-center justify-center rounded-md border border-success bg-success/10 px-2 py-1 text-success text-xs">
+              {`#${message.endpointVersion.versionNumber} `}
+              {message.endpointVersion.versionTitle}
+            </div>
+            {message.endpointVersion.id !== currentVersionId && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="hidden size-7 group-hover:flex"
+                  >
+                    <HistoryIcon className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="border bg-muted text-xs"
+                >
+                  Revert
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function TestRunItem({ testRun }: { testRun: TestRun }) {
-  const stdout = testRun.stdout
+function TestExecutionItem({
+  testExecution,
+}: { testExecution: TestExecutionMessageRawContent }) {
+  const stdout = testExecution.stdout
     ? (() => {
         // Find the JSON part of the output using regex
-        const jsonMatch = testRun.stdout?.match(/\{.*\}/s);
+        const jsonMatch = testExecution.stdout?.match(/\{.*\}/s);
         if (!jsonMatch) return undefined;
 
         try {
@@ -162,10 +229,10 @@ function TestRunItem({ testRun }: { testRun: TestRun }) {
       <div className="ml-3 flex h-48 w-full rounded-md bg-background">
         <ScrollArea className="max-h-48 w-full px-1 py-2">
           <pre>
-            {testRun.stderr && (
-              <p className="text-red-500 text-xs">{testRun.stderr}</p>
+            {testExecution.stderr && (
+              <p className="text-red-500 text-xs">{testExecution.stderr}</p>
             )}
-            {testRun.stdout && <JsonViewer data={stdout ?? {}} />}
+            {testExecution.stdout && <JsonViewer data={stdout ?? {}} />}
           </pre>
         </ScrollArea>
       </div>

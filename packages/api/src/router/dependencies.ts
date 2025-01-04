@@ -1,17 +1,17 @@
 import { and, eq } from "@integramind/db";
-import { dependencies, funcs, projects } from "@integramind/db/schema";
+import { dependencies, funcs } from "@integramind/db/schema";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { wouldCreateCycle } from "../utils";
+import { isFunctionReady, wouldCreateCycle } from "../utils";
 
 export const dependenciesRouter = {
   createBulk: protectedProcedure
     .input(
       z.object({
         dependentType: z.enum(["function", "endpoint"]),
-        dependentId: z.string(),
-        dependencyIds: z.array(z.string()),
+        dependentVersionId: z.string(),
+        dependencyVersionIds: z.array(z.string()),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -20,16 +20,16 @@ export const dependenciesRouter = {
         .delete(dependencies)
         .where(
           and(
-            eq(dependencies.dependentId, input.dependentId),
+            eq(dependencies.dependentVersionId, input.dependentVersionId),
             eq(dependencies.dependentType, input.dependentType),
           ),
         );
 
       if (input.dependentType === "function") {
-        for (const dep of input.dependencyIds) {
+        for (const dep of input.dependencyVersionIds) {
           const isCyclic = await wouldCreateCycle({
-            dependentId: input.dependentId,
-            dependencyId: dep,
+            dependentVersionId: input.dependentVersionId,
+            dependencyVersionId: dep,
           });
 
           if (isCyclic) {
@@ -45,10 +45,10 @@ export const dependenciesRouter = {
       await ctx.db
         .insert(dependencies)
         .values(
-          input.dependencyIds.map((dep) => ({
+          input.dependencyVersionIds.map((dep) => ({
             dependentType: input.dependentType,
-            dependentId: input.dependentId,
-            dependencyId: dep,
+            dependentVersionId: input.dependentVersionId,
+            dependencyVersionId: dep,
           })),
         )
         .onConflictDoNothing();
@@ -57,26 +57,39 @@ export const dependenciesRouter = {
     .input(
       z.object({
         dependentType: z.enum(["function", "endpoint"]),
-        dependentId: z.string(),
+        dependentVersionId: z.string().nullable().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
+      const dependentVersionId = input.dependentVersionId;
+
+      // If no dependent version id is provided, return all available functions
+      if (!dependentVersionId) {
+        return await ctx.db.query.funcs.findMany({
+          where: eq(funcs.userId, ctx.session.user.id),
+          columns: {
+            id: true,
+            name: true,
+          },
+        });
+      }
+
       // Get all existing dependencies for this entity
       const existingDeps = await ctx.db.query.dependencies.findMany({
         where: (table, { and, eq }) =>
           and(
-            eq(table.dependentId, input.dependentId),
+            eq(table.dependentVersionId, dependentVersionId),
             eq(table.dependentType, input.dependentType),
           ),
         columns: {
-          dependencyId: true,
+          dependencyVersionId: true,
         },
       });
 
       // For functions, we need to check the dependency chain to prevent cycles
       const dependencyChain = new Set<string>();
       if (input.dependentType === "function") {
-        const queue = existingDeps.map((d) => d.dependencyId);
+        const queue = existingDeps.map((d) => d.dependencyVersionId);
 
         while (queue.length > 0) {
           const currentId = queue.shift();
@@ -85,14 +98,14 @@ export const dependenciesRouter = {
             const deps = await ctx.db.query.dependencies.findMany({
               where: (table, { and, eq }) =>
                 and(
-                  eq(table.dependentId, currentId),
+                  eq(table.dependentVersionId, currentId),
                   eq(table.dependentType, "function"),
                 ),
               columns: {
-                dependencyId: true,
+                dependencyVersionId: true,
               },
             });
-            queue.push(...deps.map((d) => d.dependencyId));
+            queue.push(...deps.map((d) => d.dependencyVersionId));
           }
         }
       }
@@ -103,94 +116,52 @@ export const dependenciesRouter = {
         columns: {
           id: true,
           name: true,
-          rawDescription: true,
+          currentVersionId: true,
         },
       });
 
-      return availableFunctions.filter((f) => {
-        // Basic validation
-        if (!f.name || !f.rawDescription) return false;
+      if (input.dependentType === "function") {
+        const result: {
+          id: string;
+          name: string;
+        }[] = [];
 
-        // Already a dependency
-        if (existingDeps.some((d) => d.dependencyId === f.id)) return false;
+        for (const func of availableFunctions) {
+          // Check if the function has a current version
+          if (!func.currentVersionId) continue;
 
-        // For functions: prevent self-deps and cycles
-        if (input.dependentType === "function") {
-          return f.id !== input.dependentId && !dependencyChain.has(f.id);
+          // Already a dependency
+          if (
+            existingDeps.some(
+              (d) => d.dependencyVersionId === func.currentVersionId,
+            )
+          )
+            continue;
+
+          // For functions: prevent self-deps and cycles
+          if (input.dependentType === "function") {
+            if (
+              func.currentVersionId !== input.dependentVersionId &&
+              !dependencyChain.has(func.currentVersionId)
+            )
+              continue;
+          }
+
+          // Check if the function is ready
+          const isReady = await isFunctionReady({ id: func.id });
+          if (!isReady) continue;
+
+          result.push({
+            id: func.id,
+            name: func.name ?? "",
+          });
         }
 
-        // For endpoints: allow any function
-        return true;
-      });
-    }),
-  byProjectId: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const project = await ctx.db.query.projects.findFirst({
-        where: eq(projects.id, input.id),
-        with: {
-          funcs: {
-            columns: {
-              id: true,
-            },
-          },
-          endpoints: {
-            columns: {
-              id: true,
-            },
-          },
-        },
-      });
-
-      if (!project) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Project not found",
-        });
+        return result;
       }
 
-      const projectFuncIds = project.funcs.map((f) => f.id);
-      const projectEndpointIds = project.endpoints.map((e) => e.id);
-
-      const allDependencies = await ctx.db.query.dependencies.findMany({
-        where: (table, { or, and, inArray }) =>
-          or(
-            and(
-              eq(table.dependentType, "function"),
-              inArray(table.dependentId, projectFuncIds),
-            ),
-            and(
-              eq(table.dependentType, "endpoint"),
-              inArray(table.dependentId, projectEndpointIds),
-            ),
-          ),
-        with: {
-          dependentFunc: {
-            columns: {
-              id: true,
-              name: true,
-            },
-          },
-          dependentEndpoint: {
-            columns: {
-              id: true,
-              path: true,
-              method: true,
-            },
-          },
-          dependency: {
-            columns: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      });
-
-      return allDependencies.map((dep) => ({
-        source: dep.dependency.id,
-        target: dep.dependentId,
-        targetType: dep.dependentType,
-      }));
+      return availableFunctions.filter((f) =>
+        existingDeps.some((d) => d.dependencyVersionId !== f.currentVersionId),
+      );
     }),
 } satisfies TRPCRouterRecord;

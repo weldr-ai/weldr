@@ -1,5 +1,9 @@
-import { and, eq } from "@integramind/db";
-import { projects, resourceEnvironmentVariables } from "@integramind/db/schema";
+import { and, eq, inArray } from "@integramind/db";
+import {
+  dependencies,
+  projects,
+  resourceEnvironmentVariables,
+} from "@integramind/db/schema";
 import {
   insertProjectSchema,
   updateProjectSchema,
@@ -116,42 +120,58 @@ export const projectsRouter = {
               },
             },
             endpoints: {
-              columns: {
-                code: false,
-                packages: false,
-              },
               with: {
+                currentVersion: true,
                 conversation: {
                   with: {
                     messages: {
                       columns: {
-                        content: false,
+                        id: true,
+                        role: true,
+                        rawContent: true,
+                        createdAt: true,
                       },
                       orderBy: (funcsMessages, { asc }) => [
                         asc(funcsMessages.createdAt),
                       ],
+                      with: {
+                        endpointVersion: {
+                          columns: {
+                            id: true,
+                            versionTitle: true,
+                            versionNumber: true,
+                          },
+                        },
+                      },
                     },
                   },
                 },
               },
             },
             funcs: {
-              columns: {
-                docs: false,
-                packages: false,
-                code: false,
-              },
               with: {
-                testRuns: true,
+                currentVersion: true,
                 conversation: {
                   with: {
                     messages: {
                       columns: {
-                        content: false,
+                        id: true,
+                        role: true,
+                        rawContent: true,
+                        createdAt: true,
                       },
                       orderBy: (funcsMessages, { asc }) => [
                         asc(funcsMessages.createdAt),
                       ],
+                      with: {
+                        funcVersion: {
+                          columns: {
+                            id: true,
+                            versionTitle: true,
+                            versionNumber: true,
+                          },
+                        },
+                      },
                     },
                   },
                 },
@@ -205,16 +225,39 @@ export const projectsRouter = {
           ...project,
           funcs: await Promise.all(
             project.funcs.map(async (func) => {
+              const { currentVersion, ...rest } = func;
+              const {
+                id,
+                code,
+                packages,
+                docs,
+                resources,
+                hash,
+                messageId,
+                ...currentVersionRest
+              } = currentVersion ?? {};
               return {
-                ...func,
+                ...rest,
+                ...currentVersionRest,
                 canRun: await isFunctionReady({ id: func.id }),
               };
             }),
           ),
           endpoints: await Promise.all(
             project.endpoints.map(async (endpoint) => {
+              const { currentVersion, ...rest } = endpoint;
+              const {
+                id,
+                code,
+                packages,
+                resources,
+                hash,
+                messageId,
+                ...currentVersionRest
+              } = currentVersion ?? {};
               return {
-                ...endpoint,
+                ...rest,
+                ...currentVersionRest,
                 canRun: await isEndpointReady({ id: endpoint.id }),
               };
             }),
@@ -280,42 +323,58 @@ export const projectsRouter = {
         ),
         with: {
           endpoints: {
-            columns: {
-              code: false,
-              packages: false,
-            },
             with: {
+              currentVersion: true,
               conversation: {
                 with: {
                   messages: {
                     columns: {
-                      content: false,
+                      id: true,
+                      role: true,
+                      rawContent: true,
+                      createdAt: true,
                     },
                     orderBy: (funcsMessages, { asc }) => [
                       asc(funcsMessages.createdAt),
                     ],
+                    with: {
+                      endpointVersion: {
+                        columns: {
+                          id: true,
+                          versionTitle: true,
+                          versionNumber: true,
+                        },
+                      },
+                    },
                   },
                 },
               },
             },
           },
           funcs: {
-            columns: {
-              docs: false,
-              packages: false,
-              code: false,
-            },
             with: {
-              testRuns: true,
+              currentVersion: true,
               conversation: {
                 with: {
                   messages: {
                     columns: {
-                      content: false,
+                      id: true,
+                      role: true,
+                      rawContent: true,
+                      createdAt: true,
                     },
                     orderBy: (funcsMessages, { asc }) => [
                       asc(funcsMessages.createdAt),
                     ],
+                    with: {
+                      funcVersion: {
+                        columns: {
+                          id: true,
+                          versionTitle: true,
+                          versionNumber: true,
+                        },
+                      },
+                    },
                   },
                 },
               },
@@ -334,26 +393,48 @@ export const projectsRouter = {
       const result = [];
 
       for (const endpoint of project.endpoints) {
+        const { currentVersion, ...rest } = endpoint;
+        const {
+          id,
+          code,
+          packages,
+          resources,
+          hash,
+          messageId,
+          ...currentVersionRest
+        } = currentVersion ?? {};
         result.push({
           type: "endpoint",
           id: endpoint.id,
           dragHandle: ".drag-handle",
           position: { x: endpoint.positionX ?? 0, y: endpoint.positionY ?? 0 },
           data: {
-            ...endpoint,
+            ...rest,
+            ...currentVersionRest,
             canRun: await isEndpointReady({ id: endpoint.id }),
           },
         });
       }
 
       for (const func of project.funcs) {
+        const { currentVersion, ...rest } = func;
+        const {
+          id,
+          code,
+          packages,
+          resources,
+          hash,
+          messageId,
+          ...currentVersionRest
+        } = currentVersion ?? {};
         result.push({
           type: "func",
           id: func.id,
           dragHandle: ".drag-handle",
           position: { x: func.positionX ?? 0, y: func.positionY ?? 0 },
           data: {
-            ...func,
+            ...rest,
+            ...currentVersionRest,
             canRun: await isFunctionReady({ id: func.id }),
           },
         });
@@ -416,5 +497,118 @@ export const projectsRouter = {
           message: "Failed to delete project",
         });
       }
+    }),
+  dependencies: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const project = await ctx.db.query.projects.findFirst({
+        where: and(
+          eq(projects.id, input.id),
+          eq(projects.userId, ctx.session.user.id),
+        ),
+        with: {
+          funcs: {
+            columns: {
+              id: true,
+            },
+            with: {
+              currentVersion: {
+                columns: {
+                  id: true,
+                },
+              },
+            },
+          },
+          endpoints: {
+            columns: {
+              id: true,
+            },
+            with: {
+              currentVersion: {
+                columns: {
+                  id: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!project) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Project not found",
+        });
+      }
+
+      // Get all current version IDs
+      const currentVersionIds = [
+        ...project.funcs
+          .map((f) => f.currentVersion?.id)
+          .filter((id): id is string => !!id),
+        ...project.endpoints
+          .map((e) => e.currentVersion?.id)
+          .filter((id): id is string => !!id),
+      ];
+
+      // Get dependencies only for current versions in this project
+      const projectDependencies = await ctx.db.query.dependencies.findMany({
+        where: and(inArray(dependencies.dependentVersionId, currentVersionIds)),
+        with: {
+          dependentEndpointVersion: {
+            columns: {
+              endpointId: true,
+            },
+          },
+          dependentFuncVersion: {
+            columns: {
+              funcId: true,
+            },
+          },
+          dependencyVersion: {
+            columns: {
+              funcId: true,
+            },
+          },
+        },
+      });
+
+      // Create a unique set of edges using a Set with stringified edges
+      const uniqueEdgesSet = new Set<string>();
+      const edges: { dependantId: string; dependencyId: string }[] = [];
+
+      for (const dep of projectDependencies) {
+        if (dep.dependencyVersion) {
+          let edge = "";
+          if (dep.dependentEndpointVersion) {
+            edge = JSON.stringify({
+              dependantId: dep.dependentEndpointVersion.endpointId,
+              dependencyId: dep.dependencyVersion.funcId,
+            });
+          } else {
+            edge = JSON.stringify({
+              dependantId: dep.dependentFuncVersion.funcId,
+              dependencyId: dep.dependencyVersion.funcId,
+            });
+          }
+
+          if (!uniqueEdgesSet.has(edge)) {
+            uniqueEdgesSet.add(edge);
+            if (dep.dependentEndpointVersion?.endpointId) {
+              edges.push({
+                dependantId: dep.dependentEndpointVersion.endpointId,
+                dependencyId: dep.dependencyVersion.funcId,
+              });
+            } else {
+              edges.push({
+                dependantId: dep.dependentFuncVersion.funcId,
+                dependencyId: dep.dependencyVersion.funcId,
+              });
+            }
+          }
+        }
+      }
+
+      return edges;
     }),
 } satisfies TRPCRouterRecord;

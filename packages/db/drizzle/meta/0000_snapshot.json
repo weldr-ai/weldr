@@ -1,5 +1,5 @@
 {
-  "id": "a17ace58-07cd-46fe-8547-1d76a95cffa1",
+  "id": "d2719236-0016-4a9d-9afa-b33c27914833",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -50,9 +50,21 @@
           "primaryKey": false,
           "notNull": false
         },
-        "expires_at": {
-          "name": "expires_at",
+        "access_token_expires_at": {
+          "name": "access_token_expires_at",
           "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token_expires_at": {
+          "name": "refresh_token_expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -61,6 +73,18 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -97,6 +121,24 @@
           "primaryKey": false,
           "notNull": true
         },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
         "ip_address": {
           "name": "ip_address",
           "type": "text",
@@ -129,7 +171,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "sessions_token_unique": {
+          "name": "sessions_token_unique",
+          "nullsNotDistinct": false,
+          "columns": ["token"]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -228,6 +276,12 @@
         },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
@@ -332,7 +386,7 @@
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         }
       },
       "indexes": {
@@ -481,8 +535,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.endpoints": {
-      "name": "endpoints",
+    "public.endpoint_versions": {
+      "name": "endpoint_versions",
       "schema": "",
       "columns": {
         "id": {
@@ -491,24 +545,17 @@
           "primaryKey": true,
           "notNull": true
         },
-        "path": {
-          "name": "path",
+        "version_title": {
+          "name": "version_title",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "method": {
-          "name": "method",
-          "type": "http_methods",
-          "typeSchema": "public",
+        "version_number": {
+          "name": "version_number",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
-        },
-        "summary": {
-          "name": "summary",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "code": {
           "name": "code",
@@ -531,6 +578,143 @@
         "packages": {
           "name": "packages",
           "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "endpoint_id": {
+          "name": "endpoint_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message_id": {
+          "name": "message_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "endpoint_versions_endpoint_id_idx": {
+          "name": "endpoint_versions_endpoint_id_idx",
+          "columns": [
+            {
+              "expression": "endpoint_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "endpoint_versions_user_id_idx": {
+          "name": "endpoint_versions_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "endpoint_versions_created_at_idx": {
+          "name": "endpoint_versions_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "endpoint_versions_user_id_users_id_fk": {
+          "name": "endpoint_versions_user_id_users_id_fk",
+          "tableFrom": "endpoint_versions",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "endpoint_versions_endpoint_id_endpoints_id_fk": {
+          "name": "endpoint_versions_endpoint_id_endpoints_id_fk",
+          "tableFrom": "endpoint_versions",
+          "tableTo": "endpoints",
+          "columnsFrom": ["endpoint_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "endpoint_versions_message_id_conversation_messages_id_fk": {
+          "name": "endpoint_versions_message_id_conversation_messages_id_fk",
+          "tableFrom": "endpoint_versions",
+          "tableTo": "conversation_messages",
+          "columnsFrom": ["message_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.endpoints": {
+      "name": "endpoints",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "method": {
+          "name": "method",
+          "type": "http_methods",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -579,6 +763,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "current_version_id": {
+          "name": "current_version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -670,6 +860,15 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "endpoints_current_version_id_endpoint_versions_id_fk": {
+          "name": "endpoints_current_version_id_endpoint_versions_id_fk",
+          "tableFrom": "endpoints",
+          "tableTo": "endpoint_versions",
+          "columnsFrom": ["current_version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -743,14 +942,26 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.funcs": {
-      "name": "funcs",
+    "public.func_versions": {
+      "name": "func_versions",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
+          "notNull": true
+        },
+        "version_title": {
+          "name": "version_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version_number": {
+          "name": "version_number",
+          "type": "integer",
+          "primaryKey": false,
           "notNull": true
         },
         "name": {
@@ -819,6 +1030,151 @@
           "primaryKey": false,
           "notNull": false
         },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "func_id": {
+          "name": "func_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message_id": {
+          "name": "message_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "func_versions_func_id_idx": {
+          "name": "func_versions_func_id_idx",
+          "columns": [
+            {
+              "expression": "func_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "func_versions_user_id_idx": {
+          "name": "func_versions_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "func_versions_created_at_idx": {
+          "name": "func_versions_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "func_versions_message_id_idx": {
+          "name": "func_versions_message_id_idx",
+          "columns": [
+            {
+              "expression": "message_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "func_versions_func_id_funcs_id_fk": {
+          "name": "func_versions_func_id_funcs_id_fk",
+          "tableFrom": "func_versions",
+          "tableTo": "funcs",
+          "columnsFrom": ["func_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "func_versions_user_id_users_id_fk": {
+          "name": "func_versions_user_id_users_id_fk",
+          "tableFrom": "func_versions",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "func_versions_message_id_conversation_messages_id_fk": {
+          "name": "func_versions_message_id_conversation_messages_id_fk",
+          "tableFrom": "func_versions",
+          "tableTo": "conversation_messages",
+          "columnsFrom": ["message_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.funcs": {
+      "name": "funcs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "position_x": {
           "name": "position_x",
           "type": "integer",
@@ -870,11 +1226,17 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "current_version_id": {
+          "name": "current_version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
-        "unique_name": {
-          "name": "unique_name",
+        "unique_func_name_in_project": {
+          "name": "unique_func_name_in_project",
           "columns": [
             {
               "expression": "name",
@@ -1005,6 +1367,15 @@
           "columnsFrom": ["integration_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "funcs_current_version_id_func_versions_id_fk": {
+          "name": "funcs_current_version_id_func_versions_id_fk",
+          "tableFrom": "funcs",
+          "tableTo": "func_versions",
+          "columnsFrom": ["current_version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -1444,69 +1815,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.test_runs": {
-      "name": "test_runs",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "input": {
-          "name": "input",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "NULL"
-        },
-        "stdout": {
-          "name": "stdout",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "NULL"
-        },
-        "stderr": {
-          "name": "stderr",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "NULL"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "func_id": {
-          "name": "func_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "test_runs_func_id_funcs_id_fk": {
-          "name": "test_runs_func_id_funcs_id_fk",
-          "tableFrom": "test_runs",
-          "tableTo": "funcs",
-          "columnsFrom": ["func_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.dependencies": {
       "name": "dependencies",
       "schema": "",
@@ -1518,17 +1826,17 @@
           "primaryKey": false,
           "notNull": true
         },
-        "dependent_id": {
-          "name": "dependent_id",
+        "dependent_version_id": {
+          "name": "dependent_version_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "dependency_id": {
-          "name": "dependency_id",
+        "dependency_version_id": {
+          "name": "dependency_version_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -1549,13 +1857,13 @@
               "nulls": "last"
             },
             {
-              "expression": "dependent_id",
+              "expression": "dependent_version_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "dependency_id",
+              "expression": "dependency_version_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1566,11 +1874,11 @@
           "method": "btree",
           "with": {}
         },
-        "func_idx": {
-          "name": "func_idx",
+        "func_version_idx": {
+          "name": "func_version_idx",
           "columns": [
             {
-              "expression": "dependent_id",
+              "expression": "dependent_version_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1581,11 +1889,11 @@
           "method": "btree",
           "with": {}
         },
-        "dependency_idx": {
-          "name": "dependency_idx",
+        "dependency_version_idx": {
+          "name": "dependency_version_idx",
           "columns": [
             {
-              "expression": "dependency_id",
+              "expression": "dependency_version_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1597,7 +1905,26 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "dependencies_dependent_version_id_func_versions_id_fk": {
+          "name": "dependencies_dependent_version_id_func_versions_id_fk",
+          "tableFrom": "dependencies",
+          "tableTo": "func_versions",
+          "columnsFrom": ["dependent_version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "dependencies_dependency_version_id_func_versions_id_fk": {
+          "name": "dependencies_dependency_version_id_func_versions_id_fk",
+          "tableFrom": "dependencies",
+          "tableTo": "func_versions",
+          "columnsFrom": ["dependency_version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},

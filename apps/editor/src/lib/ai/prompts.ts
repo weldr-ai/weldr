@@ -32,6 +32,7 @@ export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gather
      - Lists of all resources and helper functions involved.
      - Consideration of key edge cases and error-handling strategies.
      - Any npm dependencies (e.g. useful npm packages to use).
+     - Specify error handling strategies for the function as you see fit. By default, functions should throw generic \`Error\` with a message if they fail to execute. Infer errors without asking the user and always do what's appropriate.
 
 # Output Format
 
@@ -444,6 +445,9 @@ export const generateFuncCodeUserPrompt = async ({
 }) => {
   const helperFunctions = await db.query.funcs.findMany({
     where: inArray(funcs.id, helperFunctionIds ?? []),
+    with: {
+      currentVersion: true,
+    },
   });
 
   return `## Context
@@ -480,13 +484,13 @@ ${
   helperFunctions && helperFunctions.length > 0
     ? `### Helper Functions\n${helperFunctions
         .map((helperFunction) => {
-          if (!helperFunction.name || !helperFunction.docs) {
+          if (!helperFunction.name || !helperFunction.currentVersion?.docs) {
             throw new Error("Helper function name is required");
           }
           const importInfo = `Available in \`@/lib/${toKebabCase(helperFunction.name)}\`\n`;
           return `- \`${helperFunction.name}\`
 How to import: ${importInfo}
-Docs:\n${helperFunction.docs}`;
+Docs:\n${helperFunction.currentVersion.docs}`;
         })
         .join("\n\n")}`
     : ""
@@ -1476,6 +1480,9 @@ export const generateEndpointCodeUserPrompt = async ({
 }) => {
   const helperFunctions = await db.query.funcs.findMany({
     where: inArray(funcs.id, helperFunctionIds ?? []),
+    with: {
+      currentVersion: true,
+    },
   });
 
   return `## Context
@@ -1512,13 +1519,13 @@ ${
   helperFunctions && helperFunctions.length > 0
     ? `### Helper Functions\n${helperFunctions
         .map((helperFunction) => {
-          if (!helperFunction.name || !helperFunction.docs) {
+          if (!helperFunction.name || !helperFunction.currentVersion?.docs) {
             throw new Error("Helper function name is required");
           }
           const importInfo = `Available in \`@/lib/${toKebabCase(helperFunction.name)}\`\n`;
           return `- \`${helperFunction.name}\`
 How to import: ${importInfo}
-Docs:\n${helperFunction.docs}`;
+Docs:\n${helperFunction.currentVersion.docs}`;
         })
         .join("\n\n")}`
     : ""

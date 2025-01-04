@@ -12,7 +12,6 @@ export default {
     "./src/schema/resources.ts",
     "./src/schema/projects.ts",
     "./src/schema/environment-variables.ts",
-    "./src/schema/test-runs.ts",
     "./src/schema/dependencies.ts",
   ],
   out: "./drizzle",

@@ -35,22 +35,31 @@ export const endpointPathSchema = z
     },
   );
 
+export const endpointVersionSchema = z.object({
+  id: z.string().cuid2(),
+  versionTitle: z.string(),
+  versionNumber: z.number(),
+  path: endpointPathSchema,
+  method: httpMethodSchema,
+  summary: z.string(),
+  code: z.string(),
+  openApiSpec: openApiEndpointSpecSchema,
+  resources: requirementResourceSchema.array(),
+  packages: packageSchema.array(),
+  dependencies: dependencySchema.array(),
+});
+
 export const endpointSchema = z.object({
   id: z.string().cuid2(),
-  code: z.string().optional(),
   method: httpMethodSchema.optional(),
   path: endpointPathSchema.optional(),
-  summary: z.string().optional(),
-  description: z.string().optional(),
-  openApiSpec: openApiEndpointSpecSchema.optional(),
-  resources: requirementResourceSchema.array().optional(),
-  packages: packageSchema.array().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   projectId: z.string().cuid2(),
-  dependencies: dependencySchema.array(),
   conversationId: z.string().cuid2(),
   conversation: conversationSchema,
+  currentVersionId: z.string().nullable(),
+  currentVersion: endpointVersionSchema.nullable(),
   canRun: z.boolean().default(false),
 });
 
@@ -66,16 +75,24 @@ export const updateEndpointSchema = z.object({
     id: z.string(),
   }),
   payload: z.object({
-    method: httpMethodSchema.optional(),
-    path: endpointPathSchema.optional(),
+    positionX: z.number().optional(),
+    positionY: z.number().optional(),
+  }),
+});
+
+export const createNewEndpointVersionSchema = z.object({
+  where: z.object({
+    id: z.string(),
+  }),
+  payload: z.object({
+    versionTitle: z.string().min(1, {
+      message: "Version title is required.",
+    }),
     code: z.string().optional(),
-    summary: z.string().optional(),
-    description: z.string().optional(),
     openApiSpec: openApiEndpointSpecSchema.optional(),
     resources: requirementResourceSchema.array().optional(),
     packages: packageSchema.array().optional(),
-    positionX: z.number().optional(),
-    positionY: z.number().optional(),
+    messageId: z.string(),
   }),
 });
 

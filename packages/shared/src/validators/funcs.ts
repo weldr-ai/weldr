@@ -8,18 +8,14 @@ import { conversationSchema } from "./conversations";
 import { dependencySchema } from "./dependencies";
 import { integrationTypeSchema } from "./integrations";
 import { jsonSchema } from "./json-schema";
-import { testRunSchema } from "./test-runs";
 
-export const funcSchema = z.object({
+export const funcVersionSchema = z.object({
   id: z.string(),
+  versionTitle: z.string(),
+  versionNumber: z.number(),
   name: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  positionX: z.number().default(0),
-  positionY: z.number().default(0),
   inputSchema: jsonSchema.optional(),
   outputSchema: jsonSchema.optional(),
-  testInput: z.unknown().optional(),
   rawDescription: rawContentSchema.optional(),
   behavior: rawContentSchema.optional(),
   errors: z.string().optional(),
@@ -28,12 +24,25 @@ export const funcSchema = z.object({
   resources: requirementResourceSchema.array().optional().nullable(),
   packages: packageSchema.array().optional().nullable(),
   userId: z.string().nullable(),
-  conversationId: z.string().nullable(),
+  projectId: z.string(),
+  dependencies: dependencySchema.array(),
+  testInput: z.unknown().optional(),
+});
+
+export const funcSchema = z.object({
+  id: z.string(),
+  name: z.string().optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  positionX: z.number().default(0),
+  positionY: z.number().default(0),
   canRun: z.boolean().optional(),
+  conversationId: z.string().nullable(),
+  userId: z.string().nullable(),
   projectId: z.string(),
   conversation: conversationSchema,
-  testRuns: testRunSchema.array(),
-  dependencies: dependencySchema.array(),
+  currentVersionId: z.string().nullable(),
+  currentVersion: funcVersionSchema,
 });
 
 export const insertFuncSchema = z.object({
@@ -48,6 +57,20 @@ export const updateFuncSchema = z.object({
     id: z.string(),
   }),
   payload: z.object({
+    testInput: z.unknown().optional(),
+    positionX: z.number().optional(),
+    positionY: z.number().optional(),
+  }),
+});
+
+export const createNewFuncVersionSchema = z.object({
+  where: z.object({
+    id: z.string(),
+  }),
+  payload: z.object({
+    versionTitle: z.string().min(1, {
+      message: "Version title is required.",
+    }),
     name: z
       .string()
       .min(1, {
@@ -60,9 +83,7 @@ export const updateFuncSchema = z.object({
         message: "Can only contain letters and numbers",
       })
       .optional(),
-    positionX: z.number().optional(),
-    positionY: z.number().optional(),
-    testInput: z.unknown().optional(),
+    messageId: z.string(),
     inputSchema: jsonSchema.optional(),
     outputSchema: jsonSchema.optional(),
     rawDescription: rawContentSchema.optional(),

@@ -2,6 +2,7 @@ import type { rawContentReferenceElementSchema } from "@integramind/shared/valid
 import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
 import { cn, renderDataTypeIcon } from "@integramind/ui/utils";
 import { ColumnsIcon, FunctionSquareIcon, TableIcon } from "lucide-react";
+import React from "react";
 import type { z } from "zod";
 
 interface ReferenceBadgeProps {
@@ -18,7 +19,16 @@ export function ReferenceBadge({ reference, className }: ReferenceBadgeProps) {
       )}
     >
       {reference.referenceType === "variable" ? (
-        renderDataTypeIcon(reference.dataType)
+        Array.isArray(reference.dataType) ? (
+          reference.dataType.map((type, index) => (
+            <React.Fragment key={type}>
+              {index > 0 && " | "}
+              {renderDataTypeIcon(type)}
+            </React.Fragment>
+          ))
+        ) : (
+          renderDataTypeIcon(reference.dataType)
+        )
       ) : reference.referenceType === "resource" ? (
         <>
           {reference.resourceType === "postgres" ? (

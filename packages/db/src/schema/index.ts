@@ -7,5 +7,4 @@ export * from "./funcs";
 export * from "./integrations";
 export * from "./projects";
 export * from "./resources";
-export * from "./test-runs";
 export * from "./vault";

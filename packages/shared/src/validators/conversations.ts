@@ -53,12 +53,17 @@ export const assistantMessageRawContentElementSchema = z.union([
 export const assistantMessageRawContentSchema =
   assistantMessageRawContentElementSchema.array();
 
-export const messageRawContentSchema = z
-  .union([
-    userMessageRawContentElementSchema,
-    assistantMessageRawContentElementSchema,
-  ])
-  .array();
+export const testExecutionMessageRawContentSchema = z.object({
+  stdin: z.string().nullable(),
+  stdout: z.string().nullable(),
+  stderr: z.string().nullable(),
+});
+
+export const messageRawContentSchema = z.union([
+  userMessageRawContentElementSchema.array(),
+  assistantMessageRawContentElementSchema.array(),
+  testExecutionMessageRawContentSchema,
+]);
 
 export const conversationMessageSchema = z.object({
   id: z.string().optional(),
@@ -66,6 +71,20 @@ export const conversationMessageSchema = z.object({
   content: z.string().optional(),
   rawContent: messageRawContentSchema,
   createdAt: z.date().optional(),
+  funcVersion: z
+    .object({
+      id: z.string(),
+      versionTitle: z.string(),
+      versionNumber: z.number(),
+    })
+    .optional(),
+  endpointVersion: z
+    .object({
+      id: z.string(),
+      versionTitle: z.string(),
+      versionNumber: z.number(),
+    })
+    .optional(),
 });
 
 export const conversationSchema = z.object({

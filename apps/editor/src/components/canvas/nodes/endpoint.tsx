@@ -39,6 +39,7 @@ import {
 } from "@integramind/ui/resizable";
 import { ScrollArea } from "@integramind/ui/scroll-area";
 import { cn } from "@integramind/ui/utils";
+import { createId } from "@paralleldrive/cuid2";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
@@ -72,8 +73,7 @@ export const EndpointNode = memo(
 
     const data = fetchedData;
 
-    const { deleteElements, fitBounds, updateNodeData } =
-      useReactFlow<CanvasNode>();
+    const { deleteElements, fitBounds } = useReactFlow<CanvasNode>();
 
     const apiUtils = api.useUtils();
 
@@ -91,11 +91,13 @@ export const EndpointNode = memo(
 
     const [messages, setMessages] = useState<ConversationMessage[]>([
       {
+        id: createId(),
         role: "assistant",
         rawContent: [
           {
             type: "text",
-            value: "Hey, I'm your endpoint builder. How can I help you?",
+            value:
+              "Hi there! I'm IntegraMind, your AI assistant. What does your endpoint do?",
           },
         ],
       },
@@ -107,6 +109,23 @@ export const EndpointNode = memo(
     );
     const [userMessageRawContent, setUserMessageRawContent] =
       useState<UserMessageRawContent>([]);
+
+    useEffect(() => {
+      setMessages([
+        {
+          id: createId(),
+          role: "assistant",
+          rawContent: [
+            {
+              type: "text",
+              value:
+                "Hi there! I'm IntegraMind, your AI assistant. What does your endpoint do?",
+            },
+          ],
+        },
+        ...(data.conversation?.messages ?? []),
+      ]);
+    }, [data.conversation]);
 
     function onChatChange(editorState: EditorState) {
       editorState.read(async () => {
@@ -242,80 +261,9 @@ export const EndpointNode = memo(
 
       // if code generation is set, disable it and refetch the updated endpoint metadata
       if (endpointRequirementsMessageObject.message.type === "end") {
-        setIsBuilding(false);
-        const endpointBuiltSuccessfullyMessage: ConversationMessage = {
-          role: "assistant",
-          rawContent: [
-            {
-              type: "text",
-              value: "Your endpoint has been built successfully!",
-            },
-          ],
-          createdAt: new Date(),
-        };
-
         await apiUtils.endpoints.byId.invalidate({ id: data.id });
-        updateNodeData(data.id, {
-          ...endpointRequirementsMessageObject.message.content,
-          ...endpointRequirementsMessageObject.message.content.openApiSpec,
-          openApiSpec: {
-            ...endpointRequirementsMessageObject.message.content.openApiSpec,
-            parameters:
-              endpointRequirementsMessageObject.message.content.openApiSpec.parameters?.map(
-                (parameter) => ({
-                  ...parameter,
-                  schema:
-                    typeof parameter.schema === "string"
-                      ? JSON.parse(parameter.schema)
-                      : parameter.schema,
-                }),
-              ),
-            requestBody: endpointRequirementsMessageObject.message.content
-              .openApiSpec.requestBody?.content
-              ? {
-                  ...endpointRequirementsMessageObject.message.content
-                    .openApiSpec.requestBody,
-                  content: Object.fromEntries(
-                    Object.entries(
-                      endpointRequirementsMessageObject.message.content
-                        .openApiSpec.requestBody.content,
-                    ).map(([key, value]) => [
-                      key,
-                      {
-                        ...(value || {}),
-                        schema:
-                          typeof value?.schema === "string"
-                            ? JSON.parse(value.schema)
-                            : value?.schema,
-                      },
-                    ]),
-                  ),
-                }
-              : undefined,
-            responses: Object.fromEntries(
-              Object.entries(
-                endpointRequirementsMessageObject.message.content.openApiSpec
-                  .responses,
-              ).map(([key, value]) => [
-                key,
-                {
-                  description: value.description || "No description provided",
-                  content: Object.fromEntries(
-                    Object.entries(value.content || {}).map(([key, value]) => [
-                      key,
-                      {
-                        schema: JSON.parse(value.schema),
-                        example: value.example,
-                      },
-                    ]),
-                  ),
-                },
-              ]),
-            ),
-          },
-        });
-
-        setMessages([...newMessages, endpointBuiltSuccessfullyMessage]);
+        await apiUtils.projects.dependencies.invalidate({ id: data.projectId });
+        setIsBuilding(false);
       }
 
       setUserMessageContent(null);
@@ -355,12 +303,12 @@ export const EndpointNode = memo(
     const resources = useResources();
     const availableHelperFunctions = api.dependencies.available.useQuery({
       dependentType: "function",
-      dependentId: data.id,
+      dependentVersionId: data.currentVersionId,
     });
 
     const helperFunctionReferences = availableHelperFunctions.data?.reduce(
       (acc, func) => {
-        if (!func.name || !func.rawDescription) {
+        if (!func.name) {
           return acc;
         }
 
@@ -498,6 +446,7 @@ export const EndpointNode = memo(
                 <div className="flex h-[calc(100dvh-474px)] flex-col p-4">
                   <ScrollArea className="mb-4 flex-grow" ref={scrollAreaRef}>
                     <MessageList
+                      currentVersionId={data.currentVersionId}
                       messages={messages}
                       isThinking={isThinking}
                       isBuilding={isBuilding}

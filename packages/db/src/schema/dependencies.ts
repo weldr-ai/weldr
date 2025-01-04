@@ -7,8 +7,8 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { endpoints } from "./endpoints";
-import { funcs } from "./funcs";
+import { endpointVersions } from "./endpoints";
+import { funcVersions } from "./funcs";
 
 export const dependentType = pgEnum("dependent_type", ["function", "endpoint"]);
 
@@ -16,15 +16,24 @@ export const dependencies = pgTable(
   "dependencies",
   {
     dependentType: dependentType("dependent_type").notNull(),
-    dependentId: text("dependent_id").notNull(),
-    dependencyId: text("dependency_id").notNull(),
+    dependentVersionId: text("dependent_version_id")
+      .references(() => funcVersions.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    dependencyVersionId: text("dependency_version_id").references(
+      () => funcVersions.id,
+      {
+        onDelete: "set null",
+      },
+    ),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => ({
     uniqueDependency: uniqueIndex("unique_dependency").on(
       t.dependentType,
-      t.dependentId,
-      t.dependencyId,
+      t.dependentVersionId,
+      t.dependencyVersionId,
     ),
     // Only allow:
     // 1. Functions depending on different functions
@@ -39,24 +48,27 @@ export const dependencies = pgTable(
           false -- Reject any other cases
       END
     )`,
-    funcIdx: index("func_idx").on(t.dependentId),
-    dependencyIdx: index("dependency_idx").on(t.dependencyId),
+    funcVersionIdx: index("func_version_idx").on(t.dependentVersionId),
+    dependencyVersionIdx: index("dependency_version_idx").on(
+      t.dependencyVersionId,
+    ),
   }),
 );
 
 export const dependenciesRelations = relations(dependencies, ({ one }) => ({
-  dependentFunc: one(funcs, {
-    relationName: "dependencies",
-    fields: [dependencies.dependentId],
-    references: [funcs.id],
+  dependentFuncVersion: one(funcVersions, {
+    relationName: "dependents",
+    fields: [dependencies.dependentVersionId],
+    references: [funcVersions.id],
   }),
-  dependentEndpoint: one(endpoints, {
-    relationName: "dependencies",
-    fields: [dependencies.dependentId],
-    references: [endpoints.id],
+  dependentEndpointVersion: one(endpointVersions, {
+    relationName: "dependents",
+    fields: [dependencies.dependentVersionId],
+    references: [endpointVersions.id],
   }),
-  dependency: one(funcs, {
-    fields: [dependencies.dependencyId],
-    references: [funcs.id],
+  dependencyVersion: one(funcVersions, {
+    relationName: "dependencies",
+    fields: [dependencies.dependencyVersionId],
+    references: [funcVersions.id],
   }),
 }));

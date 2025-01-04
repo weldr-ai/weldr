@@ -1,12 +1,12 @@
 "use client";
 
 import { createId } from "@paralleldrive/cuid2";
-import type { ColorMode, Node as ReactFlowNode } from "@xyflow/react";
+import type { ColorMode, Edge, Node as ReactFlowNode } from "@xyflow/react";
 import {
   Background,
   Panel,
   ReactFlow,
-  SmoothStepEdge,
+  useEdgesState,
   useNodesState,
   useReactFlow,
   useViewport,
@@ -14,12 +14,14 @@ import {
 import {
   AppWindowIcon,
   ComponentIcon,
+  EyeIcon,
+  EyeOffIcon,
   FunctionSquareIcon,
   MinusIcon,
   PlusIcon,
 } from "lucide-react";
 import type React from "react";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 
 import type { CanvasNode, CanvasNodeData } from "@/types";
 
@@ -28,7 +30,9 @@ import "@xyflow/react/dist/base.css";
 
 import { Button } from "@integramind/ui/button";
 
+import { useFlowBuilderStore } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
+import type { RouterOutputs } from "@integramind/api";
 import { toast } from "@integramind/ui/hooks/use-toast";
 import { useTheme } from "@integramind/ui/theme-provider";
 import {
@@ -44,23 +48,47 @@ const nodeTypes = {
   endpoint: EndpointNode,
 };
 
-const edgeTypes = {
-  smoothstep: SmoothStepEdge,
-};
-
 export function Canvas({
   projectId,
   initialNodes,
+  initialDependencies,
 }: {
   projectId: string;
   initialNodes: CanvasNode[];
+  initialDependencies: RouterOutputs["projects"]["dependencies"];
 }) {
+  const showEdges = useFlowBuilderStore((state) => state.showEdges);
+  const toggleEdges = useFlowBuilderStore((state) => state.toggleEdges);
+
+  const { data: dependencies } = api.projects.dependencies.useQuery(
+    {
+      id: projectId,
+    },
+    {
+      initialData: initialDependencies,
+    },
+  );
+
   const { screenToFlowPosition, zoomIn, zoomOut, fitView, updateNodeData } =
     useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();
   const [nodes, setNodes, onNodesChange] =
     useNodesState<CanvasNode>(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(
+    showEdges ? [] : [],
+  );
+
+  useEffect(() => {
+    setEdges(
+      dependencies.map((edge) => ({
+        id: `${edge.dependantId}-${edge.dependencyId}`,
+        type: "smooth",
+        source: edge.dependencyId,
+        target: edge.dependantId,
+      })) as Edge[],
+    );
+  }, [dependencies, setEdges]);
 
   const apiUtils = api.useUtils();
 
@@ -231,7 +259,8 @@ export function Canvas({
       className="rounded-md"
       nodes={nodes}
       onNodesChange={onNodesChange}
-      edgeTypes={edgeTypes}
+      edges={showEdges ? edges : []}
+      onEdgesChange={onEdgesChange}
       onDrop={onDrop}
       onNodeDragStop={onNodeDragStop}
       onDragOver={onDragOver}
@@ -250,42 +279,6 @@ export function Canvas({
         className="bg-muted dark:bg-background"
         color="hsl(var(--background))"
       />
-      <Panel
-        position="bottom-right"
-        className="flex items-center gap-1 rounded-md border bg-background p-1 dark:bg-muted"
-      >
-        <Button
-          className="size-8 rounded-md"
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            zoomOut();
-          }}
-        >
-          <MinusIcon className="size-4" />
-        </Button>
-        <Button
-          className="h-8 rounded-md text-xs"
-          variant="ghost"
-          onClick={() => {
-            fitView({
-              maxZoom: 1,
-            });
-          }}
-        >
-          {`${Math.floor(viewPort.zoom * 100)}%`}
-        </Button>
-        <Button
-          className="size-8 rounded-md"
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            zoomIn();
-          }}
-        >
-          <PlusIcon className="size-4" />
-        </Button>
-      </Panel>
       <Panel
         position="bottom-center"
         className="flex items-center gap-1 rounded-md border bg-background p-1 dark:bg-muted"
@@ -350,12 +343,12 @@ export function Canvas({
           </TooltipContent>
         </Tooltip>
 
-        {/* <div className="h-9 border-l" />
+        <div className="h-9 border-l" />
 
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="rounded-full"
+              className="size-8 rounded-md"
               variant="ghost"
               size="icon"
               onClick={toggleEdges}
@@ -367,10 +360,42 @@ export function Canvas({
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="bg-muted border">
+          <TooltipContent side="top" className="border bg-muted">
             <p>Show edges</p>
           </TooltipContent>
-        </Tooltip> */}
+
+          <Button
+            className="size-8 rounded-md"
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              zoomOut();
+            }}
+          >
+            <MinusIcon className="size-4" />
+          </Button>
+          <Button
+            className="h-8 rounded-md px-2 text-xs"
+            variant="ghost"
+            onClick={() => {
+              fitView({
+                maxZoom: 1,
+              });
+            }}
+          >
+            {`${Math.floor(viewPort.zoom * 100)}%`}
+          </Button>
+          <Button
+            className="size-8 rounded-md"
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              zoomIn();
+            }}
+          >
+            <PlusIcon className="size-4" />
+          </Button>
+        </Tooltip>
       </Panel>
     </ReactFlow>
   );

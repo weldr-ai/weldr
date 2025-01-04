@@ -96,15 +96,6 @@ export const FuncNode = memo(
 
     const data = fetchedData;
 
-    const { data: testRuns } = api.testRuns.listByFuncId.useQuery(
-      {
-        funcId: data.id,
-      },
-      {
-        initialData: data.testRuns ?? [],
-      },
-    );
-
     const { deleteElements, fitBounds, updateNodeData } =
       useReactFlow<CanvasNode>();
 
@@ -126,9 +117,6 @@ export const FuncNode = memo(
     const executeFunc = api.engine.executeFunc.useMutation({
       onSuccess: async () => {
         await apiUtils.funcs.byId.invalidate({ id: data.id });
-        await apiUtils.testRuns.listByFuncId.invalidate({
-          funcId: data.id,
-        });
       },
     });
 
@@ -148,13 +136,33 @@ export const FuncNode = memo(
     const [isRunning, setIsRunning] = useState<boolean>(false);
     const [testInput, setTestInput] = useState<unknown>(data.testInput ?? {});
 
-    const conversation: ConversationMessage[] = useMemo(
-      () => [
+    const [messages, setMessages] = useState<ConversationMessage[]>([
+      {
+        id: createId(),
+        role: "assistant",
+        content:
+          "Hi there! I'm IntegraMind, your AI assistant. What does your function do?",
+        rawContent: [
+          {
+            type: "text",
+            value:
+              "Hi there! I'm IntegraMind, your AI assistant. What does your function do?",
+          },
+        ],
+      },
+      ...(data.conversation?.messages ?? []),
+    ]);
+    const [userMessageContent, setUserMessageContent] = useState<string | null>(
+      null,
+    );
+    const [userMessageRawContent, setUserMessageRawContent] =
+      useState<UserMessageRawContent>([]);
+
+    useEffect(() => {
+      setMessages([
         {
           id: createId(),
           role: "assistant",
-          content:
-            "Hi there! I'm IntegraMind, your AI assistant. What does your function do?",
           rawContent: [
             {
               type: "text",
@@ -164,17 +172,8 @@ export const FuncNode = memo(
           ],
         },
         ...(data.conversation?.messages ?? []),
-      ],
-      [data.conversation],
-    );
-
-    const [messages, setMessages] =
-      useState<ConversationMessage[]>(conversation);
-    const [userMessageContent, setUserMessageContent] = useState<string | null>(
-      null,
-    );
-    const [userMessageRawContent, setUserMessageRawContent] =
-      useState<UserMessageRawContent>([]);
+      ]);
+    }, [data.conversation]);
 
     function onChatChange(editorState: EditorState) {
       editorState.read(async () => {
@@ -343,37 +342,13 @@ export const FuncNode = memo(
 
       // if code generation is set, disable it and refetch the updated function metadata
       if (funcRequirementsMessageObject.message.type === "end") {
-        setIsBuilding(false);
-        const funcBuiltSuccessfullyMessage: ConversationMessage = {
-          role: "assistant",
-          rawContent: [
-            {
-              type: "text",
-              value: "Your function has been built successfully!",
-            },
-          ],
-          createdAt: new Date(),
-        };
-
         await apiUtils.funcs.byId.invalidate({ id: data.id });
         await apiUtils.dependencies.available.invalidate();
-        updateNodeData(data.id, {
-          ...data,
-          name: funcRequirementsMessageObject.message.content.name,
-          rawDescription:
-            funcRequirementsMessageObject.message.content.description,
-          behavior: funcRequirementsMessageObject.message.content.behavior,
-          inputSchema: JSON.parse(
-            funcRequirementsMessageObject.message.content.inputSchema,
-          ),
-          outputSchema: JSON.parse(
-            funcRequirementsMessageObject.message.content.outputSchema,
-          ),
-          errors: funcRequirementsMessageObject.message.content.errors,
-          resources: funcRequirementsMessageObject.message.content.resources,
-          canRun: true,
+        await apiUtils.projects.dependencies.invalidate({
+          // biome-ignore lint/style/noNonNullAssertion: <explanation>
+          id: data.projectId!,
         });
-        setMessages([...newMessages, funcBuiltSuccessfullyMessage]);
+        setIsBuilding(false);
       }
 
       setUserMessageContent(null);
@@ -384,12 +359,12 @@ export const FuncNode = memo(
     const resources = useResources();
     const availableHelperFunctions = api.dependencies.available.useQuery({
       dependentType: "function",
-      dependentId: data.id,
+      dependentVersionId: data.currentVersionId,
     });
 
     const helperFunctionReferences = availableHelperFunctions.data?.reduce(
       (acc, func) => {
-        if (!func.name || !func.rawDescription) {
+        if (!func.name) {
           return acc;
         }
 
@@ -451,7 +426,7 @@ export const FuncNode = memo(
                       <CircleAlertIcon className="size-4 text-destructive" />
                     )}
                   </div>
-                  <span className="text-sm">
+                  <span className="w-full truncate text-start text-sm">
                     {data.name ? toTitle(data.name) : "Unimplemented Function"}
                   </span>
                 </Card>
@@ -584,8 +559,8 @@ export const FuncNode = memo(
                     ref={scrollAreaRef}
                   >
                     <MessageList
+                      currentVersionId={data.currentVersionId}
                       messages={messages}
-                      testRuns={testRuns}
                       isThinking={isThinking}
                       isRunning={isRunning}
                       isBuilding={isBuilding}
@@ -632,76 +607,92 @@ export const FuncNode = memo(
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={35} minSize={20} className="p-4">
-                {data.rawDescription ? (
+                {data.canRun ? (
                   <ScrollArea className="size-full">
                     <div className="max-h-[500px] space-y-2">
-                      <div className="flex flex-col space-y-1">
-                        <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
-                          Description:
-                        </span>
-                        <RawContentViewer
-                          rawContent={data.rawDescription ?? []}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between pr-2">
+                      {data.rawDescription && (
+                        <div className="flex flex-col space-y-1">
                           <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
-                            Input:
+                            Description:
                           </span>
-                          <TestInputDialog
-                            schema={data.inputSchema as JsonSchema}
-                            formData={testInput}
-                            setFormData={setTestInput}
-                            onSubmit={async () => {
-                              await updateFunc.mutateAsync({
-                                where: {
-                                  id: data.id,
-                                },
-                                payload: {
-                                  testInput,
-                                },
-                              });
-                            }}
+                          <RawContentViewer
+                            rawContent={data.rawDescription ?? []}
                           />
                         </div>
-                        <TreeView
-                          data={schemaToTreeData(data.inputSchema ?? {})}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
-                          Output:
-                        </span>
-                        <TreeView
-                          data={schemaToTreeData(data.outputSchema ?? {})}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
-                          Behavior:
-                        </span>
-                        <div className="prose prose-li:my-0 prose-ol:my-0 prose-ul:my-0 cursor-text select-text prose-code:text-primary text-foreground text-sm prose-ol:marker:text-foreground [&_ol]:text-foreground [&_ol]:marker:text-foreground">
-                          <RawContentViewer rawContent={data.behavior ?? []} />
+                      )}
+
+                      {data.inputSchema && (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between pr-2">
+                            <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+                              Input:
+                            </span>
+                            <TestInputDialog
+                              schema={data.inputSchema as JsonSchema}
+                              formData={testInput}
+                              setFormData={setTestInput}
+                              onSubmit={async () => {
+                                await updateFunc.mutateAsync({
+                                  where: {
+                                    id: data.id,
+                                  },
+                                  payload: {
+                                    testInput,
+                                  },
+                                });
+                              }}
+                            />
+                          </div>
+                          <TreeView
+                            data={schemaToTreeData(data.inputSchema ?? {})}
+                          />
                         </div>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
-                          Errors:
-                        </span>
-                        <div className="prose prose-li:my-0 prose-ol:my-0 prose-ul:my-0 cursor-text select-text prose-code:text-primary text-foreground text-sm">
-                          <ReactMarkdown
-                            components={{
-                              code: ({ children }) => (
-                                <span className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-destructive text-xs">
-                                  {children}
-                                </span>
-                              ),
-                            }}
-                          >
-                            {data.errors}
-                          </ReactMarkdown>
+                      )}
+
+                      {data.outputSchema && (
+                        <div className="space-y-1">
+                          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+                            Output:
+                          </span>
+                          <TreeView
+                            data={schemaToTreeData(data.outputSchema ?? {})}
+                          />
                         </div>
-                      </div>
+                      )}
+
+                      {data.behavior && (
+                        <div className="space-y-1">
+                          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+                            Behavior:
+                          </span>
+                          <div className="prose prose-li:my-0 prose-ol:my-0 prose-ul:my-0 cursor-text select-text prose-code:text-primary text-foreground text-sm prose-ol:marker:text-foreground [&_ol]:text-foreground [&_ol]:marker:text-foreground">
+                            <RawContentViewer
+                              rawContent={data.behavior ?? []}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {data.errors && (
+                        <div className="space-y-1">
+                          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+                            Errors:
+                          </span>
+                          <div className="prose prose-li:my-0 prose-ol:my-0 prose-ul:my-0 cursor-text select-text prose-code:text-primary text-foreground text-sm">
+                            <ReactMarkdown
+                              components={{
+                                code: ({ children }) => (
+                                  <span className="inline-flex items-center rounded-md border bg-accent px-1.5 py-0.5 text-destructive text-xs">
+                                    {children}
+                                  </span>
+                                ),
+                              }}
+                            >
+                              {data.errors}
+                            </ReactMarkdown>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </ScrollArea>
                 ) : (

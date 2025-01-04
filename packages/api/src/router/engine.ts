@@ -1,15 +1,19 @@
 import { and, eq, inArray, sql } from "@integramind/db";
 import {
+  conversationMessages,
   environmentVariables,
   funcs,
   resourceEnvironmentVariables,
   resources,
-  testRuns,
 } from "@integramind/db/schema";
-import type { Package } from "@integramind/shared/types";
+import type {
+  Package,
+  TestExecutionMessageRawContent,
+} from "@integramind/shared/types";
 import { toKebabCase } from "@integramind/shared/utils";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { ofetch } from "ofetch";
+import SuperJSON from "superjson";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 import { isFunctionReady } from "../utils";
@@ -28,15 +32,19 @@ export const engineRouter = {
           eq(funcs.id, input.funcId),
           eq(funcs.userId, ctx.session.user.id),
         ),
+        with: {
+          currentVersion: true,
+        },
       });
 
-      if (!func) {
+      if (!func || !func.currentVersion || !func.conversationId) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Function not found",
         });
       }
 
+      // Check if the function is ready
       const canRun = await isFunctionReady({ id: func.id });
 
       if (!canRun) {
@@ -46,9 +54,11 @@ export const engineRouter = {
         });
       }
 
-      const resourceIds = func.resources?.map((resource) => resource.id);
+      const resourceIds = func.currentVersion.resources?.map(
+        (resource) => resource.id,
+      );
 
-      const packages: Package[] = func.packages ?? [];
+      const packages: Package[] = func.currentVersion.packages ?? [];
       const modules: { path: string; content: string }[] = [];
 
       if (resourceIds && resourceIds.length > 0) {
@@ -58,10 +68,8 @@ export const engineRouter = {
             integration: {
               with: {
                 funcs: {
-                  columns: {
-                    name: true,
-                    code: true,
-                    packages: true,
+                  with: {
+                    currentVersion: true,
                   },
                 },
               },
@@ -71,10 +79,10 @@ export const engineRouter = {
 
         for (const resource of result) {
           for (const func of resource.integration.funcs) {
-            if (func.name && func.code) {
+            if (func.currentVersion && func.name && func.currentVersion.code) {
               modules.push({
                 path: toKebabCase(func.name),
-                content: func.code,
+                content: func.currentVersion.code,
               });
             }
           }
@@ -83,7 +91,9 @@ export const engineRouter = {
         for (const func of result.flatMap(
           (resource) => resource.integration.funcs,
         )) {
-          packages.push(...(func.packages ?? []));
+          if (func?.currentVersion?.packages) {
+            packages.push(...func.currentVersion.packages);
+          }
         }
       }
 
@@ -143,7 +153,7 @@ export const engineRouter = {
       const requestBody = {
         functionName: func.name,
         functionArgs: input.input,
-        code: func.code,
+        code: func.currentVersion.code,
         modules,
         packages,
         environmentVariablesMap,
@@ -193,11 +203,19 @@ export const engineRouter = {
           },
         });
 
-        await ctx.db.insert(testRuns).values({
-          input: input.input,
-          stdout: executionResult.output.stdout,
-          stderr: executionResult.output.stderr,
-          funcId: input.funcId,
+        await ctx.db.insert(conversationMessages).values({
+          conversationId: func.conversationId,
+          role: "assistant",
+          content: `I have run the function ${func.name} with the following input:
+          ${SuperJSON.stringify(input.input)}
+          The function returned the following output:
+          ${SuperJSON.stringify(executionResult.output)}`,
+          rawContent: {
+            stdin: SuperJSON.stringify(input.input),
+            stderr: SuperJSON.stringify(executionResult.output.stderr),
+            stdout: SuperJSON.stringify(executionResult.output.stdout),
+          } as TestExecutionMessageRawContent,
+          userId: ctx.session.user.id,
         });
 
         return {

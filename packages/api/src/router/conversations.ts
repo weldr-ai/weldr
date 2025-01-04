@@ -130,15 +130,24 @@ export const conversationsRouter = {
         });
       }
 
+      let newMessage = undefined;
+
       if (input.role === "assistant") {
-        await ctx.db.insert(conversationMessages).values({
-          content: input.content,
-          rawContent: input.rawContent,
-          role: "assistant",
-          createdAt: new Date(),
-          userId: ctx.session.user.id,
-          conversationId: input.conversationId,
-        });
+        newMessage = (
+          await ctx.db
+            .insert(conversationMessages)
+            .values({
+              content: input.content,
+              rawContent: input.rawContent,
+              role: "assistant",
+              createdAt: new Date(),
+              userId: ctx.session.user.id,
+              conversationId: input.conversationId,
+            })
+            .returning({
+              id: conversationMessages.id,
+            })
+        )[0];
       }
 
       if (input.role === "user") {
@@ -160,15 +169,31 @@ export const conversationsRouter = {
           ctx,
         );
 
-        await ctx.db.insert(conversationMessages).values({
-          content: userMessageRawContentToText(resolvedRawContent),
-          rawContent: input.rawContent,
-          role: "user",
-          createdAt: new Date(),
-          userId: ctx.session.user.id,
-          conversationId: input.conversationId,
+        newMessage = (
+          await ctx.db
+            .insert(conversationMessages)
+            .values({
+              content: userMessageRawContentToText(resolvedRawContent),
+              rawContent: input.rawContent,
+              role: "user",
+              createdAt: new Date(),
+              userId: ctx.session.user.id,
+              conversationId: input.conversationId,
+            })
+            .returning({
+              id: conversationMessages.id,
+            })
+        )[0];
+      }
+
+      if (!newMessage) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create message",
         });
       }
+
+      return newMessage;
     }),
 } satisfies TRPCRouterRecord;
 
@@ -467,6 +492,9 @@ async function resolveFuncReference(
 ): Promise<ResolvedFuncReference> {
   const func = await ctx.db.query.funcs.findFirst({
     where: eq(funcs.id, reference.id),
+    with: {
+      currentVersion: true,
+    },
   });
 
   if (!func) {
@@ -476,7 +504,7 @@ async function resolveFuncReference(
     });
   }
 
-  if (!func.name || !func.docs) {
+  if (!func.name || !func.currentVersion?.docs) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Function is missing required fields",
@@ -488,7 +516,7 @@ async function resolveFuncReference(
     referenceType: "function",
     id: func.id,
     name: func.name,
-    docs: func.docs,
+    docs: func.currentVersion.docs,
   };
 }
 
@@ -644,7 +672,11 @@ async function getResourceHelperFunctions(
     with: {
       integration: {
         with: {
-          funcs: true,
+          funcs: {
+            with: {
+              currentVersion: true,
+            },
+          },
         },
       },
     },
@@ -659,7 +691,7 @@ async function getResourceHelperFunctions(
 
   const helperFunctions = resourceResult.integration.funcs
     .map((func) => {
-      if (func.name && func.docs) {
+      if (func.name && func.currentVersion?.docs) {
         return func;
       }
     })
@@ -667,7 +699,7 @@ async function getResourceHelperFunctions(
 
   return helperFunctions
     .map((func) => {
-      if (!func.name || !func.docs) {
+      if (!func.name || !func.currentVersion?.docs) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Function is missing required fields",
@@ -677,7 +709,7 @@ async function getResourceHelperFunctions(
       return {
         id: func.id,
         name: func.name,
-        docs: func.docs,
+        docs: func.currentVersion.docs,
       };
     })
     .filter((func) => func !== undefined);

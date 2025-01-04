@@ -7,7 +7,6 @@ import { funcsRouter } from "./router/funcs";
 import { integrationsRouter } from "./router/integrations";
 import { projectsRouter } from "./router/projects";
 import { resourcesRouter } from "./router/resources";
-import { testRunsRouter } from "./router/test-runs";
 
 import { createTRPCRouter } from "./trpc";
 
@@ -21,7 +20,6 @@ export const appRouter = createTRPCRouter({
   conversations: conversationsRouter,
   integrations: integrationsRouter,
   environmentVariables: environmentVariablesRouter,
-  testRuns: testRunsRouter,
 });
 
 // export type definition of API

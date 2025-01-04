@@ -3,7 +3,28 @@ import { z } from "zod";
 
 // JSON Schema Data Types
 export const dataTypeSchema = z
-  .enum(["string", "number", "integer", "boolean", "object", "array", "null"])
+  .union([
+    z.enum([
+      "string",
+      "number",
+      "integer",
+      "boolean",
+      "object",
+      "array",
+      "null",
+    ]),
+    z.array(
+      z.enum([
+        "string",
+        "number",
+        "integer",
+        "boolean",
+        "object",
+        "array",
+        "null",
+      ]),
+    ),
+  ])
   .describe("The data type of a JSON Schema value");
 
 // JSON Schema Object

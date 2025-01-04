@@ -17,6 +17,10 @@ export default async function ProjectPage({
       id: projectId,
     });
 
+    const dependencies = await api.projects.dependencies({
+      id: projectId,
+    });
+
     const initialNodes: CanvasNode[] = [];
 
     for (const endpoint of project.endpoints) {
@@ -44,7 +48,7 @@ export default async function ProjectPage({
         <Canvas
           projectId={projectId}
           initialNodes={initialNodes}
-          // initialEdges={initialEdges}
+          initialDependencies={dependencies}
         />
       </div>
     );

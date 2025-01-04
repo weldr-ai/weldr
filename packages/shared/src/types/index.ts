@@ -10,6 +10,7 @@ import type {
   conversationMessageSchema,
   conversationSchema,
   messageRawContentSchema,
+  testExecutionMessageRawContentSchema,
   userMessageRawContentSchema,
 } from "../validators/conversations";
 import type {
@@ -30,7 +31,6 @@ import type { dataTypeSchema } from "../validators/json-schema";
 import type { openApiEndpointSpecSchema } from "../validators/openapi";
 import type { projectSchema } from "../validators/projects";
 import type { resourceSchema } from "../validators/resources";
-import type { testRunSchema } from "../validators/test-runs";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
 
@@ -62,7 +62,6 @@ export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;
 export type RawContent = z.infer<typeof rawContentSchema>;
 export type Package = z.infer<typeof packageSchema>;
 export type Func = z.infer<typeof funcSchema>;
-export type TestRun = z.infer<typeof testRunSchema>;
 
 export type FuncRequirementsMessage = z.infer<
   typeof funcRequirementsMessageSchema
@@ -71,26 +70,6 @@ export type EndpointRequirementsMessage = z.infer<
   typeof endpointRequirementsMessageSchema
 >;
 
-export type BaseFormState<
-  FormFields = Record<string, string>,
-  TPayload = unknown,
-> =
-  | {
-      status: "success";
-      title?: string;
-      payload: TPayload;
-      message?: string;
-    }
-  | {
-      status: "validationError";
-      title?: string;
-      fields: FormFields;
-      errors: FormFields;
-    }
-  | {
-      status: "error";
-      title?: string;
-      fields: FormFields;
-      message?: string;
-    }
-  | undefined;
+export type TestExecutionMessageRawContent = z.infer<
+  typeof testExecutionMessageRawContentSchema
+>;

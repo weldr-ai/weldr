@@ -42,17 +42,6 @@ export function RawContentViewer({
         .join(`[REF${index}]`);
     });
 
-    const successMatch = processedContent.match(
-      /Your .+ has been built successfully!/,
-    );
-    const errorMatch = processedContent.match(/Your .+ has failed to build!/);
-
-    const className = successMatch
-      ? "text-success"
-      : errorMatch
-        ? "text-destructive"
-        : "";
-
     const processReferences = (content: ReactNode): ReactNode => {
       if (typeof content !== "string") return content;
 
