@@ -28,8 +28,6 @@ export const projects = pgTable(
       .notNull(),
   },
   (t) => ({
-    userIdIdx: index("projects_user_id_idx").on(t.userId),
-    subdomainIdx: index("projects_subdomain_idx").on(t.subdomain),
     createdAtIdx: index("projects_created_at_idx").on(t.createdAt),
   }),
 );

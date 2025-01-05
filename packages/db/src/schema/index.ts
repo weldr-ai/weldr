@@ -8,3 +8,4 @@ export * from "./integrations";
 export * from "./projects";
 export * from "./resources";
 export * from "./vault";
+export * from "./versions";

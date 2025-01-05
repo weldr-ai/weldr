@@ -1,5 +1,5 @@
 {
-  "id": "d2719236-0016-4a9d-9afa-b33c27914833",
+  "id": "521d09cd-df07-4ffb-8b14-d55578410dea",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -390,36 +390,6 @@
         }
       },
       "indexes": {
-        "conversation_messages_user_id_idx": {
-          "name": "conversation_messages_user_id_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "conversation_messages_conversation_id_idx": {
-          "name": "conversation_messages_conversation_id_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "conversation_messages_created_at_idx": {
           "name": "conversation_messages_created_at_idx",
           "columns": [
@@ -487,21 +457,6 @@
         }
       },
       "indexes": {
-        "conversations_user_id_idx": {
-          "name": "conversations_user_id_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "conversations_created_at_idx": {
           "name": "conversations_created_at_idx",
           "columns": [
@@ -535,8 +490,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.endpoint_versions": {
-      "name": "endpoint_versions",
+    "public.endpoints": {
+      "name": "endpoints",
       "schema": "",
       "columns": {
         "id": {
@@ -545,17 +500,18 @@
           "primaryKey": true,
           "notNull": true
         },
-        "version_title": {
-          "name": "version_title",
+        "path": {
+          "name": "path",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
-        "version_number": {
-          "name": "version_number",
-          "type": "integer",
+        "method": {
+          "name": "method",
+          "type": "http_methods",
+          "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "code": {
           "name": "code",
@@ -578,143 +534,6 @@
         "packages": {
           "name": "packages",
           "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "hash": {
-          "name": "hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "endpoint_id": {
-          "name": "endpoint_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "message_id": {
-          "name": "message_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "endpoint_versions_endpoint_id_idx": {
-          "name": "endpoint_versions_endpoint_id_idx",
-          "columns": [
-            {
-              "expression": "endpoint_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "endpoint_versions_user_id_idx": {
-          "name": "endpoint_versions_user_id_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "endpoint_versions_created_at_idx": {
-          "name": "endpoint_versions_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "endpoint_versions_user_id_users_id_fk": {
-          "name": "endpoint_versions_user_id_users_id_fk",
-          "tableFrom": "endpoint_versions",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "endpoint_versions_endpoint_id_endpoints_id_fk": {
-          "name": "endpoint_versions_endpoint_id_endpoints_id_fk",
-          "tableFrom": "endpoint_versions",
-          "tableTo": "endpoints",
-          "columnsFrom": ["endpoint_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "endpoint_versions_message_id_conversation_messages_id_fk": {
-          "name": "endpoint_versions_message_id_conversation_messages_id_fk",
-          "tableFrom": "endpoint_versions",
-          "tableTo": "conversation_messages",
-          "columnsFrom": ["message_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.endpoints": {
-      "name": "endpoints",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "path": {
-          "name": "path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "method": {
-          "name": "method",
-          "type": "http_methods",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -746,6 +565,12 @@
           "notNull": true,
           "default": "now()"
         },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
         "conversation_id": {
           "name": "conversation_id",
           "type": "text",
@@ -763,60 +588,9 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "current_version_id": {
-          "name": "current_version_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
-        "endpoints_project_id_idx": {
-          "name": "endpoints_project_id_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "endpoints_user_id_idx": {
-          "name": "endpoints_user_id_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "endpoints_conversation_id_idx": {
-          "name": "endpoints_conversation_id_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "endpoints_created_at_idx": {
           "name": "endpoints_created_at_idx",
           "columns": [
@@ -857,15 +631,6 @@
           "tableFrom": "endpoints",
           "tableTo": "projects",
           "columnsFrom": ["project_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "endpoints_current_version_id_endpoint_versions_id_fk": {
-          "name": "endpoints_current_version_id_endpoint_versions_id_fk",
-          "tableFrom": "endpoints",
-          "tableTo": "endpoint_versions",
-          "columnsFrom": ["current_version_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -942,26 +707,14 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.func_versions": {
-      "name": "func_versions",
+    "public.funcs": {
+      "name": "funcs",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
-        },
-        "version_title": {
-          "name": "version_title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "version_number": {
-          "name": "version_number",
-          "type": "integer",
-          "primaryKey": false,
           "notNull": true
         },
         "name": {
@@ -1030,151 +783,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "hash": {
-          "name": "hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "func_id": {
-          "name": "func_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "message_id": {
-          "name": "message_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "func_versions_func_id_idx": {
-          "name": "func_versions_func_id_idx",
-          "columns": [
-            {
-              "expression": "func_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "func_versions_user_id_idx": {
-          "name": "func_versions_user_id_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "func_versions_created_at_idx": {
-          "name": "func_versions_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "func_versions_message_id_idx": {
-          "name": "func_versions_message_id_idx",
-          "columns": [
-            {
-              "expression": "message_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "func_versions_func_id_funcs_id_fk": {
-          "name": "func_versions_func_id_funcs_id_fk",
-          "tableFrom": "func_versions",
-          "tableTo": "funcs",
-          "columnsFrom": ["func_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "func_versions_user_id_users_id_fk": {
-          "name": "func_versions_user_id_users_id_fk",
-          "tableFrom": "func_versions",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "func_versions_message_id_conversation_messages_id_fk": {
-          "name": "func_versions_message_id_conversation_messages_id_fk",
-          "tableFrom": "func_versions",
-          "tableTo": "conversation_messages",
-          "columnsFrom": ["message_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.funcs": {
-      "name": "funcs",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "position_x": {
           "name": "position_x",
           "type": "integer",
@@ -1203,6 +811,12 @@
           "notNull": true,
           "default": "now()"
         },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
         "user_id": {
           "name": "user_id",
           "type": "text",
@@ -1226,12 +840,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "current_version_id": {
-          "name": "current_version_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -1252,66 +860,6 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "funcs_project_id_idx": {
-          "name": "funcs_project_id_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "funcs_user_id_idx": {
-          "name": "funcs_user_id_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "funcs_conversation_id_idx": {
-          "name": "funcs_conversation_id_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "funcs_integration_id_idx": {
-          "name": "funcs_integration_id_idx",
-          "columns": [
-            {
-              "expression": "integration_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1367,15 +915,6 @@
           "columnsFrom": ["integration_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "funcs_current_version_id_func_versions_id_fk": {
-          "name": "funcs_current_version_id_func_versions_id_fk",
-          "tableFrom": "funcs",
-          "tableTo": "func_versions",
-          "columnsFrom": ["current_version_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -1496,51 +1035,6 @@
         }
       },
       "indexes": {
-        "resources_project_id_idx": {
-          "name": "resources_project_id_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "resources_user_id_idx": {
-          "name": "resources_user_id_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "resources_integration_id_idx": {
-          "name": "resources_integration_id_idx",
-          "columns": [
-            {
-              "expression": "integration_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "resources_created_at_idx": {
           "name": "resources_created_at_idx",
           "columns": [
@@ -1654,36 +1148,6 @@
         }
       },
       "indexes": {
-        "projects_user_id_idx": {
-          "name": "projects_user_id_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "projects_subdomain_idx": {
-          "name": "projects_subdomain_idx",
-          "columns": [
-            {
-              "expression": "subdomain",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "projects_created_at_idx": {
           "name": "projects_created_at_idx",
           "columns": [
@@ -1819,24 +1283,31 @@
       "name": "dependencies",
       "schema": "",
       "columns": {
+        "dependent_id": {
+          "name": "dependent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "dependent_type": {
           "name": "dependent_type",
-          "type": "dependent_type",
+          "type": "primitive_type",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
-        "dependent_version_id": {
-          "name": "dependent_version_id",
+        "dependency_id": {
+          "name": "dependency_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "dependency_version_id": {
-          "name": "dependency_version_id",
-          "type": "text",
+        "dependency_type": {
+          "name": "dependency_type",
+          "type": "primitive_type",
+          "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -1847,38 +1318,213 @@
         }
       },
       "indexes": {
-        "unique_dependency": {
-          "name": "unique_dependency",
+        "dependencies_created_at_idx": {
+          "name": "dependencies_created_at_idx",
           "columns": [
             {
-              "expression": "dependent_type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "dependent_version_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "dependency_version_id",
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
-          "isUnique": true,
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "dependencies_dependent_id_dependent_type_dependency_id_dependency_type_pk": {
+          "name": "dependencies_dependent_id_dependent_type_dependency_id_dependency_type_pk",
+          "columns": [
+            "dependent_id",
+            "dependent_type",
+            "dependency_id",
+            "dependency_type"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "no_self_dep": {
+          "name": "no_self_dep",
+          "value": "dependent_id != dependency_id"
         },
-        "func_version_idx": {
-          "name": "func_version_idx",
+        "valid_dep_types": {
+          "name": "valid_dep_types",
+          "value": "\n        -- Allow:\n        -- 1. Function -> Function\n        -- 2. Endpoint -> Function\n        -- Prevent:\n        -- 1. Function -> Endpoint\n        -- 2. Endpoint -> Endpoint\n        dependency_type = 'function' AND\n        (dependent_type = 'function' OR dependent_type = 'endpoint')\n      "
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.version_endpoints": {
+      "name": "version_endpoints",
+      "schema": "",
+      "columns": {
+        "version_id": {
+          "name": "version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "endpoint_id": {
+          "name": "endpoint_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "version_endpoints_version_id_versions_id_fk": {
+          "name": "version_endpoints_version_id_versions_id_fk",
+          "tableFrom": "version_endpoints",
+          "tableTo": "versions",
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "version_endpoints_endpoint_id_endpoints_id_fk": {
+          "name": "version_endpoints_endpoint_id_endpoints_id_fk",
+          "tableFrom": "version_endpoints",
+          "tableTo": "endpoints",
+          "columnsFrom": ["endpoint_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "version_endpoints_version_id_endpoint_id_pk": {
+          "name": "version_endpoints_version_id_endpoint_id_pk",
+          "columns": ["version_id", "endpoint_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.version_funcs": {
+      "name": "version_funcs",
+      "schema": "",
+      "columns": {
+        "version_id": {
+          "name": "version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "func_id": {
+          "name": "func_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "version_funcs_version_id_versions_id_fk": {
+          "name": "version_funcs_version_id_versions_id_fk",
+          "tableFrom": "version_funcs",
+          "tableTo": "versions",
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "version_funcs_func_id_funcs_id_fk": {
+          "name": "version_funcs_func_id_funcs_id_fk",
+          "tableFrom": "version_funcs",
+          "tableTo": "funcs",
+          "columnsFrom": ["func_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "version_funcs_version_id_func_id_pk": {
+          "name": "version_funcs_version_id_func_id_pk",
+          "columns": ["version_id", "func_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.versions": {
+      "name": "versions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "version_number": {
+          "name": "version_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version_name": {
+          "name": "version_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_current": {
+          "name": "is_current",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "parent_version_id": {
+          "name": "parent_version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message_id": {
+          "name": "message_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "versions_created_at_idx": {
+          "name": "versions_created_at_idx",
           "columns": [
             {
-              "expression": "dependent_version_id",
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1889,11 +1535,11 @@
           "method": "btree",
           "with": {}
         },
-        "dependency_version_idx": {
-          "name": "dependency_version_idx",
+        "versions_version_number_idx": {
+          "name": "versions_version_number_idx",
           "columns": [
             {
-              "expression": "dependency_version_id",
+              "expression": "version_number",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1906,22 +1552,40 @@
         }
       },
       "foreignKeys": {
-        "dependencies_dependent_version_id_func_versions_id_fk": {
-          "name": "dependencies_dependent_version_id_func_versions_id_fk",
-          "tableFrom": "dependencies",
-          "tableTo": "func_versions",
-          "columnsFrom": ["dependent_version_id"],
+        "versions_parent_version_id_versions_id_fk": {
+          "name": "versions_parent_version_id_versions_id_fk",
+          "tableFrom": "versions",
+          "tableTo": "versions",
+          "columnsFrom": ["parent_version_id"],
           "columnsTo": ["id"],
-          "onDelete": "cascade",
+          "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "dependencies_dependency_version_id_func_versions_id_fk": {
-          "name": "dependencies_dependency_version_id_func_versions_id_fk",
-          "tableFrom": "dependencies",
-          "tableTo": "func_versions",
-          "columnsFrom": ["dependency_version_id"],
+        "versions_user_id_users_id_fk": {
+          "name": "versions_user_id_users_id_fk",
+          "tableFrom": "versions",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
-          "onDelete": "set null",
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "versions_message_id_conversation_messages_id_fk": {
+          "name": "versions_message_id_conversation_messages_id_fk",
+          "tableFrom": "versions",
+          "tableTo": "conversation_messages",
+          "columnsFrom": ["message_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "versions_project_id_projects_id_fk": {
+          "name": "versions_project_id_projects_id_fk",
+          "tableFrom": "versions",
+          "tableTo": "projects",
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -1953,8 +1617,8 @@
       "schema": "public",
       "values": ["postgres", "mysql"]
     },
-    "public.dependent_type": {
-      "name": "dependent_type",
+    "public.primitive_type": {
+      "name": "primitive_type",
       "schema": "public",
       "values": ["function", "endpoint"]
     }

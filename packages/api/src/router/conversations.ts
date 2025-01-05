@@ -492,9 +492,6 @@ async function resolveFuncReference(
 ): Promise<ResolvedFuncReference> {
   const func = await ctx.db.query.funcs.findFirst({
     where: eq(funcs.id, reference.id),
-    with: {
-      currentVersion: true,
-    },
   });
 
   if (!func) {
@@ -504,7 +501,7 @@ async function resolveFuncReference(
     });
   }
 
-  if (!func.name || !func.currentVersion?.docs) {
+  if (!func.name || !func.docs) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Function is missing required fields",
@@ -516,7 +513,7 @@ async function resolveFuncReference(
     referenceType: "function",
     id: func.id,
     name: func.name,
-    docs: func.currentVersion.docs,
+    docs: func.docs,
   };
 }
 
@@ -672,11 +669,7 @@ async function getResourceHelperFunctions(
     with: {
       integration: {
         with: {
-          funcs: {
-            with: {
-              currentVersion: true,
-            },
-          },
+          funcs: true,
         },
       },
     },
@@ -691,7 +684,7 @@ async function getResourceHelperFunctions(
 
   const helperFunctions = resourceResult.integration.funcs
     .map((func) => {
-      if (func.name && func.currentVersion?.docs) {
+      if (func.name && func.docs) {
         return func;
       }
     })
@@ -699,7 +692,7 @@ async function getResourceHelperFunctions(
 
   return helperFunctions
     .map((func) => {
-      if (!func.name || !func.currentVersion?.docs) {
+      if (!func.name || !func.docs) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Function is missing required fields",
@@ -709,7 +702,7 @@ async function getResourceHelperFunctions(
       return {
         id: func.id,
         name: func.name,
-        docs: func.currentVersion.docs,
+        docs: func.docs,
       };
     })
     .filter((func) => func !== undefined);

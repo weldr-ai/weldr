@@ -35,7 +35,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { z } from "zod";
 
 import { DeleteAlertDialog } from "@/components/delete-alert-dialog";
 import { Editor } from "@/components/editor";
@@ -74,6 +73,7 @@ import { TreeView, schemaToTreeData } from "@integramind/ui/tree-view";
 import { createId } from "@paralleldrive/cuid2";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import ReactMarkdown from "react-markdown";
+import type { z } from "zod";
 import type { ReferenceNode } from "../../editor/plugins/reference/node";
 import MessageList from "../../message-list";
 import { RawContentViewer } from "../../raw-content-viewer";
@@ -121,6 +121,8 @@ export const FuncNode = memo(
     });
 
     const deleteFunc = api.funcs.delete.useMutation();
+
+    const createVersion = api.versions.create.useMutation();
 
     const addMessage = api.conversations.addMessage.useMutation();
 
@@ -343,10 +345,10 @@ export const FuncNode = memo(
       // if code generation is set, disable it and refetch the updated function metadata
       if (funcRequirementsMessageObject.message.type === "end") {
         await apiUtils.funcs.byId.invalidate({ id: data.id });
-        await apiUtils.dependencies.available.invalidate();
-        await apiUtils.projects.dependencies.invalidate({
+        // await apiUtils.dependencies.available.invalidate();
+        await apiUtils.versions.dependencies.invalidate({
           // biome-ignore lint/style/noNonNullAssertion: <explanation>
-          id: data.projectId!,
+          projectId: data.projectId!,
         });
         setIsBuilding(false);
       }
@@ -359,7 +361,7 @@ export const FuncNode = memo(
     const resources = useResources();
     const availableHelperFunctions = api.dependencies.available.useQuery({
       dependentType: "function",
-      dependentVersionId: data.currentVersionId,
+      dependentId: data.id,
     });
 
     const helperFunctionReferences = availableHelperFunctions.data?.reduce(
@@ -559,7 +561,6 @@ export const FuncNode = memo(
                     ref={scrollAreaRef}
                   >
                     <MessageList
-                      currentVersionId={data.currentVersionId}
                       messages={messages}
                       isThinking={isThinking}
                       isRunning={isRunning}
@@ -727,7 +728,7 @@ export const FuncNode = memo(
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
-          onDelete={() => {
+          onDelete={async () => {
             deleteElements({
               nodes: [
                 {
@@ -735,9 +736,19 @@ export const FuncNode = memo(
                 },
               ],
             });
+
             deleteFunc.mutate({
               id: data.id,
             });
+
+            if (data.name) {
+              await createVersion.mutateAsync({
+                versionName: `Delete function ${toTitle(data.name)}`,
+                // biome-ignore lint/style/noNonNullAssertion: <explanation>
+                projectId: data.projectId!,
+                deletedFuncIds: [data.id],
+              });
+            }
           }}
         />
       </>

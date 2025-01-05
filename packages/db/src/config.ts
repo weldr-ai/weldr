@@ -13,6 +13,7 @@ export default {
     "./src/schema/projects.ts",
     "./src/schema/environment-variables.ts",
     "./src/schema/dependencies.ts",
+    "./src/schema/versions.ts",
   ],
   out: "./drizzle",
   dialect: "postgresql",

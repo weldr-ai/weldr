@@ -32,12 +32,9 @@ export const engineRouter = {
           eq(funcs.id, input.funcId),
           eq(funcs.userId, ctx.session.user.id),
         ),
-        with: {
-          currentVersion: true,
-        },
       });
 
-      if (!func || !func.currentVersion || !func.conversationId) {
+      if (!func || !func.code || !func.conversationId) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Function not found",
@@ -45,7 +42,7 @@ export const engineRouter = {
       }
 
       // Check if the function is ready
-      const canRun = await isFunctionReady({ id: func.id });
+      const canRun = await isFunctionReady(func);
 
       if (!canRun) {
         throw new TRPCError({
@@ -54,11 +51,9 @@ export const engineRouter = {
         });
       }
 
-      const resourceIds = func.currentVersion.resources?.map(
-        (resource) => resource.id,
-      );
+      const resourceIds = func.resources?.map((resource) => resource.id);
 
-      const packages: Package[] = func.currentVersion.packages ?? [];
+      const packages: Package[] = func.packages ?? [];
       const modules: { path: string; content: string }[] = [];
 
       if (resourceIds && resourceIds.length > 0) {
@@ -67,11 +62,7 @@ export const engineRouter = {
           with: {
             integration: {
               with: {
-                funcs: {
-                  with: {
-                    currentVersion: true,
-                  },
-                },
+                funcs: true,
               },
             },
           },
@@ -79,10 +70,10 @@ export const engineRouter = {
 
         for (const resource of result) {
           for (const func of resource.integration.funcs) {
-            if (func.currentVersion && func.name && func.currentVersion.code) {
+            if (func.name && func.code) {
               modules.push({
                 path: toKebabCase(func.name),
-                content: func.currentVersion.code,
+                content: func.code,
               });
             }
           }
@@ -91,8 +82,8 @@ export const engineRouter = {
         for (const func of result.flatMap(
           (resource) => resource.integration.funcs,
         )) {
-          if (func?.currentVersion?.packages) {
-            packages.push(...func.currentVersion.packages);
+          if (func?.packages) {
+            packages.push(...func.packages);
           }
         }
       }
@@ -153,7 +144,7 @@ export const engineRouter = {
       const requestBody = {
         functionName: func.name,
         functionArgs: input.input,
-        code: func.currentVersion.code,
+        code: func.code,
         modules,
         packages,
         environmentVariablesMap,

@@ -445,9 +445,6 @@ export const generateFuncCodeUserPrompt = async ({
 }) => {
   const helperFunctions = await db.query.funcs.findMany({
     where: inArray(funcs.id, helperFunctionIds ?? []),
-    with: {
-      currentVersion: true,
-    },
   });
 
   return `## Context
@@ -484,13 +481,13 @@ ${
   helperFunctions && helperFunctions.length > 0
     ? `### Helper Functions\n${helperFunctions
         .map((helperFunction) => {
-          if (!helperFunction.name || !helperFunction.currentVersion?.docs) {
+          if (!helperFunction.name || !helperFunction.docs) {
             throw new Error("Helper function name is required");
           }
           const importInfo = `Available in \`@/lib/${toKebabCase(helperFunction.name)}\`\n`;
           return `- \`${helperFunction.name}\`
 How to import: ${importInfo}
-Docs:\n${helperFunction.currentVersion.docs}`;
+Docs:\n${helperFunction.docs}`;
         })
         .join("\n\n")}`
     : ""
@@ -1480,9 +1477,6 @@ export const generateEndpointCodeUserPrompt = async ({
 }) => {
   const helperFunctions = await db.query.funcs.findMany({
     where: inArray(funcs.id, helperFunctionIds ?? []),
-    with: {
-      currentVersion: true,
-    },
   });
 
   return `## Context
@@ -1519,13 +1513,13 @@ ${
   helperFunctions && helperFunctions.length > 0
     ? `### Helper Functions\n${helperFunctions
         .map((helperFunction) => {
-          if (!helperFunction.name || !helperFunction.currentVersion?.docs) {
+          if (!helperFunction.name || !helperFunction.docs) {
             throw new Error("Helper function name is required");
           }
           const importInfo = `Available in \`@/lib/${toKebabCase(helperFunction.name)}\`\n`;
           return `- \`${helperFunction.name}\`
 How to import: ${importInfo}
-Docs:\n${helperFunction.currentVersion.docs}`;
+Docs:\n${helperFunction.docs}`;
         })
         .join("\n\n")}`
     : ""

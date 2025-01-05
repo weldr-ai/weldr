@@ -81,6 +81,8 @@ export const EndpointNode = memo(
 
     const addMessage = api.conversations.addMessage.useMutation();
 
+    const createVersion = api.versions.create.useMutation();
+
     const editorRef = useRef<LexicalEditor>(null);
 
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
@@ -262,7 +264,10 @@ export const EndpointNode = memo(
       // if code generation is set, disable it and refetch the updated endpoint metadata
       if (endpointRequirementsMessageObject.message.type === "end") {
         await apiUtils.endpoints.byId.invalidate({ id: data.id });
-        await apiUtils.projects.dependencies.invalidate({ id: data.projectId });
+        await apiUtils.versions.dependencies.invalidate({
+          // biome-ignore lint/style/noNonNullAssertion: <explanation>
+          projectId: data.projectId!,
+        });
         setIsBuilding(false);
       }
 
@@ -302,8 +307,8 @@ export const EndpointNode = memo(
 
     const resources = useResources();
     const availableHelperFunctions = api.dependencies.available.useQuery({
-      dependentType: "function",
-      dependentVersionId: data.currentVersionId,
+      dependentType: "endpoint",
+      dependentId: data.id,
     });
 
     const helperFunctionReferences = availableHelperFunctions.data?.reduce(
@@ -446,7 +451,6 @@ export const EndpointNode = memo(
                 <div className="flex h-[calc(100dvh-474px)] flex-col p-4">
                   <ScrollArea className="mb-4 flex-grow" ref={scrollAreaRef}>
                     <MessageList
-                      currentVersionId={data.currentVersionId}
                       messages={messages}
                       isThinking={isThinking}
                       isBuilding={isBuilding}
@@ -545,7 +549,7 @@ export const EndpointNode = memo(
         <DeleteAlertDialog
           open={deleteAlertDialogOpen}
           setOpen={setDeleteAlertDialogOpen}
-          onDelete={() => {
+          onDelete={async () => {
             deleteElements({
               nodes: [
                 {
@@ -553,9 +557,19 @@ export const EndpointNode = memo(
                 },
               ],
             });
+
             deleteEndpoint.mutate({
               id: data.id,
             });
+
+            if (data.openApiSpec?.summary) {
+              await createVersion.mutateAsync({
+                versionName: `Delete endpoint ${data.openApiSpec.summary}`,
+                // biome-ignore lint/style/noNonNullAssertion: <explanation>
+                projectId: data.projectId!,
+                deletedFuncIds: [data.id],
+              });
+            }
           }}
         />
       </>

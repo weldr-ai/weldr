@@ -1,11 +1,6 @@
 import { createHash } from "node:crypto";
-import { db, eq } from "@integramind/db";
-import {
-  endpointVersions,
-  endpoints,
-  funcVersions,
-  funcs,
-} from "@integramind/db/schema";
+import { type InferSelectModel, db } from "@integramind/db";
+import type { endpoints, funcs } from "@integramind/db/schema";
 import type {
   JsonSchema,
   OpenApiEndpointSpec,
@@ -15,13 +10,17 @@ import type {
 } from "@integramind/shared/types";
 
 export async function wouldCreateCycle({
-  dependentVersionId,
-  dependencyVersionId,
+  dependentId,
+  dependentType,
+  dependencyId,
+  dependencyType,
 }: {
-  dependentVersionId: string;
-  dependencyVersionId: string;
+  dependentId: string;
+  dependentType: "function" | "endpoint";
+  dependencyId: string;
+  dependencyType: "function" | "endpoint";
 }): Promise<boolean> {
-  if (dependentVersionId === dependencyVersionId) {
+  if (dependentId === dependencyId) {
     return true;
   }
 
@@ -29,7 +28,7 @@ export async function wouldCreateCycle({
   const recursionStack = new Set<string>();
 
   async function dfs(currentId: string): Promise<boolean> {
-    if (currentId === dependentVersionId) {
+    if (currentId === dependentId) {
       return true;
     }
 
@@ -39,13 +38,13 @@ export async function wouldCreateCycle({
     const deps = await db.query.dependencies.findMany({
       where: (table, { and, eq }) =>
         and(
-          eq(table.dependentVersionId, currentId),
-          eq(table.dependentType, "function"), // Only follow function dependencies
+          eq(table.dependentId, currentId),
+          eq(table.dependentType, dependentType),
         ),
     });
 
     for (const dep of deps) {
-      const nextId = dep.dependencyVersionId;
+      const nextId = dep.dependencyId;
 
       if (!nextId) {
         throw new Error("Dependency version ID is null");
@@ -64,81 +63,25 @@ export async function wouldCreateCycle({
     return false;
   }
 
-  return await dfs(dependencyVersionId);
+  return await dfs(dependencyId);
 }
 
-export async function isFunctionReady({
-  id,
-}: {
-  id: string | undefined | null;
-}): Promise<boolean> {
-  if (!id) {
+export async function isFunctionReady(
+  func: InferSelectModel<typeof funcs>,
+): Promise<boolean> {
+  if (!func.code) {
     return false;
   }
-
-  const func = await db.query.funcs.findFirst({
-    where: eq(funcs.id, id),
-    with: {
-      currentVersion: {
-        columns: {
-          id: true,
-          code: true,
-        },
-        with: {
-          dependencies: true,
-        },
-      },
-    },
-  });
-
-  if (!func || !func.currentVersion) {
-    return false;
-  }
-
-  for (const dep of func.currentVersion.dependencies) {
-    if (!dep.dependencyVersionId) {
-      return false;
-    }
-  }
-
-  return Boolean(func.currentVersion.code);
+  return true;
 }
 
-export async function isEndpointReady({
-  id,
-}: {
-  id: string | undefined | null;
-}): Promise<boolean> {
-  if (!id) {
+export async function isEndpointReady(
+  endpoint: InferSelectModel<typeof endpoints>,
+): Promise<boolean> {
+  if (!endpoint.code) {
     return false;
   }
-
-  const endpoint = await db.query.endpoints.findFirst({
-    where: eq(endpoints.id, id),
-    with: {
-      currentVersion: {
-        columns: {
-          id: true,
-          code: true,
-        },
-        with: {
-          dependencies: true,
-        },
-      },
-    },
-  });
-
-  if (!endpoint || !endpoint.currentVersion) {
-    return false;
-  }
-
-  for (const dep of endpoint.currentVersion.dependencies) {
-    if (!dep.dependencyVersionId) {
-      return false;
-    }
-  }
-
-  return Boolean(endpoint.currentVersion.code);
+  return true;
 }
 
 export function generateFuncVersionHash(version: {
@@ -179,109 +122,109 @@ export function generateEndpointVersionHash(version: {
   return createHash("sha256").update(contentToHash).digest("hex");
 }
 
-const isSchemaEqual = (
-  schema1: JsonSchema | null,
-  schema2: JsonSchema | null,
-): boolean => {
-  if (schema1 === null && schema2 === null) {
-    return true;
-  }
+// const isSchemaEqual = (
+//   schema1: JsonSchema | null,
+//   schema2: JsonSchema | null,
+// ): boolean => {
+//   if (schema1 === null && schema2 === null) {
+//     return true;
+//   }
 
-  if (schema1 === null || schema2 === null) {
-    return false;
-  }
+//   if (schema1 === null || schema2 === null) {
+//     return false;
+//   }
 
-  return JSON.stringify(schema1) === JSON.stringify(schema2);
-};
+//   return JSON.stringify(schema1) === JSON.stringify(schema2);
+// };
 
 export async function hasDependencyMismatch(
   dependentVersionId: string,
   type: "func" | "endpoint",
 ): Promise<boolean> {
-  const dependentVersion =
-    type === "func"
-      ? await db.query.funcVersions.findFirst({
-          where: eq(funcVersions.id, dependentVersionId),
-          with: {
-            dependencies: {
-              with: {
-                dependencyVersion: {
-                  columns: {
-                    funcId: true,
-                    hash: true,
-                    inputSchema: true,
-                    outputSchema: true,
-                  },
-                },
-              },
-            },
-          },
-        })
-      : await db.query.endpointVersions.findFirst({
-          where: eq(endpointVersions.id, dependentVersionId),
-          with: {
-            dependencies: {
-              with: {
-                dependencyVersion: {
-                  columns: {
-                    funcId: true,
-                    hash: true,
-                    inputSchema: true,
-                    outputSchema: true,
-                  },
-                },
-              },
-            },
-          },
-        });
+  // const dependentVersion =
+  //   type === "func"
+  //     ? await db.query.funcVersions.findFirst({
+  //         where: eq(funcVersions.id, dependentVersionId),
+  //         with: {
+  //           dependencies: {
+  //             with: {
+  //               dependencyVersion: {
+  //                 columns: {
+  //                   funcId: true,
+  //                   hash: true,
+  //                   inputSchema: true,
+  //                   outputSchema: true,
+  //                 },
+  //               },
+  //             },
+  //           },
+  //         },
+  //       })
+  //     : await db.query.endpointVersions.findFirst({
+  //         where: eq(endpointVersions.id, dependentVersionId),
+  //         with: {
+  //           dependencies: {
+  //             with: {
+  //               dependencyVersion: {
+  //                 columns: {
+  //                   funcId: true,
+  //                   hash: true,
+  //                   inputSchema: true,
+  //                   outputSchema: true,
+  //                 },
+  //               },
+  //             },
+  //           },
+  //         },
+  //       });
 
-  if (!dependentVersion) {
-    return false;
-  }
+  // if (!dependentVersion) {
+  //   return false;
+  // }
 
-  for (const dep of dependentVersion.dependencies) {
-    if (!dep.dependencyVersion || !dep.dependencyVersion.hash) {
-      return false;
-    }
+  // for (const dep of dependentVersion.dependencies) {
+  //   if (!dep.dependencyVersion || !dep.dependencyVersion.hash) {
+  //     return false;
+  //   }
 
-    const func = await db.query.funcs.findFirst({
-      where: eq(funcs.id, dep.dependencyVersion.funcId),
-      with: {
-        currentVersion: {
-          columns: {
-            hash: true,
-            inputSchema: true,
-            outputSchema: true,
-          },
-        },
-      },
-    });
+  //   const func = await db.query.funcs.findFirst({
+  //     where: eq(funcs.id, dep.dependencyVersion.funcId),
+  //     with: {
+  //       currentVersion: {
+  //         columns: {
+  //           hash: true,
+  //           inputSchema: true,
+  //           outputSchema: true,
+  //         },
+  //       },
+  //     },
+  //   });
 
-    if (!func || !func.currentVersion || !func.currentVersion.hash) {
-      return false;
-    }
+  //   if (!func || !func.currentVersion || !func.currentVersion.hash) {
+  //     return false;
+  //   }
 
-    // Check if the hash is different
-    if (func.currentVersion.hash !== dep.dependencyVersion.hash) {
-      if (
-        !isSchemaEqual(
-          func.currentVersion.inputSchema,
-          dep.dependencyVersion.inputSchema,
-        )
-      ) {
-        return false;
-      }
+  //   // Check if the hash is different
+  //   if (func.currentVersion.hash !== dep.dependencyVersion.hash) {
+  //     if (
+  //       !isSchemaEqual(
+  //         func.currentVersion.inputSchema,
+  //         dep.dependencyVersion.inputSchema,
+  //       )
+  //     ) {
+  //       return false;
+  //     }
 
-      if (
-        !isSchemaEqual(
-          func.currentVersion.outputSchema,
-          dep.dependencyVersion.outputSchema,
-        )
-      ) {
-        return false;
-      }
-    }
-  }
+  //     if (
+  //       !isSchemaEqual(
+  //         func.currentVersion.outputSchema,
+  //         dep.dependencyVersion.outputSchema,
+  //       )
+  //     ) {
+  //       return false;
+  //     }
+  //   }
+  // }
 
   return true;
 }
@@ -290,24 +233,25 @@ export async function isMissingDependencies(
   dependentVersionId: string,
   type: "func" | "endpoint",
 ): Promise<boolean> {
-  const dependentVersion =
-    type === "func"
-      ? await db.query.funcVersions.findFirst({
-          where: eq(funcVersions.id, dependentVersionId),
-          with: {
-            dependencies: true,
-          },
-        })
-      : await db.query.endpointVersions.findFirst({
-          where: eq(endpointVersions.id, dependentVersionId),
-          with: {
-            dependencies: true,
-          },
-        });
+  // const dependentVersion =
+  //   type === "func"
+  //     ? await db.query.funcVersions.findFirst({
+  //         where: eq(funcVersions.id, dependentVersionId),
+  //         with: {
+  //           dependencies: true,
+  //         },
+  //       })
+  //     : await db.query.endpointVersions.findFirst({
+  //         where: eq(endpointVersions.id, dependentVersionId),
+  //         with: {
+  //           dependencies: true,
+  //         },
+  //       });
 
-  if (!dependentVersion) {
-    return false;
-  }
+  // if (!dependentVersion) {
+  //   return false;
+  // }
 
-  return dependentVersion.dependencies.some((dep) => !dep.dependencyVersionId);
+  // return dependentVersion.dependencies.some((dep) => !dep.dependencyVersionId);
+  return true;
 }

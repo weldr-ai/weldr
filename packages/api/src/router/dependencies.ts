@@ -3,15 +3,20 @@ import { dependencies, funcs } from "@integramind/db/schema";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { isFunctionReady, wouldCreateCycle } from "../utils";
+import { wouldCreateCycle } from "../utils";
 
 export const dependenciesRouter = {
   createBulk: protectedProcedure
     .input(
       z.object({
+        dependentId: z.string(),
         dependentType: z.enum(["function", "endpoint"]),
-        dependentVersionId: z.string(),
-        dependencyVersionIds: z.array(z.string()),
+        dependencies: z.array(
+          z.object({
+            id: z.string(),
+            type: z.enum(["function", "endpoint"]),
+          }),
+        ),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -20,16 +25,18 @@ export const dependenciesRouter = {
         .delete(dependencies)
         .where(
           and(
-            eq(dependencies.dependentVersionId, input.dependentVersionId),
+            eq(dependencies.dependentId, input.dependentId),
             eq(dependencies.dependentType, input.dependentType),
           ),
         );
 
       if (input.dependentType === "function") {
-        for (const dep of input.dependencyVersionIds) {
+        for (const dep of input.dependencies) {
           const isCyclic = await wouldCreateCycle({
-            dependentVersionId: input.dependentVersionId,
-            dependencyVersionId: dep,
+            dependentId: input.dependentId,
+            dependentType: input.dependentType,
+            dependencyId: dep.id,
+            dependencyType: dep.type,
           });
 
           if (isCyclic) {
@@ -45,10 +52,11 @@ export const dependenciesRouter = {
       await ctx.db
         .insert(dependencies)
         .values(
-          input.dependencyVersionIds.map((dep) => ({
+          input.dependencies.map((dep) => ({
             dependentType: input.dependentType,
-            dependentVersionId: input.dependentVersionId,
-            dependencyVersionId: dep,
+            dependentId: input.dependentId,
+            dependencyType: dep.type,
+            dependencyId: dep.id,
           })),
         )
         .onConflictDoNothing();
@@ -57,39 +65,23 @@ export const dependenciesRouter = {
     .input(
       z.object({
         dependentType: z.enum(["function", "endpoint"]),
-        dependentVersionId: z.string().nullable().optional(),
+        dependentId: z.string(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const dependentVersionId = input.dependentVersionId;
-
-      // If no dependent version id is provided, return all available functions
-      if (!dependentVersionId) {
-        return await ctx.db.query.funcs.findMany({
-          where: eq(funcs.userId, ctx.session.user.id),
-          columns: {
-            id: true,
-            name: true,
-          },
-        });
-      }
-
       // Get all existing dependencies for this entity
       const existingDeps = await ctx.db.query.dependencies.findMany({
-        where: (table, { and, eq }) =>
-          and(
-            eq(table.dependentVersionId, dependentVersionId),
-            eq(table.dependentType, input.dependentType),
-          ),
+        where: eq(dependencies.dependentId, input.dependentId),
         columns: {
-          dependencyVersionId: true,
+          dependencyId: true,
         },
       });
 
       // For functions, we need to check the dependency chain to prevent cycles
       const dependencyChain = new Set<string>();
+
       if (input.dependentType === "function") {
-        const queue = existingDeps.map((d) => d.dependencyVersionId);
+        const queue = existingDeps.map((d) => d.dependencyId);
 
         while (queue.length > 0) {
           const currentId = queue.shift();
@@ -98,14 +90,14 @@ export const dependenciesRouter = {
             const deps = await ctx.db.query.dependencies.findMany({
               where: (table, { and, eq }) =>
                 and(
-                  eq(table.dependentVersionId, currentId),
+                  eq(table.dependentId, currentId),
                   eq(table.dependentType, "function"),
                 ),
               columns: {
-                dependencyVersionId: true,
+                dependencyId: true,
               },
             });
-            queue.push(...deps.map((d) => d.dependencyVersionId));
+            queue.push(...deps.map((d) => d.dependencyId));
           }
         }
       }
@@ -116,52 +108,25 @@ export const dependenciesRouter = {
         columns: {
           id: true,
           name: true,
-          currentVersionId: true,
+          rawDescription: true,
+          code: true,
         },
       });
 
-      if (input.dependentType === "function") {
-        const result: {
-          id: string;
-          name: string;
-        }[] = [];
+      return availableFunctions.filter((f) => {
+        // Basic validation
+        if (!f.code) return false;
 
-        for (const func of availableFunctions) {
-          // Check if the function has a current version
-          if (!func.currentVersionId) continue;
+        // Already a dependency
+        if (existingDeps.some((d) => d.dependencyId === f.id)) return false;
 
-          // Already a dependency
-          if (
-            existingDeps.some(
-              (d) => d.dependencyVersionId === func.currentVersionId,
-            )
-          )
-            continue;
-
-          // For functions: prevent self-deps and cycles
-          if (input.dependentType === "function") {
-            if (
-              func.currentVersionId !== input.dependentVersionId &&
-              !dependencyChain.has(func.currentVersionId)
-            )
-              continue;
-          }
-
-          // Check if the function is ready
-          const isReady = await isFunctionReady({ id: func.id });
-          if (!isReady) continue;
-
-          result.push({
-            id: func.id,
-            name: func.name ?? "",
-          });
+        // For functions: prevent self-deps and cycles
+        if (input.dependentType === "function") {
+          return f.id !== input.dependentId && !dependencyChain.has(f.id);
         }
 
-        return result;
-      }
-
-      return availableFunctions.filter((f) =>
-        existingDeps.some((d) => d.dependencyVersionId !== f.currentVersionId),
-      );
+        // For endpoints: allow any function
+        return true;
+      });
     }),
 } satisfies TRPCRouterRecord;

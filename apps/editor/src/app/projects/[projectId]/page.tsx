@@ -13,17 +13,17 @@ export default async function ProjectPage({
   try {
     const { projectId } = await params;
 
-    const project = await api.projects.byId({
-      id: projectId,
-    });
-
-    const dependencies = await api.projects.dependencies({
-      id: projectId,
+    const {
+      funcs,
+      endpoints,
+      dependencies: initialEdges,
+    } = await api.versions.current({
+      projectId,
     });
 
     const initialNodes: CanvasNode[] = [];
 
-    for (const endpoint of project.endpoints) {
+    for (const endpoint of endpoints) {
       initialNodes.push({
         type: "endpoint",
         id: endpoint.id,
@@ -33,7 +33,7 @@ export default async function ProjectPage({
       });
     }
 
-    for (const func of project.funcs) {
+    for (const func of funcs) {
       initialNodes.push({
         type: "func",
         id: func.id,
@@ -48,7 +48,7 @@ export default async function ProjectPage({
         <Canvas
           projectId={projectId}
           initialNodes={initialNodes}
-          initialDependencies={dependencies}
+          initialEdges={initialEdges ?? []}
         />
       </div>
     );

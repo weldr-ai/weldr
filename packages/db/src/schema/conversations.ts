@@ -14,8 +14,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { endpointVersions } from "./endpoints";
-import { funcVersions } from "./funcs";
+import { versions } from "./versions";
 
 export const messageRoles = pgEnum("message_roles", ["user", "assistant"]);
 
@@ -31,7 +30,6 @@ export const conversations = pgTable(
       .notNull(),
   },
   (t) => ({
-    userIdIdx: index("conversations_user_id_idx").on(t.userId),
     createdAtIdx: index("conversations_created_at_idx").on(t.createdAt),
   }),
 );
@@ -62,10 +60,6 @@ export const conversationMessages = pgTable(
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
   },
   (t) => ({
-    userIdIdx: index("conversation_messages_user_id_idx").on(t.userId),
-    conversationIdIdx: index("conversation_messages_conversation_id_idx").on(
-      t.conversationId,
-    ),
     createdAtIdx: index("conversation_messages_created_at_idx").on(t.createdAt),
   }),
 );
@@ -77,13 +71,9 @@ export const conversationMessageRelations = relations(
       fields: [conversationMessages.conversationId],
       references: [conversations.id],
     }),
-    funcVersion: one(funcVersions, {
+    version: one(versions, {
       fields: [conversationMessages.id],
-      references: [funcVersions.messageId],
-    }),
-    endpointVersion: one(endpointVersions, {
-      fields: [conversationMessages.id],
-      references: [endpointVersions.messageId],
+      references: [versions.messageId],
     }),
   }),
 );

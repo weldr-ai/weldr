@@ -37,7 +37,7 @@ export const endpointPathSchema = z
 
 export const endpointVersionSchema = z.object({
   id: z.string().cuid2(),
-  versionTitle: z.string(),
+  versionName: z.string(),
   versionNumber: z.number(),
   path: endpointPathSchema,
   method: httpMethodSchema,
@@ -85,14 +85,10 @@ export const createNewEndpointVersionSchema = z.object({
     id: z.string(),
   }),
   payload: z.object({
-    versionTitle: z.string().min(1, {
-      message: "Version title is required.",
-    }),
     code: z.string().optional(),
     openApiSpec: openApiEndpointSpecSchema.optional(),
     resources: requirementResourceSchema.array().optional(),
     packages: packageSchema.array().optional(),
-    messageId: z.string(),
   }),
 });
 

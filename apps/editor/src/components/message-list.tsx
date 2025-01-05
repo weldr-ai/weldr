@@ -6,14 +6,7 @@ import type {
 } from "@integramind/shared/types";
 import { testExecutionMessageRawContentSchema } from "@integramind/shared/validators/conversations";
 import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
-import { Button } from "@integramind/ui/button";
 import { ScrollArea } from "@integramind/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@integramind/ui/tooltip";
-import { HistoryIcon } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import SuperJSON from "superjson";
@@ -38,13 +31,11 @@ const TypingDots = () => {
 };
 
 export default function MessageList({
-  currentVersionId,
   messages,
   isRunning,
   isThinking,
   isBuilding,
 }: {
-  currentVersionId: string | undefined | null;
   messages: ConversationMessage[];
   isRunning?: boolean;
   isThinking: boolean;
@@ -54,13 +45,7 @@ export default function MessageList({
     <div className="flex w-full flex-col gap-4">
       {messages.map((message, index) => {
         if (!message.rawContent) return null;
-        return (
-          <MessageItem
-            key={`${message.id ?? index}`}
-            message={message}
-            currentVersionId={currentVersionId}
-          />
-        );
+        return <MessageItem key={`${message.id ?? index}`} message={message} />;
       })}
 
       {isThinking && (
@@ -104,10 +89,8 @@ export default function MessageList({
 
 function MessageItem({
   message,
-  currentVersionId,
 }: {
   message: ConversationMessage;
-  currentVersionId: string | undefined | null;
 }) {
   const { user } = useAuth();
 
@@ -143,60 +126,6 @@ function MessageItem({
           <RawContentViewer
             rawContent={(message.rawContent ?? []) as RawContent}
           />
-        )}
-        {message.funcVersion && (
-          <div className="group flex h-7 items-center gap-2">
-            <div className="inline-flex h-7 items-center justify-center rounded-md border border-success bg-success/10 px-2 py-1 text-success text-xs">
-              {`#${message.funcVersion.versionNumber} `}
-              {message.funcVersion.versionTitle}
-            </div>
-            {message.funcVersion.id !== currentVersionId && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="hidden size-7 group-hover:flex"
-                  >
-                    <HistoryIcon className="size-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  className="border bg-muted text-xs"
-                >
-                  Revert
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        )}
-        {message.endpointVersion && (
-          <div className="group flex h-7 items-center gap-2">
-            <div className="inline-flex h-7 items-center justify-center rounded-md border border-success bg-success/10 px-2 py-1 text-success text-xs">
-              {`#${message.endpointVersion.versionNumber} `}
-              {message.endpointVersion.versionTitle}
-            </div>
-            {message.endpointVersion.id !== currentVersionId && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="hidden size-7 group-hover:flex"
-                  >
-                    <HistoryIcon className="size-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  className="border bg-muted text-xs"
-                >
-                  Revert
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
         )}
       </div>
     </div>

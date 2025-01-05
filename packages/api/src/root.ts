@@ -7,19 +7,20 @@ import { funcsRouter } from "./router/funcs";
 import { integrationsRouter } from "./router/integrations";
 import { projectsRouter } from "./router/projects";
 import { resourcesRouter } from "./router/resources";
-
+import { versionsRouter } from "./router/versions";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
   funcs: funcsRouter,
-  dependencies: dependenciesRouter,
   resources: resourcesRouter,
   projects: projectsRouter,
   endpoints: endpointsRouter,
+  versions: versionsRouter,
   engine: engineRouter,
   conversations: conversationsRouter,
   integrations: integrationsRouter,
   environmentVariables: environmentVariablesRouter,
+  dependencies: dependenciesRouter,
 });
 
 // export type definition of API

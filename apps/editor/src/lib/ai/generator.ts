@@ -10,7 +10,7 @@ import {
 } from "@/lib/ai/prompts";
 import { createOpenAI } from "@ai-sdk/openai";
 import { auth } from "@integramind/auth";
-import { and, db, eq, inArray, not } from "@integramind/db";
+import { and, db, eq, not } from "@integramind/db";
 import { conversations, endpoints, funcs } from "@integramind/db/schema";
 import type {
   AssistantMessageRawContent,
@@ -177,6 +177,22 @@ export async function generateFunc(funcId: string) {
 
           const helperFunctionIds = object.message.content.helperFunctionIds;
 
+          if (
+            object.message.content.helperFunctionIds &&
+            object.message.content.helperFunctionIds.length > 0
+          ) {
+            await api.dependencies.createBulk({
+              dependentType: "function",
+              dependentId: funcId,
+              dependencies: object.message.content.helperFunctionIds.map(
+                (id) => ({
+                  id,
+                  type: "function",
+                }),
+              ),
+            });
+          }
+
           const docs = compileDocs({
             description: assistantMessageRawContentToText(
               object.message.content.description,
@@ -214,6 +230,23 @@ export async function generateFunc(funcId: string) {
             systemPrompt: FUNC_DEVELOPER_PROMPT,
           });
 
+          await api.funcs.createNewVersion({
+            where: { id: funcId },
+            payload: {
+              name: object.message.content.name,
+              rawDescription: object.message.content.description,
+              behavior: object.message.content.behavior,
+              packages: object.message.content.packages,
+              errors: object.message.content.errors,
+              resources: object.message.content.resources,
+              inputSchema,
+              outputSchema,
+              docs,
+              code,
+            },
+          });
+
+          // Add message to conversation
           const assistantBuiltMessage = await api.conversations.addMessage({
             role: "assistant",
             content: "Your function has been built successfully!",
@@ -226,48 +259,14 @@ export async function generateFunc(funcId: string) {
             conversationId: conversation.id,
           });
 
-          const newVersion = await api.funcs.createNewVersion({
-            where: { id: funcId },
-            payload: {
-              versionTitle: `Create ${toTitle(object.message.content.name)}`,
-              name: object.message.content.name,
-              rawDescription: object.message.content.description,
-              behavior: object.message.content.behavior,
-              packages: object.message.content.packages,
-              errors: object.message.content.errors,
-              resources: object.message.content.resources,
-              inputSchema,
-              outputSchema,
-              docs,
-              code,
-              messageId: assistantBuiltMessage.id,
-            },
+          // Create new version
+          await api.versions.create({
+            versionName: `Create function ${toTitle(object.message.content.name)}`,
+            // biome-ignore lint/style/noNonNullAssertion: <explanation>
+            projectId: funcData.projectId!,
+            messageId: assistantBuiltMessage.id,
+            addedFuncIds: [funcId],
           });
-
-          if (helperFunctionIds && helperFunctionIds.length > 0) {
-            const helperFunctionVersions = await db.query.funcs.findMany({
-              where: and(inArray(funcs.id, helperFunctionIds)),
-              columns: {
-                currentVersionId: true,
-              },
-            });
-
-            const helperFunctionVersionIds: string[] = [];
-
-            for (const helperFunctionVersion of helperFunctionVersions) {
-              if (helperFunctionVersion.currentVersionId) {
-                helperFunctionVersionIds.push(
-                  helperFunctionVersion.currentVersionId,
-                );
-              }
-            }
-
-            await api.dependencies.createBulk({
-              dependentType: "function",
-              dependentVersionId: newVersion.id,
-              dependencyVersionIds: helperFunctionVersionIds,
-            });
-          }
         }
       },
     });
@@ -409,6 +408,19 @@ export async function generateEndpoint(endpointId: string) {
             `[generateEndpoint] Updating endpoint ${endpointId} with OpenAPI specification`,
           );
 
+          if (object.message.content.helperFunctionIds) {
+            await api.dependencies.createBulk({
+              dependentType: "endpoint",
+              dependentId: endpointId,
+              dependencies: object.message.content.helperFunctionIds.map(
+                (id) => ({
+                  id,
+                  type: "function",
+                }),
+              ),
+            });
+          }
+
           const openApiSpec = {
             ...object.message.content.openApiSpec,
             parameters: object.message.content.openApiSpec.parameters?.map(
@@ -479,6 +491,17 @@ export async function generateEndpoint(endpointId: string) {
             systemPrompt: ENDPOINT_DEVELOPER_PROMPT,
           });
 
+          await api.endpoints.createNewVersion({
+            where: { id: endpointId },
+            payload: {
+              openApiSpec,
+              code,
+              packages: object.message.content.packages,
+              resources: object.message.content.resources,
+            },
+          });
+
+          // Add message to conversation
           const assistantBuiltMessage = await api.conversations.addMessage({
             role: "assistant",
             content: "Your endpoint has been built successfully!",
@@ -491,47 +514,13 @@ export async function generateEndpoint(endpointId: string) {
             conversationId: conversation.id,
           });
 
-          const newVersion = await api.endpoints.createNewVersion({
-            where: { id: endpointId },
-            payload: {
-              versionTitle: `Create ${object.message.content.openApiSpec.summary}`,
-              openApiSpec,
-              code,
-              packages: object.message.content.packages,
-              resources: object.message.content.resources,
-              messageId: assistantBuiltMessage.id,
-            },
+          // Create new version
+          await api.versions.create({
+            versionName: `Create endpoint ${object.message.content.openApiSpec.summary}`,
+            projectId: endpoint.projectId,
+            messageId: assistantBuiltMessage.id,
+            addedEndpointIds: [endpointId],
           });
-
-          if (
-            object.message.content.helperFunctionIds &&
-            object.message.content.helperFunctionIds.length > 0
-          ) {
-            const helperFunctionVersions = await db.query.funcs.findMany({
-              where: and(
-                inArray(funcs.id, object.message.content.helperFunctionIds),
-              ),
-              columns: {
-                currentVersionId: true,
-              },
-            });
-
-            const helperFunctionVersionIds: string[] = [];
-
-            for (const helperFunctionVersion of helperFunctionVersions) {
-              if (helperFunctionVersion.currentVersionId) {
-                helperFunctionVersionIds.push(
-                  helperFunctionVersion.currentVersionId,
-                );
-              }
-            }
-
-            await api.dependencies.createBulk({
-              dependentType: "endpoint",
-              dependentVersionId: newVersion.id,
-              dependencyVersionIds: helperFunctionVersionIds,
-            });
-          }
         }
       },
     });

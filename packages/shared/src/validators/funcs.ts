@@ -11,7 +11,7 @@ import { jsonSchema } from "./json-schema";
 
 export const funcVersionSchema = z.object({
   id: z.string(),
-  versionTitle: z.string(),
+  versionName: z.string(),
   versionNumber: z.number(),
   name: z.string().nullable(),
   inputSchema: jsonSchema.optional(),
@@ -68,9 +68,6 @@ export const createNewFuncVersionSchema = z.object({
     id: z.string(),
   }),
   payload: z.object({
-    versionTitle: z.string().min(1, {
-      message: "Version title is required.",
-    }),
     name: z
       .string()
       .min(1, {
@@ -83,7 +80,6 @@ export const createNewFuncVersionSchema = z.object({
         message: "Can only contain letters and numbers",
       })
       .optional(),
-    messageId: z.string(),
     inputSchema: jsonSchema.optional(),
     outputSchema: jsonSchema.optional(),
     rawDescription: rawContentSchema.optional(),

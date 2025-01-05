@@ -71,17 +71,10 @@ export const conversationMessageSchema = z.object({
   content: z.string().optional(),
   rawContent: messageRawContentSchema,
   createdAt: z.date().optional(),
-  funcVersion: z
+  version: z
     .object({
       id: z.string(),
-      versionTitle: z.string(),
-      versionNumber: z.number(),
-    })
-    .optional(),
-  endpointVersion: z
-    .object({
-      id: z.string(),
-      versionTitle: z.string(),
+      versionName: z.string(),
       versionNumber: z.number(),
     })
     .optional(),
