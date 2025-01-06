@@ -1,5 +1,10 @@
 import { and, eq, isNull } from "@integramind/db";
-import { conversations, endpoints } from "@integramind/db/schema";
+import {
+  conversations,
+  endpoints,
+  versionEndpoints,
+  versions,
+} from "@integramind/db/schema";
 import {
   createNewEndpointVersionSchema,
   insertEndpointSchema,
@@ -47,25 +52,49 @@ export const endpointsRouter = {
             });
           }
 
-          const result = await tx
-            .insert(endpoints)
-            .values({
-              ...input,
-              userId: ctx.session.user.id,
-              projectId: project.id,
-              conversationId: conversation.id,
-            })
-            .returning();
+          const newEndpoint = (
+            await tx
+              .insert(endpoints)
+              .values({
+                ...input,
+                userId: ctx.session.user.id,
+                projectId: project.id,
+                conversationId: conversation.id,
+              })
+              .returning()
+          )[0];
 
-          if (!result[0]) {
+          if (!newEndpoint) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to create endpoint",
             });
           }
 
+          const currentVersion = await tx.query.versions.findFirst({
+            where: and(
+              eq(versions.projectId, input.projectId),
+              eq(versions.isCurrent, true),
+            ),
+            with: {
+              endpoints: true,
+            },
+          });
+
+          if (!currentVersion) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create endpoint",
+            });
+          }
+
+          await tx.insert(versionEndpoints).values({
+            endpointId: newEndpoint.id,
+            versionId: currentVersion.id,
+          });
+
           return {
-            ...result[0],
+            ...newEndpoint,
             conversationId: conversation.id,
             conversation: {
               ...conversation,

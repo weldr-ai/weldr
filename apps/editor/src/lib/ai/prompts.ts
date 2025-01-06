@@ -495,7 +495,7 @@ Docs:\n${helperFunction.docs}`;
 
 ${
   packages && packages.length > 0
-    ? `### Packages\n${packages.map((pkg) => `- ${pkg.name}`).join("\n")}`
+    ? `### Packages\n${packages.map((pkg) => `- ${pkg.name}: ${pkg.reason}`).join("\n")}`
     : ""
 }
 
@@ -1527,7 +1527,7 @@ Docs:\n${helperFunction.docs}`;
 
 ${
   packages && packages.length > 0
-    ? `### Packages\n${packages.map((pkg) => `- ${pkg.name}`).join("\n")}`
+    ? `### Packages\n${packages.map((pkg) => `- ${pkg.name}: ${pkg.reason}`).join("\n")}`
     : ""
 }
 

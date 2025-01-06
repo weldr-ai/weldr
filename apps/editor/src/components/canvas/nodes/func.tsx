@@ -350,12 +350,12 @@ export const FuncNode = memo(
           // biome-ignore lint/style/noNonNullAssertion: <explanation>
           projectId: data.projectId!,
         });
-        setIsBuilding(false);
       }
 
       setUserMessageContent(null);
       setUserMessageRawContent([]);
       setIsGenerating(false);
+      setIsBuilding(false);
     };
 
     const resources = useResources();
@@ -622,12 +622,12 @@ export const FuncNode = memo(
                         </div>
                       )}
 
-                      {data.inputSchema && (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between pr-2">
-                            <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
-                              Input:
-                            </span>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between pr-2">
+                          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+                            Input:
+                          </span>
+                          {data.inputSchema && (
                             <TestInputDialog
                               schema={data.inputSchema as JsonSchema}
                               formData={testInput}
@@ -643,23 +643,37 @@ export const FuncNode = memo(
                                 });
                               }}
                             />
-                          </div>
+                          )}
+                        </div>
+                        {data.inputSchema ? (
                           <TreeView
                             data={schemaToTreeData(data.inputSchema ?? {})}
                           />
-                        </div>
-                      )}
+                        ) : (
+                          <div className="flex items-center justify-center">
+                            <span className="text-muted-foreground text-xs">
+                              Doesn't accept any input
+                            </span>
+                          </div>
+                        )}
+                      </div>
 
-                      {data.outputSchema && (
-                        <div className="space-y-1">
-                          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
-                            Output:
-                          </span>
+                      <div className="space-y-1">
+                        <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+                          Output:
+                        </span>
+                        {data.outputSchema ? (
                           <TreeView
                             data={schemaToTreeData(data.outputSchema ?? {})}
                           />
-                        </div>
-                      )}
+                        ) : (
+                          <div className="flex items-center justify-center">
+                            <span className="text-muted-foreground text-xs">
+                              Doesn't return any output
+                            </span>
+                          </div>
+                        )}
+                      </div>
 
                       {data.behavior && (
                         <div className="space-y-1">

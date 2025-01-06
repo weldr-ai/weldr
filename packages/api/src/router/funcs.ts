@@ -1,6 +1,11 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
-import { conversations, funcs } from "@integramind/db/schema";
+import {
+  conversations,
+  funcs,
+  versionFuncs,
+  versions,
+} from "@integramind/db/schema";
 
 import { and, eq, isNull } from "@integramind/db";
 import {
@@ -51,6 +56,28 @@ export const funcsRouter = {
               message: "Failed to create function",
             });
           }
+
+          const currentVersion = await tx.query.versions.findFirst({
+            where: and(
+              eq(versions.projectId, input.projectId),
+              eq(versions.isCurrent, true),
+            ),
+            with: {
+              funcs: true,
+            },
+          });
+
+          if (!currentVersion) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create function",
+            });
+          }
+
+          await tx.insert(versionFuncs).values({
+            funcId: newFunc.id,
+            versionId: currentVersion.id,
+          });
 
           return {
             ...newFunc,

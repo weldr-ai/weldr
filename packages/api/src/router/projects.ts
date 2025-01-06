@@ -1,5 +1,9 @@
 import { and, eq } from "@integramind/db";
-import { projects, resourceEnvironmentVariables } from "@integramind/db/schema";
+import {
+  projects,
+  resourceEnvironmentVariables,
+  versions,
+} from "@integramind/db/schema";
 import {
   insertProjectSchema,
   updateProjectSchema,
@@ -18,37 +22,43 @@ export const projectsRouter = {
         return await ctx.db.transaction(async (tx) => {
           const projectId = createId();
 
-          const response = await ofetch<{ engineMachineId: string }>(
-            `${process.env.DEPLOYER_API_URL}/projects`,
-            {
-              method: "POST",
-              retry: 3,
-              retryDelay: 1000,
-              body: {
-                projectId,
-              },
-              async onRequestError({ request, options, error }) {
-                console.log("[fetch request error]", request, error);
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message: "Failed to create project",
-                });
-              },
-              async onResponseError({ request, response, options }) {
-                console.log("[fetch response error]", request, response);
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message: "Failed to create project",
-                });
-              },
-            },
-          );
+          let engineMachineId: string | undefined;
 
-          if (!response.engineMachineId) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create project",
-            });
+          if (process.env.NODE_ENV !== "development") {
+            const response = await ofetch<{ engineMachineId: string }>(
+              `${process.env.DEPLOYER_API_URL}/projects`,
+              {
+                method: "POST",
+                retry: 3,
+                retryDelay: 1000,
+                body: {
+                  projectId,
+                },
+                async onRequestError({ request, options, error }) {
+                  console.log("[fetch request error]", request, error);
+                  throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to create project",
+                  });
+                },
+                async onResponseError({ request, response, options }) {
+                  console.log("[fetch response error]", request, response);
+                  throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to create project",
+                  });
+                },
+              },
+            );
+
+            if (!response.engineMachineId) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Failed to create project",
+              });
+            }
+
+            engineMachineId = response.engineMachineId;
           }
 
           const project = (
@@ -60,7 +70,7 @@ export const projectsRouter = {
                 subdomain: input.subdomain,
                 description: input.description,
                 userId: ctx.session.user.id,
-                engineMachineId: response.engineMachineId,
+                engineMachineId,
               })
               .returning()
           )[0];
@@ -71,6 +81,14 @@ export const projectsRouter = {
               message: "Failed to create project",
             });
           }
+
+          await tx.insert(versions).values({
+            projectId: project.id,
+            isCurrent: true,
+            versionName: `Initiated project ${project.name}`,
+            versionNumber: 1,
+            userId: ctx.session.user.id,
+          });
 
           return project;
         });

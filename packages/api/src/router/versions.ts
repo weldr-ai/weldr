@@ -30,8 +30,8 @@ export const versionsRouter = {
 
         if (!currentVersion) {
           throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Current version not found",
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create new version",
           });
         }
 
@@ -50,43 +50,41 @@ export const versionsRouter = {
             .returning()
         )[0];
 
-        if (!newVersion) {
+        const versionFuncIds = [...(input.addedFuncIds ?? [])];
+        const versionEndpointIds = [...(input.addedEndpointIds ?? [])];
+
+        for (const funcId of currentVersion.funcs) {
+          if (!input.deletedFuncIds?.includes(funcId.funcId)) {
+            versionFuncIds.push(funcId.funcId);
+          }
+        }
+
+        for (const endpointId of currentVersion.endpoints) {
+          if (!input.deletedEndpointIds?.includes(endpointId.endpointId)) {
+            versionEndpointIds.push(endpointId.endpointId);
+          }
+        }
+
+        if (!newVersion || !newVersion.id) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to create new version",
           });
         }
 
-        const filteredFuncs = currentVersion.funcs
-          .filter((func) => !input.deletedFuncIds?.includes(func.funcId))
-          .map((func) => func.funcId);
-
-        const filteredEndpoints = currentVersion.endpoints
-          .filter(
-            (endpoint) =>
-              !input.deletedEndpointIds?.includes(endpoint.endpointId),
-          )
-          .map((endpoint) => endpoint.endpointId);
-
-        for (const funcId of [
-          ...filteredFuncs,
-          ...(input.addedFuncIds ?? []),
-        ]) {
-          await tx.insert(versionFuncs).values({
+        await tx.insert(versionFuncs).values(
+          versionFuncIds.map((funcId) => ({
             funcId,
             versionId: newVersion.id,
-          });
-        }
+          })),
+        );
 
-        for (const endpointId of [
-          ...filteredEndpoints,
-          ...(input.addedEndpointIds ?? []),
-        ]) {
-          await tx.insert(versionEndpoints).values({
+        await tx.insert(versionEndpoints).values(
+          versionEndpointIds.map((endpointId) => ({
             endpointId,
             versionId: newVersion.id,
-          });
-        }
+          })),
+        );
 
         return newVersion;
       });

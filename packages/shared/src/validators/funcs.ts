@@ -110,42 +110,48 @@ export const funcRequirementsMessageSchema = z.object({
           description: rawContentSchema.describe(
             "Comprehensive description of the function that includes: its main purpose, and any key features/capabilities. Should explain both WHAT it does and WHY it exists.",
           ),
-          inputSchema: z.string().describe(
-            `JSON schema for input structure following JSON Schema 2020-12 spec including:
-             - Required and optional properties using "$schema": "https://json-schema.org/draft/2020-12/schema"
-             - Types and formats for fields with proper "type" and "format" keywords
-             - Valid ranges/enums using "minimum", "maximum", "enum", "pattern" etc.
-             - Nested structures with "properties", "items", "additionalProperties"
-             - Validation rules using keywords like "minLength", "maxLength", "required"
-             - Schema metadata with "$id", "title", "description"
+          inputSchema: z
+            .string()
+            .describe(
+              `JSON schema for input structure following JSON Schema 2020-12 spec including:
+                - Required and optional properties using "$schema": "https://json-schema.org/draft/2020-12/schema"
+                - Types and formats for fields with proper "type" and "format" keywords
+                - Valid ranges/enums using "minimum", "maximum", "enum", "pattern" etc.
+                - Nested structures with "properties", "items", "additionalProperties"
+                - Validation rules using keywords like "minLength", "maxLength", "required"
+                - Schema metadata with "$id", "title", "description"
 
-             Properties must:
-             - Use camelCase naming convention
-             - Be descriptive
-             - Have root type: 'object' with "type": "object"
-             - Follow JSON Schema 2020-12 specification
-             - Include descriptions using "description" keyword for all properties
-             - Use appropriate formats (e.g., "date-time", "email", "uri")
-             - Define proper "contentMediaType" and "contentEncoding" where applicable`,
-          ),
-          outputSchema: z.string().describe(
-            `JSON schema for output structure following JSON Schema 2020-12 spec including:
-             - Required and optional properties using "$schema": "https://json-schema.org/draft/2020-12/schema"
-             - Types and formats for fields with proper "type" and "format" keywords
-             - Valid ranges/enums using "minimum", "maximum", "enum", "pattern" etc.
-             - Nested structures with "properties", "items", "additionalProperties"
-             - Validation rules using keywords like "minLength", "maxLength", "required"
-             - Schema metadata with "$id", "title", "description"
+              Properties must:
+                - Use camelCase naming convention
+                - Be descriptive
+                - Have root type: 'object' with "type": "object"
+                - Follow JSON Schema 2020-12 specification
+                - Include descriptions using "description" keyword for all properties
+                - Use appropriate formats (e.g., "date-time", "email", "uri")
+                - Define proper "contentMediaType" and "contentEncoding" where applicable`,
+            )
+            .optional(),
+          outputSchema: z
+            .string()
+            .describe(
+              `JSON schema for output structure following JSON Schema 2020-12 spec including:
+                - Required and optional properties using "$schema": "https://json-schema.org/draft/2020-12/schema"
+                - Types and formats for fields with proper "type" and "format" keywords
+                - Valid ranges/enums using "minimum", "maximum", "enum", "pattern" etc.
+                - Nested structures with "properties", "items", "additionalProperties"
+                - Validation rules using keywords like "minLength", "maxLength", "required"
+                - Schema metadata with "$id", "title", "description"
 
-             Properties must:
-             - Use camelCase naming convention
-             - Be descriptive
-             - Have root type: 'object' with "type": "object"
-             - Follow JSON Schema 2020-12 specification
-             - Include descriptions using "description" keyword for all properties
-             - Use appropriate formats (e.g., "date-time", "email", "uri")
-             - Define proper "contentMediaType" and "contentEncoding" where applicable`,
-          ),
+              Properties must:
+                - Use camelCase naming convention
+                - Be descriptive
+                - Have root type: 'object' with "type": "object"
+                - Follow JSON Schema 2020-12 specification
+                - Include descriptions using "description" keyword for all properties
+                - Use appropriate formats (e.g., "date-time", "email", "uri")
+                - Define proper "contentMediaType" and "contentEncoding" where applicable`,
+            )
+            .optional(),
           signature: z
             .string()
             .describe(
@@ -162,7 +168,7 @@ export const funcRequirementsMessageSchema = z.object({
               "Specification of the return value including: type structure, and any conditional return formats based on input or processing state.",
             ),
           behavior: rawContentSchema.describe(
-            "Step-by-step description of function behavior including: data validation, business logic, transformations, calculations, external service calls, error handling, and success/failure paths. Should detail edge cases and performance considerations. Must be valid markdown-like list. Use references for all the variables, functions, resources, etc.",
+            "Step-by-step description of function behavior including: data validation, business logic, transformations, calculations, external service calls, error handling, and success/failure paths. Should detail edge cases and performance considerations. Must be valid markdown-like list. Must use `\\n` at the end of each line. Use references for all the variables, functions, resources, etc.",
           ),
           errors: z
             .string()
