@@ -125,18 +125,17 @@ export const resourcesRouter = {
 
       const result = await ctx.db.transaction(async (tx) => {
         try {
-          const resource = (
-            await tx
-              .insert(resources)
-              .values({
-                name: input.name,
-                description: input.description,
-                projectId: input.projectId,
-                userId: ctx.session.user.id,
-                integrationId: input.integrationId,
-              })
-              .returning({ id: resources.id })
-          )[0];
+          const resource = await tx
+            .insert(resources)
+            .values({
+              name: input.name,
+              description: input.description,
+              projectId: input.projectId,
+              userId: ctx.session.user.id,
+              integrationId: input.integrationId,
+            })
+            .returning({ id: resources.id })
+            .then(([resource]) => resource);
 
           if (!resource) {
             throw new TRPCError({
@@ -146,16 +145,17 @@ export const resourcesRouter = {
           }
 
           for (const env of environment) {
-            const resourceEnvironmentVariable = (
-              await tx
-                .insert(resourceEnvironmentVariables)
-                .values({
-                  mapTo: env.mapTo,
-                  resourceId: resource.id,
-                  environmentVariableId: env.id,
-                })
-                .returning()
-            )[0];
+            const resourceEnvironmentVariable = await tx
+              .insert(resourceEnvironmentVariables)
+              .values({
+                mapTo: env.mapTo,
+                resourceId: resource.id,
+                environmentVariableId: env.id,
+              })
+              .returning()
+              .then(
+                ([resourceEnvironmentVariable]) => resourceEnvironmentVariable,
+              );
 
             if (!resourceEnvironmentVariable) {
               throw new TRPCError({

@@ -29,7 +29,6 @@ export function CreateProjectForm() {
     resolver: zodResolver(insertProjectSchema),
     defaultValues: {
       name: "",
-      subdomain: "",
       description: "",
     },
   });
@@ -67,24 +66,6 @@ export function CreateProjectForm() {
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
                 <Input placeholder="Enter project name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="subdomain"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-xs">Subdomain</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Input placeholder="Enter subdomain" {...field} />
-                  <span className="absolute top-[9px] right-2.5 text-muted-foreground text-xs">
-                    .integramind.app
-                  </span>
-                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -127,6 +127,33 @@ function MessageItem({
             rawContent={(message.rawContent ?? []) as RawContent}
           />
         )}
+        {message.version && (
+          <div className="group flex h-7 items-center gap-2">
+            <div className="inline-flex h-7 items-center justify-center rounded-md border border-success bg-success/10 px-2 py-1 text-success text-xs">
+              {`#${message.version.versionNumber} `}
+              {message.version.versionName}
+            </div>
+            {/* {message.version.id !== currentVersionId && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="hidden size-7 group-hover:flex"
+                  >
+                    <HistoryIcon className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="border bg-muted text-xs"
+                >
+                  Revert
+                </TooltipContent>
+              </Tooltip>
+            )} */}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -14,12 +14,6 @@ export const projectSchema = z.object({
 
 export const insertProjectSchema = z.object({
   name: z.string().transform((name) => name.replace(/\s+/g, " ").trim()),
-  subdomain: z
-    .string()
-    .min(1, { message: "Subdomain is required" })
-    .regex(/^[a-z0-9-]+$/, {
-      message: "Must contain only lowercase letters, numbers, and hyphens",
-    }),
   description: z.string().optional(),
 });
 

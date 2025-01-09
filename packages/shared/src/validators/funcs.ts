@@ -2,17 +2,15 @@ import { z } from "zod";
 import {
   packageSchema,
   rawContentSchema,
-  requirementResourceSchema,
+  resourceMetadataSchema,
 } from "./common";
 import { conversationSchema } from "./conversations";
 import { dependencySchema } from "./dependencies";
 import { integrationTypeSchema } from "./integrations";
 import { jsonSchema } from "./json-schema";
 
-export const funcVersionSchema = z.object({
+export const funcSchema = z.object({
   id: z.string(),
-  versionName: z.string(),
-  versionNumber: z.number(),
   name: z.string().nullable(),
   inputSchema: jsonSchema.optional(),
   outputSchema: jsonSchema.optional(),
@@ -21,17 +19,12 @@ export const funcVersionSchema = z.object({
   errors: z.string().optional(),
   docs: z.string().optional(),
   code: z.string().optional(),
-  resources: requirementResourceSchema.array().optional().nullable(),
+  diff: z.string().optional(),
+  isDeployed: z.boolean().optional(),
+  resources: resourceMetadataSchema.array().optional().nullable(),
   packages: packageSchema.array().optional().nullable(),
-  userId: z.string().nullable(),
-  projectId: z.string(),
   dependencies: dependencySchema.array(),
   testInput: z.unknown().optional(),
-});
-
-export const funcSchema = z.object({
-  id: z.string(),
-  name: z.string().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   positionX: z.number().default(0),
@@ -41,8 +34,6 @@ export const funcSchema = z.object({
   userId: z.string().nullable(),
   projectId: z.string(),
   conversation: conversationSchema,
-  currentVersionId: z.string().nullable(),
-  currentVersion: funcVersionSchema,
 });
 
 export const insertFuncSchema = z.object({
@@ -87,7 +78,8 @@ export const createNewFuncVersionSchema = z.object({
     errors: z.string().optional(),
     docs: z.string().optional(),
     code: z.string().optional(),
-    resources: requirementResourceSchema.array().optional().nullable(),
+    diff: z.string().optional(),
+    resources: resourceMetadataSchema.array().optional().nullable(),
     packages: packageSchema.array().optional().nullable(),
   }),
 });

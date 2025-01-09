@@ -14,6 +14,7 @@ export default {
     "./src/schema/environment-variables.ts",
     "./src/schema/dependencies.ts",
     "./src/schema/versions.ts",
+    "./src/schema/packages.ts",
   ],
   out: "./drizzle",
   dialect: "postgresql",

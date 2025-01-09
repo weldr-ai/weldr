@@ -1,11 +1,9 @@
-import type {
-  OpenApiEndpointSpec,
-  Package,
-  RequirementResource,
-} from "@integramind/shared/types";
+import type { OpenApiEndpointSpec } from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
+  type AnyPgColumn,
+  boolean,
   index,
   integer,
   jsonb,
@@ -19,7 +17,9 @@ import { users } from "./auth";
 import { conversations } from "./conversations";
 import { dependencies } from "./dependencies";
 import { funcs } from "./funcs";
+import { endpointPackages } from "./packages";
 import { projects } from "./projects";
+import { endpointResources } from "./resources";
 
 export const httpMethods = pgEnum("http_methods", [
   "get",
@@ -38,9 +38,8 @@ export const endpoints = pgTable(
     path: text("path"),
     method: httpMethods("method"),
     code: text("code"),
+    diff: text("diff"),
     openApiSpec: jsonb("open_api_spec").$type<OpenApiEndpointSpec>(),
-    resources: jsonb("resources").$type<RequirementResource[]>(),
-    packages: jsonb("packages").$type<Package[]>(),
     positionX: integer("position_x").default(0),
     positionY: integer("position_y").default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -48,7 +47,8 @@ export const endpoints = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
-    deletedAt: timestamp("deleted_at"),
+    isDeleted: boolean("is_deleted").default(false),
+    isDeployed: boolean("is_deployed").default(false),
     conversationId: text("conversation_id")
       .references(() => conversations.id)
       .notNull(),
@@ -58,6 +58,7 @@ export const endpoints = pgTable(
     projectId: text("project_id")
       .references(() => projects.id)
       .notNull(),
+    parentId: text("parent_id").references((): AnyPgColumn => endpoints.id),
   },
   (table) => ({
     uniqueEndpoint: unique().on(table.projectId, table.path, table.method),
@@ -77,5 +78,11 @@ export const endpointsRelations = relations(endpoints, ({ one, many }) => ({
   funcs: many(funcs),
   funcDependencies: many(dependencies, {
     relationName: "dependency_endpoint",
+  }),
+  resources: many(endpointResources),
+  packages: many(endpointPackages),
+  parent: one(endpoints, {
+    fields: [endpoints.parentId],
+    references: [endpoints.id],
   }),
 }));

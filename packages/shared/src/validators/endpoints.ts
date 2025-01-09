@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   packageSchema,
   rawContentSchema,
-  requirementResourceSchema,
+  resourceMetadataSchema,
 } from "./common";
 import { conversationSchema } from "./conversations";
 import { dependencySchema } from "./dependencies";
@@ -35,31 +35,21 @@ export const endpointPathSchema = z
     },
   );
 
-export const endpointVersionSchema = z.object({
+export const endpointSchema = z.object({
   id: z.string().cuid2(),
-  versionName: z.string(),
-  versionNumber: z.number(),
   path: endpointPathSchema,
   method: httpMethodSchema,
   summary: z.string(),
   code: z.string(),
   openApiSpec: openApiEndpointSpecSchema,
-  resources: requirementResourceSchema.array(),
+  resources: resourceMetadataSchema.array(),
   packages: packageSchema.array(),
   dependencies: dependencySchema.array(),
-});
-
-export const endpointSchema = z.object({
-  id: z.string().cuid2(),
-  method: httpMethodSchema.optional(),
-  path: endpointPathSchema.optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   projectId: z.string().cuid2(),
   conversationId: z.string().cuid2(),
   conversation: conversationSchema,
-  currentVersionId: z.string().nullable(),
-  currentVersion: endpointVersionSchema.nullable(),
   canRun: z.boolean().default(false),
 });
 
@@ -86,9 +76,11 @@ export const createNewEndpointVersionSchema = z.object({
   }),
   payload: z.object({
     code: z.string().optional(),
+    diff: z.string().optional(),
     openApiSpec: openApiEndpointSpecSchema.optional(),
-    resources: requirementResourceSchema.array().optional(),
+    resources: resourceMetadataSchema.array().optional(),
     packages: packageSchema.array().optional(),
+    messageId: z.string(),
   }),
 });
 

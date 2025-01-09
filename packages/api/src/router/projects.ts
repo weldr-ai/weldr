@@ -61,19 +61,18 @@ export const projectsRouter = {
             engineMachineId = response.engineMachineId;
           }
 
-          const project = (
-            await tx
-              .insert(projects)
-              .values({
-                id: projectId,
-                name: input.name,
-                subdomain: input.subdomain,
-                description: input.description,
-                userId: ctx.session.user.id,
-                engineMachineId,
-              })
-              .returning()
-          )[0];
+          const project = await tx
+            .insert(projects)
+            .values({
+              id: projectId,
+              name: input.name,
+              subdomain: projectId,
+              description: input.description,
+              userId: ctx.session.user.id,
+              engineMachineId,
+            })
+            .returning()
+            .then(([project]) => project);
 
           if (!project) {
             throw new TRPCError({
@@ -84,7 +83,7 @@ export const projectsRouter = {
 
           await tx.insert(versions).values({
             projectId: project.id,
-            isCurrent: true,
+            isActive: true,
             versionName: `Initiated project ${project.name}`,
             versionNumber: 1,
             userId: ctx.session.user.id,
@@ -197,18 +196,17 @@ export const projectsRouter = {
     .input(updateProjectSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        const result = (
-          await ctx.db
-            .update(projects)
-            .set(input.payload)
-            .where(
-              and(
-                eq(projects.id, input.where.id),
-                eq(projects.userId, ctx.session.user.id),
-              ),
-            )
-            .returning()
-        )[0];
+        const result = await ctx.db
+          .update(projects)
+          .set(input.payload)
+          .where(
+            and(
+              eq(projects.id, input.where.id),
+              eq(projects.userId, ctx.session.user.id),
+            ),
+          )
+          .returning()
+          .then(([project]) => project);
 
         if (!result) {
           throw new TRPCError({

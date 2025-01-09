@@ -324,7 +324,7 @@ export function Canvas({
               onDragStart={(event) => onDragStart(event, "endpoint")}
               draggable
             >
-              <span className="size-4 font-semibold">API</span>
+              <span className="font-semibold text-[10px]">HTTP</span>
             </div>
           </TooltipTrigger>
           <TooltipContent side="top" className="border bg-muted">

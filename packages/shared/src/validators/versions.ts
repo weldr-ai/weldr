@@ -8,4 +8,5 @@ export const insertVersionSchema = z.object({
   deletedEndpointIds: z.array(z.string()).optional(),
   projectId: z.string(),
   messageId: z.string().optional(),
+  userId: z.string(),
 });

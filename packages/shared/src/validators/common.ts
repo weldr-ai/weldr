@@ -104,7 +104,7 @@ export const rawContentSchema = z
   .union([rawContentTextElementSchema, rawContentReferenceElementSchema])
   .array();
 
-export const requirementResourceSchema = z.discriminatedUnion("type", [
+export const resourceMetadataSchema = z.discriminatedUnion("type", [
   z.object({
     id: z.string(),
     name: z.string(),

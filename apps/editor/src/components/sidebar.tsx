@@ -1,6 +1,12 @@
 "use client";
 
-import { BoltIcon, BoxesIcon, Layers3Icon, PlusIcon } from "lucide-react";
+import {
+  BoltIcon,
+  BoxesIcon,
+  Layers3Icon,
+  PlusIcon,
+  SparklesIcon,
+} from "lucide-react";
 
 import { useCommandCenterStore } from "@/lib/store";
 import type { RouterOutputs } from "@integramind/api";
@@ -81,6 +87,20 @@ export function Sidebar({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon">
+                <SparklesIcon className="size-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              className="-top-2 relative border bg-muted"
+            >
+              <p>Build</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon">
                 <Layers3Icon className="size-5" />
               </Button>
             </TooltipTrigger>
@@ -91,7 +111,8 @@ export function Sidebar({
               <p>Layers</p>
             </TooltipContent>
           </Tooltip>
-
+        </div>
+        <div className="flex flex-col items-center space-y-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
@@ -108,8 +129,8 @@ export function Sidebar({
               <p>Settings</p>
             </TooltipContent>
           </Tooltip>
+          <AccountDropdownMenu />
         </div>
-        <AccountDropdownMenu />
       </div>
     </div>
   );

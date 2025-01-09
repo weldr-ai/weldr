@@ -14,6 +14,7 @@ import { users } from "./auth";
 import { conversationMessages } from "./conversations";
 import { endpoints } from "./endpoints";
 import { funcs } from "./funcs";
+import { packages } from "./packages";
 import { projects } from "./projects";
 
 export const versions = pgTable(
@@ -24,7 +25,7 @@ export const versions = pgTable(
       .$defaultFn(() => createId()),
     versionNumber: integer("version_number").notNull(),
     versionName: text("version_name").notNull(),
-    isCurrent: boolean("is_current").notNull().default(false),
+    isActive: boolean("is_active").notNull().default(false),
     parentVersionId: text("parent_version_id").references(
       (): AnyPgColumn => versions.id,
     ),
@@ -55,6 +56,7 @@ export const versionsRelations = relations(versions, ({ one, many }) => ({
   childVersions: many(versions),
   endpoints: many(versionEndpoints),
   funcs: many(versionFuncs),
+  packages: many(versionPackages),
 }));
 
 export const versionFuncs = pgTable(
@@ -72,7 +74,7 @@ export const versionFuncs = pgTable(
   }),
 );
 
-export const versionFuncsRelations = relations(versionFuncs, ({ one }) => ({
+export const versionFuncRelations = relations(versionFuncs, ({ one }) => ({
   version: one(versions, {
     fields: [versionFuncs.versionId],
     references: [versions.id],
@@ -100,7 +102,7 @@ export const versionEndpoints = pgTable(
   }),
 );
 
-export const versionEndpointsRelations = relations(
+export const versionEndpointRelations = relations(
   versionEndpoints,
   ({ one }) => ({
     version: one(versions, {
@@ -110,6 +112,35 @@ export const versionEndpointsRelations = relations(
     endpoint: one(endpoints, {
       fields: [versionEndpoints.endpointId],
       references: [endpoints.id],
+    }),
+  }),
+);
+
+export const versionPackages = pgTable(
+  "version_packages",
+  {
+    versionId: text("version_id")
+      .references(() => versions.id)
+      .notNull(),
+    packageId: text("package_id")
+      .references(() => packages.id)
+      .notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.versionId, t.packageId] }),
+  }),
+);
+
+export const versionPackageRelations = relations(
+  versionPackages,
+  ({ one }) => ({
+    version: one(versions, {
+      fields: [versionPackages.versionId],
+      references: [versions.id],
+    }),
+    package: one(packages, {
+      fields: [versionPackages.packageId],
+      references: [packages.id],
     }),
   }),
 );

@@ -1,12 +1,9 @@
-import type {
-  JsonSchema,
-  Package,
-  RawContent,
-  RequirementResource,
-} from "@integramind/shared/types";
+import type { JsonSchema, RawContent } from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
+  type AnyPgColumn,
+  boolean,
   index,
   integer,
   jsonb,
@@ -19,7 +16,9 @@ import { users } from "./auth";
 import { conversations } from "./conversations";
 import { dependencies } from "./dependencies";
 import { integrations } from "./integrations";
+import { funcPackages } from "./packages";
 import { projects } from "./projects";
+import { funcResources } from "./resources";
 
 export const funcs = pgTable(
   "funcs",
@@ -35,8 +34,7 @@ export const funcs = pgTable(
     errors: text("errors"),
     docs: text("docs"),
     code: text("code"),
-    packages: jsonb("packages").$type<Package[]>(),
-    resources: jsonb("resources").$type<RequirementResource[]>(),
+    diff: text("diff"),
     testInput: jsonb("test_input").$type<unknown>(),
     positionX: integer("position_x").default(0),
     positionY: integer("position_y").default(0),
@@ -45,7 +43,8 @@ export const funcs = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
-    deletedAt: timestamp("deleted_at"),
+    isDeleted: boolean("is_deleted").default(false),
+    isDeployed: boolean("is_deployed").default(false),
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
     conversationId: text("conversation_id").references(() => conversations.id),
     projectId: text("project_id").references(() => projects.id, {
@@ -54,6 +53,7 @@ export const funcs = pgTable(
     integrationId: text("integration_id").references(() => integrations.id, {
       onDelete: "cascade",
     }),
+    parentId: text("parent_id").references((): AnyPgColumn => funcs.id),
   },
   (t) => ({
     uniqueNameInProject: uniqueIndex("unique_func_name_in_project").on(
@@ -89,5 +89,11 @@ export const funcRelations = relations(funcs, ({ one, many }) => ({
   }),
   funcDependents: many(dependencies, {
     relationName: "dependent_func",
+  }),
+  resources: many(funcResources),
+  packages: many(funcPackages),
+  parent: one(funcs, {
+    fields: [funcs.parentId],
+    references: [funcs.id],
   }),
 }));

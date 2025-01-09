@@ -39,6 +39,8 @@ export const createTRPCContext: (opts: {
   };
 };
 
+export type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
+
 /**
  * 2. INITIALIZATION
  *

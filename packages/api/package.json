@@ -16,12 +16,14 @@
     "@integramind/shared": "workspace:*",
     "@paralleldrive/cuid2": "^2.2.2",
     "@trpc/server": "11.0.0-rc.666",
+    "diff": "^7.0.0",
     "ofetch": "^1.4.1",
     "superjson": "^2.2.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@integramind/tsconfig": "workspace:*",
+    "@types/diff": "^7.0.0",
     "typescript": "^5.7.2"
   }
 }

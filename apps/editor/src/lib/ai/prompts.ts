@@ -4,7 +4,7 @@ import { db, inArray } from "@integramind/db";
 import { funcs } from "@integramind/db/schema";
 import type { Package } from "@integramind/shared/types";
 import { toKebabCase } from "@integramind/shared/utils";
-import type { requirementResourceSchema } from "@integramind/shared/validators/common";
+import type { resourceMetadataSchema } from "@integramind/shared/validators/common";
 import type { openApiEndpointSpecSchema } from "@integramind/shared/validators/openapi";
 import type { z } from "zod";
 
@@ -439,7 +439,7 @@ export const generateFuncCodeUserPrompt = async ({
 }: {
   name: string;
   docs: string;
-  resources?: z.infer<typeof requirementResourceSchema>[];
+  resources?: z.infer<typeof resourceMetadataSchema>[];
   helperFunctionIds: string[] | undefined;
   packages: Package[] | undefined;
 }) => {
@@ -1471,7 +1471,7 @@ export const generateEndpointCodeUserPrompt = async ({
   packages,
 }: {
   openApiSpec: z.infer<typeof openApiEndpointSpecSchema>;
-  resources?: z.infer<typeof requirementResourceSchema>[];
+  resources?: z.infer<typeof resourceMetadataSchema>[];
   helperFunctionIds: string[] | undefined;
   packages: Package[] | undefined;
 }) => {

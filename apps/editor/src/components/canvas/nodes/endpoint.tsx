@@ -81,8 +81,6 @@ export const EndpointNode = memo(
 
     const addMessage = api.conversations.addMessage.useMutation();
 
-    const createVersion = api.versions.create.useMutation();
-
     const editorRef = useRef<LexicalEditor>(null);
 
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
@@ -561,15 +559,6 @@ export const EndpointNode = memo(
             deleteEndpoint.mutate({
               id: data.id,
             });
-
-            if (data.openApiSpec?.summary) {
-              await createVersion.mutateAsync({
-                versionName: `Delete endpoint ${data.openApiSpec.summary}`,
-                // biome-ignore lint/style/noNonNullAssertion: <explanation>
-                projectId: data.projectId!,
-                deletedFuncIds: [data.id],
-              });
-            }
           }}
         />
       </>

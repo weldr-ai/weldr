@@ -3,7 +3,7 @@ import type { z } from "zod";
 import type {
   packageSchema,
   rawContentSchema,
-  requirementResourceSchema,
+  resourceMetadataSchema,
 } from "../validators/common";
 import type {
   assistantMessageRawContentSchema,
@@ -47,7 +47,7 @@ export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
 export type Conversation = z.infer<typeof conversationSchema>;
 
 export type Resource = z.infer<typeof resourceSchema>;
-export type RequirementResource = z.infer<typeof requirementResourceSchema>;
+export type ResourceMetadata = z.infer<typeof resourceMetadataSchema>;
 export type Endpoint = z.infer<typeof endpointSchema>;
 export type OpenApiEndpointSpec = z.infer<typeof openApiEndpointSpecSchema>;
 

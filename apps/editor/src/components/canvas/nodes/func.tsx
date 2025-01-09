@@ -122,8 +122,6 @@ export const FuncNode = memo(
 
     const deleteFunc = api.funcs.delete.useMutation();
 
-    const createVersion = api.versions.create.useMutation();
-
     const addMessage = api.conversations.addMessage.useMutation();
 
     const editorRef = useRef<LexicalEditor>(null);
@@ -754,15 +752,6 @@ export const FuncNode = memo(
             deleteFunc.mutate({
               id: data.id,
             });
-
-            if (data.name) {
-              await createVersion.mutateAsync({
-                versionName: `Delete function ${toTitle(data.name)}`,
-                // biome-ignore lint/style/noNonNullAssertion: <explanation>
-                projectId: data.projectId!,
-                deletedFuncIds: [data.id],
-              });
-            }
           }}
         />
       </>

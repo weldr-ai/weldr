@@ -17,11 +17,12 @@ import type {
   EndpointRequirementsMessage,
   FuncRequirementsMessage,
 } from "@integramind/shared/types";
-import { toTitle } from "@integramind/shared/utils";
+import { toKebabCase } from "@integramind/shared/utils";
 import { endpointRequirementsMessageSchema } from "@integramind/shared/validators/endpoints";
 import { funcRequirementsMessageSchema } from "@integramind/shared/validators/funcs";
 import { type CoreMessage, streamObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
+import { createPatch } from "diff";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { api } from "../trpc/server";
@@ -46,7 +47,9 @@ export async function generateFunc(funcId: string) {
     id: funcId,
   });
 
-  if (!funcData.conversationId || !funcData.projectId) {
+  const projectId = funcData.projectId;
+
+  if (!funcData.conversationId || !projectId) {
     return {
       status: "error",
       message: "Function name or conversation ID is required",
@@ -55,7 +58,7 @@ export async function generateFunc(funcId: string) {
 
   const existingFuncs = await db.query.funcs.findMany({
     where: and(
-      eq(funcs.projectId, funcData.projectId),
+      eq(funcs.projectId, projectId),
       eq(funcs.userId, session.user.id),
       not(eq(funcs.id, funcId)),
     ),
@@ -230,6 +233,16 @@ export async function generateFunc(funcId: string) {
             systemPrompt: FUNC_DEVELOPER_PROMPT,
           });
 
+          console.log(`[generateFunc] Generated code: ${code}`);
+
+          const diff = await createPatch(
+            `lib/functions/${toKebabCase(object.message.content.name)}.ts`,
+            "",
+            code,
+          );
+
+          console.log(`[generateFunc] Generated diff: ${diff}`);
+
           await api.funcs.createNewVersion({
             where: { id: funcId },
             payload: {
@@ -243,29 +256,8 @@ export async function generateFunc(funcId: string) {
               outputSchema,
               docs,
               code,
+              diff,
             },
-          });
-
-          // Add message to conversation
-          const assistantBuiltMessage = await api.conversations.addMessage({
-            role: "assistant",
-            content: "Your function has been built successfully!",
-            rawContent: [
-              {
-                type: "text",
-                value: "Your function has been built successfully!",
-              },
-            ],
-            conversationId: conversation.id,
-          });
-
-          // Create new version
-          await api.versions.create({
-            versionName: `Create function ${toTitle(object.message.content.name)}`,
-            // biome-ignore lint/style/noNonNullAssertion: <explanation>
-            projectId: funcData.projectId!,
-            messageId: assistantBuiltMessage.id,
-            addedFuncIds: [funcId],
           });
         }
       },
@@ -295,8 +287,9 @@ export async function generateEndpoint(endpointId: string) {
       eq(endpoints.userId, session.user.id),
     ),
   });
+  const projectId = endpoint?.projectId;
 
-  if (!endpoint) {
+  if (!endpoint || !projectId) {
     return {
       status: "error",
       message: "Endpoint not found",
@@ -305,7 +298,7 @@ export async function generateEndpoint(endpointId: string) {
 
   const existingEndpoints = await db.query.endpoints.findMany({
     where: and(
-      eq(endpoints.projectId, endpoint.projectId),
+      eq(endpoints.projectId, projectId),
       eq(endpoints.userId, session.user.id),
       not(eq(endpoints.id, endpointId)),
     ),
@@ -491,15 +484,16 @@ export async function generateEndpoint(endpointId: string) {
             systemPrompt: ENDPOINT_DEVELOPER_PROMPT,
           });
 
-          await api.endpoints.createNewVersion({
-            where: { id: endpointId },
-            payload: {
-              openApiSpec,
-              code,
-              packages: object.message.content.packages,
-              resources: object.message.content.resources,
-            },
-          });
+          const path = object.message.content.openApiSpec.path.replace(
+            /\{[^[\]]+\}/g,
+            "[$1]",
+          );
+
+          const diff = await createPatch(
+            `${path}/${object.message.content.openApiSpec.method}/index.ts`,
+            "",
+            code,
+          );
 
           // Add message to conversation
           const assistantBuiltMessage = await api.conversations.addMessage({
@@ -514,12 +508,16 @@ export async function generateEndpoint(endpointId: string) {
             conversationId: conversation.id,
           });
 
-          // Create new version
-          await api.versions.create({
-            versionName: `Create endpoint ${object.message.content.openApiSpec.summary}`,
-            projectId: endpoint.projectId,
-            messageId: assistantBuiltMessage.id,
-            addedEndpointIds: [endpointId],
+          await api.endpoints.createNewVersion({
+            where: { id: endpointId },
+            payload: {
+              openApiSpec,
+              code,
+              diff,
+              packages: object.message.content.packages,
+              resources: object.message.content.resources,
+              messageId: assistantBuiltMessage.id,
+            },
           });
         }
       },

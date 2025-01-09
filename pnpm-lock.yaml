@@ -153,6 +153,9 @@ importers:
       ai:
         specifier: ^4.0.4
         version: 4.0.4(react@18.3.1)(zod@3.24.1)
+      diff:
+        specifier: ^7.0.0
+        version: 7.0.0
       json-schema:
         specifier: ^0.4.0
         version: 0.4.0
@@ -211,6 +214,9 @@ importers:
       '@integramind/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@types/diff':
+        specifier: ^7.0.0
+        version: 7.0.0
       '@types/node':
         specifier: ^20.11.24
         version: 20.14.10
@@ -329,6 +335,9 @@ importers:
       '@trpc/server':
         specifier: 11.0.0-rc.666
         version: 11.0.0-rc.666(typescript@5.7.2)
+      diff:
+        specifier: ^7.0.0
+        version: 7.0.0
       ofetch:
         specifier: ^1.4.1
         version: 1.4.1
@@ -342,6 +351,9 @@ importers:
       '@integramind/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@types/diff':
+        specifier: ^7.0.0
+        version: 7.0.0
       typescript:
         specifier: ^5.7.2
         version: 5.7.2
@@ -3473,6 +3485,9 @@ packages:
   '@types/diff-match-patch@1.0.36':
     resolution: {integrity: sha512-xFdR6tkm0MWvBfO8xXCSsinYxHcqkQUlcHeSpMC2ukzOb6lwQAfDmW+Qt0AvlGd8HpsS28qKsB+oPeJn9I39jg==}
 
+  '@types/diff@7.0.0':
+    resolution: {integrity: sha512-sVpkpbnTJL9CYoDf4U+tHaQLe5HiTaHWY7m9FuYA7oMCHwC9ie0Vh9eIGapyzYrU3+pILlSY2fAc4elfw5m4dg==}
+
   '@types/eslint@8.56.10':
     resolution: {integrity: sha512-Shavhk87gCtY2fhXDctcfS3e6FdxWkCx1iUZ9eEUbh7rTqlZT0/IzOkCOVt0fCjcFuZ9FPYfuezTBImfHCDBGQ==}
 
@@ -4300,6 +4315,10 @@ packages:
 
   diff@4.0.2:
     resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
+    engines: {node: '>=0.3.1'}
+
+  diff@7.0.0:
+    resolution: {integrity: sha512-PJWHUb1RFevKCwaFA9RlG5tCd+FO5iRh9A8HEtkmBH2Li03iJriB6m6JIN4rGz3K3JLawI7/veA1xzRKP6ISBw==}
     engines: {node: '>=0.3.1'}
 
   dir-glob@3.0.1:
@@ -9771,6 +9790,8 @@ snapshots:
 
   '@types/diff-match-patch@1.0.36': {}
 
+  '@types/diff@7.0.0': {}
+
   '@types/eslint@8.56.10':
     dependencies:
       '@types/estree': 1.0.5
@@ -10675,6 +10696,8 @@ snapshots:
   diff-match-patch@1.0.5: {}
 
   diff@4.0.2: {}
+
+  diff@7.0.0: {}
 
   dir-glob@3.0.1:
     dependencies:

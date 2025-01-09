@@ -32,6 +32,7 @@
     "@vercel/speed-insights": "^1.0.10",
     "@xyflow/react": "^12.3.6",
     "ai": "^4.0.4",
+    "diff": "^7.0.0",
     "json-schema": "^0.4.0",
     "lexical": "^0.16.0",
     "lucide-react": "^0.363.0",
@@ -53,6 +54,7 @@
   "devDependencies": {
     "@integramind/tailwind-config": "workspace:^",
     "@integramind/tsconfig": "workspace:*",
+    "@types/diff": "^7.0.0",
     "@types/node": "^20.11.24",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

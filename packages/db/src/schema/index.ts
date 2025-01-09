@@ -5,6 +5,7 @@ export * from "./endpoints";
 export * from "./environment-variables";
 export * from "./funcs";
 export * from "./integrations";
+export * from "./packages";
 export * from "./projects";
 export * from "./resources";
 export * from "./vault";

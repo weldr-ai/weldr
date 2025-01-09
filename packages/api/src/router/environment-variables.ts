@@ -24,14 +24,13 @@ export const environmentVariablesRouter = {
       }
 
       const environmentVariable = await ctx.db.transaction(async (tx) => {
-        const secret = (
-          await tx
-            .insert(secrets)
-            .values({
-              secret: input.value,
-            })
-            .returning()
-        )[0];
+        const secret = await tx
+          .insert(secrets)
+          .values({
+            secret: input.value,
+          })
+          .returning()
+          .then(([secret]) => secret);
 
         if (!secret) {
           throw new TRPCError({
@@ -40,18 +39,17 @@ export const environmentVariablesRouter = {
           });
         }
 
-        const environmentVariable = (
-          await tx
-            .insert(environmentVariables)
-            .values({
-              ...input,
-              userId: ctx.session.user.id,
-              secretId: secret.id,
-            })
-            .returning({
-              id: environmentVariables.id,
-            })
-        )[0];
+        const environmentVariable = await tx
+          .insert(environmentVariables)
+          .values({
+            ...input,
+            userId: ctx.session.user.id,
+            secretId: secret.id,
+          })
+          .returning({
+            id: environmentVariables.id,
+          })
+          .then(([environmentVariable]) => environmentVariable);
 
         return environmentVariable;
       });

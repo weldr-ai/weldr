@@ -1,21 +1,27 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
 import {
+  conversationMessages,
   conversations,
+  funcPackages,
+  funcResources,
   funcs,
+  packages,
   versionFuncs,
   versions,
 } from "@integramind/db/schema";
 
-import { and, eq, isNull } from "@integramind/db";
+import { type InferInsertModel, and, eq } from "@integramind/db";
+import { toKebabCase, toTitle } from "@integramind/shared/utils";
 import {
   createNewFuncVersionSchema,
   insertFuncSchema,
   updateFuncSchema,
 } from "@integramind/shared/validators/funcs";
+import { createPatch } from "diff";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { isFunctionReady } from "../utils";
+import { createVersion, isFunctionReady } from "../utils";
 
 export const funcsRouter = {
   create: protectedProcedure
@@ -23,14 +29,13 @@ export const funcsRouter = {
     .mutation(async ({ ctx, input }) => {
       try {
         const result = await ctx.db.transaction(async (tx) => {
-          const conversation = (
-            await tx
-              .insert(conversations)
-              .values({
-                userId: ctx.session.user.id,
-              })
-              .returning()
-          )[0];
+          const conversation = await tx
+            .insert(conversations)
+            .values({
+              userId: ctx.session.user.id,
+            })
+            .returning()
+            .then(([conversation]) => conversation);
 
           if (!conversation) {
             throw new TRPCError({
@@ -39,16 +44,15 @@ export const funcsRouter = {
             });
           }
 
-          const newFunc = (
-            await tx
-              .insert(funcs)
-              .values({
-                ...input,
-                userId: ctx.session.user.id,
-                conversationId: conversation?.id,
-              })
-              .returning()
-          )[0];
+          const newFunc = await tx
+            .insert(funcs)
+            .values({
+              ...input,
+              userId: ctx.session.user.id,
+              conversationId: conversation?.id,
+            })
+            .returning()
+            .then(([func]) => func);
 
           if (!newFunc) {
             throw new TRPCError({
@@ -60,7 +64,7 @@ export const funcsRouter = {
           const currentVersion = await tx.query.versions.findFirst({
             where: and(
               eq(versions.projectId, input.projectId),
-              eq(versions.isCurrent, true),
+              eq(versions.isActive, true),
             ),
             with: {
               funcs: true,
@@ -89,8 +93,17 @@ export const funcsRouter = {
           };
         });
 
-        const { integrationId, code, packages, docs, resources, ...rest } =
-          result;
+        const {
+          integrationId,
+          diff,
+          docs,
+          isDeleted,
+          parentId,
+          code,
+          isDeployed,
+          ...rest
+        } = result;
+
         return {
           ...rest,
           canRun: await isFunctionReady(result),
@@ -118,7 +131,7 @@ export const funcsRouter = {
           where: and(
             eq(funcs.id, input.id),
             eq(funcs.userId, ctx.session.user.id),
-            isNull(funcs.deletedAt),
+            eq(funcs.isDeleted, false),
           ),
           with: {
             conversation: {
@@ -156,12 +169,13 @@ export const funcsRouter = {
         }
 
         const {
-          code,
-          packages,
-          docs,
-          resources,
-          deletedAt,
           integrationId,
+          diff,
+          docs,
+          isDeleted,
+          parentId,
+          code,
+          isDeployed,
           ...rest
         } = result;
 
@@ -188,6 +202,7 @@ export const funcsRouter = {
           where: and(
             eq(funcs.id, input.where.id),
             eq(funcs.userId, ctx.session.user.id),
+            eq(funcs.isDeleted, false),
           ),
         });
 
@@ -198,13 +213,12 @@ export const funcsRouter = {
           });
         }
 
-        const updatedFunc = (
-          await ctx.db
-            .update(funcs)
-            .set(input.payload)
-            .where(eq(funcs.id, func.id))
-            .returning()
-        )[0];
+        const updatedFunc = await ctx.db
+          .update(funcs)
+          .set(input.payload)
+          .where(eq(funcs.id, func.id))
+          .returning()
+          .then(([func]) => func);
 
         if (!updatedFunc) {
           throw new TRPCError({
@@ -213,7 +227,16 @@ export const funcsRouter = {
           });
         }
 
-        const { integrationId, ...updatedFuncRest } = updatedFunc;
+        const {
+          integrationId,
+          diff,
+          docs,
+          isDeleted,
+          parentId,
+          code,
+          isDeployed,
+          ...updatedFuncRest
+        } = updatedFunc;
 
         return {
           ...updatedFuncRest,
@@ -234,31 +257,145 @@ export const funcsRouter = {
     .input(createNewFuncVersionSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        const func = await ctx.db.query.funcs.findFirst({
-          where: and(
-            eq(funcs.id, input.where.id),
-            eq(funcs.userId, ctx.session.user.id),
-          ),
-        });
-
-        if (!func) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Function not found",
+        await ctx.db.transaction(async (tx) => {
+          const func = await tx.query.funcs.findFirst({
+            where: and(
+              eq(funcs.id, input.where.id),
+              eq(funcs.userId, ctx.session.user.id),
+              eq(funcs.isDeleted, false),
+            ),
           });
-        }
 
-        if (!func.code) {
-          await ctx.db
-            .update(funcs)
-            .set(input.payload)
-            .where(eq(funcs.id, func.id));
-          return;
-        }
+          if (!func || !func.projectId) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Function not found",
+            });
+          }
 
-        await ctx.db.insert(funcs).values({
-          ...func,
-          ...input.payload,
+          const { resources, packages: pkgs, ...rest } = input.payload;
+          const firstImplementation = !func.code;
+          let newFunc: InferInsertModel<typeof funcs> | undefined;
+
+          if (!func.code) {
+            newFunc = await tx
+              .update(funcs)
+              .set(rest)
+              .where(eq(funcs.id, func.id))
+              .returning()
+              .then(([func]) => func);
+          } else {
+            newFunc = await tx
+              .insert(funcs)
+              .values({
+                ...func,
+                ...rest,
+                parentId: func.id,
+              })
+              .returning()
+              .then(([func]) => func);
+          }
+
+          if (
+            !newFunc ||
+            !newFunc.name ||
+            !newFunc.id ||
+            !newFunc.projectId ||
+            !newFunc.conversationId
+          ) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create function",
+            });
+          }
+
+          if (resources) {
+            for (const resource of resources) {
+              await tx.insert(funcResources).values({
+                funcId: newFunc.id,
+                resourceId: resource.id,
+                metadata: resource,
+              });
+            }
+          }
+
+          if (pkgs) {
+            for (const pkg of pkgs) {
+              const newPkg = await tx
+                .insert(packages)
+                .values({
+                  ...pkg,
+                  projectId: newFunc.projectId,
+                })
+                .onConflictDoNothing()
+                .returning()
+                .then(([pkg]) => pkg);
+
+              if (!newPkg) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Failed to create function",
+                });
+              }
+
+              await tx
+                .insert(funcPackages)
+                .values({
+                  funcId: newFunc.id,
+                  packageId: newPkg.id,
+                })
+                .onConflictDoNothing();
+            }
+          }
+
+          // Add message to conversation
+          const assistantBuiltMessage = await ctx.db
+            .insert(conversationMessages)
+            .values({
+              role: "assistant",
+              content: "Your function has been built successfully!",
+              rawContent: [
+                {
+                  type: "text",
+                  value: "Your function has been built successfully!",
+                },
+              ],
+              conversationId: newFunc.conversationId,
+            })
+            .returning()
+            .then(([message]) => message);
+
+          if (!assistantBuiltMessage) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create new function version",
+            });
+          }
+
+          // If function is implemented, create a new version and delete the old function
+          // else, just create a new version with the new function
+          try {
+            await createVersion({
+              db: ctx.db,
+              tx: tx,
+              input: {
+                userId: ctx.session.user.id,
+                projectId: newFunc.projectId,
+                versionName: `${toTitle(newFunc.name)} (${
+                  firstImplementation ? "created" : "updated"
+                })`,
+                addedFuncIds: [newFunc.id],
+                deletedFuncIds: firstImplementation ? [] : [func.id],
+                messageId: assistantBuiltMessage.id,
+              },
+            });
+          } catch (error) {
+            console.error(error);
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create new function version",
+            });
+          }
         });
       } catch (error) {
         console.error(error);
@@ -280,29 +417,68 @@ export const funcsRouter = {
             where: and(
               eq(funcs.id, input.id),
               eq(funcs.userId, ctx.session.user.id),
-              isNull(funcs.deletedAt),
+              eq(funcs.isDeleted, false),
             ),
           });
 
-          if (!func || !func.conversationId) {
+          if (!func || !func.conversationId || !func.projectId) {
             throw new TRPCError({
               code: "NOT_FOUND",
               message: "Function not found",
             });
           }
 
+          let diff: string | undefined;
+
+          if (func.name && func.code) {
+            diff = createPatch(
+              `lib/functions/${toKebabCase(func.name)}.ts`,
+              func.code,
+              "",
+            );
+          }
+
           await tx
             .update(funcs)
             .set({
-              deletedAt: new Date(),
+              isDeleted: true,
+              isDeployed: false,
+              diff,
             })
             .where(
               and(
                 eq(funcs.id, func.id),
                 eq(funcs.userId, ctx.session.user.id),
-                isNull(funcs.deletedAt),
+                eq(funcs.isDeleted, false),
               ),
             );
+
+          // If function is implemented, create a new version and delete the old function
+          // else, just delete the function from the current version
+          if (func.name) {
+            try {
+              await createVersion({
+                db: ctx.db,
+                tx: tx,
+                input: {
+                  userId: ctx.session.user.id,
+                  projectId: func.projectId,
+                  versionName: `${func.name} (deleted)`,
+                  deletedFuncIds: [func.id],
+                },
+              });
+            } catch (error) {
+              console.error(error);
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Failed to delete function",
+              });
+            }
+          } else {
+            await tx
+              .delete(versionFuncs)
+              .where(eq(versionFuncs.funcId, func.id));
+          }
         });
       } catch (error) {
         console.error(error);

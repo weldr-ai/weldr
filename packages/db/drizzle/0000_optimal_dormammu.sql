@@ -3,6 +3,7 @@ CREATE TYPE "public"."http_methods" AS ENUM('get', 'post', 'put', 'patch', 'dele
 CREATE TYPE "public"."integration_category" AS ENUM('database');--> statement-breakpoint
 CREATE TYPE "public"."integration_type" AS ENUM('postgres', 'mysql');--> statement-breakpoint
 CREATE TYPE "public"."primitive_type" AS ENUM('function', 'endpoint');--> statement-breakpoint
+CREATE TYPE "public"."package_type" AS ENUM('production', 'development');--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -80,17 +81,18 @@ CREATE TABLE "endpoints" (
 	"path" text,
 	"method" "http_methods",
 	"code" text,
+	"diff" text,
 	"open_api_spec" jsonb,
-	"resources" jsonb,
-	"packages" jsonb,
 	"position_x" integer DEFAULT 0,
 	"position_y" integer DEFAULT 0,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"deleted_at" timestamp,
+	"is_deleted" boolean DEFAULT false,
+	"is_deployed" boolean DEFAULT false,
 	"conversation_id" text NOT NULL,
 	"user_id" text NOT NULL,
 	"project_id" text NOT NULL,
+	"parent_id" text,
 	CONSTRAINT "endpoints_project_id_path_method_unique" UNIQUE("project_id","path","method")
 );
 --> statement-breakpoint
@@ -114,18 +116,33 @@ CREATE TABLE "funcs" (
 	"errors" text,
 	"docs" text,
 	"code" text,
-	"packages" jsonb,
-	"resources" jsonb,
+	"diff" text,
 	"test_input" jsonb,
 	"position_x" integer DEFAULT 0,
 	"position_y" integer DEFAULT 0,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"deleted_at" timestamp,
+	"is_deleted" boolean DEFAULT false,
+	"is_deployed" boolean DEFAULT false,
 	"user_id" text,
 	"conversation_id" text,
 	"project_id" text,
-	"integration_id" text
+	"integration_id" text,
+	"parent_id" text
+);
+--> statement-breakpoint
+CREATE TABLE "endpoint_resources" (
+	"endpoint_id" text NOT NULL,
+	"resource_id" text NOT NULL,
+	"metadata" jsonb,
+	CONSTRAINT "endpoint_resources_endpoint_id_resource_id_pk" PRIMARY KEY("endpoint_id","resource_id")
+);
+--> statement-breakpoint
+CREATE TABLE "func_resources" (
+	"func_id" text NOT NULL,
+	"resource_id" text NOT NULL,
+	"metadata" jsonb,
+	CONSTRAINT "func_resources_func_id_resource_id_pk" PRIMARY KEY("func_id","resource_id")
 );
 --> statement-breakpoint
 CREATE TABLE "resource_environment_variables" (
@@ -139,6 +156,7 @@ CREATE TABLE "resources" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
+	"is_deployed" boolean DEFAULT false,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"project_id" text NOT NULL,
@@ -202,16 +220,44 @@ CREATE TABLE "version_funcs" (
 	CONSTRAINT "version_funcs_version_id_func_id_pk" PRIMARY KEY("version_id","func_id")
 );
 --> statement-breakpoint
+CREATE TABLE "version_packages" (
+	"version_id" text NOT NULL,
+	"package_id" text NOT NULL,
+	CONSTRAINT "version_packages_version_id_package_id_pk" PRIMARY KEY("version_id","package_id")
+);
+--> statement-breakpoint
 CREATE TABLE "versions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"version_number" integer NOT NULL,
 	"version_name" text NOT NULL,
-	"is_current" boolean DEFAULT false NOT NULL,
+	"is_active" boolean DEFAULT false NOT NULL,
 	"parent_version_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"user_id" text NOT NULL,
 	"message_id" text,
 	"project_id" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "endpoint_packages" (
+	"package_id" text NOT NULL,
+	"endpoint_id" text NOT NULL,
+	CONSTRAINT "endpoint_packages_package_id_endpoint_id_pk" PRIMARY KEY("package_id","endpoint_id")
+);
+--> statement-breakpoint
+CREATE TABLE "func_packages" (
+	"func_id" text NOT NULL,
+	"package_id" text NOT NULL,
+	CONSTRAINT "func_packages_func_id_package_id_pk" PRIMARY KEY("func_id","package_id")
+);
+--> statement-breakpoint
+CREATE TABLE "packages" (
+	"id" text PRIMARY KEY NOT NULL,
+	"type" "package_type" NOT NULL,
+	"name" text NOT NULL,
+	"reason" text NOT NULL,
+	"version" text,
+	"project_id" text,
+	CONSTRAINT "packages_project_id_name_unique" UNIQUE("project_id","name")
 );
 --> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -222,10 +268,16 @@ ALTER TABLE "conversations" ADD CONSTRAINT "conversations_user_id_users_id_fk" F
 ALTER TABLE "endpoints" ADD CONSTRAINT "endpoints_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "endpoints" ADD CONSTRAINT "endpoints_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "endpoints" ADD CONSTRAINT "endpoints_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "endpoints" ADD CONSTRAINT "endpoints_parent_id_endpoints_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."endpoints"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "funcs" ADD CONSTRAINT "funcs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "funcs" ADD CONSTRAINT "funcs_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "funcs" ADD CONSTRAINT "funcs_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "funcs" ADD CONSTRAINT "funcs_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "funcs" ADD CONSTRAINT "funcs_parent_id_funcs_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."funcs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "endpoint_resources" ADD CONSTRAINT "endpoint_resources_endpoint_id_endpoints_id_fk" FOREIGN KEY ("endpoint_id") REFERENCES "public"."endpoints"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "endpoint_resources" ADD CONSTRAINT "endpoint_resources_resource_id_resources_id_fk" FOREIGN KEY ("resource_id") REFERENCES "public"."resources"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "func_resources" ADD CONSTRAINT "func_resources_func_id_funcs_id_fk" FOREIGN KEY ("func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "func_resources" ADD CONSTRAINT "func_resources_resource_id_resources_id_fk" FOREIGN KEY ("resource_id") REFERENCES "public"."resources"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "resource_environment_variables" ADD CONSTRAINT "resource_environment_variables_resource_id_resources_id_fk" FOREIGN KEY ("resource_id") REFERENCES "public"."resources"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "resource_environment_variables" ADD CONSTRAINT "resource_environment_variables_environment_variable_id_environment_variables_id_fk" FOREIGN KEY ("environment_variable_id") REFERENCES "public"."environment_variables"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "resources" ADD CONSTRAINT "resources_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -239,10 +291,17 @@ ALTER TABLE "version_endpoints" ADD CONSTRAINT "version_endpoints_version_id_ver
 ALTER TABLE "version_endpoints" ADD CONSTRAINT "version_endpoints_endpoint_id_endpoints_id_fk" FOREIGN KEY ("endpoint_id") REFERENCES "public"."endpoints"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "version_funcs" ADD CONSTRAINT "version_funcs_version_id_versions_id_fk" FOREIGN KEY ("version_id") REFERENCES "public"."versions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "version_funcs" ADD CONSTRAINT "version_funcs_func_id_funcs_id_fk" FOREIGN KEY ("func_id") REFERENCES "public"."funcs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "version_packages" ADD CONSTRAINT "version_packages_version_id_versions_id_fk" FOREIGN KEY ("version_id") REFERENCES "public"."versions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "version_packages" ADD CONSTRAINT "version_packages_package_id_packages_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."packages"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_parent_version_id_versions_id_fk" FOREIGN KEY ("parent_version_id") REFERENCES "public"."versions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_message_id_conversation_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "public"."conversation_messages"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "endpoint_packages" ADD CONSTRAINT "endpoint_packages_package_id_packages_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."packages"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "endpoint_packages" ADD CONSTRAINT "endpoint_packages_endpoint_id_endpoints_id_fk" FOREIGN KEY ("endpoint_id") REFERENCES "public"."endpoints"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "func_packages" ADD CONSTRAINT "func_packages_func_id_funcs_id_fk" FOREIGN KEY ("func_id") REFERENCES "public"."funcs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "func_packages" ADD CONSTRAINT "func_packages_package_id_packages_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."packages"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "packages" ADD CONSTRAINT "packages_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "conversation_messages_created_at_idx" ON "conversation_messages" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "conversations_created_at_idx" ON "conversations" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "endpoints_created_at_idx" ON "endpoints" USING btree ("created_at");--> statement-breakpoint

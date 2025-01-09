@@ -11,12 +11,7 @@ export const engineRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {}),
-  patch: protectedProcedure
-    .input(
-      z.object({
-        funcId: z.string(),
-        input: z.record(z.any()).optional(),
-      }),
-    )
+  deploy: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
     .mutation(async ({ ctx, input }) => {}),
 } satisfies TRPCRouterRecord;

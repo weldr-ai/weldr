@@ -133,21 +133,20 @@ export const conversationsRouter = {
       let newMessage = undefined;
 
       if (input.role === "assistant") {
-        newMessage = (
-          await ctx.db
-            .insert(conversationMessages)
-            .values({
-              content: input.content,
-              rawContent: input.rawContent,
-              role: "assistant",
-              createdAt: new Date(),
-              userId: ctx.session.user.id,
-              conversationId: input.conversationId,
-            })
-            .returning({
-              id: conversationMessages.id,
-            })
-        )[0];
+        newMessage = await ctx.db
+          .insert(conversationMessages)
+          .values({
+            content: input.content,
+            rawContent: input.rawContent,
+            role: "assistant",
+            createdAt: new Date(),
+            userId: ctx.session.user.id,
+            conversationId: input.conversationId,
+          })
+          .returning({
+            id: conversationMessages.id,
+          })
+          .then(([message]) => message);
       }
 
       if (input.role === "user") {
@@ -169,21 +168,20 @@ export const conversationsRouter = {
           ctx,
         );
 
-        newMessage = (
-          await ctx.db
-            .insert(conversationMessages)
-            .values({
-              content: userMessageRawContentToText(resolvedRawContent),
-              rawContent: input.rawContent,
-              role: "user",
-              createdAt: new Date(),
-              userId: ctx.session.user.id,
-              conversationId: input.conversationId,
-            })
-            .returning({
-              id: conversationMessages.id,
-            })
-        )[0];
+        newMessage = await ctx.db
+          .insert(conversationMessages)
+          .values({
+            content: userMessageRawContentToText(resolvedRawContent),
+            rawContent: input.rawContent,
+            role: "user",
+            createdAt: new Date(),
+            userId: ctx.session.user.id,
+            conversationId: input.conversationId,
+          })
+          .returning({
+            id: conversationMessages.id,
+          })
+          .then(([message]) => message);
       }
 
       if (!newMessage) {
