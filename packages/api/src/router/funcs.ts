@@ -3,25 +3,30 @@ import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import {
   conversationMessages,
   conversations,
-  funcPackages,
-  funcResources,
+  dependencies,
+  funcDefinitionPackages,
+  funcDefinitionResources,
+  funcDefinitions,
   funcs,
   packages,
-  versionFuncs,
-  versions,
 } from "@integramind/db/schema";
 
-import { type InferInsertModel, and, eq } from "@integramind/db";
-import { toKebabCase, toTitle } from "@integramind/shared/utils";
+import { and, eq } from "@integramind/db";
+import { toKebabCase } from "@integramind/shared/utils";
 import {
-  createNewFuncVersionSchema,
+  createFuncDefinitionSchema,
   insertFuncSchema,
   updateFuncSchema,
 } from "@integramind/shared/validators/funcs";
 import { createPatch } from "diff";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { createVersion, isFunctionReady } from "../utils";
+import {
+  createVersion,
+  defineVersion,
+  isFunctionReady,
+  wouldCreateCycle,
+} from "../utils";
 
 export const funcsRouter = {
   create: protectedProcedure
@@ -61,28 +66,6 @@ export const funcsRouter = {
             });
           }
 
-          const currentVersion = await tx.query.versions.findFirst({
-            where: and(
-              eq(versions.projectId, input.projectId),
-              eq(versions.isActive, true),
-            ),
-            with: {
-              funcs: true,
-            },
-          });
-
-          if (!currentVersion) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create function",
-            });
-          }
-
-          await tx.insert(versionFuncs).values({
-            funcId: newFunc.id,
-            versionId: currentVersion.id,
-          });
-
           return {
             ...newFunc,
             conversationId: conversation.id,
@@ -93,16 +76,7 @@ export const funcsRouter = {
           };
         });
 
-        const {
-          integrationId,
-          diff,
-          docs,
-          isDeleted,
-          parentId,
-          code,
-          isDeployed,
-          ...rest
-        } = result;
+        const { integrationId, currentDefinitionId, ...rest } = result;
 
         return {
           ...rest,
@@ -131,9 +105,19 @@ export const funcsRouter = {
           where: and(
             eq(funcs.id, input.id),
             eq(funcs.userId, ctx.session.user.id),
-            eq(funcs.isDeleted, false),
           ),
           with: {
+            currentDefinition: {
+              columns: {
+                name: true,
+                inputSchema: true,
+                outputSchema: true,
+                rawDescription: true,
+                behavior: true,
+                errors: true,
+                testInput: true,
+              },
+            },
             conversation: {
               with: {
                 messages: {
@@ -170,17 +154,14 @@ export const funcsRouter = {
 
         const {
           integrationId,
-          diff,
-          docs,
-          isDeleted,
-          parentId,
-          code,
-          isDeployed,
+          currentDefinitionId,
+          currentDefinition,
           ...rest
         } = result;
 
         return {
           ...rest,
+          ...currentDefinition,
           canRun: await isFunctionReady(result),
         };
       } catch (error) {
@@ -202,7 +183,6 @@ export const funcsRouter = {
           where: and(
             eq(funcs.id, input.where.id),
             eq(funcs.userId, ctx.session.user.id),
-            eq(funcs.isDeleted, false),
           ),
         });
 
@@ -227,16 +207,8 @@ export const funcsRouter = {
           });
         }
 
-        const {
-          integrationId,
-          diff,
-          docs,
-          isDeleted,
-          parentId,
-          code,
-          isDeployed,
-          ...updatedFuncRest
-        } = updatedFunc;
+        const { integrationId, currentDefinitionId, ...updatedFuncRest } =
+          updatedFunc;
 
         return {
           ...updatedFuncRest,
@@ -253,8 +225,8 @@ export const funcsRouter = {
         });
       }
     }),
-  createNewVersion: protectedProcedure
-    .input(createNewFuncVersionSchema)
+  define: protectedProcedure
+    .input(createFuncDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
       try {
         await ctx.db.transaction(async (tx) => {
@@ -262,57 +234,99 @@ export const funcsRouter = {
             where: and(
               eq(funcs.id, input.where.id),
               eq(funcs.userId, ctx.session.user.id),
-              eq(funcs.isDeleted, false),
             ),
+            with: {
+              currentDefinition: {
+                with: {
+                  resources: true,
+                  packages: true,
+                },
+              },
+            },
           });
 
-          if (!func || !func.projectId) {
+          if (!func || !func.projectId || !func.conversationId) {
             throw new TRPCError({
               code: "NOT_FOUND",
               message: "Function not found",
             });
           }
 
-          const { resources, packages: pkgs, ...rest } = input.payload;
-          const firstImplementation = !func.code;
-          let newFunc: InferInsertModel<typeof funcs> | undefined;
+          const {
+            resources,
+            packages: pkgs,
+            helperFunctionIds,
+            ...rest
+          } = input.payload;
 
-          if (!func.code) {
-            newFunc = await tx
-              .update(funcs)
-              .set(rest)
-              .where(eq(funcs.id, func.id))
-              .returning()
-              .then(([func]) => func);
-          } else {
-            newFunc = await tx
-              .insert(funcs)
-              .values({
-                ...func,
-                ...rest,
-                parentId: func.id,
-              })
-              .returning()
-              .then(([func]) => func);
-          }
+          const diff = await createPatch(
+            `lib/functions/${toKebabCase(rest.name)}.ts`,
+            "",
+            rest.code,
+          );
 
-          if (
-            !newFunc ||
-            !newFunc.name ||
-            !newFunc.id ||
-            !newFunc.projectId ||
-            !newFunc.conversationId
-          ) {
+          const assistantBuiltMessage = await tx
+            .insert(conversationMessages)
+            .values({
+              role: "assistant",
+              content: "Your function has been built successfully!",
+              rawContent: [
+                {
+                  type: "text",
+                  value: "Your function has been built successfully!",
+                },
+              ],
+              conversationId: func.conversationId,
+              userId: ctx.session.user.id,
+            })
+            .returning()
+            .then(([message]) => message);
+
+          if (!assistantBuiltMessage) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create function",
+              message: "Failed to define function",
             });
           }
 
+          const { newVersion, previousVersion } = await createVersion({
+            db: tx,
+            versionName: `${rest.name} (created)`,
+            projectId: func.projectId,
+            userId: ctx.session.user.id,
+            messageId: assistantBuiltMessage.id,
+          });
+
+          const newDefinition = await tx
+            .insert(funcDefinitions)
+            .values({
+              diff,
+              userId: ctx.session.user.id,
+              funcId: func.id,
+              versionId: newVersion.id,
+              ...rest,
+            })
+            .returning()
+            .then(([func]) => func);
+
+          if (!newDefinition || !newDefinition.name || !newDefinition.id) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to define function",
+            });
+          }
+
+          await tx
+            .update(funcs)
+            .set({
+              currentDefinitionId: newDefinition.id,
+            })
+            .where(eq(funcs.id, func.id));
+
           if (resources) {
             for (const resource of resources) {
-              await tx.insert(funcResources).values({
-                funcId: newFunc.id,
+              await tx.insert(funcDefinitionResources).values({
+                funcDefinitionId: newDefinition.id,
                 resourceId: resource.id,
                 metadata: resource,
               });
@@ -325,7 +339,7 @@ export const funcsRouter = {
                 .insert(packages)
                 .values({
                   ...pkg,
-                  projectId: newFunc.projectId,
+                  projectId: func.projectId,
                 })
                 .onConflictDoNothing()
                 .returning()
@@ -334,68 +348,64 @@ export const funcsRouter = {
               if (!newPkg) {
                 throw new TRPCError({
                   code: "INTERNAL_SERVER_ERROR",
-                  message: "Failed to create function",
+                  message: "Failed to define function",
                 });
               }
 
               await tx
-                .insert(funcPackages)
+                .insert(funcDefinitionPackages)
                 .values({
-                  funcId: newFunc.id,
+                  funcDefinitionId: newDefinition.id,
                   packageId: newPkg.id,
                 })
                 .onConflictDoNothing();
             }
           }
 
-          // Add message to conversation
-          const assistantBuiltMessage = await ctx.db
-            .insert(conversationMessages)
-            .values({
-              role: "assistant",
-              content: "Your function has been built successfully!",
-              rawContent: [
-                {
-                  type: "text",
-                  value: "Your function has been built successfully!",
-                },
-              ],
-              conversationId: newFunc.conversationId,
-            })
-            .returning()
-            .then(([message]) => message);
+          if (helperFunctionIds) {
+            for (const helperFunctionId of helperFunctionIds) {
+              const helperFunction = await tx.query.funcs.findFirst({
+                where: and(
+                  eq(funcs.id, helperFunctionId),
+                  eq(funcs.userId, ctx.session.user.id),
+                ),
+              });
 
-          if (!assistantBuiltMessage) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create new function version",
-            });
+              if (!helperFunction || !helperFunction.currentDefinitionId) {
+                throw new TRPCError({
+                  code: "NOT_FOUND",
+                  message: "Helper function not found",
+                });
+              }
+
+              const isCycle = await wouldCreateCycle({
+                dependentId: newDefinition.id,
+                dependencyId: helperFunction.currentDefinitionId,
+                db: tx,
+              });
+
+              if (isCycle) {
+                throw new TRPCError({
+                  code: "BAD_REQUEST",
+                  message: "Dependency cycle detected",
+                });
+              }
+
+              await tx.insert(dependencies).values({
+                dependentDefinitionId: newDefinition.id,
+                dependentType: "function",
+                dependencyDefinitionId: helperFunctionId,
+                dependencyType: "function",
+              });
+            }
           }
 
-          // If function is implemented, create a new version and delete the old function
-          // else, just create a new version with the new function
-          try {
-            await createVersion({
-              db: ctx.db,
-              tx: tx,
-              input: {
-                userId: ctx.session.user.id,
-                projectId: newFunc.projectId,
-                versionName: `${toTitle(newFunc.name)} (${
-                  firstImplementation ? "created" : "updated"
-                })`,
-                addedFuncIds: [newFunc.id],
-                deletedFuncIds: firstImplementation ? [] : [func.id],
-                messageId: assistantBuiltMessage.id,
-              },
-            });
-          } catch (error) {
-            console.error(error);
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create new function version",
-            });
-          }
+          await defineVersion({
+            db: tx,
+            previousVersionId: previousVersion.id,
+            newVersionId: newVersion.id,
+            addedFuncDefinitionIds: [newDefinition.id],
+          });
         });
       } catch (error) {
         console.error(error);
@@ -404,7 +414,7 @@ export const funcsRouter = {
         }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create new function version",
+          message: "Failed to define function",
         });
       }
     }),
@@ -413,12 +423,14 @@ export const funcsRouter = {
     .mutation(async ({ ctx, input }) => {
       try {
         await ctx.db.transaction(async (tx) => {
-          const func = await ctx.db.query.funcs.findFirst({
+          const func = await tx.query.funcs.findFirst({
             where: and(
               eq(funcs.id, input.id),
               eq(funcs.userId, ctx.session.user.id),
-              eq(funcs.isDeleted, false),
             ),
+            with: {
+              currentDefinition: true,
+            },
           });
 
           if (!func || !func.conversationId || !func.projectId) {
@@ -428,44 +440,21 @@ export const funcsRouter = {
             });
           }
 
-          let diff: string | undefined;
-
-          if (func.name && func.code) {
-            diff = createPatch(
-              `lib/functions/${toKebabCase(func.name)}.ts`,
-              func.code,
-              "",
-            );
-          }
-
-          await tx
-            .update(funcs)
-            .set({
-              isDeleted: true,
-              isDeployed: false,
-              diff,
-            })
-            .where(
-              and(
-                eq(funcs.id, func.id),
-                eq(funcs.userId, ctx.session.user.id),
-                eq(funcs.isDeleted, false),
-              ),
-            );
-
           // If function is implemented, create a new version and delete the old function
-          // else, just delete the function from the current version
-          if (func.name) {
+          if (func.currentDefinition) {
             try {
-              await createVersion({
-                db: ctx.db,
-                tx: tx,
-                input: {
-                  userId: ctx.session.user.id,
-                  projectId: func.projectId,
-                  versionName: `${func.name} (deleted)`,
-                  deletedFuncIds: [func.id],
-                },
+              const { newVersion, previousVersion } = await createVersion({
+                db: tx,
+                userId: ctx.session.user.id,
+                projectId: func.projectId,
+                versionName: `${func.currentDefinition.name} (deleted)`,
+              });
+
+              await defineVersion({
+                db: tx,
+                previousVersionId: previousVersion.id,
+                newVersionId: newVersion.id,
+                deletedFuncDefinitionIds: [func.currentDefinition.id],
               });
             } catch (error) {
               console.error(error);
@@ -475,9 +464,7 @@ export const funcsRouter = {
               });
             }
           } else {
-            await tx
-              .delete(versionFuncs)
-              .where(eq(versionFuncs.funcId, func.id));
+            await tx.delete(funcs).where(eq(funcs.id, func.id));
           }
         });
       } catch (error) {

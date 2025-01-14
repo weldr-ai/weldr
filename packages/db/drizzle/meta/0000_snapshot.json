@@ -1,5 +1,5 @@
 {
-  "id": "e1646294-0747-4248-a9be-5a4aae6d8ca2",
+  "id": "3b2a10d2-8d78-4b23-a44f-4964f0327bf8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -490,8 +490,112 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.endpoints": {
-      "name": "endpoints",
+    "public.endpoint_definition_packages": {
+      "name": "endpoint_definition_packages",
+      "schema": "",
+      "columns": {
+        "package_id": {
+          "name": "package_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "endpoint_definition_id": {
+          "name": "endpoint_definition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "endpoint_definition_packages_package_id_packages_id_fk": {
+          "name": "endpoint_definition_packages_package_id_packages_id_fk",
+          "tableFrom": "endpoint_definition_packages",
+          "tableTo": "packages",
+          "columnsFrom": ["package_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "endpoint_definition_packages_endpoint_definition_id_endpoint_definitions_id_fk": {
+          "name": "endpoint_definition_packages_endpoint_definition_id_endpoint_definitions_id_fk",
+          "tableFrom": "endpoint_definition_packages",
+          "tableTo": "endpoint_definitions",
+          "columnsFrom": ["endpoint_definition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "endpoint_definition_packages_package_id_endpoint_definition_id_pk": {
+          "name": "endpoint_definition_packages_package_id_endpoint_definition_id_pk",
+          "columns": ["package_id", "endpoint_definition_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.endpoint_definition_resources": {
+      "name": "endpoint_definition_resources",
+      "schema": "",
+      "columns": {
+        "endpoint_definition_id": {
+          "name": "endpoint_definition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resource_id": {
+          "name": "resource_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "endpoint_definition_resources_endpoint_definition_id_endpoint_definitions_id_fk": {
+          "name": "endpoint_definition_resources_endpoint_definition_id_endpoint_definitions_id_fk",
+          "tableFrom": "endpoint_definition_resources",
+          "tableTo": "endpoint_definitions",
+          "columnsFrom": ["endpoint_definition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "endpoint_definition_resources_resource_id_resources_id_fk": {
+          "name": "endpoint_definition_resources_resource_id_resources_id_fk",
+          "tableFrom": "endpoint_definition_resources",
+          "tableTo": "resources",
+          "columnsFrom": ["resource_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "endpoint_definition_resources_endpoint_definition_id_resource_id_pk": {
+          "name": "endpoint_definition_resources_endpoint_definition_id_resource_id_pk",
+          "columns": ["endpoint_definition_id", "resource_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.endpoint_definitions": {
+      "name": "endpoint_definitions",
       "schema": "",
       "columns": {
         "id": {
@@ -504,32 +608,162 @@
           "name": "path",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "method": {
           "name": "method",
           "type": "http_methods",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "code": {
           "name": "code",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "diff": {
           "name": "diff",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "open_api_spec": {
           "name": "open_api_spec",
           "type": "jsonb",
           "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "endpoint_id": {
+          "name": "endpoint_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "previous_id": {
+          "name": "previous_id",
+          "type": "text",
+          "primaryKey": false,
           "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version_id": {
+          "name": "version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "unique_endpoint_in_version": {
+          "name": "unique_endpoint_in_version",
+          "columns": [
+            {
+              "expression": "path",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "method",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "version_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "endpoint_data_created_at_idx": {
+          "name": "endpoint_data_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "endpoint_definitions_endpoint_id_endpoints_id_fk": {
+          "name": "endpoint_definitions_endpoint_id_endpoints_id_fk",
+          "tableFrom": "endpoint_definitions",
+          "tableTo": "endpoints",
+          "columnsFrom": ["endpoint_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "endpoint_definitions_previous_id_endpoint_definitions_id_fk": {
+          "name": "endpoint_definitions_previous_id_endpoint_definitions_id_fk",
+          "tableFrom": "endpoint_definitions",
+          "tableTo": "endpoint_definitions",
+          "columnsFrom": ["previous_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "endpoint_definitions_user_id_users_id_fk": {
+          "name": "endpoint_definitions_user_id_users_id_fk",
+          "tableFrom": "endpoint_definitions",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "endpoint_definitions_version_id_versions_id_fk": {
+          "name": "endpoint_definitions_version_id_versions_id_fk",
+          "tableFrom": "endpoint_definitions",
+          "tableTo": "versions",
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.endpoints": {
+      "name": "endpoints",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
         },
         "position_x": {
           "name": "position_x",
@@ -559,28 +793,14 @@
           "notNull": true,
           "default": "now()"
         },
-        "is_deleted": {
-          "name": "is_deleted",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "is_deployed": {
-          "name": "is_deployed",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "conversation_id": {
-          "name": "conversation_id",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "user_id": {
-          "name": "user_id",
+        "conversation_id": {
+          "name": "conversation_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -591,8 +811,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "parent_id": {
-          "name": "parent_id",
+        "current_definition_id": {
+          "name": "current_definition_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -616,20 +836,20 @@
         }
       },
       "foreignKeys": {
-        "endpoints_conversation_id_conversations_id_fk": {
-          "name": "endpoints_conversation_id_conversations_id_fk",
-          "tableFrom": "endpoints",
-          "tableTo": "conversations",
-          "columnsFrom": ["conversation_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
         "endpoints_user_id_users_id_fk": {
           "name": "endpoints_user_id_users_id_fk",
           "tableFrom": "endpoints",
           "tableTo": "users",
           "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "endpoints_conversation_id_conversations_id_fk": {
+          "name": "endpoints_conversation_id_conversations_id_fk",
+          "tableFrom": "endpoints",
+          "tableTo": "conversations",
+          "columnsFrom": ["conversation_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -643,24 +863,18 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "endpoints_parent_id_endpoints_id_fk": {
-          "name": "endpoints_parent_id_endpoints_id_fk",
+        "endpoints_current_definition_id_endpoint_definitions_id_fk": {
+          "name": "endpoints_current_definition_id_endpoint_definitions_id_fk",
           "tableFrom": "endpoints",
-          "tableTo": "endpoints",
-          "columnsFrom": ["parent_id"],
+          "tableTo": "endpoint_definitions",
+          "columnsFrom": ["current_definition_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "endpoints_project_id_path_method_unique": {
-          "name": "endpoints_project_id_path_method_unique",
-          "nullsNotDistinct": false,
-          "columns": ["project_id", "path", "method"]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -724,8 +938,112 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.funcs": {
-      "name": "funcs",
+    "public.func_definition_packages": {
+      "name": "func_definition_packages",
+      "schema": "",
+      "columns": {
+        "func_definition_id": {
+          "name": "func_definition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "package_id": {
+          "name": "package_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "func_definition_packages_func_definition_id_func_definitions_id_fk": {
+          "name": "func_definition_packages_func_definition_id_func_definitions_id_fk",
+          "tableFrom": "func_definition_packages",
+          "tableTo": "func_definitions",
+          "columnsFrom": ["func_definition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "func_definition_packages_package_id_packages_id_fk": {
+          "name": "func_definition_packages_package_id_packages_id_fk",
+          "tableFrom": "func_definition_packages",
+          "tableTo": "packages",
+          "columnsFrom": ["package_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "func_definition_packages_func_definition_id_package_id_pk": {
+          "name": "func_definition_packages_func_definition_id_package_id_pk",
+          "columns": ["func_definition_id", "package_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.func_definition_resources": {
+      "name": "func_definition_resources",
+      "schema": "",
+      "columns": {
+        "func_definition_id": {
+          "name": "func_definition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resource_id": {
+          "name": "resource_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "func_definition_resources_func_definition_id_func_definitions_id_fk": {
+          "name": "func_definition_resources_func_definition_id_func_definitions_id_fk",
+          "tableFrom": "func_definition_resources",
+          "tableTo": "func_definitions",
+          "columnsFrom": ["func_definition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "func_definition_resources_resource_id_resources_id_fk": {
+          "name": "func_definition_resources_resource_id_resources_id_fk",
+          "tableFrom": "func_definition_resources",
+          "tableTo": "resources",
+          "columnsFrom": ["resource_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "func_definition_resources_func_definition_id_resource_id_pk": {
+          "name": "func_definition_resources_func_definition_id_resource_id_pk",
+          "columns": ["func_definition_id", "resource_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.func_definitions": {
+      "name": "func_definitions",
       "schema": "",
       "columns": {
         "id": {
@@ -738,7 +1056,7 @@
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "input_schema": {
           "name": "input_schema",
@@ -756,13 +1074,13 @@
           "name": "raw_description",
           "type": "jsonb",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "behavior": {
           "name": "behavior",
           "type": "jsonb",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "errors": {
           "name": "errors",
@@ -774,25 +1092,149 @@
           "name": "docs",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "code": {
           "name": "code",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "diff": {
           "name": "diff",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "test_input": {
           "name": "test_input",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "previous_id": {
+          "name": "previous_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "func_id": {
+          "name": "func_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version_id": {
+          "name": "version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "unique_func_in_version": {
+          "name": "unique_func_in_version",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "version_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "func_data_created_at_idx": {
+          "name": "func_data_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "func_definitions_previous_id_func_definitions_id_fk": {
+          "name": "func_definitions_previous_id_func_definitions_id_fk",
+          "tableFrom": "func_definitions",
+          "tableTo": "func_definitions",
+          "columnsFrom": ["previous_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "func_definitions_func_id_funcs_id_fk": {
+          "name": "func_definitions_func_id_funcs_id_fk",
+          "tableFrom": "func_definitions",
+          "tableTo": "funcs",
+          "columnsFrom": ["func_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "func_definitions_user_id_users_id_fk": {
+          "name": "func_definitions_user_id_users_id_fk",
+          "tableFrom": "func_definitions",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "func_definitions_version_id_versions_id_fk": {
+          "name": "func_definitions_version_id_versions_id_fk",
+          "tableFrom": "func_definitions",
+          "tableTo": "versions",
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.funcs": {
+      "name": "funcs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
         },
         "position_x": {
           "name": "position_x",
@@ -822,20 +1264,6 @@
           "notNull": true,
           "default": "now()"
         },
-        "is_deleted": {
-          "name": "is_deleted",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "is_deployed": {
-          "name": "is_deployed",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
         "user_id": {
           "name": "user_id",
           "type": "text",
@@ -860,35 +1288,14 @@
           "primaryKey": false,
           "notNull": false
         },
-        "parent_id": {
-          "name": "parent_id",
+        "current_definition_id": {
+          "name": "current_definition_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         }
       },
       "indexes": {
-        "unique_func_name_in_project": {
-          "name": "unique_func_name_in_project",
-          "columns": [
-            {
-              "expression": "name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "funcs_created_at_idx": {
           "name": "funcs_created_at_idx",
           "columns": [
@@ -942,127 +1349,17 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "funcs_parent_id_funcs_id_fk": {
-          "name": "funcs_parent_id_funcs_id_fk",
+        "funcs_current_definition_id_func_definitions_id_fk": {
+          "name": "funcs_current_definition_id_func_definitions_id_fk",
           "tableFrom": "funcs",
-          "tableTo": "funcs",
-          "columnsFrom": ["parent_id"],
+          "tableTo": "func_definitions",
+          "columnsFrom": ["current_definition_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.endpoint_resources": {
-      "name": "endpoint_resources",
-      "schema": "",
-      "columns": {
-        "endpoint_id": {
-          "name": "endpoint_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "resource_id": {
-          "name": "resource_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "endpoint_resources_endpoint_id_endpoints_id_fk": {
-          "name": "endpoint_resources_endpoint_id_endpoints_id_fk",
-          "tableFrom": "endpoint_resources",
-          "tableTo": "endpoints",
-          "columnsFrom": ["endpoint_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "endpoint_resources_resource_id_resources_id_fk": {
-          "name": "endpoint_resources_resource_id_resources_id_fk",
-          "tableFrom": "endpoint_resources",
-          "tableTo": "resources",
-          "columnsFrom": ["resource_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "endpoint_resources_endpoint_id_resource_id_pk": {
-          "name": "endpoint_resources_endpoint_id_resource_id_pk",
-          "columns": ["endpoint_id", "resource_id"]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.func_resources": {
-      "name": "func_resources",
-      "schema": "",
-      "columns": {
-        "func_id": {
-          "name": "func_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "resource_id": {
-          "name": "resource_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "func_resources_func_id_funcs_id_fk": {
-          "name": "func_resources_func_id_funcs_id_fk",
-          "tableFrom": "func_resources",
-          "tableTo": "funcs",
-          "columnsFrom": ["func_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "func_resources_resource_id_resources_id_fk": {
-          "name": "func_resources_resource_id_resources_id_fk",
-          "tableFrom": "func_resources",
-          "tableTo": "resources",
-          "columnsFrom": ["resource_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "func_resources_func_id_resource_id_pk": {
-          "name": "func_resources_func_id_resource_id_pk",
-          "columns": ["func_id", "resource_id"]
-        }
-      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -1434,12 +1731,6 @@
       "name": "dependencies",
       "schema": "",
       "columns": {
-        "dependent_id": {
-          "name": "dependent_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "dependent_type": {
           "name": "dependent_type",
           "type": "primitive_type",
@@ -1447,8 +1738,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "dependency_id": {
-          "name": "dependency_id",
+        "dependent_definition_id": {
+          "name": "dependent_definition_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1457,6 +1748,12 @@
           "name": "dependency_type",
           "type": "primitive_type",
           "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dependency_definition_id": {
+          "name": "dependency_definition_id",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -1487,13 +1784,13 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "dependencies_dependent_id_dependent_type_dependency_id_dependency_type_pk": {
-          "name": "dependencies_dependent_id_dependent_type_dependency_id_dependency_type_pk",
+        "dependencies_dependent_type_dependent_definition_id_dependency_type_dependency_definition_id_pk": {
+          "name": "dependencies_dependent_type_dependent_definition_id_dependency_type_dependency_definition_id_pk",
           "columns": [
-            "dependent_id",
             "dependent_type",
-            "dependency_id",
-            "dependency_type"
+            "dependent_definition_id",
+            "dependency_type",
+            "dependency_definition_id"
           ]
         }
       },
@@ -1511,8 +1808,8 @@
       },
       "isRLSEnabled": false
     },
-    "public.version_endpoints": {
-      "name": "version_endpoints",
+    "public.version_endpoint_definitions": {
+      "name": "version_endpoint_definitions",
       "schema": "",
       "columns": {
         "version_id": {
@@ -1521,8 +1818,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "endpoint_id": {
-          "name": "endpoint_id",
+        "endpoint_definition_id": {
+          "name": "endpoint_definition_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1530,29 +1827,29 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "version_endpoints_version_id_versions_id_fk": {
-          "name": "version_endpoints_version_id_versions_id_fk",
-          "tableFrom": "version_endpoints",
+        "version_endpoint_definitions_version_id_versions_id_fk": {
+          "name": "version_endpoint_definitions_version_id_versions_id_fk",
+          "tableFrom": "version_endpoint_definitions",
           "tableTo": "versions",
           "columnsFrom": ["version_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "version_endpoints_endpoint_id_endpoints_id_fk": {
-          "name": "version_endpoints_endpoint_id_endpoints_id_fk",
-          "tableFrom": "version_endpoints",
-          "tableTo": "endpoints",
-          "columnsFrom": ["endpoint_id"],
+        "version_endpoint_definitions_endpoint_definition_id_endpoint_definitions_id_fk": {
+          "name": "version_endpoint_definitions_endpoint_definition_id_endpoint_definitions_id_fk",
+          "tableFrom": "version_endpoint_definitions",
+          "tableTo": "endpoint_definitions",
+          "columnsFrom": ["endpoint_definition_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
-        "version_endpoints_version_id_endpoint_id_pk": {
-          "name": "version_endpoints_version_id_endpoint_id_pk",
-          "columns": ["version_id", "endpoint_id"]
+        "version_endpoint_definitions_version_id_endpoint_definition_id_pk": {
+          "name": "version_endpoint_definitions_version_id_endpoint_definition_id_pk",
+          "columns": ["version_id", "endpoint_definition_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1560,8 +1857,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.version_funcs": {
-      "name": "version_funcs",
+    "public.version_func_definitions": {
+      "name": "version_func_definitions",
       "schema": "",
       "columns": {
         "version_id": {
@@ -1570,8 +1867,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "func_id": {
-          "name": "func_id",
+        "func_definition_id": {
+          "name": "func_definition_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1579,29 +1876,29 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "version_funcs_version_id_versions_id_fk": {
-          "name": "version_funcs_version_id_versions_id_fk",
-          "tableFrom": "version_funcs",
+        "version_func_definitions_version_id_versions_id_fk": {
+          "name": "version_func_definitions_version_id_versions_id_fk",
+          "tableFrom": "version_func_definitions",
           "tableTo": "versions",
           "columnsFrom": ["version_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "version_funcs_func_id_funcs_id_fk": {
-          "name": "version_funcs_func_id_funcs_id_fk",
-          "tableFrom": "version_funcs",
-          "tableTo": "funcs",
-          "columnsFrom": ["func_id"],
+        "version_func_definitions_func_definition_id_func_definitions_id_fk": {
+          "name": "version_func_definitions_func_definition_id_func_definitions_id_fk",
+          "tableFrom": "version_func_definitions",
+          "tableTo": "func_definitions",
+          "columnsFrom": ["func_definition_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
-        "version_funcs_version_id_func_id_pk": {
-          "name": "version_funcs_version_id_func_id_pk",
-          "columns": ["version_id", "func_id"]
+        "version_func_definitions_version_id_func_definition_id_pk": {
+          "name": "version_func_definitions_version_id_func_definition_id_pk",
+          "columns": ["version_id", "func_definition_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1790,104 +2087,6 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.endpoint_packages": {
-      "name": "endpoint_packages",
-      "schema": "",
-      "columns": {
-        "package_id": {
-          "name": "package_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "endpoint_id": {
-          "name": "endpoint_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "endpoint_packages_package_id_packages_id_fk": {
-          "name": "endpoint_packages_package_id_packages_id_fk",
-          "tableFrom": "endpoint_packages",
-          "tableTo": "packages",
-          "columnsFrom": ["package_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "endpoint_packages_endpoint_id_endpoints_id_fk": {
-          "name": "endpoint_packages_endpoint_id_endpoints_id_fk",
-          "tableFrom": "endpoint_packages",
-          "tableTo": "endpoints",
-          "columnsFrom": ["endpoint_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "endpoint_packages_package_id_endpoint_id_pk": {
-          "name": "endpoint_packages_package_id_endpoint_id_pk",
-          "columns": ["package_id", "endpoint_id"]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.func_packages": {
-      "name": "func_packages",
-      "schema": "",
-      "columns": {
-        "func_id": {
-          "name": "func_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "package_id": {
-          "name": "package_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "func_packages_func_id_funcs_id_fk": {
-          "name": "func_packages_func_id_funcs_id_fk",
-          "tableFrom": "func_packages",
-          "tableTo": "funcs",
-          "columnsFrom": ["func_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "func_packages_package_id_packages_id_fk": {
-          "name": "func_packages_package_id_packages_id_fk",
-          "tableFrom": "func_packages",
-          "tableTo": "packages",
-          "columnsFrom": ["package_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "func_packages_func_id_package_id_pk": {
-          "name": "func_packages_func_id_package_id_pk",
-          "columns": ["func_id", "package_id"]
-        }
-      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

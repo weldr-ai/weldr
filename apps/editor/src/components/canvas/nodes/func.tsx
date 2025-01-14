@@ -47,7 +47,6 @@ import { getResourceReferences } from "@/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
 import type { RouterOutputs } from "@integramind/api";
 import type {
-  AssistantMessageRawContent,
   ConversationMessage,
   FuncRequirementsMessage,
   JsonSchema,
@@ -297,15 +296,15 @@ export const FuncNode = memo(
       for await (const content of readStreamableValue(
         result as StreamableValue<FuncRequirementsMessage>,
       )) {
-        newAssistantMessage = {
-          role: "assistant",
-          rawContent: [],
-          createdAt: new Date(),
-        };
-
         if (content?.message?.content && content.message.type === "message") {
           setIsThinking(false);
+          newAssistantMessage = {
+            role: "assistant",
+            rawContent: [],
+            createdAt: new Date(),
+          };
           newAssistantMessage.rawContent = content.message.content;
+          setMessages([...newMessages, newAssistantMessage]);
         }
 
         // if end message, start generating code
@@ -315,19 +314,8 @@ export const FuncNode = memo(
         ) {
           setIsThinking(false);
           setIsBuilding(true);
-          const rawContent: AssistantMessageRawContent = [
-            {
-              type: "text",
-              value: "Generating the following function: ",
-            },
-            ...content.message.content.description,
-          ];
-          newAssistantMessage.rawContent = rawContent;
         }
 
-        if (newAssistantMessage) {
-          setMessages([...newMessages, newAssistantMessage]);
-        }
         newAssistantMessageStr = JSON.stringify(content);
       }
 
@@ -364,7 +352,7 @@ export const FuncNode = memo(
 
     const helperFunctionReferences = availableHelperFunctions.data?.reduce(
       (acc, func) => {
-        if (!func.name) {
+        if (!func.currentDefinition?.name) {
           return acc;
         }
 
@@ -372,7 +360,7 @@ export const FuncNode = memo(
           type: "reference",
           referenceType: "function",
           id: func.id,
-          name: func.name,
+          name: func.currentDefinition.name,
         });
 
         return acc;

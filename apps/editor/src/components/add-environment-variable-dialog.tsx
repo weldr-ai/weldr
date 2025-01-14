@@ -29,7 +29,9 @@ import type { z } from "zod";
 
 export default function AddEnvironmentVariableDialog({
   projectId,
-}: { projectId: string }) {
+}: {
+  projectId: string;
+}) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const form = useForm<z.infer<typeof insertEnvironmentVariableSchema>>({
@@ -77,7 +79,7 @@ export default function AddEnvironmentVariableDialog({
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline">
           <PlusIcon className="mr-2 size-4" />
           Add Variable
         </Button>

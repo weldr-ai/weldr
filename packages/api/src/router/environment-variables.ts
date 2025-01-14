@@ -69,7 +69,8 @@ export const environmentVariablesRouter = {
       return ctx.db.query.environmentVariables.findMany({
         where: eq(environmentVariables.projectId, input.projectId),
         columns: {
-          secretId: false,
+          id: true,
+          key: true,
         },
       });
     }),

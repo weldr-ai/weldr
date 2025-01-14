@@ -1,24 +1,6 @@
 import type { DatabaseStructure } from "@integramind/shared/integrations/postgres/types";
-import type { AssistantMessageRawContent } from "@integramind/shared/types";
 import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
 import type { z } from "zod";
-
-export function assistantMessageRawContentToText(
-  rawMessageContent: AssistantMessageRawContent = [],
-): string {
-  return rawMessageContent
-    .map((element) => {
-      switch (element.type) {
-        case "text": {
-          return element.value;
-        }
-        case "reference": {
-          return element.name;
-        }
-      }
-    })
-    .join("");
-}
 
 export function getResourceReferences(
   resources: {

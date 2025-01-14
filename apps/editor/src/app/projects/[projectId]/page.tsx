@@ -16,7 +16,7 @@ export default async function ProjectPage({
     const {
       funcs,
       endpoints,
-      dependencies: initialEdges,
+      dependencyChain: initialEdges,
     } = await api.versions.current({
       projectId,
     });

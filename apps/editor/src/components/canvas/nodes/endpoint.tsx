@@ -11,7 +11,6 @@ import { getResourceReferences } from "@/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
 import type { RouterOutputs } from "@integramind/api";
 import type {
-  AssistantMessageRawContent,
   ConversationMessage,
   EndpointRequirementsMessage,
   UserMessageRawContent,
@@ -235,13 +234,6 @@ export const EndpointNode = memo(
         ) {
           setIsThinking(false);
           setIsBuilding(true);
-          const rawContent: AssistantMessageRawContent = [
-            {
-              type: "text",
-              value: `Generating the following endpoint: ${content.message.content.openApiSpec.description}`,
-            },
-          ];
-          newAssistantMessage.rawContent = rawContent;
         }
 
         if (newAssistantMessage) {
@@ -263,8 +255,7 @@ export const EndpointNode = memo(
       if (endpointRequirementsMessageObject.message.type === "end") {
         await apiUtils.endpoints.byId.invalidate({ id: data.id });
         await apiUtils.versions.dependencies.invalidate({
-          // biome-ignore lint/style/noNonNullAssertion: <explanation>
-          projectId: data.projectId!,
+          projectId: data.projectId,
         });
         setIsBuilding(false);
       }
@@ -311,7 +302,7 @@ export const EndpointNode = memo(
 
     const helperFunctionReferences = availableHelperFunctions.data?.reduce(
       (acc, func) => {
-        if (!func.name) {
+        if (!func.currentDefinition?.name) {
           return acc;
         }
 
@@ -319,7 +310,7 @@ export const EndpointNode = memo(
           type: "reference",
           referenceType: "function",
           id: func.id,
-          name: func.name,
+          name: func.currentDefinition.name,
         });
 
         return acc;

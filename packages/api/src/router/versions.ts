@@ -1,9 +1,9 @@
-import { and, eq, inArray, or } from "@integramind/db";
-import { dependencies, versions } from "@integramind/db/schema";
+import { and, eq, inArray } from "@integramind/db";
+import { endpoints, funcs, versions } from "@integramind/db/schema";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { isEndpointReady, isFunctionReady } from "../utils";
+import { getDependencyChain, isEndpointReady, isFunctionReady } from "../utils";
 
 export const versionsRouter = {
   current: protectedProcedure
@@ -13,69 +13,11 @@ export const versionsRouter = {
         where: and(
           eq(versions.projectId, input.projectId),
           eq(versions.isActive, true),
+          eq(versions.userId, ctx.session.user.id),
         ),
         with: {
-          endpoints: {
-            with: {
-              endpoint: {
-                with: {
-                  conversation: {
-                    with: {
-                      messages: {
-                        columns: {
-                          content: false,
-                        },
-                        orderBy: (funcsMessages, { asc }) => [
-                          asc(funcsMessages.createdAt),
-                        ],
-                        with: {
-                          version: {
-                            columns: {
-                              id: true,
-                              versionName: true,
-                              versionNumber: true,
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          funcs: {
-            with: {
-              func: {
-                with: {
-                  conversation: {
-                    with: {
-                      messages: {
-                        columns: {
-                          id: true,
-                          role: true,
-                          rawContent: true,
-                          createdAt: true,
-                        },
-                        orderBy: (funcsMessages, { asc }) => [
-                          asc(funcsMessages.createdAt),
-                        ],
-                        with: {
-                          version: {
-                            columns: {
-                              id: true,
-                              versionName: true,
-                              versionNumber: true,
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
+          endpointDefinitions: true,
+          funcDefinitions: true,
         },
       });
 
@@ -86,54 +28,113 @@ export const versionsRouter = {
         };
       }
 
-      const funcIds = currentVersion.funcs.map((f) => f.funcId);
-      const endpointIds = currentVersion.endpoints.map((e) => e.endpointId);
-      const queryIds = [...funcIds, ...endpointIds];
-      const dependenciesResult = await ctx.db.query.dependencies.findMany({
-        where: or(
-          inArray(dependencies.dependentId, queryIds),
-          inArray(dependencies.dependencyId, queryIds),
-        ),
+      const funcDefinitionIds = currentVersion.funcDefinitions.map(
+        (f) => f.funcDefinitionId,
+      );
+      const endpointDefinitionIds = currentVersion.endpointDefinitions.map(
+        (e) => e.endpointDefinitionId,
+      );
+
+      const versionFuncs = await ctx.db.query.funcs.findMany({
+        where: inArray(funcs.currentDefinitionId, funcDefinitionIds),
+        with: {
+          currentDefinition: {
+            columns: {
+              name: true,
+              inputSchema: true,
+              outputSchema: true,
+              rawDescription: true,
+              behavior: true,
+              errors: true,
+              testInput: true,
+            },
+          },
+          conversation: {
+            with: {
+              messages: {
+                columns: {
+                  id: true,
+                  role: true,
+                  rawContent: true,
+                  createdAt: true,
+                },
+                orderBy: (funcsMessages, { asc }) => [
+                  asc(funcsMessages.createdAt),
+                ],
+                with: {
+                  version: {
+                    columns: {
+                      id: true,
+                      versionName: true,
+                      versionNumber: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
+
+      const versionEndpoints = await ctx.db.query.endpoints.findMany({
+        where: inArray(endpoints.currentDefinitionId, endpointDefinitionIds),
+        with: {
+          currentDefinition: {
+            columns: {
+              path: true,
+              method: true,
+              openApiSpec: true,
+            },
+          },
+          conversation: {
+            with: {
+              messages: {
+                columns: {
+                  content: false,
+                },
+                orderBy: (funcsMessages, { asc }) => [
+                  asc(funcsMessages.createdAt),
+                ],
+                with: {
+                  version: {
+                    columns: {
+                      id: true,
+                      versionName: true,
+                      versionNumber: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const primitiveIds = [...funcDefinitionIds, ...endpointDefinitionIds];
+      const dependencyChain = await getDependencyChain(ctx.db, primitiveIds);
 
       return {
         funcs: await Promise.all(
-          currentVersion?.funcs
-            .filter((data) => !data.func.isDeleted)
-            .map(async (data) => {
-              const {
-                code,
-                docs,
-                integrationId,
-                diff,
-                isDeleted,
-                isDeployed,
-                ...rest
-              } = data.func;
-              return {
-                ...rest,
-                canRun: await isFunctionReady(data.func),
-              };
-            }) ?? [],
+          versionFuncs.map(async (data) => {
+            const { currentDefinitionId, currentDefinition, ...rest } = data;
+            return {
+              ...rest,
+              ...currentDefinition,
+              canRun: await isFunctionReady(data),
+            };
+          }) ?? [],
         ),
         endpoints: await Promise.all(
-          currentVersion?.endpoints
-            .filter((data) => !data.endpoint.isDeleted)
-            .map(async (data) => {
-              const { code, diff, isDeleted, isDeployed, ...rest } =
-                data.endpoint;
-              return {
-                ...rest,
-                canRun: await isEndpointReady(data.endpoint),
-              };
-            }) ?? [],
+          versionEndpoints.map(async (data) => {
+            const { currentDefinitionId, currentDefinition, ...rest } = data;
+            return {
+              ...rest,
+              ...currentDefinition,
+              canRun: await isEndpointReady(data),
+            };
+          }) ?? [],
         ),
-        dependencies: dependenciesResult.map((d) => ({
-          id: `${d.dependentId}-${d.dependencyId}`,
-          type: "smooth",
-          source: d.dependentId,
-          target: d.dependencyId,
-        })),
+        dependencyChain,
       };
     }),
   dependencies: protectedProcedure
@@ -145,8 +146,8 @@ export const versionsRouter = {
           eq(versions.isActive, true),
         ),
         with: {
-          funcs: true,
-          endpoints: true,
+          funcDefinitions: true,
+          endpointDefinitions: true,
         },
       });
 
@@ -154,21 +155,15 @@ export const versionsRouter = {
         return [];
       }
 
-      const funcIds = version.funcs.map((f) => f.funcId);
-      const endpointIds = version.endpoints.map((e) => e.endpointId);
-      const queryIds = [...funcIds, ...endpointIds];
-      const dependenciesResult = await ctx.db.query.dependencies.findMany({
-        where: or(
-          inArray(dependencies.dependentId, queryIds),
-          inArray(dependencies.dependencyId, queryIds),
-        ),
-      });
+      const funcDefinitionIds = version.funcDefinitions.map(
+        (f) => f.funcDefinitionId,
+      );
+      const endpointDefinitionIds = version.endpointDefinitions.map(
+        (e) => e.endpointDefinitionId,
+      );
+      const primitiveIds = [...funcDefinitionIds, ...endpointDefinitionIds];
+      const dependencyChain = await getDependencyChain(ctx.db, primitiveIds);
 
-      return dependenciesResult.map((d) => ({
-        id: `${d.dependentId}-${d.dependencyId}`,
-        type: "smooth",
-        source: d.dependentId,
-        target: d.dependencyId,
-      }));
+      return dependencyChain;
     }),
 } satisfies TRPCRouterRecord;

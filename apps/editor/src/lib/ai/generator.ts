@@ -10,23 +10,20 @@ import {
 } from "@/lib/ai/prompts";
 import { createOpenAI } from "@ai-sdk/openai";
 import { auth } from "@integramind/auth";
-import { and, db, eq, not } from "@integramind/db";
+import { and, db, eq, isNotNull, not } from "@integramind/db";
 import { conversations, endpoints, funcs } from "@integramind/db/schema";
 import type {
-  AssistantMessageRawContent,
   EndpointRequirementsMessage,
   FuncRequirementsMessage,
 } from "@integramind/shared/types";
-import { toKebabCase } from "@integramind/shared/utils";
+import { assistantMessageRawContentToText } from "@integramind/shared/utils";
 import { endpointRequirementsMessageSchema } from "@integramind/shared/validators/endpoints";
 import { funcRequirementsMessageSchema } from "@integramind/shared/validators/funcs";
 import { type CoreMessage, streamObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
-import { createPatch } from "diff";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { api } from "../trpc/server";
-import { assistantMessageRawContentToText } from "../utils";
 import { generateCode } from "./helpers";
 
 const openai = createOpenAI({
@@ -43,13 +40,20 @@ export async function generateFunc(funcId: string) {
 
   console.log(`[generateFunc] Starting for func ${funcId}`);
 
-  const funcData = await api.funcs.byId({
-    id: funcId,
+  const funcData = await db.query.funcs.findFirst({
+    where: and(eq(funcs.id, funcId), eq(funcs.userId, session.user.id)),
   });
 
-  const projectId = funcData.projectId;
+  const projectId = funcData?.projectId;
 
-  if (!funcData.conversationId || !projectId) {
+  if (!funcData || !projectId) {
+    return {
+      status: "error",
+      message: "Function not found",
+    };
+  }
+
+  if (!funcData.conversationId) {
     return {
       status: "error",
       message: "Function name or conversation ID is required",
@@ -61,15 +65,12 @@ export async function generateFunc(funcId: string) {
       eq(funcs.projectId, projectId),
       eq(funcs.userId, session.user.id),
       not(eq(funcs.id, funcId)),
+      isNotNull(funcs.currentDefinitionId),
     ),
-    columns: {
-      name: true,
+    with: {
+      currentDefinition: true,
     },
   });
-
-  const implementedFuncs = existingFuncs.filter(
-    (existingFunc) => existingFunc.name,
-  );
 
   const conversation = await db.query.conversations.findFirst({
     where: and(
@@ -95,7 +96,7 @@ export async function generateFunc(funcId: string) {
   );
 
   console.log(
-    `[generateFunc] Implemented funcs: ${JSON.stringify(implementedFuncs, null, 2)}`,
+    `[generateFunc] Existing funcs: ${JSON.stringify(existingFuncs, null, 2)}`,
   );
 
   const messages = [
@@ -103,9 +104,13 @@ export async function generateFunc(funcId: string) {
       role: "user",
       content: `The function you are generating should not have the same name as any of the following functions:
       ${
-        implementedFuncs.length > 0
-          ? implementedFuncs
-              .map((existingFunc) => `- \`${existingFunc.name}\``)
+        existingFuncs.length > 0
+          ? existingFuncs
+              .filter((existingFunc) => existingFunc.currentDefinition !== null)
+              .map(
+                (existingFunc) =>
+                  `- \`${existingFunc.currentDefinition?.name}\``,
+              )
               .join("\n")
           : "No other functions implemented yet"
       }`,
@@ -140,7 +145,7 @@ export async function generateFunc(funcId: string) {
           console.log(
             `[generateFunc] Adding message to conversation for func ${funcId}`,
           );
-          api.conversations.addMessage({
+          await api.conversations.addMessage({
             role: "assistant",
             content: assistantMessageRawContentToText(object.message.content),
             rawContent: object.message.content,
@@ -150,22 +155,6 @@ export async function generateFunc(funcId: string) {
 
         if (object?.message?.type === "end") {
           console.log("[generateFunc] Processing final requirements");
-
-          const description: AssistantMessageRawContent = [
-            {
-              type: "text",
-              value: "Generating the following function: ",
-            },
-            ...object.message.content.description,
-          ];
-
-          await api.conversations.addMessage({
-            role: "assistant",
-            content: assistantMessageRawContentToText(description),
-            rawContent: description,
-            conversationId: conversation.id,
-          });
-
           console.log(
             `[generateFunc] Updating func ${funcId} with gathered requirements`,
           );
@@ -179,22 +168,6 @@ export async function generateFunc(funcId: string) {
             : undefined;
 
           const helperFunctionIds = object.message.content.helperFunctionIds;
-
-          if (
-            object.message.content.helperFunctionIds &&
-            object.message.content.helperFunctionIds.length > 0
-          ) {
-            await api.dependencies.createBulk({
-              dependentType: "function",
-              dependentId: funcId,
-              dependencies: object.message.content.helperFunctionIds.map(
-                (id) => ({
-                  id,
-                  type: "function",
-                }),
-              ),
-            });
-          }
 
           const docs = compileDocs({
             description: assistantMessageRawContentToText(
@@ -211,7 +184,7 @@ export async function generateFunc(funcId: string) {
           });
 
           const funcCodeUserPrompt = await generateFuncCodeUserPrompt({
-            name: funcData?.name ?? "",
+            name: object.message.content.name ?? "",
             docs,
             resources: object.message.content.resources,
             helperFunctionIds,
@@ -235,28 +208,20 @@ export async function generateFunc(funcId: string) {
 
           console.log(`[generateFunc] Generated code: ${code}`);
 
-          const diff = await createPatch(
-            `lib/functions/${toKebabCase(object.message.content.name)}.ts`,
-            "",
-            code,
-          );
-
-          console.log(`[generateFunc] Generated diff: ${diff}`);
-
-          await api.funcs.createNewVersion({
+          await api.funcs.define({
             where: { id: funcId },
             payload: {
               name: object.message.content.name,
               rawDescription: object.message.content.description,
               behavior: object.message.content.behavior,
-              packages: object.message.content.packages,
               errors: object.message.content.errors,
-              resources: object.message.content.resources,
               inputSchema,
               outputSchema,
               docs,
               code,
-              diff,
+              resources: object.message.content.resources,
+              packages: object.message.content.packages,
+              helperFunctionIds: object.message.content.helperFunctionIds,
             },
           });
         }
@@ -287,6 +252,7 @@ export async function generateEndpoint(endpointId: string) {
       eq(endpoints.userId, session.user.id),
     ),
   });
+
   const projectId = endpoint?.projectId;
 
   if (!endpoint || !projectId) {
@@ -301,16 +267,12 @@ export async function generateEndpoint(endpointId: string) {
       eq(endpoints.projectId, projectId),
       eq(endpoints.userId, session.user.id),
       not(eq(endpoints.id, endpointId)),
+      isNotNull(endpoints.currentDefinitionId),
     ),
-    columns: {
-      path: true,
-      method: true,
+    with: {
+      currentDefinition: true,
     },
   });
-
-  const implementedEndpoints = existingEndpoints.filter(
-    (existingEndpoint) => existingEndpoint.path && existingEndpoint.method,
-  );
 
   const conversation = await db.query.conversations.findFirst({
     where: eq(conversations.id, endpoint.conversationId),
@@ -331,11 +293,11 @@ export async function generateEndpoint(endpointId: string) {
       role: "user",
       content: `The application has the following endpoints implemented:
       ${
-        implementedEndpoints.length > 0
-          ? implementedEndpoints
+        existingEndpoints.length > 0
+          ? existingEndpoints
               .map(
-                (implementedEndpoint) =>
-                  `- ${implementedEndpoint.method} ${implementedEndpoint.path}`,
+                (existingEndpoint) =>
+                  `- ${existingEndpoint.currentDefinition?.method} ${existingEndpoint.currentDefinition?.path}`,
               )
               .join("\n")
           : "No other endpoints implemented yet"
@@ -374,7 +336,7 @@ export async function generateEndpoint(endpointId: string) {
           console.log(
             `[generateEndpoint] Adding message to conversation for endpoint ${endpointId}`,
           );
-          api.conversations.addMessage({
+          await api.conversations.addMessage({
             role: "assistant",
             content: assistantMessageRawContentToText(object.message.content),
             rawContent: object.message.content,
@@ -383,36 +345,9 @@ export async function generateEndpoint(endpointId: string) {
         }
 
         if (object?.message?.type === "end") {
-          const description: AssistantMessageRawContent = [
-            {
-              type: "text",
-              value: `Generating the following endpoint: ${object.message.content.openApiSpec.description}`,
-            },
-          ];
-
-          api.conversations.addMessage({
-            role: "assistant",
-            content: assistantMessageRawContentToText(description),
-            rawContent: description,
-            conversationId: conversation.id,
-          });
-
           console.log(
             `[generateEndpoint] Updating endpoint ${endpointId} with OpenAPI specification`,
           );
-
-          if (object.message.content.helperFunctionIds) {
-            await api.dependencies.createBulk({
-              dependentType: "endpoint",
-              dependentId: endpointId,
-              dependencies: object.message.content.helperFunctionIds.map(
-                (id) => ({
-                  id,
-                  type: "function",
-                }),
-              ),
-            });
-          }
 
           const openApiSpec = {
             ...object.message.content.openApiSpec,
@@ -484,39 +419,14 @@ export async function generateEndpoint(endpointId: string) {
             systemPrompt: ENDPOINT_DEVELOPER_PROMPT,
           });
 
-          const path = object.message.content.openApiSpec.path.replace(
-            /\{[^[\]]+\}/g,
-            "[$1]",
-          );
-
-          const diff = await createPatch(
-            `${path}/${object.message.content.openApiSpec.method}/index.ts`,
-            "",
-            code,
-          );
-
-          // Add message to conversation
-          const assistantBuiltMessage = await api.conversations.addMessage({
-            role: "assistant",
-            content: "Your endpoint has been built successfully!",
-            rawContent: [
-              {
-                type: "text",
-                value: "Your endpoint has been built successfully!",
-              },
-            ],
-            conversationId: conversation.id,
-          });
-
-          await api.endpoints.createNewVersion({
+          await api.endpoints.define({
             where: { id: endpointId },
             payload: {
               openApiSpec,
               code,
-              diff,
               packages: object.message.content.packages,
               resources: object.message.content.resources,
-              messageId: assistantBuiltMessage.id,
+              helperFunctionIds: object.message.content.helperFunctionIds,
             },
           });
         }

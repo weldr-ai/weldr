@@ -4,37 +4,8 @@ import {
   rawContentSchema,
   resourceMetadataSchema,
 } from "./common";
-import { conversationSchema } from "./conversations";
-import { dependencySchema } from "./dependencies";
 import { integrationTypeSchema } from "./integrations";
 import { jsonSchema } from "./json-schema";
-
-export const funcSchema = z.object({
-  id: z.string(),
-  name: z.string().nullable(),
-  inputSchema: jsonSchema.optional(),
-  outputSchema: jsonSchema.optional(),
-  rawDescription: rawContentSchema.optional(),
-  behavior: rawContentSchema.optional(),
-  errors: z.string().optional(),
-  docs: z.string().optional(),
-  code: z.string().optional(),
-  diff: z.string().optional(),
-  isDeployed: z.boolean().optional(),
-  resources: resourceMetadataSchema.array().optional().nullable(),
-  packages: packageSchema.array().optional().nullable(),
-  dependencies: dependencySchema.array(),
-  testInput: z.unknown().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  positionX: z.number().default(0),
-  positionY: z.number().default(0),
-  canRun: z.boolean().optional(),
-  conversationId: z.string().nullable(),
-  userId: z.string().nullable(),
-  projectId: z.string(),
-  conversation: conversationSchema,
-});
 
 export const insertFuncSchema = z.object({
   id: z.string().cuid2(),
@@ -54,7 +25,7 @@ export const updateFuncSchema = z.object({
   }),
 });
 
-export const createNewFuncVersionSchema = z.object({
+export const createFuncDefinitionSchema = z.object({
   where: z.object({
     id: z.string(),
   }),
@@ -69,18 +40,17 @@ export const createNewFuncVersionSchema = z.object({
       })
       .regex(/^[a-z][a-zA-Z0-9]*$/, {
         message: "Can only contain letters and numbers",
-      })
-      .optional(),
+      }),
     inputSchema: jsonSchema.optional(),
     outputSchema: jsonSchema.optional(),
-    rawDescription: rawContentSchema.optional(),
-    behavior: rawContentSchema.optional(),
+    rawDescription: rawContentSchema,
+    behavior: rawContentSchema,
     errors: z.string().optional(),
-    docs: z.string().optional(),
-    code: z.string().optional(),
-    diff: z.string().optional(),
+    docs: z.string(),
+    code: z.string(),
     resources: resourceMetadataSchema.array().optional().nullable(),
     packages: packageSchema.array().optional().nullable(),
+    helperFunctionIds: z.string().array().optional().nullable(),
   }),
 });
 

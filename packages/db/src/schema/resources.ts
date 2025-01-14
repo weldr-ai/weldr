@@ -1,10 +1,8 @@
-import type { ResourceMetadata } from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
-  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -12,9 +10,9 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { endpoints } from "./endpoints";
+import { endpointDefinitions } from "./endpoints";
 import { environmentVariables } from "./environment-variables";
-import { funcs } from "./funcs";
+import { funcDefinitions } from "./funcs";
 import { integrations } from "./integrations";
 import { projects } from "./projects";
 
@@ -48,7 +46,7 @@ export const resources = pgTable(
   }),
 );
 
-export const resourcesRelations = relations(resources, ({ one }) => ({
+export const resourcesRelations = relations(resources, ({ one, many }) => ({
   project: one(projects, {
     fields: [resources.projectId],
     references: [projects.id],
@@ -61,6 +59,8 @@ export const resourcesRelations = relations(resources, ({ one }) => ({
     fields: [resources.integrationId],
     references: [integrations.id],
   }),
+  funcDefinitions: many(funcDefinitions),
+  endpointDefinitions: many(endpointDefinitions),
 }));
 
 export const resourceEnvironmentVariables = pgTable(
@@ -89,63 +89,6 @@ export const resourceEnvironmentVariablesRelations = relations(
     environmentVariable: one(environmentVariables, {
       fields: [resourceEnvironmentVariables.environmentVariableId],
       references: [environmentVariables.id],
-    }),
-  }),
-);
-
-export const funcResources = pgTable(
-  "func_resources",
-  {
-    funcId: text("func_id")
-      .references(() => funcs.id, { onDelete: "cascade" })
-      .notNull(),
-    resourceId: text("resource_id")
-      .references(() => resources.id, { onDelete: "cascade" })
-      .notNull(),
-    metadata: jsonb("metadata").$type<ResourceMetadata>(),
-  },
-  (t) => ({
-    pk: primaryKey({ columns: [t.funcId, t.resourceId] }),
-  }),
-);
-
-export const funcResourcesRelations = relations(funcResources, ({ one }) => ({
-  func: one(funcs, {
-    fields: [funcResources.funcId],
-    references: [funcs.id],
-  }),
-  resource: one(resources, {
-    fields: [funcResources.resourceId],
-    references: [resources.id],
-  }),
-}));
-
-export const endpointResources = pgTable(
-  "endpoint_resources",
-  {
-    endpointId: text("endpoint_id")
-      .references(() => endpoints.id, { onDelete: "cascade" })
-      .notNull(),
-    resourceId: text("resource_id")
-      .references(() => resources.id, { onDelete: "cascade" })
-      .notNull(),
-    metadata: jsonb("metadata").$type<ResourceMetadata>(),
-  },
-  (t) => ({
-    pk: primaryKey({ columns: [t.endpointId, t.resourceId] }),
-  }),
-);
-
-export const endpointResourcesRelations = relations(
-  endpointResources,
-  ({ one }) => ({
-    endpoint: one(endpoints, {
-      fields: [endpointResources.endpointId],
-      references: [endpoints.id],
-    }),
-    resource: one(resources, {
-      fields: [endpointResources.resourceId],
-      references: [resources.id],
     }),
   }),
 );

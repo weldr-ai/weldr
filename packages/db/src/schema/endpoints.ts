@@ -1,25 +1,28 @@
-import type { OpenApiEndpointSpec } from "@integramind/shared/types";
+import type {
+  OpenApiEndpointSpec,
+  ResourceMetadata,
+} from "@integramind/shared/types";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
-  boolean,
   index,
   integer,
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
-  unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { conversations } from "./conversations";
 import { dependencies } from "./dependencies";
-import { funcs } from "./funcs";
-import { endpointPackages } from "./packages";
+import { packages } from "./packages";
 import { projects } from "./projects";
-import { endpointResources } from "./resources";
+import { resources } from "./resources";
+import { versions } from "./versions";
 
 export const httpMethods = pgEnum("http_methods", [
   "get",
@@ -35,11 +38,6 @@ export const endpoints = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => createId()),
-    path: text("path"),
-    method: httpMethods("method"),
-    code: text("code"),
-    diff: text("diff"),
-    openApiSpec: jsonb("open_api_spec").$type<OpenApiEndpointSpec>(),
     positionX: integer("position_x").default(0),
     positionY: integer("position_y").default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -47,22 +45,21 @@ export const endpoints = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
-    isDeleted: boolean("is_deleted").default(false),
-    isDeployed: boolean("is_deployed").default(false),
-    conversationId: text("conversation_id")
-      .references(() => conversations.id)
-      .notNull(),
     userId: text("user_id")
       .references(() => users.id)
+      .notNull(),
+    conversationId: text("conversation_id")
+      .references(() => conversations.id)
       .notNull(),
     projectId: text("project_id")
       .references(() => projects.id)
       .notNull(),
-    parentId: text("parent_id").references((): AnyPgColumn => endpoints.id),
+    currentDefinitionId: text("current_definition_id").references(
+      (): AnyPgColumn => endpointDefinitions.id,
+    ),
   },
-  (table) => ({
-    uniqueEndpoint: unique().on(table.projectId, table.path, table.method),
-    createdAtIdx: index("endpoints_created_at_idx").on(table.createdAt),
+  (t) => ({
+    createdAtIdx: index("endpoints_created_at_idx").on(t.createdAt),
   }),
 );
 
@@ -75,14 +72,127 @@ export const endpointsRelations = relations(endpoints, ({ one, many }) => ({
     fields: [endpoints.conversationId],
     references: [conversations.id],
   }),
-  funcs: many(funcs),
-  funcDependencies: many(dependencies, {
-    relationName: "dependency_endpoint",
-  }),
-  resources: many(endpointResources),
-  packages: many(endpointPackages),
-  parent: one(endpoints, {
-    fields: [endpoints.parentId],
-    references: [endpoints.id],
+  definitions: many(endpointDefinitions),
+  currentDefinition: one(endpointDefinitions, {
+    fields: [endpoints.currentDefinitionId],
+    references: [endpointDefinitions.id],
   }),
 }));
+
+export const endpointDefinitions = pgTable(
+  "endpoint_definitions",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    path: text("path").notNull(),
+    method: httpMethods("method").notNull(),
+    code: text("code").notNull(),
+    diff: text("diff").notNull(),
+    openApiSpec: jsonb("open_api_spec").$type<OpenApiEndpointSpec>().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    endpointId: text("endpoint_id")
+      .references(() => endpoints.id)
+      .notNull(),
+    previousId: text("previous_id").references(
+      (): AnyPgColumn => endpointDefinitions.id,
+    ),
+    userId: text("user_id")
+      .references(() => users.id)
+      .notNull(),
+    versionId: text("version_id")
+      .references(() => versions.id)
+      .notNull(),
+  },
+  (t) => ({
+    uniqueEndpointInVersion: uniqueIndex("unique_endpoint_in_version").on(
+      t.path,
+      t.method,
+      t.versionId,
+    ),
+    createdAtIdx: index("endpoint_data_created_at_idx").on(t.createdAt),
+  }),
+);
+
+export const endpointDefinitionRelations = relations(
+  endpointDefinitions,
+  ({ one, many }) => ({
+    endpoint: one(endpoints, {
+      fields: [endpointDefinitions.endpointId],
+      references: [endpoints.id],
+    }),
+    user: one(users, {
+      fields: [endpointDefinitions.userId],
+      references: [users.id],
+    }),
+    previous: one(endpointDefinitions, {
+      fields: [endpointDefinitions.previousId],
+      references: [endpointDefinitions.id],
+    }),
+    children: many(endpointDefinitions),
+    resources: many(endpointDefinitionResources),
+    packages: many(endpointDefinitionPackages),
+    funcDefinitionDependencies: many(dependencies, {
+      relationName: "dependency_func_definition",
+    }),
+  }),
+);
+
+export const endpointDefinitionResources = pgTable(
+  "endpoint_definition_resources",
+  {
+    endpointDefinitionId: text("endpoint_definition_id")
+      .references(() => endpointDefinitions.id, { onDelete: "cascade" })
+      .notNull(),
+    resourceId: text("resource_id")
+      .references(() => resources.id, { onDelete: "cascade" })
+      .notNull(),
+    metadata: jsonb("metadata").$type<ResourceMetadata>(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.endpointDefinitionId, t.resourceId] }),
+  }),
+);
+
+export const endpointDefinitionResourcesRelations = relations(
+  endpointDefinitionResources,
+  ({ one }) => ({
+    resource: one(resources, {
+      fields: [endpointDefinitionResources.resourceId],
+      references: [resources.id],
+    }),
+    endpointDefinition: one(endpointDefinitions, {
+      fields: [endpointDefinitionResources.endpointDefinitionId],
+      references: [endpointDefinitions.id],
+    }),
+  }),
+);
+
+export const endpointDefinitionPackages = pgTable(
+  "endpoint_definition_packages",
+  {
+    packageId: text("package_id")
+      .references(() => packages.id, { onDelete: "cascade" })
+      .notNull(),
+    endpointDefinitionId: text("endpoint_definition_id")
+      .references(() => endpointDefinitions.id, { onDelete: "cascade" })
+      .notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.packageId, t.endpointDefinitionId] }),
+  }),
+);
+
+export const endpointDefinitionPackagesRelations = relations(
+  endpointDefinitionPackages,
+  ({ one }) => ({
+    package: one(packages, {
+      fields: [endpointDefinitionPackages.packageId],
+      references: [packages.id],
+    }),
+    endpointDefinition: one(endpointDefinitions, {
+      fields: [endpointDefinitionPackages.endpointDefinitionId],
+      references: [endpointDefinitions.id],
+    }),
+  }),
+);

@@ -13,15 +13,9 @@ import type {
   testExecutionMessageRawContentSchema,
   userMessageRawContentSchema,
 } from "../validators/conversations";
-import type {
-  endpointRequirementsMessageSchema,
-  endpointSchema,
-} from "../validators/endpoints";
+import type { endpointRequirementsMessageSchema } from "../validators/endpoints";
 import type { environmentVariableSchema } from "../validators/environment-variables";
-import type {
-  funcRequirementsMessageSchema,
-  funcSchema,
-} from "../validators/funcs";
+import type { funcRequirementsMessageSchema } from "../validators/funcs";
 import type {
   integrationHelperFunctionSchema,
   integrationSchema,
@@ -48,7 +42,6 @@ export type Conversation = z.infer<typeof conversationSchema>;
 
 export type Resource = z.infer<typeof resourceSchema>;
 export type ResourceMetadata = z.infer<typeof resourceMetadataSchema>;
-export type Endpoint = z.infer<typeof endpointSchema>;
 export type OpenApiEndpointSpec = z.infer<typeof openApiEndpointSpecSchema>;
 
 export type Integration = z.infer<typeof integrationSchema>;
@@ -61,7 +54,6 @@ export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;
 
 export type RawContent = z.infer<typeof rawContentSchema>;
 export type Package = z.infer<typeof packageSchema>;
-export type Func = z.infer<typeof funcSchema>;
 
 export type FuncRequirementsMessage = z.infer<
   typeof funcRequirementsMessageSchema

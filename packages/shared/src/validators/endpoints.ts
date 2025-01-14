@@ -4,8 +4,6 @@ import {
   rawContentSchema,
   resourceMetadataSchema,
 } from "./common";
-import { conversationSchema } from "./conversations";
-import { dependencySchema } from "./dependencies";
 import { integrationTypeSchema } from "./integrations";
 import {
   contentTypeSchema,
@@ -35,24 +33,6 @@ export const endpointPathSchema = z
     },
   );
 
-export const endpointSchema = z.object({
-  id: z.string().cuid2(),
-  path: endpointPathSchema,
-  method: httpMethodSchema,
-  summary: z.string(),
-  code: z.string(),
-  openApiSpec: openApiEndpointSpecSchema,
-  resources: resourceMetadataSchema.array(),
-  packages: packageSchema.array(),
-  dependencies: dependencySchema.array(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  projectId: z.string().cuid2(),
-  conversationId: z.string().cuid2(),
-  conversation: conversationSchema,
-  canRun: z.boolean().default(false),
-});
-
 export const insertEndpointSchema = z.object({
   id: z.string().cuid2(),
   positionX: z.number(),
@@ -70,17 +50,16 @@ export const updateEndpointSchema = z.object({
   }),
 });
 
-export const createNewEndpointVersionSchema = z.object({
+export const createEndpointDefinitionSchema = z.object({
   where: z.object({
     id: z.string(),
   }),
   payload: z.object({
-    code: z.string().optional(),
-    diff: z.string().optional(),
-    openApiSpec: openApiEndpointSpecSchema.optional(),
+    code: z.string(),
+    openApiSpec: openApiEndpointSpecSchema,
     resources: resourceMetadataSchema.array().optional(),
     packages: packageSchema.array().optional(),
-    messageId: z.string(),
+    helperFunctionIds: z.string().array().optional(),
   }),
 });
 

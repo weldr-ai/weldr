@@ -121,11 +121,9 @@ export const openApiEndpointSpecSchema = z.object({
     .describe("The URL path pattern (e.g., '/users/{userId}/posts')"),
   summary: z
     .string()
-    .optional()
     .describe("A short summary of what the operation does (1-2 lines)"),
   description: z
     .string()
-    .optional()
     .describe(
       "A verbose explanation of the operation's behavior. Can include markdown formatting and detailed information about edge cases, notes, and examples.",
     ),

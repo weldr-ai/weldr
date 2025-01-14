@@ -1,8 +1,8 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
-import { pgEnum, pgTable, primaryKey, text, unique } from "drizzle-orm/pg-core";
-import { endpoints } from "./endpoints";
-import { funcs } from "./funcs";
+import { pgEnum, pgTable, text, unique } from "drizzle-orm/pg-core";
+import { endpointDefinitions } from "./endpoints";
+import { funcDefinitions } from "./funcs";
 import { projects } from "./projects";
 
 export const packageType = pgEnum("package_type", [
@@ -32,61 +32,6 @@ export const packageRelations = relations(packages, ({ one, many }) => ({
     fields: [packages.projectId],
     references: [projects.id],
   }),
-  endpoints: many(endpoints),
-  funcs: many(funcs),
+  endpointDefinitions: many(endpointDefinitions),
+  funcDefinitions: many(funcDefinitions),
 }));
-
-export const funcPackages = pgTable(
-  "func_packages",
-  {
-    funcId: text("func_id")
-      .references(() => funcs.id, { onDelete: "cascade" })
-      .notNull(),
-    packageId: text("package_id")
-      .references(() => packages.id, { onDelete: "cascade" })
-      .notNull(),
-  },
-  (t) => ({
-    pk: primaryKey({ columns: [t.funcId, t.packageId] }),
-  }),
-);
-
-export const funcPackagesRelations = relations(funcPackages, ({ one }) => ({
-  func: one(funcs, {
-    fields: [funcPackages.funcId],
-    references: [funcs.id],
-  }),
-  package: one(packages, {
-    fields: [funcPackages.packageId],
-    references: [packages.id],
-  }),
-}));
-
-export const endpointPackages = pgTable(
-  "endpoint_packages",
-  {
-    packageId: text("package_id")
-      .references(() => packages.id, { onDelete: "cascade" })
-      .notNull(),
-    endpointId: text("endpoint_id")
-      .references(() => endpoints.id, { onDelete: "cascade" })
-      .notNull(),
-  },
-  (t) => ({
-    pk: primaryKey({ columns: [t.packageId, t.endpointId] }),
-  }),
-);
-
-export const endpointPackagesRelations = relations(
-  endpointPackages,
-  ({ one }) => ({
-    package: one(packages, {
-      fields: [endpointPackages.packageId],
-      references: [packages.id],
-    }),
-    endpoint: one(endpoints, {
-      fields: [endpointPackages.endpointId],
-      references: [endpoints.id],
-    }),
-  }),
-);

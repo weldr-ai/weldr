@@ -129,7 +129,7 @@ function MessageItem({
         )}
         {message.version && (
           <div className="group flex h-7 items-center gap-2">
-            <div className="inline-flex h-7 items-center justify-center rounded-md border border-success bg-success/10 px-2 py-1 text-success text-xs">
+            <div className="inline-flex h-7 cursor-text select-text items-center justify-center rounded-md bg-success/10 px-1.5 py-0.5 font-semibold text-success text-xs">
               {`#${message.version.versionNumber} `}
               {message.version.versionName}
             </div>

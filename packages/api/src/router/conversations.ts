@@ -1,5 +1,5 @@
 import type { Session } from "@integramind/auth";
-import type { db } from "@integramind/db";
+import { type db, isNotNull } from "@integramind/db";
 import {
   conversationMessages,
   conversations,
@@ -152,7 +152,11 @@ export const conversationsRouter = {
       if (input.role === "user") {
         if (input.funcId) {
           const funcResult = await ctx.db.query.funcs.findFirst({
-            where: eq(funcs.id, input.funcId),
+            where: and(
+              eq(funcs.id, input.funcId),
+              eq(funcs.userId, ctx.session.user.id),
+              isNotNull(funcs.currentDefinitionId),
+            ),
           });
 
           if (!funcResult) {
@@ -486,10 +490,18 @@ async function resolveFuncReference(
   },
   ctx: {
     db: typeof db;
+    session: Session;
   },
 ): Promise<ResolvedFuncReference> {
   const func = await ctx.db.query.funcs.findFirst({
-    where: eq(funcs.id, reference.id),
+    where: and(
+      eq(funcs.id, reference.id),
+      eq(funcs.userId, ctx.session.user.id),
+      isNotNull(funcs.currentDefinitionId),
+    ),
+    with: {
+      currentDefinition: true,
+    },
   });
 
   if (!func) {
@@ -499,7 +511,7 @@ async function resolveFuncReference(
     });
   }
 
-  if (!func.name || !func.docs) {
+  if (!func.currentDefinition) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Function is missing required fields",
@@ -510,8 +522,8 @@ async function resolveFuncReference(
     type: "reference",
     referenceType: "function",
     id: func.id,
-    name: func.name,
-    docs: func.docs,
+    name: func.currentDefinition.name,
+    docs: func.currentDefinition.docs,
   };
 }
 
@@ -663,11 +675,18 @@ async function getResourceHelperFunctions(
   },
 ) {
   const resourceResult = await ctx.db.query.resources.findFirst({
-    where: eq(resources.id, resourceId),
+    where: and(
+      eq(resources.id, resourceId),
+      eq(resources.userId, ctx.session.user.id),
+    ),
     with: {
       integration: {
         with: {
-          funcs: true,
+          funcs: {
+            with: {
+              currentDefinition: true,
+            },
+          },
         },
       },
     },
@@ -682,7 +701,7 @@ async function getResourceHelperFunctions(
 
   const helperFunctions = resourceResult.integration.funcs
     .map((func) => {
-      if (func.name && func.docs) {
+      if (func.currentDefinition) {
         return func;
       }
     })
@@ -690,7 +709,7 @@ async function getResourceHelperFunctions(
 
   return helperFunctions
     .map((func) => {
-      if (!func.name || !func.docs) {
+      if (!func.currentDefinition) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Function is missing required fields",
@@ -699,8 +718,8 @@ async function getResourceHelperFunctions(
 
       return {
         id: func.id,
-        name: func.name,
-        docs: func.docs,
+        name: func.currentDefinition.name,
+        docs: func.currentDefinition.docs,
       };
     })
     .filter((func) => func !== undefined);
@@ -710,6 +729,7 @@ async function getResourceMetadata(
   resourceId: string,
   ctx: {
     db: typeof db;
+    session: Session;
   },
 ): Promise<{
   name: string;
@@ -719,7 +739,10 @@ async function getResourceMetadata(
   };
 }> {
   const resource = await ctx.db.query.resources.findFirst({
-    where: eq(resources.id, resourceId),
+    where: and(
+      eq(resources.id, resourceId),
+      eq(resources.userId, ctx.session.user.id),
+    ),
     with: {
       integration: {
         columns: {

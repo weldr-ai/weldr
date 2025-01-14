@@ -165,7 +165,11 @@ const comingSoonIntegrations = [
 
 export function IntegrationsSection({
   project,
-}: { project: RouterOutputs["projects"]["byId"] }) {
+  env,
+}: {
+  project: RouterOutputs["projects"]["byId"];
+  env: RouterOutputs["environmentVariables"]["list"];
+}) {
   const { resolvedTheme } = useTheme();
   const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
 
@@ -243,13 +247,10 @@ export function IntegrationsSection({
                         key={resource.id}
                         integration={integration}
                         resource={resource}
-                        env={project.environmentVariables}
+                        env={env}
                       />
                     ))}
-                    <AddResourceDialog
-                      integration={integration}
-                      env={project.environmentVariables}
-                    />
+                    <AddResourceDialog integration={integration} env={env} />
                   </div>
                 </div>
               </DialogContent>

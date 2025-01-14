@@ -17,20 +17,12 @@ import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 import { DeleteAlertDialog } from "../delete-alert-dialog";
 
 export function EnvSection({
-  project,
-}: { project: RouterOutputs["projects"]["byId"] }) {
+  env,
+  projectId,
+}: { env: RouterOutputs["environmentVariables"]["list"]; projectId: string }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const apiUtils = api.useUtils();
-
-  const { data: environmentVariables } = api.environmentVariables.list.useQuery(
-    {
-      projectId: project.id,
-    },
-    {
-      initialData: project.environmentVariables,
-    },
-  );
 
   const deleteEnvironmentVariable = api.environmentVariables.delete.useMutation(
     {
@@ -53,7 +45,7 @@ export function EnvSection({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Environment Variables</span>
-          <AddEnvironmentVariableDialog projectId={project.id} />
+          <AddEnvironmentVariableDialog projectId={projectId} />
         </CardTitle>
         <CardDescription>
           Manage your project environment variables
@@ -61,7 +53,7 @@ export function EnvSection({
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {environmentVariables.map((envVar) => (
+          {env.map((envVar) => (
             <div key={envVar.id} className="flex items-center justify-between">
               <span>{envVar.key}</span>
               <Button

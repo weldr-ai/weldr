@@ -1,15 +1,16 @@
-import { type InferInsertModel, and, eq } from "@integramind/db";
+import { and, eq } from "@integramind/db";
 import {
+  conversationMessages,
   conversations,
-  endpointPackages,
-  endpointResources,
+  dependencies,
+  endpointDefinitionPackages,
+  endpointDefinitionResources,
+  endpointDefinitions,
   endpoints,
   packages,
-  versionEndpoints,
-  versions,
 } from "@integramind/db/schema";
 import {
-  createNewEndpointVersionSchema,
+  createEndpointDefinitionSchema,
   insertEndpointSchema,
   updateEndpointSchema,
 } from "@integramind/shared/validators/endpoints";
@@ -17,7 +18,12 @@ import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { createPatch } from "diff";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { createVersion, isEndpointReady } from "../utils";
+import {
+  createVersion,
+  defineVersion,
+  isEndpointReady,
+  wouldCreateCycle,
+} from "../utils";
 
 export const endpointsRouter = {
   create: protectedProcedure
@@ -73,28 +79,6 @@ export const endpointsRouter = {
             });
           }
 
-          const currentVersion = await tx.query.versions.findFirst({
-            where: and(
-              eq(versions.projectId, input.projectId),
-              eq(versions.isActive, true),
-            ),
-            with: {
-              endpoints: true,
-            },
-          });
-
-          if (!currentVersion) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create endpoint",
-            });
-          }
-
-          await tx.insert(versionEndpoints).values({
-            endpointId: newEndpoint.id,
-            versionId: currentVersion.id,
-          });
-
           return {
             ...newEndpoint,
             conversationId: conversation.id,
@@ -105,7 +89,8 @@ export const endpointsRouter = {
           };
         });
 
-        const { code, diff, isDeleted, isDeployed, parentId, ...rest } = result;
+        const { currentDefinitionId, ...rest } = result;
+
         return {
           ...rest,
           canRun: await isEndpointReady(result),
@@ -130,9 +115,15 @@ export const endpointsRouter = {
             and(
               eq(endpoints.id, input.id),
               eq(endpoints.userId, ctx.session.user.id),
-              eq(endpoints.isDeleted, false),
             ),
           with: {
+            currentDefinition: {
+              columns: {
+                path: true,
+                method: true,
+                openApiSpec: true,
+              },
+            },
             conversation: {
               with: {
                 messages: {
@@ -167,9 +158,11 @@ export const endpointsRouter = {
           });
         }
 
-        const { code, diff, isDeleted, isDeployed, parentId, ...rest } = result;
+        const { currentDefinitionId, currentDefinition, ...rest } = result;
+
         return {
           ...rest,
+          ...currentDefinition,
           canRun: await isEndpointReady(result),
         };
       } catch (error) {
@@ -195,7 +188,6 @@ export const endpointsRouter = {
             and(
               eq(endpoints.id, input.where.id),
               eq(endpoints.userId, ctx.session.user.id),
-              eq(endpoints.isDeleted, false),
             ),
           );
       } catch (error) {
@@ -209,8 +201,8 @@ export const endpointsRouter = {
         });
       }
     }),
-  createNewVersion: protectedProcedure
-    .input(createNewEndpointVersionSchema)
+  define: protectedProcedure
+    .input(createEndpointDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
       try {
         await ctx.db.transaction(async (tx) => {
@@ -218,11 +210,10 @@ export const endpointsRouter = {
             where: and(
               eq(endpoints.id, input.where.id),
               eq(endpoints.userId, ctx.session.user.id),
-              eq(endpoints.isDeleted, false),
             ),
           });
 
-          if (!endpoint) {
+          if (!endpoint || !endpoint.conversationId) {
             throw new TRPCError({
               code: "NOT_FOUND",
               message: "Endpoint not found",
@@ -232,38 +223,68 @@ export const endpointsRouter = {
           const {
             resources,
             packages: pkgs,
-            messageId,
+            helperFunctionIds,
             ...rest
           } = input.payload;
-          const firstImplementation = !endpoint.code;
-          let newEndpoint: InferInsertModel<typeof endpoints> | undefined;
 
-          if (!endpoint.code) {
-            newEndpoint = await ctx.db
-              .update(endpoints)
-              .set({
-                ...rest,
-              })
-              .where(eq(endpoints.id, endpoint.id))
-              .returning()
-              .then(([endpoint]) => endpoint);
-          } else {
-            newEndpoint = await ctx.db
-              .insert(endpoints)
-              .values({
-                ...endpoint,
-                ...rest,
-                parentId: endpoint.id,
-              })
-              .returning()
-              .then(([endpoint]) => endpoint);
+          const path = rest.openApiSpec.path.replace(/\{[^[\]]+\}/g, "[$1]");
+
+          const diff = await createPatch(
+            `${path}/${rest.openApiSpec.method}/index.ts`,
+            "",
+            input.payload.code,
+          );
+
+          const assistantBuiltMessage = await ctx.db
+            .insert(conversationMessages)
+            .values({
+              role: "assistant",
+              content: "Your endpoint has been built successfully!",
+              rawContent: [
+                {
+                  type: "text",
+                  value: "Your endpoint has been built successfully!",
+                },
+              ],
+              conversationId: endpoint.conversationId,
+              userId: ctx.session.user.id,
+            })
+            .returning()
+            .then(([message]) => message);
+
+          if (!assistantBuiltMessage) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create new function version",
+            });
           }
 
+          const { newVersion, previousVersion } = await createVersion({
+            db: tx,
+            versionName: `${rest.openApiSpec.summary} (created)`,
+            projectId: endpoint.projectId,
+            userId: ctx.session.user.id,
+            messageId: assistantBuiltMessage.id,
+          });
+
+          const newDefinition = await tx
+            .insert(endpointDefinitions)
+            .values({
+              versionId: newVersion.id,
+              path: rest.openApiSpec.path,
+              method: rest.openApiSpec.method,
+              userId: ctx.session.user.id,
+              endpointId: endpoint.id,
+              diff,
+              ...rest,
+            })
+            .returning()
+            .then(([endpoint]) => endpoint);
+
           if (
-            !newEndpoint ||
-            !newEndpoint.id ||
-            !newEndpoint.projectId ||
-            !newEndpoint.openApiSpec?.summary
+            !newDefinition ||
+            !newDefinition.id ||
+            !newDefinition.openApiSpec?.summary
           ) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
@@ -271,10 +292,17 @@ export const endpointsRouter = {
             });
           }
 
+          await tx
+            .update(endpoints)
+            .set({
+              currentDefinitionId: newDefinition.id,
+            })
+            .where(eq(endpoints.id, endpoint.id));
+
           if (resources) {
             for (const resource of resources) {
-              await ctx.db.insert(endpointResources).values({
-                endpointId: newEndpoint.id,
+              await ctx.db.insert(endpointDefinitionResources).values({
+                endpointDefinitionId: newDefinition.id,
                 resourceId: resource.id,
                 metadata: resource,
               });
@@ -287,7 +315,7 @@ export const endpointsRouter = {
                 .insert(packages)
                 .values({
                   ...pkg,
-                  projectId: newEndpoint.projectId,
+                  projectId: endpoint.projectId,
                 })
                 .onConflictDoNothing()
                 .returning()
@@ -301,39 +329,45 @@ export const endpointsRouter = {
               }
 
               await tx
-                .insert(endpointPackages)
+                .insert(endpointDefinitionPackages)
                 .values({
-                  endpointId: newEndpoint.id,
+                  endpointDefinitionId: newDefinition.id,
                   packageId: newPkg.id,
                 })
                 .onConflictDoNothing();
             }
           }
 
-          // If endpoint is implemented, create a new version and delete the old endpoint
-          // else, just create a new version with the new endpoint
-          try {
-            await createVersion({
-              db: ctx.db,
-              tx: tx,
-              input: {
-                userId: ctx.session.user.id,
-                projectId: newEndpoint.projectId,
-                versionName: `${newEndpoint.openApiSpec.summary} (${
-                  firstImplementation ? "created" : "updated"
-                })`,
-                addedEndpointIds: [newEndpoint.id],
-                deletedEndpointIds: firstImplementation ? [] : [endpoint.id],
-                messageId,
-              },
-            });
-          } catch (error) {
-            console.error(error);
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create new endpoint version",
-            });
+          if (helperFunctionIds) {
+            for (const helperFunctionId of helperFunctionIds) {
+              const isCycle = await wouldCreateCycle({
+                dependentId: newDefinition.endpointId,
+                dependencyId: helperFunctionId,
+                db: tx,
+              });
+
+              if (isCycle) {
+                throw new TRPCError({
+                  code: "BAD_REQUEST",
+                  message: "Dependency cycle detected",
+                });
+              }
+
+              await tx.insert(dependencies).values({
+                dependentDefinitionId: newDefinition.id,
+                dependentType: "endpoint",
+                dependencyDefinitionId: helperFunctionId,
+                dependencyType: "function",
+              });
+            }
           }
+
+          await defineVersion({
+            db: tx,
+            previousVersionId: previousVersion.id,
+            newVersionId: newVersion.id,
+            addedEndpointDefinitionIds: [newDefinition.id],
+          });
         });
       } catch (error) {
         console.error(error);
@@ -352,11 +386,13 @@ export const endpointsRouter = {
       try {
         await ctx.db.transaction(async (tx) => {
           const endpoint = await tx.query.endpoints.findFirst({
+            with: {
+              currentDefinition: true,
+            },
             where: (endpoints, { eq, and }) =>
               and(
                 eq(endpoints.id, input.id),
                 eq(endpoints.userId, ctx.session.user.id),
-                eq(endpoints.isDeleted, false),
               ),
           });
 
@@ -367,46 +403,20 @@ export const endpointsRouter = {
             });
           }
 
-          let diff: string | undefined;
-
-          if (endpoint.path && endpoint.code) {
-            const path = endpoint.path.replace(/\{[^[\]]+\}/g, "[$1]");
-
-            diff = createPatch(
-              `${path}/${endpoint.method}/index.ts`,
-              endpoint.code,
-              "",
-            );
-          }
-
-          await tx
-            .update(endpoints)
-            .set({
-              isDeployed: false,
-              isDeleted: true,
-              diff,
-            })
-            .where(
-              and(
-                eq(endpoints.id, input.id),
-                eq(endpoints.userId, ctx.session.user.id),
-                eq(endpoints.isDeleted, false),
-              ),
-            );
-
-          // If endpoint is implemented, create a new version and delete the old endpoint
-          // else, just delete the endpoint from the current version
-          if (endpoint.openApiSpec?.summary) {
+          if (endpoint.currentDefinition) {
             try {
-              await createVersion({
-                db: ctx.db,
-                tx: tx,
-                input: {
-                  userId: ctx.session.user.id,
-                  projectId: endpoint.projectId,
-                  versionName: `${endpoint.openApiSpec.summary} (deleted)`,
-                  deletedEndpointIds: [endpoint.id],
-                },
+              const { newVersion, previousVersion } = await createVersion({
+                db: tx,
+                versionName: `${endpoint.currentDefinition.openApiSpec.summary} (deleted)`,
+                projectId: endpoint.projectId,
+                userId: ctx.session.user.id,
+              });
+
+              await defineVersion({
+                db: tx,
+                previousVersionId: previousVersion.id,
+                newVersionId: newVersion.id,
+                deletedEndpointDefinitionIds: [endpoint.currentDefinition.id],
               });
             } catch (error) {
               console.error(error);
@@ -416,9 +426,7 @@ export const endpointsRouter = {
               });
             }
           } else {
-            await tx
-              .delete(versionEndpoints)
-              .where(eq(versionEndpoints.endpointId, endpoint.id));
+            await tx.delete(endpoints).where(eq(endpoints.id, endpoint.id));
           }
         });
       } catch (error) {

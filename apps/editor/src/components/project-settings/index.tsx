@@ -1,5 +1,6 @@
 "use client";
 
+import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@integramind/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -20,6 +21,15 @@ export function ProjectSettings({
   const currentTab = (searchParams.get("tab") ?? "general") as Tab;
 
   const [activeTab, setActiveTab] = useState<Tab>(currentTab);
+
+  const { data: env } = api.environmentVariables.list.useQuery(
+    {
+      projectId: project.id,
+    },
+    {
+      initialData: project.environmentVariables,
+    },
+  );
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -43,6 +53,7 @@ export function ProjectSettings({
         >
           General
         </TabsTrigger>
+
         <TabsTrigger
           className="w-full justify-start"
           value="integrations"
@@ -73,11 +84,11 @@ export function ProjectSettings({
         </TabsContent>
 
         <TabsContent value="integrations" className="mt-0">
-          <IntegrationsSection project={project} />
+          <IntegrationsSection project={project} env={env} />
         </TabsContent>
 
         <TabsContent value="env" className="mt-0">
-          <EnvSection project={project} />
+          <EnvSection env={env} projectId={project.id} />
         </TabsContent>
       </div>
     </Tabs>

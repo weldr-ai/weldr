@@ -84,7 +84,7 @@ export const projectsRouter = {
           await tx.insert(versions).values({
             projectId: project.id,
             isActive: true,
-            versionName: `Initiated project ${project.name}`,
+            versionName: `${project.name} (initiated)`,
             versionNumber: 1,
             userId: ctx.session.user.id,
           });
