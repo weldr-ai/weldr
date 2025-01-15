@@ -22,7 +22,7 @@ import { ReferenceNode } from "./plugins/reference/node";
 interface EditorProps {
   id: string;
   placeholder?: string;
-  onChange: (editorState: EditorState) => void;
+  onChange?: (editorState: EditorState) => void;
   className?: string;
   editorRef?: { current: null | LexicalEditor };
   rawMessage?: UserMessageRawContent;
@@ -77,7 +77,7 @@ export function Editor({ ...props }: EditorProps) {
           ErrorBoundary={LexicalErrorBoundary}
         />
       </div>
-      <OnChangePlugin onChange={props.onChange} />
+      {props.onChange && <OnChangePlugin onChange={props.onChange} />}
       <HistoryPlugin />
       {props.editorRef && <EditorRefPlugin editorRef={props.editorRef} />}
     </LexicalComposer>

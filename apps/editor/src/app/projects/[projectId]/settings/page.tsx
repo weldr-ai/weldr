@@ -18,7 +18,7 @@ export default async function ProjectSettingsPage({
     const project = await api.projects.byId({ id: projectId });
 
     return (
-      <div className="flex-1 rounded-md bg-background p-6">
+      <div className="flex-1 rounded-md bg-background p-6 py-4">
         <div className="flex flex-col">
           <div className="mb-6">
             <Link

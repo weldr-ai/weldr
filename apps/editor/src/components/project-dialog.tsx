@@ -15,14 +15,14 @@ import {
 } from "@integramind/ui/command";
 
 import { CreateProjectDialog } from "@/components/create-project-dialog";
-import { useCommandCenterStore } from "@/lib/store";
+import { useCommandCenter } from "@/lib/store";
 import type { RouterOutputs } from "@integramind/api";
 
 export function ProjectsDialog({
   projects,
 }: { projects: RouterOutputs["projects"]["list"] }) {
   const router = useRouter();
-  const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
+  const { setOpen } = useCommandCenter();
   const [createProjectDialogOpen, setCreateProjectDialogOpen] =
     useState<boolean>(false);
 
@@ -41,7 +41,7 @@ export function ProjectsDialog({
               <Button
                 className="size-6 rounded-sm bg-muted"
                 onClick={() => {
-                  setCommandCenterOpen(false);
+                  setOpen(false);
                   setCreateProjectDialogOpen(true);
                 }}
                 variant="outline"
@@ -57,7 +57,7 @@ export function ProjectsDialog({
                   value={project.name}
                   className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-lg text-center"
                   onSelect={() => {
-                    setCommandCenterOpen(false);
+                    setOpen(false);
                     router.replace(`/projects/${project.id}`);
                   }}
                 >

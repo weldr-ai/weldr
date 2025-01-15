@@ -37,6 +37,7 @@ import { SendgridIcon } from "@integramind/ui/icons/sendgrid-icon";
 import { SlackIcon } from "@integramind/ui/icons/slack-icon";
 import { StripeIcon } from "@integramind/ui/icons/stripe-icon";
 import { TwilioIcon } from "@integramind/ui/icons/twilio-icon";
+import { ScrollArea } from "@integramind/ui/scroll-area";
 import { useTheme } from "@integramind/ui/theme-provider";
 import { useState } from "react";
 import { AddResourceDialog } from "../add-resource-dialog";
@@ -191,105 +192,107 @@ export function IntegrationsSection({
   const { data: integrations } = api.integrations.list.useQuery();
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <CardTitle>Integrations</CardTitle>
         <CardDescription>Manage your workspace integrations</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="grid size-full grid-cols-3 gap-4">
-          {integrations?.map((integration) => (
-            <Dialog
-              key={integration.id}
-              open={addResourceDialogOpen}
-              onOpenChange={setAddResourceDialogOpen}
-            >
-              <DialogTrigger asChild>
-                <Button
-                  key={integration.id}
-                  variant="outline"
-                  className="flex size-80 w-full flex-col items-start justify-between gap-4 p-6"
-                >
-                  <div className="flex flex-col items-start gap-4">
+      <CardContent className="h-full">
+        <ScrollArea className="h-[calc(100%-72px)]">
+          <div className="grid size-full grid-cols-3 gap-4 pb-4">
+            {integrations?.map((integration) => (
+              <Dialog
+                key={integration.id}
+                open={addResourceDialogOpen}
+                onOpenChange={setAddResourceDialogOpen}
+              >
+                <DialogTrigger asChild>
+                  <Button
+                    key={integration.id}
+                    variant="outline"
+                    className="flex size-80 w-full flex-col items-start justify-between gap-4 p-6"
+                  >
                     <div className="flex flex-col items-start gap-4">
+                      <div className="flex flex-col items-start gap-4">
+                        {integration.type === "postgres" ? (
+                          <PostgresIcon className="size-10" />
+                        ) : null}
+                        <span className="font-semibold text-lg">
+                          {integration.name}
+                        </span>
+                      </div>
+                      <span className="text-wrap text-start text-muted-foreground">
+                        {integration.description}
+                      </span>
+                    </div>
+                    <Badge variant="outline" className="rounded-full px-3 py-2">
+                      {integration.category?.toUpperCase()}
+                    </Badge>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-xl">
+                  <DialogHeader className="space-y-4">
+                    <DialogTitle className="flex flex-col items-start gap-4">
                       {integration.type === "postgres" ? (
                         <PostgresIcon className="size-10" />
                       ) : null}
-                      <span className="font-semibold text-lg">
-                        {integration.name}
-                      </span>
-                    </div>
-                    <span className="text-wrap text-start text-muted-foreground">
+                      {integration.name}
+                    </DialogTitle>
+                    <DialogDescription>
                       {integration.description}
-                    </span>
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col gap-4 overflow-y-auto">
+                    <div className="flex flex-col gap-4">
+                      {groupedResources[integration.type]?.map((resource) => (
+                        <AddResourceDialog
+                          key={resource.id}
+                          integration={integration}
+                          resource={resource}
+                          env={env}
+                        />
+                      ))}
+                      <AddResourceDialog integration={integration} env={env} />
+                    </div>
                   </div>
-                  <Badge variant="outline" className="rounded-full px-3 py-2">
-                    {integration.category?.toUpperCase()}
-                  </Badge>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-xl">
-                <DialogHeader className="space-y-4">
-                  <DialogTitle className="flex flex-col items-start gap-4">
-                    {integration.type === "postgres" ? (
-                      <PostgresIcon className="size-10" />
-                    ) : null}
-                    {integration.name}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {integration.description}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-col gap-4 overflow-y-auto">
-                  <div className="flex flex-col gap-4">
-                    {groupedResources[integration.type]?.map((resource) => (
-                      <AddResourceDialog
-                        key={resource.id}
-                        integration={integration}
-                        resource={resource}
-                        env={env}
-                      />
-                    ))}
-                    <AddResourceDialog integration={integration} env={env} />
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          ))}
-          {comingSoonIntegrations.map((integration) => (
-            <Button
-              key={integration.id}
-              disabled
-              variant="outline"
-              className="flex size-80 w-full flex-col items-start justify-between gap-4 p-6"
-            >
-              <div className="flex flex-col items-start gap-4">
+                </DialogContent>
+              </Dialog>
+            ))}
+            {comingSoonIntegrations.map((integration) => (
+              <Button
+                key={integration.id}
+                disabled
+                variant="outline"
+                className="flex size-80 w-full flex-col items-start justify-between gap-4 p-6"
+              >
                 <div className="flex flex-col items-start gap-4">
-                  {integration.icon
-                    ? integration.icon({
-                        className: "size-10",
-                        theme: resolvedTheme === "dark" ? "dark" : "light",
-                      })
-                    : null}
-                  <span className="flex items-center font-semibold text-lg">
-                    {integration.name}
-                    <span className="ml-2 text-muted-foreground text-xs">
-                      (Coming Soon)
+                  <div className="flex flex-col items-start gap-4">
+                    {integration.icon
+                      ? integration.icon({
+                          className: "size-10",
+                          theme: resolvedTheme === "dark" ? "dark" : "light",
+                        })
+                      : null}
+                    <span className="flex items-center font-semibold text-lg">
+                      {integration.name}
+                      <span className="ml-2 text-muted-foreground text-xs">
+                        (Coming Soon)
+                      </span>
                     </span>
+                  </div>
+                  <span className="text-wrap text-start text-muted-foreground">
+                    {integration.description}
                   </span>
                 </div>
-                <span className="text-wrap text-start text-muted-foreground">
-                  {integration.description}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="rounded-full px-3 py-2">
-                  {integration.category.toUpperCase()}
-                </Badge>
-              </div>
-            </Button>
-          ))}
-        </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="rounded-full px-3 py-2">
+                    {integration.category.toUpperCase()}
+                  </Badge>
+                </div>
+              </Button>
+            ))}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

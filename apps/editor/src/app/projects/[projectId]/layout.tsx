@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { CommandCenter } from "@/components/command-center";
-import { Sidebar } from "@/components/sidebar";
+import { Navbar } from "@/components/navbar";
 import { ResourcesProvider } from "@/lib/context/resources";
 import { api } from "@/lib/trpc/server";
 
@@ -30,14 +30,10 @@ export default async function ProjectLayout({
           metadata: resource.metadata,
         }))}
       >
-        <div className="flex h-screen bg-background">
-          <div className="sticky top-0 z-50 h-screen dark:bg-muted">
-            <Sidebar project={project} />
-          </div>
-          <main className="flex-1 py-2.5 pr-2.5 dark:bg-muted">
-            <div className="h-full overflow-auto rounded-md border bg-background">
-              {children}
-            </div>
+        <div className="flex h-screen flex-col dark:bg-muted">
+          <Navbar project={project} />
+          <main className="flex-1 px-2 pb-2">
+            <div className="flex size-full">{children}</div>
           </main>
         </div>
         <CommandCenter projects={projects} />

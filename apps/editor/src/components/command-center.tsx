@@ -15,7 +15,7 @@ import {
 } from "@integramind/ui/command";
 
 import { CreateProjectDialog } from "@/components/create-project-dialog";
-import { useCommandCenterStore } from "@/lib/store";
+import { useCommandCenter } from "@/lib/store";
 import type { RouterOutputs } from "@integramind/api";
 
 // TODO: the command center should be a complete center to navigate the project quickly
@@ -23,8 +23,7 @@ export function CommandCenter({
   projects,
 }: { projects: RouterOutputs["projects"]["list"] }) {
   const router = useRouter();
-  const commandCenterOpen = useCommandCenterStore((state) => state.open);
-  const setCommandCenterOpen = useCommandCenterStore((state) => state.setOpen);
+  const { open, setOpen } = useCommandCenter();
   const [createProjectDialogOpen, setCreateProjectDialogOpen] =
     useState<boolean>(false);
 
@@ -32,19 +31,16 @@ export function CommandCenter({
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setCommandCenterOpen(true);
+        setOpen(true);
       }
     };
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, [setCommandCenterOpen]);
+  }, [setOpen]);
 
   return (
     <>
-      <CommandDialog
-        open={commandCenterOpen}
-        onOpenChange={setCommandCenterOpen}
-      >
+      <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput
           className="border-none ring-0"
           placeholder="Search projects..."
@@ -55,7 +51,7 @@ export function CommandCenter({
             <Button
               className="size-6 rounded-sm bg-muted"
               onClick={() => {
-                setCommandCenterOpen(false);
+                setOpen(false);
                 setCreateProjectDialogOpen(true);
               }}
               variant="outline"
@@ -73,7 +69,7 @@ export function CommandCenter({
                   value={project.name}
                   className="flex h-24 cursor-pointer flex-col items-center justify-center rounded-lg text-center"
                   onSelect={() => {
-                    setCommandCenterOpen(false);
+                    setOpen(false);
                     router.replace(`/projects/${project.id}`);
                   }}
                 >

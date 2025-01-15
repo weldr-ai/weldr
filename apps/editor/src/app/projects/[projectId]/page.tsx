@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
-import { Canvas } from "@/components/canvas";
+import { ProjectView } from "@/components/project-view";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
 
@@ -12,6 +12,7 @@ export default async function ProjectPage({
 }): Promise<JSX.Element | undefined> {
   try {
     const { projectId } = await params;
+    const project = await api.projects.byId({ id: projectId });
 
     const {
       funcs,
@@ -44,13 +45,11 @@ export default async function ProjectPage({
     }
 
     return (
-      <div className="flex size-full">
-        <Canvas
-          projectId={projectId}
-          initialNodes={initialNodes}
-          initialEdges={initialEdges ?? []}
-        />
-      </div>
+      <ProjectView
+        project={project}
+        initialNodes={initialNodes}
+        initialEdges={initialEdges ?? []}
+      />
     );
   } catch (error) {
     console.error(error);

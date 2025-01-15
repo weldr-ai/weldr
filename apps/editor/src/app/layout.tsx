@@ -7,11 +7,11 @@ import { Toaster } from "@integramind/ui/toaster";
 import { cn } from "@integramind/ui/utils";
 
 import { QueryProvider } from "@/components/query-client-provider";
+import { AppStateProvider } from "@/lib/store";
 import { TRPCReactProvider } from "@/lib/trpc/client";
 import { HydrateClient } from "@/lib/trpc/server";
 import { auth } from "@integramind/auth";
 import { AuthProvider } from "@integramind/auth/provider";
-import { ThemeProvider } from "@integramind/ui/theme-provider";
 import { TooltipProvider } from "@integramind/ui/tooltip";
 import { ReactFlowProvider } from "@xyflow/react";
 import { headers } from "next/headers";
@@ -37,7 +37,7 @@ export default async function RootLayout({
   const session = await auth.api.getSession({ headers: await headers() });
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body
         className={cn(
           "flex min-h-screen w-full flex-col bg-background font-sans antialiased",
@@ -45,27 +45,22 @@ export default async function RootLayout({
         )}
         suppressHydrationWarning
       >
-        <TRPCReactProvider>
-          <QueryProvider>
-            <HydrateClient>
-              <AuthProvider user={session?.user ?? null}>
-                <ThemeProvider
-                  attribute="class"
-                  defaultTheme="system"
-                  enableSystem
-                  disableTransitionOnChange
-                >
-                  <ReactFlowProvider>
-                    <TooltipProvider delayDuration={200}>
+        <AppStateProvider>
+          <TRPCReactProvider>
+            <QueryProvider>
+              <HydrateClient>
+                <AuthProvider user={session?.user ?? null}>
+                  <TooltipProvider delayDuration={200}>
+                    <ReactFlowProvider>
                       {children}
                       <Toaster />
-                    </TooltipProvider>
-                  </ReactFlowProvider>
-                </ThemeProvider>
-              </AuthProvider>
-            </HydrateClient>
-          </QueryProvider>
-        </TRPCReactProvider>
+                    </ReactFlowProvider>
+                  </TooltipProvider>
+                </AuthProvider>
+              </HydrateClient>
+            </QueryProvider>
+          </TRPCReactProvider>
+        </AppStateProvider>
       </body>
     </html>
   );

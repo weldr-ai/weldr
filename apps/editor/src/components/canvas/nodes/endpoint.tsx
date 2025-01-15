@@ -5,7 +5,7 @@ import MessageList from "@/components/message-list";
 import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
 import { generateEndpoint } from "@/lib/ai/generator";
 import { useResources } from "@/lib/context/resources";
-import { useFlowBuilderStore } from "@/lib/store";
+import { useFlowBuilder } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { getResourceReferences } from "@/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
@@ -292,7 +292,7 @@ export const EndpointNode = memo(
       scrollToBottom();
     }, [scrollToBottom]);
 
-    const showEdges = useFlowBuilderStore((state) => state.showEdges);
+    const { showEdges } = useFlowBuilder();
 
     const resources = useResources();
     const availableHelperFunctions = api.dependencies.available.useQuery({

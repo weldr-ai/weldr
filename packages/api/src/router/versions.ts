@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "@integramind/db";
+import { and, eq, inArray, isNull, or } from "@integramind/db";
 import { endpoints, funcs, versions } from "@integramind/db/schema";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
@@ -36,7 +36,10 @@ export const versionsRouter = {
       );
 
       const versionFuncs = await ctx.db.query.funcs.findMany({
-        where: inArray(funcs.currentDefinitionId, funcDefinitionIds),
+        where: or(
+          inArray(funcs.currentDefinitionId, funcDefinitionIds),
+          isNull(funcs.currentDefinitionId),
+        ),
         with: {
           currentDefinition: {
             columns: {
@@ -77,7 +80,10 @@ export const versionsRouter = {
       });
 
       const versionEndpoints = await ctx.db.query.endpoints.findMany({
-        where: inArray(endpoints.currentDefinitionId, endpointDefinitionIds),
+        where: or(
+          inArray(endpoints.currentDefinitionId, endpointDefinitionIds),
+          isNull(endpoints.currentDefinitionId),
+        ),
         with: {
           currentDefinition: {
             columns: {

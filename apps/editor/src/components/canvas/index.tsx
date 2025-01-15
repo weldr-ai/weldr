@@ -30,7 +30,7 @@ import "@xyflow/react/dist/base.css";
 
 import { Button } from "@integramind/ui/button";
 
-import { useFlowBuilderStore } from "@/lib/store";
+import { useFlowBuilder } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@integramind/api";
 import { toast } from "@integramind/ui/hooks/use-toast";
@@ -57,8 +57,7 @@ export function Canvas({
   initialNodes: CanvasNode[];
   initialEdges: RouterOutputs["versions"]["dependencies"];
 }) {
-  const showEdges = useFlowBuilderStore((state) => state.showEdges);
-  const toggleEdges = useFlowBuilderStore((state) => state.toggleEdges);
+  const { showEdges, toggleEdges } = useFlowBuilder();
 
   const { data: dependencies } = api.versions.dependencies.useQuery(
     {
@@ -245,7 +244,7 @@ export function Canvas({
 
   return (
     <ReactFlow
-      className="rounded-md"
+      className="rounded-b-md"
       nodes={nodes}
       onNodesChange={onNodesChange}
       edges={showEdges ? edges : []}

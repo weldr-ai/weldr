@@ -41,7 +41,7 @@ import { Editor } from "@/components/editor";
 import { TestInputDialog } from "@/components/test-input-dialog";
 import { generateFunc } from "@/lib/ai/generator";
 import { useResources } from "@/lib/context/resources";
-import { useFlowBuilderStore } from "@/lib/store";
+import { useFlowBuilder } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { getResourceReferences } from "@/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
@@ -128,7 +128,7 @@ export const FuncNode = memo(
     const [deleteAlertDialogOpen, setDeleteAlertDialogOpen] =
       useState<boolean>(false);
 
-    const showEdges = useFlowBuilderStore((state) => state.showEdges);
+    const { showEdges } = useFlowBuilder();
     const [isThinking, setIsThinking] = useState<boolean>(false);
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [isBuilding, setIsBuilding] = useState<boolean>(false);
@@ -396,7 +396,7 @@ export const FuncNode = memo(
                       {
                         x: positionAbsoluteX,
                         y: positionAbsoluteY - 100,
-                        width: 200,
+                        width: 250,
                         height: 800,
                       },
                       {

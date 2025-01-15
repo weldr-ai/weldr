@@ -3,25 +3,13 @@
 import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@integramind/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState } from "react";
 import { EnvSection } from "./env-section";
 import { GeneralSection } from "./general-section";
 import { IntegrationsSection } from "./integrations-section";
 
-type Tab = "general" | "integrations" | "env";
-
 export function ProjectSettings({
   project,
 }: { project: RouterOutputs["projects"]["byId"] }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const currentTab = (searchParams.get("tab") ?? "general") as Tab;
-
-  const [activeTab, setActiveTab] = useState<Tab>(currentTab);
-
   const { data: env } = api.environmentVariables.list.useQuery(
     {
       projectId: project.id,
@@ -31,49 +19,17 @@ export function ProjectSettings({
     },
   );
 
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set(name, value);
-      return params.toString();
-    },
-    [searchParams],
-  );
-
   return (
-    <Tabs defaultValue={activeTab} className="flex flex-1 gap-4">
+    <Tabs defaultValue="general" className="flex flex-1 gap-4">
       <TabsList className="flex h-fit w-[230px] flex-col gap-2 p-2.5">
-        <TabsTrigger
-          className="w-full justify-start"
-          value="general"
-          onClick={() => {
-            setActiveTab("general");
-            router.push(`${pathname}?${createQueryString("tab", "general")}`);
-          }}
-        >
+        <TabsTrigger className="w-full justify-start" value="general">
           General
         </TabsTrigger>
 
-        <TabsTrigger
-          className="w-full justify-start"
-          value="integrations"
-          onClick={() => {
-            setActiveTab("integrations");
-            router.push(
-              `${pathname}?${createQueryString("tab", "integrations")}`,
-            );
-          }}
-        >
+        <TabsTrigger className="w-full justify-start" value="integrations">
           Integrations
         </TabsTrigger>
-        <TabsTrigger
-          className="w-full justify-start"
-          value="env"
-          onClick={() => {
-            setActiveTab("env");
-            router.push(`${pathname}?${createQueryString("tab", "env")}`);
-          }}
-        >
+        <TabsTrigger className="w-full justify-start" value="env">
           Environment Variables
         </TabsTrigger>
       </TabsList>
@@ -83,7 +39,10 @@ export function ProjectSettings({
           <GeneralSection project={project} />
         </TabsContent>
 
-        <TabsContent value="integrations" className="mt-0">
+        <TabsContent
+          value="integrations"
+          className="mt-0 h-[calc(100vh-146px)] overflow-hidden"
+        >
           <IntegrationsSection project={project} env={env} />
         </TabsContent>
 

@@ -10,7 +10,7 @@ import {
 
 export function Preview() {
   return (
-    <div className="flex size-full min-h-screen bg-background dark:bg-muted">
+    <div className="flex size-full min-h-screen bg-muted">
       <div className="flex flex-col">
         <header className="flex h-14 items-center border-b bg-muted">
           <Button variant="ghost" size="icon" className="size-14 p-2">
