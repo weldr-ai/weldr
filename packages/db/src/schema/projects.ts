@@ -17,6 +17,7 @@ export const projects = pgTable(
     name: text("name").notNull(),
     subdomain: text("subdomain").unique().notNull(),
     description: text("description"),
+    thumbnail: text("thumbnail"),
     engineMachineId: text("engine_machine_id"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

@@ -155,7 +155,6 @@ export const conversationsRouter = {
             where: and(
               eq(funcs.id, input.funcId),
               eq(funcs.userId, ctx.session.user.id),
-              isNotNull(funcs.currentDefinitionId),
             ),
           });
 

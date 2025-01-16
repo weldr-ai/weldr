@@ -8,11 +8,8 @@ import { toast } from "@integramind/ui/hooks/use-toast";
 import { GithubIcon } from "@integramind/ui/icons/github-icon";
 import { GoogleIcon } from "@integramind/ui/icons/google-icon";
 import { MicrosoftIcon } from "@integramind/ui/icons/microsoft-icon";
-import { useTheme } from "@integramind/ui/theme-provider";
-import { cn } from "@integramind/ui/utils";
 
 export function Socials() {
-  const { resolvedTheme: theme } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   async function onSocialSignIn(provider: "github" | "microsoft" | "google") {
@@ -69,9 +66,7 @@ export function Socials() {
         disabled={isSubmitting}
         onClick={() => onSocialSignIn("github")}
       >
-        <GithubIcon
-          className={cn("size-4", theme === "dark" && "fill-white")}
-        />
+        <GithubIcon className="size-4 fill-white" />
         <span className="sr-only">Github Logo</span>
       </Button>
     </div>

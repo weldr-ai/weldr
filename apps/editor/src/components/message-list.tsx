@@ -7,7 +7,6 @@ import type {
 import { testExecutionMessageRawContentSchema } from "@integramind/shared/validators/conversations";
 import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
 import { ScrollArea } from "@integramind/ui/scroll-area";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import SuperJSON from "superjson";
 import { JsonViewer } from "./json-viewer";
@@ -50,8 +49,8 @@ export default function MessageList({
 
       {isThinking && (
         <div key="thinking" className="flex items-start">
-          <Avatar className="size-6 rounded-md">
-            <AvatarImage src="/logo-solid.svg" alt="Integrator" />
+          <Avatar className="size-7 rounded-full">
+            <AvatarImage src="/api/avatars/integramind" alt="IntegraMind" />
           </Avatar>
           <span className="ml-3 text-muted-foreground text-sm">
             Thinking
@@ -62,8 +61,8 @@ export default function MessageList({
 
       {isBuilding && (
         <div key="generating" className="flex items-start">
-          <Avatar className="size-6 rounded-md">
-            <AvatarImage src="/logo-solid.svg" alt="Integrator" />
+          <Avatar className="size-7 rounded-full">
+            <AvatarImage src="/api/avatars/integramind" alt="IntegraMind" />
           </Avatar>
           <span className="ml-3 text-muted-foreground text-sm">
             Building
@@ -74,8 +73,8 @@ export default function MessageList({
 
       {isRunning && (
         <div key="running" className="flex items-start">
-          <Avatar className="size-6 rounded-md">
-            <AvatarImage src="/logo-solid.svg" alt="Integrator" />
+          <Avatar className="size-7 rounded-full">
+            <AvatarImage src="/api/avatars/integramind" alt="IntegraMind" />
           </Avatar>
           <span className="ml-3 text-muted-foreground text-sm">
             Running your function
@@ -100,21 +99,20 @@ function MessageItem({
 
   return (
     <div className="flex w-full items-start" key={message.id}>
-      <Avatar className="size-6 rounded-md">
+      <Avatar className="size-7 rounded-full">
         {message.role === "user" ? (
           <>
             <AvatarImage src={user?.image ?? undefined} alt="User" />
             <AvatarFallback>
-              <Image
-                src={`${process.env.NEXT_PUBLIC_EDITOR_BASE_URL}/api/avatars/${user?.email}`}
-                alt="User"
-                width={32}
-                height={32}
-              />
+              <Avatar className="size-7 rounded-full">
+                <AvatarImage src={`/api/avatars/${user?.email}`} alt="User" />
+              </Avatar>
             </AvatarFallback>
           </>
         ) : (
-          <AvatarImage src="/logo-solid.svg" alt="Integrator" />
+          <Avatar className="size-7 rounded-full">
+            <AvatarImage src="/api/avatars/integramind" alt="IntegraMind" />
+          </Avatar>
         )}
       </Avatar>
       <div className="ml-3 space-y-1">

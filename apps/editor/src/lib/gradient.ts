@@ -1,29 +1,56 @@
-import color from "tinycolor2";
+const ELEMENTS = 3;
+const SIZE = 80;
 
-async function hash(str: string): Promise<number> {
-  let sum = 0;
-  const buffer = await crypto.subtle.digest(
-    "SHA-1",
-    new TextEncoder().encode(str),
-  );
-  for (const n of new Uint8Array(buffer)) {
-    sum += n;
+export const hashCode = (name: string) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    const character = name.charCodeAt(i);
+    hash = (hash << 5) - hash + character;
+    hash = hash & hash;
   }
-  return sum;
-}
+  return Math.abs(hash);
+};
 
-async function hue(str: string): Promise<number> {
-  const n = await hash(str);
-  return n % 360;
-}
+export const getModulus = (num: number, max: number) => {
+  return num % max;
+};
 
-export async function generateGradient(username: string) {
-  const h = await hue(username);
-  const c1 = color({ h, s: 0.95, l: 0.5 });
-  const second = c1.triad()[1].toHexString();
+export const getDigit = (number: number, ntn: number) => {
+  return Math.floor((number / 10 ** ntn) % 10);
+};
 
-  return {
-    fromColor: c1.toHexString(),
-    toColor: second,
-  };
+export const getAngle = (x: number, y: number) => {
+  return (Math.atan2(y, x) * 180) / Math.PI;
+};
+
+export const getUnit = (number: number, range: number, index: number) => {
+  const value = number % range;
+
+  if (index && getDigit(number, index) % 2 === 0) {
+    return -value;
+  }
+  return value;
+};
+
+export const getRandomColor = (
+  number: number,
+  colors: string[],
+  range: number,
+) => {
+  return colors[number % range];
+};
+
+export function generateGradient(name: string, colors: string[]) {
+  const numFromName = hashCode(name);
+  const range = colors.length;
+
+  const elementsProperties = Array.from({ length: ELEMENTS }, (_, i) => ({
+    color: getRandomColor(numFromName + i, colors, range),
+    translateX: getUnit(numFromName * (i + 1), SIZE / 10, 1),
+    translateY: getUnit(numFromName * (i + 1), SIZE / 10, 2),
+    scale: 1.2 + getUnit(numFromName * (i + 1), SIZE / 20, 1) / 10,
+    rotate: getUnit(numFromName * (i + 1), 360, 1),
+  }));
+
+  return elementsProperties;
 }

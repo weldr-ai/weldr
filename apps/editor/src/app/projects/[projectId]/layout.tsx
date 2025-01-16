@@ -32,9 +32,7 @@ export default async function ProjectLayout({
       >
         <div className="flex h-screen flex-col dark:bg-muted">
           <Navbar project={project} />
-          <main className="flex-1 px-2 pb-2">
-            <div className="flex size-full">{children}</div>
-          </main>
+          <main className="flex size-full flex-1 px-2 pb-2">{children}</main>
         </div>
         <CommandCenter projects={projects} />
       </ResourcesProvider>

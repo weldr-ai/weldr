@@ -6,6 +6,7 @@ export const projectSchema = z.object({
   name: z.string(),
   subdomain: z.string(),
   description: z.string().nullable(),
+  thumbnail: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
   userId: z.string().nullable(),
@@ -15,6 +16,7 @@ export const projectSchema = z.object({
 export const insertProjectSchema = z.object({
   name: z.string().transform((name) => name.replace(/\s+/g, " ").trim()),
   description: z.string().optional(),
+  thumbnail: z.string().optional(),
 });
 
 export const updateProjectSchema = z.object({

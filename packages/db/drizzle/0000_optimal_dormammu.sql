@@ -195,6 +195,7 @@ CREATE TABLE "projects" (
 	"name" text NOT NULL,
 	"subdomain" text NOT NULL,
 	"description" text,
+	"thumbnail" text,
 	"engine_machine_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
