@@ -26,6 +26,7 @@ export const versions = pgTable(
     versionNumber: integer("version_number").notNull(),
     versionName: text("version_name").notNull(),
     isActive: boolean("is_active").notNull().default(false),
+    machineId: text("machine_id"),
     parentVersionId: text("parent_version_id").references(
       (): AnyPgColumn => versions.id,
     ),

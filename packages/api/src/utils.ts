@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import {
   type Db,
   type InferSelectModel,
@@ -19,13 +18,6 @@ import {
   versionPackages,
   versions,
 } from "@integramind/db/schema";
-import type {
-  JsonSchema,
-  OpenApiEndpointSpec,
-  Package,
-  RawContent,
-  ResourceMetadata,
-} from "@integramind/shared/types";
 import { TRPCError } from "@trpc/server";
 
 export async function wouldCreateCycle({
@@ -106,48 +98,6 @@ export async function isEndpointReady(
     return false;
   }
   return true;
-}
-
-export function generateFuncVersionHash(version: {
-  name: string;
-  inputSchema: JsonSchema;
-  outputSchema: JsonSchema;
-  rawDescription: RawContent;
-  behavior: RawContent;
-  errors: string;
-  docs: string;
-  code: string;
-  packages: Package[];
-  resources: ResourceMetadata[];
-}) {
-  const contentToHash = JSON.stringify({
-    name: version.name,
-    inputSchema: version.inputSchema,
-    outputSchema: version.outputSchema,
-    rawDescription: version.rawDescription,
-    behavior: version.behavior,
-    errors: version.errors,
-    docs: version.docs,
-    code: version.code,
-    packages: version.packages,
-    resources: version.resources,
-  });
-  return createHash("sha256").update(contentToHash).digest("hex");
-}
-
-export function generateEndpointVersionHash(version: {
-  openApiSpec: OpenApiEndpointSpec;
-  code: string;
-  packages: Package[];
-  resources: ResourceMetadata[];
-}) {
-  const contentToHash = JSON.stringify({
-    code: version.code,
-    packages: version.packages,
-    resources: version.resources,
-    openApiSpec: version.openApiSpec,
-  });
-  return createHash("sha256").update(contentToHash).digest("hex");
 }
 
 export async function createVersion({

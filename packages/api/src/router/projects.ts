@@ -22,43 +22,27 @@ export const projectsRouter = {
         return await ctx.db.transaction(async (tx) => {
           const projectId = createId();
 
-          let engineMachineId: string | undefined;
-
           if (process.env.NODE_ENV !== "development") {
-            const response = await ofetch<{ engineMachineId: string }>(
-              `${process.env.DEPLOYER_API_URL}/projects`,
-              {
-                method: "POST",
-                retry: 3,
-                retryDelay: 1000,
-                body: {
-                  projectId,
-                },
-                async onRequestError({ request, options, error }) {
-                  console.log("[fetch request error]", request, error);
-                  throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: "Failed to create project",
-                  });
-                },
-                async onResponseError({ request, response, options }) {
-                  console.log("[fetch response error]", request, response);
-                  throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: "Failed to create project",
-                  });
-                },
+            const response = await fetch("https://api.machines.dev/v1/apps", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env.FLY_API_KEY}`,
               },
-            );
+              body: JSON.stringify({
+                app_name: `preview-${projectId}`,
+                enable_subdomains: true,
+                network: `net-${projectId}`,
+                org_slug: process.env.FLY_ORG_SLUG,
+              }),
+            });
 
-            if (!response.engineMachineId) {
+            if (!response.ok) {
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
                 message: "Failed to create project",
               });
             }
-
-            engineMachineId = response.engineMachineId;
           }
 
           const project = await tx
@@ -69,7 +53,6 @@ export const projectsRouter = {
               subdomain: projectId,
               description: input.description,
               userId: ctx.session.user.id,
-              engineMachineId,
             })
             .returning()
             .then(([project]) => project);

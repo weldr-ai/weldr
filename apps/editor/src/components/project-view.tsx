@@ -80,16 +80,16 @@ function Main({
   initialEdges: RouterOutputs["versions"]["dependencies"];
 }) {
   return (
-    <Tabs defaultValue="canvas" className="flex size-full flex-col">
+    <Tabs defaultValue="preview" className="flex size-full flex-col">
       <div className="flex w-full items-center justify-between border-b px-3 py-1.5">
         <TabsList className="rounded-none border-none p-0">
-          <TabsTrigger value="canvas">
-            <FrameIcon className="mr-1 size-4" />
-            Canvas
-          </TabsTrigger>
           <TabsTrigger value="preview">
             <AppWindowIcon className="mr-1 size-4" />
             Preview
+          </TabsTrigger>
+          <TabsTrigger value="canvas">
+            <FrameIcon className="mr-1 size-4" />
+            Canvas
           </TabsTrigger>
           <TabsTrigger value="settings">
             <SettingsIcon className="mr-1 size-4" />
@@ -107,15 +107,17 @@ function Main({
           </TooltipContent>
         </Tooltip>
       </div>
+      <TabsContent value="preview" className="mt-0 flex-1 bg-background">
+        <div className="flex size-full items-center justify-center">
+          Preview
+        </div>
+      </TabsContent>
       <TabsContent value="canvas" className="mt-0 flex-1 bg-background">
         <Canvas
           projectId={project.id}
           initialNodes={initialNodes}
           initialEdges={initialEdges ?? []}
         />
-      </TabsContent>
-      <TabsContent value="preview" className="mt-0 flex-1 bg-background">
-        Preview
       </TabsContent>
       <TabsContent value="settings" className="mt-0 flex-1 bg-background p-4">
         <ProjectSettings project={project} />

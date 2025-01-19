@@ -26,7 +26,7 @@ export default async function Home(): Promise<JSX.Element> {
   return (
     <div className="flex w-full">
       <div className="absolute top-2 left-2 z-[100]">
-        <MainDropdownMenu showViewAll={false} />
+        <MainDropdownMenu showViewAll={false} variant="default" />
       </div>
       <div className="fixed inset-0 z-10 flex bg-black/80">
         {projects.length > 0 ? (

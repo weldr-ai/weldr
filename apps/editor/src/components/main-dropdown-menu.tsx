@@ -31,8 +31,10 @@ import { CreateProjectDialog } from "./create-project-dialog";
 
 export function MainDropdownMenu({
   showViewAll = true,
+  variant = "ghost",
 }: {
   showViewAll?: boolean;
+  variant?: "ghost" | "default";
 }): JSX.Element {
   const router = useRouter();
   const [createProjectDialogOpen, setCreateProjectDialogOpen] = useState(false);
@@ -41,7 +43,7 @@ export function MainDropdownMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant={variant} size="icon">
           <LogoIcon className="size-10" />
           <span className="sr-only">IntegraMind</span>
         </Button>
