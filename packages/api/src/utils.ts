@@ -18,6 +18,8 @@ import {
   versionPackages,
   versions,
 } from "@integramind/db/schema";
+import { Fly } from "@integramind/shared/fly";
+import { toKebabCase } from "@integramind/shared/utils";
 import { TRPCError } from "@trpc/server";
 
 export async function wouldCreateCycle({
@@ -257,7 +259,11 @@ export async function defineVersion({
   const newVersionFuncs = await transactionDb.query.funcDefinitions.findMany({
     where: inArray(funcDefinitions.id, versionFuncDefinitionIds),
     with: {
-      packages: true,
+      packages: {
+        with: {
+          package: true,
+        },
+      },
     },
   });
 
@@ -266,35 +272,92 @@ export async function defineVersion({
     await transactionDb.query.endpointDefinitions.findMany({
       where: inArray(endpointDefinitions.id, versionEndpointDefinitionIds),
       with: {
-        packages: true,
+        packages: {
+          with: {
+            package: true,
+          },
+        },
       },
     });
 
   // Collect all unique package IDs that are in use
-  const activePackageIds = new Set<string>();
+  const activePackages = new Map<
+    string,
+    {
+      type: "production" | "development";
+      name: string;
+    }
+  >();
 
   // Add packages from functions
   for (const func of newVersionFuncs) {
     for (const pkg of func.packages) {
-      activePackageIds.add(pkg.packageId);
+      activePackages.set(pkg.packageId, {
+        type: pkg.package.type,
+        name: pkg.package.name,
+      });
     }
   }
 
   // Add packages from endpoints
   for (const endpoint of newVersionEndpoints) {
     for (const pkg of endpoint.packages) {
-      activePackageIds.add(pkg.packageId);
+      activePackages.set(pkg.packageId, {
+        type: pkg.package.type,
+        name: pkg.package.name,
+      });
     }
   }
 
   // Insert active packages into version_packages
-  if (activePackageIds.size > 0) {
+  if (activePackages.size > 0) {
     await transactionDb.insert(versionPackages).values(
-      Array.from(activePackageIds).map((packageId) => ({
+      Array.from(activePackages).map(([packageId, _]) => ({
         packageId,
         versionId: newVersionId,
       })),
     );
+  }
+
+  // Deploy a machine for the new version only if there are endpoints
+  if (process.env.NODE_ENV !== "development") {
+    const files = [
+      ...newVersionFuncs.map((func) => ({
+        guest_path: `/src/lib/${toKebabCase(func.name)}.ts`,
+        raw_value: Buffer.from(func.code).toString("base64"),
+      })),
+      ...newVersionEndpoints.map((endpoint) => {
+        const normalizedPath = endpoint.path
+          .replace(/^\//, "")
+          .replace(/[{]/g, "[")
+          .replace(/[}]/g, "]");
+        return {
+          guest_path: `/src/app/api/_hono/routes/${normalizedPath}/${endpoint.method}.ts`,
+          raw_value: Buffer.from(endpoint.code).toString("base64"),
+        };
+      }),
+    ];
+
+    const machineId = await Fly.Machine.create({
+      projectId: previousVersion.projectId,
+      versionId: newVersionId,
+      files,
+      packages: {
+        production: Array.from(activePackages.entries())
+          .filter(([_, pkg]) => pkg.type === "production")
+          .map(([_, pkg]) => pkg.name),
+        development: Array.from(activePackages.entries())
+          .filter(([_, pkg]) => pkg.type === "development")
+          .map(([_, pkg]) => pkg.name),
+      },
+    });
+
+    await transactionDb
+      .update(versions)
+      .set({
+        machineId,
+      })
+      .where(eq(versions.id, newVersionId));
   }
 }
 

@@ -32,7 +32,10 @@ export const dependencies = pgTable(
       ],
     }),
     createdAtIdx: index("dependencies_created_at_idx").on(t.createdAt),
-    noSelfDep: check("no_self_dep", sql`dependent_id != dependency_id`),
+    noSelfDep: check(
+      "no_self_dep",
+      sql`dependent_definition_id != dependency_definition_id`,
+    ),
     validDep: check(
       "valid_dep_types",
       sql`

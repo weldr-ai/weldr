@@ -152,7 +152,7 @@ export const versionPackageRelations = relations(
       references: [versions.id],
     }),
     package: one(packages, {
-      relationName: "version_packages",
+      relationName: "package_versions",
       fields: [versionPackages.packageId],
       references: [packages.id],
     }),

@@ -4,6 +4,7 @@ import {
   resourceEnvironmentVariables,
   versions,
 } from "@integramind/db/schema";
+import { Fly } from "@integramind/shared/fly";
 import {
   insertProjectSchema,
   updateProjectSchema,
@@ -23,26 +24,10 @@ export const projectsRouter = {
           const projectId = createId();
 
           if (process.env.NODE_ENV !== "development") {
-            const response = await fetch("https://api.machines.dev/v1/apps", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${process.env.FLY_API_KEY}`,
-              },
-              body: JSON.stringify({
-                app_name: `preview-${projectId}`,
-                enable_subdomains: true,
-                network: `net-${projectId}`,
-                org_slug: process.env.FLY_ORG_SLUG,
-              }),
+            await Fly.App.create({
+              appName: `preview-app-${projectId}`,
+              networkName: `preview-net-${projectId}`,
             });
-
-            if (!response.ok) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Failed to create project",
-              });
-            }
           }
 
           const project = await tx

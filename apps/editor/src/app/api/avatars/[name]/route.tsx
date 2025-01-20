@@ -11,9 +11,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { name: string } },
 ) {
+  const { name } = await params;
   const maskID = createId();
   const size = 120;
-  const gradient = await generateGradient(params.name, [
+  const gradient = await generateGradient(name, [
     "#5b1d99",
     "#0074b4",
     "#00b34c",

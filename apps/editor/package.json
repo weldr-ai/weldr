@@ -3,10 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "pnpm with-env next build",
+    "build": "next build",
     "clean": "git clean -xdf .next .turbo node_modules dist",
     "dev": "pnpm with-env next dev -p 3001",
-    "start": "pnpm with-env next start",
+    "start": "next start",
     "check-types": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
   },
