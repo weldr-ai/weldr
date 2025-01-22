@@ -39,18 +39,34 @@ export function ProjectView({
   const { isCollapsed } = useChat();
 
   return (
-    <ResizablePanelGroup direction="horizontal">
+    <ResizablePanelGroup direction="horizontal" className="space-x-0.5">
       {!isCollapsed && (
         <>
-          <ResizablePanel defaultSize={30} minSize={30} maxSize={40} order={1}>
-            <div className="flex h-[calc(100vh-64px)] flex-col overflow-hidden">
-              <ScrollArea className="size-full">
-                <div className="flex size-full flex-col gap-2 p-2" />
-              </ScrollArea>
-              <div className="pr-2">
-                <Editor id="editor" />
+          <ResizablePanel defaultSize={30} minSize={30} order={1}>
+            <Tabs
+              defaultValue="chat"
+              className="flex h-full flex-col overflow-hidden rounded-lg border"
+            >
+              <div className="flex w-full items-center justify-between border-b px-3 py-1.5">
+                <TabsList className="rounded-none border-none p-0">
+                  <TabsTrigger value="chat">Chat</TabsTrigger>
+                  <TabsTrigger value="history">History</TabsTrigger>
+                </TabsList>
               </div>
-            </div>
+              <TabsContent value="chat">
+                <ScrollArea className="h-[calc(100vh-238px)] px-2">
+                  <div />
+                </ScrollArea>
+                <div className="p-2">
+                  <Editor id="editor" className="h-full" />
+                </div>
+              </TabsContent>
+              <TabsContent value="history">
+                <ScrollArea className="h-[calc(100vh-132px)] px-2">
+                  <div />
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
           </ResizablePanel>
           <ResizableHandle className="bg-primary opacity-0 hover:opacity-100" />
         </>
@@ -58,6 +74,7 @@ export function ProjectView({
       <ResizablePanel
         className="h-full rounded-md border"
         defaultSize={70}
+        minSize={30}
         order={2}
       >
         <Main
