@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { Resend } from "resend";
 import type { z } from "zod";
 
-import { db, eq } from "@integramind/db";
-import { insertWaitlistSchema, waitlist } from "@integramind/db/schema";
+import { db, eq } from "@weldr/db";
+import { insertWaitlistSchema, waitlist } from "@weldr/db/schema";
 
 const resend = new Resend(process.env.RESEND_API_KEY ?? "");
 
@@ -61,10 +61,10 @@ export async function joinWaitlist(
 
       if (result) {
         await resend.emails.send({
-          from: "IntegraMind <noreply@integramind.ai>",
+          from: "Weldr <noreply@weldr.ai>",
           to: [validation.data.email],
           subject: "Thank you for your interest!",
-          html: "<p>Hi,</p><p>Thank you for your interest! We will get in touch with you soon when we launch.</p><p>If you have any questions, please feel free to reach out to us at <a href='mailto:hey@integramind.ai'>hey@integramind.ai</a>.</p><p>Best regards, <br /> IntegraMind Team</p>",
+          html: "<p>Hi,</p><p>Thank you for your interest! We will get in touch with you soon when we launch.</p><p>If you have any questions, please feel free to reach out to us at <a href='mailto:hey@weldr.ai'>hey@weldr.ai</a>.</p><p>Best regards, <br /> Weldr Team</p>",
         });
       } else {
         throw new Error("Failed to insert waitlist");

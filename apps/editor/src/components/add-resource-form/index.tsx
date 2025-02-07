@@ -1,13 +1,10 @@
 "use client";
 
-import { toast } from "@integramind/ui/hooks/use-toast";
+import { toast } from "@weldr/ui/hooks/use-toast";
 
 import { api } from "@/lib/trpc/client";
-import type { RouterOutputs } from "@integramind/api";
-import type {
-  EnvironmentVariable,
-  Integration,
-} from "@integramind/shared/types";
+import type { RouterOutputs } from "@weldr/api";
+import type { EnvironmentVariable, Integration } from "@weldr/shared/types";
 import { AddPostgresResourceForm } from "./add-postgres-resource-form";
 
 export function AddResourceForm({

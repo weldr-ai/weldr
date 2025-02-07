@@ -1,16 +1,16 @@
 "use client";
 
 import { api } from "@/lib/trpc/client";
-import type { RouterOutputs } from "@integramind/api";
-import { Button } from "@integramind/ui/button";
+import type { RouterOutputs } from "@weldr/api";
+import { Button } from "@weldr/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@integramind/ui/card";
-import { toast } from "@integramind/ui/hooks/use-toast";
+} from "@weldr/ui/card";
+import { toast } from "@weldr/ui/hooks/use-toast";
 import { Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";

@@ -1,11 +1,11 @@
 import "server-only";
 
-import { db, inArray } from "@integramind/db";
-import { funcs } from "@integramind/db/schema";
-import type { Package } from "@integramind/shared/types";
-import { toKebabCase } from "@integramind/shared/utils";
-import type { resourceMetadataSchema } from "@integramind/shared/validators/common";
-import type { openApiEndpointSpecSchema } from "@integramind/shared/validators/openapi";
+import { db, inArray } from "@weldr/db";
+import { funcs } from "@weldr/db/schema";
+import type { Package } from "@weldr/shared/types";
+import { toKebabCase } from "@weldr/shared/utils";
+import type { resourceMetadataSchema } from "@weldr/shared/validators/common";
+import type { openApiEndpointSpecSchema } from "@weldr/shared/validators/openapi";
 import type { z } from "zod";
 
 export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gathering agent specializing in defining detailed specifications for functions through interactive dialogue. Your task is to assist users in clarifying their requirements, and ultimately provide a structured summary of the function specifications.

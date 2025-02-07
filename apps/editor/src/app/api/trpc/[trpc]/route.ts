@@ -1,6 +1,6 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
-import { appRouter, createTRPCContext } from "@integramind/api";
+import { appRouter, createTRPCContext } from "@weldr/api";
 
 /**
  * Configure basic CORS headers

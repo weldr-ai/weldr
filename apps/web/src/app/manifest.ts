@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "IntegraMind",
-    short_name: "IntegraMind",
+    name: "Weldr",
+    short_name: "Weldr",
     description:
       "Create backend APIs, automation workflows, and integrations using only plain English, no coding required!",
     start_url: "/",

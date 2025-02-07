@@ -1,6 +1,6 @@
-import { db } from "@integramind/db";
-import ResetPasswordEmail from "@integramind/emails/reset-password";
-import VerificationEmail from "@integramind/emails/verification-email";
+import { db } from "@weldr/db";
+import ResetPasswordEmail from "@weldr/emails/reset-password";
+import VerificationEmail from "@weldr/emails/verification-email";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
@@ -18,7 +18,7 @@ export const auth = betterAuth({
     async sendVerificationEmail({ user, url }) {
       console.log("Sending verification email to", user.email);
       await resend.emails.send({
-        from: "IntegraMind <noreply@integramind.ai>",
+        from: "Weldr <noreply@weldr.ai>",
         to: user.email,
         subject: "Verify your email address",
         react: (
@@ -41,7 +41,7 @@ export const auth = betterAuth({
     autoSignIn: true,
     async sendResetPassword({ user, url, token }, request) {
       await resend.emails.send({
-        from: "IntegraMind <noreply@integramind.ai>",
+        from: "Weldr <noreply@weldr.ai>",
         to: user.email,
         subject: "Reset your password",
         react: (

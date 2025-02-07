@@ -1,5 +1,5 @@
 {
-  "extends": "@integramind/tsconfig/next.json",
+  "extends": "@weldr/tsconfig/next.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {

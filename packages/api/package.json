@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/api",
+  "name": "@weldr/api",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -11,9 +11,9 @@
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@integramind/auth": "workspace:*",
-    "@integramind/db": "workspace:*",
-    "@integramind/shared": "workspace:*",
+    "@weldr/auth": "workspace:*",
+    "@weldr/db": "workspace:*",
+    "@weldr/shared": "workspace:*",
     "@paralleldrive/cuid2": "^2.2.2",
     "@trpc/server": "11.0.0-rc.666",
     "diff": "^7.0.0",
@@ -22,7 +22,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@integramind/tsconfig": "workspace:*",
+    "@weldr/tsconfig": "workspace:*",
     "@types/diff": "^7.0.0",
     "typescript": "^5.7.2"
   }

@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 
-import { authClient } from "@integramind/auth/client";
-import { Button } from "@integramind/ui/button";
-import { toast } from "@integramind/ui/hooks/use-toast";
-import { GithubIcon } from "@integramind/ui/icons/github-icon";
-import { GoogleIcon } from "@integramind/ui/icons/google-icon";
-import { MicrosoftIcon } from "@integramind/ui/icons/microsoft-icon";
+import { authClient } from "@weldr/auth/client";
+import { Button } from "@weldr/ui/button";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { GithubIcon } from "@weldr/ui/icons/github-icon";
+import { GoogleIcon } from "@weldr/ui/icons/google-icon";
+import { MicrosoftIcon } from "@weldr/ui/icons/microsoft-icon";
 
 export function Socials() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);

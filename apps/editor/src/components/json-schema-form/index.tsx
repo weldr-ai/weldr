@@ -1,6 +1,6 @@
-import type { JsonSchema } from "@integramind/shared/types";
-import { Button } from "@integramind/ui/button";
-import { Card } from "@integramind/ui/card";
+import type { JsonSchema } from "@weldr/shared/types";
+import { Button } from "@weldr/ui/button";
+import { Card } from "@weldr/ui/card";
 import { useState } from "react";
 import { FieldWrapper } from "./field-wrapper";
 import type { RecordValue, ValidationError } from "./types";

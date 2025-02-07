@@ -3,7 +3,7 @@
 import { EditIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@weldr/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,14 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@integramind/ui/dialog";
+} from "@weldr/ui/dialog";
 
 import { AddResourceForm } from "@/components/add-resource-form";
-import type { RouterOutputs } from "@integramind/api";
-import type {
-  EnvironmentVariable,
-  Integration,
-} from "@integramind/shared/types";
+import type { RouterOutputs } from "@weldr/api";
+import type { EnvironmentVariable, Integration } from "@weldr/shared/types";
 
 export function AddResourceDialog({
   integration,

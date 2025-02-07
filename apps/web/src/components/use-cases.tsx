@@ -1,8 +1,8 @@
 import { AppWindowMacIcon, ServerIcon, WebhookIcon } from "lucide-react";
 import Image from "next/image";
 
-import { Badge } from "@integramind/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
+import { Badge } from "@weldr/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
 
 export function UseCases() {
   return (

@@ -1,6 +1,6 @@
-import { and, eq, inArray, isNull, or } from "@integramind/db";
-import { endpoints, funcs, versions } from "@integramind/db/schema";
 import type { TRPCRouterRecord } from "@trpc/server";
+import { and, eq, inArray, isNull, or } from "@weldr/db";
+import { endpoints, funcs, versions } from "@weldr/db/schema";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 import { getDependencyChain, isEndpointReady, isFunctionReady } from "../utils";

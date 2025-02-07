@@ -5,19 +5,19 @@ import Link from "next/link";
 import { useState } from "react";
 import { SupportLinks } from "../_components/support-links";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@weldr/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@integramind/ui/card";
-import { Input } from "@integramind/ui/input";
+} from "@weldr/ui/card";
+import { Input } from "@weldr/ui/input";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { authClient } from "@integramind/auth/client";
-import { signUpSchema } from "@integramind/shared/validators/auth";
+import { authClient } from "@weldr/auth/client";
+import { signUpSchema } from "@weldr/shared/validators/auth";
 import {
   Form,
   FormControl,
@@ -25,9 +25,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@integramind/ui/form";
-import { toast } from "@integramind/ui/hooks/use-toast";
-import { LogoIcon } from "@integramind/ui/icons/logo-icon";
+} from "@weldr/ui/form";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";

@@ -28,18 +28,14 @@ import type { CanvasNode, CanvasNodeData } from "@/types";
 import "@/styles/flow-builder.css";
 import "@xyflow/react/dist/base.css";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@weldr/ui/button";
 
 import { useFlowBuilder } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
-import type { RouterOutputs } from "@integramind/api";
-import { toast } from "@integramind/ui/hooks/use-toast";
-import { useTheme } from "@integramind/ui/theme-provider";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@integramind/ui/tooltip";
+import type { RouterOutputs } from "@weldr/api";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { useTheme } from "@weldr/ui/theme-provider";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
 import { EndpointNode } from "./nodes/endpoint";
 import { FuncNode } from "./nodes/func";
 

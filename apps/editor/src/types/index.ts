@@ -1,6 +1,6 @@
 import type { Edge, Node, NodeProps } from "@xyflow/react";
 
-import type { RouterOutputs } from "@integramind/api";
+import type { RouterOutputs } from "@weldr/api";
 
 export type CanvasNodeTypes = "func" | "endpoint" | "module";
 export type CanvasNodeData =

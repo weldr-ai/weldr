@@ -1,5 +1,5 @@
 {
-  "extends": "@integramind/tsconfig/node.json",
+  "extends": "@weldr/tsconfig/node.json",
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "./dist",

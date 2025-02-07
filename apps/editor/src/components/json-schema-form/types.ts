@@ -1,4 +1,4 @@
-import type { JsonSchema } from "@integramind/shared/types";
+import type { JsonSchema } from "@weldr/shared/types";
 
 export interface ValidationError {
   path: string;

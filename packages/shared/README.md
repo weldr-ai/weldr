@@ -1,1 +1,1 @@
-# `@integramind/shared`
+# `@weldr/shared`

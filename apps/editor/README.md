@@ -1,1 +1,1 @@
-# `@integramind/editor`
+# `@weldr/editor`

@@ -3,23 +3,19 @@
 import { Editor } from "@/components/editor";
 import { useChat } from "@/lib/store";
 import type { CanvasNode } from "@/types";
-import type { RouterOutputs } from "@integramind/api";
+import type { RouterOutputs } from "@weldr/api";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@integramind/ui/resizable";
-import { ScrollArea } from "@integramind/ui/scroll-area";
+} from "@weldr/ui/resizable";
+import { ScrollArea } from "@weldr/ui/scroll-area";
 
 import { Canvas } from "@/components/canvas";
 import { ProjectSettings } from "@/components/project-settings";
-import { Button } from "@integramind/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@integramind/ui/tooltip";
+import { Button } from "@weldr/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
 import {
   AppWindowIcon,
   ExternalLinkIcon,

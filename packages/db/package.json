@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/db",
+  "name": "@weldr/db",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -22,14 +22,14 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@integramind/shared": "workspace:*",
+    "@weldr/shared": "workspace:*",
     "@paralleldrive/cuid2": "^2.2.2",
     "drizzle-orm": "^0.38.3",
     "drizzle-zod": "^0.6.1",
     "pg": "^8.13.1"
   },
   "devDependencies": {
-    "@integramind/tsconfig": "workspace:*",
+    "@weldr/tsconfig": "workspace:*",
     "@types/pg": "^8.11.10",
     "dotenv-cli": "^7.4.1",
     "drizzle-kit": "^0.30.1",

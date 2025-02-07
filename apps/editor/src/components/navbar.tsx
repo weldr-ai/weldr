@@ -1,13 +1,9 @@
 "use client";
 
 import { useChat } from "@/lib/store";
-import type { RouterOutputs } from "@integramind/api";
-import { Button } from "@integramind/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@integramind/ui/tooltip";
+import type { RouterOutputs } from "@weldr/api";
+import { Button } from "@weldr/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
 import { RocketIcon, SidebarIcon } from "lucide-react";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 

@@ -11,12 +11,7 @@ const config = {
   reactStrictMode: true,
 
   /** Enables hot reloading for local packages without a build step */
-  transpilePackages: [
-    "@integramind/api",
-    "@integramind/auth",
-    "@integramind/db",
-    "@integramind/ui",
-  ],
+  transpilePackages: ["@weldr/api", "@weldr/auth", "@weldr/db", "@weldr/ui"],
 
   images: {
     remotePatterns: [

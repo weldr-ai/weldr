@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/auth",
+  "name": "@weldr/auth",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -13,8 +13,8 @@
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@integramind/db": "workspace:*",
-    "@integramind/emails": "workspace:*",
+    "@weldr/db": "workspace:*",
+    "@weldr/emails": "workspace:*",
     "better-auth": "1.1.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -22,7 +22,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@integramind/tsconfig": "workspace:*",
+    "@weldr/tsconfig": "workspace:*",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "esbuild": "^0.24.2",

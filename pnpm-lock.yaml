@@ -26,15 +26,15 @@ importers:
       '@ianvs/prettier-plugin-sort-imports':
         specifier: ^4.2.1
         version: 4.3.1(@vue/compiler-sfc@3.5.13)(prettier@3.3.2)
-      '@integramind/tsconfig':
-        specifier: workspace:*
-        version: link:tooling/typescript
       '@turbo/gen':
         specifier: ^1.13.3
         version: 1.13.4(@swc/core@1.3.101(@swc/helpers@0.5.15))(@types/node@22.8.1)(typescript@5.7.2)
       '@typescript-eslint/parser':
         specifier: ^7.11.0
         version: 7.16.0(eslint@8.57.0)(typescript@5.7.2)
+      '@weldr/tsconfig':
+        specifier: workspace:*
+        version: link:tooling/typescript
       commitizen:
         specifier: ^4.3.0
         version: 4.3.0(@types/node@22.8.1)(typescript@5.7.2)
@@ -71,21 +71,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.3.4
         version: 3.9.0(react-hook-form@7.52.1(react@18.3.1))
-      '@integramind/api':
-        specifier: workspace:*
-        version: link:../../packages/api
-      '@integramind/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@integramind/db':
-        specifier: workspace:*
-        version: link:../../packages/db
-      '@integramind/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@integramind/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@lexical/react':
         specifier: ^0.16.0
         version: 0.16.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(yjs@13.6.18)
@@ -119,6 +104,21 @@ importers:
       '@vercel/speed-insights':
         specifier: ^1.0.10
         version: 1.0.12(next@15.1.2(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(svelte@4.2.19)(vue-router@4.5.0(vue@3.5.13(typescript@5.7.2)))(vue@3.5.13(typescript@5.7.2))
+      '@weldr/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      '@weldr/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@weldr/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@weldr/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@weldr/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@xyflow/react':
         specifier: ^12.3.6
         version: 12.3.6(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -168,12 +168,6 @@ importers:
         specifier: ^3.24.1
         version: 3.24.1
     devDependencies:
-      '@integramind/tailwind-config':
-        specifier: workspace:^
-        version: link:../../tooling/tailwind
-      '@integramind/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/typescript
       '@types/node':
         specifier: ^20.11.24
         version: 20.14.10
@@ -183,6 +177,12 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.0
         version: 18.3.0
+      '@weldr/tailwind-config':
+        specifier: workspace:^
+        version: link:../../tooling/tailwind
+      '@weldr/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
       autoprefixer:
         specifier: ^10.4.18
         version: 10.4.19(postcss@8.4.47)
@@ -204,15 +204,15 @@ importers:
 
   apps/web:
     dependencies:
-      '@integramind/db':
-        specifier: workspace:*
-        version: link:../../packages/db
-      '@integramind/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@vercel/analytics':
         specifier: ^1.2.2
         version: 1.3.1(next@15.1.2(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      '@weldr/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@weldr/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       framer-motion:
         specifier: ^11.2.10
         version: 11.3.2(@emotion/is-prop-valid@0.8.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -238,12 +238,6 @@ importers:
         specifier: ^3.24.1
         version: 3.24.1
     devDependencies:
-      '@integramind/tailwind-config':
-        specifier: workspace:*
-        version: link:../../tooling/tailwind
-      '@integramind/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/typescript
       '@types/node':
         specifier: ^20.11.24
         version: 20.14.10
@@ -253,6 +247,12 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.0
         version: 18.3.0
+      '@weldr/tailwind-config':
+        specifier: workspace:*
+        version: link:../../tooling/tailwind
+      '@weldr/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
       autoprefixer:
         specifier: ^10.4.18
         version: 10.4.19(postcss@8.4.47)
@@ -274,21 +274,21 @@ importers:
 
   packages/api:
     dependencies:
-      '@integramind/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@integramind/db':
-        specifier: workspace:*
-        version: link:../db
-      '@integramind/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@paralleldrive/cuid2':
         specifier: ^2.2.2
         version: 2.2.2
       '@trpc/server':
         specifier: 11.0.0-rc.666
         version: 11.0.0-rc.666(typescript@5.7.2)
+      '@weldr/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@weldr/db':
+        specifier: workspace:*
+        version: link:../db
+      '@weldr/shared':
+        specifier: workspace:*
+        version: link:../shared
       diff:
         specifier: ^7.0.0
         version: 7.0.0
@@ -302,22 +302,22 @@ importers:
         specifier: ^3.24.1
         version: 3.24.1
     devDependencies:
-      '@integramind/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/typescript
       '@types/diff':
         specifier: ^7.0.0
         version: 7.0.0
+      '@weldr/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
       typescript:
         specifier: ^5.7.2
         version: 5.7.2
 
   packages/auth:
     dependencies:
-      '@integramind/db':
+      '@weldr/db':
         specifier: workspace:*
         version: link:../db
-      '@integramind/emails':
+      '@weldr/emails':
         specifier: workspace:*
         version: link:../emails
       better-auth:
@@ -336,15 +336,15 @@ importers:
         specifier: ^3.24.1
         version: 3.24.1
     devDependencies:
-      '@integramind/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/typescript
       '@types/react':
         specifier: ^18.3.3
         version: 18.3.3
       '@types/react-dom':
         specifier: ^18.3.0
         version: 18.3.0
+      '@weldr/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
       esbuild:
         specifier: ^0.24.2
         version: 0.24.2
@@ -354,12 +354,12 @@ importers:
 
   packages/db:
     dependencies:
-      '@integramind/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@paralleldrive/cuid2':
         specifier: ^2.2.2
         version: 2.2.2
+      '@weldr/shared':
+        specifier: workspace:*
+        version: link:../shared
       drizzle-orm:
         specifier: ^0.38.3
         version: 0.38.3(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.11.10)(@types/react@19.0.2)(kysely@0.27.4)(pg@8.13.1)(postgres@3.4.4)(react@18.3.1)
@@ -370,12 +370,12 @@ importers:
         specifier: ^8.13.1
         version: 8.13.1
     devDependencies:
-      '@integramind/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/typescript
       '@types/pg':
         specifier: ^8.11.10
         version: 8.11.10
+      '@weldr/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
       dotenv-cli:
         specifier: ^7.4.1
         version: 7.4.2
@@ -401,18 +401,18 @@ importers:
         specifier: 3.0.2
         version: 3.0.2(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
-      '@integramind/tailwind-config':
-        specifier: workspace:*
-        version: link:../../tooling/tailwind
-      '@integramind/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/typescript
       '@types/react':
         specifier: ^18.3.3
         version: 18.3.3
       '@types/react-dom':
         specifier: ^18.3.0
         version: 18.3.0
+      '@weldr/tailwind-config':
+        specifier: workspace:*
+        version: link:../../tooling/tailwind
+      '@weldr/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
       tailwindcss:
         specifier: 3.4.11
         version: 3.4.11(ts-node@10.9.2(@swc/core@1.3.101(@swc/helpers@0.5.15))(@types/node@22.8.1)(typescript@5.7.2))
@@ -444,7 +444,7 @@ importers:
         specifier: ^3.24.1
         version: 3.24.1
     devDependencies:
-      '@integramind/tsconfig':
+      '@weldr/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       typescript:
@@ -598,12 +598,6 @@ importers:
         specifier: ^3.24.1
         version: 3.24.1
     devDependencies:
-      '@integramind/tailwind-config':
-        specifier: workspace:*
-        version: link:../../tooling/tailwind
-      '@integramind/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/typescript
       '@types/eslint':
         specifier: ^8.56.6
         version: 8.56.10
@@ -613,6 +607,12 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.0
         version: 18.3.0
+      '@weldr/tailwind-config':
+        specifier: workspace:*
+        version: link:../../tooling/tailwind
+      '@weldr/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
       autoprefixer:
         specifier: ^10.4.18
         version: 10.4.19(postcss@8.4.39)
@@ -655,7 +655,7 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.4(ts-node@10.9.2(@swc/core@1.3.101(@swc/helpers@0.5.15))(@types/node@22.8.1)(typescript@5.7.2)))
     devDependencies:
-      '@integramind/tsconfig':
+      '@weldr/tsconfig':
         specifier: workspace:*
         version: link:../typescript
       typescript:

@@ -1,1 +1,1 @@
-# `@integramind/db`
+# `@weldr/db`

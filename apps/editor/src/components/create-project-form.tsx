@@ -6,13 +6,13 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { Button } from "@integramind/ui/button";
-import { Form, FormControl, FormField, FormItem } from "@integramind/ui/form";
-import { toast } from "@integramind/ui/hooks/use-toast";
-import { Textarea } from "@integramind/ui/textarea";
+import { Button } from "@weldr/ui/button";
+import { Form, FormControl, FormField, FormItem } from "@weldr/ui/form";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { Textarea } from "@weldr/ui/textarea";
 
 import { api } from "@/lib/trpc/client";
-import { insertProjectSchema } from "@integramind/shared/validators/projects";
+import { insertProjectSchema } from "@weldr/shared/validators/projects";
 import { useEffect, useState } from "react";
 
 const placeholders = [

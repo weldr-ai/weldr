@@ -1,14 +1,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { RouterOutputs } from "@integramind/api";
-import { updateProjectSchema } from "@integramind/shared/validators/projects";
-import { Button } from "@integramind/ui/button";
+import type { RouterOutputs } from "@weldr/api";
+import { updateProjectSchema } from "@weldr/shared/validators/projects";
+import { Button } from "@weldr/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@integramind/ui/card";
+} from "@weldr/ui/card";
 import {
   Form,
   FormControl,
@@ -16,10 +16,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@integramind/ui/form";
-import { toast } from "@integramind/ui/hooks/use-toast";
-import { Input } from "@integramind/ui/input";
-import { Textarea } from "@integramind/ui/textarea";
+} from "@weldr/ui/form";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { Input } from "@weldr/ui/input";
+import { Textarea } from "@weldr/ui/textarea";
 import { Loader2Icon } from "lucide-react";
 
 import { api } from "@/lib/trpc/client";
@@ -107,7 +107,7 @@ export function GeneralSection({
                     <div className="relative">
                       <Input placeholder="Enter subdomain" {...field} />
                       <span className="absolute top-[9px] right-2.5 text-muted-foreground text-xs">
-                        .integramind.app
+                        .weldr.app
                       </span>
                     </div>
                   </FormControl>

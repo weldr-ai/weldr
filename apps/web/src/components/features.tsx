@@ -6,12 +6,12 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-import { Badge } from "@integramind/ui/badge";
+import { Badge } from "@weldr/ui/badge";
 
-import { NotionIcon } from "@integramind/ui/icons/notion-icon";
-import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
-import { SalesforceIcon } from "@integramind/ui/icons/salesforce-icon";
-import { SlackIcon } from "@integramind/ui/icons/slack-icon";
+import { NotionIcon } from "@weldr/ui/icons/notion-icon";
+import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
+import { SalesforceIcon } from "@weldr/ui/icons/salesforce-icon";
+import { SlackIcon } from "@weldr/ui/icons/slack-icon";
 
 export function Features() {
   return (
@@ -63,8 +63,8 @@ export function Features() {
               No Code, Just English!
             </h3>
             <p className="max-w-lg text-sm">
-              No coding necessary, just English! IntegraMind lets you automate
-              your workflows and build custom solutions quickly.
+              No coding necessary, just English! Weldr lets you automate your
+              workflows and build custom solutions quickly.
             </p>
           </div>
         </div>
@@ -81,8 +81,8 @@ export function Features() {
           <div className="space-y-2 lg:h-28 lg:space-y-4 xl:h-36">
             <h3 className="font-semibold text-xl lg:text-3xl">Maintainable</h3>
             <p className="max-w-lg text-sm">
-              IntegraMind&apos;s programming paradigm is designed to be
-              maintainable, so users can easily build and modify their flows.
+              Weldr&apos;s programming paradigm is designed to be maintainable,
+              so users can easily build and modify their flows.
             </p>
           </div>
         </div>
@@ -121,7 +121,7 @@ export function Features() {
           <div className="space-y-2 md:space-y-4 lg:h-28 xl:h-36">
             <h3 className="font-semibold text-xl lg:text-3xl">Customizable</h3>
             <p className="max-w-lg text-sm">
-              IntegraMind provides few primitives that you can compose to build
+              Weldr provides few primitives that you can compose to build
               anything you want.
             </p>
           </div>
@@ -135,8 +135,8 @@ export function Features() {
           <div className="space-y-2 lg:h-28 lg:space-y-4 xl:h-36">
             <h3 className="font-semibold text-xl lg:text-3xl">Intuitive</h3>
             <p className="max-w-lg text-sm">
-              No learning curve, no complicated interface. IntegraMind is built
-              with emphasis on simplicity and ease of use.
+              No learning curve, no complicated interface. Weldr is built with
+              emphasis on simplicity and ease of use.
             </p>
           </div>
         </div>

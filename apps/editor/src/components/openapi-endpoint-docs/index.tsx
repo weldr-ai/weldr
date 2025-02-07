@@ -5,10 +5,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@integramind/ui/accordion";
-import { Badge } from "@integramind/ui/badge";
-import { Button } from "@integramind/ui/button";
-import { cn } from "@integramind/ui/utils";
+} from "@weldr/ui/accordion";
+import { Badge } from "@weldr/ui/badge";
+import { Button } from "@weldr/ui/button";
+import { cn } from "@weldr/ui/utils";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import type { OpenAPIV3 } from "openapi-types";
 import { useState } from "react";
@@ -123,7 +123,7 @@ export default function OpenApiEndpointDocs({
   if (!spec) {
     return (
       <div className="flex h-[calc(100dvh-432px)] items-center justify-center text-center text-muted-foreground text-xs">
-        Chat with IntegraMind to generate the endpoint
+        Chat with Weldr to generate the endpoint
       </div>
     );
   }

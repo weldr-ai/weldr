@@ -9,15 +9,16 @@ import { useFlowBuilder } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { getResourceReferences } from "@/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
-import type { RouterOutputs } from "@integramind/api";
+import { createId } from "@paralleldrive/cuid2";
+import type { RouterOutputs } from "@weldr/api";
 import type {
   ConversationMessage,
   EndpointRequirementsMessage,
   UserMessageRawContent,
-} from "@integramind/shared/types";
-import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
-import { Button } from "@integramind/ui/button";
-import { Card } from "@integramind/ui/card";
+} from "@weldr/shared/types";
+import { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/conversations";
+import { Button } from "@weldr/ui/button";
+import { Card } from "@weldr/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -25,20 +26,19 @@ import {
   ContextMenuLabel,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@integramind/ui/context-menu";
+} from "@weldr/ui/context-menu";
 import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardTrigger,
-} from "@integramind/ui/expandable-card";
+} from "@weldr/ui/expandable-card";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@integramind/ui/resizable";
-import { ScrollArea } from "@integramind/ui/scroll-area";
-import { cn } from "@integramind/ui/utils";
-import { createId } from "@paralleldrive/cuid2";
+} from "@weldr/ui/resizable";
+import { ScrollArea } from "@weldr/ui/scroll-area";
+import { cn } from "@weldr/ui/utils";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
@@ -96,7 +96,7 @@ export const EndpointNode = memo(
           {
             type: "text",
             value:
-              "Hi there! I'm IntegraMind, your AI assistant. What does your endpoint do?",
+              "Hi there! I'm Weldr, your AI assistant. What does your endpoint do?",
           },
         ],
       },
@@ -118,7 +118,7 @@ export const EndpointNode = memo(
             {
               type: "text",
               value:
-                "Hi there! I'm IntegraMind, your AI assistant. What does your endpoint do?",
+                "Hi there! I'm Weldr, your AI assistant. What does your endpoint do?",
             },
           ],
         },
@@ -392,7 +392,7 @@ export const EndpointNode = memo(
               <ContextMenuItem className="flex items-center justify-between text-xs">
                 <Link
                   className="flex items-center"
-                  href="https://docs.integramind.ai/endpoints"
+                  href="https://docs.weldr.ai/endpoints"
                   target="blank"
                 >
                   <FileTextIcon className="mr-3 size-4 text-muted-foreground" />

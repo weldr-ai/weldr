@@ -2,14 +2,14 @@ import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { buttonVariants } from "@integramind/ui/button";
+import { buttonVariants } from "@weldr/ui/button";
 
 export default function WaitlistConfirmationPage() {
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4">
       <Image
         className="size-20"
-        alt="IntegraMind"
+        alt="Weldr"
         height={500}
         priority
         src="/logo.svg"

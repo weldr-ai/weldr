@@ -1,15 +1,15 @@
-import { Button } from "@integramind/ui/button";
-import { Card, CardContent } from "@integramind/ui/card";
-import { Input } from "@integramind/ui/input";
+import { Button } from "@weldr/ui/button";
+import { Card, CardContent } from "@weldr/ui/card";
+import { Input } from "@weldr/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@integramind/ui/select";
-import { Switch } from "@integramind/ui/switch";
-import { Textarea } from "@integramind/ui/textarea";
+} from "@weldr/ui/select";
+import { Switch } from "@weldr/ui/switch";
+import { Textarea } from "@weldr/ui/textarea";
 import { Minus, Plus } from "lucide-react";
 import type { FormFieldProps } from "./types";
 

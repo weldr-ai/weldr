@@ -1,1 +1,1 @@
-# `@integramind/marketing`
+# `@weldr/marketing`

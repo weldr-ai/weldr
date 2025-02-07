@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/editor",
+  "name": "@weldr/editor",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -15,11 +15,11 @@
     "@ai-sdk/fireworks": "^0.1.8",
     "@ai-sdk/openai": "^0.0.60",
     "@hookform/resolvers": "^3.3.4",
-    "@integramind/api": "workspace:*",
-    "@integramind/auth": "workspace:*",
-    "@integramind/db": "workspace:*",
-    "@integramind/shared": "workspace:*",
-    "@integramind/ui": "workspace:*",
+    "@weldr/api": "workspace:*",
+    "@weldr/auth": "workspace:*",
+    "@weldr/db": "workspace:*",
+    "@weldr/shared": "workspace:*",
+    "@weldr/ui": "workspace:*",
     "@lexical/react": "^0.16.0",
     "@paralleldrive/cuid2": "^2.2.2",
     "@tanstack/react-query": "^5.62.9",
@@ -49,8 +49,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@integramind/tailwind-config": "workspace:^",
-    "@integramind/tsconfig": "workspace:*",
+    "@weldr/tailwind-config": "workspace:^",
+    "@weldr/tsconfig": "workspace:*",
     "@types/node": "^20.11.24",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

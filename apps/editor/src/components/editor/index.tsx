@@ -11,10 +11,10 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, LexicalEditor } from "lexical";
 import { useEffect } from "react";
 
-import { cn } from "@integramind/ui/utils";
+import { cn } from "@weldr/ui/utils";
 
-import type { UserMessageRawContent } from "@integramind/shared/types";
-import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
+import type { UserMessageRawContent } from "@weldr/shared/types";
+import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/conversations";
 import type { z } from "zod";
 import { ReferencesPlugin } from "./plugins/reference";
 import { ReferenceNode } from "./plugins/reference/node";

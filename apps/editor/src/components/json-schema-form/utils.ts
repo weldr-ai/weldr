@@ -1,4 +1,4 @@
-import type { JsonSchema } from "@integramind/shared/types";
+import type { JsonSchema } from "@weldr/shared/types";
 import type { JSONSchema7Definition } from "json-schema";
 
 export function isJsonSchema(

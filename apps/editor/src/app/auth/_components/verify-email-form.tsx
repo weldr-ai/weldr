@@ -1,8 +1,8 @@
 "use client";
 
-import { buttonVariants } from "@integramind/ui/button";
-import { LogoIcon } from "@integramind/ui/icons/logo-icon";
-import { cn } from "@integramind/ui/utils";
+import { buttonVariants } from "@weldr/ui/button";
+import { LogoIcon } from "@weldr/ui/icons/logo-icon";
+import { cn } from "@weldr/ui/utils";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 

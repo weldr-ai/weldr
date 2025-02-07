@@ -1,6 +1,6 @@
-import { eq } from "@integramind/db";
-import { integrations } from "@integramind/db/schema";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
+import { eq } from "@weldr/db";
+import { integrations } from "@weldr/db/schema";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 

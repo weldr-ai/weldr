@@ -1,16 +1,16 @@
 "use client";
 
 import { api } from "@/lib/trpc/client";
-import type { RouterOutputs } from "@integramind/api";
-import { Badge } from "@integramind/ui/badge";
-import { Button } from "@integramind/ui/button";
+import type { RouterOutputs } from "@weldr/api";
+import { Badge } from "@weldr/ui/badge";
+import { Button } from "@weldr/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@integramind/ui/card";
+} from "@weldr/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -18,27 +18,27 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@integramind/ui/dialog";
-import { AirtableIcon } from "@integramind/ui/icons/airtable-icon";
-import { AsanaIcon } from "@integramind/ui/icons/asana-icon";
-import { CalComIcon } from "@integramind/ui/icons/cal-com-icon";
-import { GithubIcon } from "@integramind/ui/icons/github-icon";
-import { GoogleDriveIcon } from "@integramind/ui/icons/google-drive-icon";
-import { GoogleSheetsIcon } from "@integramind/ui/icons/google-sheets-icon";
-import { HubspotIcon } from "@integramind/ui/icons/hubspot-icon";
-import { JiraIcon } from "@integramind/ui/icons/jira-icon";
-import { LinearIcon } from "@integramind/ui/icons/linear-icon";
-import { NotionIcon } from "@integramind/ui/icons/notion-icon";
-import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
-import { ResendIcon } from "@integramind/ui/icons/resend-icon";
-import { S3Icon } from "@integramind/ui/icons/s3-icon";
-import { SalesforceIcon } from "@integramind/ui/icons/salesforce-icon";
-import { SendgridIcon } from "@integramind/ui/icons/sendgrid-icon";
-import { SlackIcon } from "@integramind/ui/icons/slack-icon";
-import { StripeIcon } from "@integramind/ui/icons/stripe-icon";
-import { TwilioIcon } from "@integramind/ui/icons/twilio-icon";
-import { ScrollArea } from "@integramind/ui/scroll-area";
-import { useTheme } from "@integramind/ui/theme-provider";
+} from "@weldr/ui/dialog";
+import { AirtableIcon } from "@weldr/ui/icons/airtable-icon";
+import { AsanaIcon } from "@weldr/ui/icons/asana-icon";
+import { CalComIcon } from "@weldr/ui/icons/cal-com-icon";
+import { GithubIcon } from "@weldr/ui/icons/github-icon";
+import { GoogleDriveIcon } from "@weldr/ui/icons/google-drive-icon";
+import { GoogleSheetsIcon } from "@weldr/ui/icons/google-sheets-icon";
+import { HubspotIcon } from "@weldr/ui/icons/hubspot-icon";
+import { JiraIcon } from "@weldr/ui/icons/jira-icon";
+import { LinearIcon } from "@weldr/ui/icons/linear-icon";
+import { NotionIcon } from "@weldr/ui/icons/notion-icon";
+import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
+import { ResendIcon } from "@weldr/ui/icons/resend-icon";
+import { S3Icon } from "@weldr/ui/icons/s3-icon";
+import { SalesforceIcon } from "@weldr/ui/icons/salesforce-icon";
+import { SendgridIcon } from "@weldr/ui/icons/sendgrid-icon";
+import { SlackIcon } from "@weldr/ui/icons/slack-icon";
+import { StripeIcon } from "@weldr/ui/icons/stripe-icon";
+import { TwilioIcon } from "@weldr/ui/icons/twilio-icon";
+import { ScrollArea } from "@weldr/ui/scroll-area";
+import { useTheme } from "@weldr/ui/theme-provider";
 import { useState } from "react";
 import { AddResourceDialog } from "../add-resource-dialog";
 

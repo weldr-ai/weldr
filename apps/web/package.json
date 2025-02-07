@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/web",
+  "name": "@weldr/web",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -11,8 +11,8 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@integramind/db": "workspace:*",
-    "@integramind/ui": "workspace:*",
+    "@weldr/db": "workspace:*",
+    "@weldr/ui": "workspace:*",
     "@vercel/analytics": "^1.2.2",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.363.0",
@@ -24,8 +24,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@integramind/tailwind-config": "workspace:*",
-    "@integramind/tsconfig": "workspace:*",
+    "@weldr/tailwind-config": "workspace:*",
+    "@weldr/tsconfig": "workspace:*",
     "@types/node": "^20.11.24",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

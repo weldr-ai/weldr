@@ -1,5 +1,5 @@
-import type { DatabaseStructure } from "@integramind/shared/integrations/postgres/types";
-import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
+import type { DatabaseStructure } from "@weldr/shared/integrations/postgres/types";
+import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/conversations";
 import type { z } from "zod";
 
 export function getResourceReferences(

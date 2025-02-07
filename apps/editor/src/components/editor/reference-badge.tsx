@@ -1,6 +1,6 @@
-import type { rawContentReferenceElementSchema } from "@integramind/shared/validators/common";
-import { PostgresIcon } from "@integramind/ui/icons/postgres-icon";
-import { cn, renderDataTypeIcon } from "@integramind/ui/utils";
+import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
+import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
+import { cn, renderDataTypeIcon } from "@weldr/ui/utils";
 import { ColumnsIcon, FunctionSquareIcon, TableIcon } from "lucide-react";
 import React from "react";
 import type { z } from "zod";

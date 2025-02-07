@@ -4,8 +4,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@integramind/ui/card";
-import { LogoIcon } from "@integramind/ui/icons/logo-icon";
+} from "@weldr/ui/card";
+import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import Link from "next/link";
 import { SupportLinks } from "../../_components/support-links";
 

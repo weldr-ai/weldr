@@ -7,11 +7,11 @@ import { useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { insertWaitlistSchema } from "@integramind/db/schema";
-import { Button } from "@integramind/ui/button";
-import { Form, FormControl, FormField, FormItem } from "@integramind/ui/form";
-import { toast } from "@integramind/ui/hooks/use-toast";
-import { Input } from "@integramind/ui/input";
+import { insertWaitlistSchema } from "@weldr/db/schema";
+import { Button } from "@weldr/ui/button";
+import { Form, FormControl, FormField, FormItem } from "@weldr/ui/form";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { Input } from "@weldr/ui/input";
 
 import { joinWaitlist } from "@/lib/actions/waitlist";
 

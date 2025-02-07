@@ -1,9 +1,9 @@
+import { createId } from "@paralleldrive/cuid2";
 import type {
   AssistantMessageRawContent,
   TestExecutionMessageRawContent,
   UserMessageRawContent,
-} from "@integramind/shared/types";
-import { createId } from "@paralleldrive/cuid2";
+} from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
   index,

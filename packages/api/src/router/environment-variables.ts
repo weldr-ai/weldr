@@ -1,7 +1,7 @@
-import { and, eq } from "@integramind/db";
-import { environmentVariables, secrets } from "@integramind/db/schema";
-import { insertEnvironmentVariableSchema } from "@integramind/shared/validators/environment-variables";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
+import { and, eq } from "@weldr/db";
+import { environmentVariables, secrets } from "@weldr/db/schema";
+import { insertEnvironmentVariableSchema } from "@weldr/shared/validators/environment-variables";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 

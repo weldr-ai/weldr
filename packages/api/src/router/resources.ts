@@ -1,21 +1,21 @@
-import { and, db, eq, sql } from "@integramind/db";
+import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
+import { and, db, eq, sql } from "@weldr/db";
 import {
   environmentVariables,
   integrations,
   projects,
   resourceEnvironmentVariables,
   resources,
-} from "@integramind/db/schema";
+} from "@weldr/db/schema";
 import {
   getDatabaseStructure,
   testConnection,
-} from "@integramind/shared/integrations/postgres";
-import type { DbConfig } from "@integramind/shared/integrations/postgres/types";
+} from "@weldr/shared/integrations/postgres";
+import type { DbConfig } from "@weldr/shared/integrations/postgres/types";
 import {
   insertResourceSchema,
   updateResourceSchema,
-} from "@integramind/shared/validators/resources";
-import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
+} from "@weldr/shared/validators/resources";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 

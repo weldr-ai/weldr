@@ -33,15 +33,15 @@ export function ResetPasswordEmail({
               src={
                 process.env.NODE_ENV === "development"
                   ? "http://localhost:3000/logo.svg"
-                  : "https://integramind.com/logo.svg"
+                  : "https://weldr.com/logo.svg"
               }
               width="32"
               height="32"
-              alt="IntegraMind"
+              alt="Weldr"
             />
             <Section>
               <Text>Hi {firstName},</Text>
-              <Text>Click below to reset your IntegraMind password:</Text>
+              <Text>Click below to reset your Weldr password:</Text>
               <Container className="flex justify-center">
                 <Button
                   href={resetPasswordLink}
@@ -55,7 +55,7 @@ export function ResetPasswordEmail({
                 email and ensure your account is secure.
               </Text>
               <Text>Thanks,</Text>
-              <Text>IntegraMind</Text>
+              <Text>Weldr</Text>
             </Section>
           </Container>
         </Body>

@@ -2,8 +2,8 @@
 
 import { api } from "@/lib/trpc/client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertEnvironmentVariableSchema } from "@integramind/shared/validators/environment-variables";
-import { Button } from "@integramind/ui/button";
+import { insertEnvironmentVariableSchema } from "@weldr/shared/validators/environment-variables";
+import { Button } from "@weldr/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@integramind/ui/dialog";
+} from "@weldr/ui/dialog";
 import {
   Form,
   FormControl,
@@ -19,9 +19,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@integramind/ui/form";
-import { toast } from "@integramind/ui/hooks/use-toast";
-import { Input } from "@integramind/ui/input";
+} from "@weldr/ui/form";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { Input } from "@weldr/ui/input";
 import { Loader2Icon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";

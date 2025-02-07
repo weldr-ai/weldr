@@ -9,15 +9,15 @@ import {
   funcDefinitions,
   funcs,
   packages,
-} from "@integramind/db/schema";
+} from "@weldr/db/schema";
 
-import { and, eq } from "@integramind/db";
-import { toKebabCase } from "@integramind/shared/utils";
+import { and, eq } from "@weldr/db";
+import { toKebabCase } from "@weldr/shared/utils";
 import {
   createFuncDefinitionSchema,
   insertFuncSchema,
   updateFuncSchema,
-} from "@integramind/shared/validators/funcs";
+} from "@weldr/shared/validators/funcs";
 import { createPatch } from "diff";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";

@@ -1,18 +1,18 @@
-import { and, eq } from "@integramind/db";
+import { createId } from "@paralleldrive/cuid2";
+import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
+import { and, eq } from "@weldr/db";
 import {
   conversationMessages,
   conversations,
   projects,
   resourceEnvironmentVariables,
   versions,
-} from "@integramind/db/schema";
-import { Fly } from "@integramind/shared/fly";
+} from "@weldr/db/schema";
+import { Fly } from "@weldr/shared/fly";
 import {
   insertProjectSchema,
   updateProjectSchema,
-} from "@integramind/shared/validators/projects";
-import { createId } from "@paralleldrive/cuid2";
-import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
+} from "@weldr/shared/validators/projects";
 import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";

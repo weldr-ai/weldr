@@ -1,8 +1,8 @@
 "use client";
 
 import { api } from "@/lib/trpc/client";
-import type { RouterOutputs } from "@integramind/api";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@integramind/ui/tabs";
+import type { RouterOutputs } from "@weldr/api";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
 import { EnvSection } from "./env-section";
 import { GeneralSection } from "./general-section";
 import { IntegrationsSection } from "./integrations-section";

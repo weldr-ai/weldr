@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/tailwind-config",
+  "name": "@weldr/tailwind-config",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -20,7 +20,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@integramind/tsconfig": "workspace:*",
+    "@weldr/tsconfig": "workspace:*",
     "typescript": "^5.7.2"
   }
 }

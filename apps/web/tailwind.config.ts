@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-import baseConfig from "@integramind/tailwind-config";
+import baseConfig from "@weldr/tailwind-config";
 
 const config: Pick<Config, "content" | "presets" | "theme"> = {
   content: ["./src/**/*.tsx", "../../packages/ui/**/*.{ts,tsx}"],

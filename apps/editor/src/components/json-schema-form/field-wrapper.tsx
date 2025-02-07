@@ -1,7 +1,7 @@
-import type { JsonSchema } from "@integramind/shared/types";
-import { Alert, AlertDescription } from "@integramind/ui/alert";
-import { Label } from "@integramind/ui/label";
-import { Switch } from "@integramind/ui/switch";
+import type { JsonSchema } from "@weldr/shared/types";
+import { Alert, AlertDescription } from "@weldr/ui/alert";
+import { Label } from "@weldr/ui/label";
+import { Switch } from "@weldr/ui/switch";
 import { FormField } from "./form-field";
 import type { ValidationError } from "./types";
 

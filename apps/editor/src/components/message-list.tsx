@@ -1,12 +1,12 @@
-import { useAuth } from "@integramind/auth/provider";
+import { useAuth } from "@weldr/auth/provider";
 import type {
   ConversationMessage,
   RawContent,
   TestExecutionMessageRawContent,
-} from "@integramind/shared/types";
-import { testExecutionMessageRawContentSchema } from "@integramind/shared/validators/conversations";
-import { Avatar, AvatarFallback, AvatarImage } from "@integramind/ui/avatar";
-import { ScrollArea } from "@integramind/ui/scroll-area";
+} from "@weldr/shared/types";
+import { testExecutionMessageRawContentSchema } from "@weldr/shared/validators/conversations";
+import { Avatar, AvatarFallback, AvatarImage } from "@weldr/ui/avatar";
+import { ScrollArea } from "@weldr/ui/scroll-area";
 import { useEffect, useState } from "react";
 import SuperJSON from "superjson";
 import { JsonViewer } from "./json-viewer";
@@ -50,7 +50,7 @@ export default function MessageList({
       {isThinking && (
         <div key="thinking" className="flex items-start">
           <Avatar className="size-7 rounded-full">
-            <AvatarImage src="/api/avatars/integramind" alt="IntegraMind" />
+            <AvatarImage src="/api/avatars/weldr" alt="Weldr" />
           </Avatar>
           <span className="ml-3 text-muted-foreground text-sm">
             Thinking
@@ -62,7 +62,7 @@ export default function MessageList({
       {isBuilding && (
         <div key="generating" className="flex items-start">
           <Avatar className="size-7 rounded-full">
-            <AvatarImage src="/api/avatars/integramind" alt="IntegraMind" />
+            <AvatarImage src="/api/avatars/weldr" alt="Weldr" />
           </Avatar>
           <span className="ml-3 text-muted-foreground text-sm">
             Building
@@ -74,7 +74,7 @@ export default function MessageList({
       {isRunning && (
         <div key="running" className="flex items-start">
           <Avatar className="size-7 rounded-full">
-            <AvatarImage src="/api/avatars/integramind" alt="IntegraMind" />
+            <AvatarImage src="/api/avatars/weldr" alt="Weldr" />
           </Avatar>
           <span className="ml-3 text-muted-foreground text-sm">
             Running your function
@@ -111,7 +111,7 @@ function MessageItem({
           </>
         ) : (
           <Avatar className="size-7 rounded-full">
-            <AvatarImage src="/api/avatars/integramind" alt="IntegraMind" />
+            <AvatarImage src="/api/avatars/weldr" alt="Weldr" />
           </Avatar>
         )}
       </Avatar>

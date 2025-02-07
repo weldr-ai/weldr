@@ -1,5 +1,5 @@
-import { Button } from "@integramind/ui/button";
-import { Card } from "@integramind/ui/card";
+import { Button } from "@weldr/ui/button";
+import { Card } from "@weldr/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -7,20 +7,20 @@ import {
   ContextMenuLabel,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@integramind/ui/context-menu";
+} from "@weldr/ui/context-menu";
 import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardHeader,
   ExpandableCardTrigger,
-} from "@integramind/ui/expandable-card";
+} from "@weldr/ui/expandable-card";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@integramind/ui/resizable";
-import { ScrollArea } from "@integramind/ui/scroll-area";
-import { cn } from "@integramind/ui/utils";
+} from "@weldr/ui/resizable";
+import { ScrollArea } from "@weldr/ui/scroll-area";
+import { cn } from "@weldr/ui/utils";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import type { EditorState, LexicalEditor, ParagraphNode } from "lexical";
 import { $getRoot } from "lexical";
@@ -45,15 +45,16 @@ import { useFlowBuilder } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { getResourceReferences } from "@/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
-import type { RouterOutputs } from "@integramind/api";
+import { createId } from "@paralleldrive/cuid2";
+import type { RouterOutputs } from "@weldr/api";
 import type {
   ConversationMessage,
   FuncRequirementsMessage,
   JsonSchema,
   UserMessageRawContent,
-} from "@integramind/shared/types";
-import { toTitle } from "@integramind/shared/utils";
-import { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
+} from "@weldr/shared/types";
+import { toTitle } from "@weldr/shared/utils";
+import { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/conversations";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,15 +62,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@integramind/ui/dropdown-menu";
-import { toast } from "@integramind/ui/hooks/use-toast";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@integramind/ui/tooltip";
-import { TreeView, schemaToTreeData } from "@integramind/ui/tree-view";
-import { createId } from "@paralleldrive/cuid2";
+} from "@weldr/ui/dropdown-menu";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
+import { TreeView, schemaToTreeData } from "@weldr/ui/tree-view";
 import { type StreamableValue, readStreamableValue } from "ai/rsc";
 import ReactMarkdown from "react-markdown";
 import type { z } from "zod";
@@ -140,12 +136,12 @@ export const FuncNode = memo(
         id: createId(),
         role: "assistant",
         content:
-          "Hi there! I'm IntegraMind, your AI assistant. What does your function do?",
+          "Hi there! I'm Weldr, your AI assistant. What does your function do?",
         rawContent: [
           {
             type: "text",
             value:
-              "Hi there! I'm IntegraMind, your AI assistant. What does your function do?",
+              "Hi there! I'm Weldr, your AI assistant. What does your function do?",
           },
         ],
       },
@@ -166,7 +162,7 @@ export const FuncNode = memo(
             {
               type: "text",
               value:
-                "Hi there! I'm IntegraMind, your AI assistant. What does your function do?",
+                "Hi there! I'm Weldr, your AI assistant. What does your function do?",
             },
           ],
         },
@@ -426,7 +422,7 @@ export const FuncNode = memo(
               <ContextMenuItem className="flex items-center justify-between text-xs">
                 <Link
                   className="flex items-center"
-                  href="https://docs.integramind.ai/functions"
+                  href="https://docs.weldr.ai/functions"
                   target="blank"
                 >
                   <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
@@ -513,7 +509,7 @@ export const FuncNode = memo(
                           <DropdownMenuItem className="flex items-center justify-between text-xs">
                             <Link
                               className="flex items-center"
-                              href="https://docs.integramind.ai/functions"
+                              href="https://docs.weldr.ai/functions"
                               target="blank"
                             >
                               <FileTextIcon className="mr-3 size-4 text-muted-foreground" />
@@ -561,7 +557,7 @@ export const FuncNode = memo(
                         editorRef={editorRef}
                         references={references}
                         rawMessage={userMessageRawContent}
-                        placeholder="Create, refine, or fix your function with IntegraMind..."
+                        placeholder="Create, refine, or fix your function with Weldr..."
                         onChange={onChatChange}
                         onSubmit={async () => {
                           if (userMessageContent && !isGenerating) {
@@ -699,7 +695,7 @@ export const FuncNode = memo(
                 ) : (
                   <div className="flex h-full items-center justify-center">
                     <span className="text-center text-muted-foreground text-sm">
-                      Chat with IntegraMind to build the function
+                      Chat with Weldr to build the function
                     </span>
                   </div>
                 )}

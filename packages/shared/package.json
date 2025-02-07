@@ -1,5 +1,5 @@
 {
-  "name": "@integramind/shared",
+  "name": "@weldr/shared",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -27,7 +27,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@integramind/tsconfig": "workspace:*",
+    "@weldr/tsconfig": "workspace:*",
     "typescript": "^5.7.2"
   }
 }

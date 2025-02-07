@@ -7,16 +7,16 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { authClient } from "@integramind/auth/client";
-import { signInSchema } from "@integramind/shared/validators/auth";
-import { Button } from "@integramind/ui/button";
+import { authClient } from "@weldr/auth/client";
+import { signInSchema } from "@weldr/shared/validators/auth";
+import { Button } from "@weldr/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@integramind/ui/card";
+} from "@weldr/ui/card";
 import {
   Form,
   FormControl,
@@ -24,12 +24,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
+} from "@weldr/ui/form";
+import { Input } from "@weldr/ui/input";
 
-import { Checkbox } from "@integramind/ui/checkbox";
-import { toast } from "@integramind/ui/hooks/use-toast";
-import { LogoIcon } from "@integramind/ui/icons/logo-icon";
+import { Checkbox } from "@weldr/ui/checkbox";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 
 import { Socials } from "../_components/socials";
 import { SupportLinks } from "../_components/support-links";

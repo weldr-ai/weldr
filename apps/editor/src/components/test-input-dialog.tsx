@@ -1,5 +1,5 @@
-import type { JsonSchema } from "@integramind/shared/types";
-import { Button } from "@integramind/ui/button";
+import type { JsonSchema } from "@weldr/shared/types";
+import { Button } from "@weldr/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@integramind/ui/dialog";
+} from "@weldr/ui/dialog";
 import { TestTubeDiagonalIcon } from "lucide-react";
 import { useState } from "react";
 import { JsonSchemaForm } from "./json-schema-form";

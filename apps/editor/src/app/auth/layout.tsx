@@ -1,4 +1,4 @@
-import { auth } from "@integramind/auth";
+import { auth } from "@weldr/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 

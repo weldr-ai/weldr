@@ -1,24 +1,24 @@
-import type { Session } from "@integramind/auth";
-import { type db, isNotNull } from "@integramind/db";
+import type { TRPCRouterRecord } from "@trpc/server";
+import { TRPCError } from "@trpc/server";
+import type { Session } from "@weldr/auth";
+import { type db, isNotNull } from "@weldr/db";
 import {
   conversationMessages,
   conversations,
   funcs,
   resourceEnvironmentVariables,
   resources,
-} from "@integramind/db/schema";
-import { getDatabaseStructure } from "@integramind/shared/integrations/postgres";
+} from "@weldr/db/schema";
+import { getDatabaseStructure } from "@weldr/shared/integrations/postgres";
 import type {
   DatabaseStructure,
   DbConfig,
-} from "@integramind/shared/integrations/postgres/types";
-import type { UserMessageRawContent } from "@integramind/shared/types";
+} from "@weldr/shared/integrations/postgres/types";
+import type { UserMessageRawContent } from "@weldr/shared/types";
 import {
   assistantMessageRawContentSchema,
   userMessageRawContentSchema,
-} from "@integramind/shared/validators/conversations";
-import type { TRPCRouterRecord } from "@trpc/server";
-import { TRPCError } from "@trpc/server";
+} from "@weldr/shared/validators/conversations";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";

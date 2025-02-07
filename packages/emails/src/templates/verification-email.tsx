@@ -33,17 +33,17 @@ export function VerificationEmail({
               src={
                 process.env.NODE_ENV === "development"
                   ? "http://localhost:3000/logo.svg"
-                  : "https://integramind.com/logo.svg"
+                  : "https://weldr.com/logo.svg"
               }
               width="32"
               height="32"
-              alt="IntegraMind"
+              alt="Weldr"
             />
             <Section>
               <Text>Hi {firstName},</Text>
               <Text>
-                Welcome to IntegraMind! We're thrilled to have you join our
-                community of innovative thinkers and problem solvers.
+                Welcome to Weldr! We're thrilled to have you join our community
+                of innovative thinkers and problem solvers.
               </Text>
               <Container className="flex justify-center">
                 <Button
@@ -58,7 +58,7 @@ export function VerificationEmail({
                 is here to help.
               </Text>
               <Text>Thanks,</Text>
-              <Text>IntegraMind</Text>
+              <Text>Weldr</Text>
             </Section>
           </Container>
         </Body>

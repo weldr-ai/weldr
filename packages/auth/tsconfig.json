@@ -1,5 +1,5 @@
 {
-  "extends": "@integramind/tsconfig/react-library.json",
+  "extends": "@weldr/tsconfig/react-library.json",
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "./dist",

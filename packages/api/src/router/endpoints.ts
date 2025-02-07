@@ -1,4 +1,5 @@
-import { and, eq } from "@integramind/db";
+import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
+import { and, eq } from "@weldr/db";
 import {
   conversationMessages,
   conversations,
@@ -8,13 +9,12 @@ import {
   endpointDefinitions,
   endpoints,
   packages,
-} from "@integramind/db/schema";
+} from "@weldr/db/schema";
 import {
   createEndpointDefinitionSchema,
   insertEndpointSchema,
   updateEndpointSchema,
-} from "@integramind/shared/validators/endpoints";
-import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
+} from "@weldr/shared/validators/endpoints";
 import { createPatch } from "diff";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";

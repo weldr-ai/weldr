@@ -1,6 +1,6 @@
-import type { RawContent } from "@integramind/shared/types";
-import type { rawContentReferenceElementSchema } from "@integramind/shared/validators/common";
-import { cn } from "@integramind/ui/utils";
+import type { RawContent } from "@weldr/shared/types";
+import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
+import { cn } from "@weldr/ui/utils";
 import { nanoid } from "nanoid";
 import { type ReactNode, useMemo } from "react";
 import ReactMarkdown from "react-markdown";

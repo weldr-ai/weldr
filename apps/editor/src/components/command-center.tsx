@@ -11,13 +11,13 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@integramind/ui/command";
+} from "@weldr/ui/command";
 
 import { useCommandCenter } from "@/lib/store";
-import type { RouterOutputs } from "@integramind/api";
-import { Button, buttonVariants } from "@integramind/ui/button";
-import { LogoIcon } from "@integramind/ui/icons/logo-icon";
-import { cn } from "@integramind/ui/utils";
+import type { RouterOutputs } from "@weldr/api";
+import { Button, buttonVariants } from "@weldr/ui/button";
+import { LogoIcon } from "@weldr/ui/icons/logo-icon";
+import { cn } from "@weldr/ui/utils";
 import Link from "next/link";
 import { CreateProjectForm } from "./create-project-form";
 

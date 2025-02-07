@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import {
   type Db,
   type InferSelectModel,
@@ -6,7 +7,7 @@ import {
   db,
   eq,
   inArray,
-} from "@integramind/db";
+} from "@weldr/db";
 import {
   dependencies,
   endpointDefinitions,
@@ -17,10 +18,9 @@ import {
   versionFuncDefinitions,
   versionPackages,
   versions,
-} from "@integramind/db/schema";
-import { Fly } from "@integramind/shared/fly";
-import { toKebabCase } from "@integramind/shared/utils";
-import { TRPCError } from "@trpc/server";
+} from "@weldr/db/schema";
+import { Fly } from "@weldr/shared/fly";
+import { toKebabCase } from "@weldr/shared/utils";
 
 export async function wouldCreateCycle({
   dependentId,

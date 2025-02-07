@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@integramind/auth/client";
+import { authClient } from "@weldr/auth/client";
 
 import {
   BookOpenIcon,
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { useCommandCenter } from "@/lib/store";
-import { Button } from "@integramind/ui/button";
+import { Button } from "@weldr/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,8 +22,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@integramind/ui/dropdown-menu";
-import { LogoIcon } from "@integramind/ui/icons/logo-icon";
+} from "@weldr/ui/dropdown-menu";
+import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -36,7 +36,7 @@ export function MainDropdownMenu(): JSX.Element {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <LogoIcon className="size-10" />
-          <span className="sr-only">IntegraMind</span>
+          <span className="sr-only">Weldr</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="start" side="bottom">
@@ -73,7 +73,7 @@ export function MainDropdownMenu(): JSX.Element {
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Support</DropdownMenuLabel>
 
-        <Link href="https://integramind.ai/support" target="_blank">
+        <Link href="https://weldr.ai/support" target="_blank">
           <DropdownMenuItem>
             <HelpCircleIcon className="mr-2 size-4 text-muted-foreground" />
             Help
@@ -81,7 +81,7 @@ export function MainDropdownMenu(): JSX.Element {
           </DropdownMenuItem>
         </Link>
 
-        <Link href="https://docs.integramind.ai" target="_blank">
+        <Link href="https://docs.weldr.ai" target="_blank">
           <DropdownMenuItem>
             <BookOpenIcon className="mr-2 size-4 text-muted-foreground" />
             Docs

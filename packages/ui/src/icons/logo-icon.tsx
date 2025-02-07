@@ -1,197 +1,40 @@
 "use client";
 
-import { useTheme } from "next-themes";
+import { cn } from "../utils";
 
 export function LogoIcon({
   className,
-  theme,
 }: {
   className?: string;
-  theme?: "light" | "dark";
 }) {
-  const { resolvedTheme } = useTheme();
-
   return (
-    <>
-      {theme === "light" || resolvedTheme === "light" ? (
-        <svg
-          className={className}
-          width="1024"
-          height="1024"
-          viewBox="0 0 1024 1024"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+    <svg
+      className={cn("p-1", className)}
+      width="1024"
+      height="1024"
+      viewBox="0 0 1024 1024"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <title>Weldr Logo</title>
+      <path
+        d="M611.567 553.199L1024 512L611.567 470.75L874.052 149.948L553.233 412.45L512 0L470.75 412.45L149.948 149.948L412.433 470.75L0 512L412.433 553.199L149.948 874.035L470.75 611.567L512 1024L553.233 611.567L874.052 874.035L611.567 553.199Z"
+        fill="url(#paint0_linear_1708_297)"
+      />
+      <defs>
+        <linearGradient
+          id="paint0_linear_1708_297"
+          x1="1024"
+          y1="0"
+          x2="83.283"
+          y2="1095.52"
+          gradientUnits="userSpaceOnUse"
         >
-          <title>IntegraMind</title>
-          <circle
-            cx="512.582"
-            cy="235.636"
-            r="43.6364"
-            stroke="#111113"
-            strokeWidth="25"
-          />
-          <circle
-            cx="512.582"
-            cy="788.364"
-            r="43.6364"
-            stroke="#111113"
-            strokeWidth="25"
-          />
-          <line
-            x1="514.629"
-            y1="744.727"
-            x2="514.629"
-            y2="279.273"
-            stroke="#111113"
-            strokeWidth="25"
-          />
-          <circle
-            cx="672.582"
-            cy="322.909"
-            r="43.6364"
-            stroke="#111113"
-            strokeWidth="25"
-          />
-          <circle
-            cx="672.582"
-            cy="701.091"
-            r="43.6364"
-            stroke="#111113"
-            strokeWidth="25"
-          />
-          <path
-            d="M672.58 657.454V599.273L614.398 552.727V471.273L672.58 424.727L672.58 366.545"
-            stroke="#111113"
-            strokeWidth="25"
-          />
-          <circle
-            cx="43.6364"
-            cy="43.6364"
-            r="43.6364"
-            transform="matrix(-1 0 0 1 396.215 279.273)"
-            stroke="#111113"
-            strokeWidth="25"
-          />
-          <circle
-            cx="43.6364"
-            cy="43.6364"
-            r="43.6364"
-            transform="matrix(-1 0 0 1 396.215 657.454)"
-            stroke="#111113"
-            strokeWidth="25"
-          />
-          <path
-            d="M352.58 657.454V599.273L410.762 552.727L410.762 471.273L352.58 424.727V366.545"
-            stroke="#111113"
-            strokeWidth="25"
-          />
-          <circle
-            cx="43.6364"
-            cy="43.6364"
-            r="43.6364"
-            transform="matrix(-1 0 0 1 279.273 467.782)"
-            stroke="#111113"
-            strokeWidth="25"
-          />
-          <circle
-            cx="43.6364"
-            cy="43.6364"
-            r="43.6364"
-            transform="matrix(-1 0 0 1 832 467.782)"
-            stroke="#111113"
-            strokeWidth="25"
-          />
-        </svg>
-      ) : (
-        <svg
-          className={className}
-          width="1024"
-          height="1024"
-          viewBox="0 0 1024 1024"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <title>IntegraMind</title>
-          <circle
-            cx="512.582"
-            cy="235.636"
-            r="43.6364"
-            stroke="white"
-            strokeWidth="25"
-          />
-          <circle
-            cx="512.582"
-            cy="788.364"
-            r="43.6364"
-            stroke="white"
-            strokeWidth="25"
-          />
-          <line
-            x1="514.629"
-            y1="744.727"
-            x2="514.629"
-            y2="279.273"
-            stroke="white"
-            strokeWidth="25"
-          />
-          <circle
-            cx="672.582"
-            cy="322.909"
-            r="43.6364"
-            stroke="white"
-            strokeWidth="25"
-          />
-          <circle
-            cx="672.582"
-            cy="701.091"
-            r="43.6364"
-            stroke="white"
-            strokeWidth="25"
-          />
-          <path
-            d="M672.58 657.454V599.273L614.398 552.727V471.273L672.58 424.727L672.58 366.545"
-            stroke="white"
-            strokeWidth="25"
-          />
-          <circle
-            cx="43.6364"
-            cy="43.6364"
-            r="43.6364"
-            transform="matrix(-1 0 0 1 396.215 279.273)"
-            stroke="white"
-            strokeWidth="25"
-          />
-          <circle
-            cx="43.6364"
-            cy="43.6364"
-            r="43.6364"
-            transform="matrix(-1 0 0 1 396.215 657.454)"
-            stroke="white"
-            strokeWidth="25"
-          />
-          <path
-            d="M352.58 657.454V599.273L410.762 552.727L410.762 471.273L352.58 424.727V366.545"
-            stroke="white"
-            strokeWidth="25"
-          />
-          <circle
-            cx="43.6364"
-            cy="43.6364"
-            r="43.6364"
-            transform="matrix(-1 0 0 1 279.273 467.782)"
-            stroke="white"
-            strokeWidth="25"
-          />
-          <circle
-            cx="43.6364"
-            cy="43.6364"
-            r="43.6364"
-            transform="matrix(-1 0 0 1 832 467.782)"
-            stroke="white"
-            strokeWidth="25"
-          />
-        </svg>
-      )}
-    </>
+          <stop offset="0.3" stopColor="#449EFF" />
+          <stop offset="0.5" stopColor="#FFE065" />
+          <stop offset="0.7" stopColor="#FF904F" />
+        </linearGradient>
+      </defs>
+    </svg>
   );
 }

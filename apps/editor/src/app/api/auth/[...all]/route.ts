@@ -1,4 +1,4 @@
-import { auth } from "@integramind/auth";
+import { auth } from "@weldr/auth";
 import { toNextJsHandler } from "better-auth/next-js";
 
 export const { GET, POST } = toNextJsHandler(auth);

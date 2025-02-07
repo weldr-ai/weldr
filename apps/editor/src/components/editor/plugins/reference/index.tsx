@@ -9,11 +9,11 @@ import {
 import type { TextNode } from "lexical";
 import { useCallback, useMemo, useState } from "react";
 
-import { ScrollArea } from "@integramind/ui/scroll-area";
-import { cn } from "@integramind/ui/utils";
+import { ScrollArea } from "@weldr/ui/scroll-area";
+import { cn } from "@weldr/ui/utils";
 
 import { $createReferenceNode } from "@/components/editor/plugins/reference/node";
-import type { userMessageRawContentReferenceElementSchema } from "@integramind/shared/validators/conversations";
+import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/conversations";
 import { nanoid } from "nanoid";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";

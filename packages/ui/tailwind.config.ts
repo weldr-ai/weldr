@@ -4,7 +4,7 @@
  */
 import type { Config } from "tailwindcss";
 
-import baseConfig from "@integramind/tailwind-config";
+import baseConfig from "@weldr/tailwind-config";
 
 export default {
   content: ["./src/**/*.tsx"],

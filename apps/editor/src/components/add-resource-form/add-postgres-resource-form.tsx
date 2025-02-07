@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Button } from "@integramind/ui/button";
+import { Button } from "@weldr/ui/button";
 import {
   Form,
   FormControl,
@@ -14,29 +14,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@integramind/ui/form";
-import { Input } from "@integramind/ui/input";
-import { RadioGroup, RadioGroupItem } from "@integramind/ui/radio-group";
-import { Textarea } from "@integramind/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@integramind/ui/tooltip";
+} from "@weldr/ui/form";
+import { Input } from "@weldr/ui/input";
+import { RadioGroup, RadioGroupItem } from "@weldr/ui/radio-group";
+import { Textarea } from "@weldr/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
 
 import type { api } from "@/lib/trpc/client";
-import type { RouterOutputs } from "@integramind/api";
-import type {
-  EnvironmentVariable,
-  Integration,
-} from "@integramind/shared/types";
+import type { RouterOutputs } from "@weldr/api";
+import type { EnvironmentVariable, Integration } from "@weldr/shared/types";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@integramind/ui/select";
+} from "@weldr/ui/select";
 
 const validationSchema = z.discriminatedUnion("connectionType", [
   z.object({

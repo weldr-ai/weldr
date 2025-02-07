@@ -1,9 +1,9 @@
-import { toast } from "@integramind/ui/hooks/use-toast";
 import {
   QueryCache,
   QueryClient,
   defaultShouldDehydrateQuery,
 } from "@tanstack/react-query";
+import { toast } from "@weldr/ui/hooks/use-toast";
 import SuperJSON from "superjson";
 
 export const createQueryClient = () =>

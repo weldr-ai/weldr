@@ -9,16 +9,16 @@ import {
   generateFuncCodeUserPrompt,
 } from "@/lib/ai/prompts";
 import { createOpenAI } from "@ai-sdk/openai";
-import { auth } from "@integramind/auth";
-import { and, db, eq, isNotNull, not } from "@integramind/db";
-import { conversations, endpoints, funcs } from "@integramind/db/schema";
+import { auth } from "@weldr/auth";
+import { and, db, eq, isNotNull, not } from "@weldr/db";
+import { conversations, endpoints, funcs } from "@weldr/db/schema";
 import type {
   EndpointRequirementsMessage,
   FuncRequirementsMessage,
-} from "@integramind/shared/types";
-import { assistantMessageRawContentToText } from "@integramind/shared/utils";
-import { endpointRequirementsMessageSchema } from "@integramind/shared/validators/endpoints";
-import { funcRequirementsMessageSchema } from "@integramind/shared/validators/funcs";
+} from "@weldr/shared/types";
+import { assistantMessageRawContentToText } from "@weldr/shared/utils";
+import { endpointRequirementsMessageSchema } from "@weldr/shared/validators/endpoints";
+import { funcRequirementsMessageSchema } from "@weldr/shared/validators/funcs";
 import { type CoreMessage, streamObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import { headers } from "next/headers";
