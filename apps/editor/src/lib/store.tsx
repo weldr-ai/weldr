@@ -9,8 +9,14 @@ import {
 } from "react";
 
 interface CommandCenterContextType {
-  open: boolean;
-  setOpen: (open: boolean) => void;
+  open: {
+    isOpen: boolean;
+    mode?: "create-project" | undefined;
+  };
+  setOpen: (open: {
+    isOpen: boolean;
+    mode?: "create-project" | undefined;
+  }) => void;
 }
 
 const CommandCenterContext = createContext<
@@ -18,7 +24,7 @@ const CommandCenterContext = createContext<
 >(undefined);
 
 export function CommandCenterProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState({ isOpen: false });
 
   return (
     <CommandCenterContext.Provider value={{ open, setOpen }}>

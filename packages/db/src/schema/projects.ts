@@ -3,6 +3,7 @@ import { relations } from "drizzle-orm";
 import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
+import { conversations } from "./conversations";
 import { endpoints } from "./endpoints";
 import { environmentVariables } from "./environment-variables";
 import { funcs } from "./funcs";
@@ -14,7 +15,7 @@ export const projects = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => createId()),
-    name: text("name").notNull(),
+    name: text("name"),
     subdomain: text("subdomain").unique().notNull(),
     description: text("description"),
     thumbnail: text("thumbnail"),
@@ -25,6 +26,9 @@ export const projects = pgTable(
       .notNull(),
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    conversationId: text("conversation_id")
+      .references(() => conversations.id, { onDelete: "cascade" })
       .notNull(),
   },
   (t) => ({
@@ -37,6 +41,10 @@ export const projectRelations = relations(projects, ({ many, one }) => ({
   endpoints: many(endpoints),
   funcs: many(funcs),
   environmentVariables: many(environmentVariables),
+  conversation: one(conversations, {
+    fields: [projects.conversationId],
+    references: [conversations.id],
+  }),
   user: one(users, {
     fields: [projects.userId],
     references: [users.id],

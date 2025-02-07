@@ -26,46 +26,37 @@ import {
 import { LogoIcon } from "@integramind/ui/icons/logo-icon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { CreateProjectDialog } from "./create-project-dialog";
 
-export function MainDropdownMenu({
-  showViewAll = true,
-  variant = "ghost",
-}: {
-  showViewAll?: boolean;
-  variant?: "ghost" | "default";
-}): JSX.Element {
+export function MainDropdownMenu(): JSX.Element {
   const router = useRouter();
-  const [createProjectDialogOpen, setCreateProjectDialogOpen] = useState(false);
   const { setOpen } = useCommandCenter();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={variant} size="icon">
+        <Button variant="ghost" size="icon">
           <LogoIcon className="size-10" />
           <span className="sr-only">IntegraMind</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="start" side="bottom">
         <DropdownMenuLabel>Projects</DropdownMenuLabel>
-        {showViewAll && (
-          <DropdownMenuItem onClick={() => setOpen(true)}>
-            <BoxesIcon className="mr-2 size-4 text-muted-foreground" />
-            View All Projects
-            <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
-              <span className="text-xs">
-                {typeof window !== "undefined" &&
-                window.navigator?.userAgent.toLowerCase().includes("mac")
-                  ? "⌘"
-                  : "Ctrl"}
-              </span>
-              k
-            </kbd>
-          </DropdownMenuItem>
-        )}
-        <DropdownMenuItem onClick={() => setCreateProjectDialogOpen(true)}>
+        <DropdownMenuItem onClick={() => setOpen({ isOpen: true })}>
+          <BoxesIcon className="mr-2 size-4 text-muted-foreground" />
+          View All Projects
+          <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
+            <span className="text-xs">
+              {typeof window !== "undefined" &&
+              window.navigator?.userAgent.toLowerCase().includes("mac")
+                ? "⌘"
+                : "Ctrl"}
+            </span>
+            k
+          </kbd>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => setOpen({ isOpen: true, mode: "create-project" })}
+        >
           <PlusIcon className="mr-2 size-4 text-muted-foreground" />
           Create Project
         </DropdownMenuItem>
@@ -114,10 +105,6 @@ export function MainDropdownMenu({
           Logout
         </DropdownMenuItem>
       </DropdownMenuContent>
-      <CreateProjectDialog
-        open={createProjectDialogOpen}
-        setOpen={setCreateProjectDialogOpen}
-      />
     </DropdownMenu>
   );
 }

@@ -1,6 +1,5 @@
 "use client";
-
-import { ExternalLinkIcon, PlusIcon } from "lucide-react";
+import { BoxesIcon, ExternalLinkIcon, PlusIcon } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
@@ -14,13 +13,13 @@ import {
   CommandList,
 } from "@integramind/ui/command";
 
-import { CreateProjectDialog } from "@/components/create-project-dialog";
 import { useCommandCenter } from "@/lib/store";
 import type { RouterOutputs } from "@integramind/api";
 import { Button, buttonVariants } from "@integramind/ui/button";
 import { LogoIcon } from "@integramind/ui/icons/logo-icon";
 import { cn } from "@integramind/ui/utils";
 import Link from "next/link";
+import { CreateProjectForm } from "./create-project-form";
 
 export function CommandCenter({
   projects,
@@ -30,11 +29,12 @@ export function CommandCenter({
   asDialog?: boolean;
 }) {
   const { open, setOpen } = useCommandCenter();
-  const [createProjectDialogOpen, setCreateProjectDialogOpen] =
-    useState<boolean>(false);
   const [selectedProject, setSelectedProject] = useState<
     RouterOutputs["projects"]["list"][0] | null
   >(null);
+  const [isCreateMode, setIsCreateMode] = useState(
+    projects.length === 0 || open.mode === "create-project",
+  );
 
   useEffect(() => {
     if (!asDialog) return;
@@ -42,7 +42,7 @@ export function CommandCenter({
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen(true);
+        setOpen({ isOpen: true });
       }
     };
     document.addEventListener("keydown", down);
@@ -50,104 +50,106 @@ export function CommandCenter({
   }, [setOpen, asDialog]);
 
   const content = (
-    <div className="flex h-full">
-      <div className="w-80 border-r">
-        <div className="flex h-full flex-col">
-          <CommandInput
-            className="border-none focus:ring-0"
-            placeholder="Search projects..."
-          />
-          <CommandList className="h-full overflow-y-auto">
-            <CommandEmpty>No projects found.</CommandEmpty>
-            <CommandGroup>
-              <div className="mt-1 mb-2 flex w-full items-center justify-between pl-1">
-                <span className="font-medium text-sm">Projects</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-7"
-                  onClick={() => setCreateProjectDialogOpen(true)}
-                >
-                  <PlusIcon className="size-4" />
-                </Button>
-              </div>
-              {projects.map((project) => (
-                <CommandItem
-                  key={project.id}
-                  value={project.name}
-                  className="flex cursor-pointer items-center gap-3 rounded-md p-2"
-                  onSelect={() => {
-                    setSelectedProject(project);
-                  }}
-                >
-                  <div className="flex size-8 items-center justify-center rounded-lg border bg-muted/30">
-                    <LogoIcon className="size-6" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{project.name}</span>
-                    {project.description && (
-                      <span className="line-clamp-1 text-muted-foreground text-xs">
-                        {project.description}
-                      </span>
-                    )}
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
+    <div className="flex size-full">
+      {isCreateMode ? (
+        <div className="relative flex size-full items-center justify-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-3 right-3"
+            onClick={() => setIsCreateMode(false)}
+          >
+            <BoxesIcon className="mr-2 size-4" />
+            View Projects
+          </Button>
+          <CreateProjectForm />
         </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 p-6">
-        {selectedProject ? (
-          <div className="flex h-full flex-col gap-2">
-            <Link
-              href={`/projects/${selectedProject.id}`}
-              className="block overflow-hidden rounded-lg border"
-            >
-              {selectedProject.thumbnail ? (
-                <Image
-                  src={selectedProject.thumbnail}
-                  alt={selectedProject.name}
-                  width={400}
-                  height={300}
-                  className="rounded-lg object-cover transition-transform duration-200 hover:scale-[1.1]"
-                />
-              ) : (
-                <div className="flex aspect-video h-[250px] w-full items-center justify-center rounded-lg bg-muted/30 transition-transform duration-200 hover:scale-[1.1]">
-                  <LogoIcon className="size-24" />
-                </div>
-              )}
-            </Link>
-
-            <div className="flex items-center space-x-2">
-              <h2 className="font-semibold text-xl">{selectedProject.name}</h2>
-              <Link
-                href={`/projects/${selectedProject.id}`}
-                className={cn(
-                  buttonVariants({
-                    variant: "ghost",
-                    size: "icon",
-                  }),
-                  "size-7",
-                )}
+      ) : (
+        <>
+          <div className="w-80 border-r">
+            <CommandInput
+              className="border-none focus:ring-0"
+              placeholder="Search projects..."
+            />
+            <CommandList className="max-h-[calc(100%-84px)] w-80">
+              <CommandEmpty>No projects found.</CommandEmpty>
+              <CommandGroup>
+                {projects.map((project) => (
+                  <CommandItem
+                    key={project.id}
+                    value={project.name ?? "New Project"}
+                    className="flex cursor-pointer items-center gap-3 rounded-md p-2"
+                    onSelect={() => {
+                      setSelectedProject(project);
+                    }}
+                  >
+                    <div className="flex size-8 items-center justify-center rounded-lg border bg-muted/30">
+                      <LogoIcon className="size-6" />
+                    </div>
+                    <span className="font-medium">{project.name}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+              <Button
+                variant="ghost"
+                className="absolute bottom-0 w-80 rounded-t-none rounded-br-none border-t border-r bg-background"
+                onClick={() => {
+                  setIsCreateMode(true);
+                }}
               >
-                <ExternalLinkIcon className="size-3" />
-              </Link>
-            </div>
-            {selectedProject.description && (
-              <p className="mt-4 text-muted-foreground">
-                {selectedProject.description}
-              </p>
+                <PlusIcon className="mr-2 size-4" />
+                Create New Project
+              </Button>
+            </CommandList>
+          </div>
+          <div className="flex-1 p-6">
+            {selectedProject ? (
+              <div className="flex h-full flex-col gap-2">
+                <Link
+                  href={`/projects/${selectedProject.id}`}
+                  className="block overflow-hidden rounded-lg border"
+                >
+                  {selectedProject.thumbnail ? (
+                    <Image
+                      src={selectedProject.thumbnail}
+                      alt={selectedProject.name ?? "New Project"}
+                      width={400}
+                      height={300}
+                      className="rounded-lg object-cover transition-transform duration-200 hover:scale-[1.1]"
+                    />
+                  ) : (
+                    <div className="flex aspect-video h-[250px] w-full items-center justify-center rounded-lg bg-muted/30 transition-transform duration-200 hover:scale-[1.1]">
+                      <LogoIcon className="size-24" />
+                    </div>
+                  )}
+                </Link>
+
+                <div className="flex items-center space-x-2">
+                  <h2 className="font-semibold text-xl">
+                    {selectedProject.name}
+                  </h2>
+                  <Link
+                    href={`/projects/${selectedProject.id}`}
+                    className={cn(
+                      buttonVariants({
+                        variant: "ghost",
+                        size: "icon",
+                      }),
+                      "size-7",
+                    )}
+                  >
+                    <ExternalLinkIcon className="size-3" />
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center text-muted-foreground">
+                Select a project to view details
+              </div>
             )}
           </div>
-        ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
-            Select a project to view details
-          </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 
@@ -155,8 +157,8 @@ export function CommandCenter({
     <>
       {asDialog ? (
         <CommandDialog
-          open={open}
-          onOpenChange={setOpen}
+          open={open.isOpen}
+          onOpenChange={(isOpen) => setOpen({ isOpen })}
           className="h-[600px] w-[896px] max-w-4xl"
         >
           {content}
@@ -166,10 +168,6 @@ export function CommandCenter({
           {content}
         </Command>
       )}
-      <CreateProjectDialog
-        open={createProjectDialogOpen}
-        setOpen={setCreateProjectDialogOpen}
-      />
     </>
   );
 }

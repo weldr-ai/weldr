@@ -14,9 +14,7 @@ export const projectSchema = z.object({
 });
 
 export const insertProjectSchema = z.object({
-  name: z.string().transform((name) => name.replace(/\s+/g, " ").trim()),
-  description: z.string().optional(),
-  thumbnail: z.string().optional(),
+  message: z.string(),
 });
 
 export const updateProjectSchema = z.object({

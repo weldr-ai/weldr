@@ -1,5 +1,7 @@
 import { and, eq } from "@integramind/db";
 import {
+  conversationMessages,
+  conversations,
   projects,
   resourceEnvironmentVariables,
   versions,
@@ -30,17 +32,37 @@ export const projectsRouter = {
             });
           }
 
-          const project = await tx
+          const [conversation] = await tx
+            .insert(conversations)
+            .values({
+              id: createId(),
+              userId: ctx.session.user.id,
+            })
+            .returning();
+
+          if (!conversation) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create conversation",
+            });
+          }
+
+          await tx.insert(conversationMessages).values({
+            conversationId: conversation.id,
+            role: "user",
+            content: input.message,
+            rawContent: [],
+          });
+
+          const [project] = await tx
             .insert(projects)
             .values({
               id: projectId,
-              name: input.name,
               subdomain: projectId,
-              description: input.description,
+              conversationId: conversation.id,
               userId: ctx.session.user.id,
             })
-            .returning()
-            .then(([project]) => project);
+            .returning();
 
           if (!project) {
             throw new TRPCError({

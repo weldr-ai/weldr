@@ -5,7 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./utils": "./src/utils.tsx",
+    "./utils": "./src/utils.ts",
     "./validators/*": "./src/validators/*.ts",
     "./types": "./src/types/index.ts",
     "./integrations/*": "./src/integrations/*/index.ts",
