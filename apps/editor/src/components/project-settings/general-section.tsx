@@ -54,7 +54,7 @@ export function GeneralSection({
         id: project.id,
       },
       payload: {
-        name: project.name,
+        name: project.name ?? "",
         description: project.description ?? "",
         subdomain: project.subdomain,
       },
@@ -68,7 +68,7 @@ export function GeneralSection({
         id: result.id,
       },
       payload: {
-        name: result.name,
+        name: result.name ?? "",
         description: result.description ?? "",
         subdomain: result.subdomain,
       },
