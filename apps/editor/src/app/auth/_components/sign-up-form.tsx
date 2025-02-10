@@ -1,6 +1,6 @@
 "use client";
 
-import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, LoaderIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { SupportLinks } from "../_components/support-links";
@@ -219,7 +219,7 @@ export function SignUpForm() {
                 disabled={!form.formState.isValid || isSubmitting}
               >
                 {isSubmitting && (
-                  <Loader2Icon className="mr-1 size-3 animate-spin" />
+                  <LoaderIcon className="mr-1 size-3 animate-spin" />
                 )}
                 Sign up
               </Button>

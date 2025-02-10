@@ -1,18 +1,19 @@
 import type { JSONSchema7 } from "json-schema";
 import type { z } from "zod";
 import type {
+  assistantMessageRawContentSchema,
+  attachmentSchema,
+  chatMessageSchema,
+  chatSchema,
+  messageRawContentSchema,
+  testExecutionMessageRawContentSchema,
+  userMessageRawContentSchema,
+} from "../validators/chats";
+import type {
   packageSchema,
   rawContentSchema,
   resourceMetadataSchema,
 } from "../validators/common";
-import type {
-  assistantMessageRawContentSchema,
-  conversationMessageSchema,
-  conversationSchema,
-  messageRawContentSchema,
-  testExecutionMessageRawContentSchema,
-  userMessageRawContentSchema,
-} from "../validators/conversations";
 import type { endpointRequirementsMessageSchema } from "../validators/endpoints";
 import type { environmentVariableSchema } from "../validators/environment-variables";
 import type { funcRequirementsMessageSchema } from "../validators/funcs";
@@ -37,8 +38,9 @@ export type AssistantMessageRawContent = z.infer<
   typeof assistantMessageRawContentSchema
 >;
 export type MessageRawContent = z.infer<typeof messageRawContentSchema>;
-export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
-export type Conversation = z.infer<typeof conversationSchema>;
+export type ChatMessage = z.infer<typeof chatMessageSchema>;
+export type Chat = z.infer<typeof chatSchema>;
+export type Attachment = z.infer<typeof attachmentSchema>;
 
 export type Resource = z.infer<typeof resourceSchema>;
 export type ResourceMetadata = z.infer<typeof resourceMetadataSchema>;

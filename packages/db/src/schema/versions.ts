@@ -11,7 +11,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { conversationMessages } from "./conversations";
+import { chatMessages } from "./chats";
 import { endpointDefinitions } from "./endpoints";
 import { funcDefinitions } from "./funcs";
 import { packages } from "./packages";
@@ -34,7 +34,7 @@ export const versions = pgTable(
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),
-    messageId: text("message_id").references(() => conversationMessages.id),
+    messageId: text("message_id").references(() => chatMessages.id),
     projectId: text("project_id")
       .references(() => projects.id)
       .notNull(),

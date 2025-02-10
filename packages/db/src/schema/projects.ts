@@ -3,7 +3,7 @@ import { relations } from "drizzle-orm";
 import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
-import { conversations } from "./conversations";
+import { chats } from "./chats";
 import { endpoints } from "./endpoints";
 import { environmentVariables } from "./environment-variables";
 import { funcs } from "./funcs";
@@ -27,8 +27,8 @@ export const projects = pgTable(
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    conversationId: text("conversation_id")
-      .references(() => conversations.id, { onDelete: "cascade" })
+    chatId: text("chat_id")
+      .references(() => chats.id, { onDelete: "cascade" })
       .notNull(),
   },
   (t) => ({
@@ -41,9 +41,9 @@ export const projectRelations = relations(projects, ({ many, one }) => ({
   endpoints: many(endpoints),
   funcs: many(funcs),
   environmentVariables: many(environmentVariables),
-  conversation: one(conversations, {
-    fields: [projects.conversationId],
-    references: [conversations.id],
+  chat: one(chats, {
+    fields: [projects.chatId],
+    references: [chats.id],
   }),
   user: one(users, {
     fields: [projects.userId],

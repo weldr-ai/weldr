@@ -1,10 +1,10 @@
 import { useAuth } from "@weldr/auth/provider";
 import type {
-  ConversationMessage,
+  ChatMessage,
   RawContent,
   TestExecutionMessageRawContent,
 } from "@weldr/shared/types";
-import { testExecutionMessageRawContentSchema } from "@weldr/shared/validators/conversations";
+import { testExecutionMessageRawContentSchema } from "@weldr/shared/validators/chats";
 import { Avatar, AvatarFallback, AvatarImage } from "@weldr/ui/avatar";
 import { ScrollArea } from "@weldr/ui/scroll-area";
 import { useEffect, useState } from "react";
@@ -35,7 +35,7 @@ export default function MessageList({
   isThinking,
   isBuilding,
 }: {
-  messages: ConversationMessage[];
+  messages: ChatMessage[];
   isRunning?: boolean;
   isThinking: boolean;
   isBuilding?: boolean;
@@ -89,7 +89,7 @@ export default function MessageList({
 function MessageItem({
   message,
 }: {
-  message: ConversationMessage;
+  message: ChatMessage;
 }) {
   const { user } = useAuth();
 

@@ -3,8 +3,8 @@ import { TRPCError } from "@trpc/server";
 import type { Session } from "@weldr/auth";
 import { type db, isNotNull } from "@weldr/db";
 import {
-  conversationMessages,
-  conversations,
+  chatMessages,
+  chats,
   funcs,
   resourceEnvironmentVariables,
   resources,
@@ -18,7 +18,7 @@ import type { UserMessageRawContent } from "@weldr/shared/types";
 import {
   assistantMessageRawContentSchema,
   userMessageRawContentSchema,
-} from "@weldr/shared/validators/conversations";
+} from "@weldr/shared/validators/chats";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
@@ -92,12 +92,12 @@ type ResolvedReference =
 
 type ResolvedRawContent =
   | {
-      type: "text";
+      type: "paragraph";
       value: string;
     }
   | ResolvedReference;
 
-export const conversationsRouter = {
+export const chatsRouter = {
   addMessage: protectedProcedure
     .input(
       z.discriminatedUnion("role", [
@@ -105,28 +105,28 @@ export const conversationsRouter = {
           role: z.literal("assistant"),
           rawContent: assistantMessageRawContentSchema,
           content: z.string(),
-          conversationId: z.string(),
+          chatId: z.string(),
         }),
         z.object({
           role: z.literal("user"),
           rawContent: userMessageRawContentSchema,
-          conversationId: z.string(),
+          chatId: z.string(),
           funcId: z.string().optional(),
         }),
       ]),
     )
     .mutation(async ({ ctx, input }) => {
-      const conversation = await ctx.db.query.conversations.findFirst({
+      const chat = await ctx.db.query.chats.findFirst({
         where: and(
-          eq(conversations.id, input.conversationId),
-          eq(conversations.userId, ctx.session.user.id),
+          eq(chats.id, input.chatId),
+          eq(chats.userId, ctx.session.user.id),
         ),
       });
 
-      if (!conversation) {
+      if (!chat) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Conversation not found",
+          message: "Chat not found",
         });
       }
 
@@ -134,17 +134,17 @@ export const conversationsRouter = {
 
       if (input.role === "assistant") {
         newMessage = await ctx.db
-          .insert(conversationMessages)
+          .insert(chatMessages)
           .values({
             content: input.content,
             rawContent: input.rawContent,
             role: "assistant",
             createdAt: new Date(),
             userId: ctx.session.user.id,
-            conversationId: input.conversationId,
+            chatId: input.chatId,
           })
           .returning({
-            id: conversationMessages.id,
+            id: chatMessages.id,
           })
           .then(([message]) => message);
       }
@@ -172,17 +172,17 @@ export const conversationsRouter = {
         );
 
         newMessage = await ctx.db
-          .insert(conversationMessages)
+          .insert(chatMessages)
           .values({
             content: userMessageRawContentToText(resolvedRawContent),
             rawContent: input.rawContent,
             role: "user",
             createdAt: new Date(),
             userId: ctx.session.user.id,
-            conversationId: input.conversationId,
+            chatId: input.chatId,
           })
           .returning({
-            id: conversationMessages.id,
+            id: chatMessages.id,
           })
           .then(([message]) => message);
       }
@@ -220,9 +220,9 @@ async function resolveRawContent(
 
   for (const element of rawMessageContent) {
     switch (element.type) {
-      case "text": {
+      case "paragraph": {
         references.push({
-          type: "text",
+          type: "paragraph",
           value: element.value,
         });
         break;
@@ -310,7 +310,7 @@ function userMessageRawContentToText(
   const helperFunctions: string[] = [];
 
   const getElementKey = (element: ResolvedRawContent): string => {
-    if (element.type === "text") return element.value;
+    if (element.type === "paragraph") return element.value;
 
     switch (element.referenceType) {
       case "function": {
@@ -333,7 +333,7 @@ function userMessageRawContentToText(
   const text = rawMessageContent
     .reduce((acc, element) => {
       switch (element.type) {
-        case "text": {
+        case "paragraph": {
           return `${acc}${element.value}`;
         }
 

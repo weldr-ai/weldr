@@ -14,7 +14,7 @@ import { useEffect } from "react";
 import { cn } from "@weldr/ui/utils";
 
 import type { UserMessageRawContent } from "@weldr/shared/types";
-import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/conversations";
+import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/chats";
 import type { z } from "zod";
 import { ReferencesPlugin } from "./plugins/reference";
 import { ReferenceNode } from "./plugins/reference/node";

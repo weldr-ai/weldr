@@ -13,7 +13,7 @@ import { ScrollArea } from "@weldr/ui/scroll-area";
 import { cn } from "@weldr/ui/utils";
 
 import { $createReferenceNode } from "@/components/editor/plugins/reference/node";
-import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/conversations";
+import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/chats";
 import { nanoid } from "nanoid";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";

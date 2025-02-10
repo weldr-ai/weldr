@@ -39,7 +39,7 @@ export function assistantMessageRawContentToText(
   return rawMessageContent
     .map((element) => {
       switch (element.type) {
-        case "text": {
+        case "paragraph": {
           return element.value;
         }
         case "reference": {

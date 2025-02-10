@@ -1,8 +1,8 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { and, eq } from "@weldr/db";
 import {
-  conversationMessages,
-  conversations,
+  chatMessages,
+  chats,
   dependencies,
   endpointDefinitionPackages,
   endpointDefinitionResources,
@@ -46,18 +46,18 @@ export const endpointsRouter = {
             });
           }
 
-          const conversation = await tx
-            .insert(conversations)
+          const chat = await tx
+            .insert(chats)
             .values({
               userId: ctx.session.user.id,
             })
             .returning()
-            .then(([conversation]) => conversation);
+            .then(([chat]) => chat);
 
-          if (!conversation) {
+          if (!chat) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create conversation",
+              message: "Failed to create chat",
             });
           }
 
@@ -67,7 +67,7 @@ export const endpointsRouter = {
               ...input,
               userId: ctx.session.user.id,
               projectId: project.id,
-              conversationId: conversation.id,
+              chatId: chat.id,
             })
             .returning()
             .then(([endpoint]) => endpoint);
@@ -81,9 +81,9 @@ export const endpointsRouter = {
 
           return {
             ...newEndpoint,
-            conversationId: conversation.id,
-            conversation: {
-              ...conversation,
+            chatId: chat.id,
+            chat: {
+              ...chat,
               messages: [],
             },
           };
@@ -124,7 +124,7 @@ export const endpointsRouter = {
                 openApiSpec: true,
               },
             },
-            conversation: {
+            chat: {
               with: {
                 messages: {
                   columns: {
@@ -213,7 +213,7 @@ export const endpointsRouter = {
             ),
           });
 
-          if (!endpoint || !endpoint.conversationId) {
+          if (!endpoint || !endpoint.chatId) {
             throw new TRPCError({
               code: "NOT_FOUND",
               message: "Endpoint not found",
@@ -236,17 +236,17 @@ export const endpointsRouter = {
           );
 
           const assistantBuiltMessage = await ctx.db
-            .insert(conversationMessages)
+            .insert(chatMessages)
             .values({
               role: "assistant",
               content: "Your endpoint has been built successfully!",
               rawContent: [
                 {
-                  type: "text",
+                  type: "paragraph",
                   value: "Your endpoint has been built successfully!",
                 },
               ],
-              conversationId: endpoint.conversationId,
+              chatId: endpoint.chatId,
               userId: ctx.session.user.id,
             })
             .returning()

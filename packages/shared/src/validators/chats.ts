@@ -3,8 +3,8 @@ import {
   databaseColumnReferenceSchema,
   databaseTableReferenceSchema,
   functionReferenceSchema,
+  rawContentParagraphElementSchema,
   rawContentReferenceElementSchema,
-  rawContentTextElementSchema,
   resourceReferenceSchema,
 } from "./common";
 
@@ -35,7 +35,7 @@ export const userMessageRawContentReferenceElementSchema = z.discriminatedUnion(
 );
 
 export const userMessageRawContentElementSchema = z.union([
-  rawContentTextElementSchema,
+  rawContentParagraphElementSchema,
   userMessageRawContentReferenceElementSchema,
 ]);
 
@@ -46,7 +46,7 @@ export const assistantMessageRawContentReferenceElementSchema =
   rawContentReferenceElementSchema;
 
 export const assistantMessageRawContentElementSchema = z.union([
-  rawContentTextElementSchema,
+  rawContentParagraphElementSchema,
   assistantMessageRawContentReferenceElementSchema,
 ]);
 
@@ -65,7 +65,16 @@ export const messageRawContentSchema = z.union([
   testExecutionMessageRawContentSchema,
 ]);
 
-export const conversationMessageSchema = z.object({
+export const attachmentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  key: z.string(),
+  contentType: z.string(),
+  size: z.number(),
+  url: z.string().optional(),
+});
+
+export const chatMessageSchema = z.object({
   id: z.string().optional(),
   role: z.enum(["user", "assistant"]),
   content: z.string().optional(),
@@ -78,10 +87,11 @@ export const conversationMessageSchema = z.object({
       versionNumber: z.number(),
     })
     .optional(),
+  attachments: attachmentSchema.array().optional(),
 });
 
-export const conversationSchema = z.object({
+export const chatSchema = z.object({
   id: z.string(),
   createdAt: z.date(),
-  messages: conversationMessageSchema.array(),
+  messages: chatMessageSchema.array(),
 });

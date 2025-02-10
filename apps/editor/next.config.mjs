@@ -18,6 +18,9 @@ const config = {
       {
         hostname: "localhost",
       },
+      {
+        hostname: "*.fly.storage.tigris.dev",
+      },
     ],
   },
 

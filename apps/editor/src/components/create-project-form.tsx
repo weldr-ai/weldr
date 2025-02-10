@@ -1,19 +1,13 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowUpIcon, PaperclipIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import type { z } from "zod";
-
-import { Button } from "@weldr/ui/button";
-import { Form, FormControl, FormField, FormItem } from "@weldr/ui/form";
-import { toast } from "@weldr/ui/hooks/use-toast";
-import { Textarea } from "@weldr/ui/textarea";
-
 import { api } from "@/lib/trpc/client";
-import { insertProjectSchema } from "@weldr/shared/validators/projects";
-import { useEffect, useState } from "react";
+import { createId } from "@paralleldrive/cuid2";
+import type { Attachment } from "@weldr/shared/types";
+import { Button } from "@weldr/ui/button";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { MultimodalInput } from "./multimodal-input";
 
 const placeholders = [
   "I want to build an app that helps people learn languages...",
@@ -42,18 +36,10 @@ const quickStartTemplates = [
 
 export function CreateProjectForm() {
   const router = useRouter();
-  const [placeholder, setPlaceholder] = useState("");
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const projectChatId = createId();
 
-  const form = useForm<z.infer<typeof insertProjectSchema>>({
-    mode: "onChange",
-    resolver: zodResolver(insertProjectSchema),
-    defaultValues: {
-      message: "",
-    },
-  });
-
-  const apiUtils = api.useUtils();
+  const [message, setMessage] = useState("");
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   const createProjectMutation = api.projects.create.useMutation({
     onSuccess: async (data) => {
@@ -62,7 +48,6 @@ export function CreateProjectForm() {
         description: "Project created successfully.",
         duration: 2000,
       });
-      await apiUtils.projects.list.invalidate();
       router.push(`/projects/${data.id}`);
     },
     onError: (error) => {
@@ -75,89 +60,43 @@ export function CreateProjectForm() {
     },
   });
 
-  useEffect(() => {
-    let charIndex = 0;
-    let isDeleting = false;
-    const currentPlaceholder = placeholders[placeholderIndex];
-
-    if (form.getValues("message")) {
-      setPlaceholder("");
-      return;
-    }
-
-    const interval = setInterval(() => {
-      if (!isDeleting) {
-        setPlaceholder(currentPlaceholder?.slice(0, charIndex) ?? "");
-        charIndex++;
-
-        if (charIndex > (currentPlaceholder?.length ?? 0)) {
-          isDeleting = true;
-          return;
-        }
-      } else {
-        charIndex--;
-        setPlaceholder(currentPlaceholder?.slice(0, charIndex) ?? "");
-
-        if (charIndex === 0) {
-          isDeleting = false;
-          setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
-          return;
-        }
-      }
-    }, 50);
-
-    return () => clearInterval(interval);
-  }, [placeholderIndex, form]);
+  const handleSubmit = () => {
+    createProjectMutation.mutate({
+      chatId: projectChatId,
+      message,
+      attachments: attachments.map((attachment) => ({
+        key: attachment.id,
+        name: attachment.name,
+        contentType: attachment.contentType,
+        size: attachment.size,
+      })),
+    });
+  };
 
   return (
-    <Form {...form}>
-      <form
-        className="flex size-full flex-col items-center justify-center gap-16"
-        onSubmit={form.handleSubmit((data) =>
-          createProjectMutation.mutate(data),
-        )}
-      >
+    <>
+      <div className="flex size-full flex-col items-center justify-center gap-16">
         <div className="flex flex-col items-center gap-4">
           <div className="font-semibold text-3xl">
             What can I forge for you today?
           </div>
           <p className="text-muted-foreground">
-            Weldr will forge your visions into reality.
+            Forge your visions into reality with Weldr.
           </p>
         </div>
-        <FormField
-          control={form.control}
-          name="message"
-          render={({ field }) => (
-            <FormItem className="relative">
-              <div className="absolute inset-1 animate-pulse bg-gradient-to-r from-orange-500 via-amber-200 to-100% to-blue-500 blur-lg" />
-              <FormControl>
-                <Textarea
-                  {...field}
-                  placeholder={placeholder}
-                  className="relative h-[150px] w-[650px] resize-none rounded-xl bg-background p-4 focus-visible:ring-0"
-                />
-              </FormControl>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="absolute bottom-3 left-3 z-50 h-7 rounded-md"
-              >
-                <PaperclipIcon className="mr-2 size-3" />
-                Attach
-              </Button>
-              <Button
-                type="submit"
-                size="icon"
-                className="absolute right-3 bottom-3 z-50 size-7 rounded-md"
-                disabled={!form.formState.isDirty}
-              >
-                <ArrowUpIcon className="size-4" />
-              </Button>
-            </FormItem>
-          )}
-        />
+        <div className="relative">
+          <div className="absolute inset-1 animate-pulse bg-gradient-to-r from-orange-500 via-amber-200 to-100% to-blue-500 blur-lg" />
+          <MultimodalInput
+            chatId={projectChatId}
+            handleSubmit={handleSubmit}
+            input={message}
+            setInput={setMessage}
+            attachments={attachments}
+            setAttachments={setAttachments}
+            className="relative w-[650px]"
+            placeholders={placeholders}
+          />
+        </div>
         <div className="flex gap-3">
           {quickStartTemplates.map((template) => (
             <Button
@@ -166,13 +105,13 @@ export function CreateProjectForm() {
               variant="outline"
               className="rounded-full bg-muted"
               size="sm"
-              onClick={() => form.setValue("message", template.content)}
+              onClick={() => setMessage(template.content)}
             >
               {template.label}
             </Button>
           ))}
         </div>
-      </form>
-    </Form>
+      </div>
+    </>
   );
 }

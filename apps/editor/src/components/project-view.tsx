@@ -1,7 +1,6 @@
 "use client";
 
 import { Editor } from "@/components/editor";
-import { useChat } from "@/lib/store";
 import type { CanvasNode } from "@/types";
 import type { RouterOutputs } from "@weldr/api";
 import {
@@ -13,6 +12,7 @@ import { ScrollArea } from "@weldr/ui/scroll-area";
 
 import { Canvas } from "@/components/canvas";
 import { ProjectSettings } from "@/components/project-settings";
+import { useView } from "@/lib/store";
 import { Button } from "@weldr/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
@@ -32,30 +32,25 @@ export function ProjectView({
   initialNodes: CanvasNode[];
   initialEdges: RouterOutputs["versions"]["dependencies"];
 }) {
-  const { isCollapsed } = useChat();
+  const { isChatCollapsed } = useView();
 
   return (
     <ResizablePanelGroup direction="horizontal" className="space-x-0.5">
-      {!isCollapsed && (
+      {!isChatCollapsed && (
         <>
           <ResizablePanel defaultSize={30} minSize={30} order={1}>
-            <Tabs
-              defaultValue="chat"
-              className="flex h-full flex-col overflow-hidden rounded-lg border"
-            >
-              <div className="flex w-full items-center justify-between border-b px-3 py-1.5">
-                <TabsList className="rounded-none border-none p-0">
+            <Tabs defaultValue="chat" className="flex h-full w-full flex-col">
+              <div className="flex w-full items-center justify-between rounded-md border px-3 py-1.5">
+                <TabsList className="p-0">
                   <TabsTrigger value="chat">Chat</TabsTrigger>
                   <TabsTrigger value="history">History</TabsTrigger>
                 </TabsList>
               </div>
-              <TabsContent value="chat">
-                <ScrollArea className="h-[calc(100vh-238px)] px-2">
+              <TabsContent value="chat" className="flex-1">
+                <ScrollArea className="h-[calc(100vh-250px)] w-full px-2">
                   <div />
                 </ScrollArea>
-                <div className="p-2">
-                  <Editor id="editor" className="h-full" />
-                </div>
+                <Editor id="editor" className="h-[128px] w-full" />
               </TabsContent>
               <TabsContent value="history">
                 <ScrollArea className="h-[calc(100vh-132px)] px-2">

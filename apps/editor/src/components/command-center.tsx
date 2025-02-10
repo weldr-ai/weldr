@@ -32,9 +32,7 @@ export function CommandCenter({
   const [selectedProject, setSelectedProject] = useState<
     RouterOutputs["projects"]["list"][0] | null
   >(null);
-  const [isCreateMode, setIsCreateMode] = useState(
-    projects.length === 0 || open.mode === "create-project",
-  );
+  const [isCreateMode, setIsCreateMode] = useState(true);
 
   useEffect(() => {
     if (!asDialog) return;
@@ -42,12 +40,16 @@ export function CommandCenter({
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen({ isOpen: true });
+        setOpen("view");
       }
     };
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, [setOpen, asDialog]);
+
+  useEffect(() => {
+    setIsCreateMode(open !== "view");
+  }, [open]);
 
   const content = (
     <div className="flex size-full">
@@ -157,8 +159,10 @@ export function CommandCenter({
     <>
       {asDialog ? (
         <CommandDialog
-          open={open.isOpen}
-          onOpenChange={(isOpen) => setOpen({ isOpen })}
+          open={open !== null}
+          onOpenChange={(isOpen) =>
+            setOpen(isOpen ? (isCreateMode ? "create" : "view") : null)
+          }
           className="h-[600px] w-[896px] max-w-4xl"
         >
           {content}

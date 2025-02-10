@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2Icon } from "lucide-react";
+import { LoaderIcon } from "lucide-react";
 import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
@@ -104,7 +104,7 @@ function SubmitButton({
       className={className}
       variant={variant}
     >
-      {pending && <Loader2Icon className="mr-1 size-3 animate-spin" />}
+      {pending && <LoaderIcon className="mr-1 size-3 animate-spin" />}
       Join Waitlist
     </Button>
   );

@@ -10,7 +10,7 @@ import { DecoratorNode } from "lexical";
 import type { ReactNode } from "react";
 
 import { ReferenceBadge } from "@/components/editor/reference-badge";
-import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/conversations";
+import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/chats";
 import type { z } from "zod";
 
 export type SerializedReferenceNode = Spread<

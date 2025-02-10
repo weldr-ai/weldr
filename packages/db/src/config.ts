@@ -2,12 +2,10 @@ import type { Config } from "drizzle-kit";
 
 const connectionString = process.env.DATABASE_URL ?? "";
 
-console.log(connectionString);
-
 export default {
   schema: [
     "./src/schema/auth.ts",
-    "./src/schema/conversations.ts",
+    "./src/schema/chats.ts",
     "./src/schema/endpoints.ts",
     "./src/schema/integrations.ts",
     "./src/schema/funcs.ts",

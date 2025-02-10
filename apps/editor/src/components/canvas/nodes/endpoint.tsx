@@ -12,11 +12,11 @@ import type { CanvasNode, CanvasNodeProps } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
 import type { RouterOutputs } from "@weldr/api";
 import type {
-  ConversationMessage,
+  ChatMessage,
   EndpointRequirementsMessage,
   UserMessageRawContent,
 } from "@weldr/shared/types";
-import { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/conversations";
+import { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/chats";
 import { Button } from "@weldr/ui/button";
 import { Card } from "@weldr/ui/card";
 import {
@@ -78,7 +78,7 @@ export const EndpointNode = memo(
 
     const deleteEndpoint = api.endpoints.delete.useMutation();
 
-    const addMessage = api.conversations.addMessage.useMutation();
+    const addMessage = api.chats.addMessage.useMutation();
 
     const editorRef = useRef<LexicalEditor>(null);
 
@@ -88,19 +88,19 @@ export const EndpointNode = memo(
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [isBuilding, setIsBuilding] = useState<boolean>(false);
 
-    const [messages, setMessages] = useState<ConversationMessage[]>([
+    const [messages, setMessages] = useState<ChatMessage[]>([
       {
         id: createId(),
         role: "assistant",
         rawContent: [
           {
-            type: "text",
+            type: "paragraph",
             value:
               "Hi there! I'm Weldr, your AI assistant. What does your endpoint do?",
           },
         ],
       },
-      ...(data.conversation?.messages ?? []),
+      ...(data.chat?.messages ?? []),
     ]);
 
     const [userMessageContent, setUserMessageContent] = useState<string | null>(
@@ -116,15 +116,15 @@ export const EndpointNode = memo(
           role: "assistant",
           rawContent: [
             {
-              type: "text",
+              type: "paragraph",
               value:
                 "Hi there! I'm Weldr, your AI assistant. What does your endpoint do?",
             },
           ],
         },
-        ...(data.conversation?.messages ?? []),
+        ...(data.chat?.messages ?? []),
       ]);
-    }, [data.conversation]);
+    }, [data.chat]);
 
     function onChatChange(editorState: EditorState) {
       editorState.read(async () => {
@@ -135,9 +135,9 @@ export const EndpointNode = memo(
         )?.getChildren();
 
         const userMessageRawContent = children?.reduce((acc, child) => {
-          if (child.__type === "text") {
+          if (child.__type === "paragraph") {
             acc.push({
-              type: "text",
+              type: "paragraph",
               value: child.getTextContent(),
             });
           }
@@ -180,12 +180,12 @@ export const EndpointNode = memo(
         return;
       }
 
-      const newMessageUser: ConversationMessage & {
-        conversationId: string;
+      const newMessageUser: ChatMessage & {
+        chatId: string;
       } = {
         role: "user",
         rawContent: userMessageRawContent,
-        conversationId: data.conversationId,
+        chatId: data.chatId,
         createdAt: new Date(),
       };
 
@@ -195,7 +195,7 @@ export const EndpointNode = memo(
 
       await addMessage.mutateAsync({
         role: "user",
-        conversationId: data.conversationId,
+        chatId: data.chatId,
         rawContent: userMessageRawContent,
       });
 
@@ -211,7 +211,7 @@ export const EndpointNode = memo(
       }
 
       let newAssistantMessageStr = "";
-      let newAssistantMessage: ConversationMessage | null = null;
+      let newAssistantMessage: ChatMessage | null = null;
 
       for await (const content of readStreamableValue(
         result as StreamableValue<EndpointRequirementsMessage>,

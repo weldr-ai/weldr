@@ -1,8 +1,8 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
 import {
-  conversationMessages,
-  conversations,
+  chatMessages,
+  chats,
   dependencies,
   funcDefinitionPackages,
   funcDefinitionResources,
@@ -34,18 +34,18 @@ export const funcsRouter = {
     .mutation(async ({ ctx, input }) => {
       try {
         const result = await ctx.db.transaction(async (tx) => {
-          const conversation = await tx
-            .insert(conversations)
+          const chat = await tx
+            .insert(chats)
             .values({
               userId: ctx.session.user.id,
             })
             .returning()
-            .then(([conversation]) => conversation);
+            .then(([chat]) => chat);
 
-          if (!conversation) {
+          if (!chat) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create conversation",
+              message: "Failed to create chat",
             });
           }
 
@@ -54,7 +54,7 @@ export const funcsRouter = {
             .values({
               ...input,
               userId: ctx.session.user.id,
-              conversationId: conversation?.id,
+              chatId: chat?.id,
             })
             .returning()
             .then(([func]) => func);
@@ -68,9 +68,9 @@ export const funcsRouter = {
 
           return {
             ...newFunc,
-            conversationId: conversation.id,
-            conversation: {
-              ...conversation,
+            chatId: chat.id,
+            chat: {
+              ...chat,
               messages: [],
             },
           };
@@ -118,7 +118,7 @@ export const funcsRouter = {
                 testInput: true,
               },
             },
-            conversation: {
+            chat: {
               with: {
                 messages: {
                   columns: {
@@ -245,7 +245,7 @@ export const funcsRouter = {
             },
           });
 
-          if (!func || !func.projectId || !func.conversationId) {
+          if (!func || !func.projectId || !func.chatId) {
             throw new TRPCError({
               code: "NOT_FOUND",
               message: "Function not found",
@@ -266,17 +266,17 @@ export const funcsRouter = {
           );
 
           const assistantBuiltMessage = await tx
-            .insert(conversationMessages)
+            .insert(chatMessages)
             .values({
               role: "assistant",
               content: "Your function has been built successfully!",
               rawContent: [
                 {
-                  type: "text",
+                  type: "paragraph",
                   value: "Your function has been built successfully!",
                 },
               ],
-              conversationId: func.conversationId,
+              chatId: func.chatId,
               userId: ctx.session.user.id,
             })
             .returning()
@@ -433,7 +433,7 @@ export const funcsRouter = {
             },
           });
 
-          if (!func || !func.conversationId || !func.projectId) {
+          if (!func || !func.chatId || !func.projectId) {
             throw new TRPCError({
               code: "NOT_FOUND",
               message: "Function not found",

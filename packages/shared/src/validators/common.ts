@@ -38,8 +38,8 @@ export const packageSchema = z.object({
   reason: z.string().describe("The reason for the npm package"),
 });
 
-export const rawContentTextElementSchema = z.object({
-  type: z.literal("text"),
+export const rawContentParagraphElementSchema = z.object({
+  type: z.literal("paragraph"),
   value: z
     .string()
     .describe("The value of the text. Should be valid markdown."),
@@ -101,7 +101,7 @@ export const rawContentReferenceElementSchema = z.discriminatedUnion(
 );
 
 export const rawContentSchema = z
-  .union([rawContentTextElementSchema, rawContentReferenceElementSchema])
+  .union([rawContentParagraphElementSchema, rawContentReferenceElementSchema])
   .array();
 
 export const resourceMetadataSchema = z.discriminatedUnion("type", [

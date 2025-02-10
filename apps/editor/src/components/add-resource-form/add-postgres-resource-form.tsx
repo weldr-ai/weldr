@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2Icon } from "lucide-react";
+import { LoaderIcon } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -519,7 +519,7 @@ export function AddPostgresResourceForm({
             }
           >
             {addResourceMutation.isPending && (
-              <Loader2Icon className="mr-1 size-3 animate-spin" />
+              <LoaderIcon className="mr-1 size-3 animate-spin" />
             )}
             {resource ? "Update" : "Add"}
           </Button>

@@ -1,4 +1,4 @@
-import { conversationsRouter } from "./router/conversations";
+import { chatsRouter } from "./router/chats";
 import { dependenciesRouter } from "./router/dependencies";
 import { endpointsRouter } from "./router/endpoints";
 import { engineRouter } from "./router/engine";
@@ -17,7 +17,7 @@ export const appRouter = createTRPCRouter({
   endpoints: endpointsRouter,
   versions: versionsRouter,
   engine: engineRouter,
-  conversations: conversationsRouter,
+  chats: chatsRouter,
   integrations: integrationsRouter,
   environmentVariables: environmentVariablesRouter,
   dependencies: dependenciesRouter,

@@ -2,11 +2,11 @@ import { createId } from "@paralleldrive/cuid2";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { and, eq } from "@weldr/db";
 import {
-  conversationMessages,
-  conversations,
+  attachments,
+  chatMessages,
+  chats,
   projects,
   resourceEnvironmentVariables,
-  versions,
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import {
@@ -32,34 +32,62 @@ export const projectsRouter = {
             });
           }
 
-          const [conversation] = await tx
-            .insert(conversations)
+          const [chat] = await tx
+            .insert(chats)
             .values({
-              id: createId(),
+              id: input.chatId,
               userId: ctx.session.user.id,
             })
             .returning();
 
-          if (!conversation) {
+          if (!chat) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create conversation",
+              message: "Failed to create chat",
             });
           }
 
-          await tx.insert(conversationMessages).values({
-            conversationId: conversation.id,
-            role: "user",
-            content: input.message,
-            rawContent: [],
-          });
+          const [message] = await tx
+            .insert(chatMessages)
+            .values({
+              chatId: chat.id,
+              role: "user",
+              content: input.message,
+              rawContent: [
+                {
+                  type: "paragraph",
+                  value: input.message,
+                },
+              ],
+            })
+            .returning();
+
+          if (!message) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create message",
+            });
+          }
+
+          if (input.attachments.length > 0) {
+            await tx.insert(attachments).values(
+              input.attachments.map((attachment) => ({
+                key: attachment.key,
+                name: attachment.name,
+                contentType: attachment.contentType,
+                size: attachment.size,
+                messageId: message.id,
+                userId: ctx.session.user.id,
+              })),
+            );
+          }
 
           const [project] = await tx
             .insert(projects)
             .values({
               id: projectId,
               subdomain: projectId,
-              conversationId: conversation.id,
+              chatId: chat.id,
               userId: ctx.session.user.id,
             })
             .returning();
@@ -70,14 +98,6 @@ export const projectsRouter = {
               message: "Failed to create project",
             });
           }
-
-          await tx.insert(versions).values({
-            projectId: project.id,
-            isActive: true,
-            versionName: `${project.name} (initiated)`,
-            versionNumber: 1,
-            userId: ctx.session.user.id,
-          });
 
           return project;
         });

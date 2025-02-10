@@ -160,7 +160,7 @@ export function Canvas({
             data: {
               id: newNodeId,
               projectId,
-              conversation: {},
+              chat: {},
             },
           } as CanvasNode;
           setNodes((nodes) => nodes.concat(newNode));
@@ -185,7 +185,7 @@ export function Canvas({
               data: {
                 id: newNodeId,
                 projectId,
-                conversation: {},
+                chat: {},
               } as CanvasNodeData,
             } as CanvasNode;
             await createEndpoint.mutateAsync({

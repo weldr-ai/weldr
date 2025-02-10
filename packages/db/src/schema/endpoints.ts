@@ -17,7 +17,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { conversations } from "./conversations";
+import { chats } from "./chats";
 import { dependencies } from "./dependencies";
 import { packages } from "./packages";
 import { projects } from "./projects";
@@ -48,8 +48,8 @@ export const endpoints = pgTable(
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),
-    conversationId: text("conversation_id")
-      .references(() => conversations.id)
+    chatId: text("chat_id")
+      .references(() => chats.id)
       .notNull(),
     projectId: text("project_id")
       .references(() => projects.id)
@@ -68,9 +68,9 @@ export const endpointsRelations = relations(endpoints, ({ one, many }) => ({
     fields: [endpoints.projectId],
     references: [projects.id],
   }),
-  conversation: one(conversations, {
-    fields: [endpoints.conversationId],
-    references: [conversations.id],
+  chat: one(chats, {
+    fields: [endpoints.chatId],
+    references: [chats.id],
   }),
   definitions: many(endpointDefinitions),
   currentDefinition: one(endpointDefinitions, {

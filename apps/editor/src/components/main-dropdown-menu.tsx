@@ -41,7 +41,7 @@ export function MainDropdownMenu(): JSX.Element {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="start" side="bottom">
         <DropdownMenuLabel>Projects</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => setOpen({ isOpen: true })}>
+        <DropdownMenuItem onClick={() => setOpen("view")}>
           <BoxesIcon className="mr-2 size-4 text-muted-foreground" />
           View All Projects
           <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
@@ -54,9 +54,7 @@ export function MainDropdownMenu(): JSX.Element {
             k
           </kbd>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => setOpen({ isOpen: true, mode: "create-project" })}
-        >
+        <DropdownMenuItem onClick={() => setOpen("create")}>
           <PlusIcon className="mr-2 size-4 text-muted-foreground" />
           Create Project
         </DropdownMenuItem>

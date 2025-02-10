@@ -21,7 +21,7 @@ export function RawContentViewer({
     const references: Array<Omit<ReferenceItem, "type">> = [];
 
     for (const item of rawContent) {
-      if (item.type === "text") {
+      if (item.type === "paragraph") {
         text += item.value;
       } else {
         const placeholder = `:::REF${references.length}:::`;

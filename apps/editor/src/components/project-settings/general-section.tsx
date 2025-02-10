@@ -20,7 +20,7 @@ import {
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { Input } from "@weldr/ui/input";
 import { Textarea } from "@weldr/ui/textarea";
-import { Loader2Icon } from "lucide-react";
+import { LoaderIcon } from "lucide-react";
 
 import { api } from "@/lib/trpc/client";
 import { useRouter } from "next/navigation";
@@ -139,7 +139,7 @@ export function GeneralSection({
                 }
               >
                 {updateProject.isPending && (
-                  <Loader2Icon className="mr-2 size-3.5 animate-spin" />
+                  <LoaderIcon className="mr-2 size-3.5 animate-spin" />
                 )}
                 Update
               </Button>

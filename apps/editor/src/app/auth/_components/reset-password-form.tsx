@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, LoaderIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -160,7 +160,7 @@ export function ResetPasswordForm() {
                 disabled={!form.formState.isValid || isSubmitting}
               >
                 {isSubmitting && (
-                  <Loader2Icon className="mr-1 size-3 animate-spin" />
+                  <LoaderIcon className="mr-1 size-3 animate-spin" />
                 )}
                 Reset password
               </Button>

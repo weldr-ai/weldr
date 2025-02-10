@@ -17,7 +17,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { conversations } from "./conversations";
+import { chats } from "./chats";
 import { dependencies } from "./dependencies";
 import { integrations } from "./integrations";
 import { packages } from "./packages";
@@ -39,7 +39,7 @@ export const funcs = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-    conversationId: text("conversation_id").references(() => conversations.id),
+    chatId: text("chat_id").references(() => chats.id),
     projectId: text("project_id").references(() => projects.id, {
       onDelete: "cascade",
     }),
@@ -56,9 +56,9 @@ export const funcs = pgTable(
 );
 
 export const funcRelations = relations(funcs, ({ one, many }) => ({
-  conversation: one(conversations, {
-    fields: [funcs.conversationId],
-    references: [conversations.id],
+  chat: one(chats, {
+    fields: [funcs.chatId],
+    references: [chats.id],
   }),
   project: one(projects, {
     fields: [funcs.projectId],

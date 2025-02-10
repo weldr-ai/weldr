@@ -1,5 +1,5 @@
 export * from "./auth";
-export * from "./conversations";
+export * from "./chats";
 export * from "./dependencies";
 export * from "./endpoints";
 export * from "./environment-variables";

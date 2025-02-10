@@ -11,7 +11,7 @@ import {
 import { createOpenAI } from "@ai-sdk/openai";
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull, not } from "@weldr/db";
-import { conversations, endpoints, funcs } from "@weldr/db/schema";
+import { chats, endpoints, funcs } from "@weldr/db/schema";
 import type {
   EndpointRequirementsMessage,
   FuncRequirementsMessage,
@@ -53,10 +53,10 @@ export async function generateFunc(funcId: string) {
     };
   }
 
-  if (!funcData.conversationId) {
+  if (!funcData.chatId) {
     return {
       status: "error",
-      message: "Function name or conversation ID is required",
+      message: "Function name or chat ID is required",
     };
   }
 
@@ -72,10 +72,10 @@ export async function generateFunc(funcId: string) {
     },
   });
 
-  const conversation = await db.query.conversations.findFirst({
+  const chat = await db.query.chats.findFirst({
     where: and(
-      eq(conversations.id, funcData.conversationId),
-      eq(conversations.userId, session.user.id),
+      eq(chats.id, funcData.chatId),
+      eq(chats.userId, session.user.id),
     ),
     with: {
       messages: {
@@ -84,16 +84,14 @@ export async function generateFunc(funcId: string) {
     },
   });
 
-  if (!conversation) {
+  if (!chat) {
     return {
       status: "error",
-      message: "Conversation not found",
+      message: "Chat not found",
     };
   }
 
-  console.log(
-    `[generateFunc] Conversation: ${JSON.stringify(conversation, null, 2)}`,
-  );
+  console.log(`[generateFunc] Chat: ${JSON.stringify(chat, null, 2)}`);
 
   console.log(
     `[generateFunc] Existing funcs: ${JSON.stringify(existingFuncs, null, 2)}`,
@@ -115,7 +113,7 @@ export async function generateFunc(funcId: string) {
           : "No other functions implemented yet"
       }`,
     },
-    ...conversation.messages.map((message) => ({
+    ...chat.messages.map((message) => ({
       role: message.role,
       content: message.content,
     })),
@@ -143,13 +141,13 @@ export async function generateFunc(funcId: string) {
 
         if (object?.message?.type === "message") {
           console.log(
-            `[generateFunc] Adding message to conversation for func ${funcId}`,
+            `[generateFunc] Adding message to chat for func ${funcId}`,
           );
-          await api.conversations.addMessage({
+          await api.chats.addMessage({
             role: "assistant",
             content: assistantMessageRawContentToText(object.message.content),
             rawContent: object.message.content,
-            conversationId: conversation.id,
+            chatId: chat.id,
           });
         }
 
@@ -274,17 +272,17 @@ export async function generateEndpoint(endpointId: string) {
     },
   });
 
-  const conversation = await db.query.conversations.findFirst({
-    where: eq(conversations.id, endpoint.conversationId),
+  const chat = await db.query.chats.findFirst({
+    where: eq(chats.id, endpoint.chatId),
     with: {
       messages: true,
     },
   });
 
-  if (!conversation) {
+  if (!chat) {
     return {
       status: "error",
-      message: "Conversation not found",
+      message: "Chat not found",
     };
   }
 
@@ -303,7 +301,7 @@ export async function generateEndpoint(endpointId: string) {
           : "No other endpoints implemented yet"
       }`,
     },
-    ...conversation.messages.map((message) => ({
+    ...chat.messages.map((message) => ({
       role: message.role,
       content: message.content,
     })),
@@ -334,13 +332,13 @@ export async function generateEndpoint(endpointId: string) {
 
         if (object?.message?.type === "message") {
           console.log(
-            `[generateEndpoint] Adding message to conversation for endpoint ${endpointId}`,
+            `[generateEndpoint] Adding message to chat for endpoint ${endpointId}`,
           );
-          await api.conversations.addMessage({
+          await api.chats.addMessage({
             role: "assistant",
             content: assistantMessageRawContentToText(object.message.content),
             rawContent: object.message.content,
-            conversationId: conversation.id,
+            chatId: chat.id,
           });
         }
 

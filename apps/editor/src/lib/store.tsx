@@ -9,14 +9,8 @@ import {
 } from "react";
 
 interface CommandCenterContextType {
-  open: {
-    isOpen: boolean;
-    mode?: "create-project" | undefined;
-  };
-  setOpen: (open: {
-    isOpen: boolean;
-    mode?: "create-project" | undefined;
-  }) => void;
+  open: "create" | "view" | null;
+  setOpen: (open: "create" | "view" | null) => void;
 }
 
 const CommandCenterContext = createContext<
@@ -24,7 +18,7 @@ const CommandCenterContext = createContext<
 >(undefined);
 
 export function CommandCenterProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState({ isOpen: false });
+  const [open, setOpen] = useState<"create" | "view" | null>(null);
 
   return (
     <CommandCenterContext.Provider value={{ open, setOpen }}>
@@ -91,30 +85,30 @@ export function useFlowBuilder() {
   return context;
 }
 
-// Chat Context
-interface ChatContextType {
-  isCollapsed: boolean;
-  toggleCollapsed: () => void;
+// View Context
+interface ViewContextType {
+  isChatCollapsed: boolean;
+  toggleChatCollapsed: () => void;
 }
 
-const ChatContext = createContext<ChatContextType | undefined>(undefined);
+const ViewContext = createContext<ViewContextType | undefined>(undefined);
 
-export function ChatProvider({ children }: { children: ReactNode }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+export function ViewProvider({ children }: { children: ReactNode }) {
+  const [isChatCollapsed, setIsChatCollapsed] = useState(false);
 
-  const toggleCollapsed = () => setIsCollapsed((prev) => !prev);
+  const toggleChatCollapsed = () => setIsChatCollapsed((prev) => !prev);
 
   return (
-    <ChatContext.Provider value={{ isCollapsed, toggleCollapsed }}>
+    <ViewContext.Provider value={{ isChatCollapsed, toggleChatCollapsed }}>
       {children}
-    </ChatContext.Provider>
+    </ViewContext.Provider>
   );
 }
 
-export function useChat() {
-  const context = useContext(ChatContext);
+export function useView() {
+  const context = useContext(ViewContext);
   if (context === undefined) {
-    throw new Error("useChat must be used within a ChatProvider");
+    throw new Error("useView must be used within a ViewProvider");
   }
   return context;
 }
@@ -123,7 +117,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   return (
     <CommandCenterProvider>
       <FlowBuilderProvider>
-        <ChatProvider>{children}</ChatProvider>
+        <ViewProvider>{children}</ViewProvider>
       </FlowBuilderProvider>
     </CommandCenterProvider>
   );

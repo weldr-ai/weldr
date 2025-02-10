@@ -14,7 +14,16 @@ export const projectSchema = z.object({
 });
 
 export const insertProjectSchema = z.object({
+  chatId: z.string(),
   message: z.string(),
+  attachments: z
+    .object({
+      key: z.string(),
+      name: z.string(),
+      contentType: z.string(),
+      size: z.number(),
+    })
+    .array(),
 });
 
 export const updateProjectSchema = z.object({

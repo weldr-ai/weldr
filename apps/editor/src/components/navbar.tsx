@@ -1,6 +1,6 @@
 "use client";
 
-import { useChat } from "@/lib/store";
+import { useView } from "@/lib/store";
 import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
@@ -12,7 +12,7 @@ export function Navbar({
 }: {
   project: RouterOutputs["projects"]["byId"];
 }) {
-  const { toggleCollapsed } = useChat();
+  const { toggleChatCollapsed } = useView();
 
   return (
     <div className="flex h-[56px] w-full items-center justify-between px-2">
@@ -21,7 +21,7 @@ export function Navbar({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={toggleCollapsed}>
+            <Button variant="ghost" size="icon" onClick={toggleChatCollapsed}>
               <SidebarIcon className="size-4" />
             </Button>
           </TooltipTrigger>
@@ -31,7 +31,7 @@ export function Navbar({
         </Tooltip>
       </div>
 
-      <h2 className="font-semibold text-sm">{project.name}</h2>
+      <h2 className="font-semibold text-sm">{project.name ?? "New Project"}</h2>
 
       <div className="flex flex-col items-center space-y-2">
         <Button variant="outline">

@@ -52,7 +52,7 @@ export const versionsRouter = {
               testInput: true,
             },
           },
-          conversation: {
+          chat: {
             with: {
               messages: {
                 columns: {
@@ -92,7 +92,7 @@ export const versionsRouter = {
               openApiSpec: true,
             },
           },
-          conversation: {
+          chat: {
             with: {
               messages: {
                 columns: {

@@ -22,7 +22,7 @@ import {
 } from "@weldr/ui/form";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { Input } from "@weldr/ui/input";
-import { Loader2Icon, PlusIcon } from "lucide-react";
+import { LoaderIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -131,7 +131,7 @@ export default function AddEnvironmentVariableDialog({
                 }
               >
                 {createEnvironmentVariable.isPending && (
-                  <Loader2Icon className="size-4 animate-spin" />
+                  <LoaderIcon className="size-4 animate-spin" />
                 )}
                 Add Environment Variable
               </Button>

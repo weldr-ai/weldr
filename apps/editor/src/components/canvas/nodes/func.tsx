@@ -48,13 +48,13 @@ import type { CanvasNode, CanvasNodeProps } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
 import type { RouterOutputs } from "@weldr/api";
 import type {
-  ConversationMessage,
+  ChatMessage,
   FuncRequirementsMessage,
   JsonSchema,
   UserMessageRawContent,
 } from "@weldr/shared/types";
 import { toTitle } from "@weldr/shared/utils";
-import { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/conversations";
+import { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/chats";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -117,7 +117,7 @@ export const FuncNode = memo(
 
     const deleteFunc = api.funcs.delete.useMutation();
 
-    const addMessage = api.conversations.addMessage.useMutation();
+    const addMessage = api.chats.addMessage.useMutation();
 
     const editorRef = useRef<LexicalEditor>(null);
 
@@ -131,7 +131,7 @@ export const FuncNode = memo(
     const [isRunning, setIsRunning] = useState<boolean>(false);
     const [testInput, setTestInput] = useState<unknown>(data.testInput ?? {});
 
-    const [messages, setMessages] = useState<ConversationMessage[]>([
+    const [messages, setMessages] = useState<ChatMessage[]>([
       {
         id: createId(),
         role: "assistant",
@@ -139,13 +139,13 @@ export const FuncNode = memo(
           "Hi there! I'm Weldr, your AI assistant. What does your function do?",
         rawContent: [
           {
-            type: "text",
+            type: "paragraph",
             value:
               "Hi there! I'm Weldr, your AI assistant. What does your function do?",
           },
         ],
       },
-      ...(data.conversation?.messages ?? []),
+      ...(data.chat?.messages ?? []),
     ]);
     const [userMessageContent, setUserMessageContent] = useState<string | null>(
       null,
@@ -160,15 +160,15 @@ export const FuncNode = memo(
           role: "assistant",
           rawContent: [
             {
-              type: "text",
+              type: "paragraph",
               value:
                 "Hi there! I'm Weldr, your AI assistant. What does your function do?",
             },
           ],
         },
-        ...(data.conversation?.messages ?? []),
+        ...(data.chat?.messages ?? []),
       ]);
-    }, [data.conversation]);
+    }, [data.chat]);
 
     function onChatChange(editorState: EditorState) {
       editorState.read(async () => {
@@ -179,9 +179,9 @@ export const FuncNode = memo(
         const text = root.getTextContent();
 
         const userMessageRawContent = children?.reduce((acc, child) => {
-          if (child.__type === "text") {
+          if (child.__type === "paragraph") {
             acc.push({
-              type: "text",
+              type: "paragraph",
               value: child.getTextContent(),
             });
           }
@@ -235,7 +235,7 @@ export const FuncNode = memo(
         e.preventDefault();
       }
 
-      if (!data.conversationId) {
+      if (!data.chatId) {
         return;
       }
 
@@ -255,12 +255,12 @@ export const FuncNode = memo(
         return;
       }
 
-      const newMessageUser: ConversationMessage & {
-        conversationId: string;
+      const newMessageUser: ChatMessage & {
+        chatId: string;
       } = {
         role: "user",
         rawContent: userMessageRawContent,
-        conversationId: data.conversationId,
+        chatId: data.chatId,
         createdAt: new Date(),
       };
 
@@ -271,7 +271,7 @@ export const FuncNode = memo(
       await addMessage.mutateAsync({
         role: "user",
         rawContent: userMessageRawContent,
-        conversationId: data.conversationId,
+        chatId: data.chatId,
         funcId: data.id,
       });
 
@@ -287,7 +287,7 @@ export const FuncNode = memo(
       }
 
       let newAssistantMessageStr = "";
-      let newAssistantMessage: ConversationMessage | null = null;
+      let newAssistantMessage: ChatMessage | null = null;
 
       for await (const content of readStreamableValue(
         result as StreamableValue<FuncRequirementsMessage>,

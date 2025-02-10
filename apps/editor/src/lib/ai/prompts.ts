@@ -46,9 +46,9 @@ export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gather
 {
   "type": "message",
   "content": [
-    { "type": "text", "value": "[Introductory statement or question]" },
+    { "type": "paragraph", "value": "[Introductory statement or question]" },
     { "type": "reference", "referenceType": "[variable/function/resource/database-table/database-column]", "id": "[resourceId]", "name": "[resourceName]" },
-    { "type": "text", "value": "[Additional clarification or prompt]" }
+    { "type": "paragraph", "value": "[Additional clarification or prompt]" }
   ]
 }
 \`\`\`
@@ -63,21 +63,21 @@ export const FUNC_REQUIREMENTS_AGENT_PROMPT = `You are an AI requirements-gather
     "inputSchema": "{\"type\": \"object\", \"required\": [], \"properties\": {\"[inputFieldName1]\": {\"type\": \"[dataType]\"}, \"[inputFieldName2]\": {\"type\": \"[dataType]\"}}}",
     "outputSchema": "{\"type\": \"object\", \"required\": [], \"properties\": {\"[outputFieldName1]\": {\"type\": \"[dataType]\"}, \"[outputFieldName2]\": {\"type\": \"[dataType]\"}}}",
     "description": [
-      { "type": "text", "value": "This function filters data from " },
+      { "type": "paragraph", "value": "This function filters data from " },
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
-      { "type": "text", "value": " based on provided inputs and returns filtered results." }
+      { "type": "paragraph", "value": " based on provided inputs and returns filtered results." }
     ],
     "signature": "[Function signature (valid TypeScript code block)]",
     "parameters": "[Function parameters (valid TypeScript code block)]",
     "returns": "[Function return value (valid TypeScript code block)]",
     "behavior": [
-      { "type": "text", "value": "1. Validate input parameters\n" },
-      { "type": "text", "value": "2. Query " },
+      { "type": "paragraph", "value": "1. Validate input parameters\n" },
+      { "type": "paragraph", "value": "2. Query " },
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
-      { "type": "text", "value": " table using " },
+      { "type": "paragraph", "value": " table using " },
       { "type": "reference", "referenceType": "function", "name": "query" },
-      { "type": "text", "value": "\n3. Process the returned data\n" },
-      { "type": "text", "value": "4. Return formatted results" }
+      { "type": "paragraph", "value": "\n3. Process the returned data\n" },
+      { "type": "paragraph", "value": "4. Return formatted results" }
     ],
     "errors": "[Error handling strategies (markdown list)]",
     "examples": "[Examples of the function (valid TypeScript code block)]",
@@ -178,7 +178,7 @@ I want to filter the customers table based on any combination of optional filter
 {
   "type": "message",
   "content": [
-    { "type": "text", "value": "Should we return all records if no filter parameters are provided, or should we require at least one filter field?" }
+    { "type": "paragraph", "value": "Should we return all records if no filter parameters are provided, or should we require at least one filter field?" }
   ]
 }
 \`\`\`
@@ -192,33 +192,33 @@ I want to filter the customers table based on any combination of optional filter
     "inputSchema": "{\"type\": \"object\", \"required\": [], \"properties\": {\"customerId\": {\"type\": \"integer\"}, \"firstName\": {\"type\": \"string\"}, \"lastName\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"phone\": {\"type\": \"string\"}, \"address\": {\"type\": \"string\"}}}",
     "outputSchema": "{\"title\": \"Customer\", \"type\": \"array\", \"items\": {\"type\": \"object\", \"required\": [\"customerId\", \"firstName\", \"lastName\", \"email\", \"phone\", \"address\"], \"properties\": {\"customerId\": {\"type\": \"integer\"}, \"firstName\": {\"type\": \"string\"}, \"lastName\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\"}, \"phone\": {\"type\": \"string\"}, \"address\": {\"type\": \"string\"}}}}",
     "description": [
-      { "type": "text", "value": "This function filters the " },
+      { "type": "paragraph", "value": "This function filters the " },
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
-      { "type": "text", "value": " table in the " },
+      { "type": "paragraph", "value": " table in the " },
       { "type": "reference", "referenceType": "resource", "name": "CRM" },
-      { "type": "text", "value": " database based on any combination of optional filter fields: " },
+      { "type": "paragraph", "value": " database based on any combination of optional filter fields: " },
       { "type": "reference", "referenceType": "variable", "name": "customerId", "dataType": "integer" },
-      { "type": "text", "value": ", " },
+      { "type": "paragraph", "value": ", " },
       { "type": "reference", "referenceType": "variable", "name": "firstName", "dataType": "string" },
-      { "type": "text", "value": ", " },
+      { "type": "paragraph", "value": ", " },
       { "type": "reference", "referenceType": "variable", "name": "lastName", "dataType": "string" },
-      { "type": "text", "value": ", " },
+      { "type": "paragraph", "value": ", " },
       { "type": "reference", "referenceType": "variable", "name": "email", "dataType": "string" },
-      { "type": "text", "value": ", " },
+      { "type": "paragraph", "value": ", " },
       { "type": "reference", "referenceType": "variable", "name": "phone", "dataType": "string" },
-      { "type": "text", "value": ", and " },
+      { "type": "paragraph", "value": ", and " },
       { "type": "reference", "referenceType": "variable", "name": "address", "dataType": "string" },
-      { "type": "text", "value": ". Returns all matching records." }
+      { "type": "paragraph", "value": ". Returns all matching records." }
     ],
     "signature": "async function filterCustomers(filters: FilterCustomersInput): Promise<FilterCustomersResult>",
     "parameters": "/**\n * @param filters - The filter criteria\n * @type {FilterCustomersInput} - Filter parameters object\n */\nfilters: FilterCustomersInput = {\n  customerId?: number;    // Optional customer ID filter\n  firstName?: string;    // Optional first name filter\n  lastName?: string;     // Optional last name filter\n  email?: string;        // Optional email filter\n  phone?: string;        // Optional phone filter\n  address?: string;      // Optional address filter\n}",
     "returns": "/**\n * @returns {Promise<FilterCustomersResult>} Array of customer records matching the filter criteria\n * @typedef {Object} FilterCustomersResult\n * @property {number} customerId - Unique identifier of the customer\n * @property {string} firstName - Customer's first name\n * @property {string} lastName - Customer's last name \n * @property {string} email - Customer's email address\n * @property {string} phone - Customer's phone number\n * @property {string} address - Customer's physical address\n */\nPromise<FilterCustomersResult> where FilterCustomersResult = {\n  customerId: number;\n  firstName: string;\n  lastName: string;\n  email: string;\n  phone: string;\n  address: string;\n}[]",
     "behavior": [
-      { "type": "text", "value": "The function filters " },
+      { "type": "paragraph", "value": "The function filters " },
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
-      { "type": "text", "value": " based on provided criteria:\n\n1. Input Handling\n   - All filter parameters are optional\n   - Empty/undefined filters are ignored\n   - String filters use case-insensitive partial matching\n\n2. Query Building\n   - Constructs SQL query with WHERE clauses for provided filters\n   - Uses parameterized queries for security\n   - Combines multiple filters with AND logic\n\n3. Results\n   - Returns array of matching " },
+      { "type": "paragraph", "value": " based on provided criteria:\n\n1. Input Handling\n   - All filter parameters are optional\n   - Empty/undefined filters are ignored\n   - String filters use case-insensitive partial matching\n\n2. Query Building\n   - Constructs SQL query with WHERE clauses for provided filters\n   - Uses parameterized queries for security\n   - Combines multiple filters with AND logic\n\n3. Results\n   - Returns array of matching " },
       { "type": "reference", "referenceType": "database-table", "name": "customers" },
-      { "type": "text", "value": " records\n   - Returns empty array if no matches found\n   - Maintains original column casing from database" }
+      { "type": "paragraph", "value": " records\n   - Returns empty array if no matches found\n   - Maintains original column casing from database" }
     ],
     "errors": "- \`Failed to connect to database\`: Thrown when the database connection cannot be established\n- \`Database query failed\`: Thrown when the database query execution fails\n- \`Invalid customerId: must be a positive integer\`: Thrown when the customerId parameter is not a positive integer\n- \`Invalid firstName: must be a string\`: Thrown when the firstName parameter is not a valid string\n- \`Invalid lastName: must be a string\`: Thrown when the lastName parameter is not a valid string\n- \`Invalid email: must be a string\`: Thrown when the email parameter is not a valid string\n- \`Invalid phone: must be a string\`: Thrown when the phone parameter is not a valid string\n- \`Invalid address: must be a string\`: Thrown when the address parameter is not a valid string",
     "examples": "/**\n * @example\n * // Filter by customer ID\n * const result1 = await filterCustomers({ customerId: 123 });\n * // Returns:\n * // [{\n * //   customerId: 123,\n * //   firstName: 'John',\n * //   lastName: 'Smith', \n * //   email: 'john.smith@email.com',\n * //   phone: '555-0123',\n * //   address: '123 Main St'\n * // }]\n *\n * @example\n * // Filter by partial name match (case-insensitive)\n * const result2 = await filterCustomers({ firstName: 'jo', lastName: 'sm' });\n * // Returns:\n * // [{\n * //   customerId: 123,\n * //   firstName: 'John',\n * //   lastName: 'Smith',\n * //   email: 'john.smith@email.com', \n * //   phone: '555-0123',\n * //   address: '123 Main St'\n * // },\n * // {\n * //   customerId: 456,\n * //   firstName: 'Joseph',\n * //   lastName: 'Smalls',\n * //   email: 'joe.smalls@email.com',\n * //   phone: '555-4567',\n * //   address: '789 Oak Rd'\n * // }]\n *\n * @example\n * // No matches found\n * const result3 = await filterCustomers({ email: 'nonexistent@email.com' });\n * // Returns: []\n *\n * @example\n * // Invalid input throws error\n * try {\n *   const result4 = await filterCustomers({ customerId: -1 });\n * } catch (error) {\n *   // Error: Invalid customerId: must be a positive integer\n * }\n *\n * @example\n * // Complex filter combining multiple fields\n * const result5 = await filterCustomers({\n *   lastName: 'Smith',\n *   address: 'Main St',\n *   phone: '555'\n * });\n * // Returns:\n * // [{\n * //   customerId: 123,\n * //   firstName: 'John', \n * //   lastName: 'Smith',\n * //   email: 'john.smith@email.com',\n * //   phone: '555-0123',\n * //   address: '123 Main St'\n * // }]\n */",
@@ -592,9 +592,9 @@ export const ENDPOINT_REQUIREMENTS_PROMPT = `You are an AI requirements-gatherin
 {
   "type": "message",
   "content": [
-    { "type": "text", "value": "[Introductory statement or question]" },
+    { "type": "paragraph", "value": "[Introductory statement or question]" },
     { "type": "reference", "referenceType": "[variable/function/resource/database-table/database-column]", "id": "[resourceId]", "name": "[resourceName]" },
-    { "type": "text", "value": "[Additional clarification or prompt]" }
+    { "type": "paragraph", "value": "[Additional clarification or prompt]" }
   ]
 }
 \`\`\`
@@ -758,16 +758,16 @@ I want to create an endpoint that allows creating a new order for a customer, va
 {
   "type": "message",
   "content": [
-    { "type": "text", "value": "I understand you want to create an endpoint for order creation that will:" },
-    { "type": "text", "value": "\n\n1. Validate the customer using " },
+    { "type": "paragraph", "value": "I understand you want to create an endpoint for order creation that will:" },
+    { "type": "paragraph", "value": "\n\n1. Validate the customer using " },
     { "type": "reference", "referenceType": "function", "id": "validateCustomer", "name": "validateCustomer" },
-    { "type": "text", "value": "\n2. Calculate order totals using " },
+    { "type": "paragraph", "value": "\n2. Calculate order totals using " },
     { "type": "reference", "referenceType": "function", "id": "bcdxzv12xvwsfwe3wxyz", "name": "calculateOrderTotal" },
-    { "type": "text", "value": "\n3. Save the order data to " },
+    { "type": "paragraph", "value": "\n3. Save the order data to " },
     { "type": "reference", "referenceType": "database-table", "name": "orders" },
-    { "type": "text", "value": " and " },
+    { "type": "paragraph", "value": " and " },
     { "type": "reference", "referenceType": "database-table", "name": "order_items" },
-    { "type": "text", "value": "\n\nLet me help you define the complete requirements for this endpoint. First, could you confirm if there are any specific validation rules for the order items beyond the basic structure (product ID and quantity)?" }
+    { "type": "paragraph", "value": "\n\nLet me help you define the complete requirements for this endpoint. First, could you confirm if there are any specific validation rules for the order items beyond the basic structure (product ID and quantity)?" }
   ]
 }
 \`\`\`
