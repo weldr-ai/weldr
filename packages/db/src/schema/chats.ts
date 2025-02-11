@@ -77,6 +77,10 @@ export const chatMessageRelations = relations(
       references: [versions.messageId],
     }),
     attachments: many(attachments),
+    user: one(users, {
+      fields: [chatMessages.userId],
+      references: [users.id],
+    }),
   }),
 );
 

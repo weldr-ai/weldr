@@ -30,7 +30,7 @@ const attachmentSchema = z.object({
 
 const BUCKET_NAME = "weldr-chat-attachments";
 
-const S3 = new S3Client({
+const s3Client = new S3Client({
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   region: process.env.AWS_REGION!,
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
           Key: key,
           Body: new Uint8Array(fileBuffer),
         },
-        client: S3,
+        client: s3Client,
         queueSize: 3,
       });
 
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
 
       // Create a signed URL for the uploaded object
       const imageUrl = await getSignedUrl(
-        S3,
+        s3Client,
         new GetObjectCommand({
           Bucket: BUCKET_NAME,
           Key: key,
@@ -157,7 +157,7 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    await S3.send(
+    await s3Client.send(
       new DeleteObjectCommand({
         Bucket: BUCKET_NAME,
         Key: validated.data.filename,

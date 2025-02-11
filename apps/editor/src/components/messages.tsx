@@ -5,42 +5,39 @@ import { useScrollToBottom } from "../hooks/use-scroll-to-bottom";
 import { PreviewMessage, ThinkingMessage } from "./message";
 
 interface MessagesProps {
-  isLoading: boolean;
+  isThinking: boolean;
   messages: ChatMessage[];
 }
 
-function PureMessages({ isLoading, messages }: MessagesProps) {
+function PureMessages({ isThinking, messages }: MessagesProps) {
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
 
   return (
     <div
       ref={messagesContainerRef}
-      className="flex min-w-0 flex-1 flex-col gap-6 overflow-y-scroll pt-4"
+      className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex min-w-0 flex-1 flex-col gap-4 overflow-y-scroll p-2"
     >
-      {messages.map((message, index) => (
+      {messages.map((message) => (
         <PreviewMessage
           key={message.id}
           message={message}
-          isLoading={isLoading && messages.length - 1 === index}
+          isThinking={isThinking}
         />
       ))}
 
-      {isLoading &&
+      {isThinking &&
         messages.length > 0 &&
         messages[messages.length - 1]?.role === "user" && <ThinkingMessage />}
 
-      <div
-        ref={messagesEndRef}
-        className="min-h-[24px] min-w-[24px] shrink-0"
-      />
+      <div ref={messagesEndRef} />
     </div>
   );
 }
 
 export const Messages = memo(PureMessages, (prevProps, nextProps) => {
-  if (prevProps.isLoading !== nextProps.isLoading) return false;
-  if (prevProps.isLoading && nextProps.isLoading) return false;
+  if (prevProps.isThinking !== nextProps.isThinking) return false;
+  if (prevProps.isThinking && nextProps.isThinking) return false;
   if (prevProps.messages.length !== nextProps.messages.length) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
 

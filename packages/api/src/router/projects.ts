@@ -16,6 +16,7 @@ import {
 import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
+import { getAttachmentUrl } from "../utils";
 
 export const projectsRouter = {
   create: protectedProcedure
@@ -59,6 +60,7 @@ export const projectsRouter = {
                   value: input.message,
                 },
               ],
+              userId: ctx.session.user.id,
             })
             .returning();
 
@@ -136,6 +138,36 @@ export const projectsRouter = {
             eq(projects.userId, ctx.session.user.id),
           ),
           with: {
+            chat: {
+              with: {
+                messages: {
+                  columns: {
+                    content: false,
+                  },
+                  orderBy: (messages, { asc }) => [asc(messages.createdAt)],
+                  with: {
+                    attachments: {
+                      columns: {
+                        name: true,
+                        key: true,
+                      },
+                    },
+                    user: {
+                      columns: {
+                        name: true,
+                      },
+                    },
+                    version: {
+                      columns: {
+                        id: true,
+                        versionName: true,
+                        versionNumber: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
             environmentVariables: {
               columns: {
                 secretId: false,
@@ -185,8 +217,24 @@ export const projectsRouter = {
           }),
         );
 
+        const chatWithAttachments = await Promise.all(
+          project.chat.messages.map(async (message) => {
+            const attachmentsWithUrls = await Promise.all(
+              message.attachments.map(async (attachment) => ({
+                name: attachment.name,
+                url: await getAttachmentUrl(attachment.key),
+              })),
+            );
+            return {
+              ...message,
+              attachments: attachmentsWithUrls,
+            };
+          }),
+        );
+
         const result = {
           ...project,
+          chat: chatWithAttachments,
           resources: resourceEnvs,
         };
 

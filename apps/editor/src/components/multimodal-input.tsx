@@ -23,26 +23,30 @@ import { PreviewAttachment } from "./preview-attachment";
 
 function PureMultimodalInput({
   chatId,
-  className,
-  input,
-  setInput,
+  message,
+  setMessage,
   attachments,
   setAttachments,
-  isGenerating,
+  isThinking,
   handleSubmit,
   placeholder,
   placeholders,
+  formClassName,
+  attachmentsClassName,
+  textareaClassName,
 }: {
   chatId: string;
-  className?: string;
-  input: string;
-  setInput: (input: string) => void;
+  message: string;
+  setMessage: (message: string) => void;
   attachments: Attachment[];
   setAttachments: Dispatch<SetStateAction<Attachment[]>>;
-  isGenerating?: boolean;
+  isThinking?: boolean;
   handleSubmit: (event?: { preventDefault?: () => void }) => void;
   placeholder?: string;
   placeholders?: string[];
+  formClassName?: string;
+  attachmentsClassName?: string;
+  textareaClassName?: string;
 }) {
   const [currentPlaceholder, setCurrentPlaceholder] = useState(
     placeholder ?? "Send a message...",
@@ -57,9 +61,9 @@ function PureMultimodalInput({
 
   const submitForm = useCallback(() => {
     handleSubmit();
-    setInput("");
+    setMessage("");
     setAttachments([]);
-  }, [handleSubmit, setAttachments, setInput]);
+  }, [handleSubmit, setAttachments, setMessage]);
 
   const uploadFile = async (file: File) => {
     const formData = new FormData();
@@ -193,7 +197,7 @@ function PureMultimodalInput({
     let isDeleting = false;
     const currentPlaceholder = placeholders[placeholderIndex];
 
-    if (input) {
+    if (message) {
       setCurrentPlaceholder("");
       return;
     }
@@ -220,10 +224,15 @@ function PureMultimodalInput({
     }, 50);
 
     return () => clearInterval(interval);
-  }, [placeholderIndex, input, placeholders]);
+  }, [placeholderIndex, message, placeholders]);
 
   return (
-    <form className="relative flex w-full flex-col rounded-2xl bg-background">
+    <form
+      className={cn(
+        "relative flex w-full flex-col rounded-xl border bg-background",
+        formClassName,
+      )}
+    >
       <input
         type="file"
         className="-top-4 -left-4 pointer-events-none fixed size-0.5 opacity-0"
@@ -234,7 +243,12 @@ function PureMultimodalInput({
       />
 
       {(attachments.length > 0 || uploadQueue.length > 0) && (
-        <div className="flex flex-row items-end gap-2 overflow-x-scroll rounded-t-xl bg-muted p-2">
+        <div
+          className={cn(
+            "flex flex-row items-end gap-2 overflow-x-scroll rounded-t-xl border-b bg-muted p-2",
+            attachmentsClassName,
+          )}
+        >
           {attachments.map((attachment) => (
             <PreviewAttachment
               key={attachment.id}
@@ -272,18 +286,18 @@ function PureMultimodalInput({
       <Textarea
         ref={textareaRef}
         placeholder={currentPlaceholder}
-        value={input}
-        onChange={(event) => setInput(event.target.value)}
+        value={message}
+        onChange={(event) => setMessage(event.target.value)}
         className={cn(
           "!text-base max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 focus-visible:ring-0",
-          className,
+          textareaClassName,
         )}
         rows={2}
         autoFocus
         onKeyDown={(event) => {
           if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
             event.preventDefault();
-            if (isGenerating) {
+            if (isThinking) {
               toast({
                 description:
                   "Please wait for the model to finish its response!",
@@ -298,16 +312,16 @@ function PureMultimodalInput({
       <div className="absolute bottom-2 left-2 flex w-fit flex-row justify-start">
         <AttachmentsButton
           fileInputRef={fileInputRef}
-          isGenerating={isGenerating}
+          isThinking={isThinking}
         />
       </div>
 
       <div className="absolute right-2 bottom-2 flex w-fit flex-row justify-end">
-        {isGenerating ? (
+        {isThinking ? (
           <StopButton stop={stop} />
         ) : (
           <SendButton
-            input={input}
+            message={message}
             submitForm={submitForm}
             uploadQueue={uploadQueue}
           />
@@ -320,8 +334,8 @@ function PureMultimodalInput({
 export const MultimodalInput = memo(
   PureMultimodalInput,
   (prevProps, nextProps) => {
-    if (prevProps.input !== nextProps.input) return false;
-    if (prevProps.isGenerating !== nextProps.isGenerating) return false;
+    if (prevProps.message !== nextProps.message) return false;
+    if (prevProps.isThinking !== nextProps.isThinking) return false;
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;
     return true;
   },
@@ -329,10 +343,10 @@ export const MultimodalInput = memo(
 
 function PureAttachmentsButton({
   fileInputRef,
-  isGenerating,
+  isThinking,
 }: {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
-  isGenerating?: boolean;
+  isThinking?: boolean;
 }) {
   return (
     <Button
@@ -342,7 +356,7 @@ function PureAttachmentsButton({
         event.preventDefault();
         fileInputRef.current?.click();
       }}
-      disabled={isGenerating}
+      disabled={isThinking}
     >
       <PaperclipIcon className="size-3" />
     </Button>
@@ -374,11 +388,11 @@ const StopButton = memo(PureStopButton);
 
 function PureSendButton({
   submitForm,
-  input,
+  message,
   uploadQueue,
 }: {
   submitForm: () => void;
-  input: string;
+  message: string;
   uploadQueue: string[];
 }) {
   return (
@@ -388,7 +402,7 @@ function PureSendButton({
         event.preventDefault();
         submitForm();
       }}
-      disabled={input.length === 0 || uploadQueue.length > 0}
+      disabled={message.length === 0 || uploadQueue.length > 0}
     >
       <ArrowUpIcon className="size-3" />
     </Button>
@@ -398,6 +412,6 @@ function PureSendButton({
 const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
   if (prevProps.uploadQueue.length !== nextProps.uploadQueue.length)
     return false;
-  if (prevProps.input !== nextProps.input) return false;
+  if (prevProps.message !== nextProps.message) return false;
   return true;
 });

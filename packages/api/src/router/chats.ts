@@ -22,6 +22,7 @@ import {
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
+import { getAttachmentUrl } from "../utils";
 
 interface ResolvedFuncReference {
   type: "reference";
@@ -98,6 +99,65 @@ type ResolvedRawContent =
   | ResolvedReference;
 
 export const chatsRouter = {
+  messages: protectedProcedure
+    .input(z.object({ chatId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const messages = await ctx.db.query.chatMessages.findMany({
+        where: and(
+          eq(chatMessages.chatId, input.chatId),
+          eq(chatMessages.userId, ctx.session.user.id),
+        ),
+        orderBy: (chatMessages, { desc }) => [desc(chatMessages.createdAt)],
+        columns: {
+          content: false,
+        },
+        with: {
+          version: {
+            columns: {
+              id: true,
+              versionName: true,
+              versionNumber: true,
+            },
+          },
+          attachments: {
+            columns: {
+              name: true,
+              key: true,
+            },
+          },
+          user: {
+            columns: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      const messagesWithAttachments = await Promise.all(
+        messages.map(async (message) => {
+          const attachments = [];
+
+          for (const attachment of message.attachments) {
+            const url = await getAttachmentUrl(attachment.key);
+
+            attachments.push({
+              name: attachment.name,
+              url,
+            });
+          }
+
+          return {
+            ...message,
+            attachments,
+          };
+        }),
+      );
+
+      return messagesWithAttachments;
+    }),
   addMessage: protectedProcedure
     .input(
       z.discriminatedUnion("role", [
@@ -106,11 +166,13 @@ export const chatsRouter = {
           rawContent: assistantMessageRawContentSchema,
           content: z.string(),
           chatId: z.string(),
+          attachmentIds: z.string().array().optional(),
         }),
         z.object({
           role: z.literal("user"),
           rawContent: userMessageRawContentSchema,
           chatId: z.string(),
+          attachmentIds: z.string().array().optional(),
           funcId: z.string().optional(),
         }),
       ]),

@@ -88,6 +88,15 @@ export const chatMessageSchema = z.object({
     })
     .optional(),
   attachments: attachmentSchema.array().optional(),
+  userId: z.string().optional(),
+  user: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      email: z.string(),
+      image: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const chatSchema = z.object({

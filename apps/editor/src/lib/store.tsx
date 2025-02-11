@@ -87,19 +87,17 @@ export function useFlowBuilder() {
 
 // View Context
 interface ViewContextType {
-  isChatCollapsed: boolean;
-  toggleChatCollapsed: () => void;
+  activeTab: "chat" | "history" | null;
+  setActiveTab: (activeTab: "chat" | "history" | null) => void;
 }
 
 const ViewContext = createContext<ViewContextType | undefined>(undefined);
 
 export function ViewProvider({ children }: { children: ReactNode }) {
-  const [isChatCollapsed, setIsChatCollapsed] = useState(false);
-
-  const toggleChatCollapsed = () => setIsChatCollapsed((prev) => !prev);
+  const [activeTab, setActiveTab] = useState<"chat" | "history" | null>("chat");
 
   return (
-    <ViewContext.Provider value={{ isChatCollapsed, toggleChatCollapsed }}>
+    <ViewContext.Provider value={{ activeTab, setActiveTab }}>
       {children}
     </ViewContext.Provider>
   );

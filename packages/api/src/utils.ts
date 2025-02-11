@@ -1,3 +1,5 @@
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { TRPCError } from "@trpc/server";
 import {
   type Db,
@@ -424,4 +426,32 @@ export async function getDependencyChain(db: Db, primitiveIds: string[]) {
   }
 
   return Array.from(dependencyChain.values());
+}
+
+const BUCKET_NAME = "weldr-chat-attachments";
+
+const s3Client = new S3Client({
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  region: process.env.AWS_REGION!,
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  endpoint: process.env.AWS_ENDPOINT_URL_S3!,
+  credentials: {
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
+export async function getAttachmentUrl(key: string) {
+  const url = await getSignedUrl(
+    s3Client,
+    new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    }),
+    { expiresIn: 3600 },
+  );
+
+  return url;
 }

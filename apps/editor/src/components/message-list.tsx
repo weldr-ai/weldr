@@ -1,4 +1,4 @@
-import { useAuth } from "@weldr/auth/provider";
+import { authClient } from "@weldr/auth/client";
 import type {
   ChatMessage,
   RawContent,
@@ -91,7 +91,7 @@ function MessageItem({
 }: {
   message: ChatMessage;
 }) {
-  const { user } = useAuth();
+  const { data: session } = authClient.useSession();
 
   const isTestExecution = testExecutionMessageRawContentSchema.safeParse(
     message.rawContent,
@@ -102,10 +102,13 @@ function MessageItem({
       <Avatar className="size-7 rounded-full">
         {message.role === "user" ? (
           <>
-            <AvatarImage src={user?.image ?? undefined} alt="User" />
+            <AvatarImage src={session?.user.image ?? undefined} alt="User" />
             <AvatarFallback>
               <Avatar className="size-7 rounded-full">
-                <AvatarImage src={`/api/avatars/${user?.email}`} alt="User" />
+                <AvatarImage
+                  src={`/api/avatars/${session?.user.email}`}
+                  alt="User"
+                />
               </Avatar>
             </AvatarFallback>
           </>
@@ -121,9 +124,11 @@ function MessageItem({
             testExecution={message.rawContent as TestExecutionMessageRawContent}
           />
         ) : (
-          <RawContentViewer
-            rawContent={(message.rawContent ?? []) as RawContent}
-          />
+          <>
+            <RawContentViewer
+              rawContent={(message.rawContent ?? []) as RawContent}
+            />
+          </>
         )}
         {message.version && (
           <div className="group flex h-7 items-center gap-2">

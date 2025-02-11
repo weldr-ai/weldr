@@ -27,19 +27,30 @@ import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export function MainDropdownMenu(): JSX.Element {
+export function MainDropdownMenu({
+  side = "bottom",
+  className,
+}: {
+  side?: "bottom" | "top" | "left" | "right";
+  className?: string;
+}): JSX.Element {
   const router = useRouter();
   const { setOpen } = useCommandCenter();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" className={className}>
           <LogoIcon className="size-10" />
           <span className="sr-only">Weldr</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="start" side="bottom">
+      <DropdownMenuContent
+        className="w-56"
+        align="start"
+        side={side}
+        sideOffset={10}
+      >
         <DropdownMenuLabel>Projects</DropdownMenuLabel>
         <DropdownMenuItem onClick={() => setOpen("view")}>
           <BoxesIcon className="mr-2 size-4 text-muted-foreground" />

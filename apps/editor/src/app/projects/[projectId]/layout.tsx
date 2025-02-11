@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { CommandCenter } from "@/components/command-center";
-import { Navbar } from "@/components/navbar";
+import { Sidebar } from "@/components/sidebar";
 import { ResourcesProvider } from "@/lib/context/resources";
 import { api } from "@/lib/trpc/server";
 
@@ -15,7 +15,6 @@ export default async function ProjectLayout({
 }): Promise<JSX.Element> {
   try {
     const { projectId } = await params;
-    const project = await api.projects.byId({ id: projectId });
     const projects = await api.projects.list();
     const resourcesWithMetadata = await api.resources.listWithMetadata({
       projectId,
@@ -30,9 +29,11 @@ export default async function ProjectLayout({
           metadata: resource.metadata,
         }))}
       >
-        <div className="flex h-screen flex-col dark:bg-muted">
-          <Navbar project={project} />
-          <main className="flex size-full flex-1 px-2 pb-2">{children}</main>
+        <div className="flex h-screen dark:bg-muted">
+          <div className="sticky top-0 z-50 h-screen dark:bg-muted">
+            <Sidebar />
+          </div>
+          <main className="flex size-full flex-1">{children}</main>
         </div>
         <CommandCenter projects={projects} />
       </ResourcesProvider>

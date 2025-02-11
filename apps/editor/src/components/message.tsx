@@ -1,92 +1,117 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 
-import type { ChatMessage } from "@weldr/shared/types";
+import { authClient } from "@weldr/auth/client";
+import type { ChatMessage, RawContent } from "@weldr/shared/types";
+import { Avatar, AvatarFallback, AvatarImage } from "@weldr/ui/avatar";
+import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import { cn } from "@weldr/ui/utils";
-import { SparklesIcon } from "lucide-react";
-import { PreviewAttachment } from "./preview-attachment";
+import Image from "next/image";
+import { RawContentViewer } from "./raw-content-viewer";
 
 const PurePreviewMessage = ({
   message,
-  isLoading,
 }: {
   message: ChatMessage;
-  isLoading: boolean;
+  isThinking: boolean;
 }) => {
-  return (
-    <AnimatePresence>
-      <motion.div
-        className="group/message mx-auto w-full max-w-3xl px-4"
-        initial={{ y: 5, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        data-role={message.role}
-      >
-        <div className="flex w-full gap-4 group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl">
-          {message.role === "assistant" && (
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
-              <div className="translate-y-px">
-                <SparklesIcon size={14} />
-              </div>
-            </div>
-          )}
+  const { data: session } = authClient.useSession();
 
-          <div className="flex w-full flex-col gap-4">
-            {message.attachments && (
-              <div className="flex flex-row justify-end gap-2">
-                {message.attachments.map((attachment) => (
-                  <PreviewAttachment
-                    key={attachment.id}
-                    attachment={attachment}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+  return (
+    <div
+      className={cn(
+        "flex w-full flex-col gap-2",
+        message.role === "user" && "items-end",
+      )}
+      key={message.id}
+    >
+      {message.role === "user" && (
+        <div className="flex items-center gap-1">
+          <span className="text-muted-foreground text-xs">
+            {message.userId === session?.user.id ? "You" : message.user?.name}
+          </span>
+          <Avatar className="size-7 rounded-full">
+            <AvatarImage src={message.user?.image ?? undefined} alt="User" />
+            <AvatarFallback>
+              <Image
+                src={`/api/avatars/${message.user?.email}`}
+                alt="User"
+                width={28}
+                height={28}
+              />
+            </AvatarFallback>
+          </Avatar>
         </div>
-      </motion.div>
-    </AnimatePresence>
+      )}
+
+      {message.role === "assistant" && (
+        <div className="flex items-center gap-1">
+          <LogoIcon className="size-6 p-0" />
+          <span className="text-muted-foreground text-xs">Weldr</span>
+        </div>
+      )}
+
+      <div
+        className={cn(
+          "space-y-1",
+          message.role === "user" && "rounded-md bg-primary p-2",
+        )}
+      >
+        <RawContentViewer
+          rawContent={(message.rawContent ?? []) as RawContent}
+        />
+        {message.version && (
+          <div className="group flex h-7 items-center gap-2">
+            <div className="inline-flex h-7 cursor-text select-text items-center justify-center rounded-md bg-success/10 px-1.5 py-0.5 font-semibold text-success text-xs">
+              {`#${message.version.versionNumber} `}
+              {message.version.versionName}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
 export const PreviewMessage = memo(
   PurePreviewMessage,
   (prevProps, nextProps) => {
-    if (prevProps.isLoading !== nextProps.isLoading) return false;
-    if (prevProps.message.content !== nextProps.message.content) return false;
+    if (prevProps.isThinking !== nextProps.isThinking) return false;
+    if (prevProps.message.rawContent !== nextProps.message.rawContent)
+      return false;
     return true;
   },
 );
 
+const TypingDots = () => {
+  const [dots, setDots] = useState("");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((prevDots) => {
+        if (prevDots.length >= 3) return "";
+        return `${prevDots}.`;
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return <span>{dots}</span>;
+};
+
 export const ThinkingMessage = () => {
-  const role = "assistant";
-
   return (
-    <motion.div
-      className="group/message mx-auto w-full max-w-3xl px-4 "
-      initial={{ y: 5, opacity: 0 }}
-      animate={{ y: 0, opacity: 1, transition: { delay: 1 } }}
-      data-role={role}
-    >
-      <div
-        className={cn(
-          "flex w-full gap-4 rounded-xl group-data-[role=user]/message:ml-auto group-data-[role=user]/message:w-fit group-data-[role=user]/message:max-w-2xl group-data-[role=user]/message:px-3 group-data-[role=user]/message:py-2",
-          {
-            "group-data-[role=user]/message:bg-muted": true,
-          },
-        )}
-      >
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-full ring-1 ring-border">
-          <SparklesIcon size={14} />
-        </div>
-
-        <div className="flex w-full flex-col gap-2">
-          <div className="flex flex-col gap-4 text-muted-foreground">
-            Thinking...
-          </div>
-        </div>
+    <div key="thinking" className="flex w-full flex-col gap-2">
+      <div className="flex items-center gap-1">
+        <LogoIcon className="size-6 p-0" />
+        <span className="text-muted-foreground text-xs">Weldr</span>
       </div>
-    </motion.div>
+      <span className="text-muted-foreground text-sm">
+        Thinking
+        <TypingDots />
+      </span>
+    </div>
   );
 };

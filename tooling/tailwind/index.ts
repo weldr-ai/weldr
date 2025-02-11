@@ -1,6 +1,7 @@
 import aspectRatio from "@tailwindcss/aspect-ratio";
 import forms from "@tailwindcss/forms";
 import typography from "@tailwindcss/typography";
+import scrollbar from "tailwind-scrollbar";
 import type { Config } from "tailwindcss";
 import animate from "tailwindcss-animate";
 import { fontFamily } from "tailwindcss/defaultTheme";
@@ -84,5 +85,5 @@ export default {
       },
     },
   },
-  plugins: [animate, aspectRatio, forms, typography],
+  plugins: [animate, aspectRatio, forms, typography, scrollbar],
 } satisfies Config;

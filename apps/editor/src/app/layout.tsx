@@ -10,11 +10,8 @@ import { QueryProvider } from "@/components/query-client-provider";
 import { AppStateProvider } from "@/lib/store";
 import { TRPCReactProvider } from "@/lib/trpc/client";
 import { HydrateClient } from "@/lib/trpc/server";
-import { auth } from "@weldr/auth";
-import { AuthProvider } from "@weldr/auth/provider";
 import { TooltipProvider } from "@weldr/ui/tooltip";
 import { ReactFlowProvider } from "@xyflow/react";
-import { headers } from "next/headers";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -34,8 +31,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }): Promise<JSX.Element> {
-  const session = await auth.api.getSession({ headers: await headers() });
-
   return (
     <html lang="en" className="dark">
       <body
@@ -49,14 +44,12 @@ export default async function RootLayout({
           <TRPCReactProvider>
             <QueryProvider>
               <HydrateClient>
-                <AuthProvider user={session?.user ?? null}>
-                  <TooltipProvider delayDuration={200}>
-                    <ReactFlowProvider>
-                      {children}
-                      <Toaster />
-                    </ReactFlowProvider>
-                  </TooltipProvider>
-                </AuthProvider>
+                <TooltipProvider delayDuration={200}>
+                  <ReactFlowProvider>
+                    {children}
+                    <Toaster />
+                  </ReactFlowProvider>
+                </TooltipProvider>
               </HydrateClient>
             </QueryProvider>
           </TRPCReactProvider>

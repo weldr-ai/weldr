@@ -89,11 +89,11 @@ export function CreateProjectForm() {
           <MultimodalInput
             chatId={projectChatId}
             handleSubmit={handleSubmit}
-            input={message}
-            setInput={setMessage}
+            message={message}
+            setMessage={setMessage}
             attachments={attachments}
             setAttachments={setAttachments}
-            className="relative w-[650px]"
+            formClassName="relative border w-[650px]"
             placeholders={placeholders}
           />
         </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import { Editor } from "@/components/editor";
 import type { CanvasNode } from "@/types";
 import type { RouterOutputs } from "@weldr/api";
 import {
@@ -8,20 +7,15 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@weldr/ui/resizable";
-import { ScrollArea } from "@weldr/ui/scroll-area";
 
 import { Canvas } from "@/components/canvas";
 import { ProjectSettings } from "@/components/project-settings";
 import { useView } from "@/lib/store";
-import { Button } from "@weldr/ui/button";
+import type { ChatMessage } from "@weldr/shared/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
-import {
-  AppWindowIcon,
-  ExternalLinkIcon,
-  FrameIcon,
-  SettingsIcon,
-} from "lucide-react";
+import { cn } from "@weldr/ui/utils";
+import { AppWindowIcon, FrameIcon, SettingsIcon } from "lucide-react";
+import { Chat } from "./chat";
 
 export function ProjectView({
   project,
@@ -32,40 +26,36 @@ export function ProjectView({
   initialNodes: CanvasNode[];
   initialEdges: RouterOutputs["versions"]["dependencies"];
 }) {
-  const { isChatCollapsed } = useView();
+  const { activeTab } = useView();
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="space-x-0.5">
-      {!isChatCollapsed && (
+    <ResizablePanelGroup direction="horizontal">
+      {activeTab !== null && (
         <>
-          <ResizablePanel defaultSize={30} minSize={30} order={1}>
-            <Tabs defaultValue="chat" className="flex h-full w-full flex-col">
-              <div className="flex w-full items-center justify-between rounded-md border px-3 py-1.5">
-                <TabsList className="p-0">
-                  <TabsTrigger value="chat">Chat</TabsTrigger>
-                  <TabsTrigger value="history">History</TabsTrigger>
-                </TabsList>
-              </div>
-              <TabsContent value="chat" className="flex-1">
-                <ScrollArea className="h-[calc(100vh-250px)] w-full px-2">
-                  <div />
-                </ScrollArea>
-                <Editor id="editor" className="h-[128px] w-full" />
-              </TabsContent>
-              <TabsContent value="history">
-                <ScrollArea className="h-[calc(100vh-132px)] px-2">
-                  <div />
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
+          <ResizablePanel
+            defaultSize={25}
+            minSize={25}
+            order={1}
+            className="size-full"
+          >
+            {activeTab === "chat" ? (
+              <Chat
+                chatId={project.chatId}
+                initialMessages={project.chat as unknown as ChatMessage[]}
+              />
+            ) : (
+              "History"
+            )}
           </ResizablePanel>
-          <ResizableHandle className="bg-primary opacity-0 hover:opacity-100" />
+          <ResizableHandle className="w-0" withHandle />
         </>
       )}
       <ResizablePanel
-        className="h-full rounded-md border"
-        defaultSize={70}
-        minSize={30}
+        className={cn("h-full", {
+          "border-l": activeTab !== null,
+        })}
+        defaultSize={75}
+        minSize={25}
         order={2}
       >
         <Main
@@ -89,7 +79,7 @@ function Main({
 }) {
   return (
     <Tabs defaultValue="preview" className="flex size-full flex-col">
-      <div className="flex w-full items-center justify-between border-b px-3 py-1.5">
+      <div className="flex h-12 w-full items-center justify-between border-b px-3">
         <TabsList className="rounded-none border-none p-0">
           <TabsTrigger value="preview">
             <AppWindowIcon className="mr-1 size-4" />
@@ -104,16 +94,6 @@ function Main({
             Settings
           </TabsTrigger>
         </TabsList>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-7">
-              <ExternalLinkIcon className="size-3" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="border bg-muted text-xs">
-            Open in new tab
-          </TooltipContent>
-        </Tooltip>
       </div>
       <TabsContent value="preview" className="mt-0 flex-1 bg-background">
         <div className="flex size-full items-center justify-center">

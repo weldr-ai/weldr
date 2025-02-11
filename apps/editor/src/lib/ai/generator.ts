@@ -15,11 +15,12 @@ import { chats, endpoints, funcs } from "@weldr/db/schema";
 import type {
   EndpointRequirementsMessage,
   FuncRequirementsMessage,
+  RawContent,
 } from "@weldr/shared/types";
 import { assistantMessageRawContentToText } from "@weldr/shared/utils";
 import { endpointRequirementsMessageSchema } from "@weldr/shared/validators/endpoints";
 import { funcRequirementsMessageSchema } from "@weldr/shared/validators/funcs";
-import { type CoreMessage, streamObject } from "ai";
+import { type CoreMessage, streamObject, streamText } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -30,6 +31,44 @@ const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   compatibility: "strict",
 });
+
+function rawContentToText(rawContent: RawContent) {
+  return rawContent
+    .map((element) => {
+      switch (element.type) {
+        case "paragraph": {
+          return element.value;
+        }
+        case "reference": {
+          return element.name;
+        }
+      }
+    })
+    .join("");
+}
+
+export async function simpleAgent(prompt: RawContent) {
+  const stream = createStreamableValue("");
+
+  const promptText = rawContentToText(prompt);
+
+  (async () => {
+    const { textStream } = streamText({
+      model: openai("gpt-4o-mini"),
+      system:
+        "You are a helpful assistant that can answer questions and help with tasks.",
+      prompt: promptText,
+    });
+
+    for await (const delta of textStream) {
+      stream.update(delta);
+    }
+
+    stream.done();
+  })();
+
+  return stream.value;
+}
 
 export async function generateFunc(funcId: string) {
   const session = await auth.api.getSession({ headers: await headers() });
