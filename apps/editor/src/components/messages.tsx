@@ -1,3 +1,4 @@
+import type { RouterOutputs } from "@weldr/api";
 import type { ChatMessage } from "@weldr/shared/types";
 import equal from "fast-deep-equal";
 import { memo } from "react";
@@ -7,9 +8,10 @@ import { PreviewMessage, ThinkingMessage } from "./message";
 interface MessagesProps {
   isThinking: boolean;
   messages: ChatMessage[];
+  integrations: RouterOutputs["integrations"]["list"];
 }
 
-function PureMessages({ isThinking, messages }: MessagesProps) {
+function PureMessages({ isThinking, messages, integrations }: MessagesProps) {
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
 
@@ -23,6 +25,7 @@ function PureMessages({ isThinking, messages }: MessagesProps) {
           key={message.id}
           message={message}
           isThinking={isThinking}
+          integrations={integrations}
         />
       ))}
 

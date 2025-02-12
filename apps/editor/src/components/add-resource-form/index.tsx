@@ -71,11 +71,9 @@ export function AddResourceForm({
       return (
         <AddPostgresResourceForm
           postgresIntegration={integration}
-          env={env}
           addResourceMutation={addResourceMutation}
           updateResourceMutation={updateResourceMutation}
           resource={resource}
-          resourceEnvironmentVariables={resourceEnvironmentVariables}
         />
       );
     }

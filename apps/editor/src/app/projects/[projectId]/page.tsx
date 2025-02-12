@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { ProjectView } from "@/components/project-view";
 import { api } from "@/lib/trpc/server";
-import type { CanvasNode } from "@/types";
+import type { CanvasNode, CanvasNodeData } from "@/types";
 
 export default async function ProjectPage({
   params,
@@ -13,6 +13,7 @@ export default async function ProjectPage({
   try {
     const { projectId } = await params;
     const project = await api.projects.byId({ id: projectId });
+    const integrations = await api.integrations.list();
 
     const {
       funcs,
@@ -30,7 +31,7 @@ export default async function ProjectPage({
         id: endpoint.id,
         dragHandle: ".drag-handle",
         position: { x: endpoint.positionX ?? 0, y: endpoint.positionY ?? 0 },
-        data: endpoint,
+        data: endpoint as CanvasNodeData,
       });
     }
 
@@ -40,7 +41,7 @@ export default async function ProjectPage({
         id: func.id,
         dragHandle: ".drag-handle",
         position: { x: func.positionX ?? 0, y: func.positionY ?? 0 },
-        data: func,
+        data: func as CanvasNodeData,
       });
     }
 
@@ -49,6 +50,7 @@ export default async function ProjectPage({
         project={project}
         initialNodes={initialNodes}
         initialEdges={initialEdges ?? []}
+        integrations={integrations}
       />
     );
   } catch (error) {

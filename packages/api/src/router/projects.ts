@@ -9,6 +9,7 @@ import {
   resourceEnvironmentVariables,
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
+import type { ChatMessage } from "@weldr/shared/types";
 import {
   insertProjectSchema,
   updateProjectSchema,
@@ -217,7 +218,7 @@ export const projectsRouter = {
           }),
         );
 
-        const chatWithAttachments = await Promise.all(
+        const messagesWithAttachments = await Promise.all(
           project.chat.messages.map(async (message) => {
             const attachmentsWithUrls = await Promise.all(
               message.attachments.map(async (attachment) => ({
@@ -234,7 +235,10 @@ export const projectsRouter = {
 
         const result = {
           ...project,
-          chat: chatWithAttachments,
+          chat: {
+            ...project.chat,
+            messages: messagesWithAttachments as ChatMessage[],
+          },
           resources: resourceEnvs,
         };
 

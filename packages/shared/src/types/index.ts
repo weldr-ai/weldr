@@ -7,6 +7,7 @@ import type {
   chatSchema,
   messageRawContentSchema,
   testExecutionMessageRawContentSchema,
+  toolMessageRawContentSchema,
   userMessageRawContentSchema,
 } from "../validators/chats";
 import type {
@@ -38,6 +39,7 @@ export type AssistantMessageRawContent = z.infer<
   typeof assistantMessageRawContentSchema
 >;
 export type MessageRawContent = z.infer<typeof messageRawContentSchema>;
+export type ToolMessageRawContent = z.infer<typeof toolMessageRawContentSchema>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export type Chat = z.infer<typeof chatSchema>;
 export type Attachment = z.infer<typeof attachmentSchema>;

@@ -1,4 +1,4 @@
-<current_tech_stack>
+export const baseConventions = `<current_tech_stack>
   - TypeScript
   - React
   - Next.js 13+ App Router
@@ -41,8 +41,8 @@
   │   │   │   ├── react.ts              # tRPC client-side utilities
   │   │   │   └── query-client.ts       # tRPC query client
   │   │   ├── auth                      # Folder containing the authentication utilities (MUST NOT ADD ANY NEW FILES INSIDE THIS FOLDER)
-  │   │   │   ├── index.tsx             # Better-Auth config file and exports the `auth` instance for server-side use (CAN MODIFY THIS FILE)
-  │   │   │   └── react.ts              # Exports the `auth` instance for client-side use (MUST NOT MODIFY THIS FILE)
+  │   │   │   ├── index.tsx             # Better-Auth config file and exports the \`auth\` instance for server-side use (CAN MODIFY THIS FILE)
+  │   │   │   └── react.ts              # Exports the \`auth\` instance for client-side use (MUST NOT MODIFY THIS FILE)
   │   │   ├── validators                # Folder containing the zod validations
   │   │   │   ├── [module-name].ts      # Module for a group of zod validation schemas
   │   │   │   └── ...                   # Other zod validation modules
@@ -65,32 +65,32 @@
 </folder_structure_conventions>
 
 <server_functions_conventions>
-  - MUST import the `server-only` package on top of the file to ensure that the function is only executed on the server.
-  - MUST create all server-related files in the `/src/server` directory.
+  - MUST import the \`server-only\` package on top of the file to ensure that the function is only executed on the server.
+  - MUST create all server-related files in the \`/src/server\` directory.
 
   <example_server_function>
     /src/server/queries/blogs.ts
-    ```typescript
+    \`\`\`typescript
       import "server-only";
 
       export async function getBlogs() {
         const blogs = await db.query.blogs.findMany();
         return blogs;
       }
-    ```
+    \`\`\`
   </example_server_function>
 </server_functions_conventions>
 
 <tRPC_conventions>
   - tRPC is already configured in the project.
-  - MUST create all tRPC related files in the `/src/server/api` directory.
-  - MUST use the `createTRPCRouter` function to create your routers.
-  - MUST use the `protectedProcedure` and `publicProcedure` to create your procedures.
-  - MUST use the `api` object to call the procedures.
+  - MUST create all tRPC related files in the \`/src/server/api\` directory.
+  - MUST use the \`createTRPCRouter\` function to create your routers.
+  - MUST use the \`protectedProcedure\` and \`publicProcedure\` to create your procedures.
+  - MUST use the \`api\` object to call the procedures.
 
   <example_tRPC_router>
     /src/server/api/routers/blogs.ts
-    ```typescript
+    \`\`\`typescript
     import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
     import { blogs } from "@/server/db/schema";
 
@@ -105,14 +105,14 @@
         return await ctx.db.select().from(blogs);
       }),
     });
-    ```
+    \`\`\`
   </example_tRPC_router>
 
   <example_calling_tRPC_procedures_on_client>
-    - You are provided with an `api` object to call the procedures with TanStack Query.
+    - You are provided with an \`api\` object to call the procedures with TanStack Query.
 
     /src/components/blogs-list.tsx
-    ```typescriptreact
+    \`\`\`typescriptreact
     "use client";
 
     import { api } from "@/trpc/react";
@@ -125,14 +125,14 @@
 
       return <div>{data}</div>
     }
-    ```
+    \`\`\`
   </example_calling_tRPC_procedures_on_client>
 
   <example_fetching_data_and_hydrating_client_on_server>
-    - You are provided with an `api` object to call the procedures with TanStack Query.
+    - You are provided with an \`api\` object to call the procedures with TanStack Query.
 
     /src/app/blogs/page.tsx
-    ```typescriptreact
+    \`\`\`typescriptreact
     import { api, HydrateClient } from "@/trpc/server";
 
     function Hydration() {
@@ -150,14 +150,14 @@
         </HydrateClient>
       )
     }
-    ```
+    \`\`\`
   </example_fetching_data_and_hydrating_client_on_server>
 </tRPC_conventions>
 
 <authentication_conventions>
-  - When setting up or updating authentication, you MUST use the `configure-authentication` tool.
-  - You can only use the `auth` object at `src/lib/auth/index.ts` to get the current session on the server.
-  - You can only use the `auth` object at `src/lib/auth/react.ts` to get the current session on the client.
+  - When setting up or updating authentication, you MUST use the \`configure-authentication\` tool.
+  - You can only use the \`auth\` object at \`src/lib/auth/index.ts\` to get the current session on the server.
+  - You can only use the \`auth\` object at \`src/lib/auth/react.ts\` to get the current session on the client.
   - MUST NOT use next.js middleware to handle authentication. Instead, you should check the session in routes.
   - Here is how the session object looks like:
     {
@@ -184,7 +184,7 @@
 
   <example_getting_session_on_server>
     /src/app/blogs/page.tsx
-    ```typescriptreact
+    \`\`\`typescriptreact
     import { auth } from "@/lib/auth";
     import { headers } from "next/headers";
 
@@ -204,12 +204,12 @@
         <p>User: {user.email}</p>
       </div>
     );
-    ```
+    \`\`\`
   </example_getting_session_on_server>
 
   <example_getting_session_on_client>
     /src/components/user-button.tsx
-    ```typescriptreact
+    \`\`\`typescriptreact
     "use client";
 
     import { auth } from "@/lib/auth/react";
@@ -219,21 +219,21 @@
 
       return <div>{session?.user?.email}</div>;
     }
-    ```
+    \`\`\`
   </example_getting_session_on_client>
 </authentication_conventions>
 
 <database_conventions>
-  - You MUST NOT configure Drizzle ORM, it can only be configured by calling the `configure-database` tool.
-  - You can define the tables in the `src/db/schema` folder.
-  - You can use the database instance in the `src/server/db/index.ts` file.
+  - You MUST NOT configure Drizzle ORM, it can only be configured by calling the \`configure-database\` tool.
+  - You can define the tables in the \`src/db/schema\` folder.
+  - You can use the database instance in the \`src/server/db/index.ts\` file.
 
   <defining_tables>
     - Weldr MUST write each table in a separate file and export it in the index file.
     - Weldr MUST write the relations in the same file of the table.
 
     /src/db/schema/blogs.ts
-    ```typescript
+    \`\`\`typescript
     import { relations } from "drizzle-orm";
     import { pgTable, serial, text } from "drizzle-orm/pg-core";
     import { users } from "./users";
@@ -251,28 +251,28 @@
         references: [users.id],
       }),
     }));
-    ```
+    \`\`\`
 
     After defining the table, you MUST export it in the index file.
 
     /src/db/schema/index.ts
-    ```typescript
+    \`\`\`typescript
     export * from "./blogs";
     export * from "./users";
-    ```
+    \`\`\`
   </defining_tables>
 
   <using_database>
-    - You can use the database instance in the `src/server/db/index.ts` file.
-    - You can use anything from the `drizzle-orm` package.
+    - You can use the database instance in the \`src/server/db/index.ts\` file.
+    - You can use anything from the \`drizzle-orm\` package.
 
     /src/server/db/queries/blogs.ts
-    ```typescript
+    \`\`\`typescript
     import { db } from "@/server/db";
     import { blogs } from "@/server/db/schema";
 
     const blogs = await db.select().from(blogs);
-    ```
+    \`\`\`
   </using_database>
 </database_conventions>
 
@@ -288,7 +288,7 @@
   - MUST use path aliases for imports with @/ prefix
 
   <example_code_style>
-    ```typescript
+    \`\`\`typescript
     // CORRECT: Type imports
     import type { User } from '@/types'
     import { type Config } from '@/config'
@@ -302,19 +302,19 @@
 
     // CORRECT: Utility imports
     import { cn } from '@/lib/utils'
-    ```
+    \`\`\`
   </example_code_style>
 </general_coding_conventions>
 
 <use_native_apis>
   PREFER Native APIs:
-  ```typescript
+  \`\`\`typescript
   // CORRECT: Using native fetch
   async function getData() {
     const res = await fetch('/api/data')
     return res.json()
   }
-  ```
+  \`\`\`
 
   AVOID Unless Necessary:
   - HTTP client libraries when fetch is sufficient
@@ -338,7 +338,7 @@
 
   <example_building_forms>
     /src/components/create-bookmark-form.tsx
-    ```typescriptreact
+    \`\`\`typescriptreact
     "use client";
 
     import { useForm } from "react-hook-form";
@@ -380,7 +380,7 @@
         </Form>
       );
     }
-    ```
+    \`\`\`
   </example_building_forms>
 </building_forms_conventions>
 
@@ -410,7 +410,7 @@
     For example:
 
     /src/app/posts/[slug]/page.tsx
-    ```typescriptreact
+    \`\`\`typescriptreact
     import { headers } from "next/headers";
     import { cookies } from "next/headers";
 
@@ -431,5 +431,5 @@
         </div>
       )
     }
-    ```
-</nextjs_app_router_conventions>
+    \`\`\`
+</nextjs_app_router_conventions>`;

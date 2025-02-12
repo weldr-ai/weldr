@@ -1,7 +1,11 @@
-import fs from "node:fs";
+import { coder } from "./coder";
+import { authenticationConventions } from "./conventions/authentication-rules";
+import { baseConventions } from "./conventions/base-rules";
+import { manager } from "./manager";
 
-export function readPrompt(promptName: string) {
-  return fs.readFileSync(`${__dirname}/prompts/${promptName}.txt`, "utf-8");
-}
-
-export const coderPrompt = readPrompt("coder");
+export const prompts = {
+  coder,
+  manager,
+  authenticationConventions,
+  baseConventions,
+};

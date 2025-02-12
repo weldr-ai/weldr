@@ -11,7 +11,7 @@ import {
 import { Canvas } from "@/components/canvas";
 import { ProjectSettings } from "@/components/project-settings";
 import { useView } from "@/lib/store";
-import type { ChatMessage } from "@weldr/shared/types";
+import { api } from "@/lib/trpc/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
 import { cn } from "@weldr/ui/utils";
 import { AppWindowIcon, FrameIcon, SettingsIcon } from "lucide-react";
@@ -21,12 +21,23 @@ export function ProjectView({
   project,
   initialNodes,
   initialEdges,
+  integrations,
 }: {
   project: RouterOutputs["projects"]["byId"];
   initialNodes: CanvasNode[];
   initialEdges: RouterOutputs["versions"]["dependencies"];
+  integrations: RouterOutputs["integrations"]["list"];
 }) {
   const { activeTab } = useView();
+
+  const { data: messages } = api.chats.messages.useQuery(
+    {
+      chatId: project.chatId,
+    },
+    {
+      initialData: project.chat.messages,
+    },
+  );
 
   return (
     <ResizablePanelGroup direction="horizontal">
@@ -41,7 +52,9 @@ export function ProjectView({
             {activeTab === "chat" ? (
               <Chat
                 chatId={project.chatId}
-                initialMessages={project.chat as unknown as ChatMessage[]}
+                projectId={project.id}
+                initialMessages={messages}
+                integrations={integrations}
               />
             ) : (
               "History"
@@ -62,6 +75,7 @@ export function ProjectView({
           project={project}
           initialNodes={initialNodes}
           initialEdges={initialEdges ?? []}
+          integrations={integrations}
         />
       </ResizablePanel>
     </ResizablePanelGroup>
@@ -72,10 +86,12 @@ function Main({
   project,
   initialNodes,
   initialEdges,
+  integrations,
 }: {
   project: RouterOutputs["projects"]["byId"];
   initialNodes: CanvasNode[];
   initialEdges: RouterOutputs["versions"]["dependencies"];
+  integrations: RouterOutputs["integrations"]["list"];
 }) {
   return (
     <Tabs defaultValue="preview" className="flex size-full flex-col">
@@ -108,7 +124,7 @@ function Main({
         />
       </TabsContent>
       <TabsContent value="settings" className="mt-0 flex-1 bg-background p-4">
-        <ProjectSettings project={project} />
+        <ProjectSettings project={project} integrations={integrations} />
       </TabsContent>
     </Tabs>
   );

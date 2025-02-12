@@ -1,7 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import type {
   AssistantMessageRawContent,
-  TestExecutionMessageRawContent,
+  ToolMessageRawContent,
   UserMessageRawContent,
 } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
@@ -17,7 +17,11 @@ import {
 import { users } from "./auth";
 import { versions } from "./versions";
 
-export const messageRoles = pgEnum("message_roles", ["user", "assistant"]);
+export const messageRoles = pgEnum("message_roles", [
+  "user",
+  "assistant",
+  "tool",
+]);
 
 export const chats = pgTable(
   "chats",
@@ -46,12 +50,12 @@ export const chatMessages = pgTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     role: messageRoles("role").notNull(),
-    content: text("content").notNull(),
+    content: text("content"),
     rawContent: jsonb("raw_content")
       .$type<
         | UserMessageRawContent
         | AssistantMessageRawContent
-        | TestExecutionMessageRawContent
+        | ToolMessageRawContent
       >()
       .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

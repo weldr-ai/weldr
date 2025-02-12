@@ -10,6 +10,7 @@ import {
   endpoints,
   packages,
 } from "@weldr/db/schema";
+import type { ChatMessage } from "@weldr/shared/types";
 import {
   createEndpointDefinitionSchema,
   insertEndpointSchema,
@@ -158,11 +159,16 @@ export const endpointsRouter = {
           });
         }
 
-        const { currentDefinitionId, currentDefinition, ...rest } = result;
+        const { currentDefinitionId, currentDefinition, chat, ...rest } =
+          result;
 
         return {
           ...rest,
           ...currentDefinition,
+          chat: {
+            ...chat,
+            messages: chat?.messages as ChatMessage[],
+          },
           canRun: await isEndpointReady(result),
         };
       } catch (error) {

@@ -14,12 +14,10 @@ import type {
   DatabaseStructure,
   DbConfig,
 } from "@weldr/shared/integrations/postgres/types";
-import type { UserMessageRawContent } from "@weldr/shared/types";
-import {
-  assistantMessageRawContentSchema,
-  userMessageRawContentSchema,
-} from "@weldr/shared/validators/chats";
-import { and, eq, sql } from "drizzle-orm";
+import type { ChatMessage, UserMessageRawContent } from "@weldr/shared/types";
+import { assistantMessageRawContentToText } from "@weldr/shared/utils";
+import { addMessagesInputSchema } from "@weldr/shared/validators/chats";
+import { type InferInsertModel, and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 import { getAttachmentUrl } from "../utils";
@@ -107,7 +105,7 @@ export const chatsRouter = {
           eq(chatMessages.chatId, input.chatId),
           eq(chatMessages.userId, ctx.session.user.id),
         ),
-        orderBy: (chatMessages, { desc }) => [desc(chatMessages.createdAt)],
+        orderBy: (chatMessages, { asc }) => [asc(chatMessages.createdAt)],
         columns: {
           content: false,
         },
@@ -156,28 +154,15 @@ export const chatsRouter = {
         }),
       );
 
-      return messagesWithAttachments;
+      return messagesWithAttachments as ChatMessage[];
     }),
   addMessage: protectedProcedure
-    .input(
-      z.discriminatedUnion("role", [
-        z.object({
-          role: z.literal("assistant"),
-          rawContent: assistantMessageRawContentSchema,
-          content: z.string(),
-          chatId: z.string(),
-          attachmentIds: z.string().array().optional(),
-        }),
-        z.object({
-          role: z.literal("user"),
-          rawContent: userMessageRawContentSchema,
-          chatId: z.string(),
-          attachmentIds: z.string().array().optional(),
-          funcId: z.string().optional(),
-        }),
-      ]),
-    )
+    .input(addMessagesInputSchema)
     .mutation(async ({ ctx, input }) => {
+      if (input.messages.length === 0) {
+        return;
+      }
+
       const chat = await ctx.db.query.chats.findFirst({
         where: and(
           eq(chats.id, input.chatId),
@@ -192,71 +177,48 @@ export const chatsRouter = {
         });
       }
 
-      let newMessage = undefined;
+      const messages: InferInsertModel<typeof chatMessages>[] = [];
 
-      if (input.role === "assistant") {
-        newMessage = await ctx.db
-          .insert(chatMessages)
-          .values({
-            content: input.content,
-            rawContent: input.rawContent,
-            role: "assistant",
-            createdAt: new Date(),
-            userId: ctx.session.user.id,
-            chatId: input.chatId,
-          })
-          .returning({
-            id: chatMessages.id,
-          })
-          .then(([message]) => message);
-      }
+      for (const item of input.messages) {
+        const resolvedRawContent: ResolvedRawContent[] = [];
 
-      if (input.role === "user") {
-        if (input.funcId) {
-          const funcResult = await ctx.db.query.funcs.findFirst({
-            where: and(
-              eq(funcs.id, input.funcId),
-              eq(funcs.userId, ctx.session.user.id),
-            ),
-          });
-
-          if (!funcResult) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Function not found",
+        if (item.role === "user") {
+          if (item.funcId) {
+            const funcResult = await ctx.db.query.funcs.findFirst({
+              where: and(
+                eq(funcs.id, item.funcId),
+                eq(funcs.userId, ctx.session.user.id),
+              ),
             });
+
+            if (!funcResult) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Function not found",
+              });
+            }
           }
+
+          resolvedRawContent.push(
+            ...(await resolveRawContent(item.rawContent, ctx)),
+          );
         }
 
-        const resolvedRawContent = await resolveRawContent(
-          input.rawContent,
-          ctx,
-        );
-
-        newMessage = await ctx.db
-          .insert(chatMessages)
-          .values({
-            content: userMessageRawContentToText(resolvedRawContent),
-            rawContent: input.rawContent,
-            role: "user",
-            createdAt: new Date(),
-            userId: ctx.session.user.id,
-            chatId: input.chatId,
-          })
-          .returning({
-            id: chatMessages.id,
-          })
-          .then(([message]) => message);
-      }
-
-      if (!newMessage) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create message",
+        messages.push({
+          content:
+            item.role === "user"
+              ? userMessageRawContentToText(resolvedRawContent)
+              : item.role === "assistant"
+                ? assistantMessageRawContentToText(item.rawContent)
+                : undefined,
+          rawContent: item.rawContent,
+          role: item.role,
+          userId: ctx.session.user.id,
+          chatId: input.chatId,
         });
       }
 
-      return newMessage;
+      await ctx.db.insert(chatMessages).values(messages);
     }),
 } satisfies TRPCRouterRecord;
 

@@ -9,7 +9,11 @@ import { IntegrationsSection } from "./integrations-section";
 
 export function ProjectSettings({
   project,
-}: { project: RouterOutputs["projects"]["byId"] }) {
+  integrations,
+}: {
+  project: RouterOutputs["projects"]["byId"];
+  integrations: RouterOutputs["integrations"]["list"];
+}) {
   const { data: env } = api.environmentVariables.list.useQuery(
     {
       projectId: project.id,
@@ -43,7 +47,11 @@ export function ProjectSettings({
           value="integrations"
           className="mt-0 h-[calc(100vh-146px)] overflow-hidden"
         >
-          <IntegrationsSection project={project} env={env} />
+          <IntegrationsSection
+            project={project}
+            env={env}
+            integrations={integrations}
+          />
         </TabsContent>
 
         <TabsContent value="env" className="mt-0">

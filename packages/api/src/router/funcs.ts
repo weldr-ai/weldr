@@ -12,6 +12,7 @@ import {
 } from "@weldr/db/schema";
 
 import { and, eq } from "@weldr/db";
+import type { ChatMessage } from "@weldr/shared/types";
 import { toKebabCase } from "@weldr/shared/utils";
 import {
   createFuncDefinitionSchema,
@@ -156,12 +157,17 @@ export const funcsRouter = {
           integrationId,
           currentDefinitionId,
           currentDefinition,
+          chat,
           ...rest
         } = result;
 
         return {
           ...rest,
           ...currentDefinition,
+          chat: {
+            ...chat,
+            messages: chat?.messages as ChatMessage[],
+          },
           canRun: await isFunctionReady(result),
         };
       } catch (error) {

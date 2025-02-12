@@ -1,6 +1,6 @@
 "use client";
 
-import { EditIcon, PlusIcon } from "lucide-react";
+import { EditIcon } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@weldr/ui/button";
@@ -16,15 +16,18 @@ import {
 import { AddResourceForm } from "@/components/add-resource-form";
 import type { RouterOutputs } from "@weldr/api";
 import type { EnvironmentVariable, Integration } from "@weldr/shared/types";
+import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
 
 export function AddResourceDialog({
   integration,
   env,
   resource,
+  className,
 }: {
   integration: Pick<Integration, "id" | "name" | "type">;
   env: Pick<EnvironmentVariable, "id" | "key">[];
   resource?: RouterOutputs["projects"]["byId"]["resources"][number];
+  className?: string;
 }) {
   const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
 
@@ -34,7 +37,11 @@ export function AddResourceDialog({
       onOpenChange={setAddResourceDialogOpen}
     >
       <DialogTrigger asChild>
-        <Button variant={resource ? "outline" : "default"} className="text-xs">
+        <Button
+          size="sm"
+          variant={resource ? "outline" : "default"}
+          className={className}
+        >
           {resource ? (
             <>
               {resource.name}
@@ -42,8 +49,10 @@ export function AddResourceDialog({
             </>
           ) : (
             <>
-              <PlusIcon className="mr-1.5 size-3.5" />
-              Add new resource
+              {integration.type === "postgres" && (
+                <PostgresIcon className="mr-2 size-4" />
+              )}
+              Setup {integration.name}
             </>
           )}
         </Button>

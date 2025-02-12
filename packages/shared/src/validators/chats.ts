@@ -59,10 +59,16 @@ export const testExecutionMessageRawContentSchema = z.object({
   stderr: z.string().nullable(),
 });
 
+export const toolMessageRawContentSchema = z.object({
+  toolName: z.string(),
+  toolArgs: z.record(z.any()).optional(),
+  toolResult: z.any().optional(),
+});
+
 export const messageRawContentSchema = z.union([
   userMessageRawContentElementSchema.array(),
   assistantMessageRawContentElementSchema.array(),
-  testExecutionMessageRawContentSchema,
+  toolMessageRawContentSchema,
 ]);
 
 export const attachmentSchema = z.object({
@@ -74,19 +80,15 @@ export const attachmentSchema = z.object({
   url: z.string().optional(),
 });
 
-export const chatMessageSchema = z.object({
+const baseMessageSchema = z.object({
   id: z.string().optional(),
-  role: z.enum(["user", "assistant"]),
-  content: z.string().optional(),
-  rawContent: messageRawContentSchema,
-  createdAt: z.date().optional(),
-  version: z
-    .object({
-      id: z.string(),
-      versionName: z.string(),
-      versionNumber: z.number(),
-    })
-    .optional(),
+  createdAt: z.date(),
+  chatId: z.string().optional(),
+});
+
+const userMessageSchema = baseMessageSchema.extend({
+  role: z.literal("user"),
+  rawContent: userMessageRawContentElementSchema.array(),
   attachments: attachmentSchema.array().optional(),
   userId: z.string().optional(),
   user: z
@@ -99,8 +101,53 @@ export const chatMessageSchema = z.object({
     .optional(),
 });
 
+const assistantMessageSchema = baseMessageSchema.extend({
+  role: z.literal("assistant"),
+  rawContent: assistantMessageRawContentElementSchema.array(),
+  version: z
+    .object({
+      id: z.string(),
+      versionName: z.string(),
+      versionNumber: z.number(),
+    })
+    .optional(),
+});
+
+const toolMessageSchema = baseMessageSchema.extend({
+  role: z.literal("tool"),
+  rawContent: toolMessageRawContentSchema,
+});
+
+export const chatMessageSchema = z.discriminatedUnion("role", [
+  userMessageSchema,
+  assistantMessageSchema,
+  toolMessageSchema,
+]);
+
 export const chatSchema = z.object({
   id: z.string(),
   createdAt: z.date(),
   messages: chatMessageSchema.array(),
+});
+
+export const addMessageItemSchema = z.discriminatedUnion("role", [
+  z.object({
+    role: z.literal("assistant"),
+    rawContent: assistantMessageRawContentSchema,
+  }),
+  z.object({
+    role: z.literal("user"),
+    rawContent: userMessageRawContentSchema,
+    attachmentIds: z.string().array().optional(),
+    funcId: z.string().optional(),
+  }),
+  z.object({
+    role: z.literal("tool"),
+    rawContent: toolMessageRawContentSchema,
+  }),
+]);
+
+export const addMessagesInputSchema = z.object({
+  chatId: z.string(),
+  messages: addMessageItemSchema.array(),
 });

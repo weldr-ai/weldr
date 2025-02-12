@@ -1,19 +1,18 @@
-
-<authentication>
+export const authenticationConventions = `<authentication>
   - We are using a library called better-auth to handle authentication.
-  - You can only configure authentication in the project by calling the `setup-authentication` tool.
+  - You can only configure authentication in the project by calling the \`setup-authentication\` tool.
     - The tool will install the dependencies and configure the project to use better-auth.
     - The tool will configure the authentication tables in the database.
     - The tool will configure basic email/password auth.
-  - You can use the `auth` instance in the `src/lib/auth/index.ts` file on the server.
-  - You can use the `auth` instance in the `src/lib/auth/react.ts` file on the client.
-  - You should update the `src/lib/auth/index.ts` file to what the user wants to do.
+  - You can use the \`auth\` instance in the \`src/lib/auth/index.ts\` file on the server.
+  - You can use the \`auth\` instance in the \`src/lib/auth/react.ts\` file on the client.
+  - You should update the \`src/lib/auth/index.ts\` file to what the user wants to do.
   - You MUST NOT use next.js middleware to handle authentication. Instead, you should check the session in routes.
   - All sign in, sign up, sign out, etc. MUST be handled using the client instance on client components.
 
   <configuring_better_auth>
     /src/lib/auth/index.ts
-    ```typescript
+    \`\`\`typescript
     import { db } from "@/server/db";
     import { betterAuth } from "better-auth";
     import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -37,7 +36,7 @@
     });
 
     export type Session = typeof auth.$Infer.Session;
-    ```
+    \`\`\`
   </configuring_better_auth>
 
   <examples_using_better_auth_on_client>
@@ -49,7 +48,7 @@
     - onSuccess: () => void
 
     <sign_in_on_client>
-      ```typescriptreact
+      \`\`\`typescriptreact
       "use client";
 
       import { auth } from "@/lib/auth/react";
@@ -73,11 +72,11 @@
           },
         },
       });
-      ```
+      \`\`\`
     </sign_in_on_client>
 
     <sign_up_on_client>
-      ```typescriptreact
+      \`\`\`typescriptreact
       await auth.signUp.email({
         name: data.name,
         email: data.email,
@@ -86,11 +85,11 @@
           // Any options for the request
         },
       });
-      ```
+      \`\`\`
     </sign_up_on_client>
 
     <sign_in_with_social_provider_on_client>
-      ```typescriptreact
+      \`\`\`typescriptreact
       function SignInWithSocialProvider() {
         return (
           <button onClick={async () => {
@@ -104,14 +103,14 @@
           </button>
         )
       }
-      ```
+      \`\`\`
     </sign_in_with_social_provider_on_client>
 
     <sign_out_on_client>
       // Sign out
 
       await auth.signOut();
-      ```
+      \`\`\`
     </sign_out_on_client>
 
     <get_session_on_client>
@@ -172,6 +171,6 @@
         // Any options for the request
       },
     });
-      ```
+    \`\`\`
   </examples_using_better_auth_on_client>
-</authentication>
+</authentication>`;

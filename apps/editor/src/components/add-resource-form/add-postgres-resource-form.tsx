@@ -17,19 +17,10 @@ import {
 } from "@weldr/ui/form";
 import { Input } from "@weldr/ui/input";
 import { RadioGroup, RadioGroupItem } from "@weldr/ui/radio-group";
-import { Textarea } from "@weldr/ui/textarea";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
 
 import type { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@weldr/api";
-import type { EnvironmentVariable, Integration } from "@weldr/shared/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@weldr/ui/select";
+import type { Integration } from "@weldr/shared/types";
 
 const validationSchema = z.discriminatedUnion("connectionType", [
   z.object({
@@ -38,11 +29,11 @@ const validationSchema = z.discriminatedUnion("connectionType", [
     integrationId: z.string(),
     name: z.string().min(1),
     description: z.string().optional(),
-    POSTGRES_DB: z.string(),
-    POSTGRES_HOST: z.string(),
-    POSTGRES_PASSWORD: z.string(),
-    POSTGRES_PORT: z.string(),
-    POSTGRES_USER: z.string(),
+    POSTGRES_DB: z.string().min(1),
+    POSTGRES_HOST: z.string().min(1),
+    POSTGRES_PASSWORD: z.string().min(1),
+    POSTGRES_PORT: z.string().min(1),
+    POSTGRES_USER: z.string().min(1),
   }),
   z.object({
     connectionType: z.literal("url"),
@@ -50,26 +41,19 @@ const validationSchema = z.discriminatedUnion("connectionType", [
     integrationId: z.string(),
     name: z.string().min(1),
     description: z.string().optional(),
-    DATABASE_URL: z.string(),
+    DATABASE_URL: z.string().min(1),
   }),
 ]);
 
 export function AddPostgresResourceForm({
   postgresIntegration,
-  env,
   addResourceMutation,
   updateResourceMutation,
-  resourceEnvironmentVariables,
   resource,
 }: {
   postgresIntegration: Pick<Integration, "id" | "name">;
-  env: Pick<EnvironmentVariable, "key">[];
   addResourceMutation: ReturnType<typeof api.resources.create.useMutation>;
   updateResourceMutation: ReturnType<typeof api.resources.update.useMutation>;
-  resourceEnvironmentVariables?: {
-    mapTo: string;
-    userKey: string;
-  }[];
   resource?: RouterOutputs["projects"]["byId"]["resources"][number];
 }) {
   const { projectId } = useParams<{ projectId: string }>();
@@ -80,13 +64,6 @@ export function AddPostgresResourceForm({
     name: resource?.name ?? "",
     description: resource?.description ?? "",
     connectionType: "url" as const,
-    ...(resourceEnvironmentVariables?.reduce(
-      (acc, variable) => {
-        acc[variable.mapTo] = variable.userKey;
-        return acc;
-      },
-      {} as Record<string, string>,
-    ) ?? {}),
   };
 
   const form = useForm<z.infer<typeof validationSchema>>({
@@ -101,33 +78,13 @@ export function AddPostgresResourceForm({
     const environmentVariables =
       data.connectionType === "credentials"
         ? [
-            {
-              userKey: data.POSTGRES_DB,
-              mapTo: "POSTGRES_DB",
-            },
-            {
-              userKey: data.POSTGRES_USER,
-              mapTo: "POSTGRES_USER",
-            },
-            {
-              userKey: data.POSTGRES_PASSWORD,
-              mapTo: "POSTGRES_PASSWORD",
-            },
-            {
-              userKey: data.POSTGRES_HOST,
-              mapTo: "POSTGRES_HOST",
-            },
-            {
-              userKey: data.POSTGRES_PORT,
-              mapTo: "POSTGRES_PORT",
-            },
+            { userKey: data.POSTGRES_DB, mapTo: "POSTGRES_DB" },
+            { userKey: data.POSTGRES_USER, mapTo: "POSTGRES_USER" },
+            { userKey: data.POSTGRES_PASSWORD, mapTo: "POSTGRES_PASSWORD" },
+            { userKey: data.POSTGRES_HOST, mapTo: "POSTGRES_HOST" },
+            { userKey: data.POSTGRES_PORT, mapTo: "POSTGRES_PORT" },
           ]
-        : [
-            {
-              userKey: data.DATABASE_URL,
-              mapTo: "DATABASE_URL",
-            },
-          ];
+        : [{ userKey: data.DATABASE_URL, mapTo: "DATABASE_URL" }];
 
     if (resource) {
       await updateResourceMutation.mutateAsync({
@@ -206,44 +163,18 @@ export function AddPostgresResourceForm({
               control={form.control}
               name="POSTGRES_USER"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Database User</FormLabel>
+                <FormItem className="grid grid-cols-[150px_1fr] items-center gap-y-2 space-y-0">
+                  <div className="flex h-9 items-center rounded-l-md border-y border-l px-3 font-mono text-xs">
+                    POSTGRES_USER
+                  </div>
                   <FormControl>
-                    <div className="flex gap-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="w-full">
-                            <Select
-                              {...field}
-                              onValueChange={(value) => field.onChange(value)}
-                              value={field.value || ""}
-                              disabled={env.length === 0}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select environment variable" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {env.map((e) => (
-                                  <SelectItem key={e.key} value={e.key}>
-                                    {e.key}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </TooltipTrigger>
-                        {env.length === 0 && (
-                          <TooltipContent
-                            side="right"
-                            className="border bg-muted text-destructive"
-                          >
-                            <p>Add an environment variable first</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </div>
+                    <Input
+                      className="rounded-l-none"
+                      {...field}
+                      placeholder="Enter database user"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="col-span-2" />
                 </FormItem>
               )}
             />
@@ -251,44 +182,19 @@ export function AddPostgresResourceForm({
               control={form.control}
               name="POSTGRES_PASSWORD"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Database Password</FormLabel>
+                <FormItem className="grid grid-cols-[150px_1fr] items-center gap-y-2 space-y-0">
+                  <div className="flex h-9 items-center rounded-l-md border-y border-l px-3 font-mono text-xs">
+                    POSTGRES_PASSWORD
+                  </div>
                   <FormControl>
-                    <div className="flex gap-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="w-full">
-                            <Select
-                              {...field}
-                              onValueChange={(value) => field.onChange(value)}
-                              value={field.value || ""}
-                              disabled={env.length === 0}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select environment variable" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {env.map((e) => (
-                                  <SelectItem key={e.key} value={e.key}>
-                                    {e.key}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </TooltipTrigger>
-                        {env.length === 0 && (
-                          <TooltipContent
-                            side="right"
-                            className="border bg-muted text-destructive"
-                          >
-                            <p>Add an environment variable first</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </div>
+                    <Input
+                      {...field}
+                      type="password"
+                      className="rounded-l-none"
+                      placeholder="Enter database password"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="col-span-2" />
                 </FormItem>
               )}
             />
@@ -296,44 +202,18 @@ export function AddPostgresResourceForm({
               control={form.control}
               name="POSTGRES_HOST"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Database Host</FormLabel>
+                <FormItem className="grid grid-cols-[150px_1fr] items-center gap-y-2 space-y-0">
+                  <div className="flex h-9 items-center rounded-l-md border-y border-l px-3 font-mono text-xs">
+                    POSTGRES_HOST
+                  </div>
                   <FormControl>
-                    <div className="flex gap-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="w-full">
-                            <Select
-                              {...field}
-                              onValueChange={(value) => field.onChange(value)}
-                              value={field.value || ""}
-                              disabled={env.length === 0}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select environment variable" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {env.map((e) => (
-                                  <SelectItem key={e.key} value={e.key}>
-                                    {e.key}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </TooltipTrigger>
-                        {env.length === 0 && (
-                          <TooltipContent
-                            side="right"
-                            className="border bg-muted text-destructive"
-                          >
-                            <p>Add an environment variable first</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </div>
+                    <Input
+                      className="rounded-l-none"
+                      {...field}
+                      placeholder="Enter database host"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="col-span-2" />
                 </FormItem>
               )}
             />
@@ -341,44 +221,18 @@ export function AddPostgresResourceForm({
               control={form.control}
               name="POSTGRES_PORT"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Database Port</FormLabel>
+                <FormItem className="grid grid-cols-[150px_1fr] items-center gap-y-2 space-y-0">
+                  <div className="flex h-9 items-center rounded-l-md border-y border-l px-3 font-mono text-xs">
+                    POSTGRES_PORT
+                  </div>
                   <FormControl>
-                    <div className="flex gap-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="w-full">
-                            <Select
-                              {...field}
-                              onValueChange={(value) => field.onChange(value)}
-                              value={field.value || ""}
-                              disabled={env.length === 0}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select environment variable" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {env.map((e) => (
-                                  <SelectItem key={e.key} value={e.key}>
-                                    {e.key}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </TooltipTrigger>
-                        {env.length === 0 && (
-                          <TooltipContent
-                            side="right"
-                            className="border bg-muted text-destructive"
-                          >
-                            <p>Add an environment variable first</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </div>
+                    <Input
+                      className="rounded-l-none"
+                      {...field}
+                      placeholder="Enter database port"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="col-span-2" />
                 </FormItem>
               )}
             />
@@ -386,44 +240,18 @@ export function AddPostgresResourceForm({
               control={form.control}
               name="POSTGRES_DB"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Database Name</FormLabel>
+                <FormItem className="grid grid-cols-[150px_1fr] items-center gap-y-2 space-y-0">
+                  <div className="flex h-9 items-center rounded-l-md border-y border-l px-3 font-mono text-xs">
+                    POSTGRES_DB
+                  </div>
                   <FormControl>
-                    <div className="flex gap-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="w-full">
-                            <Select
-                              {...field}
-                              onValueChange={(value) => field.onChange(value)}
-                              value={field.value || ""}
-                              disabled={env.length === 0}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select environment variable" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {env.map((e) => (
-                                  <SelectItem key={e.key} value={e.key}>
-                                    {e.key}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </TooltipTrigger>
-                        {env.length === 0 && (
-                          <TooltipContent
-                            side="right"
-                            className="border bg-muted text-destructive"
-                          >
-                            <p>Add an environment variable first</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </div>
+                    <Input
+                      className="rounded-l-none"
+                      {...field}
+                      placeholder="Enter database name"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="col-span-2" />
                 </FormItem>
               )}
             />
@@ -433,65 +261,22 @@ export function AddPostgresResourceForm({
             control={form.control}
             name="DATABASE_URL"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">Connection String</FormLabel>
+              <FormItem className="grid grid-cols-[150px_1fr] items-center gap-y-2 space-y-0">
+                <div className="flex h-9 items-center rounded-l-md border-y border-l px-3 font-mono text-xs">
+                  DATABASE_URL
+                </div>
                 <FormControl>
-                  <div className="flex gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="w-full">
-                          <Select
-                            {...field}
-                            onValueChange={(value) => field.onChange(value)}
-                            value={field.value || ""}
-                            disabled={env.length === 0}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select environment variable" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {env.map((e) => (
-                                <SelectItem key={e.key} value={e.key}>
-                                  {e.key}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TooltipTrigger>
-                      {env.length === 0 && (
-                        <TooltipContent
-                          side="right"
-                          className="border bg-muted text-destructive"
-                        >
-                          <p>Add an environment variable first</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </div>
+                  <Input
+                    className="rounded-l-none"
+                    {...field}
+                    placeholder="Enter database URL"
+                  />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="col-span-2" />
               </FormItem>
             )}
           />
         )}
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-xs">
-                Description{" "}
-                <span className="text-muted-foreground">(optional)</span>
-              </FormLabel>
-              <FormControl>
-                <Textarea {...field} placeholder="Enter resource description" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <FormField
           control={form.control}
@@ -507,11 +292,6 @@ export function AddPostgresResourceForm({
         <div className="flex w-full justify-end">
           <Button
             type="submit"
-            aria-disabled={
-              !form.formState.isValid ||
-              addResourceMutation.isPending ||
-              !form.formState.isDirty
-            }
             disabled={
               !form.formState.isValid ||
               addResourceMutation.isPending ||

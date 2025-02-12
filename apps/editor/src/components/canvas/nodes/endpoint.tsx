@@ -9,7 +9,6 @@ import { useFlowBuilder } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { getResourceReferences } from "@/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
-import { createId } from "@paralleldrive/cuid2";
 import type { RouterOutputs } from "@weldr/api";
 import type {
   ChatMessage,
@@ -88,43 +87,15 @@ export const EndpointNode = memo(
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [isBuilding, setIsBuilding] = useState<boolean>(false);
 
-    const [messages, setMessages] = useState<ChatMessage[]>([
-      {
-        id: createId(),
-        role: "assistant",
-        rawContent: [
-          {
-            type: "paragraph",
-            value:
-              "Hi there! I'm Weldr, your AI assistant. What does your endpoint do?",
-          },
-        ],
-      },
-      ...(data.chat?.messages ?? []),
-    ]);
+    const [messages, setMessages] = useState<ChatMessage[]>(
+      data.chat?.messages ?? [],
+    );
 
     const [userMessageContent, setUserMessageContent] = useState<string | null>(
       null,
     );
     const [userMessageRawContent, setUserMessageRawContent] =
       useState<UserMessageRawContent>([]);
-
-    useEffect(() => {
-      setMessages([
-        {
-          id: createId(),
-          role: "assistant",
-          rawContent: [
-            {
-              type: "paragraph",
-              value:
-                "Hi there! I'm Weldr, your AI assistant. What does your endpoint do?",
-            },
-          ],
-        },
-        ...(data.chat?.messages ?? []),
-      ]);
-    }, [data.chat]);
 
     function onChatChange(editorState: EditorState) {
       editorState.read(async () => {
@@ -180,9 +151,7 @@ export const EndpointNode = memo(
         return;
       }
 
-      const newMessageUser: ChatMessage & {
-        chatId: string;
-      } = {
+      const newMessageUser: ChatMessage = {
         role: "user",
         rawContent: userMessageRawContent,
         chatId: data.chatId,
@@ -194,9 +163,13 @@ export const EndpointNode = memo(
       setMessages(newMessages);
 
       await addMessage.mutateAsync({
-        role: "user",
         chatId: data.chatId,
-        rawContent: userMessageRawContent,
+        messages: [
+          {
+            role: "user",
+            rawContent: userMessageRawContent,
+          },
+        ],
       });
 
       const result = await generateEndpoint(data.id);

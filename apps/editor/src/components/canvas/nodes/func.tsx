@@ -45,7 +45,6 @@ import { useFlowBuilder } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { getResourceReferences } from "@/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
-import { createId } from "@paralleldrive/cuid2";
 import type { RouterOutputs } from "@weldr/api";
 import type {
   ChatMessage,
@@ -131,44 +130,14 @@ export const FuncNode = memo(
     const [isRunning, setIsRunning] = useState<boolean>(false);
     const [testInput, setTestInput] = useState<unknown>(data.testInput ?? {});
 
-    const [messages, setMessages] = useState<ChatMessage[]>([
-      {
-        id: createId(),
-        role: "assistant",
-        content:
-          "Hi there! I'm Weldr, your AI assistant. What does your function do?",
-        rawContent: [
-          {
-            type: "paragraph",
-            value:
-              "Hi there! I'm Weldr, your AI assistant. What does your function do?",
-          },
-        ],
-      },
-      ...(data.chat?.messages ?? []),
-    ]);
+    const [messages, setMessages] = useState<ChatMessage[]>(
+      data.chat?.messages ?? [],
+    );
     const [userMessageContent, setUserMessageContent] = useState<string | null>(
       null,
     );
     const [userMessageRawContent, setUserMessageRawContent] =
       useState<UserMessageRawContent>([]);
-
-    useEffect(() => {
-      setMessages([
-        {
-          id: createId(),
-          role: "assistant",
-          rawContent: [
-            {
-              type: "paragraph",
-              value:
-                "Hi there! I'm Weldr, your AI assistant. What does your function do?",
-            },
-          ],
-        },
-        ...(data.chat?.messages ?? []),
-      ]);
-    }, [data.chat]);
 
     function onChatChange(editorState: EditorState) {
       editorState.read(async () => {
@@ -255,9 +224,7 @@ export const FuncNode = memo(
         return;
       }
 
-      const newMessageUser: ChatMessage & {
-        chatId: string;
-      } = {
+      const newMessageUser: ChatMessage = {
         role: "user",
         rawContent: userMessageRawContent,
         chatId: data.chatId,
@@ -269,10 +236,14 @@ export const FuncNode = memo(
       setMessages(newMessages);
 
       await addMessage.mutateAsync({
-        role: "user",
-        rawContent: userMessageRawContent,
         chatId: data.chatId,
-        funcId: data.id,
+        messages: [
+          {
+            role: "user",
+            rawContent: userMessageRawContent,
+            funcId: data.id,
+          },
+        ],
       });
 
       const result = await generateFunc(data.id);

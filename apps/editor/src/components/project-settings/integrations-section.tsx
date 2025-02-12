@@ -1,6 +1,5 @@
 "use client";
 
-import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@weldr/api";
 import { Badge } from "@weldr/ui/badge";
 import { Button } from "@weldr/ui/button";
@@ -167,9 +166,11 @@ const comingSoonIntegrations = [
 export function IntegrationsSection({
   project,
   env,
+  integrations,
 }: {
   project: RouterOutputs["projects"]["byId"];
   env: RouterOutputs["environmentVariables"]["list"];
+  integrations: RouterOutputs["integrations"]["list"];
 }) {
   const { resolvedTheme } = useTheme();
   const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
@@ -188,8 +189,6 @@ export function IntegrationsSection({
     },
     {} as Record<string, RouterOutputs["projects"]["byId"]["resources"]>,
   );
-
-  const { data: integrations } = api.integrations.list.useQuery();
 
   return (
     <Card className="h-full">

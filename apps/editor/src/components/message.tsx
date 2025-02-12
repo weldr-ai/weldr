@@ -2,19 +2,23 @@
 
 import { memo, useEffect, useState } from "react";
 
+import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
-import type { ChatMessage, RawContent } from "@weldr/shared/types";
+import type { ChatMessage } from "@weldr/shared/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@weldr/ui/avatar";
 import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import { cn } from "@weldr/ui/utils";
 import Image from "next/image";
+import { AddResourceDialog } from "./add-resource-dialog";
 import { RawContentViewer } from "./raw-content-viewer";
 
 const PurePreviewMessage = ({
   message,
+  integrations,
 }: {
   message: ChatMessage;
   isThinking: boolean;
+  integrations: RouterOutputs["integrations"]["list"];
 }) => {
   const { data: session } = authClient.useSession();
 
@@ -58,15 +62,31 @@ const PurePreviewMessage = ({
           message.role === "user" && "rounded-md bg-primary p-2",
         )}
       >
-        <RawContentViewer
-          rawContent={(message.rawContent ?? []) as RawContent}
-        />
-        {message.version && (
+        {Array.isArray(message.rawContent) && (
+          <RawContentViewer rawContent={message.rawContent} />
+        )}
+        {message.role === "assistant" && message.version && (
           <div className="group flex h-7 items-center gap-2">
             <div className="inline-flex h-7 cursor-text select-text items-center justify-center rounded-md bg-success/10 px-1.5 py-0.5 font-semibold text-success text-xs">
               {`#${message.version.versionNumber} `}
               {message.version.versionName}
             </div>
+          </div>
+        )}
+        {message.role === "tool" && (
+          <div className="flex items-center gap-1">
+            {message.rawContent.toolName === "setupResource" && (
+              <SetupResource
+                resource={
+                  (
+                    message.rawContent.toolArgs as {
+                      resource: "postgres";
+                    }
+                  ).resource
+                }
+                integrations={integrations}
+              />
+            )}
           </div>
         )}
       </div>
@@ -115,3 +135,33 @@ export const ThinkingMessage = () => {
     </div>
   );
 };
+
+export function SetupResource({
+  resource,
+  integrations,
+}: {
+  resource: "postgres";
+  integrations: RouterOutputs["integrations"]["list"];
+}) {
+  console.log(integrations);
+
+  switch (resource) {
+    case "postgres": {
+      const postgresIntegration = integrations?.find(
+        (integration) => integration.type === "postgres",
+      );
+
+      if (!postgresIntegration) {
+        return null;
+      }
+
+      return (
+        <AddResourceDialog
+          integration={postgresIntegration}
+          env={[]}
+          className="border bg-background hover:bg-accent"
+        />
+      );
+    }
+  }
+}
