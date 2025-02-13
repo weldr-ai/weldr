@@ -32,6 +32,9 @@ export function Chat({
 
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [lastMessage, setLastMessage] = useState<ChatMessage | undefined>(
+    messages[messages.length - 1],
+  );
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
@@ -123,15 +126,14 @@ export function Chat({
   }, [chatId, projectId, apiUtils]);
 
   useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-
     if (lastMessage?.role === "user" && !generationTriggered.current) {
       generationTriggered.current = true;
+      setLastMessage(undefined);
       void triggerGeneration().finally(() => {
         generationTriggered.current = false;
       });
     }
-  }, [messages, triggerGeneration]);
+  }, [lastMessage, triggerGeneration]);
 
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
@@ -181,7 +183,7 @@ export function Chat({
       newMessageUser as ChatMessage,
     ]);
 
-    await addMessage.mutateAsync({
+    addMessage.mutate({
       chatId,
       messages: [
         {
@@ -197,6 +199,8 @@ export function Chat({
         },
       ],
     });
+
+    await apiUtils.chats.messages.invalidate({ chatId });
 
     await triggerGeneration();
   };

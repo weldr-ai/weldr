@@ -5,6 +5,7 @@ import { api } from "@/lib/trpc/server";
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { chats, projects } from "@weldr/db/schema";
+import type { ToolMessageRawContent } from "@weldr/shared/types";
 import type { addMessageItemSchema } from "@weldr/shared/validators/chats";
 import { type CoreMessage, streamText } from "ai";
 import { createStreamableValue } from "ai/rsc";
@@ -16,7 +17,6 @@ import { implement, initializeProject, setupResource } from "../tools";
 
 export async function manager(chatId: string, projectId: string) {
   const session = await auth.api.getSession({ headers: await headers() });
-  console.log("I am being called");
 
   if (!session) {
     redirect("/auth/sign-in");
@@ -41,8 +41,9 @@ export async function manager(chatId: string, projectId: string) {
         columns: {
           role: true,
           content: true,
+          rawContent: true,
         },
-        limit: project.initiatedAt ? 1 : 10,
+        limit: 10,
       },
     },
   });
@@ -54,7 +55,23 @@ export async function manager(chatId: string, projectId: string) {
   const promptMessages: CoreMessage[] = [];
 
   for (const message of chat.messages) {
-    if (message.role === "tool" || message.content === null) continue;
+    if (message.role === "tool") {
+      const toolInfo = message.rawContent as ToolMessageRawContent;
+
+      if (
+        toolInfo.toolName === "setupResource" &&
+        toolInfo.toolResult?.status !== "pending"
+      ) {
+        promptMessages.push({
+          role: "user",
+          content: `Setting up ${toolInfo.toolArgs?.resource} has been ${toolInfo.toolResult?.status}.`,
+        });
+      }
+
+      continue;
+    }
+
+    if (message.content === null) continue;
 
     promptMessages.push({
       role: message.role,
@@ -107,7 +124,9 @@ export async function manager(chatId: string, projectId: string) {
 
                 // TODO: prepare the boilerplate
 
-                // TODO: code the project
+                // TODO: call the architect to plan the implementation
+
+                // TODO: call the coder to code the implementation
 
                 break;
               }
@@ -134,7 +153,9 @@ export async function manager(chatId: string, projectId: string) {
                 break;
               }
               case "implement": {
-                // TODO: code the project
+                // TODO: call the architect to plan the implementation
+
+                // TODO: call the coder to code the implementation
 
                 break;
               }
@@ -148,16 +169,21 @@ export async function manager(chatId: string, projectId: string) {
                 toolResult: toolResult?.result,
               },
             });
+
+            if (text) {
+              messages.push({
+                role: "assistant",
+                rawContent: [{ type: "paragraph", value: text }],
+              });
+            }
           }
         }
 
         if (finishReason === "stop" && text) {
-          console.log(text);
           messages.push({
             role: "assistant",
             rawContent: [{ type: "paragraph", value: text }],
           });
-          console.log(JSON.stringify(messages, null, 2));
         }
 
         if (messages.length > 0) {
