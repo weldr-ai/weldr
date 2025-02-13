@@ -87,7 +87,11 @@ export function useFlowBuilder() {
 
 // Project Context
 interface ProjectContextType {
-  projectId: string;
+  project: {
+    id: string;
+    name: string | null;
+    description: string | null;
+  };
   activeTab: "chat" | "history" | null;
   setActiveTab: (activeTab: "chat" | "history" | null) => void;
 }
@@ -96,15 +100,19 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export function ProjectProvider({
   children,
-  projectId,
+  project,
 }: {
   children: ReactNode;
-  projectId: string;
+  project: {
+    id: string;
+    name: string | null;
+    description: string | null;
+  };
 }) {
   const [activeTab, setActiveTab] = useState<"chat" | "history" | null>("chat");
 
   return (
-    <ProjectContext.Provider value={{ projectId, activeTab, setActiveTab }}>
+    <ProjectContext.Provider value={{ project, activeTab, setActiveTab }}>
       {children}
     </ProjectContext.Provider>
   );

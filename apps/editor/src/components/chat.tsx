@@ -1,26 +1,25 @@
 import { manager } from "@/lib/ai/agents/manager";
+import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { createId } from "@paralleldrive/cuid2";
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
+import { Button } from "@weldr/ui/button";
 import { readStreamableValue } from "ai/rsc";
+import { ChevronsLeftIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
 interface ChatProps {
   initialMessages: ChatMessage[];
   chatId: string;
-  projectId: string;
   integrations: RouterOutputs["integrations"]["list"];
 }
 
-export function Chat({
-  initialMessages,
-  chatId,
-  projectId,
-  integrations,
-}: ChatProps) {
+export function Chat({ initialMessages, chatId, integrations }: ChatProps) {
+  const { project, setActiveTab } = useProject();
+
   const { data: session } = authClient.useSession();
 
   const [isThinking, setIsThinking] = useState(false);
@@ -43,7 +42,7 @@ export function Chat({
   const triggerGeneration = useCallback(async () => {
     setIsThinking(true);
 
-    const result = await manager(chatId, projectId);
+    const result = await manager(chatId, project.id);
 
     const newAssistantMessage: ChatMessage = {
       id: createId(),
@@ -123,7 +122,7 @@ export function Chat({
     await apiUtils.chats.messages.invalidate({ chatId });
 
     setIsThinking(false);
-  }, [chatId, projectId, apiUtils]);
+  }, [chatId, project.id, apiUtils]);
 
   useEffect(() => {
     if (lastMessage?.role === "user" && !generationTriggered.current) {
@@ -207,6 +206,15 @@ export function Chat({
 
   return (
     <div className="flex size-full flex-col">
+      <div className="flex h-12 w-full items-center gap-2 border-b px-2">
+        <Button variant="ghost" size="icon" onClick={() => setActiveTab(null)}>
+          <ChevronsLeftIcon className="size-4" />
+        </Button>
+        <h3 className="font-semibold text-sm">
+          {project?.name || "New Project"}
+        </h3>
+      </div>
+
       <Messages
         messages={messages}
         setMessages={setMessages}

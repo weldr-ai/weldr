@@ -37,7 +37,7 @@ export function PostgresForm({
   onCancel,
   onClose,
 }: PostgresFormProps) {
-  const { projectId } = useProject();
+  const { project } = useProject();
 
   const addResourceMutation = api.resources.create.useMutation({
     onSuccess: () => {
@@ -59,7 +59,7 @@ export function PostgresForm({
   const onSubmit = async (data: z.infer<typeof validationSchema>) => {
     await addResourceMutation.mutateAsync({
       ...data,
-      projectId,
+      projectId: project.id,
       environmentVariables: [
         { userKey: data.DATABASE_URL, mapTo: "DATABASE_URL" },
       ],

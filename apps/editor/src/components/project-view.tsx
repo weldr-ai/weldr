@@ -52,7 +52,6 @@ export function ProjectView({
             {activeTab === "chat" ? (
               <Chat
                 chatId={project.chatId}
-                projectId={project.id}
                 initialMessages={messages}
                 integrations={integrations}
               />

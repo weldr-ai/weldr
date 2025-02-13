@@ -16,13 +16,20 @@ export default async function ProjectLayout({
 }): Promise<JSX.Element> {
   try {
     const { projectId } = await params;
+    const project = await api.projects.byId({ id: projectId });
     const projects = await api.projects.list();
     const resourcesWithMetadata = await api.resources.listWithMetadata({
       projectId,
     });
 
     return (
-      <ProjectProvider projectId={projectId}>
+      <ProjectProvider
+        project={{
+          id: projectId,
+          name: project.name,
+          description: project.description,
+        }}
+      >
         <ResourcesProvider
           resources={resourcesWithMetadata.map((resource) => ({
             id: resource.id,

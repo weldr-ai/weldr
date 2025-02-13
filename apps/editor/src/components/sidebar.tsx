@@ -3,7 +3,7 @@
 import { useProject } from "@/lib/store";
 import { Button } from "@weldr/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
-import { HistoryIcon, PanelLeftCloseIcon, SparklesIcon } from "lucide-react";
+import { HistoryIcon, SparklesIcon } from "lucide-react";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 
 export function Sidebar() {
@@ -44,16 +44,6 @@ export function Sidebar() {
           </TooltipContent>
         </Tooltip>
       </div>
-      {activeTab !== null && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="mt-auto"
-          onClick={() => setActiveTab(null)}
-        >
-          <PanelLeftCloseIcon className="size-4" />
-        </Button>
-      )}
     </div>
   );
 }
