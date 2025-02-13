@@ -70,7 +70,8 @@ export async function manager(chatId: string, projectId: string) {
     | {
         type: "tool";
         toolName: string;
-        toolArgs: Record<string, string>;
+        toolArgs: Record<string, unknown>;
+        toolResult: unknown;
       }
   >();
 
@@ -84,11 +85,15 @@ export async function manager(chatId: string, projectId: string) {
         : ["initializeProject", "setupResource"],
       tools: { setupResource, implement, initializeProject },
       maxSteps: 3,
-      onFinish: async ({ text, finishReason, toolCalls }) => {
+      onFinish: async ({ text, finishReason, toolCalls, toolResults }) => {
         const messages: z.infer<typeof addMessageItemSchema>[] = [];
 
         if (finishReason === "tool-calls") {
           for (const toolCall of toolCalls) {
+            const toolResult = toolResults.find(
+              (toolResult) => toolResult.toolCallId === toolCall.toolCallId,
+            );
+
             switch (toolCall.toolName) {
               case "initializeProject": {
                 await db
@@ -115,6 +120,7 @@ export async function manager(chatId: string, projectId: string) {
                   type: "tool",
                   toolName: toolCall.toolName,
                   toolArgs: toolCall.args,
+                  toolResult: toolResult?.result,
                 });
                 messages.push({
                   role: "assistant",
@@ -139,6 +145,7 @@ export async function manager(chatId: string, projectId: string) {
               rawContent: {
                 toolName: toolCall.toolName,
                 toolArgs: toolCall.args,
+                toolResult: toolResult?.result,
               },
             });
           }

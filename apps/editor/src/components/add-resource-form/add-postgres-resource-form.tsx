@@ -269,7 +269,7 @@ export function AddPostgresResourceForm({
                   <Input
                     className="rounded-l-none"
                     {...field}
-                    placeholder="Enter database URL"
+                    placeholder="postgres://user:password@host:port/db"
                   />
                 </FormControl>
                 <FormMessage className="col-span-2" />

@@ -10,7 +10,7 @@ import {
 
 import { Canvas } from "@/components/canvas";
 import { ProjectSettings } from "@/components/project-settings";
-import { useView } from "@/lib/store";
+import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
 import { cn } from "@weldr/ui/utils";
@@ -28,7 +28,7 @@ export function ProjectView({
   initialEdges: RouterOutputs["versions"]["dependencies"];
   integrations: RouterOutputs["integrations"]["list"];
 }) {
-  const { activeTab } = useView();
+  const { activeTab } = useProject();
 
   const { data: messages } = api.chats.messages.useQuery(
     {

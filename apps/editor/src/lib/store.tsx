@@ -85,38 +85,47 @@ export function useFlowBuilder() {
   return context;
 }
 
-// View Context
-interface ViewContextType {
+// Project Context
+interface ProjectContextType {
+  projectId: string;
   activeTab: "chat" | "history" | null;
   setActiveTab: (activeTab: "chat" | "history" | null) => void;
 }
 
-const ViewContext = createContext<ViewContextType | undefined>(undefined);
+const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
-export function ViewProvider({ children }: { children: ReactNode }) {
+export function ProjectProvider({
+  children,
+  projectId,
+}: {
+  children: ReactNode;
+  projectId: string;
+}) {
   const [activeTab, setActiveTab] = useState<"chat" | "history" | null>("chat");
 
   return (
-    <ViewContext.Provider value={{ activeTab, setActiveTab }}>
+    <ProjectContext.Provider value={{ projectId, activeTab, setActiveTab }}>
       {children}
-    </ViewContext.Provider>
+    </ProjectContext.Provider>
   );
 }
 
-export function useView() {
-  const context = useContext(ViewContext);
+export function useProject() {
+  const context = useContext(ProjectContext);
   if (context === undefined) {
-    throw new Error("useView must be used within a ViewProvider");
+    throw new Error("useProject must be used within a ProjectProvider");
   }
   return context;
 }
 
-export function AppStateProvider({ children }: { children: ReactNode }) {
+export function AppStateProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return (
     <CommandCenterProvider>
-      <FlowBuilderProvider>
-        <ViewProvider>{children}</ViewProvider>
-      </FlowBuilderProvider>
+      <FlowBuilderProvider>{children}</FlowBuilderProvider>
     </CommandCenterProvider>
   );
 }

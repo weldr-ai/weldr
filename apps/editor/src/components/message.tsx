@@ -2,26 +2,28 @@
 
 import { memo, useEffect, useState } from "react";
 
+import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@weldr/api";
-import { authClient } from "@weldr/auth/client";
-import type { ChatMessage } from "@weldr/shared/types";
-import { Avatar, AvatarFallback, AvatarImage } from "@weldr/ui/avatar";
+import type { ChatMessage, ToolMessage } from "@weldr/shared/types";
+import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import { cn } from "@weldr/ui/utils";
-import Image from "next/image";
-import { AddResourceDialog } from "./add-resource-dialog";
+import { ChatResourceDialog } from "./chat-resource-dialog";
 import { RawContentViewer } from "./raw-content-viewer";
 
 const PurePreviewMessage = ({
   message,
   integrations,
+  setMessages,
+  setIsWaiting,
 }: {
   message: ChatMessage;
   isThinking: boolean;
+  isWaiting: boolean;
+  setMessages: (messages: ChatMessage[]) => void;
+  setIsWaiting: (isWaiting: boolean) => void;
   integrations: RouterOutputs["integrations"]["list"];
 }) => {
-  const { data: session } = authClient.useSession();
-
   return (
     <div
       className={cn(
@@ -30,25 +32,6 @@ const PurePreviewMessage = ({
       )}
       key={message.id}
     >
-      {message.role === "user" && (
-        <div className="flex items-center gap-1">
-          <span className="text-muted-foreground text-xs">
-            {message.userId === session?.user.id ? "You" : message.user?.name}
-          </span>
-          <Avatar className="size-7 rounded-full">
-            <AvatarImage src={message.user?.image ?? undefined} alt="User" />
-            <AvatarFallback>
-              <Image
-                src={`/api/avatars/${message.user?.email}`}
-                alt="User"
-                width={28}
-                height={28}
-              />
-            </AvatarFallback>
-          </Avatar>
-        </div>
-      )}
-
       {message.role === "assistant" && (
         <div className="flex items-center gap-1">
           <LogoIcon className="size-6 p-0" />
@@ -77,13 +60,9 @@ const PurePreviewMessage = ({
           <div className="flex items-center gap-1">
             {message.rawContent.toolName === "setupResource" && (
               <SetupResource
-                resource={
-                  (
-                    message.rawContent.toolArgs as {
-                      resource: "postgres";
-                    }
-                  ).resource
-                }
+                setMessages={setMessages}
+                setIsWaiting={setIsWaiting}
+                message={message}
                 integrations={integrations}
               />
             )}
@@ -97,6 +76,7 @@ const PurePreviewMessage = ({
 export const PreviewMessage = memo(
   PurePreviewMessage,
   (prevProps, nextProps) => {
+    if (prevProps.isWaiting !== nextProps.isWaiting) return false;
     if (prevProps.isThinking !== nextProps.isThinking) return false;
     if (prevProps.message.rawContent !== nextProps.message.rawContent)
       return false;
@@ -121,7 +101,7 @@ const TypingDots = () => {
   return <span>{dots}</span>;
 };
 
-export const ThinkingMessage = () => {
+export const PendingMessage = ({ type }: { type: "thinking" | "waiting" }) => {
   return (
     <div key="thinking" className="flex w-full flex-col gap-2">
       <div className="flex items-center gap-1">
@@ -129,7 +109,7 @@ export const ThinkingMessage = () => {
         <span className="text-muted-foreground text-xs">Weldr</span>
       </div>
       <span className="text-muted-foreground text-sm">
-        Thinking
+        {type === "thinking" ? "Thinking" : "Waiting"}
         <TypingDots />
       </span>
     </div>
@@ -137,15 +117,43 @@ export const ThinkingMessage = () => {
 };
 
 export function SetupResource({
-  resource,
+  message,
   integrations,
+  setMessages,
+  setIsWaiting,
 }: {
-  resource: "postgres";
+  message: ToolMessage;
   integrations: RouterOutputs["integrations"]["list"];
+  setMessages: (messages: ChatMessage[]) => void;
+  setIsWaiting: (isWaiting: boolean) => void;
 }) {
-  console.log(integrations);
+  const toolInfo = message.rawContent as unknown as {
+    toolArgs: { resource: "postgres" };
+    toolResult: { status: "pending" | "success" | "error" | "cancelled" };
+  };
 
-  switch (resource) {
+  const updateMessageMutation = api.chats.updateMessage.useMutation({
+    onSuccess: (data) => {
+      // @ts-expect-error
+      setMessages((messages: ChatMessage[]) => {
+        const message = messages.find((m) => m.id === data.id);
+        if (message) {
+          message.rawContent = data.rawContent;
+        }
+        return messages;
+      });
+      setIsWaiting(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update message",
+      });
+      setIsWaiting(false);
+    },
+  });
+
+  switch (toolInfo.toolArgs.resource) {
     case "postgres": {
       const postgresIntegration = integrations?.find(
         (integration) => integration.type === "postgres",
@@ -156,10 +164,27 @@ export function SetupResource({
       }
 
       return (
-        <AddResourceDialog
+        <ChatResourceDialog
           integration={postgresIntegration}
-          env={[]}
-          className="border bg-background hover:bg-accent"
+          status={toolInfo.toolResult.status}
+          onSuccess={() => {
+            updateMessageMutation.mutate({
+              where: { messageId: message.id as string },
+              data: {
+                type: "tool",
+                toolResult: { status: "success" },
+              },
+            });
+          }}
+          onCancel={() => {
+            updateMessageMutation.mutate({
+              where: { messageId: message.id as string },
+              data: {
+                type: "tool",
+                toolResult: { status: "cancelled" },
+              },
+            });
+          }}
         />
       );
     }

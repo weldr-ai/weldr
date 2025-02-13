@@ -2,13 +2,16 @@ import type { JSONSchema7 } from "json-schema";
 import type { z } from "zod";
 import type {
   assistantMessageRawContentSchema,
+  assistantMessageSchema,
   attachmentSchema,
   chatMessageSchema,
   chatSchema,
   messageRawContentSchema,
   testExecutionMessageRawContentSchema,
   toolMessageRawContentSchema,
+  toolMessageSchema,
   userMessageRawContentSchema,
+  userMessageSchema,
 } from "../validators/chats";
 import type {
   packageSchema,
@@ -41,6 +44,9 @@ export type AssistantMessageRawContent = z.infer<
 export type MessageRawContent = z.infer<typeof messageRawContentSchema>;
 export type ToolMessageRawContent = z.infer<typeof toolMessageRawContentSchema>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
+export type UserMessage = z.infer<typeof userMessageSchema>;
+export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
+export type ToolMessage = z.infer<typeof toolMessageSchema>;
 export type Chat = z.infer<typeof chatSchema>;
 export type Attachment = z.infer<typeof attachmentSchema>;
 

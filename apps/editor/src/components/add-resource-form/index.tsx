@@ -4,23 +4,16 @@ import { toast } from "@weldr/ui/hooks/use-toast";
 
 import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@weldr/api";
-import type { EnvironmentVariable, Integration } from "@weldr/shared/types";
+import type { Integration } from "@weldr/shared/types";
 import { AddPostgresResourceForm } from "./add-postgres-resource-form";
 
 export function AddResourceForm({
   integration,
-  env,
   resource,
-  resourceEnvironmentVariables,
   setAddResourceDialogOpen,
 }: {
   integration: Pick<Integration, "id" | "name" | "type">;
-  env: Pick<EnvironmentVariable, "key">[];
   resource?: RouterOutputs["projects"]["byId"]["resources"][number];
-  resourceEnvironmentVariables?: {
-    mapTo: string;
-    userKey: string;
-  }[];
   setAddResourceDialogOpen?: (open: boolean) => void;
 }) {
   const apiUtils = api.useUtils();

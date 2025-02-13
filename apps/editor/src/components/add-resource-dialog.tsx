@@ -15,17 +15,15 @@ import {
 
 import { AddResourceForm } from "@/components/add-resource-form";
 import type { RouterOutputs } from "@weldr/api";
-import type { EnvironmentVariable, Integration } from "@weldr/shared/types";
+import type { Integration } from "@weldr/shared/types";
 import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
 
 export function AddResourceDialog({
   integration,
-  env,
   resource,
   className,
 }: {
   integration: Pick<Integration, "id" | "name" | "type">;
-  env: Pick<EnvironmentVariable, "id" | "key">[];
   resource?: RouterOutputs["projects"]["byId"]["resources"][number];
   className?: string;
 }) {
@@ -71,8 +69,6 @@ export function AddResourceDialog({
         <AddResourceForm
           integration={integration}
           resource={resource}
-          env={env}
-          resourceEnvironmentVariables={resource?.environmentVariables}
           setAddResourceDialogOpen={setAddResourceDialogOpen}
         />
       </DialogContent>

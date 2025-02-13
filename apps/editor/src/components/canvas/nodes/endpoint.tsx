@@ -9,6 +9,7 @@ import { useFlowBuilder } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { getResourceReferences } from "@/lib/utils";
 import type { CanvasNode, CanvasNodeProps } from "@/types";
+import { createId } from "@paralleldrive/cuid2";
 import type { RouterOutputs } from "@weldr/api";
 import type {
   ChatMessage,
@@ -151,14 +152,15 @@ export const EndpointNode = memo(
         return;
       }
 
-      const newMessageUser: ChatMessage = {
+      const newMessageUser = {
+        id: createId(),
         role: "user",
         rawContent: userMessageRawContent,
         chatId: data.chatId,
         createdAt: new Date(),
       };
 
-      const newMessages = [...messages, newMessageUser];
+      const newMessages = [...messages, newMessageUser as ChatMessage];
 
       setMessages(newMessages);
 
@@ -166,6 +168,7 @@ export const EndpointNode = memo(
         chatId: data.chatId,
         messages: [
           {
+            id: newMessageUser.id,
             role: "user",
             rawContent: userMessageRawContent,
           },

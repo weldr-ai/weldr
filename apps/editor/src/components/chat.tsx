@@ -2,6 +2,7 @@ import { manager } from "@/lib/ai/agents/manager";
 import { api } from "@/lib/trpc/client";
 import { createId } from "@paralleldrive/cuid2";
 import type { RouterOutputs } from "@weldr/api";
+import { authClient } from "@weldr/auth/client";
 import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
 import { readStreamableValue } from "ai/rsc";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -20,7 +21,10 @@ export function Chat({
   projectId,
   integrations,
 }: ChatProps) {
+  const { data: session } = authClient.useSession();
+
   const [isThinking, setIsThinking] = useState(false);
+  const [isWaiting, setIsWaiting] = useState(false);
 
   const apiUtils = api.useUtils();
 
@@ -28,9 +32,6 @@ export function Chat({
 
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
-  const [lastMessage, setLastMessage] = useState<ChatMessage | undefined>(
-    messages[messages.length - 1],
-  );
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
@@ -40,8 +41,6 @@ export function Chat({
     setIsThinking(true);
 
     const result = await manager(chatId, projectId);
-
-    console.log(result);
 
     const newAssistantMessage: ChatMessage = {
       id: createId(),
@@ -95,6 +94,10 @@ export function Chat({
           break;
         }
         case "tool": {
+          if (delta.toolName === "setupResource") {
+            setIsWaiting(true);
+          }
+
           setMessages((prevMessages) => {
             return [
               ...prevMessages,
@@ -120,14 +123,28 @@ export function Chat({
   }, [chatId, projectId, apiUtils]);
 
   useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+
     if (lastMessage?.role === "user" && !generationTriggered.current) {
       generationTriggered.current = true;
-      setLastMessage(undefined);
       void triggerGeneration().finally(() => {
         generationTriggered.current = false;
       });
     }
-  }, [lastMessage, triggerGeneration]);
+  }, [messages, triggerGeneration]);
+
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+
+    if (
+      lastMessage?.role === "tool" &&
+      lastMessage.rawContent.toolName === "setupResource" &&
+      lastMessage.rawContent.toolResult?.status === "pending"
+    ) {
+      console.log("setting waiting to true");
+      setIsWaiting(true);
+    }
+  }, [messages]);
 
   const handleSubmit = async () => {
     setIsThinking(true);
@@ -136,7 +153,8 @@ export function Chat({
       return;
     }
 
-    const newMessageUser: ChatMessage = {
+    const newMessageUser = {
+      id: createId(),
       role: "user",
       createdAt: new Date(),
       rawContent: [
@@ -146,14 +164,28 @@ export function Chat({
         },
       ],
       attachments,
+      chatId,
+      userId: session?.user.id,
+      user: session?.user
+        ? {
+            id: session.user.id,
+            name: session.user.name,
+            email: session.user.email,
+            image: session.user.image ?? undefined,
+          }
+        : undefined,
     };
 
-    setMessages((prevMessages) => [...prevMessages, newMessageUser]);
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      newMessageUser as ChatMessage,
+    ]);
 
     await addMessage.mutateAsync({
       chatId,
       messages: [
         {
+          id: newMessageUser.id,
           role: "user",
           rawContent: [
             {
@@ -173,8 +205,11 @@ export function Chat({
     <div className="flex size-full flex-col">
       <Messages
         messages={messages}
+        setMessages={setMessages}
         isThinking={isThinking}
         integrations={integrations}
+        isWaiting={isWaiting}
+        setIsWaiting={setIsWaiting}
       />
 
       <div className="relative px-2 pb-2">

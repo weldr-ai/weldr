@@ -47,11 +47,7 @@ export function ProjectSettings({
           value="integrations"
           className="mt-0 h-[calc(100vh-146px)] overflow-hidden"
         >
-          <IntegrationsSection
-            project={project}
-            env={env}
-            integrations={integrations}
-          />
+          <IntegrationsSection project={project} integrations={integrations} />
         </TabsContent>
 
         <TabsContent value="env" className="mt-0">

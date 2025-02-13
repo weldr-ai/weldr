@@ -29,6 +29,11 @@ export const setupResource = tool({
   parameters: z.object({
     resource: z.enum(["postgres"]).describe("The type of resource to setup"),
   }),
+  execute: async () => {
+    return {
+      status: "pending",
+    };
+  },
 });
 
 export const implement = tool({

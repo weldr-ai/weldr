@@ -3,15 +3,25 @@ import type { ChatMessage } from "@weldr/shared/types";
 import equal from "fast-deep-equal";
 import { memo } from "react";
 import { useScrollToBottom } from "../hooks/use-scroll-to-bottom";
-import { PreviewMessage, ThinkingMessage } from "./message";
+import { PendingMessage, PreviewMessage } from "./message";
 
 interface MessagesProps {
   isThinking: boolean;
+  isWaiting: boolean;
   messages: ChatMessage[];
+  setMessages: (messages: ChatMessage[]) => void;
+  setIsWaiting: (isWaiting: boolean) => void;
   integrations: RouterOutputs["integrations"]["list"];
 }
 
-function PureMessages({ isThinking, messages, integrations }: MessagesProps) {
+function PureMessages({
+  isThinking,
+  isWaiting,
+  messages,
+  setMessages,
+  setIsWaiting,
+  integrations,
+}: MessagesProps) {
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
 
@@ -26,12 +36,23 @@ function PureMessages({ isThinking, messages, integrations }: MessagesProps) {
           message={message}
           isThinking={isThinking}
           integrations={integrations}
+          isWaiting={isWaiting}
+          setMessages={setMessages}
+          setIsWaiting={setIsWaiting}
         />
       ))}
 
       {isThinking &&
         messages.length > 0 &&
-        messages[messages.length - 1]?.role === "user" && <ThinkingMessage />}
+        messages[messages.length - 1]?.role === "user" && (
+          <PendingMessage type="thinking" />
+        )}
+
+      {isWaiting &&
+        messages.length > 0 &&
+        messages[messages.length - 1]?.role === "tool" && (
+          <PendingMessage type="waiting" />
+        )}
 
       <div ref={messagesEndRef} />
     </div>
@@ -39,6 +60,8 @@ function PureMessages({ isThinking, messages, integrations }: MessagesProps) {
 }
 
 export const Messages = memo(PureMessages, (prevProps, nextProps) => {
+  if (prevProps.isWaiting !== nextProps.isWaiting) return false;
+  if (prevProps.isWaiting && nextProps.isWaiting) return false;
   if (prevProps.isThinking !== nextProps.isThinking) return false;
   if (prevProps.isThinking && nextProps.isThinking) return false;
   if (prevProps.messages.length !== nextProps.messages.length) return false;

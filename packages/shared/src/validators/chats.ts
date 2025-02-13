@@ -86,7 +86,7 @@ const baseMessageSchema = z.object({
   chatId: z.string().optional(),
 });
 
-const userMessageSchema = baseMessageSchema.extend({
+export const userMessageSchema = baseMessageSchema.extend({
   role: z.literal("user"),
   rawContent: userMessageRawContentElementSchema.array(),
   attachments: attachmentSchema.array().optional(),
@@ -101,7 +101,7 @@ const userMessageSchema = baseMessageSchema.extend({
     .optional(),
 });
 
-const assistantMessageSchema = baseMessageSchema.extend({
+export const assistantMessageSchema = baseMessageSchema.extend({
   role: z.literal("assistant"),
   rawContent: assistantMessageRawContentElementSchema.array(),
   version: z
@@ -113,7 +113,7 @@ const assistantMessageSchema = baseMessageSchema.extend({
     .optional(),
 });
 
-const toolMessageSchema = baseMessageSchema.extend({
+export const toolMessageSchema = baseMessageSchema.extend({
   role: z.literal("tool"),
   rawContent: toolMessageRawContentSchema,
 });
@@ -136,6 +136,7 @@ export const addMessageItemSchema = z.discriminatedUnion("role", [
     rawContent: assistantMessageRawContentSchema,
   }),
   z.object({
+    id: z.string().cuid2(),
     role: z.literal("user"),
     rawContent: userMessageRawContentSchema,
     attachmentIds: z.string().array().optional(),

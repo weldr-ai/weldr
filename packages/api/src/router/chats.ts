@@ -9,6 +9,7 @@ import {
   resourceEnvironmentVariables,
   resources,
 } from "@weldr/db/schema";
+import { mergeJson } from "@weldr/db/utils";
 import { getDatabaseStructure } from "@weldr/shared/integrations/postgres";
 import type {
   DatabaseStructure,
@@ -205,6 +206,7 @@ export const chatsRouter = {
         }
 
         messages.push({
+          id: item.role === "user" ? item.id : undefined,
           content:
             item.role === "user"
               ? userMessageRawContentToText(resolvedRawContent)
@@ -219,6 +221,43 @@ export const chatsRouter = {
       }
 
       await ctx.db.insert(chatMessages).values(messages);
+    }),
+  updateMessage: protectedProcedure
+    .input(
+      z.object({
+        where: z.object({
+          messageId: z.string(),
+        }),
+        data: z.object({
+          type: z.literal("tool"),
+          toolResult: z.any(),
+        }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [message] = await ctx.db
+        .update(chatMessages)
+        .set({
+          rawContent: mergeJson(chatMessages.rawContent, {
+            toolResult: input.data.toolResult,
+          }),
+        })
+        .where(
+          and(
+            eq(chatMessages.id, input.where.messageId),
+            eq(chatMessages.userId, ctx.session.user.id),
+          ),
+        )
+        .returning();
+
+      if (!message) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Message not found",
+        });
+      }
+
+      return message;
     }),
 } satisfies TRPCRouterRecord;
 

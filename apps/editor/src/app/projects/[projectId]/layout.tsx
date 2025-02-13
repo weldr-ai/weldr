@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { CommandCenter } from "@/components/command-center";
 import { Sidebar } from "@/components/sidebar";
 import { ResourcesProvider } from "@/lib/context/resources";
+import { ProjectProvider } from "@/lib/store";
 import { api } from "@/lib/trpc/server";
 
 export default async function ProjectLayout({
@@ -21,22 +22,24 @@ export default async function ProjectLayout({
     });
 
     return (
-      <ResourcesProvider
-        resources={resourcesWithMetadata.map((resource) => ({
-          id: resource.id,
-          name: resource.name,
-          integrationType: resource.integration.type,
-          metadata: resource.metadata,
-        }))}
-      >
-        <div className="flex h-screen dark:bg-muted">
-          <div className="sticky top-0 z-50 h-screen dark:bg-muted">
-            <Sidebar />
+      <ProjectProvider projectId={projectId}>
+        <ResourcesProvider
+          resources={resourcesWithMetadata.map((resource) => ({
+            id: resource.id,
+            name: resource.name,
+            integrationType: resource.integration.type,
+            metadata: resource.metadata,
+          }))}
+        >
+          <div className="flex h-screen dark:bg-muted">
+            <div className="sticky top-0 z-50 h-screen dark:bg-muted">
+              <Sidebar />
+            </div>
+            <main className="flex size-full flex-1">{children}</main>
           </div>
-          <main className="flex size-full flex-1">{children}</main>
-        </div>
-        <CommandCenter projects={projects} />
-      </ResourcesProvider>
+          <CommandCenter projects={projects} />
+        </ResourcesProvider>
+      </ProjectProvider>
     );
   } catch (error) {
     console.error(error);

@@ -1,13 +1,13 @@
 "use client";
 
-import { useView } from "@/lib/store";
+import { useProject } from "@/lib/store";
 import { Button } from "@weldr/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
 import { HistoryIcon, PanelLeftCloseIcon, SparklesIcon } from "lucide-react";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 
 export function Sidebar() {
-  const { activeTab, setActiveTab } = useView();
+  const { activeTab, setActiveTab } = useProject();
 
   return (
     <div className="flex size-full w-12 flex-col items-center border-r py-2">
