@@ -34,15 +34,15 @@
     "@commitlint/config-conventional": "^19.2.2",
     "@commitlint/cz-commitlint": "^19.2.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
-    "@weldr/tsconfig": "workspace:*",
     "@turbo/gen": "^1.13.3",
     "@typescript-eslint/parser": "^7.11.0",
+    "@weldr/tsconfig": "workspace:*",
     "commitizen": "^4.3.0",
     "eslint": "^8.57.0",
     "husky": "^9.0.11",
     "inquirer": "^9.2.22",
     "lint-staged": "^15.2.5",
-    "turbo": "^2.0.14",
+    "turbo": "^2.4.2",
     "typescript": "^5.7.2"
   },
   "config": {
