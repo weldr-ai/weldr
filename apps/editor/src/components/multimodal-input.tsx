@@ -245,7 +245,7 @@ function PureMultimodalInput({
       {(attachments.length > 0 || uploadQueue.length > 0) && (
         <div
           className={cn(
-            "flex flex-row items-end gap-2 overflow-x-scroll rounded-t-xl border-b bg-muted p-2",
+            "flex flex-row items-end gap-2 overflow-x-scroll rounded-t-xl bg-muted p-2",
             attachmentsClassName,
           )}
         >
