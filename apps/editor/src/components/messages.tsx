@@ -28,7 +28,7 @@ function PureMessages({
   return (
     <div
       ref={messagesContainerRef}
-      className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex min-w-0 flex-1 flex-col gap-4 overflow-y-scroll p-2"
+      className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-2"
     >
       {messages.map((message) => (
         <PreviewMessage

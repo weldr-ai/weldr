@@ -1,11 +1,11 @@
-import { coder } from "./coder";
-import { authenticationConventions } from "./conventions/authentication-rules";
-import { baseConventions } from "./conventions/base-rules";
-import { manager } from "./manager";
+import { architect } from "./architect";
+import { authenticationCoder } from "./authentication-coder";
+import { generalCoder } from "./general-coder";
+import { requirementsEngineer } from "./requirements-engineer";
 
 export const prompts = {
-  coder,
-  manager,
-  authenticationConventions,
-  baseConventions,
+  authenticationCoder,
+  generalCoder,
+  requirementsEngineer,
+  architect,
 };

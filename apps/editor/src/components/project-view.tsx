@@ -10,10 +10,8 @@ import {
 
 import { Canvas } from "@/components/canvas";
 import { ProjectSettings } from "@/components/project-settings";
-import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
-import { cn } from "@weldr/ui/utils";
 import { AppWindowIcon, FrameIcon, SettingsIcon } from "lucide-react";
 import { Chat } from "./chat";
 
@@ -28,8 +26,6 @@ export function ProjectView({
   initialEdges: RouterOutputs["versions"]["dependencies"];
   integrations: RouterOutputs["integrations"]["list"];
 }) {
-  const { activeTab } = useProject();
-
   const { data: messages } = api.chats.messages.useQuery(
     {
       chatId: project.chatId,
@@ -40,32 +36,22 @@ export function ProjectView({
   );
 
   return (
-    <ResizablePanelGroup direction="horizontal">
-      {activeTab !== null && (
-        <>
-          <ResizablePanel
-            defaultSize={25}
-            minSize={25}
-            order={1}
-            className="size-full"
-          >
-            {activeTab === "chat" ? (
-              <Chat
-                chatId={project.chatId}
-                initialMessages={messages}
-                integrations={integrations}
-              />
-            ) : (
-              "History"
-            )}
-          </ResizablePanel>
-          <ResizableHandle className="w-0" withHandle />
-        </>
-      )}
+    <ResizablePanelGroup direction="horizontal" className="rounded-xl">
       <ResizablePanel
-        className={cn("h-full", {
-          "border-l": activeTab !== null,
-        })}
+        defaultSize={25}
+        minSize={25}
+        order={1}
+        className="size-full"
+      >
+        <Chat
+          chatId={project.chatId}
+          initialMessages={messages}
+          integrations={integrations}
+        />
+      </ResizablePanel>
+      <ResizableHandle className="w-0" withHandle />
+      <ResizablePanel
+        className="h-full border-l"
         defaultSize={75}
         minSize={25}
         order={2}

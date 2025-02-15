@@ -134,6 +134,9 @@ importers:
       '@xyflow/react':
         specifier: ^12.3.6
         version: 12.3.6(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      add:
+        specifier: ^2.0.6
+        version: 2.0.6
       ai:
         specifier: ^4.1.24
         version: 4.1.24(react@18.3.1)(zod@3.24.1)
@@ -161,6 +164,9 @@ importers:
       perfect-debounce:
         specifier: ^1.0.0
         version: 1.0.0
+      pnpm:
+        specifier: ^10.3.0
+        version: 10.3.0
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -3922,6 +3928,9 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
+  add@2.0.6:
+    resolution: {integrity: sha512-j5QzrmsokwWWp6kUcJQySpbG+xfOBqqKnup3OIk1pz+kB/80SLorZ9V8zHFLO92Lcd+hbvq8bT+zOGoPkmBV0Q==}
+
   agent-base@7.1.1:
     resolution: {integrity: sha512-H0TSyFNDMomMNJQBn8wFV5YC/2eJ+VXECwOadZJT554xP6cODZHPX3H9QMQECxvrgiSOP1pHjy1sMWQVYJOUOA==}
     engines: {node: '>= 14'}
@@ -6112,6 +6121,11 @@ packages:
   pkg-dir@4.2.0:
     resolution: {integrity: sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ==}
     engines: {node: '>=8'}
+
+  pnpm@10.3.0:
+    resolution: {integrity: sha512-7lku2ogVqKKTwga7CRfEuw/ydMUN73y8F74F7GQfwtGwJJDOZgBhNWvQ0Sak1+suyIMOaVn7ikR1ccYx1aJELQ==}
+    engines: {node: '>=18.12'}
+    hasBin: true
 
   postcss-import@15.1.0:
     resolution: {integrity: sha512-hpr+J05B2FVYUAXHeK1YyI267J/dDDhMU6B6civm8hSY1jYJnBXxzKDKDswzJmtLHryrjhnDjqqp/49t8FALew==}
@@ -10930,6 +10944,8 @@ snapshots:
 
   acorn@8.14.0: {}
 
+  add@2.0.6: {}
+
   agent-base@7.1.1:
     dependencies:
       debug: 4.3.7
@@ -13387,6 +13403,8 @@ snapshots:
   pkg-dir@4.2.0:
     dependencies:
       find-up: 4.1.0
+
+  pnpm@10.3.0: {}
 
   postcss-import@15.1.0(postcss@8.4.47):
     dependencies:

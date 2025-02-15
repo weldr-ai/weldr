@@ -13,9 +13,9 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { z } from "zod";
 import { prompts } from "../prompts";
-import { implement, initializeProject, setupResource } from "../tools";
+import { implement, initializeProject } from "../tools";
 
-export async function manager(chatId: string, projectId: string) {
+export async function requirementsEngineer(chatId: string, projectId: string) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session) {
@@ -95,21 +95,21 @@ export async function manager(chatId: string, projectId: string) {
   (async () => {
     const { textStream } = streamText({
       model: models.geminiFlash,
-      system: prompts.manager,
+      system: prompts.requirementsEngineer,
       messages: promptMessages,
       experimental_activeTools: project.initiatedAt
-        ? ["setupResource", "implement"]
-        : ["initializeProject", "setupResource"],
-      tools: { setupResource, implement, initializeProject },
+        ? ["implement"]
+        : ["initializeProject"],
+      tools: { implement, initializeProject },
       maxSteps: 3,
       onFinish: async ({ text, finishReason, toolCalls, toolResults }) => {
         const messages: z.infer<typeof addMessageItemSchema>[] = [];
 
         if (finishReason === "tool-calls") {
           for (const toolCall of toolCalls) {
-            const toolResult = toolResults.find(
-              (toolResult) => toolResult.toolCallId === toolCall.toolCallId,
-            );
+            // const toolResult = toolResults.find(
+            //   (toolResult) => toolResult.toolCallId === toolCall.toolCallId,
+            // );
 
             switch (toolCall.toolName) {
               case "initializeProject": {
@@ -130,28 +130,28 @@ export async function manager(chatId: string, projectId: string) {
 
                 break;
               }
-              case "setupResource": {
-                stream.update({
-                  type: "text",
-                  text: "Please, complete the database setup to continue.",
-                });
-                stream.update({
-                  type: "tool",
-                  toolName: toolCall.toolName,
-                  toolArgs: toolCall.args,
-                  toolResult: toolResult?.result,
-                });
-                messages.push({
-                  role: "assistant",
-                  rawContent: [
-                    {
-                      type: "paragraph",
-                      value: "Please, complete the database setup to continue.",
-                    },
-                  ],
-                });
-                break;
-              }
+              // case "setupResource": {
+              //   stream.update({
+              //     type: "text",
+              //     text: "Please, complete the database setup to continue.",
+              //   });
+              //   stream.update({
+              //     type: "tool",
+              //     toolName: toolCall.toolName,
+              //     toolArgs: toolCall.args,
+              //     toolResult: toolResult?.result,
+              //   });
+              //   messages.push({
+              //     role: "assistant",
+              //     rawContent: [
+              //       {
+              //         type: "paragraph",
+              //         value: "Please, complete the database setup to continue.",
+              //       },
+              //     ],
+              //   });
+              //   break;
+              // }
               case "implement": {
                 // TODO: call the architect to plan the implementation
 
@@ -166,7 +166,7 @@ export async function manager(chatId: string, projectId: string) {
               rawContent: {
                 toolName: toolCall.toolName,
                 toolArgs: toolCall.args,
-                toolResult: toolResult?.result,
+                // toolResult: toolResult?.result,
               },
             });
 

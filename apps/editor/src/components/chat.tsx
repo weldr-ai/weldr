@@ -1,16 +1,15 @@
-import { manager } from "@/lib/ai/agents/manager";
+import { requirementsEngineer } from "@/lib/ai/agents/requirements-engineer";
 import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { createId } from "@paralleldrive/cuid2";
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
-import { Button } from "@weldr/ui/button";
 import { readStreamableValue } from "ai/rsc";
-import { ChevronsLeftIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
+
 interface ChatProps {
   initialMessages: ChatMessage[];
   chatId: string;
@@ -18,7 +17,7 @@ interface ChatProps {
 }
 
 export function Chat({ initialMessages, chatId, integrations }: ChatProps) {
-  const { project, setActiveTab } = useProject();
+  const { project } = useProject();
 
   const { data: session } = authClient.useSession();
 
@@ -42,7 +41,7 @@ export function Chat({ initialMessages, chatId, integrations }: ChatProps) {
   const triggerGeneration = useCallback(async () => {
     setIsThinking(true);
 
-    const result = await manager(chatId, project.id);
+    const result = await requirementsEngineer(chatId, project.id);
 
     const newAssistantMessage: ChatMessage = {
       id: createId(),
@@ -206,15 +205,6 @@ export function Chat({ initialMessages, chatId, integrations }: ChatProps) {
 
   return (
     <div className="flex size-full flex-col">
-      <div className="flex h-12 w-full items-center gap-2 border-b px-2">
-        <Button variant="ghost" size="icon" onClick={() => setActiveTab(null)}>
-          <ChevronsLeftIcon className="size-4" />
-        </Button>
-        <h3 className="font-semibold text-sm">
-          {project?.name || "New Project"}
-        </h3>
-      </div>
-
       <Messages
         messages={messages}
         setMessages={setMessages}

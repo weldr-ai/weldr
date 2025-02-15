@@ -1,4 +1,4 @@
-export const authenticationConventions = `<authentication>
+export const authenticationCoder = `<authentication>
   - We are using a library called better-auth to handle authentication.
   - You can only configure authentication in the project by calling the \`setup-authentication\` tool.
     - The tool will install the dependencies and configure the project to use better-auth.

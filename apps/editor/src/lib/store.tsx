@@ -92,8 +92,6 @@ interface ProjectContextType {
     name: string | null;
     description: string | null;
   };
-  activeTab: "chat" | "history" | null;
-  setActiveTab: (activeTab: "chat" | "history" | null) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -109,10 +107,8 @@ export function ProjectProvider({
     description: string | null;
   };
 }) {
-  const [activeTab, setActiveTab] = useState<"chat" | "history" | null>("chat");
-
   return (
-    <ProjectContext.Provider value={{ project, activeTab, setActiveTab }}>
+    <ProjectContext.Provider value={{ project }}>
       {children}
     </ProjectContext.Provider>
   );

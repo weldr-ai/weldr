@@ -15,7 +15,7 @@ export async function coder(prompt: CoreUserMessage) {
 
     const { textStream } = streamText({
       model: models.claudeSonnet,
-      system: `${prompts.baseConventions}\n\n${prompts.coder}`,
+      system: prompts.generalCoder,
       messages: currentMessages,
       onFinish({ finishReason, text }) {
         if (finishReason === "length") {

@@ -240,7 +240,6 @@ export function Canvas({
 
   return (
     <ReactFlow
-      className="rounded-b-md"
       nodes={nodes}
       onNodesChange={onNodesChange}
       edges={showEdges ? edges : []}
