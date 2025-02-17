@@ -3,7 +3,6 @@
 import { memo, useEffect, useState } from "react";
 
 import { api } from "@/lib/trpc/client";
-import type { RouterOutputs } from "@weldr/api";
 import type { ChatMessage, ToolMessage } from "@weldr/shared/types";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons/logo-icon";
@@ -13,16 +12,16 @@ import { RawContentViewer } from "./raw-content-viewer";
 
 const PurePreviewMessage = ({
   message,
-  integrations,
   setMessages,
   setIsWaiting,
+  // integrations,
 }: {
   message: ChatMessage;
   isThinking: boolean;
   isWaiting: boolean;
   setMessages: (messages: ChatMessage[]) => void;
   setIsWaiting: (isWaiting: boolean) => void;
-  integrations: RouterOutputs["integrations"]["list"];
+  // integrations: RouterOutputs["integrations"]["list"];
 }) => {
   return (
     <div
@@ -63,7 +62,7 @@ const PurePreviewMessage = ({
                 setMessages={setMessages}
                 setIsWaiting={setIsWaiting}
                 message={message}
-                integrations={integrations}
+                // integrations={integrations}
               />
             )}
           </div>
@@ -118,12 +117,12 @@ export const PendingMessage = ({ type }: { type: "thinking" | "waiting" }) => {
 
 export function SetupResource({
   message,
-  integrations,
+  // integrations,
   setMessages,
   setIsWaiting,
 }: {
   message: ToolMessage;
-  integrations: RouterOutputs["integrations"]["list"];
+  // integrations: RouterOutputs["integrations"]["list"];
   setMessages: (messages: ChatMessage[]) => void;
   setIsWaiting: (isWaiting: boolean) => void;
 }) {
@@ -155,17 +154,17 @@ export function SetupResource({
 
   switch (toolInfo.toolArgs.resource) {
     case "postgres": {
-      const postgresIntegration = integrations?.find(
-        (integration) => integration.type === "postgres",
-      );
+      // const postgresIntegration = integrations?.find(
+      //   (integration) => integration.type === "postgres",
+      // );
 
-      if (!postgresIntegration) {
-        return null;
-      }
+      // if (!postgresIntegration) {
+      //   return null;
+      // }
 
       return (
         <ChatResourceDialog
-          integration={postgresIntegration}
+          // integration={postgresIntegration}
           status={toolInfo.toolResult.status}
           onSuccess={() => {
             updateMessageMutation.mutate({

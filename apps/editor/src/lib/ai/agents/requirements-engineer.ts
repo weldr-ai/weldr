@@ -73,7 +73,7 @@ export async function requirementsEngineer(chatId: string, projectId: string) {
       continue;
     }
 
-    if (message.content === null) continue;
+    if (message.content === null || message.role === "version") continue;
 
     promptMessages.push({
       role: message.role,

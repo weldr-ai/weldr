@@ -3,7 +3,8 @@ import { notFound, redirect } from "next/navigation";
 
 import { ProjectView } from "@/components/project-view";
 import { api } from "@/lib/trpc/server";
-import type { CanvasNode, CanvasNodeData } from "@/types";
+import type { CanvasNode } from "@/types";
+import type { Edge } from "@xyflow/react";
 
 export default async function ProjectPage({
   params,
@@ -12,45 +13,18 @@ export default async function ProjectPage({
 }): Promise<JSX.Element | undefined> {
   try {
     const { projectId } = await params;
+    // const integrations = await api.integrations.list();
     const project = await api.projects.byId({ id: projectId });
-    const integrations = await api.integrations.list();
-
-    const {
-      funcs,
-      endpoints,
-      dependencyChain: initialEdges,
-    } = await api.versions.current({
-      projectId,
-    });
 
     const initialNodes: CanvasNode[] = [];
-
-    for (const endpoint of endpoints) {
-      initialNodes.push({
-        type: "endpoint",
-        id: endpoint.id,
-        dragHandle: ".drag-handle",
-        position: { x: endpoint.positionX ?? 0, y: endpoint.positionY ?? 0 },
-        data: endpoint as CanvasNodeData,
-      });
-    }
-
-    for (const func of funcs) {
-      initialNodes.push({
-        type: "func",
-        id: func.id,
-        dragHandle: ".drag-handle",
-        position: { x: func.positionX ?? 0, y: func.positionY ?? 0 },
-        data: func as CanvasNodeData,
-      });
-    }
+    const initialEdges: Edge[] = [];
 
     return (
       <ProjectView
         project={project}
         initialNodes={initialNodes}
         initialEdges={initialEdges ?? []}
-        integrations={integrations}
+        // integrations={integrations}
       />
     );
   } catch (error) {

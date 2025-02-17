@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
   boolean,
@@ -9,11 +9,11 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { chatMessages } from "./chats";
-import { endpointDefinitions } from "./endpoints";
-import { funcDefinitions } from "./funcs";
+import { declarations } from "./declarations";
+import { files } from "./files";
 import { packages } from "./packages";
 import { projects } from "./projects";
 
@@ -21,12 +21,12 @@ export const versions = pgTable(
   "versions",
   {
     id: text("id")
+      .$default(() => createId())
       .primaryKey()
-      .$defaultFn(() => createId()),
+      .notNull(),
     versionNumber: integer("version_number").notNull(),
     versionName: text("version_name").notNull(),
-    isActive: boolean("is_active").notNull().default(false),
-    machineId: text("machine_id"),
+    isActive: boolean("is_active").default(false).notNull(),
     parentVersionId: text("parent_version_id").references(
       (): AnyPgColumn => versions.id,
     ),
@@ -34,96 +34,90 @@ export const versions = pgTable(
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),
-    messageId: text("message_id").references(() => chatMessages.id),
     projectId: text("project_id")
       .references(() => projects.id)
       .notNull(),
   },
-  (t) => ({
-    createdAtIdx: index("versions_created_at_idx").on(t.createdAt),
-    versionNumberIdx: index("versions_version_number_idx").on(t.versionNumber),
-  }),
+  (table) => [
+    uniqueIndex("active_version_idx")
+      .on(table.projectId, table.isActive)
+      .where(sql`(is_active = true)`),
+    uniqueIndex("version_number_unique_idx").on(
+      table.projectId,
+      table.versionNumber,
+    ),
+    index("versions_created_at_idx").on(table.createdAt),
+  ],
 );
 
-export const versionRelations = relations(versions, ({ one, many }) => ({
+export const versionsRelations = relations(versions, ({ one, many }) => ({
+  version: one(versions, {
+    fields: [versions.parentVersionId],
+    references: [versions.id],
+    relationName: "versions_parentVersionId_versions_id",
+  }),
+  versions: many(versions, {
+    relationName: "versions_parentVersionId_versions_id",
+  }),
+  project: one(projects, {
+    fields: [versions.projectId],
+    references: [projects.id],
+  }),
   user: one(users, {
     fields: [versions.userId],
     references: [users.id],
   }),
-  parentVersion: one(versions, {
-    fields: [versions.parentVersionId],
+  declarations: many(versionDeclarations),
+  packages: many(versionPackages),
+  files: many(versionFiles),
+}));
+
+export const versionFiles = pgTable(
+  "version_files",
+  {
+    versionId: text("version_id").notNull(),
+    fileId: text("file_id").notNull(),
+    s3VersionId: text("s3_version_id").notNull(),
+    size: integer("size").notNull(),
+    hash: text().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.versionId, table.fileId] }),
+  }),
+);
+
+export const versionFilesRelations = relations(versionFiles, ({ one }) => ({
+  file: one(files, {
+    fields: [versionFiles.fileId],
+    references: [files.id],
+  }),
+  version: one(versions, {
+    fields: [versionFiles.versionId],
     references: [versions.id],
-  }),
-  childVersions: many(versions),
-  endpointDefinitions: many(versionEndpointDefinitions, {
-    relationName: "version_endpoint_definition",
-  }),
-  funcDefinitions: many(versionFuncDefinitions, {
-    relationName: "version_func_definition",
-  }),
-  packages: many(versionPackages, {
-    relationName: "version_packages",
   }),
 }));
 
-export const versionFuncDefinitions = pgTable(
-  "version_func_definitions",
+export const versionDeclarations = pgTable(
+  "version_declarations",
   {
-    versionId: text("version_id")
-      .references(() => versions.id)
-      .notNull(),
-    funcDefinitionId: text("func_definition_id")
-      .references(() => funcDefinitions.id)
-      .notNull(),
+    versionId: text("version_id").notNull(),
+    declarationId: text("declaration_id").notNull(),
   },
-  (t) => ({
-    pk: primaryKey({ columns: [t.versionId, t.funcDefinitionId] }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.versionId, table.declarationId] }),
   }),
 );
 
-export const versionFuncDefinitionRelations = relations(
-  versionFuncDefinitions,
+export const versionDeclarationsRelations = relations(
+  versionDeclarations,
   ({ one }) => ({
+    declaration: one(declarations, {
+      fields: [versionDeclarations.declarationId],
+      references: [declarations.id],
+    }),
     version: one(versions, {
-      relationName: "version_func_definition",
-      fields: [versionFuncDefinitions.versionId],
+      fields: [versionDeclarations.versionId],
       references: [versions.id],
-    }),
-    funcDefinition: one(funcDefinitions, {
-      fields: [versionFuncDefinitions.funcDefinitionId],
-      references: [funcDefinitions.id],
-    }),
-  }),
-);
-
-export const versionEndpointDefinitions = pgTable(
-  "version_endpoint_definitions",
-  {
-    versionId: text("version_id")
-      .references(() => versions.id)
-      .notNull(),
-    endpointDefinitionId: text("endpoint_definition_id")
-      .references(() => endpointDefinitions.id)
-      .notNull(),
-  },
-  (t) => ({
-    pk: primaryKey({
-      columns: [t.versionId, t.endpointDefinitionId],
-    }),
-  }),
-);
-
-export const versionEndpointDefinitionRelations = relations(
-  versionEndpointDefinitions,
-  ({ one }) => ({
-    version: one(versions, {
-      relationName: "version_endpoint_definition",
-      fields: [versionEndpointDefinitions.versionId],
-      references: [versions.id],
-    }),
-    endpointDefinition: one(endpointDefinitions, {
-      fields: [versionEndpointDefinitions.endpointDefinitionId],
-      references: [endpointDefinitions.id],
     }),
   }),
 );
@@ -131,30 +125,24 @@ export const versionEndpointDefinitionRelations = relations(
 export const versionPackages = pgTable(
   "version_packages",
   {
-    versionId: text("version_id")
-      .references(() => versions.id)
-      .notNull(),
-    packageId: text("package_id")
-      .references(() => packages.id)
-      .notNull(),
+    versionId: text("version_id").notNull(),
+    packageId: text("package_id").notNull(),
   },
-  (t) => ({
-    pk: primaryKey({ columns: [t.versionId, t.packageId] }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.versionId, table.packageId] }),
   }),
 );
 
-export const versionPackageRelations = relations(
+export const versionPackagesRelations = relations(
   versionPackages,
   ({ one }) => ({
-    version: one(versions, {
-      relationName: "version_packages",
-      fields: [versionPackages.versionId],
-      references: [versions.id],
-    }),
     package: one(packages, {
-      relationName: "package_versions",
       fields: [versionPackages.packageId],
       references: [packages.id],
+    }),
+    version: one(versions, {
+      fields: [versionPackages.versionId],
+      references: [versions.id],
     }),
   }),
 );

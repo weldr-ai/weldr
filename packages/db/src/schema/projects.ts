@@ -4,10 +4,7 @@ import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
 import { chats } from "./chats";
-import { endpoints } from "./endpoints";
 import { environmentVariables } from "./environment-variables";
-import { funcs } from "./funcs";
-import { resources } from "./resources";
 
 export const projects = pgTable(
   "projects",
@@ -16,10 +13,9 @@ export const projects = pgTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     name: text("name"),
-    description: text("description"),
-    initiatedAt: timestamp("initiated_at"),
-    subdomain: text("subdomain").unique().notNull(),
     thumbnail: text("thumbnail"),
+    subdomain: text("subdomain").unique().notNull(),
+    initiatedAt: timestamp("initiated_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -28,9 +24,6 @@ export const projects = pgTable(
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    chatId: text("chat_id")
-      .references(() => chats.id, { onDelete: "cascade" })
-      .notNull(),
   },
   (t) => ({
     createdAtIdx: index("projects_created_at_idx").on(t.createdAt),
@@ -38,14 +31,8 @@ export const projects = pgTable(
 );
 
 export const projectRelations = relations(projects, ({ many, one }) => ({
-  resources: many(resources),
-  endpoints: many(endpoints),
-  funcs: many(funcs),
   environmentVariables: many(environmentVariables),
-  chat: one(chats, {
-    fields: [projects.chatId],
-    references: [chats.id],
-  }),
+  chats: many(chats),
   user: one(users, {
     fields: [projects.userId],
     references: [users.id],

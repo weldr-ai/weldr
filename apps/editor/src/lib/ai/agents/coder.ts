@@ -58,7 +58,7 @@ export async function coder(prompt: CoreUserMessage, context: string) {
 
   const editedFiles = applyEdits(edits, files);
 
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.APP_ENV === "development") {
     const tempDir = join(process.cwd(), ".temp", "next-boilerplate");
 
     for (const [path, content] of Object.entries(editedFiles)) {

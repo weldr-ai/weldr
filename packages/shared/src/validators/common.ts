@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { databaseTableSchema } from "../integrations/postgres/validators";
 import { dataTypeSchema } from "./json-schema";
 
 export const functionReferenceSchema = z.object({
@@ -32,7 +31,7 @@ export const databaseColumnReferenceSchema = z.object({
 });
 
 export const packageSchema = z.object({
-  type: z.enum(["development", "production"]),
+  type: z.enum(["runtime", "development"]),
   name: z.string().describe("The name of the npm package"),
   version: z.string().optional().describe("The version of the npm package"),
   reason: z.string().describe("The reason for the npm package"),
@@ -103,12 +102,3 @@ export const rawContentReferenceElementSchema = z.discriminatedUnion(
 export const rawContentSchema = z
   .union([rawContentParagraphElementSchema, rawContentReferenceElementSchema])
   .array();
-
-export const resourceMetadataSchema = z.discriminatedUnion("type", [
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    type: z.literal("postgres"),
-    tables: databaseTableSchema.array(),
-  }),
-]);

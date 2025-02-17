@@ -1,13 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { and, eq } from "@weldr/db";
-import {
-  attachments,
-  chatMessages,
-  chats,
-  projects,
-  resourceEnvironmentVariables,
-} from "@weldr/db/schema";
+import { attachments, chatMessages, chats, projects } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import type { ChatMessage } from "@weldr/shared/types";
 import {
@@ -27,10 +21,26 @@ export const projectsRouter = {
         return await ctx.db.transaction(async (tx) => {
           const projectId = createId();
 
-          if (process.env.NODE_ENV !== "development") {
+          if (process.env.APP_ENV !== "development") {
             await Fly.App.create({
               appName: `preview-app-${projectId}`,
               networkName: `preview-net-${projectId}`,
+            });
+          }
+
+          const [project] = await tx
+            .insert(projects)
+            .values({
+              id: projectId,
+              subdomain: projectId,
+              userId: ctx.session.user.id,
+            })
+            .returning();
+
+          if (!project) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create project",
             });
           }
 
@@ -39,6 +49,7 @@ export const projectsRouter = {
             .values({
               id: input.chatId,
               userId: ctx.session.user.id,
+              projectId: projectId,
             })
             .returning();
 
@@ -85,23 +96,6 @@ export const projectsRouter = {
             );
           }
 
-          const [project] = await tx
-            .insert(projects)
-            .values({
-              id: projectId,
-              subdomain: projectId,
-              chatId: chat.id,
-              userId: ctx.session.user.id,
-            })
-            .returning();
-
-          if (!project) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create project",
-            });
-          }
-
           return project;
         });
       } catch (error) {
@@ -139,7 +133,9 @@ export const projectsRouter = {
             eq(projects.userId, ctx.session.user.id),
           ),
           with: {
-            chat: {
+            chats: {
+              limit: 1,
+              orderBy: (chats, { desc }) => [desc(chats.createdAt)],
               with: {
                 messages: {
                   columns: {
@@ -158,13 +154,6 @@ export const projectsRouter = {
                         name: true,
                       },
                     },
-                    version: {
-                      columns: {
-                        id: true,
-                        versionName: true,
-                        versionNumber: true,
-                      },
-                    },
                   },
                 },
               },
@@ -172,16 +161,6 @@ export const projectsRouter = {
             environmentVariables: {
               columns: {
                 secretId: false,
-              },
-            },
-            resources: {
-              columns: {
-                id: true,
-                name: true,
-                description: true,
-              },
-              with: {
-                integration: true,
               },
             },
           },
@@ -194,32 +173,17 @@ export const projectsRouter = {
           });
         }
 
-        const resourceEnvs = await Promise.all(
-          project.resources.map(async (resource) => {
-            const data =
-              await ctx.db.query.resourceEnvironmentVariables.findMany({
-                where: eq(resourceEnvironmentVariables.resourceId, resource.id),
-                with: {
-                  environmentVariable: {
-                    columns: {
-                      key: true,
-                    },
-                  },
-                },
-              });
-            return {
-              ...resource,
-              environmentVariables: data.map((rev) => ({
-                id: rev.environmentVariableId,
-                mapTo: rev.mapTo,
-                userKey: rev.environmentVariable.key,
-              })),
-            };
-          }),
-        );
+        const [chat] = project.chats;
+
+        if (!chat) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Chat not found",
+          });
+        }
 
         const messagesWithAttachments = await Promise.all(
-          project.chat.messages.map(async (message) => {
+          chat.messages.map(async (message) => {
             const attachmentsWithUrls = await Promise.all(
               message.attachments.map(async (attachment) => ({
                 name: attachment.name,
@@ -236,10 +200,9 @@ export const projectsRouter = {
         const result = {
           ...project,
           chat: {
-            ...project.chat,
+            ...chat,
             messages: messagesWithAttachments as ChatMessage[],
           },
-          resources: resourceEnvs,
         };
 
         return result;

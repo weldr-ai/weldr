@@ -1,6 +1,6 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 import { eq } from "@weldr/db";
-import { funcs } from "@weldr/db/schema";
+import { declarations } from "node_modules/@weldr/db/src/schema/declarations";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
@@ -13,25 +13,20 @@ export const dependenciesRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const func = await ctx.db.query.funcs.findFirst({
-        where: eq(funcs.id, input.dependentId),
+      const func = await ctx.db.query.declarations.findFirst({
+        where: eq(declarations.id, input.dependentId),
         with: {
-          currentDefinition: {
-            with: {
-              funcDefinitionDependencies: true,
-            },
-          },
+          dependencies: true,
         },
       });
 
-      const existingDeps =
-        func?.currentDefinition?.funcDefinitionDependencies ?? [];
+      const existingDeps = func?.dependencies ?? [];
 
       // For functions, we need to check the dependency chain to prevent cycles
       const dependencyChain = new Set<string>();
 
       if (input.dependentType === "function") {
-        const queue = existingDeps.map((d) => d.dependencyDefinitionId);
+        const queue = existingDeps.map((d) => d.dependencyId);
 
         while (queue.length > 0) {
           const currentId = queue.shift();
@@ -40,41 +35,29 @@ export const dependenciesRouter = {
             const deps = await ctx.db.query.dependencies.findMany({
               where: (table, { and, eq }) =>
                 and(
-                  eq(table.dependentDefinitionId, currentId),
+                  eq(table.dependentId, currentId),
                   eq(table.dependentType, "function"),
                 ),
               columns: {
-                dependencyDefinitionId: true,
+                dependencyId: true,
               },
             });
-            queue.push(...deps.map((d) => d.dependencyDefinitionId));
+            queue.push(...deps.map((d) => d.dependencyId));
           }
         }
       }
 
       // Get all available functions that can be dependencies
-      const availableFunctions = await ctx.db.query.funcs.findMany({
-        where: eq(funcs.userId, ctx.session.user.id),
+      const availableFunctions = await ctx.db.query.declarations.findMany({
+        where: eq(declarations.userId, ctx.session.user.id),
         with: {
-          currentDefinition: true,
+          dependencies: true,
         },
       });
 
       return availableFunctions.filter((f) => {
-        // Basic validation
-        if (!f.currentDefinition) return false;
-
-        // Already a dependency
-        if (existingDeps.some((d) => d.dependencyDefinitionId === f.id))
-          return false;
-
         // For functions: prevent self-deps and cycles
-        if (input.dependentType === "function") {
-          return f.id !== input.dependentId && !dependencyChain.has(f.id);
-        }
-
-        // For endpoints: allow any function
-        return true;
+        return f.id !== input.dependentId && !dependencyChain.has(f.id);
       });
     }),
 } satisfies TRPCRouterRecord;

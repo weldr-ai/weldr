@@ -19,7 +19,6 @@ import {
 } from "@weldr/ui/form";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { Input } from "@weldr/ui/input";
-import { Textarea } from "@weldr/ui/textarea";
 import { LoaderIcon } from "lucide-react";
 
 import { api } from "@/lib/trpc/client";
@@ -55,7 +54,6 @@ export function GeneralSection({
       },
       payload: {
         name: project.name ?? "",
-        description: project.description ?? "",
         subdomain: project.subdomain,
       },
     },
@@ -69,7 +67,6 @@ export function GeneralSection({
       },
       payload: {
         name: result.name ?? "",
-        description: result.description ?? "",
         subdomain: result.subdomain,
       },
     });
@@ -110,19 +107,6 @@ export function GeneralSection({
                         .weldr.app
                       </span>
                     </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="payload.description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} placeholder="Enter description" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

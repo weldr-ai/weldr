@@ -1,14 +1,9 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import { pgEnum, pgTable, text, unique } from "drizzle-orm/pg-core";
-import { endpointDefinitions } from "./endpoints";
-import { funcDefinitions } from "./funcs";
 import { projects } from "./projects";
 
-export const packageType = pgEnum("package_type", [
-  "production",
-  "development",
-]);
+export const packageType = pgEnum("package_type", ["runtime", "development"]);
 
 export const packages = pgTable(
   "packages",
@@ -32,6 +27,4 @@ export const packageRelations = relations(packages, ({ one, many }) => ({
     fields: [packages.projectId],
     references: [projects.id],
   }),
-  endpointDefinitions: many(endpointDefinitions),
-  funcDefinitions: many(funcDefinitions),
 }));

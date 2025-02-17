@@ -1,9 +1,9 @@
-import type { JSONSchema7 } from "json-schema";
 import { z } from "zod";
 
 // JSON Schema Data Types
 export const dataTypeSchema = z
   .union([
+    z.string().describe("TypeScript type literal"),
     z.enum([
       "string",
       "number",
@@ -27,186 +27,81 @@ export const dataTypeSchema = z
   ])
   .describe("The data type of a JSON Schema value");
 
-// JSON Schema Object
-export const jsonSchema: z.ZodType<JSONSchema7> = z
-  .lazy(() =>
-    z.object({
-      // Basic schema properties
-      type: dataTypeSchema
-        .optional()
-        .describe("The type of value this schema validates"),
-      title: z
-        .string()
-        .optional()
-        .describe("A human-readable title for the schema"),
-      description: z
-        .string()
-        .optional()
-        .describe("A detailed explanation of what this schema validates"),
+// Basic value types that can be used in enum and const
+export const basicValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
 
-      // For objects
-      required: z
-        .array(z.string())
-        .optional()
-        .describe("List of property names that must be present"),
-      properties: z
-        .record(jsonSchema)
-        .optional()
-        .describe("Schema definitions for each property of an object"),
-      additionalProperties: z
-        .union([z.boolean(), jsonSchema])
-        .optional()
-        .describe(
-          "Whether additional properties are allowed, or a schema they must match",
-        ),
+// Schema for simple validations (no nested schemas)
+export const simpleValidationSchema = z.object({
+  // Basic schema properties
+  type: dataTypeSchema.optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
 
-      // For arrays
-      items: z
-        .union([jsonSchema, z.array(jsonSchema)])
-        .optional()
-        .describe(
-          "Schema that array items must match, or list of schemas for tuple validation",
-        ),
-      minItems: z
-        .number()
-        .int()
-        .positive()
-        .optional()
-        .describe("Minimum number of items required in array"),
-      maxItems: z
-        .number()
-        .int()
-        .positive()
-        .optional()
-        .describe("Maximum number of items allowed in array"),
-      uniqueItems: z
-        .boolean()
-        .optional()
-        .describe("Whether array items must be unique"),
+  // String validations
+  minLength: z.number().int().nonnegative().optional(),
+  maxLength: z.number().int().nonnegative().optional(),
+  pattern: z.string().optional(),
+  format: z.string().optional(),
 
-      // String validations
-      minLength: z
-        .number()
-        .int()
-        .nonnegative()
-        .optional()
-        .describe("Minimum length of string"),
-      maxLength: z
-        .number()
-        .int()
-        .nonnegative()
-        .optional()
-        .describe("Maximum length of string"),
-      pattern: z
-        .string()
-        .optional()
-        .describe("Regular expression pattern string must match"),
-      format: z
-        .string()
-        .optional()
-        .describe(
-          "Predefined format the string must conform to (e.g. email, date-time)",
-        ),
+  // Number validations
+  minimum: z.number().optional(),
+  maximum: z.number().optional(),
+  exclusiveMinimum: z.number().optional(),
+  exclusiveMaximum: z.number().optional(),
+  multipleOf: z.number().positive().optional(),
 
-      // Number validations
-      minimum: z.number().optional().describe("Minimum value (inclusive)"),
-      maximum: z.number().optional().describe("Maximum value (inclusive)"),
-      exclusiveMinimum: z
-        .number()
-        .optional()
-        .describe("Minimum value (exclusive)"),
-      exclusiveMaximum: z
-        .number()
-        .optional()
-        .describe("Maximum value (exclusive)"),
-      multipleOf: z
-        .number()
-        .positive()
-        .optional()
-        .describe("Number must be a multiple of this value"),
+  // Enum and const
+  enum: z.array(basicValueSchema).optional(),
+  const: basicValueSchema.optional(),
 
-      // Combiners
-      oneOf: z
-        .array(jsonSchema)
-        .optional()
-        .describe("Value must match exactly one of these schemas"),
-      anyOf: z
-        .array(jsonSchema)
-        .optional()
-        .describe("Value must match at least one of these schemas"),
-      allOf: z
-        .array(jsonSchema)
-        .optional()
-        .describe("Value must match all of these schemas"),
-      not: jsonSchema.optional().describe("Value must not match this schema"),
+  // Schema metadata
+  $id: z.string().optional(),
+  $schema: z.string().optional(),
+  $ref: z.string().optional(),
+  $comment: z.string().optional(),
 
-      // Conditionals
-      if: jsonSchema.optional().describe("Schema to conditionally evaluate"),
-      // biome-ignore lint/suspicious/noThenProperty: Required for JSON Schema conditional
-      then: jsonSchema
-        .optional()
-        .describe("Schema to use if 'if' schema matches"),
-      else: jsonSchema
-        .optional()
-        .describe("Schema to use if 'if' schema does not match"),
+  // Content
+  contentMediaType: z.string().optional(),
+  contentEncoding: z.string().optional(),
 
-      // Enum
-      enum: z
-        .array(z.union([z.string(), z.number(), z.boolean(), z.null()]))
-        .optional()
-        .describe("List of allowed values"),
-      const: z
-        .union([z.string(), z.number(), z.boolean(), z.null()])
-        .optional()
-        .describe("Constant value that this schema validates"),
+  // Additional metadata
+  readOnly: z.boolean().optional(),
+  writeOnly: z.boolean().optional(),
+  examples: z.array(z.any()).optional(),
+  default: z.any().optional(),
+});
 
-      // Schema metadata
-      $id: z.string().optional().describe("Unique identifier for this schema"),
-      $schema: z.string().optional().describe("JSON Schema version identifier"),
-      $ref: z
-        .string()
-        .optional()
-        .describe("Reference to another schema definition"),
-      $comment: z
-        .string()
-        .optional()
-        .describe("Internal comment for schema maintainers"),
-      $defs: z
-        .record(jsonSchema)
-        .optional()
-        .describe("Container for schema definitions that can be referenced"),
-      definitions: z
-        .record(jsonSchema)
-        .optional()
-        .describe("Legacy container for schema definitions (prefer $defs)"),
+// Final JSON Schema without recursion
+export const jsonSchema = simpleValidationSchema.extend({
+  // For objects
+  required: z.array(z.string()).optional(),
+  properties: z.record(z.any()).optional(),
+  additionalProperties: z.union([z.boolean(), z.any()]).optional(),
 
-      // Content
-      contentMediaType: z
-        .string()
-        .optional()
-        .describe("MIME type of the string content"),
-      contentEncoding: z
-        .string()
-        .optional()
-        .describe("Encoding used for the string content"),
+  // For arrays
+  items: z.union([z.any(), z.array(z.any())]).optional(),
+  minItems: z.number().int().positive().optional(),
+  maxItems: z.number().int().positive().optional(),
+  uniqueItems: z.boolean().optional(),
 
-      // Additional metadata
-      readOnly: z
-        .boolean()
-        .optional()
-        .describe("Whether the value should be treated as read-only"),
-      writeOnly: z
-        .boolean()
-        .optional()
-        .describe("Whether the value should be treated as write-only"),
-      examples: z
-        .array(z.any())
-        .optional()
-        .describe("Sample values that validate against this schema"),
-      default: z
-        .any()
-        .optional()
-        .describe("Default value to use if none is provided"),
-    }),
-  )
-  .describe("A JSON Schema definition");
+  // Combiners
+  oneOf: z.array(z.any()).optional(),
+  anyOf: z.array(z.any()).optional(),
+  allOf: z.array(z.any()).optional(),
+  not: z.any().optional(),
+
+  // Conditionals
+  if: z.any().optional(),
+  // biome-ignore lint/suspicious/noThenProperty: Required for JSON Schema conditional
+  then: z.any().optional(),
+  else: z.any().optional(),
+
+  // Schema definitions
+  $defs: z.record(z.any()).optional(),
+  definitions: z.record(z.any()).optional(),
+});

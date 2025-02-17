@@ -2,7 +2,6 @@ import { requirementsEngineer } from "@/lib/ai/agents/requirements-engineer";
 import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { createId } from "@paralleldrive/cuid2";
-import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
 import { readStreamableValue } from "ai/rsc";
@@ -13,10 +12,14 @@ import { MultimodalInput } from "./multimodal-input";
 interface ChatProps {
   initialMessages: ChatMessage[];
   chatId: string;
-  integrations: RouterOutputs["integrations"]["list"];
+  // integrations: RouterOutputs["integrations"]["list"];
 }
 
-export function Chat({ initialMessages, chatId, integrations }: ChatProps) {
+export function Chat({
+  initialMessages,
+  chatId,
+  // integrations
+}: ChatProps) {
   const { project } = useProject();
 
   const { data: session } = authClient.useSession();
@@ -209,7 +212,7 @@ export function Chat({ initialMessages, chatId, integrations }: ChatProps) {
         messages={messages}
         setMessages={setMessages}
         isThinking={isThinking}
-        integrations={integrations}
+        // integrations={integrations}
         isWaiting={isWaiting}
         setIsWaiting={setIsWaiting}
       />

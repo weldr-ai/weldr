@@ -12,7 +12,7 @@ const globalForDb = globalThis as unknown as {
 
 const conn =
   globalForDb.conn ?? new Pool({ connectionString: process.env.DATABASE_URL });
-if (process.env.NODE_ENV !== "production") globalForDb.conn = conn;
+if (process.env.APP_ENV !== "production") globalForDb.conn = conn;
 
 export const db = drizzle(conn, { schema });
 export * from "drizzle-orm";

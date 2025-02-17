@@ -90,7 +90,6 @@ interface ProjectContextType {
   project: {
     id: string;
     name: string | null;
-    description: string | null;
   };
 }
 
@@ -104,7 +103,6 @@ export function ProjectProvider({
   project: {
     id: string;
     name: string | null;
-    description: string | null;
   };
 }) {
   return (

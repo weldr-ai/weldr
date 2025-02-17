@@ -15,12 +15,13 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { versions } from "./versions";
+import { projects } from "./projects";
 
 export const messageRoles = pgEnum("message_roles", [
   "user",
   "assistant",
   "tool",
+  "version",
 ]);
 
 export const chats = pgTable(
@@ -33,14 +34,25 @@ export const chats = pgTable(
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
+    projectId: text("project_id").references(() => projects.id, {
+      onDelete: "cascade",
+    }),
   },
   (t) => ({
     createdAtIdx: index("chats_created_at_idx").on(t.createdAt),
   }),
 );
 
-export const chatRelations = relations(chats, ({ many }) => ({
+export const chatRelations = relations(chats, ({ one, many }) => ({
   messages: many(chatMessages),
+  user: one(users, {
+    fields: [chats.userId],
+    references: [users.id],
+  }),
+  project: one(projects, {
+    fields: [chats.projectId],
+    references: [projects.id],
+  }),
 }));
 
 export const chatMessages = pgTable(
@@ -75,10 +87,6 @@ export const chatMessageRelations = relations(
     chat: one(chats, {
       fields: [chatMessages.chatId],
       references: [chats.id],
-    }),
-    version: one(versions, {
-      fields: [chatMessages.id],
-      references: [versions.messageId],
     }),
     attachments: many(attachments),
     user: one(users, {

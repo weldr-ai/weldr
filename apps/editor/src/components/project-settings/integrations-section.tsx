@@ -10,14 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@weldr/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@weldr/ui/dialog";
 import { AirtableIcon } from "@weldr/ui/icons/airtable-icon";
 import { AsanaIcon } from "@weldr/ui/icons/asana-icon";
 import { CalComIcon } from "@weldr/ui/icons/cal-com-icon";
@@ -28,7 +20,6 @@ import { HubspotIcon } from "@weldr/ui/icons/hubspot-icon";
 import { JiraIcon } from "@weldr/ui/icons/jira-icon";
 import { LinearIcon } from "@weldr/ui/icons/linear-icon";
 import { NotionIcon } from "@weldr/ui/icons/notion-icon";
-import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
 import { ResendIcon } from "@weldr/ui/icons/resend-icon";
 import { S3Icon } from "@weldr/ui/icons/s3-icon";
 import { SalesforceIcon } from "@weldr/ui/icons/salesforce-icon";
@@ -38,8 +29,7 @@ import { StripeIcon } from "@weldr/ui/icons/stripe-icon";
 import { TwilioIcon } from "@weldr/ui/icons/twilio-icon";
 import { ScrollArea } from "@weldr/ui/scroll-area";
 import { useTheme } from "@weldr/ui/theme-provider";
-import { useState } from "react";
-import { AddResourceDialog } from "../add-resource-dialog";
+// import { AddResourceDialog } from "../add-resource-dialog";
 
 const comingSoonIntegrations = [
   {
@@ -165,28 +155,28 @@ const comingSoonIntegrations = [
 
 export function IntegrationsSection({
   project,
-  integrations,
+  // integrations,
 }: {
   project: RouterOutputs["projects"]["byId"];
-  integrations: RouterOutputs["integrations"]["list"];
+  // integrations: RouterOutputs["integrations"]["list"];
 }) {
   const { resolvedTheme } = useTheme();
-  const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
+  // const [addResourceDialogOpen, setAddResourceDialogOpen] = useState(false);
 
-  const groupedResources = project.resources.reduce<
-    Record<string, RouterOutputs["projects"]["byId"]["resources"]>
-  >(
-    (acc, resource) => {
-      if (resource.integration.type) {
-        acc[resource.integration.type] = [
-          ...(acc[resource.integration.type] || []),
-          resource,
-        ];
-      }
-      return acc;
-    },
-    {} as Record<string, RouterOutputs["projects"]["byId"]["resources"]>,
-  );
+  // const groupedResources = project.resources.reduce<
+  //   Record<string, RouterOutputs["projects"]["byId"]["resources"]>
+  // >(
+  //   (acc, resource) => {
+  //     if (resource.integration.type) {
+  //       acc[resource.integration.type] = [
+  //         ...(acc[resource.integration.type] || []),
+  //         resource,
+  //       ];
+  //     }
+  //     return acc;
+  //   },
+  //   {} as Record<string, RouterOutputs["projects"]["byId"]["resources"]>,
+  // );
 
   return (
     <Card className="h-full">
@@ -197,7 +187,7 @@ export function IntegrationsSection({
       <CardContent className="h-full">
         <ScrollArea className="h-[calc(100%-72px)]">
           <div className="grid size-full grid-cols-3 gap-4 pb-4">
-            {integrations?.map((integration) => (
+            {/* {integrations?.map((integration) => (
               <Dialog
                 key={integration.id}
                 open={addResourceDialogOpen}
@@ -253,7 +243,7 @@ export function IntegrationsSection({
                   </div>
                 </DialogContent>
               </Dialog>
-            ))}
+            ))} */}
             {comingSoonIntegrations.map((integration) => (
               <Button
                 key={integration.id}

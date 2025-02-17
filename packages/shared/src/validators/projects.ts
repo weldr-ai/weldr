@@ -5,8 +5,8 @@ export const projectSchema = z.object({
   id: z.string(),
   name: z.string(),
   subdomain: z.string(),
-  description: z.string().nullable(),
   thumbnail: z.string().nullable(),
+  initiatedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
   userId: z.string().nullable(),
@@ -42,6 +42,5 @@ export const updateProjectSchema = z.object({
         message: "Must contain only lowercase letters, numbers, and hyphens",
       })
       .optional(),
-    description: z.string().optional(),
   }),
 });

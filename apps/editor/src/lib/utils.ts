@@ -1,4 +1,3 @@
-import type { DatabaseStructure } from "@weldr/shared/integrations/postgres/types";
 import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/chats";
 import type { z } from "zod";
 
@@ -45,8 +44,9 @@ export function getResourceReferences(
       resource.integrationType === "postgres" ||
       resource.integrationType === "mysql"
     ) {
-      const databaseStructure = resource.metadata as DatabaseStructure;
+      const databaseStructure = resource.metadata;
 
+      // @ts-expect-error - FIXME: fix this
       for (const table of databaseStructure) {
         for (const column of table.columns) {
           references.push({

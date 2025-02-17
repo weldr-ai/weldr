@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
-export type DataType =
+export type PrimitiveDataType =
   | "string"
   | "number"
   | "integer"
@@ -18,6 +18,8 @@ export type DataType =
   | "boolean"
   | "object"
   | "null";
+
+export type DataType = PrimitiveDataType | Array<PrimitiveDataType> | string;
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));

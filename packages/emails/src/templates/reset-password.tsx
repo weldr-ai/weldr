@@ -31,7 +31,7 @@ export function ResetPasswordEmail({
           <Container className="mx-auto px-4 py-8">
             <Img
               src={
-                process.env.NODE_ENV === "development"
+                process.env.APP_ENV === "development"
                   ? "http://localhost:3000/logo.svg"
                   : "https://weldr.com/logo.svg"
               }

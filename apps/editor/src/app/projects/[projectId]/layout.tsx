@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 
 import { CommandCenter } from "@/components/command-center";
 import { Navbar } from "@/components/navbar";
-import { ResourcesProvider } from "@/lib/context/resources";
 import { ProjectProvider } from "@/lib/store";
 import { api } from "@/lib/trpc/server";
 
@@ -18,36 +17,35 @@ export default async function ProjectLayout({
     const { projectId } = await params;
     const project = await api.projects.byId({ id: projectId });
     const projects = await api.projects.list();
-    const resourcesWithMetadata = await api.resources.listWithMetadata({
-      projectId,
-    });
+    // const resourcesWithMetadata = await api.resources.listWithMetadata({
+    //   projectId,
+    // });
 
     return (
       <ProjectProvider
         project={{
           id: projectId,
           name: project.name,
-          description: project.description,
         }}
       >
-        <ResourcesProvider
+        {/* <ResourcesProvider
           resources={resourcesWithMetadata.map((resource) => ({
             id: resource.id,
             name: resource.name,
             integrationType: resource.integration.type,
             metadata: resource.metadata,
           }))}
-        >
-          <div className="flex h-screen flex-col">
-            <Navbar project={project} />
-            <main className="flex size-full flex-1 px-2 pb-2">
-              <div className="size-full rounded-xl border dark:bg-muted">
-                {children}
-              </div>
-            </main>
-          </div>
-          <CommandCenter projects={projects} />
-        </ResourcesProvider>
+        > */}
+        <div className="flex h-screen flex-col">
+          <Navbar project={project} />
+          <main className="flex size-full flex-1 px-2 pb-2">
+            <div className="size-full rounded-xl border dark:bg-muted">
+              {children}
+            </div>
+          </main>
+        </div>
+        <CommandCenter projects={projects} />
+        {/* </ResourcesProvider> */}
       </ProjectProvider>
     );
   } catch (error) {

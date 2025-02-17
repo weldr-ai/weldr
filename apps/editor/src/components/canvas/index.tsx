@@ -1,7 +1,6 @@
 "use client";
 
-import { createId } from "@paralleldrive/cuid2";
-import type { ColorMode, Edge, Node as ReactFlowNode } from "@xyflow/react";
+import type { ColorMode, Edge } from "@xyflow/react";
 import {
   Background,
   Panel,
@@ -13,7 +12,6 @@ import {
 } from "@xyflow/react";
 import {
   AppWindowIcon,
-  ComponentIcon,
   EyeIcon,
   EyeOffIcon,
   FunctionSquareIcon,
@@ -23,7 +21,7 @@ import {
 import type React from "react";
 import { useCallback } from "react";
 
-import type { CanvasNode, CanvasNodeData } from "@/types";
+import type { CanvasNode } from "@/types";
 
 import "@/styles/flow-builder.css";
 import "@xyflow/react/dist/base.css";
@@ -31,18 +29,10 @@ import "@xyflow/react/dist/base.css";
 import { Button } from "@weldr/ui/button";
 
 import { useFlowBuilder } from "@/lib/store";
-import { api } from "@/lib/trpc/client";
-import type { RouterOutputs } from "@weldr/api";
-import { toast } from "@weldr/ui/hooks/use-toast";
 import { useTheme } from "@weldr/ui/theme-provider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
-import { EndpointNode } from "./nodes/endpoint";
-import { FuncNode } from "./nodes/func";
 
-const nodeTypes = {
-  func: FuncNode,
-  endpoint: EndpointNode,
-};
+const nodeTypes = {};
 
 export function Canvas({
   projectId,
@@ -51,188 +41,112 @@ export function Canvas({
 }: {
   projectId: string;
   initialNodes: CanvasNode[];
-  initialEdges: RouterOutputs["versions"]["dependencies"];
+  initialEdges: Edge[];
 }) {
   const { showEdges, toggleEdges } = useFlowBuilder();
 
-  const { data: dependencies } = api.versions.dependencies.useQuery(
-    {
-      projectId,
-    },
-    {
-      initialData: initialEdges,
-    },
-  );
-
-  const { screenToFlowPosition, zoomIn, zoomOut, fitView, updateNodeData } =
-    useReactFlow();
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();
-  const [nodes, setNodes, onNodesChange] =
+  const [nodes, _setNodes, onNodesChange] =
     useNodesState<CanvasNode>(initialNodes);
-  const [edges, _setEdges, onEdgesChange] = useEdgesState<Edge>(
-    showEdges ? dependencies : [],
-  );
+  const [edges, _setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
 
-  const apiUtils = api.useUtils();
+  // const apiUtils = api.useUtils();
 
-  const createFunc = api.funcs.create.useMutation({
-    onSuccess: (data) => {
-      updateNodeData(data.id, data);
-      apiUtils.funcs.byId.invalidate({ id: data.id });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  // const createNode = api.nodes.create.useMutation({
+  //   onSuccess: (data) => {
+  //     updateNodeData(data.id, data);
+  //     apiUtils.nodes.byId.invalidate({ id: data.id });
+  //   },
+  //   onError: (error) => {
+  //     toast({
+  //       title: "Error",
+  //       description: error.message,
+  //       variant: "destructive",
+  //     });
+  //   },
+  // });
 
-  const updateFunc = api.funcs.update.useMutation({
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const createEndpoint = api.endpoints.create.useMutation({
-    onSuccess: (data) => {
-      updateNodeData(data.id, data);
-      apiUtils.endpoints.byId.invalidate({ id: data.id });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateEndpoint = api.endpoints.update.useMutation({
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  // const updateNode = api.nodes.update.useMutation({
+  //   onError: (error) => {
+  //     toast({
+  //       title: "Error",
+  //       description: error.message,
+  //       variant: "destructive",
+  //     });
+  //   },
+  // });
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  const onDrop = useCallback(
-    async (event: React.DragEvent<HTMLDivElement>) => {
-      event.preventDefault();
+  // const onDrop = useCallback(
+  //   async (event: React.DragEvent<HTMLDivElement>) => {
+  //     event.preventDefault();
 
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
+  //     const position = screenToFlowPosition({
+  //       x: event.clientX,
+  //       y: event.clientY,
+  //     });
 
-      const type = event.dataTransfer.getData("type") as
-        | "page"
-        | "component"
-        | "func"
-        | "endpoint";
+  //     const type = event.dataTransfer.getData("type") as
+  //       | "page"
+  //       | "function"
+  //       | "endpoint";
 
-      const newNodeId = createId();
-      let newNode: CanvasNode;
+  //     const newNodeId = createId();
+  //     const newNode: CanvasNode = {
+  //       id: newNodeId,
+  //       type,
+  //       position: {
+  //         x: position.x,
+  //         y: position.y,
+  //       },
+  //     } as CanvasNode;
 
-      switch (type) {
-        case "func": {
-          newNode = {
-            id: newNodeId,
-            type: "func",
-            dragHandle: ".drag-handle",
-            position: {
-              x: Math.floor(position.x),
-              y: Math.floor(position.y),
-            },
-            data: {
-              id: newNodeId,
-              projectId,
-              chat: {},
-            },
-          } as CanvasNode;
-          setNodes((nodes) => nodes.concat(newNode));
-          await createFunc.mutateAsync({
-            id: newNodeId,
-            projectId,
-            positionX: Math.floor(position.x),
-            positionY: Math.floor(position.y),
-          });
-          break;
-        }
-        case "endpoint":
-          {
-            newNode = {
-              id: newNodeId,
-              type: "endpoint",
-              dragHandle: ".drag-handle",
-              position: {
-                x: Math.floor(position.x),
-                y: Math.floor(position.y),
-              },
-              data: {
-                id: newNodeId,
-                projectId,
-                chat: {},
-              } as CanvasNodeData,
-            } as CanvasNode;
-            await createEndpoint.mutateAsync({
-              id: newNodeId,
-              projectId,
-              positionX: Math.floor(position.x),
-              positionY: Math.floor(position.y),
-            });
-          }
-          break;
-      }
+  //     await createNode.mutateAsync({
+  //       id: newNodeId,
+  //       projectId,
+  //       type,
+  //       position: {
+  //         x: position.x,
+  //         y: position.y,
+  //       },
+  //     });
 
-      setNodes((nodes) => nodes.concat(newNode));
-    },
-    [createEndpoint, createFunc, setNodes, screenToFlowPosition, projectId],
-  );
+  //     setNodes((nodes) => nodes.concat(newNode));
+  //   },
+  //   [createNode, setNodes, screenToFlowPosition, projectId],
+  // );
 
-  const onNodeDragStop = useCallback(
-    async (
-      _event: React.MouseEvent,
-      node: ReactFlowNode,
-      _nodes: ReactFlowNode[],
-    ) => {
-      const updatedData = {
-        where: {
-          id: node.id,
-        },
-        payload: {
-          positionX: Math.floor(node.position.x),
-          positionY: Math.floor(node.position.y),
-        },
-      };
-
-      if (node.type === "func") {
-        await updateFunc.mutateAsync(updatedData);
-      }
-
-      if (node.type === "endpoint") {
-        await updateEndpoint.mutateAsync(updatedData);
-      }
-    },
-    [updateEndpoint, updateFunc],
-  );
+  // const onNodeDragStop = useCallback(
+  //   async (
+  //     _event: React.MouseEvent,
+  //     node: ReactFlowNode,
+  //     _nodes: ReactFlowNode[],
+  //   ) => {
+  //     const updatedData = {
+  //       where: {
+  //         id: node.id,
+  //       },
+  //       payload: {
+  //         position: {
+  //           x: Math.floor(node.position.x),
+  //           y: Math.floor(node.position.y),
+  //         },
+  //       },
+  //     };
+  //     await updateNode.mutateAsync(updatedData);
+  //   },
+  //   [updateNode],
+  // );
 
   const onDragStart = (
     event: React.DragEvent<HTMLDivElement>,
-    type: "page" | "component" | "func" | "endpoint",
+    type: "page" | "function" | "endpoint",
   ) => {
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("type", type);
@@ -244,8 +158,8 @@ export function Canvas({
       onNodesChange={onNodesChange}
       edges={showEdges ? edges : []}
       onEdgesChange={onEdgesChange}
-      onDrop={onDrop}
-      onNodeDragStop={onNodeDragStop}
+      // onDrop={onDrop}
+      // onNodeDragStop={onNodeDragStop}
       onDragOver={onDragOver}
       deleteKeyCode={null}
       nodeTypes={nodeTypes}
@@ -281,7 +195,7 @@ export function Canvas({
           </TooltipContent>
         </Tooltip>
 
-        <Tooltip>
+        {/* <Tooltip>
           <TooltipTrigger asChild>
             <div
               className="inline-flex size-8 items-center justify-center rounded-md px-2 text-xs hover:cursor-grab hover:bg-accent hover:text-accent-foreground"
@@ -294,13 +208,13 @@ export function Canvas({
           <TooltipContent side="top" className="border bg-muted">
             <p>UI Component</p>
           </TooltipContent>
-        </Tooltip>
+        </Tooltip> */}
 
         <Tooltip>
           <TooltipTrigger asChild>
             <div
               className="inline-flex size-8 items-center justify-center rounded-md px-2 text-xs hover:cursor-grab hover:bg-accent hover:text-accent-foreground"
-              onDragStart={(event) => onDragStart(event, "func")}
+              onDragStart={(event) => onDragStart(event, "function")}
               draggable
             >
               <FunctionSquareIcon className="size-4" />

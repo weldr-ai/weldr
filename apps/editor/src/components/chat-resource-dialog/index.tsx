@@ -1,6 +1,5 @@
 "use client";
 
-import type { Integration } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/button";
 import {
   Dialog,
@@ -13,10 +12,9 @@ import {
 import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
 import { cn } from "@weldr/ui/utils";
 import { useState } from "react";
-import { PostgresForm } from "./postgres-form";
 
 interface ChatResourceDialogProps {
-  integration: Pick<Integration, "id" | "name" | "type">;
+  // integration: Pick<Integration, "id" | "name" | "type">;
   status: "pending" | "success" | "error" | "cancelled";
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -24,7 +22,7 @@ interface ChatResourceDialogProps {
 }
 
 export function ChatResourceDialog({
-  integration,
+  // integration,
   status,
   onSuccess,
   onCancel,
@@ -32,23 +30,23 @@ export function ChatResourceDialog({
 }: ChatResourceDialogProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const renderForm = () => {
-    switch (integration.type) {
-      case "postgres": {
-        return (
-          <PostgresForm
-            integration={integration}
-            onSuccess={onSuccess}
-            onCancel={onCancel}
-            onClose={() => setDialogOpen(false)}
-          />
-        );
-      }
-      default: {
-        return null;
-      }
-    }
-  };
+  // const renderForm = () => {
+  //   switch (integration.type) {
+  //     case "postgres": {
+  //       return (
+  //         <PostgresForm
+  //           integration={integration}
+  //           onSuccess={onSuccess}
+  //           onCancel={onCancel}
+  //           onClose={() => setDialogOpen(false)}
+  //         />
+  //       );
+  //     }
+  //     default: {
+  //       return null;
+  //     }
+  //   }
+  // };
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -64,7 +62,8 @@ export function ChatResourceDialog({
         >
           <div className="flex items-center gap-2">
             <PostgresIcon className="size-4" />
-            Setup {integration.name}
+            Setup INTEGRATION
+            {/* {integration.name} */}
           </div>
           <div
             className={cn(
@@ -87,12 +86,15 @@ export function ChatResourceDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Setup {integration.name}</DialogTitle>
+          <DialogTitle>
+            Setup INTEGRATION
+            {/* {integration.name} */}
+          </DialogTitle>
           <DialogDescription>
             Add your database connection details to continue
           </DialogDescription>
         </DialogHeader>
-        {renderForm()}
+        {/* {renderForm()} */}
       </DialogContent>
     </Dialog>
   );

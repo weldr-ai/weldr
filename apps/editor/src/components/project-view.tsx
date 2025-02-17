@@ -12,6 +12,7 @@ import { Canvas } from "@/components/canvas";
 import { ProjectSettings } from "@/components/project-settings";
 import { api } from "@/lib/trpc/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
+import type { Edge } from "@xyflow/react";
 import { AppWindowIcon, FrameIcon, SettingsIcon } from "lucide-react";
 import { Chat } from "./chat";
 
@@ -19,16 +20,16 @@ export function ProjectView({
   project,
   initialNodes,
   initialEdges,
-  integrations,
+  // integrations,
 }: {
   project: RouterOutputs["projects"]["byId"];
   initialNodes: CanvasNode[];
-  initialEdges: RouterOutputs["versions"]["dependencies"];
-  integrations: RouterOutputs["integrations"]["list"];
+  initialEdges: Edge[];
+  // integrations: RouterOutputs["integrations"]["list"];
 }) {
   const { data: messages } = api.chats.messages.useQuery(
     {
-      chatId: project.chatId,
+      chatId: project.chat.id,
     },
     {
       initialData: project.chat.messages,
@@ -44,9 +45,9 @@ export function ProjectView({
         className="size-full"
       >
         <Chat
-          chatId={project.chatId}
+          chatId={project.chat.id}
           initialMessages={messages}
-          integrations={integrations}
+          // integrations={integrations}
         />
       </ResizablePanel>
       <ResizableHandle className="w-0" withHandle />
@@ -60,7 +61,7 @@ export function ProjectView({
           project={project}
           initialNodes={initialNodes}
           initialEdges={initialEdges ?? []}
-          integrations={integrations}
+          // integrations={integrations}
         />
       </ResizablePanel>
     </ResizablePanelGroup>
@@ -71,12 +72,12 @@ function Main({
   project,
   initialNodes,
   initialEdges,
-  integrations,
+  // integrations,
 }: {
   project: RouterOutputs["projects"]["byId"];
   initialNodes: CanvasNode[];
-  initialEdges: RouterOutputs["versions"]["dependencies"];
-  integrations: RouterOutputs["integrations"]["list"];
+  initialEdges: Edge[];
+  // integrations: RouterOutputs["integrations"]["list"];
 }) {
   return (
     <Tabs defaultValue="preview" className="flex size-full flex-col">
@@ -109,7 +110,10 @@ function Main({
         />
       </TabsContent>
       <TabsContent value="settings" className="mt-0 flex-1 bg-background p-4">
-        <ProjectSettings project={project} integrations={integrations} />
+        <ProjectSettings
+          project={project}
+          // integrations={integrations}
+        />
       </TabsContent>
     </Tabs>
   );

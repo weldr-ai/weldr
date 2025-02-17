@@ -3,11 +3,8 @@ import { relations } from "drizzle-orm";
 import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { chatMessages, chats } from "./chats";
-import { endpoints } from "./endpoints";
 import { environmentVariables } from "./environment-variables";
-import { funcs } from "./funcs";
 import { projects } from "./projects";
-import { resources } from "./resources";
 
 export const users = pgTable("users", {
   id: text("id")
@@ -26,12 +23,9 @@ export const users = pgTable("users", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   projects: many(projects),
-  funcs: many(funcs),
-  resources: many(resources),
   environmentVariables: many(environmentVariables),
   chats: many(chats),
   chatMessages: many(chatMessages),
-  endpoints: many(endpoints),
 }));
 
 export const sessions = pgTable("sessions", {
@@ -40,8 +34,11 @@ export const sessions = pgTable("sessions", {
     .$defaultFn(() => createId()),
   expiresAt: timestamp("expires_at").notNull(),
   token: text("token").notNull().unique(),
-  createdAt: timestamp("created_at").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   userId: text("user_id")
@@ -65,8 +62,11 @@ export const accounts = pgTable("accounts", {
   refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
   scope: text("scope"),
   password: text("password"),
-  createdAt: timestamp("created_at").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
 export const verifications = pgTable("verifications", {
@@ -76,8 +76,11 @@ export const verifications = pgTable("verifications", {
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at"),
-  updatedAt: timestamp("updated_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
 export const waitlist = pgTable("waitlist", {

@@ -2,75 +2,60 @@ import { relations, sql } from "drizzle-orm";
 import {
   check,
   index,
-  pgEnum,
   pgTable,
   primaryKey,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
-import { endpointDefinitions } from "./endpoints";
-import { funcDefinitions } from "./funcs";
-
-export const primitiveType = pgEnum("primitive_type", ["function", "endpoint"]);
+import { declarations } from "./declarations";
+import { declarationTypes } from "./shared-enums";
 
 export const dependencies = pgTable(
   "dependencies",
   {
-    dependentType: primitiveType("dependent_type").notNull(),
-    dependentDefinitionId: text("dependent_definition_id").notNull(),
-    dependencyType: primitiveType("dependency_type").notNull(),
-    dependencyDefinitionId: text("dependency_definition_id").notNull(),
+    dependentType: declarationTypes("dependent_type").notNull(),
+    dependentId: text("dependent_id")
+      .references(() => declarations.id)
+      .notNull(),
+    dependencyType: declarationTypes("dependency_type").notNull(),
+    dependencyId: text("dependency_id")
+      .references(() => declarations.id)
+      .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => ({
     pk: primaryKey({
-      columns: [
-        t.dependentType,
-        t.dependentDefinitionId,
-        t.dependencyType,
-        t.dependencyDefinitionId,
-      ],
+      columns: [t.dependentId, t.dependencyId],
     }),
     createdAtIdx: index("dependencies_created_at_idx").on(t.createdAt),
-    noSelfDep: check(
-      "no_self_dep",
-      sql`dependent_definition_id != dependency_definition_id`,
-    ),
+    noSelfDep: check("no_self_dep", sql`dependent_id != dependency_id`),
     validDep: check(
       "valid_dep_types",
       sql`
-        -- Allow:
-        -- 1. Function -> Function
-        -- 2. Endpoint -> Function
-        -- Prevent:
-        -- 1. Function -> Endpoint
-        -- 2. Endpoint -> Endpoint
-        dependency_type = 'function' AND
-        (dependent_type = 'function' OR dependent_type = 'endpoint')
+        -- Function -> Function
+        dependency_type = 'function' AND dependent_type = 'function' OR
+        -- Function -> Endpoint
+        dependency_type = 'function' AND dependent_type = 'endpoint' OR
+        -- Function -> Component
+        dependency_type = 'function' AND dependent_type = 'component' OR
+        -- Component -> Function
+        dependency_type = 'component' AND dependent_type = 'function' OR
+        -- Component -> Endpoint
+        dependency_type = 'component' AND dependent_type = 'endpoint' OR
+        -- Component -> Component
+        dependency_type = 'component' AND dependent_type = 'component'
       `,
     ),
   }),
 );
 
 export const dependenciesRelations = relations(dependencies, ({ one }) => ({
-  dependentFuncDefinition: one(funcDefinitions, {
-    relationName: "dependent_func_definition",
-    fields: [dependencies.dependentDefinitionId],
-    references: [funcDefinitions.id],
+  dependency: one(declarations, {
+    fields: [dependencies.dependencyId],
+    references: [declarations.id],
   }),
-  dependencyFuncDefinition: one(funcDefinitions, {
-    relationName: "dependency_func_definition",
-    fields: [dependencies.dependencyDefinitionId],
-    references: [funcDefinitions.id],
-  }),
-  dependentEndpointDefinition: one(endpointDefinitions, {
-    relationName: "dependent_endpoint_definition",
-    fields: [dependencies.dependentDefinitionId],
-    references: [endpointDefinitions.id],
-  }),
-  dependencyEndpointDefinition: one(endpointDefinitions, {
-    relationName: "dependency_endpoint_definition",
-    fields: [dependencies.dependencyDefinitionId],
-    references: [endpointDefinitions.id],
+  dependent: one(declarations, {
+    fields: [dependencies.dependentId],
+    references: [declarations.id],
   }),
 }));
