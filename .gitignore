@@ -48,5 +48,5 @@ dist/
 .output/
 .nitro/
 
-# executor
-temp/
+# Local temp files
+.temp/

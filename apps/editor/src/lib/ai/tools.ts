@@ -5,21 +5,18 @@ export const initializeProject = tool({
   description: "Initialize a new project",
   parameters: z.object({
     name: z.string().min(1).describe("The name of the project"),
-    description: z
-      .string()
-      .min(1)
-      .describe("A short description of the project"),
     addons: z
       .enum(["auth"])
       .array()
       .describe("A list of addons to use for the project"),
-    detailedDescription: z
+    requirements: z
       .string()
       .min(1)
       .describe(
-        `A refined detailed description of what the user wants to do.
-        This description will be used by the coder, so it should be as detailed and specific as possible.
-        The description MUST NOT include information about technical implementation details.`,
+        `A description of the app and its features.
+        Example:
+        A simple client-side todo app with the ability to add tasks, display them, and mark them as done.
+        Doesn't require backend. Doesn't require authentication. Doesn't require database.`,
       ),
   }),
 });
@@ -43,14 +40,12 @@ export const implement = tool({
       .enum(["auth"])
       .array()
       .describe("A list of addons to use for the implementation"),
-    detailedDescription: z
+    requirements: z
       .string()
       .min(1)
       .describe(
-        `A refined detailed description of what the user wants to do.
-        Like adding a new feature, fixing a bug, editing something, etc.
-        This description will be used by the coder, so it should be as detailed and specific as possible.
-        The description MUST NOT include information about technical implementation details.`,
+        `A concise and clear description of the changes the user wants to make to the app.
+        - MUST NOT deviate from what the user wants exactly.`,
       ),
   }),
 });

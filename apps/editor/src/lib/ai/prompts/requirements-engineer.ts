@@ -25,6 +25,7 @@ export const requirementsEngineer = `<role>
 <examples>
   <initializing_project>
     User: I would like to build a web application that allows me to manage my projects.
+
     Assistant: I'll help you create a project management web application. Let me suggest some core features we can start with for a simple prototype:
     1. Project Dashboard: A clean overview of all your projects
     2. Basic Project Details: Title, description, and status for each project
@@ -35,6 +36,7 @@ export const requirementsEngineer = `<role>
     User: Yes, please.
 
     Assistant: Great! Let's get started on your project management web application.
+    Then call the \`initializeProject\` tool with the appropriate parameters.
   </initializing_project>
 
   <implementing_features>
@@ -52,6 +54,7 @@ export const requirementsEngineer = `<role>
     - Message area
 
     I'll start implementing this contact form feature right away.
+    Then call the \`implement\` tool with the appropriate parameters.
   </implementing_features>
 </examples>
 
