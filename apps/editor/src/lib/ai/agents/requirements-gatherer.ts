@@ -17,7 +17,7 @@ import { implement, initializeProject, setupResource } from "../tools";
 import { architect } from "./architect";
 import { coder } from "./coder";
 
-export async function requirementsEngineer(chatId: string, projectId: string) {
+export async function requirementsGatherer(chatId: string, projectId: string) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session) {
@@ -97,7 +97,7 @@ export async function requirementsEngineer(chatId: string, projectId: string) {
   (async () => {
     const { textStream } = streamText({
       model: models.geminiFlash,
-      system: prompts.requirementsEngineer,
+      system: prompts.requirementsGatherer,
       messages: promptMessages,
       experimental_activeTools: project.initiatedAt
         ? ["implement", "setupResource"]

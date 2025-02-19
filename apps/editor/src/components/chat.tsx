@@ -1,4 +1,4 @@
-import { requirementsEngineer } from "@/lib/ai/agents/requirements-engineer";
+import { requirementsGatherer } from "@/lib/ai/agents/requirements-gatherer";
 import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { createId } from "@paralleldrive/cuid2";
@@ -44,7 +44,7 @@ export function Chat({
   const triggerGeneration = useCallback(async () => {
     setIsThinking(true);
 
-    const result = await requirementsEngineer(chatId, project.id);
+    const result = await requirementsGatherer(chatId, project.id);
 
     const newAssistantMessage: ChatMessage = {
       id: createId(),
