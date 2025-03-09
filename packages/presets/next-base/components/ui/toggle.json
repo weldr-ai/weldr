@@ -1,0 +1,113 @@
+{
+  "file": "/src/components/ui/toggle.tsx",
+  "declarations": {
+    "toggleVariants": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "class-variance-authority",
+          "dependsOn": ["cva"]
+        }
+      ],
+      "metadata": {
+        "type": "function",
+        "name": "toggleVariants",
+        "description": "A utility function created using class-variance-authority (cva) that generates class names for the Toggle component based on variants and size props.",
+        "signature": "toggleVariants({ variant?: 'default' | 'outline', size?: 'default' | 'sm' | 'lg', className?: string }): string",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "variant": {
+              "type": "string",
+              "enum": ["default", "outline"],
+              "description": "The visual style variant of the toggle"
+            },
+            "size": {
+              "type": "string",
+              "enum": ["default", "sm", "lg"],
+              "description": "The size variant of the toggle"
+            },
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to merge with the variant classes"
+            }
+          }
+        },
+        "returns": {
+          "type": "string",
+          "description": "A string of CSS classes that implement the specified variants and sizes"
+        },
+        "examples": [
+          "toggleVariants({ variant: 'default', size: 'default' })",
+          "toggleVariants({ variant: 'outline', size: 'lg', className: 'custom-class' })"
+        ]
+      }
+    },
+    "Toggle": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-toggle",
+          "dependsOn": ["Root"]
+        },
+        {
+          "type": "external",
+          "from": "class-variance-authority",
+          "dependsOn": ["VariantProps"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Toggle",
+          "description": "A toggle component that allows users to switch between two states (on/off). Built on top of Radix UI's Toggle primitive, it provides an accessible and customizable toggle button with various styling options through variants.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "variant": {
+                "type": "string",
+                "enum": ["default", "outline"],
+                "description": "The visual style variant of the toggle",
+                "default": "default"
+              },
+              "size": {
+                "type": "string",
+                "enum": ["default", "sm", "lg"],
+                "description": "The size of the toggle button",
+                "default": "default"
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the toggle"
+              }
+            }
+          },
+          "examples": [
+            "<Toggle>Basic Toggle</Toggle>",
+            "<Toggle variant=\"outline\" size=\"lg\">Large Outline Toggle</Toggle>",
+            "<Toggle className=\"custom-class\" variant=\"default\" size=\"sm\">Small Toggle</Toggle>"
+          ],
+          "visualLayout": "A rounded button that can be toggled between two states. When toggled on, it displays with an accent background color. The button supports different sizes and variants, and can contain both text and icons with a gap between them.",
+          "interactions": [
+            "Click or tap to toggle between on/off states",
+            "Hover shows a muted background color",
+            "Focus shows a ring outline",
+            "Disabled state reduces opacity and prevents interactions"
+          ]
+        },
+        "type": "component"
+      }
+    }
+  }
+}

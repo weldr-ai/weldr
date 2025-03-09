@@ -1,0 +1,71 @@
+{
+  "file": "/src/components/ui/switch.tsx",
+  "declarations": {
+    "Switch": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-switch",
+          "dependsOn": ["Root", "Thumb"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Switch",
+          "description": "A toggle switch component that allows users to turn a setting on or off. Built on top of Radix UI's Switch primitive, this component provides an accessible and customizable switch control with smooth transitions and proper keyboard interactions.",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the switch component"
+              },
+              "checked": {
+                "type": "boolean",
+                "description": "The controlled state of the switch"
+              },
+              "defaultChecked": {
+                "type": "boolean",
+                "description": "The default state of the switch when initially rendered"
+              },
+              "onCheckedChange": {
+                "type": "function",
+                "description": "Event handler called when the state of the switch changes"
+              },
+              "disabled": {
+                "type": "boolean",
+                "description": "When true, prevents the user from interacting with the switch"
+              }
+            }
+          },
+          "rendersOn": "client",
+          "interactions": [
+            "Click or tap to toggle between checked and unchecked states",
+            "Tab to focus and Space/Enter to toggle",
+            "When disabled, the switch appears faded and does not respond to interactions"
+          ],
+          "visualLayout": "The Switch component renders as a rounded pill-shaped toggle with a circular thumb that slides from left to right. When unchecked, the thumb is positioned on the left side with a neutral background. When checked, the thumb slides to the right side and the background changes to the primary color. The component includes visual feedback for hover, focus, and disabled states.",
+          "implementationNotes": "The component is built using Radix UI's Switch primitive for accessibility and extends its functionality with custom styling using Tailwind CSS. It supports forwarded refs and preserves all native Switch primitive props.",
+          "subtype": "reusable",
+          "examples": [
+            "<Switch />",
+            "<Switch defaultChecked />",
+            "<Switch disabled />",
+            "<Switch checked={isEnabled} onCheckedChange={setIsEnabled} />"
+          ]
+        },
+        "type": "component"
+      }
+    }
+  }
+}

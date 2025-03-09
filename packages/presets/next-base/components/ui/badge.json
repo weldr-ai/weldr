@@ -1,0 +1,82 @@
+{
+  "file": "/src/components/ui/badge.tsx",
+  "declarations": {
+    "badgeVariants": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "class-variance-authority",
+          "dependsOn": ["cva"]
+        }
+      ],
+      "metadata": {
+        "type": "other",
+        "declType": "const",
+        "name": "badgeVariants",
+        "description": "A class-variance-authority (cva) configuration that defines the styling variants for the Badge component. It includes a base style with rounded corners, padding, and focus states, along with four variants:\n- default: Primary colored background with hover effect\n- secondary: Secondary colored background with hover effect\n- destructive: Destructive colored background with hover effect\n- outline: Simple outlined style\nEach variant has specific color, background, and hover state styling. The default variant is set to 'default'."
+      }
+    },
+    "BadgeProps": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["HTMLAttributes"]
+        },
+        {
+          "type": "external",
+          "from": "class-variance-authority",
+          "dependsOn": ["VariantProps"]
+        }
+      ],
+      "metadata": {
+        "type": "other",
+        "declType": "interface",
+        "name": "BadgeProps",
+        "description": "Interface that defines the props for the Badge component. It extends React.HTMLAttributes<HTMLDivElement> to include all standard HTML div attributes and adds VariantProps from the badgeVariants configuration. This allows the Badge component to accept both standard HTML attributes and specific variant properties for styling."
+      }
+    },
+    "Badge": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Badge",
+          "description": "A versatile badge component that displays small bits of information. It supports different visual variants and can be customized through className props. The badge is rendered as a div element with configurable styles.",
+          "subtype": "reusable",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the badge"
+              },
+              "variant": {
+                "type": "string",
+                "enum": ["default", "secondary", "destructive", "outline"],
+                "description": "The visual style variant of the badge",
+                "default": "default"
+              }
+            },
+            "description": "Extends HTMLDivElement attributes and includes variant props"
+          },
+          "rendersOn": "both",
+          "examples": [
+            "<Badge>Default Badge</Badge>",
+            "<Badge variant=\"secondary\">Secondary Badge</Badge>",
+            "<Badge variant=\"destructive\">Destructive Badge</Badge>",
+            "<Badge variant=\"outline\">Outline Badge</Badge>",
+            "<Badge className=\"custom-class\">Custom Badge</Badge>"
+          ],
+          "visualLayout": "A small, rounded container with text inside. The appearance changes based on the variant prop, affecting background color, text color, and border styles."
+        },
+        "type": "component"
+      }
+    }
+  }
+}

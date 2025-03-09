@@ -1,0 +1,357 @@
+{
+  "file": "/src/components/ui/command.tsx",
+  "declarations": {
+    "Command": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "cmdk",
+          "dependsOn": ["CommandPrimitive"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Command",
+          "description": "A root command menu component that provides the base functionality and styling for the command palette interface. It wraps the cmdk primitive component and adds custom styling.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the command menu"
+              }
+            }
+          },
+          "visualLayout": "A full-width and height flexible container with rounded corners and a popover background color that serves as the foundation for the command menu interface.",
+          "examples": [
+            "<Command className=\"w-full\"><CommandInput /><CommandList><CommandEmpty /></CommandList></Command>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "CommandDialog": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/components/ui/dialog.tsx",
+          "dependsOn": ["Dialog", "DialogContent"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dialog",
+          "dependsOn": ["DialogProps"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CommandDialog",
+          "description": "A dialog wrapper for the command menu that provides a modal interface. It combines the Dialog component with Command to create a floating command palette.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": "object",
+                "description": "The content to be rendered within the command dialog"
+              },
+              "open": {
+                "type": "boolean",
+                "description": "Controls whether the dialog is visible"
+              },
+              "onOpenChange": {
+                "type": "function",
+                "description": "Callback fired when the open state changes"
+              }
+            }
+          },
+          "visualLayout": "A modal dialog with no padding that contains a command menu interface"
+        },
+        "type": "component"
+      }
+    },
+    "CommandInput": {
+      "dependencies": [
+        {
+          "file": "/src/lib/utils.ts",
+          "declarations": ["cn"]
+        }
+      ],
+      "externalDependencies": [
+        {
+          "importPath": "react",
+          "declarations": ["forwardRef"]
+        },
+        {
+          "importPath": "cmdk",
+          "declarations": ["CommandPrimitive"]
+        },
+        {
+          "importPath": "lucide-react",
+          "declarations": ["Search"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CommandInput",
+          "description": "A search input field component for the command menu with an integrated search icon. It provides the main interaction point for users to filter and search through command options.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the input"
+              },
+              "placeholder": {
+                "type": "string",
+                "description": "Placeholder text for the input field"
+              }
+            }
+          },
+          "visualLayout": "A flex container with a search icon and a full-width text input with transparent background"
+        },
+        "type": "component"
+      }
+    },
+    "CommandList": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "cmdk",
+          "dependsOn": ["CommandPrimitive"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CommandList",
+          "description": "A scrollable container that holds the list of command options. It manages the vertical overflow of command items with a maximum height.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the list container"
+              }
+            }
+          },
+          "visualLayout": "A scrollable container with a maximum height of 300px that handles overflow"
+        },
+        "type": "component"
+      }
+    },
+    "CommandEmpty": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "cmdk",
+          "dependsOn": ["CommandPrimitive"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CommandEmpty",
+          "description": "A component that displays when no results are found in the command menu. It provides feedback to users when their search yields no matches.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the empty state"
+              }
+            }
+          },
+          "visualLayout": "A centered text container with padding that displays a message when no results are found"
+        },
+        "type": "component"
+      }
+    },
+    "CommandGroup": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "cmdk",
+          "dependsOn": ["CommandPrimitive"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CommandGroup",
+          "description": "A component that groups related command items together with an optional heading. It provides organizational structure to the command menu.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the group"
+              },
+              "heading": {
+                "type": "string",
+                "description": "The heading text for the group"
+              }
+            }
+          },
+          "visualLayout": "A container with padding that groups command items and includes an optional styled heading"
+        },
+        "type": "component"
+      }
+    },
+    "CommandSeparator": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "cmdk",
+          "dependsOn": ["CommandPrimitive"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CommandSeparator",
+          "description": "A visual separator line used to divide sections within the command menu. It helps organize and structure the command interface.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the separator"
+              }
+            }
+          },
+          "visualLayout": "A horizontal line with subtle styling that spans the width of the command menu"
+        },
+        "type": "component"
+      }
+    },
+    "CommandItem": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "cmdk",
+          "dependsOn": ["CommandPrimitive"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CommandItem",
+          "description": "An interactive item in the command menu that users can select. It supports states for selection, disabled status, and can include icons and shortcuts.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the item"
+              },
+              "disabled": {
+                "type": "boolean",
+                "description": "Whether the item is disabled"
+              },
+              "onSelect": {
+                "type": "function",
+                "description": "Callback fired when the item is selected"
+              }
+            }
+          },
+          "visualLayout": "A flex container with padding that displays an item with optional icon and supports hover and selected states"
+        },
+        "type": "component"
+      }
+    },
+    "CommandShortcut": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CommandShortcut",
+          "description": "A component that displays keyboard shortcuts associated with command items. It provides visual hints for keyboard interactions.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the shortcut text"
+              }
+            }
+          },
+          "visualLayout": "A right-aligned span element that displays keyboard shortcut text in a muted color"
+        },
+        "type": "component"
+      }
+    }
+  }
+}

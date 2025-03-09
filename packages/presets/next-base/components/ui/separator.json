@@ -1,0 +1,62 @@
+{
+  "file": "/src/components/ui/separator.tsx",
+  "declarations": {
+    "Separator": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-separator",
+          "dependsOn": ["Root"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Separator",
+          "description": "A visual divider component that creates a thin line to separate content. Built on top of Radix UI's Separator primitive, this component provides a customizable way to create horizontal or vertical separators in the UI.",
+          "remarks": "This component is particularly useful for creating visual boundaries between different sections of content while maintaining proper accessibility semantics.",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "orientation": {
+                "type": "string",
+                "enum": ["horizontal", "vertical"],
+                "description": "The orientation of the separator",
+                "default": "horizontal"
+              },
+              "decorative": {
+                "type": "boolean",
+                "description": "When true, indicates that the separator is purely decorative and does not have semantic meaning",
+                "default": true
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the separator"
+              }
+            }
+          },
+          "rendersOn": "client",
+          "visualLayout": "A thin line that spans either horizontally or vertically based on the orientation prop. The horizontal separator has a height of 1px and full width, while the vertical separator has a width of 1px and full height.",
+          "implementationNotes": "The component uses Radix UI's Separator primitive for accessibility and combines it with Tailwind CSS for styling. The cn utility is used for class name merging.",
+          "subtype": "reusable",
+          "examples": [
+            "<Separator />",
+            "<Separator orientation=\"vertical\" />",
+            "<Separator className=\"my-4\" />",
+            "<Separator decorative={false} />"
+          ]
+        },
+        "type": "component"
+      }
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "file": "/src/components/ui/textarea.tsx",
+  "declarations": {
+    "Textarea": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Textarea",
+          "description": "A customizable textarea component that extends the native HTML textarea element with consistent styling and accessibility features. It supports all standard textarea props and includes custom styling with focus states, disabled states, and responsive text sizes.",
+          "properties": {
+            "type": "object",
+            "description": "Accepts all standard HTML textarea attributes plus custom className",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to be applied to the textarea element"
+              }
+            }
+          },
+          "rendersOn": "both",
+          "interactions": [
+            "Users can type and edit text in the textarea",
+            "Component responds to focus with a ring effect",
+            "Disabled state shows reduced opacity and not-allowed cursor",
+            "Supports all native textarea interactions and events"
+          ],
+          "visualLayout": "A full-width textarea input with minimum height of 60px, rounded corners, border, and transparent background. Features custom styling for focus states (ring effect), placeholder text, and disabled states. Text size is responsive - base size on mobile and smaller on desktop.",
+          "implementationNotes": "Component uses React.forwardRef to allow ref forwarding to the underlying textarea element. It utilizes a utility function 'cn' for class name merging. The component maintains a consistent design system through predefined classes while allowing customization through className prop.",
+          "subtype": "reusable",
+          "examples": [
+            "<Textarea placeholder=\"Type your message here.\" />",
+            "<Textarea className=\"h-40\" placeholder=\"Enter a long message\" disabled />",
+            "<Textarea className=\"custom-class\" onChange={(e) => console.log(e.target.value)} />"
+          ]
+        },
+        "type": "component"
+      }
+    }
+  }
+}

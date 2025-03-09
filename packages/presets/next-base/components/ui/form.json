@@ -1,0 +1,310 @@
+{
+  "file": "/src/components/ui/form.tsx",
+  "declarations": {
+    "Form": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "react-hook-form",
+          "dependsOn": ["FormProvider"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Form",
+          "description": "A wrapper component that provides form context using react-hook-form's FormProvider. It enables form state management and validation throughout the form component tree.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "description": "Accepts all props from react-hook-form's FormProvider"
+          },
+          "examples": [
+            "<Form {...form}>\n  <FormField name=\"username\" />\n  <FormField name=\"password\" />\n</Form>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "FormField": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "react-hook-form",
+          "dependsOn": [
+            "FieldValues",
+            "FieldPath",
+            "ControllerProps",
+            "Controller"
+          ]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "FormField",
+          "description": "A component that provides form field context and integrates with react-hook-form's Controller component. It manages the connection between the form state and the field components.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the form field"
+              }
+            },
+            "required": ["name"]
+          },
+          "examples": [
+            "<FormField\n  name=\"email\"\n  control={form.control}\n  render={({ field }) => (\n    <FormItem>\n      <FormLabel>Email</FormLabel>\n      <FormControl>\n        <input {...field} />\n      </FormControl>\n    </FormItem>\n  )}\n/>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "useFormField": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["useContext"]
+        },
+        {
+          "type": "external",
+          "from": "react-hook-form",
+          "dependsOn": ["useFormContext"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "useFormField",
+          "description": "A custom hook that provides access to the form field context and state. It returns the field's ID, validation state, and accessibility IDs for various form components.",
+          "signature": "function useFormField(): { id: string; name: string; formItemId: string; formDescriptionId: string; formMessageId: string; error?: FieldError }",
+          "subtype": "rpc",
+          "summary": "Hook to access form field context and state",
+          "throws": [
+            {
+              "type": "Error",
+              "description": "Thrown when the hook is used outside of a FormField component"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Returns an object containing form field context and state",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Unique identifier for the form field"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Name of the form field"
+                      },
+                      "formItemId": {
+                        "type": "string",
+                        "description": "ID for the form item element"
+                      },
+                      "formDescriptionId": {
+                        "type": "string",
+                        "description": "ID for the form description element"
+                      },
+                      "formMessageId": {
+                        "type": "string",
+                        "description": "ID for the form message element"
+                      },
+                      "error": {
+                        "type": "object",
+                        "description": "Error object if validation fails"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "type": "endpoint"
+      }
+    },
+    "FormItem": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef", "useId"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "FormItem",
+          "description": "A component that provides layout structure for form fields. It creates a context for the form field and manages spacing between form elements.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              }
+            }
+          },
+          "examples": [
+            "<FormItem>\n  <FormLabel>Username</FormLabel>\n  <FormControl>\n    <input type=\"text\" />\n  </FormControl>\n</FormItem>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "FormLabel": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/components/ui/label.tsx",
+          "dependsOn": ["Label"]
+        },
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "FormLabel",
+          "description": "A component that renders a label for a form field. It automatically handles error states and connects with the form field context for proper accessibility.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              }
+            }
+          },
+          "examples": ["<FormLabel>Email Address</FormLabel>"]
+        },
+        "type": "component"
+      }
+    },
+    "FormControl": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-slot",
+          "dependsOn": ["Slot"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "FormControl",
+          "description": "A component that wraps form inputs and provides proper accessibility attributes based on the form state. It automatically handles aria-describedby and aria-invalid attributes based on the field's error state.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "object",
+                "description": "Reference to the underlying DOM element"
+              }
+            }
+          },
+          "examples": [
+            "<FormControl>\n  <input type=\"text\" />\n</FormControl>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "FormDescription": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "FormDescription",
+          "description": "A component that renders helper text below a form field. It automatically connects with the form field context to provide proper accessibility attributes.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              }
+            }
+          },
+          "examples": [
+            "<FormDescription>This is a helper text for the form field.</FormDescription>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "FormMessage": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "FormMessage",
+          "description": "A component that displays validation error messages for a form field. It automatically shows the error message from the form state when validation fails.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              }
+            }
+          },
+          "examples": ["<FormMessage>This field is required</FormMessage>"]
+        },
+        "type": "component"
+      }
+    }
+  }
+}

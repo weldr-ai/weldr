@@ -1,0 +1,130 @@
+{
+  "file": "/src/components/ui/alert.tsx",
+  "declarations": {
+    "Alert": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "class-variance-authority",
+          "dependsOn": ["VariantProps"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Alert",
+          "description": "A reusable alert component that displays important messages or notifications to users. It supports different variants (default and destructive) and can contain titles and descriptions. The component is built using class-variance-authority for style variants management.",
+          "subtype": "reusable",
+          "rendersOn": "both",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "variant": {
+                "type": "string",
+                "enum": ["default", "destructive"],
+                "description": "Controls the visual style of the alert",
+                "default": "default"
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the alert"
+              }
+            },
+            "description": "Extends HTMLDivElement attributes"
+          },
+          "examples": [
+            "<Alert>\n  <AlertTitle>Heads up!</AlertTitle>\n  <AlertDescription>This is a default alert message.</AlertDescription>\n</Alert>",
+            "<Alert variant=\"destructive\">\n  <AlertTitle>Error</AlertTitle>\n  <AlertDescription>Something went wrong.</AlertDescription>\n</Alert>"
+          ],
+          "visualLayout": "A rounded container with optional icon space on the left side. Content is padded and can include a title and description. Different variants affect the background, border, and text colors."
+        },
+        "type": "component"
+      }
+    },
+    "AlertTitle": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "AlertTitle",
+          "description": "A component that renders the title text within an Alert component. It provides appropriate styling for the heading of the alert message with medium font weight and tight tracking.",
+          "subtype": "reusable",
+          "rendersOn": "both",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the title"
+              }
+            },
+            "description": "Extends HTMLHeadingElement attributes"
+          },
+          "examples": [
+            "<AlertTitle>Success!</AlertTitle>",
+            "<AlertTitle>Warning</AlertTitle>"
+          ],
+          "visualLayout": "A heading element (h5) with medium font weight, no bottom margin, and tight letter spacing. Typically appears above the AlertDescription component."
+        },
+        "type": "component"
+      }
+    },
+    "AlertDescription": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "AlertDescription",
+          "description": "A component that renders the description text within an Alert component. It provides appropriate styling for the descriptive content of the alert message.",
+          "subtype": "reusable",
+          "rendersOn": "both",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the description"
+              }
+            },
+            "description": "Extends HTMLParagraphElement attributes"
+          },
+          "examples": [
+            "<AlertDescription>Your changes have been saved successfully.</AlertDescription>",
+            "<AlertDescription>Please check your input and try again.</AlertDescription>"
+          ],
+          "visualLayout": "A text container with relaxed line height for better readability. Typically appears below the AlertTitle component."
+        },
+        "type": "component"
+      }
+    }
+  }
+}

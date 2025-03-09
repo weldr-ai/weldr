@@ -1,0 +1,218 @@
+{
+  "file": "/src/components/ui/card.tsx",
+  "declarations": {
+    "Card": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Card",
+          "description": "A versatile card component that serves as a container for content with a consistent visual style. It provides a rounded border, background color, and subtle shadow to create a card-like appearance.",
+          "subtype": "reusable",
+          "rendersOn": "both",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to be applied to the card container"
+              }
+            }
+          },
+          "examples": [
+            "<Card>\n  <CardHeader>\n    <CardTitle>Title</CardTitle>\n    <CardDescription>Description</CardDescription>\n  </CardHeader>\n  <CardContent>Content goes here</CardContent>\n  <CardFooter>Footer content</CardFooter>\n</Card>"
+          ],
+          "visualLayout": "A rectangular container with rounded corners, a border, background color, and subtle shadow. It can contain various child components like header, content, and footer sections."
+        },
+        "type": "component"
+      }
+    },
+    "CardHeader": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CardHeader",
+          "description": "The header section of the card component. It provides a container for the card's title, description, and other header content with appropriate spacing.",
+          "subtype": "reusable",
+          "rendersOn": "both",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to be applied to the header container"
+              }
+            }
+          },
+          "examples": [
+            "<CardHeader>\n  <CardTitle>Card Title</CardTitle>\n  <CardDescription>Card Description</CardDescription>\n</CardHeader>"
+          ],
+          "visualLayout": "A flexbox container with vertical layout and consistent spacing between elements. It includes padding and is typically used to house the card's title and description."
+        },
+        "type": "component"
+      }
+    },
+    "CardTitle": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CardTitle",
+          "description": "The title component for the card. It provides a visually prominent heading with appropriate typography styles including semi-bold weight and tight letter spacing.",
+          "subtype": "reusable",
+          "rendersOn": "both",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to be applied to the title text"
+              }
+            }
+          },
+          "examples": ["<CardTitle>Featured Article</CardTitle>"],
+          "visualLayout": "A text container with semi-bold font weight and tight letter spacing, typically placed at the top of the card header to provide the main heading."
+        },
+        "type": "component"
+      }
+    },
+    "CardDescription": {
+      "dependencies": [
+        {
+          "file": "/src/lib/utils.ts",
+          "declarations": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CardDescription",
+          "description": "A text component designed for displaying secondary or descriptive text within a card header. It uses a muted color and smaller font size to create visual hierarchy.",
+          "subtype": "reusable",
+          "rendersOn": "both",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to be applied to the description text"
+              }
+            }
+          },
+          "examples": [
+            "<CardDescription>This is a description of the card's purpose or content.</CardDescription>"
+          ],
+          "visualLayout": "A text container with smaller font size and muted color, typically placed below the card title within the header."
+        },
+        "type": "component"
+      }
+    },
+    "CardContent": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CardContent",
+          "description": "The main content area of the card component. It provides appropriate padding and spacing for the card's primary content.",
+          "subtype": "reusable",
+          "rendersOn": "both",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to be applied to the content container"
+              }
+            }
+          },
+          "examples": [
+            "<CardContent>\n  <p>This is the main content of the card.</p>\n</CardContent>"
+          ],
+          "visualLayout": "A padded container within the card that holds the main content. It has padding on all sides except the top, which is removed to maintain proper spacing with the header."
+        },
+        "type": "component"
+      }
+    },
+    "CardFooter": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CardFooter",
+          "description": "The footer section of the card component. It provides a container for actions, additional information, or other content that should appear at the bottom of the card.",
+          "subtype": "reusable",
+          "rendersOn": "both",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to be applied to the footer container"
+              }
+            }
+          },
+          "examples": [
+            "<CardFooter>\n  <Button>Action</Button>\n  <Button variant=\"secondary\">Cancel</Button>\n</CardFooter>"
+          ],
+          "visualLayout": "A flexbox container at the bottom of the card with centered items and appropriate padding. It removes top padding to maintain proper spacing with the content above."
+        },
+        "type": "component"
+      }
+    }
+  }
+}

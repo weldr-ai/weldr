@@ -1,0 +1,43 @@
+{
+  "file": "/src/components/ui/aspect-ratio.tsx",
+  "declarations": {
+    "AspectRatio": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-aspect-ratio",
+          "dependsOn": ["Root"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "AspectRatio",
+          "description": "A component that maintains a consistent aspect ratio for its content. It wraps around content to ensure it maintains the specified width-to-height ratio, which is particularly useful for responsive images, videos, or other media content that needs to maintain specific proportions across different screen sizes.",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "ratio": {
+                "type": "number",
+                "description": "The desired ratio of width to height (default is 1)",
+                "default": 1
+              },
+              "children": {
+                "type": "any",
+                "description": "The content to maintain the aspect ratio for"
+              }
+            }
+          },
+          "rendersOn": "client",
+          "visualLayout": "The component creates a container that maintains the specified aspect ratio, with the child content filling the available space while maintaining the proper proportions.",
+          "implementationNotes": "This component is a wrapper around Radix UI's AspectRatio primitive, providing a simple way to maintain consistent aspect ratios in the UI. It's particularly useful for preventing content from becoming distorted during responsive layout changes.",
+          "subtype": "reusable",
+          "examples": [
+            "<AspectRatio ratio={16/9}>\n  <img src=\"/example.jpg\" alt=\"Example\" />\n</AspectRatio>",
+            "<AspectRatio ratio={1}>\n  <div className=\"square-content\">1:1 Square Content</div>\n</AspectRatio>"
+          ]
+        },
+        "type": "component"
+      }
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "file": "/src/components/ui/hover-card.tsx",
+  "declarations": {
+    "HoverCard": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-hover-card",
+          "dependsOn": ["Root"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "HoverCard",
+          "description": "A wrapper component that provides hover card functionality. It acts as the root container for the hover card system, managing the state and context for its children components (trigger and content).",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "open": {
+                "type": "boolean",
+                "description": "Controls the open state of the hover card"
+              },
+              "defaultOpen": {
+                "type": "boolean",
+                "description": "Sets the initial open state of the hover card"
+              },
+              "onOpenChange": {
+                "type": "function",
+                "description": "Callback function called when the open state changes"
+              }
+            }
+          },
+          "examples": [
+            "<HoverCard>\n  <HoverCardTrigger>Hover me</HoverCardTrigger>\n  <HoverCardContent>Hover card content</HoverCardContent>\n</HoverCard>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "HoverCardTrigger": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-hover-card",
+          "dependsOn": ["Trigger"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "HoverCardTrigger",
+          "description": "The trigger element that will show the hover card content when hovered. This component wraps around the element that should trigger the hover card to appear.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "asChild": {
+                "type": "boolean",
+                "description": "Change the component to the HTML tag or component provided"
+              }
+            }
+          },
+          "examples": ["<HoverCardTrigger>Hover over me</HoverCardTrigger>"]
+        },
+        "type": "component"
+      }
+    },
+    "HoverCardContent": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-hover-card",
+          "dependsOn": ["Content"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "HoverCardContent",
+          "description": "The content component that appears when the trigger is hovered. It renders a floating card with customizable positioning and animations.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the content"
+              },
+              "align": {
+                "type": "string",
+                "description": "The alignment of the content relative to the trigger",
+                "default": "center"
+              },
+              "sideOffset": {
+                "type": "number",
+                "description": "The distance in pixels from the trigger",
+                "default": 4
+              }
+            }
+          },
+          "visualLayout": "A floating card that appears when the trigger is hovered. It has rounded corners, a border, background color, and smooth animations for entering and exiting. The card includes padding and can be positioned relative to the trigger element.",
+          "examples": [
+            "<HoverCardContent className=\"custom-class\">\n  <p>Hover card content goes here</p>\n</HoverCardContent>"
+          ]
+        },
+        "type": "component"
+      }
+    }
+  }
+}

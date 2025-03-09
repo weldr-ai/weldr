@@ -1,0 +1,142 @@
+{
+  "file": "/src/components/ui/avatar.tsx",
+  "declarations": {
+    "Avatar": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-avatar",
+          "dependsOn": ["Root"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Avatar",
+          "description": "A reusable avatar component that serves as the root container for displaying user avatars. Built on top of Radix UI's Avatar primitive, it provides a circular container for avatar images with consistent sizing and styling.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the avatar container"
+              }
+            }
+          },
+          "visualLayout": "A circular container with fixed dimensions (h-10 w-10) that clips its contents to a rounded shape. It maintains aspect ratio and handles overflow gracefully.",
+          "examples": [
+            "<Avatar>\n  <AvatarImage src=\"user-avatar.jpg\" alt=\"User\" />\n  <AvatarFallback>JD</AvatarFallback>\n</Avatar>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "AvatarImage": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-avatar",
+          "dependsOn": ["Image"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "AvatarImage",
+          "description": "The image component of the Avatar system. It handles the display of the actual avatar image while maintaining proper aspect ratio and filling the container appropriately.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "src": {
+                "type": "string",
+                "description": "The source URL of the avatar image"
+              },
+              "alt": {
+                "type": "string",
+                "description": "Alternative text for the avatar image"
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the image"
+              }
+            },
+            "required": ["src", "alt"]
+          },
+          "visualLayout": "A square image that fills its container while maintaining a 1:1 aspect ratio",
+          "examples": [
+            "<AvatarImage src=\"/path/to/image.jpg\" alt=\"User Name\" />"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "AvatarFallback": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-avatar",
+          "dependsOn": ["Fallback"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "AvatarFallback",
+          "description": "A fallback component that displays when the avatar image fails to load or is not provided. It provides a centered container for displaying alternative content such as user initials or a placeholder icon.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the fallback container"
+              },
+              "children": {
+                "type": "string",
+                "description": "The content to display in the fallback (typically user initials or an icon)"
+              }
+            }
+          },
+          "visualLayout": "A centered container that fills the avatar space with a muted background color, typically displaying text or an icon in the center",
+          "examples": [
+            "<AvatarFallback>JD</AvatarFallback>",
+            "<AvatarFallback>\n  <UserIcon className=\"w-6 h-6\" />\n</AvatarFallback>"
+          ]
+        },
+        "type": "component"
+      }
+    }
+  }
+}

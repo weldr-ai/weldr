@@ -1,0 +1,361 @@
+{
+  "file": "/src/components/ui/sheet.tsx",
+  "declarations": {
+    "Sheet": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dialog",
+          "dependsOn": ["Root"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Sheet",
+          "description": "A dialog component that slides in from the edge of the screen. The root component that wraps the entire sheet functionality.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": "any",
+                "description": "The content of the sheet"
+              },
+              "open": {
+                "type": "boolean",
+                "description": "Controls the open state of the sheet"
+              },
+              "onOpenChange": {
+                "type": "function",
+                "description": "Callback function called when the open state changes"
+              }
+            }
+          },
+          "examples": [
+            "<Sheet>\n  <SheetTrigger>Open Sheet</SheetTrigger>\n  <SheetContent>\n    <SheetHeader>\n      <SheetTitle>Sheet Title</SheetTitle>\n      <SheetDescription>Sheet Description</SheetDescription>\n    </SheetHeader>\n  </SheetContent>\n</Sheet>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "SheetTrigger": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dialog",
+          "dependsOn": ["Trigger"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "SheetTrigger",
+          "description": "Button component that triggers the sheet to open when clicked.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the trigger button"
+              },
+              "children": {
+                "type": "any",
+                "description": "The content of the trigger button"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "SheetClose": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dialog",
+          "dependsOn": ["Close"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "SheetClose",
+          "description": "Button component that closes the sheet when clicked.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the close button"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "SheetPortal": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dialog",
+          "dependsOn": ["Portal"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "SheetPortal",
+          "description": "Portal component that renders the sheet content at the root of the document, ensuring proper stacking context and accessibility.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": "any",
+                "description": "The content to be rendered in the portal"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "SheetOverlay": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dialog",
+          "dependsOn": ["Overlay"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "SheetOverlay",
+          "description": "Semi-transparent overlay that covers the main content when the sheet is open. Provides a visual backdrop and blocks interaction with the main content.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the overlay"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "SheetContent": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dialog",
+          "dependsOn": ["Content", "Close"]
+        },
+        {
+          "type": "external",
+          "from": "lucide-react",
+          "dependsOn": ["X"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "SheetContent",
+          "description": "The main content container of the sheet that slides in from one of the edges. Contains the sheet's content and a close button.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "side": {
+                "type": "string",
+                "enum": ["top", "right", "bottom", "left"],
+                "default": "right",
+                "description": "The edge of the screen the sheet should appear from"
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              },
+              "children": {
+                "type": "any",
+                "description": "The content of the sheet"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "SheetHeader": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "SheetHeader",
+          "description": "Header component for the sheet, typically containing the title and description. Centers content on mobile and left-aligns on larger screens.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              },
+              "children": {
+                "type": "any",
+                "description": "The header content, typically title and description"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "SheetFooter": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "SheetFooter",
+          "description": "Footer component for the sheet, typically containing action buttons. Arranges items in a row with right alignment on larger screens and in a reversed column on mobile.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              },
+              "children": {
+                "type": "any",
+                "description": "The footer content, typically action buttons"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "SheetTitle": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dialog",
+          "dependsOn": ["Title"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "SheetTitle",
+          "description": "Title component rendered within the sheet header. Displays the main heading of the sheet.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              },
+              "children": {
+                "type": "any",
+                "description": "The title text content"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "SheetDescription": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dialog",
+          "dependsOn": ["Description"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "SheetDescription",
+          "description": "Description text component rendered within the sheet. Provides additional context about the sheet's purpose.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              },
+              "children": {
+                "type": "any",
+                "description": "The description text content"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    }
+  }
+}

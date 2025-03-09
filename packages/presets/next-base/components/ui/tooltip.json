@@ -1,0 +1,170 @@
+{
+  "file": "/src/components/ui/tooltip.tsx",
+  "declarations": {
+    "TooltipProvider": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-tooltip",
+          "dependsOn": ["Provider"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "TooltipProvider",
+          "description": "A provider component that must wrap all tooltip instances. Shares tooltip context across all tooltip components.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": ["array", "object"],
+                "description": "The content containing tooltip components"
+              },
+              "delayDuration": {
+                "type": "number",
+                "description": "The default delay duration for all tooltip instances within the provider"
+              },
+              "skipDelayDuration": {
+                "type": "number",
+                "description": "The delay duration when quickly moving between multiple tooltips"
+              }
+            }
+          },
+          "examples": [
+            "<TooltipProvider>\n  <Tooltip>...</Tooltip>\n  <Tooltip>...</Tooltip>\n</TooltipProvider>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "Tooltip": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-tooltip",
+          "dependsOn": ["Root"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Tooltip",
+          "description": "A root component that wraps the tooltip trigger and content. It manages the state and positioning of the tooltip. Based on Radix UI's Tooltip primitive.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": "array",
+                "description": "Must contain TooltipTrigger and TooltipContent components"
+              },
+              "defaultOpen": {
+                "type": "boolean",
+                "description": "The open state of the tooltip when it is initially rendered"
+              },
+              "open": {
+                "type": "boolean",
+                "description": "The controlled open state of the tooltip"
+              },
+              "onOpenChange": {
+                "type": "function",
+                "description": "Event handler called when the open state of the tooltip changes"
+              },
+              "delayDuration": {
+                "type": "number",
+                "description": "The duration from when the mouse enters the trigger until the tooltip gets opened"
+              }
+            }
+          },
+          "examples": [
+            "<Tooltip>\n  <TooltipTrigger>Hover me</TooltipTrigger>\n  <TooltipContent>Tooltip content</TooltipContent>\n</Tooltip>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "TooltipTrigger": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-tooltip",
+          "dependsOn": ["Trigger"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "TooltipTrigger",
+          "description": "The element that triggers the tooltip to open when hovered or focused. Usually wraps an interactive element like a button or icon.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": ["string", "object"],
+                "description": "The element that triggers the tooltip"
+              },
+              "asChild": {
+                "type": "boolean",
+                "description": "Change the component to the HTML tag or component provided"
+              }
+            }
+          },
+          "examples": [
+            "<TooltipTrigger>\n  <button>Hover me</button>\n</TooltipTrigger>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "TooltipContent": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-tooltip",
+          "dependsOn": ["Portal", "Content"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "TooltipContent",
+          "description": "The component that contains the tooltip content. It handles the positioning and animations of the tooltip popup. Renders in a Portal to avoid z-index issues.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the tooltip content"
+              },
+              "sideOffset": {
+                "type": "number",
+                "description": "The distance in pixels from the trigger",
+                "default": 4
+              },
+              "children": {
+                "type": ["string", "object"],
+                "description": "The content to be displayed in the tooltip"
+              }
+            }
+          },
+          "visualLayout": "A floating box with rounded corners, background color, and smooth animations for entry and exit. Supports different slide-in animations based on the tooltip position."
+        },
+        "type": "component"
+      }
+    }
+  }
+}

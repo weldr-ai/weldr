@@ -1,0 +1,232 @@
+{
+  "file": "/src/components/ui/chart.tsx",
+  "declarations": {
+    "ChartConfig": {
+      "metadata": {
+        "type": "other",
+        "declType": "type",
+        "name": "ChartConfig",
+        "description": "A type definition that specifies the configuration for chart components. It represents a record where each key maps to an object containing optional label and icon properties, along with either a color string or a theme object that maps theme names to colors. This configuration is used to customize the appearance and labeling of chart elements."
+      }
+    },
+    "ChartContainer": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef", "useId"]
+        },
+        {
+          "type": "external",
+          "from": "recharts",
+          "dependsOn": ["ResponsiveContainer"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "ChartContainer",
+          "description": "A wrapper component that provides a responsive container for Recharts charts. It manages the chart context and applies consistent styling across different chart types.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "config": {
+                "type": "object",
+                "description": "Configuration object for the chart following ChartConfig type"
+              },
+              "children": {
+                "type": "object",
+                "description": "Chart components to be rendered inside the container"
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the container"
+              }
+            },
+            "required": ["config", "children"]
+          },
+          "examples": [
+            "<ChartContainer config={chartConfig}>\n  <LineChart data={data}>\n    <Line dataKey=\"value\" />\n  </LineChart>\n</ChartContainer>"
+          ],
+          "visualLayout": "A responsive container that wraps chart components and provides consistent styling and theming support. It maintains aspect-video ratio and includes customizable styling for various chart elements like axes, grids, and tooltips."
+        },
+        "type": "component"
+      }
+    },
+    "ChartStyle": {
+      "metadata": {
+        "definition": {
+          "name": "ChartStyle",
+          "description": "An internal component that generates and injects CSS variables for chart theming based on the provided configuration.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the chart"
+              },
+              "config": {
+                "type": "object",
+                "description": "Chart configuration object"
+              }
+            },
+            "required": ["id", "config"]
+          }
+        },
+        "type": "component"
+      }
+    },
+    "ChartTooltip": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "recharts",
+          "dependsOn": ["Tooltip"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "ChartTooltip",
+          "description": "A re-export of the Recharts Tooltip component for displaying chart tooltips.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "description": "Inherits all properties from Recharts Tooltip component"
+          }
+        },
+        "type": "component"
+      }
+    },
+    "ChartTooltipContent": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef", "useMemo"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "ChartTooltipContent",
+          "description": "A customizable tooltip content component that displays detailed information about chart data points with support for custom formatting and styling.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "hideLabel": {
+                "type": "boolean",
+                "description": "Whether to hide the tooltip label"
+              },
+              "hideIndicator": {
+                "type": "boolean",
+                "description": "Whether to hide the color indicator"
+              },
+              "indicator": {
+                "type": "string",
+                "enum": ["line", "dot", "dashed"],
+                "description": "Style of the color indicator"
+              },
+              "nameKey": {
+                "type": "string",
+                "description": "Key to use for item names"
+              },
+              "labelKey": {
+                "type": "string",
+                "description": "Key to use for labels"
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              }
+            }
+          },
+          "visualLayout": "A floating card with a border that displays the data point label, value, and optional color indicators. Supports multiple data points and custom formatting."
+        },
+        "type": "component"
+      }
+    },
+    "ChartLegend": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "recharts",
+          "dependsOn": ["Legend"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "ChartLegend",
+          "description": "A re-export of the Recharts Legend component for displaying chart legends.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "description": "Inherits all properties from Recharts Legend component"
+          }
+        },
+        "type": "component"
+      }
+    },
+    "ChartLegendContent": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "ChartLegendContent",
+          "description": "A customizable legend content component that displays chart legend items with optional icons and custom styling.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "hideIcon": {
+                "type": "boolean",
+                "description": "Whether to hide the legend item icons"
+              },
+              "nameKey": {
+                "type": "string",
+                "description": "Key to use for identifying legend items"
+              },
+              "verticalAlign": {
+                "type": "string",
+                "enum": ["top", "bottom"],
+                "description": "Vertical alignment of the legend"
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              }
+            }
+          },
+          "visualLayout": "A horizontal list of legend items, each containing an optional icon and label. Items are centered and can be aligned to the top or bottom of the chart."
+        },
+        "type": "component"
+      }
+    }
+  }
+}

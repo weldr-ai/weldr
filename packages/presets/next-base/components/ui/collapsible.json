@@ -1,0 +1,114 @@
+{
+  "file": "/src/components/ui/collapsible.tsx",
+  "declarations": {
+    "Collapsible": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-collapsible",
+          "dependsOn": ["Root"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Collapsible",
+          "description": "A component that wraps collapsible content and manages its expanded/collapsed state. This is the root component that provides context for the collapsible functionality.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "open": {
+                "type": "boolean",
+                "description": "The controlled open state of the collapsible"
+              },
+              "defaultOpen": {
+                "type": "boolean",
+                "description": "The default open state when initially rendered"
+              },
+              "onOpenChange": {
+                "type": "function",
+                "description": "Event handler called when the open state changes"
+              },
+              "disabled": {
+                "type": "boolean",
+                "description": "When true, prevents the user from interacting with the collapsible"
+              }
+            }
+          },
+          "examples": [
+            "<Collapsible>\n  <CollapsibleTrigger>Toggle</CollapsibleTrigger>\n  <CollapsibleContent>Content goes here</CollapsibleContent>\n</Collapsible>",
+            "<Collapsible defaultOpen={true}>\n  <CollapsibleTrigger>Toggle</CollapsibleTrigger>\n  <CollapsibleContent>Initially expanded content</CollapsibleContent>\n</Collapsible>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "CollapsibleTrigger": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-collapsible",
+          "dependsOn": ["CollapsibleTrigger"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CollapsibleTrigger",
+          "description": "The button that toggles the collapsible content. This component must be rendered inside a Collapsible component and controls its expanded/collapsed state.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "asChild": {
+                "type": "boolean",
+                "description": "Change the component to the HTML tag or component of your choice"
+              }
+            }
+          },
+          "examples": [
+            "<CollapsibleTrigger>Click to toggle</CollapsibleTrigger>",
+            "<CollapsibleTrigger asChild>\n  <button className=\"custom-button\">Toggle</button>\n</CollapsibleTrigger>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "CollapsibleContent": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-collapsible",
+          "dependsOn": ["CollapsibleContent"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "CollapsibleContent",
+          "description": "The component that contains the collapsible content. This component must be rendered inside a Collapsible component and will be shown/hidden based on the expanded/collapsed state.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "asChild": {
+                "type": "boolean",
+                "description": "Change the component to the HTML tag or component of your choice"
+              },
+              "forceMount": {
+                "type": "boolean",
+                "description": "Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries."
+              }
+            }
+          },
+          "examples": [
+            "<CollapsibleContent>\n  <p>This content can be collapsed</p>\n</CollapsibleContent>",
+            "<CollapsibleContent forceMount>\n  <div className=\"animated-content\">Always mounted content</div>\n</CollapsibleContent>"
+          ]
+        },
+        "type": "component"
+      }
+    }
+  }
+}

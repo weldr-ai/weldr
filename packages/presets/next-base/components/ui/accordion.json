@@ -1,0 +1,201 @@
+{
+  "file": "/src/components/ui/accordion.tsx",
+  "declarations": {
+    "Accordion": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-accordion",
+          "dependsOn": ["Root"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Accordion",
+          "description": "A vertically stacked set of interactive headings that each reveal a section of content. This is the root component that wraps all accordion elements.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "The type of accordion ('single' or 'multiple')",
+                "enum": ["single", "multiple"]
+              },
+              "value": {
+                "type": "string",
+                "description": "The controlled value of the accordion (for controlled components)"
+              },
+              "defaultValue": {
+                "type": "string",
+                "description": "The default value of the accordion (for uncontrolled components)"
+              },
+              "children": {
+                "type": "object",
+                "description": "The accordion items to be rendered within the accordion"
+              }
+            }
+          },
+          "examples": [
+            "<Accordion type=\"single\" defaultValue=\"item-1\">\n  <AccordionItem value=\"item-1\">\n    <AccordionTrigger>Section 1</AccordionTrigger>\n    <AccordionContent>Content 1</AccordionContent>\n  </AccordionItem>\n</Accordion>"
+          ],
+          "interactions": [
+            "Can be controlled or uncontrolled using value/defaultValue props",
+            "Supports single or multiple expanded sections"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "AccordionItem": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-accordion",
+          "dependsOn": ["Item"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "AccordionItem",
+          "description": "A single item within an accordion. Contains a trigger header and collapsible content section. Features a bottom border for visual separation.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "Unique identifier for the accordion item"
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the item"
+              },
+              "children": {
+                "type": "object",
+                "description": "The trigger and content components for this item"
+              }
+            }
+          },
+          "examples": [
+            "<AccordionItem value=\"item-1\">\n  <AccordionTrigger>Title</AccordionTrigger>\n  <AccordionContent>Content</AccordionContent>\n</AccordionItem>"
+          ],
+          "visualLayout": "Container with bottom border that wraps the trigger and content components"
+        },
+        "type": "component"
+      }
+    },
+    "AccordionTrigger": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-accordion",
+          "dependsOn": ["Header", "Trigger"]
+        },
+        {
+          "type": "external",
+          "from": "lucide-react",
+          "dependsOn": ["ChevronDown"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "AccordionTrigger",
+          "description": "The button that toggles the expanded/collapsed state of an accordion item. Features a chevron icon that rotates based on the expanded state.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the trigger"
+              },
+              "children": {
+                "type": "object",
+                "description": "The content of the trigger button"
+              }
+            }
+          },
+          "examples": [
+            "<AccordionTrigger>Click to expand/collapse</AccordionTrigger>"
+          ],
+          "visualLayout": "Flexible button with left-aligned text and right-aligned rotating chevron icon, featuring hover underline effect",
+          "interactions": [
+            "Clicking toggles the expanded state of the associated accordion item",
+            "Hovering shows an underline effect",
+            "Chevron icon rotates 180 degrees when expanded"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "AccordionContent": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-accordion",
+          "dependsOn": ["Content"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "AccordionContent",
+          "description": "The component that contains the collapsible content for an accordion item. Features smooth animation when expanding/collapsing.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the content"
+              },
+              "children": {
+                "type": "object",
+                "description": "The content to be displayed when the accordion item is expanded"
+              }
+            }
+          },
+          "examples": [
+            "<AccordionContent>\n  This is the expanded content of the accordion item.\n</AccordionContent>"
+          ],
+          "visualLayout": "Animated collapsible container that smoothly expands and collapses with a padding of 4 units at the bottom"
+        },
+        "type": "component"
+      }
+    }
+  }
+}

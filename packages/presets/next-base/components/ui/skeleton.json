@@ -1,0 +1,43 @@
+{
+  "file": "/src/components/ui/skeleton.tsx",
+  "declarations": {
+    "Skeleton": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "Skeleton",
+          "description": "A loading placeholder component that displays an animated pulsing effect. It's commonly used to indicate that content is being loaded, providing a better user experience by showing a visual representation of the content's shape before it arrives.",
+          "properties": {
+            "type": "object",
+            "description": "Extends React.HTMLAttributes<HTMLDivElement> allowing all standard HTML div attributes",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to be applied to the skeleton component. These classes will be merged with the default classes using the cn utility."
+              }
+            }
+          },
+          "rendersOn": "both",
+          "interactions": [
+            "Visual feedback through continuous pulse animation"
+          ],
+          "visualLayout": "A simple div element that renders as a rounded rectangle with a pulsing animation effect. The background color is set to a semi-transparent version of the primary color.",
+          "implementationNotes": "The component uses the cn utility function to merge custom className props with default classes. The animate-pulse class provides the loading animation effect, while rounded-md gives rounded corners and bg-primary/10 sets a semi-transparent background color.",
+          "subtype": "reusable",
+          "examples": [
+            "<Skeleton className=\"h-4 w-[250px]\" />",
+            "<Skeleton className=\"h-12 w-12 rounded-full\" />",
+            "<Skeleton className=\"h-32 w-full\" />"
+          ]
+        },
+        "type": "component"
+      }
+    }
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "file": "/src/components/ui/toggle-group.tsx",
+  "declarations": {
+    "ToggleGroup": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/components/ui/toggle.tsx",
+          "dependsOn": ["toggleVariants"]
+        },
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-toggle-group",
+          "dependsOn": ["Root"]
+        },
+        {
+          "type": "external",
+          "from": "class-variance-authority",
+          "dependsOn": ["VariantProps"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "ToggleGroup",
+          "description": "A wrapper component that groups multiple toggle items together. It provides context for styling and behavior of child ToggleGroupItem components. Built on top of Radix UI's ToggleGroup primitive.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "variant": {
+                "type": "string",
+                "description": "Visual style variant of the toggle group",
+                "enum": ["default"]
+              },
+              "size": {
+                "type": "string",
+                "description": "Size of the toggle group items",
+                "enum": ["default"]
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the toggle group"
+              },
+              "children": {
+                "type": "any",
+                "description": "Child components, typically ToggleGroupItem components"
+              }
+            }
+          },
+          "visualLayout": "A horizontally aligned group of toggle items with consistent spacing (gap-1) between them. Items are centered both horizontally and vertically.",
+          "examples": [
+            "<ToggleGroup type=\"single\">\n  <ToggleGroupItem value=\"a\">A</ToggleGroupItem>\n  <ToggleGroupItem value=\"b\">B</ToggleGroupItem>\n  <ToggleGroupItem value=\"c\">C</ToggleGroupItem>\n</ToggleGroup>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "ToggleGroupItem": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/components/ui/toggle.tsx",
+          "dependsOn": ["toggleVariants"]
+        },
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef", "useContext"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-toggle-group",
+          "dependsOn": ["Item"]
+        },
+        {
+          "type": "external",
+          "from": "class-variance-authority",
+          "dependsOn": ["VariantProps"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "ToggleGroupItem",
+          "description": "An individual toggle item within a ToggleGroup. Inherits styling context from its parent ToggleGroup component. Built on top of Radix UI's ToggleGroup.Item primitive.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "variant": {
+                "type": "string",
+                "description": "Visual style variant of the toggle item, overrides parent context if specified",
+                "enum": ["default"]
+              },
+              "size": {
+                "type": "string",
+                "description": "Size of the toggle item, overrides parent context if specified",
+                "enum": ["default"]
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the toggle item"
+              },
+              "value": {
+                "type": "string",
+                "description": "Unique value for the toggle item, used for selection state",
+                "required": true
+              },
+              "children": {
+                "type": "any",
+                "description": "Content to be rendered within the toggle item"
+              }
+            }
+          },
+          "visualLayout": "A single toggle button that can be selected/deselected within its parent ToggleGroup. Styling is inherited from the parent group context.",
+          "examples": [
+            "<ToggleGroupItem value=\"option1\">Option 1</ToggleGroupItem>"
+          ]
+        },
+        "type": "component"
+      }
+    }
+  }
+}

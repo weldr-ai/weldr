@@ -1,0 +1,541 @@
+{
+  "file": "/src/components/ui/dropdown-menu.tsx",
+  "declarations": {
+    "DropdownMenu": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["Root"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenu",
+          "description": "A root component that manages the state and positioning of a dropdown menu. Wraps Radix UI's DropdownMenu.Root component.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": "array",
+                "description": "The dropdown menu content and trigger elements"
+              }
+            }
+          },
+          "examples": [
+            "<DropdownMenu>\n  <DropdownMenuTrigger>Open Menu</DropdownMenuTrigger>\n  <DropdownMenuContent>\n    <DropdownMenuItem>Item 1</DropdownMenuItem>\n    <DropdownMenuItem>Item 2</DropdownMenuItem>\n  </DropdownMenuContent>\n</DropdownMenu>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuTrigger": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["Trigger"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuTrigger",
+          "description": "The button that toggles the dropdown menu. By default, it's a button with aria-haspopup and aria-expanded attributes managed automatically.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the trigger"
+              },
+              "children": {
+                "type": "array",
+                "description": "The content of the trigger button"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuGroup": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["Group"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuGroup",
+          "description": "A component that groups related menu items together.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": "array",
+                "description": "The grouped menu items"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuPortal": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["Portal"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuPortal",
+          "description": "Portals the dropdown menu content into the document body.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": "array",
+                "description": "The content to be portaled"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuSub": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["Sub"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuSub",
+          "description": "Creates a submenu within the dropdown menu.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": "array",
+                "description": "The submenu trigger and content"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuRadioGroup": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["RadioGroup"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuRadioGroup",
+          "description": "A container for radio items within the dropdown menu. Manages radio selection state.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "The currently selected radio item value"
+              },
+              "onValueChange": {
+                "type": "function",
+                "description": "Callback when selection changes"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuSubTrigger": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["SubTrigger"]
+        },
+        {
+          "type": "external",
+          "from": "lucide-react",
+          "dependsOn": ["ChevronRight"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuSubTrigger",
+          "description": "The trigger component for a submenu. Displays a chevron icon to indicate nested content.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes"
+              },
+              "inset": {
+                "type": "boolean",
+                "description": "Whether the trigger should be inset"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuSubContent": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["SubContent"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuSubContent",
+          "description": "The content component for a submenu. Includes animations and positioning.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuContent": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["Portal", "Content"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuContent",
+          "description": "The component that contains the dropdown menu items. Features animations and positioning logic.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply"
+              },
+              "sideOffset": {
+                "type": "number",
+                "description": "Distance in pixels from the trigger",
+                "default": 4
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuItem": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["Item"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuItem",
+          "description": "A clickable item within the dropdown menu. Supports keyboard navigation and hover states.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes"
+              },
+              "inset": {
+                "type": "boolean",
+                "description": "Whether the item should be inset, adding left padding"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuCheckboxItem": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["CheckboxItem", "ItemIndicator"]
+        },
+        {
+          "type": "external",
+          "from": "lucide-react",
+          "dependsOn": ["Check"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuCheckboxItem",
+          "description": "A checkbox item within the dropdown menu. Displays a checkmark when checked.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "checked": {
+                "type": "boolean",
+                "description": "The checked state of the item"
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuRadioItem": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["RadioItem", "ItemIndicator"]
+        },
+        {
+          "type": "external",
+          "from": "lucide-react",
+          "dependsOn": ["Circle"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuRadioItem",
+          "description": "A radio item within the dropdown menu. Must be used within a DropdownMenuRadioGroup.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes"
+              },
+              "value": {
+                "type": "string",
+                "description": "The value associated with this radio item"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuLabel": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["Label"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuLabel",
+          "description": "A label component for creating visual groupings within the dropdown menu.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes"
+              },
+              "inset": {
+                "type": "boolean",
+                "description": "Whether the label should be inset"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuSeparator": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react",
+          "dependsOn": ["forwardRef"]
+        },
+        {
+          "type": "external",
+          "from": "@radix-ui/react-dropdown-menu",
+          "dependsOn": ["Separator"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuSeparator",
+          "description": "A visual separator between items in the dropdown menu.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    },
+    "DropdownMenuShortcut": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "DropdownMenuShortcut",
+          "description": "A component for displaying keyboard shortcuts next to menu items.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes"
+              }
+            }
+          }
+        },
+        "type": "component"
+      }
+    }
+  }
+}

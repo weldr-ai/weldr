@@ -1,0 +1,143 @@
+{
+  "file": "/src/components/ui/resizable.tsx",
+  "declarations": {
+    "ResizablePanelGroup": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react-resizable-panels",
+          "dependsOn": ["PanelGroup"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "ResizablePanelGroup",
+          "description": "A container component that groups multiple ResizablePanel components together and manages their layout and resizing behavior. It supports both horizontal and vertical layouts.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the panel group"
+              },
+              "direction": {
+                "type": "string",
+                "enum": ["horizontal", "vertical"],
+                "description": "The direction in which panels are arranged"
+              }
+            }
+          },
+          "visualLayout": "A flex container that arranges ResizablePanel components either horizontally or vertically, with ResizableHandle components between them for resizing.",
+          "examples": [
+            "<ResizablePanelGroup direction=\"horizontal\">\n  <ResizablePanel>\n    Left panel\n  </ResizablePanel>\n  <ResizableHandle />\n  <ResizablePanel>\n    Right panel\n  </ResizablePanel>\n</ResizablePanelGroup>"
+          ],
+          "interactions": [
+            "Manages the layout and sizing of child ResizablePanel components",
+            "Handles the coordination between panels during resize operations",
+            "Adapts layout based on direction prop"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "ResizablePanel": {
+      "dependencies": [
+        {
+          "type": "external",
+          "from": "react-resizable-panels",
+          "dependsOn": ["Panel"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "ResizablePanel",
+          "description": "A panel component that can be resized using ResizableHandle components. It's a direct wrapper around ResizablePrimitive.Panel that maintains its core functionality.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the panel"
+              },
+              "defaultSize": {
+                "type": "number",
+                "description": "The default size of the panel as a percentage"
+              },
+              "minSize": {
+                "type": "number",
+                "description": "The minimum size of the panel as a percentage"
+              }
+            }
+          },
+          "visualLayout": "A flexible container that can be resized relative to its siblings within a ResizablePanelGroup",
+          "examples": [
+            "<ResizablePanel defaultSize={30}>Content</ResizablePanel>",
+            "<ResizablePanel minSize={20}>Content</ResizablePanel>"
+          ]
+        },
+        "type": "component"
+      }
+    },
+    "ResizableHandle": {
+      "dependencies": [
+        {
+          "type": "internal",
+          "from": "/src/lib/utils.ts",
+          "dependsOn": ["cn"]
+        },
+        {
+          "type": "external",
+          "from": "react-resizable-panels",
+          "dependsOn": ["PanelResizeHandle"]
+        },
+        {
+          "type": "external",
+          "from": "lucide-react",
+          "dependsOn": ["GripVertical"]
+        }
+      ],
+      "metadata": {
+        "definition": {
+          "name": "ResizableHandle",
+          "description": "A resizable handle component that allows users to resize panels by dragging. It can optionally display a grip handle for better visual feedback and usability.",
+          "subtype": "reusable",
+          "rendersOn": "client",
+          "properties": {
+            "type": "object",
+            "properties": {
+              "withHandle": {
+                "type": "boolean",
+                "description": "When true, displays a visual grip handle in the center of the resize handle"
+              },
+              "className": {
+                "type": "string",
+                "description": "Additional CSS classes to apply to the resize handle"
+              }
+            }
+          },
+          "visualLayout": "A vertical or horizontal line that serves as a resize handle between panels. When withHandle is true, it displays a small grip icon in the center of the handle.",
+          "interactions": [
+            "Can be dragged to resize adjacent panels",
+            "Shows focus states when interacted with keyboard",
+            "Adapts its appearance based on the panel group direction (vertical/horizontal)"
+          ],
+          "examples": [
+            "<ResizableHandle />",
+            "<ResizableHandle withHandle />",
+            "<ResizableHandle className=\"custom-handle\" withHandle />"
+          ]
+        },
+        "type": "component"
+      }
+    }
+  }
+}
