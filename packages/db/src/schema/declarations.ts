@@ -2,6 +2,7 @@ import { createId } from "@paralleldrive/cuid2";
 import type { DeclarationMetadata } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   index,
   jsonb,
   pgTable,
@@ -33,9 +34,15 @@ export const declarations = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
-    previousId: text("previous_id"),
-    projectId: text("project_id").notNull(),
-    userId: text("user_id").notNull(),
+    previousId: text("previous_id").references(
+      (): AnyPgColumn => declarations.id,
+    ),
+    projectId: text("project_id")
+      .references(() => projects.id)
+      .notNull(),
+    userId: text("user_id")
+      .references(() => users.id)
+      .notNull(),
     fileId: text("file_id")
       .references(() => files.id)
       .notNull(),
@@ -76,8 +83,13 @@ export const declarationsRelations = relations(
 export const declarationPackages = pgTable(
   "declaration_packages",
   {
-    declarationId: text("declaration_id").notNull(),
-    packageId: text("package_id").notNull(),
+    declarationId: text("declaration_id")
+      .references(() => declarations.id)
+      .notNull(),
+    packageId: text("package_id")
+      .references(() => packages.id)
+      .notNull(),
+    declarations: text("declarations").array(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.declarationId, table.packageId] }),

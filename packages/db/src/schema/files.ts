@@ -1,3 +1,4 @@
+import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import { index, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
 import { users } from "./auth";
@@ -7,13 +8,17 @@ import { projects } from "./projects";
 export const files = pgTable(
   "files",
   {
-    id: text().primaryKey().notNull(),
-    name: text().notNull(),
+    id: text()
+      .primaryKey()
+      .$defaultFn(() => createId()),
     path: text().notNull(),
-    contentType: text("content_type"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    projectId: text("project_id").notNull(),
-    userId: text("user_id").notNull(),
+    projectId: text("project_id")
+      .references(() => projects.id)
+      .notNull(),
+    userId: text("user_id")
+      .references(() => users.id)
+      .notNull(),
   },
   (table) => [
     index("files_created_at_idx").on(table.createdAt),

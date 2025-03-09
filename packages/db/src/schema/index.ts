@@ -5,6 +5,7 @@ export * from "./dependencies";
 export * from "./environment-variables";
 export * from "./files";
 export * from "./packages";
+export * from "./presets";
 export * from "./projects";
 export * from "./shared-enums";
 export * from "./vault";

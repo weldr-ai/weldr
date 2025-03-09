@@ -29,23 +29,23 @@ export const dependencies = pgTable(
     }),
     createdAtIdx: index("dependencies_created_at_idx").on(t.createdAt),
     noSelfDep: check("no_self_dep", sql`dependent_id != dependency_id`),
-    validDep: check(
-      "valid_dep_types",
-      sql`
-        -- Function -> Function
-        dependency_type = 'function' AND dependent_type = 'function' OR
-        -- Function -> Endpoint
-        dependency_type = 'function' AND dependent_type = 'endpoint' OR
-        -- Function -> Component
-        dependency_type = 'function' AND dependent_type = 'component' OR
-        -- Component -> Function
-        dependency_type = 'component' AND dependent_type = 'function' OR
-        -- Component -> Endpoint
-        dependency_type = 'component' AND dependent_type = 'endpoint' OR
-        -- Component -> Component
-        dependency_type = 'component' AND dependent_type = 'component'
-      `,
-    ),
+    // validDep: check(
+    //   "valid_dep_types",
+    //   sql`
+    //     -- Function -> Function
+    //     dependency_type = 'function' AND dependent_type = 'function' OR
+    //     -- Function -> Endpoint
+    //     dependency_type = 'function' AND dependent_type = 'endpoint' OR
+    //     -- Function -> Component
+    //     dependency_type = 'function' AND dependent_type = 'component' OR
+    //     -- Component -> Function
+    //     dependency_type = 'component' AND dependent_type = 'function' OR
+    //     -- Component -> Endpoint
+    //     dependency_type = 'component' AND dependent_type = 'endpoint' OR
+    //     -- Component -> Component
+    //     dependency_type = 'component' AND dependent_type = 'component'
+    //   `,
+    // ),
   }),
 );
 

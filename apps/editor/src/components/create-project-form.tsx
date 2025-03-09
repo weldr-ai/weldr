@@ -89,6 +89,7 @@ export function CreateProjectForm() {
           <MultimodalInput
             chatId={projectChatId}
             handleSubmit={handleSubmit}
+            pendingMessage={null}
             message={message}
             setMessage={setMessage}
             attachments={attachments}

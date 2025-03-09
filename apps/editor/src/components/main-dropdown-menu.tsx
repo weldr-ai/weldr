@@ -52,6 +52,10 @@ export function MainDropdownMenu({
         sideOffset={10}
       >
         <DropdownMenuLabel>Projects</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => setOpen("create")}>
+          <PlusIcon className="mr-2 size-4 text-muted-foreground" />
+          Create Project
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setOpen("view")}>
           <BoxesIcon className="mr-2 size-4 text-muted-foreground" />
           View All Projects
@@ -64,10 +68,6 @@ export function MainDropdownMenu({
             </span>
             k
           </kbd>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setOpen("create")}>
-          <PlusIcon className="mr-2 size-4 text-muted-foreground" />
-          Create Project
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Account</DropdownMenuLabel>

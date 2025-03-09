@@ -13,9 +13,11 @@ export const packages = pgTable(
       .$defaultFn(() => createId()),
     type: packageType("type").notNull(),
     name: text("name").notNull(),
-    reason: text("reason").notNull(),
+    reason: text("reason"),
     version: text("version"),
-    projectId: text("project_id").references(() => projects.id),
+    projectId: text("project_id")
+      .references(() => projects.id)
+      .notNull(),
   },
   (t) => ({
     unique: unique().on(t.projectId, t.name),

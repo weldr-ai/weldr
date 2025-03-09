@@ -2,13 +2,13 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { chatMessages, chats } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
+import { S3 } from "@weldr/shared/s3";
 import type { ChatMessage } from "@weldr/shared/types";
 import { assistantMessageRawContentToText } from "@weldr/shared/utils";
 import { addMessagesInputSchema } from "@weldr/shared/validators/chats";
 import { type InferInsertModel, and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { getAttachmentUrl } from "../utils";
 
 export const chatsRouter = {
   messages: protectedProcedure
@@ -46,7 +46,7 @@ export const chatsRouter = {
           const attachments = [];
 
           for (const attachment of message.attachments) {
-            const url = await getAttachmentUrl(attachment.key);
+            const url = await S3.getAttachmentUrl(attachment.key);
 
             attachments.push({
               name: attachment.name,

@@ -11,6 +11,7 @@ export default {
     "./src/schema/environment-variables.ts",
     "./src/schema/files.ts",
     "./src/schema/packages.ts",
+    "./src/schema/presets.ts",
     "./src/schema/projects.ts",
     "./src/schema/shared-enums.ts",
     "./src/schema/versions.ts",

@@ -99,7 +99,14 @@ function Main({
       </div>
       <TabsContent value="preview" className="mt-0 flex-1 bg-background">
         <div className="flex size-full items-center justify-center">
-          Preview
+          <iframe
+            src="http://localhost:4000"
+            className="size-full border-none"
+            title="Preview"
+            sandbox="allow-same-origin allow-scripts allow-forms"
+            referrerPolicy="no-referrer"
+            loading="lazy"
+          />
         </div>
       </TabsContent>
       <TabsContent value="canvas" className="mt-0 flex-1 bg-background">

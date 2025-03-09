@@ -5,6 +5,7 @@ import type { RouterOutputs } from "@weldr/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
 import { EnvSection } from "./env-section";
 import { GeneralSection } from "./general-section";
+import { IntegrationsSection } from "./integrations-section";
 
 export function ProjectSettings({
   project,
@@ -42,12 +43,12 @@ export function ProjectSettings({
           <GeneralSection project={project} />
         </TabsContent>
 
-        {/* <TabsContent
+        <TabsContent
           value="integrations"
           className="mt-0 h-[calc(100vh-146px)] overflow-hidden"
         >
-          <IntegrationsSection project={project} integrations={integrations} />
-        </TabsContent> */}
+          <IntegrationsSection project={project} />
+        </TabsContent>
 
         <TabsContent value="env" className="mt-0">
           <EnvSection env={env} projectId={project.id} />

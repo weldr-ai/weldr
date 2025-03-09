@@ -1,6 +1,7 @@
 import { requirementsGatherer } from "@/lib/ai/agents/requirements-gatherer";
 import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
+import type { TPendingMessage } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
@@ -24,8 +25,7 @@ export function Chat({
 
   const { data: session } = authClient.useSession();
 
-  const [isThinking, setIsThinking] = useState(false);
-  const [isWaiting, setIsWaiting] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(null);
 
   const apiUtils = api.useUtils();
 
@@ -42,9 +42,12 @@ export function Chat({
   const generationTriggered = useRef(false);
 
   const triggerGeneration = useCallback(async () => {
-    setIsThinking(true);
+    setPendingMessage("thinking");
 
-    const result = await requirementsGatherer(chatId, project.id);
+    const result = await requirementsGatherer({
+      chatId,
+      projectId: project.id,
+    });
 
     const newAssistantMessage: ChatMessage = {
       id: createId(),
@@ -58,7 +61,7 @@ export function Chat({
         continue;
       }
 
-      setIsThinking(false);
+      setPendingMessage(null);
 
       switch (delta.type) {
         case "text": {
@@ -99,7 +102,23 @@ export function Chat({
         }
         case "tool": {
           if (delta.toolName === "setupResource") {
-            setIsWaiting(true);
+            setPendingMessage("waiting");
+          }
+
+          if (delta.toolName === "initializeProject") {
+            const status = (
+              delta.toolResult as {
+                status: "pending" | "success";
+              }
+            ).status;
+
+            if (status === "success") {
+              setPendingMessage(null);
+            }
+
+            if (status === "pending") {
+              setPendingMessage("building");
+            }
           }
 
           setMessages((prevMessages) => {
@@ -123,7 +142,7 @@ export function Chat({
 
     await apiUtils.chats.messages.invalidate({ chatId });
 
-    setIsThinking(false);
+    setPendingMessage(null);
   }, [chatId, project.id, apiUtils]);
 
   useEffect(() => {
@@ -145,12 +164,12 @@ export function Chat({
       lastMessage.rawContent.toolResult?.status === "pending"
     ) {
       console.log("setting waiting to true");
-      setIsWaiting(true);
+      setPendingMessage("waiting");
     }
   }, [messages]);
 
   const handleSubmit = async () => {
-    setIsThinking(true);
+    setPendingMessage("thinking");
 
     if (!message) {
       return;
@@ -211,10 +230,9 @@ export function Chat({
       <Messages
         messages={messages}
         setMessages={setMessages}
-        isThinking={isThinking}
         // integrations={integrations}
-        isWaiting={isWaiting}
-        setIsWaiting={setIsWaiting}
+        pendingMessage={pendingMessage}
+        setPendingMessage={setPendingMessage}
       />
 
       <div className="relative px-2 pb-2">
@@ -225,7 +243,7 @@ export function Chat({
           setMessage={setMessage}
           attachments={attachments}
           setAttachments={setAttachments}
-          isThinking={isThinking}
+          pendingMessage={pendingMessage}
           handleSubmit={handleSubmit}
           placeholder="Build with Weldr..."
         />

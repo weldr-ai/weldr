@@ -3,6 +3,7 @@
 import { memo, useEffect, useState } from "react";
 
 import { api } from "@/lib/trpc/client";
+import type { TPendingMessage } from "@/types";
 import type { ChatMessage, ToolMessage } from "@weldr/shared/types";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons/logo-icon";
@@ -13,14 +14,13 @@ import { RawContentViewer } from "./raw-content-viewer";
 const PurePreviewMessage = ({
   message,
   setMessages,
-  setIsWaiting,
+  setPendingMessage,
   // integrations,
 }: {
   message: ChatMessage;
-  isThinking: boolean;
-  isWaiting: boolean;
   setMessages: (messages: ChatMessage[]) => void;
-  setIsWaiting: (isWaiting: boolean) => void;
+  pendingMessage: TPendingMessage;
+  setPendingMessage: (pendingMessage: TPendingMessage) => void;
   // integrations: RouterOutputs["integrations"]["list"];
 }) => {
   return (
@@ -60,7 +60,7 @@ const PurePreviewMessage = ({
             {message.rawContent.toolName === "setupResource" && (
               <SetupResource
                 setMessages={setMessages}
-                setIsWaiting={setIsWaiting}
+                setPendingMessage={setPendingMessage}
                 message={message}
                 // integrations={integrations}
               />
@@ -75,8 +75,7 @@ const PurePreviewMessage = ({
 export const PreviewMessage = memo(
   PurePreviewMessage,
   (prevProps, nextProps) => {
-    if (prevProps.isWaiting !== nextProps.isWaiting) return false;
-    if (prevProps.isThinking !== nextProps.isThinking) return false;
+    if (prevProps.pendingMessage !== nextProps.pendingMessage) return false;
     if (prevProps.message.rawContent !== nextProps.message.rawContent)
       return false;
     return true;
@@ -100,7 +99,11 @@ const TypingDots = () => {
   return <span>{dots}</span>;
 };
 
-export const PendingMessage = ({ type }: { type: "thinking" | "waiting" }) => {
+export const PendingMessage = ({
+  type,
+}: {
+  type: Exclude<TPendingMessage, null>;
+}) => {
   return (
     <div key="thinking" className="flex w-full flex-col gap-2">
       <div className="flex items-center gap-1">
@@ -108,7 +111,7 @@ export const PendingMessage = ({ type }: { type: "thinking" | "waiting" }) => {
         <span className="text-muted-foreground text-xs">Weldr</span>
       </div>
       <span className="text-muted-foreground text-sm">
-        {type === "thinking" ? "Thinking" : "Waiting"}
+        {type.charAt(0).toUpperCase() + type.slice(1)}
         <TypingDots />
       </span>
     </div>
@@ -119,12 +122,12 @@ export function SetupResource({
   message,
   // integrations,
   setMessages,
-  setIsWaiting,
+  setPendingMessage,
 }: {
   message: ToolMessage;
   // integrations: RouterOutputs["integrations"]["list"];
   setMessages: (messages: ChatMessage[]) => void;
-  setIsWaiting: (isWaiting: boolean) => void;
+  setPendingMessage: (pendingMessage: "thinking" | "waiting" | null) => void;
 }) {
   const toolInfo = message.rawContent as unknown as {
     toolArgs: { resource: "postgres" };
@@ -141,14 +144,14 @@ export function SetupResource({
         }
         return messages;
       });
-      setIsWaiting(false);
+      setPendingMessage(null);
     },
     onError: () => {
       toast({
         title: "Error",
         description: "Failed to update message",
       });
-      setIsWaiting(false);
+      setPendingMessage(null);
     },
   });
 

@@ -13,7 +13,7 @@ export const functionSchema = z.object({
   examples: z
     .string()
     .array()
-    .describe("Usage examples of the function")
+    .describe("Usage examples of the function. WITHOUT imports, just the code.")
     .optional(),
   throws: z
     .array(

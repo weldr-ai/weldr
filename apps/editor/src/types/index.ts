@@ -5,3 +5,5 @@ export type CanvasNodeTypes = "func" | "endpoint" | "module";
 export type CanvasNode = Node<Record<string, unknown>, CanvasNodeTypes>;
 export type CanvasEdge = Edge;
 export type CanvasNodeProps = NodeProps<CanvasNode>;
+
+export type TPendingMessage = "thinking" | "waiting" | "building" | null;

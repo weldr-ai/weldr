@@ -18,6 +18,7 @@
     "db:pull": "pnpm -F @weldr/db pull",
     "db:push": "pnpm -F @weldr/db push",
     "db:studio": "pnpm -F @weldr/db studio",
+    "db:seed": "pnpm -F @weldr/db seed",
     "db:up": "pnpm -F @weldr/db up",
     "dev": "turbo dev",
     "format-and-lint": "biome check .",

@@ -11,13 +11,16 @@
     "./integrations/*": "./src/integrations/*/index.ts",
     "./integrations/*/validators": "./src/integrations/*/validators.ts",
     "./integrations/*/types": "./src/integrations/*/types.ts",
-    "./fly": "./src/fly.ts"
+    "./fly": "./src/fly/index.ts",
+    "./s3": "./src/s3.ts"
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.758.0",
+    "@aws-sdk/s3-request-presigner": "^3.758.0",
     "@paralleldrive/cuid2": "^2.2.2",
     "json-schema": "^0.4.0",
     "lucide-react": "^0.460.0",

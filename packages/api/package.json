@@ -11,9 +11,6 @@
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.744.0",
-    "@aws-sdk/lib-storage": "^3.744.0",
-    "@aws-sdk/s3-request-presigner": "^3.744.0",
     "@paralleldrive/cuid2": "^2.2.2",
     "@trpc/server": "11.0.0-rc.666",
     "@weldr/auth": "workspace:*",

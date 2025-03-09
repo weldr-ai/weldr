@@ -17,22 +17,24 @@
     "pull": "pnpm with-env drizzle-kit introspect --config src/config.ts",
     "push": "pnpm with-env drizzle-kit push --config src/config.ts",
     "studio": "pnpm with-env drizzle-kit studio --config src/config.ts",
+    "seed": "pnpm with-env tsx src/scripts/seed.ts",
     "up": "pnpm with-env drizzle-kit up --config src/config.ts",
     "check-types": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@weldr/shared": "workspace:*",
     "@paralleldrive/cuid2": "^2.2.2",
+    "@weldr/shared": "workspace:*",
     "drizzle-orm": "^0.38.3",
     "drizzle-zod": "^0.6.1",
     "pg": "^8.13.1"
   },
   "devDependencies": {
-    "@weldr/tsconfig": "workspace:*",
     "@types/pg": "^8.11.10",
+    "@weldr/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.1",
     "drizzle-kit": "^0.30.1",
+    "tsx": "^4.19.3",
     "typescript": "^5.7.2"
   }
 }

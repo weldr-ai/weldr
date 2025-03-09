@@ -12,13 +12,14 @@ import {
   useState,
 } from "react";
 
+import type { TPendingMessage } from "@/types";
 import type { Attachment } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { Textarea } from "@weldr/ui/textarea";
 import { cn } from "@weldr/ui/utils";
 import equal from "fast-deep-equal";
-import { ArrowUpIcon, PaperclipIcon, StopCircleIcon } from "lucide-react";
+import { ArrowUpIcon, PaperclipIcon } from "lucide-react";
 import { PreviewAttachment } from "./preview-attachment";
 
 function PureMultimodalInput({
@@ -27,7 +28,7 @@ function PureMultimodalInput({
   setMessage,
   attachments,
   setAttachments,
-  isThinking,
+  pendingMessage,
   handleSubmit,
   placeholder,
   placeholders,
@@ -40,8 +41,8 @@ function PureMultimodalInput({
   setMessage: (message: string) => void;
   attachments: Attachment[];
   setAttachments: Dispatch<SetStateAction<Attachment[]>>;
-  isThinking?: boolean;
   handleSubmit: (event?: { preventDefault?: () => void }) => void;
+  pendingMessage: TPendingMessage;
   placeholder?: string;
   placeholders?: string[];
   formClassName?: string;
@@ -297,7 +298,7 @@ function PureMultimodalInput({
         onKeyDown={(event) => {
           if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
             event.preventDefault();
-            if (isThinking) {
+            if (pendingMessage === "thinking" || pendingMessage === "waiting") {
               toast({
                 description:
                   "Please wait for the model to finish its response!",
@@ -312,20 +313,16 @@ function PureMultimodalInput({
       <div className="absolute bottom-2 left-2 flex w-fit flex-row justify-start">
         <AttachmentsButton
           fileInputRef={fileInputRef}
-          isThinking={isThinking}
+          pendingMessage={pendingMessage}
         />
       </div>
 
       <div className="absolute right-2 bottom-2 flex w-fit flex-row justify-end">
-        {isThinking ? (
-          <StopButton stop={stop} />
-        ) : (
-          <SendButton
-            message={message}
-            submitForm={submitForm}
-            uploadQueue={uploadQueue}
-          />
-        )}
+        <SendButton
+          message={message}
+          submitForm={submitForm}
+          uploadQueue={uploadQueue}
+        />
       </div>
     </form>
   );
@@ -335,7 +332,7 @@ export const MultimodalInput = memo(
   PureMultimodalInput,
   (prevProps, nextProps) => {
     if (prevProps.message !== nextProps.message) return false;
-    if (prevProps.isThinking !== nextProps.isThinking) return false;
+    if (prevProps.pendingMessage !== nextProps.pendingMessage) return false;
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;
     return true;
   },
@@ -343,10 +340,10 @@ export const MultimodalInput = memo(
 
 function PureAttachmentsButton({
   fileInputRef,
-  isThinking,
+  pendingMessage,
 }: {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
-  isThinking?: boolean;
+  pendingMessage: TPendingMessage;
 }) {
   return (
     <Button
@@ -356,7 +353,11 @@ function PureAttachmentsButton({
         event.preventDefault();
         fileInputRef.current?.click();
       }}
-      disabled={isThinking}
+      disabled={
+        pendingMessage === "thinking" ||
+        pendingMessage === "waiting" ||
+        pendingMessage === "building"
+      }
     >
       <PaperclipIcon className="size-3" />
     </Button>
@@ -364,27 +365,6 @@ function PureAttachmentsButton({
 }
 
 const AttachmentsButton = memo(PureAttachmentsButton);
-
-function PureStopButton({
-  stop,
-}: {
-  stop: () => void;
-}) {
-  return (
-    <Button
-      variant="outline"
-      className="h-fit rounded-full bg-background p-1.5"
-      onClick={(event) => {
-        event.preventDefault();
-        stop();
-      }}
-    >
-      <StopCircleIcon className="size-3" />
-    </Button>
-  );
-}
-
-const StopButton = memo(PureStopButton);
 
 function PureSendButton({
   submitForm,

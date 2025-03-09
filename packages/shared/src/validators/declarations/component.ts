@@ -9,7 +9,7 @@ const baseComponentSchema = z.object({
   remarks: z.string().optional().describe("The remarks of the component"),
   properties: jsonSchema.optional(),
   rendersOn: z
-    .enum(["server", "client"])
+    .enum(["server", "client", "both"])
     .optional()
     .describe("Where the component renders on"),
   interactions: z
@@ -50,7 +50,6 @@ const baseComponentSchema = z.object({
 
 const pageSchema = baseComponentSchema.extend({
   subtype: z.literal("page"),
-  rendersOn: z.literal("server"),
   route: z.string().describe("The route of the page in openapi format"),
   meta: z
     .string()
@@ -81,7 +80,9 @@ const reusableComponentSchema = baseComponentSchema.extend({
     .string()
     .array()
     .optional()
-    .describe("Usage examples of the component"),
+    .describe(
+      "Usage examples of the component WITHOUT imports. Just the component usage. For example: <Button>Click me</Button>",
+    ),
 });
 
 export const componentSchema = z.object({

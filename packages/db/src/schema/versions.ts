@@ -24,9 +24,10 @@ export const versions = pgTable(
       .$default(() => createId())
       .primaryKey()
       .notNull(),
-    versionNumber: integer("version_number").notNull(),
-    versionName: text("version_name").notNull(),
-    isActive: boolean("is_active").default(false).notNull(),
+    number: integer("number").notNull(),
+    message: text("message").notNull(),
+    machineId: text("machine_id"),
+    isCurrent: boolean("is_current").default(false).notNull(),
     parentVersionId: text("parent_version_id").references(
       (): AnyPgColumn => versions.id,
     ),
@@ -39,13 +40,10 @@ export const versions = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("active_version_idx")
-      .on(table.projectId, table.isActive)
-      .where(sql`(is_active = true)`),
-    uniqueIndex("version_number_unique_idx").on(
-      table.projectId,
-      table.versionNumber,
-    ),
+    uniqueIndex("current_version_idx")
+      .on(table.projectId, table.isCurrent)
+      .where(sql`(is_current = true)`),
+    uniqueIndex("version_number_unique_idx").on(table.projectId, table.number),
     index("versions_created_at_idx").on(table.createdAt),
   ],
 );
@@ -75,14 +73,18 @@ export const versionsRelations = relations(versions, ({ one, many }) => ({
 export const versionFiles = pgTable(
   "version_files",
   {
-    versionId: text("version_id").notNull(),
-    fileId: text("file_id").notNull(),
+    versionId: text("version_id")
+      .references(() => versions.id)
+      .notNull(),
+    fileId: text("file_id")
+      .references(() => files.id)
+      .notNull(),
     s3VersionId: text("s3_version_id").notNull(),
-    size: integer("size").notNull(),
-    hash: text().notNull(),
   },
   (table) => ({
-    pk: primaryKey({ columns: [table.versionId, table.fileId] }),
+    pk: primaryKey({
+      columns: [table.versionId, table.fileId, table.s3VersionId],
+    }),
   }),
 );
 
@@ -100,8 +102,12 @@ export const versionFilesRelations = relations(versionFiles, ({ one }) => ({
 export const versionDeclarations = pgTable(
   "version_declarations",
   {
-    versionId: text("version_id").notNull(),
-    declarationId: text("declaration_id").notNull(),
+    versionId: text("version_id")
+      .references(() => versions.id)
+      .notNull(),
+    declarationId: text("declaration_id")
+      .references(() => declarations.id)
+      .notNull(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.versionId, table.declarationId] }),
@@ -125,8 +131,12 @@ export const versionDeclarationsRelations = relations(
 export const versionPackages = pgTable(
   "version_packages",
   {
-    versionId: text("version_id").notNull(),
-    packageId: text("package_id").notNull(),
+    versionId: text("version_id")
+      .references(() => versions.id)
+      .notNull(),
+    packageId: text("package_id")
+      .references(() => packages.id)
+      .notNull(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.versionId, table.packageId] }),

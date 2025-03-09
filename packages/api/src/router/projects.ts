@@ -3,6 +3,7 @@ import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { and, eq } from "@weldr/db";
 import { attachments, chatMessages, chats, projects } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
+import { S3 } from "@weldr/shared/s3";
 import type { ChatMessage } from "@weldr/shared/types";
 import {
   insertProjectSchema,
@@ -11,7 +12,6 @@ import {
 import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
-import { getAttachmentUrl } from "../utils";
 
 export const projectsRouter = {
   create: protectedProcedure
@@ -21,12 +21,10 @@ export const projectsRouter = {
         return await ctx.db.transaction(async (tx) => {
           const projectId = createId();
 
-          if (process.env.APP_ENV !== "development") {
-            await Fly.App.create({
-              appName: `preview-app-${projectId}`,
-              networkName: `preview-net-${projectId}`,
-            });
-          }
+          await Fly.app.create({
+            appName: `preview-app-${projectId}`,
+            networkName: `preview-net-${projectId}`,
+          });
 
           const [project] = await tx
             .insert(projects)
@@ -187,7 +185,7 @@ export const projectsRouter = {
             const attachmentsWithUrls = await Promise.all(
               message.attachments.map(async (attachment) => ({
                 name: attachment.name,
-                url: await getAttachmentUrl(attachment.key),
+                url: await S3.getAttachmentUrl(attachment.key),
               })),
             );
             return {
