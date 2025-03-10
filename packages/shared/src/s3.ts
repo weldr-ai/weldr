@@ -9,8 +9,6 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
-  endpoint: process.env.AWS_ENDPOINT_URL_S3,
   credentials: {
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
@@ -35,7 +33,7 @@ export const S3 = {
     try {
       // List all objects in the source "directory"
       const listCommand = new ListObjectsV2Command({
-        Bucket: "boilerplates",
+        Bucket: "weldr-boilerplates",
         Prefix: boilerplate,
       });
 
@@ -61,8 +59,8 @@ export const S3 = {
 
         return s3Client.send(
           new CopyObjectCommand({
-            Bucket: "projects",
-            CopySource: `boilerplates/${object.Key}`,
+            Bucket: "weldr-projects",
+            CopySource: `weldr-boilerplates/${object.Key}`,
             Key: newKey,
           }),
         );
@@ -85,14 +83,14 @@ export const S3 = {
 
     try {
       const command = new GetObjectCommand({
-        Bucket: "projects",
+        Bucket: "weldr-projects",
         Key: fullPath,
       });
 
       console.log("Reading file from S3", {
         path,
         fullPath,
-        bucket: "projects",
+        bucket: "weldr-projects",
       });
 
       const response = await s3Client.send(command);
@@ -111,12 +109,12 @@ export const S3 = {
     projectId: string;
     path: string;
     content: string;
-  }): Promise<void> => {
+  }): Promise<string | undefined> => {
     const fullPath = `${projectId}/${path}`;
 
     try {
       const command = new PutObjectCommand({
-        Bucket: "projects",
+        Bucket: "weldr-projects",
         Key: fullPath,
         Body: content,
         ContentType: "text/plain",
@@ -125,9 +123,11 @@ export const S3 = {
       console.log("Writing file to S3", {
         path,
         fullPath,
-        bucket: "projects",
+        bucket: "weldr-projects",
       });
-      await s3Client.send(command);
+
+      const response = await s3Client.send(command);
+      return response.VersionId;
     } catch (error) {
       console.error("Failed to write file to S3", { path, fullPath, error });
       throw new Error(`Failed to write file ${path} to S3`);
@@ -137,7 +137,7 @@ export const S3 = {
     const url = await getSignedUrl(
       s3Client,
       new GetObjectCommand({
-        Bucket: "chat-attachments",
+        Bucket: "weldr-chat-attachments",
         Key: key,
       }),
       { expiresIn: 3600 },
