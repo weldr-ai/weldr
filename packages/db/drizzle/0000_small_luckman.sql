@@ -190,6 +190,7 @@ CREATE TABLE "projects" (
 	"name" text,
 	"thumbnail" text,
 	"subdomain" text NOT NULL,
+	"ip_address_v6" text,
 	"initiated_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
@@ -272,4 +273,5 @@ CREATE INDEX "files_created_at_idx" ON "files" USING btree ("created_at");--> st
 CREATE INDEX "projects_created_at_idx" ON "projects" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "current_version_idx" ON "versions" USING btree ("project_id","is_current") WHERE (is_current = true);--> statement-breakpoint
 CREATE UNIQUE INDEX "version_number_unique_idx" ON "versions" USING btree ("project_id","number");--> statement-breakpoint
-CREATE INDEX "versions_created_at_idx" ON "versions" USING btree ("created_at");
+CREATE INDEX "versions_created_at_idx" ON "versions" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "versions_machine_id_idx" ON "versions" USING btree ("machine_id");

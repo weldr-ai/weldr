@@ -21,16 +21,24 @@ export const projectsRouter = {
         return await ctx.db.transaction(async (tx) => {
           const projectId = createId();
 
-          await Fly.app.create({
+          const app = await Fly.app.create({
             appName: `preview-app-${projectId}`,
             networkName: `preview-net-${projectId}`,
           });
+
+          if (!app?.id) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create app",
+            });
+          }
 
           const [project] = await tx
             .insert(projects)
             .values({
               id: projectId,
               subdomain: projectId,
+              ipAddressV6: app.ipAddressV6,
               userId: ctx.session.user.id,
             })
             .returning();

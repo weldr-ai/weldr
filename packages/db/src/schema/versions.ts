@@ -39,13 +39,17 @@ export const versions = pgTable(
       .references(() => projects.id)
       .notNull(),
   },
-  (table) => [
-    uniqueIndex("current_version_idx")
+  (table) => ({
+    currentVersionIdx: uniqueIndex("current_version_idx")
       .on(table.projectId, table.isCurrent)
       .where(sql`(is_current = true)`),
-    uniqueIndex("version_number_unique_idx").on(table.projectId, table.number),
-    index("versions_created_at_idx").on(table.createdAt),
-  ],
+    versionNumberUniqueIdx: uniqueIndex("version_number_unique_idx").on(
+      table.projectId,
+      table.number,
+    ),
+    createdAtIdx: index("versions_created_at_idx").on(table.createdAt),
+    machineIdIdx: index("versions_machine_id_idx").on(table.machineId),
+  }),
 );
 
 export const versionsRelations = relations(versions, ({ one, many }) => ({

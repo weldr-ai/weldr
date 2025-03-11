@@ -17,9 +17,7 @@ export const Fly = {
       networkName: string;
     }) => {
       try {
-        const response = await ofetch<
-          paths["/apps"]["post"]["responses"][201]["content"]
-        >(`${flyApiHostname}/v1/apps`, {
+        const app = await ofetch<{ id: string }>(`${flyApiHostname}/v1/apps`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -32,7 +30,51 @@ export const Fly = {
           },
         });
 
-        return response;
+        if (!app?.id) {
+          throw new Error("Failed to create app: No app ID returned");
+        }
+
+        // Allocate private IPv6 address for the app
+        const ipAddress = await ofetch<{
+          data: {
+            allocateIpAddress: {
+              ipAddress: {
+                address: string;
+              };
+            };
+          };
+        }>("https://api.fly.io/graphql", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${flyApiKey}`,
+          },
+          body: {
+            query: `
+              mutation($input: AllocateIPAddressInput!) {
+                allocateIpAddress(input: $input) {
+                  ipAddress {
+                    address
+                  }
+                }
+              }
+            `,
+            variables: {
+              input: {
+                appId: appName,
+                type: "private_v6",
+              },
+            },
+          },
+        });
+
+        if (!ipAddress?.data?.allocateIpAddress?.ipAddress?.address) {
+          throw new Error("Failed to allocate IP address");
+        }
+
+        return {
+          ...app,
+          ipAddressV6: ipAddress.data.allocateIpAddress.ipAddress.address,
+        };
       } catch (error) {
         console.error("Error creating app:", {
           error: error instanceof Error ? error.message : String(error),

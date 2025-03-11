@@ -1,5 +1,5 @@
 {
-  "id": "ef752889-8c7a-43b5-95a4-e9f664377ab8",
+  "id": "19f8e778-928f-4633-9894-3a9361dc20d1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1405,6 +1405,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "ip_address_v6": {
+          "name": "ip_address_v6",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "initiated_at": {
           "name": "initiated_at",
           "type": "timestamp",
@@ -1735,6 +1741,21 @@
           "columns": [
             {
               "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "versions_machine_id_idx": {
+          "name": "versions_machine_id_idx",
+          "columns": [
+            {
+              "expression": "machine_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

@@ -15,6 +15,7 @@ export const projects = pgTable(
     name: text("name"),
     thumbnail: text("thumbnail"),
     subdomain: text("subdomain").unique().notNull(),
+    ipAddressV6: text("ip_address_v6"),
     initiatedAt: timestamp("initiated_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
