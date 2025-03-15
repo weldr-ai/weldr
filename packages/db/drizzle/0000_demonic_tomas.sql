@@ -89,6 +89,7 @@ CREATE TABLE "chats" (
 CREATE TABLE "declaration_packages" (
 	"declaration_id" text NOT NULL,
 	"package_id" text NOT NULL,
+	"import_path" text NOT NULL,
 	"declarations" text[],
 	CONSTRAINT "declaration_packages_declaration_id_package_id_pk" PRIMARY KEY("declaration_id","package_id")
 );
@@ -96,15 +97,14 @@ CREATE TABLE "declaration_packages" (
 CREATE TABLE "declarations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"type" "declaration_types" NOT NULL,
-	"link" text NOT NULL,
+	"name" text NOT NULL,
 	"metadata" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"previous_id" text,
 	"project_id" text NOT NULL,
 	"user_id" text NOT NULL,
-	"file_id" text NOT NULL,
-	CONSTRAINT "unique_link" UNIQUE("project_id","link")
+	"file_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "dependencies" (
@@ -141,8 +141,7 @@ CREATE TABLE "packages" (
 	"id" text PRIMARY KEY NOT NULL,
 	"type" "package_type" NOT NULL,
 	"name" text NOT NULL,
-	"reason" text,
-	"version" text,
+	"description" text,
 	"project_id" text NOT NULL,
 	CONSTRAINT "packages_project_id_name_unique" UNIQUE("project_id","name")
 );
@@ -150,21 +149,21 @@ CREATE TABLE "packages" (
 CREATE TABLE "preset_declarations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"type" "declaration_types" NOT NULL,
-	"link" text NOT NULL,
+	"name" text NOT NULL,
 	"file" text NOT NULL,
 	"metadata" jsonb,
 	"dependencies" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"preset_id" text NOT NULL,
-	CONSTRAINT "unique_preset_declaration" UNIQUE("link","preset_id")
+	CONSTRAINT "unique_preset_declaration" UNIQUE("name","file","preset_id")
 );
 --> statement-breakpoint
 CREATE TABLE "preset_files" (
 	"id" text PRIMARY KEY NOT NULL,
-	"file" text NOT NULL,
+	"path" text NOT NULL,
 	"preset_id" text NOT NULL,
-	CONSTRAINT "unique_preset_file" UNIQUE("file","preset_id")
+	CONSTRAINT "unique_preset_file" UNIQUE("path","preset_id")
 );
 --> statement-breakpoint
 CREATE TABLE "preset_packages" (

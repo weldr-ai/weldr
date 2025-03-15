@@ -50,7 +50,11 @@ const baseComponentSchema = z.object({
 
 const pageSchema = baseComponentSchema.extend({
   subtype: z.literal("page"),
-  route: z.string().describe("The route of the page in openapi format"),
+  route: z
+    .string()
+    .describe(
+      "The route of the page in openapi format. Like /users/{id} or /users/new",
+    ),
   meta: z
     .string()
     .optional()
@@ -63,8 +67,9 @@ const layoutSchema = baseComponentSchema.extend({
   subtype: z.literal("layout"),
   route: z
     .string()
-    .optional()
-    .describe("The route of the layout in openapi format"),
+    .describe(
+      "The route of the layout in openapi format. Like /users/{id} or /users/new",
+    ),
   rendersOn: z.literal("server"),
   meta: z
     .string()

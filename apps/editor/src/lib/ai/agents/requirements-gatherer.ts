@@ -3,7 +3,7 @@
 import { models } from "@/lib/ai/models";
 import { api } from "@/lib/trpc/server";
 import { auth } from "@weldr/auth";
-import { and, db, eq } from "@weldr/db";
+import { type InferInsertModel, and, db, eq } from "@weldr/db";
 import {
   chats,
   declarationPackages,
@@ -13,6 +13,7 @@ import {
   packages,
   presets,
   projects,
+  versionFiles,
   versions,
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
@@ -153,6 +154,30 @@ export async function requirementsGatherer({
                     });
 
                     await db.transaction(async (tx) => {
+                      // Get the preset
+                      const preset = await tx.query.presets.findFirst({
+                        where: eq(presets.type, "next-base"),
+                        with: {
+                          declarations: true,
+                          files: true,
+                          packages: true,
+                        },
+                      });
+
+                      if (!preset) {
+                        throw new Error("Preset not found");
+                      }
+
+                      // Update the project name
+                      await tx
+                        .update(projects)
+                        .set({
+                          name: toolCall.args.name,
+                          // initiatedAt: new Date(),
+                        })
+                        .where(eq(projects.id, projectId));
+
+                      // Create a new version
                       const [version] = await tx
                         .insert(versions)
                         .values({
@@ -168,31 +193,11 @@ export async function requirementsGatherer({
                         throw new Error("Version not found");
                       }
 
-                      await tx
-                        .update(projects)
-                        .set({
-                          name: toolCall.args.name,
-                          // initiatedAt: new Date(),
-                        })
-                        .where(eq(projects.id, projectId));
-
-                      await S3.copyBoilerplate({
+                      // Copy boilerplate files to the project
+                      const fileVersions = await S3.copyBoilerplate({
                         boilerplate: "next-base",
                         destinationPath: `${projectId}`,
                       });
-
-                      const preset = await tx.query.presets.findFirst({
-                        where: eq(presets.type, "next-base"),
-                        with: {
-                          declarations: true,
-                          files: true,
-                          packages: true,
-                        },
-                      });
-
-                      if (!preset) {
-                        throw new Error("Preset not found");
-                      }
 
                       // Insert files from preset to the project
                       const insertedFiles = await tx
@@ -201,11 +206,29 @@ export async function requirementsGatherer({
                           preset.files.map((file) => ({
                             userId: session.user.id,
                             projectId,
-                            path: file.file,
+                            path: file.path,
                           })),
                         )
-                        .onConflictDoNothing()
                         .returning();
+
+                      // Insert version files
+                      await tx.insert(versionFiles).values(
+                        insertedFiles.map((file) => {
+                          const s3VersionId = fileVersions[file.path];
+
+                          if (!s3VersionId) {
+                            throw new Error(
+                              `S3 version ID not found for file ${file.path}`,
+                            );
+                          }
+
+                          return {
+                            versionId: version.id,
+                            fileId: file.id,
+                            s3VersionId,
+                          };
+                        }),
+                      );
 
                       // Insert packages from preset to the project
                       const insertedPkgs = await tx
@@ -217,98 +240,127 @@ export async function requirementsGatherer({
                             projectId,
                           })),
                         )
-                        .onConflictDoNothing()
                         .returning();
 
                       // Insert declarations from preset to the project
-                      const resultDeclarations = await tx
+                      const insertedDeclarations = await tx
                         .insert(declarations)
                         .values(
-                          preset.declarations.map((declaration) => ({
-                            link: `version::${version.id}|${declaration.link}`,
-                            type: declaration.type,
-                            metadata: declaration.metadata,
-                            userId: session.user.id,
-                            projectId,
-                            fileId:
-                              insertedFiles.find(
-                                (file) => file.path === declaration.file,
-                              )?.id ?? "",
-                          })),
+                          preset.declarations.map((declaration) => {
+                            const fileId = insertedFiles.find(
+                              (file) => file.path === declaration.file,
+                            )?.id;
+
+                            if (!fileId) {
+                              throw new Error(
+                                `File ID not found for declaration ${declaration.name}`,
+                              );
+                            }
+
+                            return {
+                              name: declaration.name,
+                              type: declaration.type,
+                              metadata: declaration.metadata,
+                              userId: session.user.id,
+                              projectId,
+                              fileId,
+                            } as InferInsertModel<typeof declarations>;
+                          }),
                         )
-                        .onConflictDoNothing()
                         .returning();
 
                       // Insert declaration packages and dependencies
-                      for (const declaration of preset.declarations) {
-                        const presetDependencies = declaration.dependencies;
+                      for (const presetDeclaration of preset.declarations) {
+                        const presetDependencies =
+                          presetDeclaration.dependencies;
 
                         if (!presetDependencies) {
                           continue;
                         }
 
+                        // Find the corresponding newly created declaration
+                        const insertedDeclaration = insertedDeclarations.find(
+                          (d) =>
+                            d.name === presetDeclaration.name &&
+                            d.fileId ===
+                              insertedFiles.find(
+                                (file) => file.path === presetDeclaration.file,
+                              )?.id,
+                        );
+
+                        if (!insertedDeclaration) {
+                          throw new Error("New declaration not found");
+                        }
+
+                        // Insert node package dependencies
                         const pkgs = presetDependencies?.filter(
                           (dependency) => dependency.type === "external",
                         );
 
-                        // Find the corresponding newly created declaration
-                        let newDeclaration = resultDeclarations.find(
-                          (d) => d.link === declaration.link,
-                        );
+                        if (pkgs.length > 0) {
+                          await tx.insert(declarationPackages).values(
+                            pkgs.map((pkg) => {
+                              const insertedPkg = insertedPkgs.find(
+                                (p) => p.name === pkg.from,
+                              );
 
-                        if (!newDeclaration) {
-                          newDeclaration =
-                            await tx.query.declarations.findFirst({
-                              where: eq(declarations.link, declaration.link),
-                            });
+                              if (!insertedPkg) {
+                                throw new Error("Package not found");
+                              }
 
-                          if (!newDeclaration) {
-                            throw new Error("New declaration not found");
-                          }
-                        }
-
-                        for (const pkg of pkgs) {
-                          const insertedPkg = insertedPkgs.find(
-                            (p) => p.name === pkg.from,
-                          );
-
-                          if (insertedPkg) {
-                            await tx
-                              .insert(declarationPackages)
-                              .values({
-                                declarationId: newDeclaration.id,
+                              return {
+                                declarationId: insertedDeclaration.id,
                                 packageId: insertedPkg.id,
+                                importPath: pkg.from,
                                 declarations: pkg.dependsOn,
-                              })
-                              .onConflictDoNothing();
-                          }
+                              } as InferInsertModel<typeof declarationPackages>;
+                            }),
+                          );
                         }
 
-                        const internalLinks = presetDependencies
+                        // Insert internal dependencies
+                        const internalDependencies = presetDependencies
                           ?.filter(
                             (dependency) => dependency.type === "internal",
                           )
-                          .flatMap(
-                            (dependency) =>
-                              `version::${version.id}|file::${dependency.from}|declaration::${dependency.dependsOn}`,
-                          );
+                          .flatMap((dependency) => {
+                            return dependency.dependsOn.map((dep) => {
+                              const fileId = insertedFiles.find(
+                                (file) => file.path === dependency.from,
+                              )?.id;
 
-                        for (const link of internalLinks) {
-                          const tempDependency = resultDeclarations.find(
-                            (d) => d.link === link,
-                          );
+                              if (!fileId) {
+                                throw new Error("File ID not found");
+                              }
 
-                          if (tempDependency) {
-                            await tx
-                              .insert(dependencies)
-                              .values({
-                                dependentId: newDeclaration.id,
-                                dependentType: newDeclaration.type,
-                                dependencyId: tempDependency.id,
-                                dependencyType: tempDependency.type,
-                              })
-                              .onConflictDoNothing();
-                          }
+                              return {
+                                fileId,
+                                name: dep,
+                              };
+                            });
+                          });
+
+                        if (internalDependencies.length > 0) {
+                          await tx.insert(dependencies).values(
+                            internalDependencies.map((dep) => {
+                              const dependency = insertedDeclarations.find(
+                                (d) =>
+                                  d.fileId === dep.fileId &&
+                                  d.name === dep.name,
+                              );
+
+                              if (!dependency) {
+                                throw new Error("Dependency not found");
+                              }
+
+                              return {
+                                dependentId: insertedDeclaration.id,
+                                dependentType: insertedDeclaration.type,
+                                dependencyId: dependency.id,
+                                dependencyType: dependency.type,
+                              };
+                            }),
+                          );
                         }
                       }
 
@@ -370,18 +422,21 @@ export async function requirementsGatherer({
                     });
 
                     await db.transaction(async (tx) => {
-                      const lastVersion = await tx.query.versions.findFirst({
-                        where: and(
-                          eq(versions.projectId, projectId),
-                          eq(versions.userId, session.user.id),
-                          eq(versions.isCurrent, true),
-                        ),
-                        columns: {
-                          number: true,
+                      const previousVersion = await tx.query.versions.findFirst(
+                        {
+                          where: and(
+                            eq(versions.projectId, projectId),
+                            eq(versions.userId, session.user.id),
+                            eq(versions.isCurrent, true),
+                          ),
+                          columns: {
+                            id: true,
+                            number: true,
+                          },
                         },
-                      });
+                      );
 
-                      if (!lastVersion) {
+                      if (!previousVersion) {
                         throw new Error("Version not found");
                       }
 
@@ -397,7 +452,7 @@ export async function requirementsGatherer({
                         .values({
                           projectId,
                           userId: session.user.id,
-                          number: lastVersion.number + 1,
+                          number: previousVersion.number + 1,
                           isCurrent: true,
                           message: toolCall.args.commitMessage,
                         })
@@ -424,6 +479,7 @@ export async function requirementsGatherer({
                         userId: session.user.id,
                         projectId,
                         versionId: version.id,
+                        previousVersionId: previousVersion.id,
                         machineId,
                         prompt: {
                           role: "user",

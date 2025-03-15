@@ -6,7 +6,7 @@ import { tool } from "ai";
 import { z } from "zod";
 
 export const initializeProjectTool = tool({
-  description: "Initialize a new project",
+  description: "Ask the coder agent to initialize a new project",
   parameters: z.object({
     name: z.string().min(1).describe("The name of the project"),
     addons: z
@@ -40,7 +40,7 @@ export const initializeProjectTool = tool({
 });
 
 export const setupResourceTool = tool({
-  description: "Setup the resources for the project",
+  description: "Ask the user to setup a resource",
   parameters: z.object({
     resource: z.enum(["postgres"]).describe("The type of resource to setup"),
   }),
@@ -52,7 +52,7 @@ export const setupResourceTool = tool({
 });
 
 export const implementTool = tool({
-  description: "Implement the user's request",
+  description: "Ask the coder agent to implement the changes to the project",
   parameters: z.object({
     addons: z
       .enum(["auth"])
@@ -96,13 +96,13 @@ export const installPackagesTool = ({
   tx: Tx;
 }) =>
   tool({
-    description: "Install node packages",
+    description: "Ask the user to install node packages",
     parameters: z.object({
       pkgs: z
         .object({
           type: z.enum(["runtime", "development"]),
           name: z.string(),
-          reason: z.string(),
+          description: z.string().describe("A description of the package"),
         })
         .array(),
     }),
@@ -125,8 +125,9 @@ export const installPackagesTool = ({
             projectId,
             name: pkg.name,
             type: pkg.type,
-            reason: pkg.reason,
+            description: pkg.description,
           })
+          .onConflictDoNothing()
           .returning();
 
         if (!insertedPkg) {
@@ -141,15 +142,34 @@ export const installPackagesTool = ({
     },
   });
 
-export const readFilesTool = ({
+export const removePackagesTool = ({
   projectId,
-  filesCache,
+  machineId,
 }: {
   projectId: string;
-  filesCache: Record<string, string>;
+  machineId: string;
 }) =>
   tool({
-    description: "Read files contents",
+    description: "Ask the user to remove node packages",
+    parameters: z.object({
+      pkgs: z.string().array(),
+    }),
+    execute: async ({ pkgs }) => {
+      await Fly.machine.executeCommand({
+        projectId,
+        machineId,
+        command: ["bun", "remove", ...pkgs],
+      });
+    },
+  });
+
+export const readFilesTool = ({
+  projectId,
+}: {
+  projectId: string;
+}) =>
+  tool({
+    description: "Ask the user to send you the contents of files",
     parameters: z.object({
       files: z.string().array(),
     }),
@@ -157,22 +177,38 @@ export const readFilesTool = ({
       const fileContents: Record<string, string> = {};
 
       for (const file of files) {
-        if (filesCache[file]) {
-          fileContents[file] = filesCache[file];
-        } else {
-          const fileContent = await S3.readFile({
-            projectId,
-            path: file,
-          });
+        const fileContent = await S3.readFile({
+          projectId,
+          path: file,
+        });
 
-          if (!fileContent) {
-            return "File not found";
-          }
-
-          fileContents[file] = fileContent;
+        if (!fileContent) {
+          throw new Error("File not found");
         }
+
+        fileContents[file] = fileContent;
       }
 
       return fileContents;
+    },
+  });
+
+export const deleteFilesTool = ({
+  projectId,
+}: {
+  projectId: string;
+}) =>
+  tool({
+    description: "Ask the user to delete files",
+    parameters: z.object({
+      files: z.string().array(),
+    }),
+    execute: async ({ files }) => {
+      for (const file of files) {
+        await S3.deleteFile({
+          projectId,
+          path: file,
+        });
+      }
     },
   });

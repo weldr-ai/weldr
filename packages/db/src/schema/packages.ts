@@ -13,8 +13,7 @@ export const packages = pgTable(
       .$defaultFn(() => createId()),
     type: packageType("type").notNull(),
     name: text("name").notNull(),
-    reason: text("reason"),
-    version: text("version"),
+    description: text("description"),
     projectId: text("project_id")
       .references(() => projects.id)
       .notNull(),

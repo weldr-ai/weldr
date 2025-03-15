@@ -12,6 +12,21 @@ import {
 import { packageType } from "./packages";
 import { declarationTypes } from "./shared-enums";
 
+interface InternalDependency {
+  type: "internal";
+  from: string;
+  dependsOn: string[];
+}
+
+interface ExternalDependency {
+  type: "external";
+  from: string;
+  dependsOn: string[];
+  name: string;
+}
+
+export type DeclarationDependency = InternalDependency | ExternalDependency;
+
 export const presetTypes = pgEnum("preset_type", ["next-base"]);
 
 export const presets = pgTable("presets", {
@@ -41,17 +56,10 @@ export const presetDeclarations = pgTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     type: declarationTypes("type").notNull(),
-    link: text("link").notNull(),
+    name: text("name").notNull(),
     file: text("file").notNull(),
     metadata: jsonb().$type<DeclarationMetadata>(),
-    dependencies:
-      jsonb().$type<
-        {
-          type: "internal" | "external";
-          from: string;
-          dependsOn: string[];
-        }[]
-      >(),
+    dependencies: jsonb().$type<DeclarationDependency[]>(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")
       .notNull()
@@ -62,7 +70,7 @@ export const presetDeclarations = pgTable(
       .references(() => presets.id),
   },
   (t) => ({
-    unique: unique("unique_preset_declaration").on(t.link, t.presetId),
+    unique: unique("unique_preset_declaration").on(t.name, t.file, t.presetId),
   }),
 );
 
@@ -106,13 +114,13 @@ export const presetFiles = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => createId()),
-    file: text("file").notNull(),
+    path: text("path").notNull(),
     presetId: text("preset_id")
       .references(() => presets.id)
       .notNull(),
   },
   (t) => ({
-    unique: unique("unique_preset_file").on(t.file, t.presetId),
+    unique: unique("unique_preset_file").on(t.path, t.presetId),
   }),
 );
 

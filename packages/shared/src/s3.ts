@@ -1,5 +1,6 @@
 import {
   CopyObjectCommand,
+  DeleteObjectCommand,
   GetObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
@@ -17,11 +18,6 @@ const s3Client = new S3Client({
   },
 });
 
-interface CopiedFile {
-  path: string;
-  name: string;
-}
-
 export const S3 = {
   copyBoilerplate: async ({
     boilerplate,
@@ -29,7 +25,7 @@ export const S3 = {
   }: {
     boilerplate: string;
     destinationPath: string;
-  }): Promise<void> => {
+  }): Promise<Record<string, string>> => {
     try {
       // List all objects in the source "directory"
       const listCommand = new ListObjectsV2Command({
@@ -43,30 +39,29 @@ export const S3 = {
         throw new Error(`No objects found in source path: ${boilerplate}`);
       }
 
-      const copiedFiles: CopiedFile[] = [];
+      const fileVersions: Record<string, string> = {};
 
       // Copy each object to the new location
-      const copyPromises = Contents.map((object) => {
-        if (!object.Key) return Promise.resolve();
+      const copyPromises = Contents.map(async (object) => {
+        if (!object.Key) return;
 
         const newKey = object.Key.replace(boilerplate, destinationPath);
-        const fileName = newKey.split("/").pop() || "";
 
-        copiedFiles.push({
-          path: newKey,
-          name: fileName,
-        });
-
-        return s3Client.send(
+        const result = await s3Client.send(
           new CopyObjectCommand({
             Bucket: "weldr-projects",
             CopySource: `weldr-boilerplates/${object.Key}`,
             Key: newKey,
           }),
         );
+
+        if (result.VersionId) {
+          fileVersions[newKey] = result.VersionId;
+        }
       });
 
       await Promise.all(copyPromises);
+      return fileVersions;
     } catch (error) {
       console.error("Error copying directory:", error);
       throw error;
@@ -144,5 +139,33 @@ export const S3 = {
     );
 
     return url;
+  },
+  deleteFile: async ({
+    projectId,
+    path,
+  }: {
+    projectId: string;
+    path: string;
+  }): Promise<string | undefined> => {
+    const fullPath = `${projectId}/${path}`;
+
+    try {
+      const command = new DeleteObjectCommand({
+        Bucket: "weldr-projects",
+        Key: fullPath,
+      });
+
+      console.log("Deleting file from S3", {
+        path,
+        fullPath,
+        bucket: "weldr-projects",
+      });
+
+      const response = await s3Client.send(command);
+      return response.VersionId;
+    } catch (error) {
+      console.error("Failed to delete file from S3", { path, fullPath, error });
+      throw new Error(`Failed to delete file ${path} from S3`);
+    }
   },
 };

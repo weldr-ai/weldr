@@ -9,7 +9,6 @@ import {
   primaryKey,
   text,
   timestamp,
-  unique,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { dependencies } from "./dependencies";
@@ -27,7 +26,7 @@ export const declarations = pgTable(
       .primaryKey()
       .notNull(),
     type: declarationTypes("type").notNull(),
-    link: text("link").notNull(),
+    name: text("name").notNull(),
     metadata: jsonb().$type<DeclarationMetadata>(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -49,7 +48,6 @@ export const declarations = pgTable(
   },
   (table) => ({
     createdAtIdx: index("declaration_created_at_idx").on(table.createdAt),
-    uniqueLink: unique("unique_link").on(table.projectId, table.link),
   }),
 );
 
@@ -89,6 +87,7 @@ export const declarationPackages = pgTable(
     packageId: text("package_id")
       .references(() => packages.id)
       .notNull(),
+    importPath: text("import_path").notNull(),
     declarations: text("declarations").array(),
   },
   (table) => ({

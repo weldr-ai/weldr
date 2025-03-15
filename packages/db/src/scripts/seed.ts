@@ -160,12 +160,17 @@ async function seed() {
       }
 
       for (const declaration of preset.declarations) {
-        const [file, name] = declaration.link.split("#");
+        const [_, nameWithDelimiter] = declaration.name.split("|");
+        const name = nameWithDelimiter?.split("::")[1];
+
+        if (!name) {
+          throw new Error("Invalid declaration name");
+        }
 
         await tx
           .update(schema.presetDeclarations)
           .set({
-            link: `file::${file}|declaration::${name}`,
+            name,
           })
           .where(eq(schema.presetDeclarations.id, declaration.id));
       }

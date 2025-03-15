@@ -40,6 +40,12 @@ export type ToolMessage = z.infer<typeof toolMessageSchema>;
 export type Chat = z.infer<typeof chatSchema>;
 export type Attachment = z.infer<typeof attachmentSchema>;
 
+export type DeclarationType =
+  | "function"
+  | "component"
+  | "endpoint"
+  | "model"
+  | "other";
 export type DeclarationMetadata = z.infer<typeof declarationMetadataSchema>;
 
 export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;

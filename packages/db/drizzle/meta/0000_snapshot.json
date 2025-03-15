@@ -1,5 +1,5 @@
 {
-  "id": "19f8e778-928f-4633-9894-3a9361dc20d1",
+  "id": "3aee9c70-c0cc-42ea-b9b1-6c7e08a7840f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -624,6 +624,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "import_path": {
+          "name": "import_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "declarations": {
           "name": "declarations",
           "type": "text[]",
@@ -680,8 +686,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "link": {
-          "name": "link",
+        "name": {
+          "name": "name",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -787,13 +793,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "unique_link": {
-          "name": "unique_link",
-          "nullsNotDistinct": false,
-          "columns": ["project_id", "link"]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1089,14 +1089,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "version": {
-          "name": "version",
+        "description": {
+          "name": "description",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1149,8 +1143,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "link": {
-          "name": "link",
+        "name": {
+          "name": "name",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1211,7 +1205,7 @@
         "unique_preset_declaration": {
           "name": "unique_preset_declaration",
           "nullsNotDistinct": false,
-          "columns": ["link", "preset_id"]
+          "columns": ["name", "file", "preset_id"]
         }
       },
       "policies": {},
@@ -1228,8 +1222,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "file": {
-          "name": "file",
+        "path": {
+          "name": "path",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1258,7 +1252,7 @@
         "unique_preset_file": {
           "name": "unique_preset_file",
           "nullsNotDistinct": false,
-          "columns": ["file", "preset_id"]
+          "columns": ["path", "preset_id"]
         }
       },
       "policies": {},

@@ -1,19 +1,42 @@
 import "server-only";
 
-import { type InferSelectModel, type Tx, and, eq } from "@weldr/db";
-import { declarations, files, packages } from "@weldr/db/schema";
+import {
+  type InferInsertModel,
+  type InferSelectModel,
+  type Tx,
+  and,
+  eq,
+  inArray,
+} from "@weldr/db";
+import {
+  declarationPackages,
+  declarations,
+  dependencies,
+  files,
+  packages,
+  versionDeclarations,
+  versionFiles,
+  versionPackages,
+} from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import { S3 } from "@weldr/shared/s3";
 import { type CoreMessage, type CoreUserMessage, streamText } from "ai";
 import { models } from "../models";
+import { processDeclarations } from "../process-declarations";
 import { prompts } from "../prompts";
-import { installPackagesTool, readFilesTool } from "../tools";
+import {
+  deleteFilesTool,
+  installPackagesTool,
+  readFilesTool,
+  removePackagesTool,
+} from "../tools";
 import { annotator } from "./annotator";
 
 export async function coder({
   userId,
   projectId,
   versionId,
+  previousVersionId,
   machineId,
   prompt,
   tx,
@@ -21,6 +44,7 @@ export async function coder({
   userId: string;
   projectId: string;
   versionId: string;
+  previousVersionId?: string;
   machineId: string;
   prompt: CoreUserMessage;
   tx: Tx;
@@ -38,14 +62,21 @@ export async function coder({
 
   const installedPackages = await tx.query.packages.findMany({
     where: and(eq(packages.projectId, projectId), eq(packages.type, "runtime")),
+    columns: {
+      name: true,
+      description: true,
+      type: true,
+    },
   });
+
+  const deletedPackages: string[] = [];
+  const deletedDeclarations: string[] = [];
+  const deletedFiles: string[] = [];
 
   const context = getContext({
     installedPackages,
     availableFiles,
   });
-
-  const filesCache: Record<string, string> = {};
 
   let response = "";
   let processedResponse = "";
@@ -66,9 +97,15 @@ export async function coder({
           versionId,
           tx,
         }),
+        removePackages: removePackagesTool({
+          projectId,
+          machineId,
+        }),
         readFiles: readFilesTool({
           projectId,
-          filesCache,
+        }),
+        deleteFiles: deleteFilesTool({
+          projectId,
         }),
       },
       onFinish: async ({ finishReason, text, toolCalls, toolResults }) => {
@@ -84,27 +121,6 @@ export async function coder({
         if (finishReason === "tool-calls") {
           for (const toolCall of toolCalls) {
             switch (toolCall.toolName) {
-              case "installPackages": {
-                const toolResult = toolResults.find(
-                  (toolResult) => toolResult.toolName === "installPackages",
-                );
-
-                if (!toolResult) {
-                  throw new Error("Tool result not found");
-                }
-
-                const installedPackages = toolResult.args.pkgs;
-
-                currentMessages.push({
-                  role: "user",
-                  content: `Finished installing the following packages: ${installedPackages.join(
-                    ", ",
-                  )}`,
-                });
-
-                await generate();
-                break;
-              }
               case "readFiles": {
                 const toolResult = toolResults.find(
                   (toolResult) => toolResult.toolName === "readFiles",
@@ -125,7 +141,69 @@ export async function coder({
                     .join("\n\n")}`,
                 });
 
-                await generate();
+                break;
+              }
+              case "installPackages": {
+                const toolResult = toolResults.find(
+                  (toolResult) => toolResult.toolName === "installPackages",
+                );
+
+                if (!toolResult) {
+                  throw new Error("Tool result not found");
+                }
+
+                currentMessages.push({
+                  role: "user",
+                  content: `Finished installing the following packages: ${installedPackages.join(
+                    ", ",
+                  )}`,
+                });
+
+                break;
+              }
+              case "removePackages": {
+                const toolResult = toolResults.find(
+                  (toolResult) => toolResult.toolName === "removePackages",
+                );
+
+                if (!toolResult) {
+                  throw new Error("Tool result not found");
+                }
+
+                deletedPackages.push(...toolResult.args.pkgs);
+
+                currentMessages.push({
+                  role: "user",
+                  content: `Finished removing the following packages: ${toolResult.args.pkgs.join(
+                    ", ",
+                  )}`,
+                });
+
+                break;
+              }
+              case "deleteFiles": {
+                const toolResult = toolResults.find(
+                  (toolResult) => toolResult.toolName === "deleteFiles",
+                );
+
+                if (!toolResult) {
+                  throw new Error("Tool result not found");
+                }
+
+                const deleted = await tx.query.declarations.findMany({
+                  where: inArray(declarations.fileId, toolResult.args.files),
+                });
+
+                deletedDeclarations.push(...deleted.map((d) => d.id));
+                deletedFiles.push(...toolResult.args.files);
+
+                currentMessages.push({
+                  role: "user",
+                  content: `Finished deleting the following files: ${toolResult.args.files.join(
+                    ", ",
+                  )}`,
+                });
+
                 break;
               }
               default: {
@@ -134,6 +212,8 @@ export async function coder({
               }
             }
           }
+
+          await generate();
         }
       },
     });
@@ -147,14 +227,15 @@ export async function coder({
         response,
         processedResponse,
         filePaths,
-        filesCache,
         passedEdits,
         failedEdits,
         projectId,
         userId,
         versionId,
+        previousVersionId,
         tx,
         machineId,
+        deletedDeclarations,
       });
     }
   }
@@ -168,14 +249,15 @@ export async function coder({
       response,
       processedResponse,
       filePaths,
-      filesCache,
       passedEdits,
       failedEdits,
       projectId,
       userId,
       versionId,
+      previousVersionId,
       tx,
       machineId,
+      deletedDeclarations,
     });
   }
 
@@ -223,14 +305,15 @@ export async function coder({
         response,
         processedResponse,
         filePaths,
-        filesCache,
         passedEdits,
         failedEdits,
         projectId,
         userId,
         versionId,
+        previousVersionId,
         tx,
         machineId,
+        deletedDeclarations,
       });
     }
 
@@ -247,13 +330,94 @@ export async function coder({
     passedEdits: finalEditedFiles.passed.length,
     failedEdits: finalEditedFiles.failed.length,
   });
+
+  // Complete version snapshot
+  let previousVersionDeclarations: InferSelectModel<typeof declarations>[] = [];
+  let previousVersionPackages: InferSelectModel<typeof packages>[] = [];
+  let previousVersionFiles: (InferSelectModel<typeof files> & {
+    s3VersionId: string;
+  })[] = [];
+
+  if (previousVersionId) {
+    const versionDeclarationsResult =
+      await tx.query.versionDeclarations.findMany({
+        where: eq(versionDeclarations.versionId, previousVersionId),
+        with: {
+          declaration: true,
+        },
+      });
+
+    previousVersionDeclarations = versionDeclarationsResult.map(
+      (v) => v.declaration,
+    );
+
+    const versionDeclarationPackagesResult =
+      await tx.query.versionPackages.findMany({
+        where: eq(versionPackages.versionId, previousVersionId),
+        with: {
+          package: true,
+        },
+      });
+
+    previousVersionPackages = versionDeclarationPackagesResult.map(
+      (v) => v.package,
+    );
+
+    const versionFilesResult = await tx.query.versionFiles.findMany({
+      where: eq(versionFiles.versionId, previousVersionId),
+      with: {
+        file: true,
+      },
+    });
+
+    previousVersionFiles = versionFilesResult.map((v) => {
+      return {
+        ...v.file,
+        s3VersionId: v.s3VersionId,
+      };
+    });
+  }
+
+  // Insert version declarations
+  await tx.insert(versionDeclarations).values([
+    ...previousVersionDeclarations
+      .filter((d) => Object.keys(deletedDeclarations).includes(d.name))
+      .map((d) => ({
+        versionId,
+        declarationId: d.id,
+      })),
+  ]);
+
+  // Insert version packages
+  await tx.insert(versionPackages).values([
+    ...previousVersionPackages
+      .filter((p) => Object.keys(deletedDeclarations).includes(p.name))
+      .map((p) => ({
+        versionId,
+        packageId: p.id,
+      })),
+  ]);
+
+  // Insert version files
+  await tx.insert(versionFiles).values([
+    ...previousVersionFiles
+      .filter((f) => Object.keys(deletedFiles).includes(f.path))
+      .map((f) => ({
+        versionId,
+        fileId: f.id,
+        s3VersionId: f.s3VersionId,
+      })),
+  ]);
 }
 
 function getContext({
   installedPackages,
   availableFiles,
 }: {
-  installedPackages: InferSelectModel<typeof packages>[];
+  installedPackages: Omit<
+    InferSelectModel<typeof packages>,
+    "id" | "projectId"
+  >[];
   availableFiles: (InferSelectModel<typeof files> & {
     declarations: InferSelectModel<typeof declarations>[];
   })[];
@@ -334,26 +498,28 @@ async function processStream({
   response,
   processedResponse,
   filePaths,
-  filesCache,
   passedEdits,
   failedEdits,
   projectId,
   userId,
   versionId,
+  previousVersionId,
   tx,
   machineId,
+  deletedDeclarations,
 }: {
   response: string;
   processedResponse: string;
   filePaths: string[];
-  filesCache: Record<string, string>;
   passedEdits: Edit[];
   failedEdits: FailedEdit[];
   projectId: string;
   userId: string;
   versionId: string;
+  previousVersionId?: string;
   tx: Tx;
   machineId: string;
+  deletedDeclarations: string[];
 }): Promise<string> {
   // Get the new content since last processing
   const newContent = response.substring(processedResponse.length);
@@ -408,19 +574,18 @@ async function processStream({
 
               continue;
             }
-
-            filesCache[edit.path] = file;
           }
 
           // Apply the single edit
           const results = await applyEdit({
-            filesCache,
             existingFiles: filePaths,
             edit,
             projectId,
             versionId,
+            previousVersionId,
             userId,
             tx,
+            deletedDeclarations,
           });
 
           // Write the file to the MicroVM
@@ -458,13 +623,15 @@ async function processStream({
     .join("\n");
 }
 
-async function processDeclarations({
+async function processFile({
   content,
   path,
   projectId,
   versionId,
   userId,
   tx,
+  previousVersionId,
+  deletedDeclarations,
 }: {
   content: string;
   path: string;
@@ -472,76 +639,204 @@ async function processDeclarations({
   versionId: string;
   userId: string;
   tx: Tx;
+  previousVersionId?: string;
+  deletedDeclarations: string[];
 }) {
-  const metadata = await annotator(content);
+  let file = await tx.query.files.findFirst({
+    where: and(
+      eq(files.projectId, projectId),
+      eq(files.path, path),
+      eq(files.userId, userId),
+    ),
+  });
 
-  console.log("Starting database transaction for file", { path });
+  let previousContent: string | undefined = undefined;
 
-  let [insertedFile] = await tx
-    .insert(files)
-    .values({
+  if (!file) {
+    const [insertedFile] = await tx
+      .insert(files)
+      .values({
+        projectId,
+        path,
+        userId,
+      })
+      .returning();
+
+    file = insertedFile;
+  } else {
+    previousContent = await S3.readFile({
       projectId,
       path,
-      userId,
-    })
+    });
+  }
+
+  if (!file) {
+    throw new Error(`Failed to insert/select file ${path}`);
+  }
+
+  // Save the file to S3
+  const s3Version = await S3.writeFile({
+    projectId,
+    path: file.path,
+    content,
+  });
+
+  if (!s3Version) {
+    throw new Error(`Failed to write file ${file.path} to S3`);
+  }
+
+  // Add the file to the version
+  await tx.insert(versionFiles).values({
+    versionId,
+    fileId: file.id,
+    s3VersionId: s3Version,
+  });
+
+  const processedDeclarations = await processDeclarations({
+    fileContent: content,
+    filePath: path,
+    previousContent,
+  });
+
+  let previousVersionDeclarations: InferSelectModel<typeof declarations>[] = [];
+  let declarationsToDelete: InferSelectModel<typeof declarations>[] = [];
+
+  if (previousVersionId) {
+    const versionDeclarationsResult =
+      await tx.query.versionDeclarations.findMany({
+        where: eq(versionDeclarations.versionId, previousVersionId),
+        with: {
+          declaration: true,
+        },
+      });
+
+    previousVersionDeclarations = versionDeclarationsResult.map(
+      (v) => v.declaration,
+    );
+
+    declarationsToDelete = previousVersionDeclarations.filter((d) =>
+      Object.keys(processedDeclarations.deletedDeclarations).includes(d.name),
+    );
+  }
+
+  const annotations = await annotator({
+    code: content,
+    newDeclarations: Object.keys(processedDeclarations.newDeclarations),
+    updatedDeclarations: previousVersionDeclarations,
+  });
+
+  // Insert declarations
+  const insertedDeclarations = await tx
+    .insert(declarations)
+    .values(
+      annotations.map((annotation) => {
+        const name = (() => {
+          switch (annotation.type) {
+            case "component": {
+              return annotation.definition.name;
+            }
+            case "function":
+            case "model":
+            case "other": {
+              return annotation.name;
+            }
+            case "endpoint": {
+              switch (annotation.definition.subtype) {
+                case "rest": {
+                  return `${annotation.definition.method.toUpperCase()}:${annotation.definition.path}`;
+                }
+                case "rpc": {
+                  return `${annotation.definition.name}`;
+                }
+              }
+            }
+          }
+        })();
+
+        return {
+          fileId: file.id,
+          name,
+          type: annotation.type,
+          metadata: annotation,
+          projectId,
+          userId,
+          previousId: previousVersionDeclarations.find((d) => d.name === name)
+            ?.id,
+        } as InferInsertModel<typeof declarations>;
+      }),
+    )
     .onConflictDoNothing()
     .returning();
 
-  if (!insertedFile) {
-    insertedFile = await tx.query.files.findFirst({
-      where: and(eq(files.projectId, projectId), eq(files.path, path)),
+  // Insert version declarations
+  await tx.insert(versionDeclarations).values(
+    insertedDeclarations.map((d) => ({
+      versionId,
+      declarationId: d.id,
+    })),
+  );
+
+  const tempDeclarations = {
+    ...processedDeclarations.newDeclarations,
+    ...processedDeclarations.updatedDeclarations,
+  };
+
+  // Insert declaration dependencies
+  for (const declaration of insertedDeclarations) {
+    const declarationDependencies = tempDeclarations[declaration.name] ?? [];
+
+    // Insert the declaration packages
+    const pkgs = declarationDependencies.filter((d) => d.type === "external");
+
+    const savedPkgs = await tx.query.packages.findMany({
+      where: and(
+        inArray(
+          packages.name,
+          pkgs.map((p) => p.name),
+        ),
+        eq(packages.projectId, projectId),
+      ),
     });
 
-    if (!insertedFile) {
-      throw new Error(`Failed to insert file ${path}`);
-    }
-  }
+    await tx.insert(declarationPackages).values(
+      pkgs.map((pkg) => {
+        const pkgId = savedPkgs.find((p) => p.name === pkg.name)?.id;
 
-  // Delete existing declarations for this file
-  await tx.delete(declarations).where(eq(declarations.fileId, insertedFile.id));
-
-  // Add new declarations
-  for (const declaration of metadata) {
-    let name = "";
-
-    switch (declaration.type) {
-      case "endpoint": {
-        switch (declaration.definition.subtype) {
-          case "rest": {
-            name = `${declaration.definition.method.toUpperCase()}:${declaration.definition.path}`;
-            break;
-          }
-          case "rpc": {
-            name = `${declaration.definition.name}`;
-            break;
-          }
+        if (!pkgId) {
+          throw new Error(`Package not found: ${pkg.name}`);
         }
-        break;
-      }
-      case "component": {
-        name = declaration.definition.name;
-        break;
-      }
-      case "function":
-      case "model":
-      case "other": {
-        name = declaration.name;
-        break;
-      }
-      default: {
-        throw new Error("Unknown declaration type");
-      }
-    }
 
-    await tx.insert(declarations).values({
-      link: `version::${versionId}|file::${insertedFile.path}|declaration::${name}`,
-      type: declaration.type,
-      projectId,
-      fileId: insertedFile.id,
-      userId,
-      metadata: declaration,
-    });
+        return {
+          declarationId: declaration.id,
+          packageId: pkgId,
+          importPath: pkg.name,
+          declarations: pkg.dependsOn,
+        };
+      }),
+    );
+
+    // Insert declaration dependencies
+    const internalDependencies = declarationDependencies.filter(
+      (d) => d.type === "internal",
+    );
+
+    for (const dependency of internalDependencies) {
+      const tempDependencies = previousVersionDeclarations.filter((d) =>
+        dependency.dependsOn.includes(d.name),
+      );
+
+      await tx.insert(dependencies).values(
+        tempDependencies.map((d) => ({
+          dependentType: declaration.type,
+          dependentId: declaration.id,
+          dependencyType: d.type,
+          dependencyId: d.id,
+        })),
+      );
+    }
   }
+
+  deletedDeclarations.push(...declarationsToDelete.map((d) => d.id));
 }
 
 interface Edit {
@@ -812,21 +1107,23 @@ function doReplace({
 }
 
 export async function applyEdit({
-  filesCache,
   existingFiles,
   edit,
   projectId,
   versionId,
+  previousVersionId,
   userId,
   tx,
+  deletedDeclarations,
 }: {
-  filesCache: Record<string, string>;
   existingFiles: string[];
   edit: Edit;
   projectId: string;
   versionId: string;
+  previousVersionId?: string;
   userId: string;
   tx: Tx;
+  deletedDeclarations: string[];
 }): Promise<EditResult> {
   console.log("Applying edit", { edit });
 
@@ -847,27 +1144,26 @@ export async function applyEdit({
       }
 
       console.log("Creating new file", { path: edit.path });
-      await S3.writeFile({
-        projectId,
-        path: edit.path,
-        content: edit.updated,
-      });
-
       // Process declarations for new file
-      await processDeclarations({
+      await processFile({
         content: edit.updated,
         path: edit.path,
         projectId,
         versionId,
         userId,
         tx,
+        previousVersionId,
+        deletedDeclarations,
       });
 
       return { passed: edit, failed };
     }
 
     // Handle existing file edits
-    const content = filesCache[edit.path];
+    const content = await S3.readFile({
+      projectId,
+      path: edit.path,
+    });
 
     if (!content) {
       throw new Error(`File not found: ${edit.path}`);
@@ -880,20 +1176,16 @@ export async function applyEdit({
     });
 
     if (newContent) {
-      await S3.writeFile({
-        projectId,
-        path: edit.path,
-        content: newContent,
-      });
-
       // Process declarations for updated file
-      await processDeclarations({
+      await processFile({
         content: newContent,
         path: edit.path,
         projectId,
         versionId,
         userId,
         tx,
+        previousVersionId,
+        deletedDeclarations,
       });
 
       passed = {
