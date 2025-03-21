@@ -5,6 +5,7 @@ import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { chats } from "./chats";
 import { environmentVariables } from "./environment-variables";
+import { versions } from "./versions";
 
 export const projects = pgTable(
   "projects",
@@ -38,4 +39,5 @@ export const projectRelations = relations(projects, ({ many, one }) => ({
     fields: [projects.userId],
     references: [users.id],
   }),
+  versions: many(versions),
 }));

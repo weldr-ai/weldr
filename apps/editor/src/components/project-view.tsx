@@ -10,6 +10,7 @@ import {
 
 import { Canvas } from "@/components/canvas";
 import { ProjectSettings } from "@/components/project-settings";
+import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
 import type { Edge } from "@xyflow/react";
@@ -79,6 +80,8 @@ function Main({
   initialEdges: Edge[];
   // integrations: RouterOutputs["integrations"]["list"];
 }) {
+  const { project: projectContext } = useProject();
+
   return (
     <Tabs defaultValue="preview" className="flex size-full flex-col">
       <div className="flex h-12 w-full items-center justify-between border-b px-3">
@@ -99,14 +102,19 @@ function Main({
       </div>
       <TabsContent value="preview" className="mt-0 flex-1 bg-background">
         <div className="flex size-full items-center justify-center">
-          <iframe
-            src="http://localhost:4000"
-            className="size-full border-none"
-            title="Preview"
-            sandbox="allow-same-origin allow-scripts allow-forms"
-            referrerPolicy="no-referrer"
-            loading="lazy"
-          />
+          {projectContext.currentVersion ? (
+            <iframe
+              src={`https://${projectContext.currentVersion.machineId}-${project.id}.preview.weldr.app`}
+              className="size-full border-none"
+              title="Preview"
+              sandbox="allow-same-origin allow-scripts allow-forms"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="flex size-full items-center justify-center">
+              <p>No version found</p>
+            </div>
+          )}
         </div>
       </TabsContent>
       <TabsContent value="canvas" className="mt-0 flex-1 bg-background">

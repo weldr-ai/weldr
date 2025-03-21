@@ -20,7 +20,7 @@ export function Navbar({
       <h2 className="font-semibold text-sm">{project.name}</h2>
 
       <div className="flex items-center gap-2">
-        <Versions />
+        <Versions versions={project.versions} />
         <Button size="sm" variant="outline">
           <RocketIcon className="mr-2 size-4 text-primary" />
           Publish

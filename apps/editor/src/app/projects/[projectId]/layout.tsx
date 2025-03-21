@@ -23,9 +23,10 @@ export default async function ProjectLayout({
 
     return (
       <ProjectProvider
-        project={{
+        initialProject={{
           id: projectId,
           name: project.name,
+          currentVersion: project.versions.find((version) => version.isCurrent),
         }}
       >
         {/* <ResourcesProvider

@@ -139,6 +139,7 @@ export const projectsRouter = {
             eq(projects.userId, ctx.session.user.id),
           ),
           with: {
+            versions: true,
             chats: {
               limit: 1,
               orderBy: (chats, { desc }) => [desc(chats.createdAt)],

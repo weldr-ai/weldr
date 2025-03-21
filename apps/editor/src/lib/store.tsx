@@ -1,5 +1,6 @@
 "use client";
 
+import type { RouterOutputs } from "@weldr/api";
 import {
   type ReactNode,
   createContext,
@@ -90,23 +91,38 @@ interface ProjectContextType {
   project: {
     id: string;
     name: string | null;
+    currentVersion:
+      | RouterOutputs["projects"]["byId"]["versions"][number]
+      | undefined;
   };
+  setProject: (project: {
+    id: string;
+    name: string | null;
+    currentVersion:
+      | RouterOutputs["projects"]["byId"]["versions"][number]
+      | undefined;
+  }) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export function ProjectProvider({
   children,
-  project,
+  initialProject,
 }: {
   children: ReactNode;
-  project: {
+  initialProject: {
     id: string;
     name: string | null;
+    currentVersion:
+      | RouterOutputs["projects"]["byId"]["versions"][number]
+      | undefined;
   };
 }) {
+  const [project, setProject] = useState(initialProject);
+
   return (
-    <ProjectContext.Provider value={{ project }}>
+    <ProjectContext.Provider value={{ project, setProject }}>
       {children}
     </ProjectContext.Provider>
   );
