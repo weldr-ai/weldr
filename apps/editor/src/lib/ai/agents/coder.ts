@@ -17,10 +17,18 @@ import {
   versionDeclarations,
   versionFiles,
   versionPackages,
+  versions,
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import { S3 } from "@weldr/shared/s3";
-import { type CoreMessage, type CoreUserMessage, streamText } from "ai";
+import { declarationMetadataSchema } from "@weldr/shared/validators/declarations/index";
+import {
+  type CoreMessage,
+  type CoreUserMessage,
+  streamObject,
+  streamText,
+} from "ai";
+import { z } from "zod";
 import { models } from "../models";
 import { processDeclarations } from "../process-declarations";
 import { prompts } from "../prompts";
@@ -30,14 +38,37 @@ import {
   readFilesTool,
   removePackagesTool,
 } from "../tools";
-import { annotator } from "./annotator";
+
+interface Edit {
+  path: string;
+  original: string;
+  updated: string;
+}
+
+interface FailedEdit {
+  edit: Edit;
+  error: string;
+}
+
+type EditResult = {
+  passed?: Edit;
+  failed?: FailedEdit;
+};
+
+type EditResults = {
+  passed?: Edit[];
+  failed?: FailedEdit[];
+};
+
+const HEAD = /^<{5,9} SEARCH\s*$/;
+const DIVIDER = /^={5,9}\s*$/;
+const UPDATED = /^>{5,9} REPLACE\s*$/;
 
 export async function coder({
   userId,
   projectId,
   versionId,
   previousVersionId,
-  machineId,
   prompt,
   tx,
 }: {
@@ -45,45 +76,44 @@ export async function coder({
   projectId: string;
   versionId: string;
   previousVersionId?: string;
-  machineId: string;
   prompt: CoreUserMessage;
   tx: Tx;
 }) {
   console.log("Starting coder agent", { userId, projectId });
-
   const currentMessages: CoreMessage[] = [prompt];
 
-  const availableFiles = await tx.query.files.findMany({
-    where: eq(files.projectId, projectId),
-    with: {
-      declarations: true,
-    },
-  });
-
   const installedPackages = await tx.query.packages.findMany({
-    where: and(eq(packages.projectId, projectId), eq(packages.type, "runtime")),
+    where: eq(packages.projectId, projectId),
     columns: {
       name: true,
       description: true,
       type: true,
     },
   });
-
   const deletedPackages: string[] = [];
   const deletedDeclarations: string[] = [];
   const deletedFiles: string[] = [];
 
-  const context = getContext({
-    installedPackages,
-    availableFiles,
+  let response = "";
+  let finalResult: EditResults = {};
+
+  const availableFiles = await tx.query.versionFiles.findMany({
+    where: eq(versionFiles.versionId, versionId),
+    with: {
+      file: {
+        with: {
+          declarations: true,
+        },
+      },
+    },
   });
 
-  let response = "";
-  let processedResponse = "";
+  const filePaths = availableFiles.map((versionFile) => versionFile.file.path);
 
-  const filePaths = availableFiles.map((file) => file.path);
-  const passedEdits: Edit[] = [];
-  const failedEdits: FailedEdit[] = [];
+  const context = getContext({
+    installedPackages,
+    availableFiles: availableFiles.map((v) => v.file),
+  });
 
   async function generate() {
     const { textStream } = streamText({
@@ -93,19 +123,16 @@ export async function coder({
       tools: {
         installPackages: installPackagesTool({
           projectId,
-          machineId,
           versionId,
           tx,
         }),
-        removePackages: removePackagesTool({
-          projectId,
-          machineId,
-        }),
+        removePackages: removePackagesTool,
         readFiles: readFilesTool({
           projectId,
         }),
         deleteFiles: deleteFilesTool({
           projectId,
+          tx,
         }),
       },
       onFinish: async ({ finishReason, text, toolCalls, toolResults }) => {
@@ -127,7 +154,7 @@ export async function coder({
                 );
 
                 if (!toolResult) {
-                  throw new Error("Tool result not found");
+                  throw new Error("readFiles: Tool result not found");
                 }
 
                 const fileContents = toolResult.args.files;
@@ -149,7 +176,7 @@ export async function coder({
                 );
 
                 if (!toolResult) {
-                  throw new Error("Tool result not found");
+                  throw new Error("installPackages: Tool result not found");
                 }
 
                 currentMessages.push({
@@ -167,7 +194,7 @@ export async function coder({
                 );
 
                 if (!toolResult) {
-                  throw new Error("Tool result not found");
+                  throw new Error("removePackages: Tool result not found");
                 }
 
                 deletedPackages.push(...toolResult.args.pkgs);
@@ -187,7 +214,7 @@ export async function coder({
                 );
 
                 if (!toolResult) {
-                  throw new Error("Tool result not found");
+                  throw new Error("deleteFiles: Tool result not found");
                 }
 
                 const deleted = await tx.query.declarations.findMany({
@@ -218,65 +245,59 @@ export async function coder({
       },
     });
 
+    // Collect the entire response
     for await (const text of textStream) {
       response += text;
-
       console.log(text);
+    }
 
-      processedResponse = await processStream({
-        response,
-        processedResponse,
-        filePaths,
-        passedEdits,
-        failedEdits,
-        projectId,
-        userId,
-        versionId,
-        previousVersionId,
-        tx,
-        machineId,
-        deletedDeclarations,
-      });
+    // Process all edits at once
+    const edits = getEdits({
+      content: response,
+      filePaths,
+    });
+
+    // Apply the edits
+    const results = await applyEdits({
+      existingFiles: filePaths,
+      edits,
+      projectId,
+      versionId,
+      previousVersionId,
+      userId,
+      tx,
+      deletedDeclarations,
+    });
+
+    // Add results to running totals
+    if (results.passed) {
+      finalResult.passed = results.passed;
+    }
+
+    if (results.failed) {
+      finalResult.failed = results.failed;
     }
   }
 
   await generate();
 
-  const remainingResponse = response.substring(processedResponse.length);
-
-  if (remainingResponse.trim()) {
-    processedResponse = await processStream({
-      response,
-      processedResponse,
-      filePaths,
-      passedEdits,
-      failedEdits,
-      projectId,
-      userId,
-      versionId,
-      previousVersionId,
-      tx,
-      machineId,
-      deletedDeclarations,
-    });
-  }
-
-  let finalEditedFiles = {
-    passed: passedEdits,
-    failed: failedEdits,
-  };
+  console.log("Current edits", {
+    passed: finalResult.passed,
+    failed: finalResult.failed,
+  });
 
   let retryCount = 0;
 
-  while (finalEditedFiles.failed.length > 0) {
+  while (finalResult.failed && finalResult.failed.length > 0) {
     retryCount++;
+
     console.log(`Retry attempt ${retryCount} for failed edits`, {
-      failedCount: finalEditedFiles.failed.length,
+      failedCount: finalResult.failed?.length,
     });
 
     // Add failed edits info to messages
-    const failureDetails = finalEditedFiles.failed
-      .map((f) => `Failed to edit ${f.edit.path}:\n${f.error}`)
+    const failureDetails = finalResult.failed
+      ?.map((f) => `Failed to edit ${f.edit.path}:\n${f.error}`)
       .join("\n\n");
 
     currentMessages.push({
@@ -290,45 +311,19 @@ export async function coder({
     });
 
     // Reset for next attempt
+    finalResult = {
+      passed: [],
+      failed: [],
+    };
     response = "";
-    processedResponse = "";
-    passedEdits.length = 0;
-    failedEdits.length = 0;
 
     // Generate new response
     await generate();
-
-    // Process any remaining edits from retry
-    const remainingRetryResponse = response.substring(processedResponse.length);
-    if (remainingRetryResponse.trim()) {
-      processedResponse = await processStream({
-        response,
-        processedResponse,
-        filePaths,
-        passedEdits,
-        failedEdits,
-        projectId,
-        userId,
-        versionId,
-        previousVersionId,
-        tx,
-        machineId,
-        deletedDeclarations,
-      });
-    }
-
-    // Update finalEditedFiles with results from this retry
-    finalEditedFiles = {
-      passed: [...finalEditedFiles.passed, ...passedEdits],
-      failed: failedEdits,
-    };
   }
 
   console.log("Coder agent completed", {
-    userId,
-    projectId,
-    passedEdits: finalEditedFiles.passed.length,
-    failedEdits: finalEditedFiles.failed.length,
+    passed: finalResult.passed,
+    failed: finalResult.failed,
   });
 
   // Complete version snapshot
@@ -337,8 +332,19 @@ export async function coder({
   let previousVersionFiles: (InferSelectModel<typeof files> & {
     s3VersionId: string;
   })[] = [];
+  let currentMachineId: string | null = null;
 
   if (previousVersionId) {
+    const version = await tx.query.versions.findFirst({
+      where: eq(versions.id, previousVersionId),
+    });
+
+    if (!version) {
+      throw new Error("Version not found");
+    }
+
+    currentMachineId = version.machineId;
+
     const versionDeclarationsResult =
       await tx.query.versionDeclarations.findMany({
         where: eq(versionDeclarations.versionId, previousVersionId),
@@ -379,35 +385,152 @@ export async function coder({
   }
 
   // Insert version declarations
-  await tx.insert(versionDeclarations).values([
-    ...previousVersionDeclarations
-      .filter((d) => Object.keys(deletedDeclarations).includes(d.name))
-      .map((d) => ({
-        versionId,
-        declarationId: d.id,
-      })),
-  ]);
+  if (previousVersionDeclarations.length > 0) {
+    await tx.insert(versionDeclarations).values([
+      ...previousVersionDeclarations
+        .filter((d) => Object.keys(deletedDeclarations).includes(d.name))
+        .map((d) => ({
+          versionId,
+          declarationId: d.id,
+        })),
+    ]);
+  }
 
   // Insert version packages
-  await tx.insert(versionPackages).values([
-    ...previousVersionPackages
-      .filter((p) => Object.keys(deletedDeclarations).includes(p.name))
-      .map((p) => ({
-        versionId,
-        packageId: p.id,
-      })),
-  ]);
+  if (previousVersionPackages.length > 0) {
+    await tx.insert(versionPackages).values([
+      ...previousVersionPackages
+        .filter((p) => Object.keys(deletedDeclarations).includes(p.name))
+        .map((p) => ({
+          versionId,
+          packageId: p.id,
+        })),
+    ]);
+  }
 
   // Insert version files
-  await tx.insert(versionFiles).values([
-    ...previousVersionFiles
-      .filter((f) => Object.keys(deletedFiles).includes(f.path))
-      .map((f) => ({
-        versionId,
-        fileId: f.id,
-        s3VersionId: f.s3VersionId,
-      })),
-  ]);
+  if (previousVersionFiles.length > 0) {
+    await tx.insert(versionFiles).values([
+      ...previousVersionFiles
+        .filter((f) => Object.keys(deletedFiles).includes(f.path))
+        .map((f) => ({
+          versionId,
+          fileId: f.id,
+          s3VersionId: f.s3VersionId,
+        })),
+    ]);
+  }
+
+  let currentMachine: Awaited<ReturnType<typeof Fly.machine.get>> | null = null;
+  let currentPackageDotJson:
+    | {
+        dependencies: Record<string, string>;
+        devDependencies: Record<string, string>;
+      }
+    | undefined = undefined;
+
+  if (currentMachineId) {
+    currentMachine = await Fly.machine.get({
+      projectId,
+      machineId: currentMachineId,
+    });
+
+    // Get current package.json
+    const currentPackageJson = await Fly.machine.executeCommand({
+      projectId,
+      machineId: currentMachineId,
+      command: ["cat", "/app/package.json"],
+    });
+
+    if (!currentPackageJson.stdout) {
+      throw new Error("Failed to get current package.json");
+    }
+
+    currentPackageDotJson = JSON.parse(currentPackageJson.stdout);
+  }
+
+  const filteredPackageDotJson = {
+    dependencies: Object.keys(currentPackageDotJson?.dependencies || {}).filter(
+      (pkg) => !deletedPackages.includes(pkg),
+    ),
+    devDependencies: Object.keys(
+      currentPackageDotJson?.devDependencies || {},
+    ).filter((pkg) => !deletedPackages.includes(pkg)),
+  };
+
+  const updatedFiles = [
+    ...(currentMachine?.config?.files || []),
+    ...(finalResult.passed?.map((file) => ({
+      guest_path: `/app/${file.path}`,
+      raw_value: Buffer.from(file.updated).toString("base64"),
+    })) || []),
+    ...(currentPackageDotJson
+      ? [
+          {
+            guest_path: "/app/package.json",
+            raw_value: Buffer.from(
+              JSON.stringify(filteredPackageDotJson),
+            ).toString("base64"),
+          },
+        ]
+      : []),
+  ];
+
+  console.log("updatedFiles", updatedFiles);
+
+  // Create a new machine
+  const machineId = await Fly.machine.create({
+    projectId,
+    versionId,
+    config: {
+      image: "registry.fly.io/boilerplates:next",
+      files: updatedFiles,
+    },
+  });
+
+  // Update version with new machine ID
+  await tx
+    .update(versions)
+    .set({
+      machineId,
+    })
+    .where(eq(versions.id, versionId));
+
+  // Install packages
+  await Fly.machine.executeCommand({
+    projectId,
+    machineId,
+    command: ["bun", "install"],
+  });
+
+  const runtimePkgs = installedPackages.filter(
+    (pkg) =>
+      pkg.type === "runtime" && !currentPackageDotJson?.dependencies[pkg.name],
+  );
+
+  const devPkgs = installedPackages.filter(
+    (pkg) =>
+      pkg.type === "development" &&
+      !currentPackageDotJson?.devDependencies[pkg.name],
+  );
+
+  // Install new runtime packages
+  if (runtimePkgs.length > 0) {
+    await Fly.machine.executeCommand({
+      projectId,
+      machineId,
+      command: ["bun", "add", ...runtimePkgs.map((pkg) => pkg.name)],
+    });
+  }
+
+  // Install new dev packages
+  if (devPkgs.length > 0) {
+    await Fly.machine.executeCommand({
+      projectId,
+      machineId,
+      command: ["bun", "add", "--dev", ...devPkgs.map((pkg) => pkg.name)],
+    });
+  }
 }
 
 function getContext({
@@ -423,6 +546,9 @@ function getContext({
   })[];
 }): string {
   return `
+  Currently installed packages:
+  ${installedPackages.map((pkg) => `${pkg.name}`).join("\n")}
+
   Available Files:
   ${availableFiles
     .map(
@@ -488,376 +614,8 @@ function getContext({
     .join("\n")}`,
     )
     .join("\n\n")}
-
-  Runtime Dependencies:
-  ${installedPackages.map((pkg) => `📦 ${pkg.name}`).join("\n")}
   `;
 }
-
-async function processStream({
-  response,
-  processedResponse,
-  filePaths,
-  passedEdits,
-  failedEdits,
-  projectId,
-  userId,
-  versionId,
-  previousVersionId,
-  tx,
-  machineId,
-  deletedDeclarations,
-}: {
-  response: string;
-  processedResponse: string;
-  filePaths: string[];
-  passedEdits: Edit[];
-  failedEdits: FailedEdit[];
-  projectId: string;
-  userId: string;
-  versionId: string;
-  previousVersionId?: string;
-  tx: Tx;
-  machineId: string;
-  deletedDeclarations: string[];
-}): Promise<string> {
-  // Get the new content since last processing
-  const newContent = response.substring(processedResponse.length);
-
-  // Find complete edit blocks in the new content
-  const lines = newContent.split("\n");
-  const currentBlock: string[] = [];
-  const processedLines = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line) continue; // Skip undefined lines
-
-    currentBlock.push(line);
-
-    // Check if we have a complete edit block
-    if (HEAD.test(line.trim())) {
-      // Look ahead for UPDATED pattern to find complete block
-      let isComplete = false;
-      for (let j = i + 1; j < lines.length; j++) {
-        const nextLine = lines[j];
-        if (!nextLine) continue; // Skip undefined lines
-
-        currentBlock.push(nextLine);
-        if (UPDATED.test(nextLine.trim())) {
-          isComplete = true;
-          i = j; // Skip processed lines
-          break;
-        }
-      }
-
-      if (isComplete) {
-        try {
-          // Process this single complete edit block
-          const edit = getEdits({
-            content: currentBlock.join("\n"),
-            filePaths,
-          });
-
-          // Load file if needed
-          if (edit.original.trim()) {
-            const file = await S3.readFile({
-              projectId,
-              path: edit.path,
-            });
-
-            if (!file) {
-              failedEdits.push({
-                edit,
-                error: `File not found: ${edit.path}`,
-              });
-
-              continue;
-            }
-          }
-
-          // Apply the single edit
-          const results = await applyEdit({
-            existingFiles: filePaths,
-            edit,
-            projectId,
-            versionId,
-            previousVersionId,
-            userId,
-            tx,
-            deletedDeclarations,
-          });
-
-          // Write the file to the MicroVM
-          await Fly.machine.update({
-            projectId,
-            machineId,
-            files: [
-              {
-                guest_path: edit.path,
-                raw_value: Buffer.from(edit.updated).toString("base64"),
-              },
-            ],
-          });
-
-          // Add results to running totals
-          if (results.passed) {
-            passedEdits.push(results.passed);
-          }
-
-          if (results.failed) {
-            failedEdits.push(results.failed);
-          }
-        } catch (error) {
-          // If parsing fails, we'll try again with more content
-          console.log("Couldn't parse edit block yet, continuing to stream");
-        }
-      }
-    }
-  }
-
-  // Return all content up to last successfully processed line
-  return response
-    .split("\n")
-    .slice(0, processedResponse.split("\n").length + processedLines)
-    .join("\n");
-}
-
-async function processFile({
-  content,
-  path,
-  projectId,
-  versionId,
-  userId,
-  tx,
-  previousVersionId,
-  deletedDeclarations,
-}: {
-  content: string;
-  path: string;
-  projectId: string;
-  versionId: string;
-  userId: string;
-  tx: Tx;
-  previousVersionId?: string;
-  deletedDeclarations: string[];
-}) {
-  let file = await tx.query.files.findFirst({
-    where: and(
-      eq(files.projectId, projectId),
-      eq(files.path, path),
-      eq(files.userId, userId),
-    ),
-  });
-
-  let previousContent: string | undefined = undefined;
-
-  if (!file) {
-    const [insertedFile] = await tx
-      .insert(files)
-      .values({
-        projectId,
-        path,
-        userId,
-      })
-      .returning();
-
-    file = insertedFile;
-  } else {
-    previousContent = await S3.readFile({
-      projectId,
-      path,
-    });
-  }
-
-  if (!file) {
-    throw new Error(`Failed to insert/select file ${path}`);
-  }
-
-  // Save the file to S3
-  const s3Version = await S3.writeFile({
-    projectId,
-    path: file.path,
-    content,
-  });
-
-  if (!s3Version) {
-    throw new Error(`Failed to write file ${file.path} to S3`);
-  }
-
-  // Add the file to the version
-  await tx.insert(versionFiles).values({
-    versionId,
-    fileId: file.id,
-    s3VersionId: s3Version,
-  });
-
-  const processedDeclarations = await processDeclarations({
-    fileContent: content,
-    filePath: path,
-    previousContent,
-  });
-
-  let previousVersionDeclarations: InferSelectModel<typeof declarations>[] = [];
-  let declarationsToDelete: InferSelectModel<typeof declarations>[] = [];
-
-  if (previousVersionId) {
-    const versionDeclarationsResult =
-      await tx.query.versionDeclarations.findMany({
-        where: eq(versionDeclarations.versionId, previousVersionId),
-        with: {
-          declaration: true,
-        },
-      });
-
-    previousVersionDeclarations = versionDeclarationsResult.map(
-      (v) => v.declaration,
-    );
-
-    declarationsToDelete = previousVersionDeclarations.filter((d) =>
-      Object.keys(processedDeclarations.deletedDeclarations).includes(d.name),
-    );
-  }
-
-  const annotations = await annotator({
-    code: content,
-    newDeclarations: Object.keys(processedDeclarations.newDeclarations),
-    updatedDeclarations: previousVersionDeclarations,
-  });
-
-  // Insert declarations
-  const insertedDeclarations = await tx
-    .insert(declarations)
-    .values(
-      annotations.map((annotation) => {
-        const name = (() => {
-          switch (annotation.type) {
-            case "component": {
-              return annotation.definition.name;
-            }
-            case "function":
-            case "model":
-            case "other": {
-              return annotation.name;
-            }
-            case "endpoint": {
-              switch (annotation.definition.subtype) {
-                case "rest": {
-                  return `${annotation.definition.method.toUpperCase()}:${annotation.definition.path}`;
-                }
-                case "rpc": {
-                  return `${annotation.definition.name}`;
-                }
-              }
-            }
-          }
-        })();
-
-        return {
-          fileId: file.id,
-          name,
-          type: annotation.type,
-          metadata: annotation,
-          projectId,
-          userId,
-          previousId: previousVersionDeclarations.find((d) => d.name === name)
-            ?.id,
-        } as InferInsertModel<typeof declarations>;
-      }),
-    )
-    .onConflictDoNothing()
-    .returning();
-
-  // Insert version declarations
-  await tx.insert(versionDeclarations).values(
-    insertedDeclarations.map((d) => ({
-      versionId,
-      declarationId: d.id,
-    })),
-  );
-
-  const tempDeclarations = {
-    ...processedDeclarations.newDeclarations,
-    ...processedDeclarations.updatedDeclarations,
-  };
-
-  // Insert declaration dependencies
-  for (const declaration of insertedDeclarations) {
-    const declarationDependencies = tempDeclarations[declaration.name] ?? [];
-
-    // Insert the declaration packages
-    const pkgs = declarationDependencies.filter((d) => d.type === "external");
-
-    const savedPkgs = await tx.query.packages.findMany({
-      where: and(
-        inArray(
-          packages.name,
-          pkgs.map((p) => p.name),
-        ),
-        eq(packages.projectId, projectId),
-      ),
-    });
-
-    await tx.insert(declarationPackages).values(
-      pkgs.map((pkg) => {
-        const pkgId = savedPkgs.find((p) => p.name === pkg.name)?.id;
-
-        if (!pkgId) {
-          throw new Error(`Package not found: ${pkg.name}`);
-        }
-
-        return {
-          declarationId: declaration.id,
-          packageId: pkgId,
-          importPath: pkg.name,
-          declarations: pkg.dependsOn,
-        };
-      }),
-    );
-
-    // Insert declaration dependencies
-    const internalDependencies = declarationDependencies.filter(
-      (d) => d.type === "internal",
-    );
-
-    for (const dependency of internalDependencies) {
-      const tempDependencies = previousVersionDeclarations.filter((d) =>
-        dependency.dependsOn.includes(d.name),
-      );
-
-      await tx.insert(dependencies).values(
-        tempDependencies.map((d) => ({
-          dependentType: declaration.type,
-          dependentId: declaration.id,
-          dependencyType: d.type,
-          dependencyId: d.id,
-        })),
-      );
-    }
-  }
-
-  deletedDeclarations.push(...declarationsToDelete.map((d) => d.id));
-}
-
-interface Edit {
-  path: string;
-  original: string;
-  updated: string;
-}
-
-interface FailedEdit {
-  edit: Edit;
-  error: string;
-}
-
-type EditResult = {
-  passed?: Edit;
-  failed?: FailedEdit;
-};
-
-const HEAD = /^<{5,9} SEARCH\s*$/;
-const DIVIDER = /^={5,9}\s*$/;
-const UPDATED = /^>{5,9} REPLACE\s*$/;
 
 function calculateSimilarityRatio({
   a,
@@ -878,39 +636,49 @@ function findFilename({
   lines: string[];
   filePaths?: string[];
 }): string | null {
-  // Remove any markdown code block markers and trim
-  const potentialFilenames = lines
-    .map((line) => line.trim())
-    .map((line) => line.replace(/^```\w*/, "").trim())
-    .map((line) => line.replace(/```$/, "").trim())
-    .filter((line) => line);
-
-  if (!potentialFilenames.length) {
-    return null;
+  // Look for filename before the code block starts
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]?.trim();
+    // If we hit a code block marker, use the previous non-empty line as filename
+    if (line?.startsWith("```")) {
+      // Look backwards for the first non-empty line
+      for (let j = i - 1; j >= 0; j--) {
+        const potentialFilename = lines[j]?.trim();
+        if (potentialFilename) {
+          // If filePaths is provided, try to match against them
+          if (filePaths) {
+            if (filePaths.includes(potentialFilename)) {
+              return potentialFilename;
+            }
+            // Check if basename matches
+            const basename = potentialFilename.split("/").pop();
+            if (basename) {
+              const matchingFile = filePaths.find(
+                (f) => f.split("/").pop() === basename,
+              );
+              if (matchingFile) {
+                return matchingFile;
+              }
+            }
+          }
+          return potentialFilename;
+        }
+      }
+      break;
+    }
   }
+  return null;
+}
 
-  const filename = potentialFilenames[potentialFilenames.length - 1];
-
-  if (!filePaths) {
-    return filename || null;
-  }
-
-  // Check if filename is in filePaths
-  if (filename && filePaths.includes(filename)) {
-    return filename;
-  }
-
-  // Check if basename matches
-  if (!filename) return null;
-  const basename = filename.split("/").pop();
-  if (!basename) return null;
-
-  const matchingFile = filePaths.find((f) => f.split("/").pop() === basename);
-  if (matchingFile) {
-    return matchingFile;
-  }
-
-  return filename;
+function collectUntilPattern(
+  lines: string[],
+  pattern: RegExp,
+): { lines: string[]; newIndex: number } {
+  const index = lines.findIndex((line) => pattern.test(line.trim()));
+  return {
+    lines: lines.slice(0, index),
+    newIndex: index,
+  };
 }
 
 function getEdits({
@@ -919,55 +687,69 @@ function getEdits({
 }: {
   content: string;
   filePaths: string[];
-}): Edit {
-  // Split content into lines and add newlines
-  const lines = content.split("\n").map((line) => `${line}\n`);
+}): Edit[] {
+  const lines = content.split("\n");
 
-  // Find the filename from the content
-  const filename = findFilename({
-    lines,
-    filePaths,
-  });
+  return lines.reduce<{
+    results: Edit[];
+    currentIndex: number;
+    currentFilename: string | null;
+  }>(
+    ({ results, currentFilename }, line, i) => {
+      if (!HEAD.test(line.trim())) {
+        return { results, currentIndex: i + 1, currentFilename };
+      }
 
-  if (!filename) {
-    throw new Error("Missing filename for edit block");
-  }
+      try {
+        // Find filename from previous lines
+        const prevLines = lines.slice(Math.max(0, i - 3), i);
+        const filename =
+          findFilename({
+            lines: prevLines,
+            filePaths,
+          }) || currentFilename;
 
-  // Find the edit block
-  const startIndex = lines.findIndex((line) => line && HEAD.test(line.trim()));
-  if (startIndex === -1) {
-    throw new Error("Missing edit block start (<<<<<)");
-  }
+        if (!filename) {
+          throw new Error("Missing filename before edit block");
+        }
 
-  // Extract original and updated text sections
-  const dividerIndex = lines
-    .slice(startIndex + 1)
-    .findIndex((line) => line && DIVIDER.test(line.trim()));
-  if (dividerIndex === -1) {
-    throw new Error("Missing edit block divider (=====)");
-  }
-  const originalText = lines.slice(
-    startIndex + 1,
-    startIndex + 1 + dividerIndex,
-  );
+        // Get original text
+        const remainingLines = lines.slice(i + 1);
+        const { lines: originalLines, newIndex: afterOriginal } =
+          collectUntilPattern(remainingLines, DIVIDER);
 
-  const updateStartIndex = startIndex + 1 + dividerIndex + 1;
-  const updateEndIndex = lines
-    .slice(updateStartIndex)
-    .findIndex((line) => line && UPDATED.test(line.trim()));
-  if (updateEndIndex === -1) {
-    throw new Error("Missing edit block end (>>>>>)");
-  }
-  const updatedText = lines.slice(
-    updateStartIndex,
-    updateStartIndex + updateEndIndex,
-  );
+        if (afterOriginal >= remainingLines.length) {
+          throw new Error("Expected =======");
+        }
 
-  return {
-    path: filename,
-    original: originalText.join(""),
-    updated: updatedText.join(""),
-  };
+        // Get updated text
+        const { lines: updatedLines, newIndex: afterUpdated } =
+          collectUntilPattern(remainingLines.slice(afterOriginal + 1), UPDATED);
+
+        if (afterUpdated >= remainingLines.length) {
+          throw new Error("Expected >>>>>>> REPLACE");
+        }
+
+        const newEdit: Edit = {
+          path: filename,
+          original: originalLines.join("\n"),
+          updated: updatedLines.join("\n"),
+        };
+
+        return {
+          results: [...results, newEdit],
+          currentIndex: i + afterOriginal + afterUpdated + 2,
+          currentFilename: filename,
+        };
+      } catch (error) {
+        if (error instanceof Error) {
+          throw new Error(`Error parsing edit block: ${error.message}`);
+        }
+        throw error;
+      }
+    },
+    { results: [], currentIndex: 0, currentFilename: null },
+  ).results;
 }
 
 function arraysEqual(a: string[], b: string[]): boolean {
@@ -1227,4 +1009,313 @@ export async function applyEdit({
   }
 
   return { passed, failed };
+}
+
+export async function applyEdits({
+  existingFiles,
+  edits,
+  projectId,
+  versionId,
+  previousVersionId,
+  userId,
+  tx,
+  deletedDeclarations,
+}: {
+  existingFiles: string[];
+  edits: Edit[];
+  projectId: string;
+  versionId: string;
+  previousVersionId?: string;
+  userId: string;
+  tx: Tx;
+  deletedDeclarations: string[];
+}): Promise<{
+  passed: Edit[];
+  failed: FailedEdit[];
+}> {
+  const passed: Edit[] = [];
+  const failed: FailedEdit[] = [];
+
+  for (const edit of edits) {
+    const result = await applyEdit({
+      existingFiles,
+      edit,
+      projectId,
+      versionId,
+      previousVersionId,
+      userId,
+      tx,
+      deletedDeclarations,
+    });
+
+    if (result.passed) {
+      passed.push(result.passed);
+    }
+    if (result.failed) {
+      failed.push(result.failed);
+    }
+  }
+
+  return { passed, failed };
+}
+
+async function processFile({
+  content,
+  path,
+  projectId,
+  versionId,
+  userId,
+  tx,
+  previousVersionId,
+  deletedDeclarations,
+}: {
+  content: string;
+  path: string;
+  projectId: string;
+  versionId: string;
+  userId: string;
+  tx: Tx;
+  previousVersionId?: string;
+  deletedDeclarations: string[];
+}) {
+  let file = await tx.query.files.findFirst({
+    where: and(eq(files.projectId, projectId), eq(files.path, path)),
+  });
+
+  let previousContent: string | undefined = undefined;
+
+  if (!file) {
+    const [insertedFile] = await tx
+      .insert(files)
+      .values({
+        projectId,
+        path,
+        userId,
+      })
+      .returning();
+
+    file = insertedFile;
+  } else {
+    previousContent = await S3.readFile({
+      projectId,
+      path,
+    });
+  }
+
+  if (!file) {
+    throw new Error(`Failed to insert/select file ${path}`);
+  }
+
+  // Save the file to S3
+  const s3Version = await S3.writeFile({
+    projectId,
+    path: file.path,
+    content,
+  });
+
+  if (!s3Version) {
+    throw new Error(`Failed to write file ${file.path} to S3`);
+  }
+
+  // Add the file to the version
+  await tx.insert(versionFiles).values({
+    versionId,
+    fileId: file.id,
+    s3VersionId: s3Version,
+  });
+
+  const processedDeclarations = await processDeclarations({
+    fileContent: content,
+    filePath: path,
+    previousContent,
+  });
+
+  let previousVersionDeclarations: InferSelectModel<typeof declarations>[] = [];
+  let declarationsToDelete: InferSelectModel<typeof declarations>[] = [];
+
+  if (previousVersionId) {
+    const versionDeclarationsResult =
+      await tx.query.versionDeclarations.findMany({
+        where: eq(versionDeclarations.versionId, previousVersionId),
+        with: {
+          declaration: true,
+        },
+      });
+
+    previousVersionDeclarations = versionDeclarationsResult.map(
+      (v) => v.declaration,
+    );
+
+    declarationsToDelete = previousVersionDeclarations.filter((d) =>
+      Object.keys(processedDeclarations.deletedDeclarations).includes(d.name),
+    );
+  }
+
+  // Annotate the new declarations
+  console.log("Annotating new declarations");
+  // const annotations = await annotator({
+  //   code: content,
+  //   newDeclarations: Object.keys(processedDeclarations.newDeclarations),
+  //   updatedDeclarations: previousVersionDeclarations,
+  // });
+
+  const { object, partialObjectStream } = streamObject({
+    model: models.claudeSonnet,
+    schema: z.object({
+      annotations: declarationMetadataSchema
+        .describe(
+          "The list of metadata of the exported declarations. Create the metadata for the provided declarations only. It will be used to generate the documentation. MUST be a valid JSON object not a string.",
+        )
+        .array(),
+    }),
+    system:
+      "Please, create metadata for the provided declarations based on the code. You must create metadata for new declarations and update the metadata for updated declarations if needed. You must return a valid JSON object not a string.",
+    prompt: `# Code
+
+${file.path}
+\`\`\`
+${content}
+\`\`\`
+
+${
+  Object.keys(processedDeclarations.newDeclarations).length > 0
+    ? `# New declarations\n${Object.keys(
+        processedDeclarations.newDeclarations,
+      ).join("\n")}`
+    : ""
+}${
+  previousVersionDeclarations.length > 0
+    ? `\n\n# Updated declarations\n${previousVersionDeclarations.map(
+        (declaration) =>
+          `- ${declaration.name}\n${JSON.stringify(declaration.metadata)}`,
+      )}`
+    : ""
+}`,
+  });
+
+  for await (const partialObject of partialObjectStream) {
+    console.clear();
+    console.log(partialObject);
+  }
+
+  const annotations = (await object).annotations;
+
+  // Insert declarations
+  const insertedDeclarations = await tx
+    .insert(declarations)
+    .values(
+      annotations.map((annotation) => {
+        const name = (() => {
+          switch (annotation.type) {
+            case "component": {
+              return annotation.definition.name;
+            }
+            case "function":
+            case "model":
+            case "other": {
+              return annotation.name;
+            }
+            case "endpoint": {
+              switch (annotation.definition.subtype) {
+                case "rest": {
+                  return `${annotation.definition.method.toUpperCase()}:${annotation.definition.path}`;
+                }
+                case "rpc": {
+                  return `${annotation.definition.name}`;
+                }
+              }
+            }
+          }
+        })();
+
+        return {
+          fileId: file.id,
+          name,
+          type: annotation.type,
+          metadata: annotation,
+          projectId,
+          userId,
+          previousId: previousVersionDeclarations.find((d) => d.name === name)
+            ?.id,
+        } as InferInsertModel<typeof declarations>;
+      }),
+    )
+    .onConflictDoNothing()
+    .returning();
+
+  // Insert version declarations
+  if (insertedDeclarations.length > 0) {
+    await tx.insert(versionDeclarations).values(
+      insertedDeclarations.map((d) => ({
+        versionId,
+        declarationId: d.id,
+      })),
+    );
+  }
+
+  const tempDeclarations = {
+    ...processedDeclarations.newDeclarations,
+    ...processedDeclarations.updatedDeclarations,
+  };
+
+  // Insert declaration dependencies
+  for (const declaration of insertedDeclarations) {
+    const declarationDependencies = tempDeclarations[declaration.name] ?? [];
+
+    // Insert the declaration packages
+    const pkgs = declarationDependencies.filter((d) => d.type === "external");
+
+    const savedPkgs = await tx.query.packages.findMany({
+      where: and(
+        inArray(
+          packages.name,
+          pkgs.map((p) => p.name),
+        ),
+        eq(packages.projectId, projectId),
+      ),
+    });
+
+    if (pkgs.length > 0) {
+      await tx.insert(declarationPackages).values(
+        pkgs.map((pkg) => {
+          const pkgId = savedPkgs.find((p) => p.name === pkg.name)?.id;
+
+          if (!pkgId) {
+            throw new Error(`Package not found: ${pkg.name}`);
+          }
+
+          return {
+            declarationId: declaration.id,
+            packageId: pkgId,
+            importPath: pkg.name,
+            declarations: pkg.dependsOn,
+          };
+        }),
+      );
+    }
+
+    // Insert declaration dependencies
+    const internalDependencies = declarationDependencies.filter(
+      (d) => d.type === "internal",
+    );
+
+    for (const dependency of internalDependencies) {
+      const tempDependencies = previousVersionDeclarations.filter((d) =>
+        dependency.dependsOn.includes(d.name),
+      );
+
+      if (tempDependencies.length > 0) {
+        await tx.insert(dependencies).values(
+          tempDependencies.map((d) => ({
+            dependentType: declaration.type,
+            dependentId: declaration.id,
+            dependencyType: d.type,
+            dependencyId: d.id,
+          })),
+        );
+      }
+    }
+  }
+
+  deletedDeclarations.push(...declarationsToDelete.map((d) => d.id));
 }

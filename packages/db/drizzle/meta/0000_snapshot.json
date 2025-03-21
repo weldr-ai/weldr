@@ -1,5 +1,5 @@
 {
-  "id": "3aee9c70-c0cc-42ea-b9b1-6c7e08a7840f",
+  "id": "83b6ff66-7630-4ec4-8fdf-a8057b589e62",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1015,6 +1015,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1029,6 +1035,28 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "not_deleted_unique_file_in_project": {
+          "name": "not_deleted_unique_file_in_project",
+          "columns": [
+            {
+              "expression": "path",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "(deleted_at IS NULL)",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1055,13 +1083,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "unique_file_in_project": {
-          "name": "unique_file_in_project",
-          "nullsNotDistinct": false,
-          "columns": ["path", "project_id"]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

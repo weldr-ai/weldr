@@ -88,13 +88,13 @@ export const Fly = {
   machine: {
     get: async ({
       projectId,
-      versionId,
+      machineId,
     }: {
       projectId: string;
-      versionId: string;
+      machineId: string;
     }) => {
       const response = await ofetch<components["schemas"]["Machine"]>(
-        `${flyApiHostname}/v1/apps/preview-app-${projectId}/machines/${versionId}`,
+        `${flyApiHostname}/v1/apps/preview-app-${projectId}/machines/${machineId}`,
         {
           method: "GET",
           headers: {
@@ -126,7 +126,7 @@ export const Fly = {
           body: {
             name: `preview-machine-${projectId}-${versionId}`,
             region: "iad",
-            config: config ?? {
+            config: {
               image: "registry.fly.io/boilerplates:next",
               guest: {
                 cpu_kind: "shared",
@@ -147,8 +147,11 @@ export const Fly = {
                   ],
                   protocol: "tcp",
                   internal_port: 3000,
+                  autostart: true,
+                  autostop: "stop",
                 },
               ],
+              ...config,
             },
           } satisfies components["schemas"]["CreateMachineRequest"],
           retry: 3,
@@ -175,6 +178,12 @@ export const Fly = {
           throw new Error("Failed to create machine");
         }
 
+        await Fly.machine.waitFor({
+          projectId,
+          machineId: response.id,
+          state: "started",
+        });
+
         return response.id;
       } catch (error) {
         console.error("Error creating machine:", {
@@ -198,12 +207,15 @@ export const Fly = {
         await ofetch(
           `${flyApiHostname}/v1/apps/preview-app-${projectId}/machines/${machineId}`,
           {
-            method: "PATCH",
+            method: "POST",
             headers: {
               Authorization: `Bearer ${flyApiKey}`,
             },
             body: {
-              config: { files },
+              config: {
+                image: "registry.fly.io/boilerplates:next",
+                files,
+              },
             } satisfies components["schemas"]["UpdateMachineRequest"],
           },
         );
@@ -301,6 +313,23 @@ export const Fly = {
         },
       );
     },
+    start: async ({
+      projectId,
+      machineId,
+    }: {
+      projectId: string;
+      machineId: string;
+    }) => {
+      await ofetch(
+        `${flyApiHostname}/v1/apps/preview-app-${projectId}/machines/${machineId}/start`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${flyApiKey}`,
+          },
+        },
+      );
+    },
     executeCommand: async ({
       projectId,
       machineId,
@@ -310,7 +339,15 @@ export const Fly = {
       machineId: string;
       command: string[];
     }) => {
-      await ofetch(
+      // Start the machine if it's not already running
+      await Fly.machine.start({
+        projectId,
+        machineId,
+      });
+
+      const response = await ofetch<
+        paths["/apps/{app_name}/machines/{machine_id}/exec"]["post"]["responses"][200]["content"]["application/json"]
+      >(
         `${flyApiHostname}/v1/apps/preview-app-${projectId}/machines/${machineId}/exec`,
         {
           method: "POST",
@@ -324,6 +361,8 @@ export const Fly = {
           } satisfies components["schemas"]["MachineExecRequest"],
         },
       );
+
+      return response;
     },
   },
 };

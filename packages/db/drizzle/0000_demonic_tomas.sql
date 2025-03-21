@@ -134,7 +134,7 @@ CREATE TABLE "files" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"project_id" text NOT NULL,
 	"user_id" text NOT NULL,
-	CONSTRAINT "unique_file_in_project" UNIQUE("path","project_id")
+	"deleted_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "packages" (
@@ -269,6 +269,7 @@ CREATE INDEX "chats_created_at_idx" ON "chats" USING btree ("created_at");--> st
 CREATE INDEX "declaration_created_at_idx" ON "declarations" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "dependencies_created_at_idx" ON "dependencies" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "files_created_at_idx" ON "files" USING btree ("created_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "not_deleted_unique_file_in_project" ON "files" USING btree ("path","project_id") WHERE (deleted_at IS NULL);--> statement-breakpoint
 CREATE INDEX "projects_created_at_idx" ON "projects" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "current_version_idx" ON "versions" USING btree ("project_id","is_current") WHERE (is_current = true);--> statement-breakpoint
 CREATE UNIQUE INDEX "version_number_unique_idx" ON "versions" USING btree ("project_id","number");--> statement-breakpoint

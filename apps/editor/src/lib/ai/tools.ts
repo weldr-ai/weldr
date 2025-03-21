@@ -1,6 +1,5 @@
-import type { Tx } from "@weldr/db";
-import { packages, versionPackages } from "@weldr/db/schema";
-import { Fly } from "@weldr/shared/fly";
+import { type Tx, and, eq, isNull } from "@weldr/db";
+import { files, packages, versionPackages } from "@weldr/db/schema";
 import { S3 } from "@weldr/shared/s3";
 import { tool } from "ai";
 import { z } from "zod";
@@ -86,12 +85,10 @@ export const implementTool = tool({
 
 export const installPackagesTool = ({
   projectId,
-  machineId,
   versionId,
   tx,
 }: {
   projectId: string;
-  machineId: string;
   versionId: string;
   tx: Tx;
 }) =>
@@ -108,17 +105,6 @@ export const installPackagesTool = ({
     }),
     execute: async ({ pkgs }) => {
       for (const pkg of pkgs) {
-        await Fly.machine.executeCommand({
-          projectId,
-          machineId,
-          command: [
-            "bun",
-            "add",
-            pkg.type === "runtime" ? "" : "--dev",
-            pkg.name,
-          ],
-        });
-
         const [insertedPkg] = await tx
           .insert(packages)
           .values({
@@ -142,26 +128,15 @@ export const installPackagesTool = ({
     },
   });
 
-export const removePackagesTool = ({
-  projectId,
-  machineId,
-}: {
-  projectId: string;
-  machineId: string;
-}) =>
-  tool({
-    description: "Ask the user to remove node packages",
-    parameters: z.object({
-      pkgs: z.string().array(),
-    }),
-    execute: async ({ pkgs }) => {
-      await Fly.machine.executeCommand({
-        projectId,
-        machineId,
-        command: ["bun", "remove", ...pkgs],
-      });
-    },
-  });
+export const removePackagesTool = tool({
+  description: "Ask the user to remove node packages",
+  parameters: z.object({
+    pkgs: z.string().array(),
+  }),
+  execute: async ({ pkgs }) => {
+    return pkgs;
+  },
+});
 
 export const readFilesTool = ({
   projectId,
@@ -195,16 +170,31 @@ export const readFilesTool = ({
 
 export const deleteFilesTool = ({
   projectId,
+  tx,
 }: {
   projectId: string;
+  tx: Tx;
 }) =>
   tool({
     description: "Ask the user to delete files",
     parameters: z.object({
       files: z.string().array(),
     }),
-    execute: async ({ files }) => {
-      for (const file of files) {
+    execute: async ({ files: filesToDelete }) => {
+      for (const file of filesToDelete) {
+        await tx
+          .update(files)
+          .set({
+            deletedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(files.path, file),
+              isNull(files.deletedAt),
+              eq(files.projectId, projectId),
+            ),
+          );
+
         await S3.deleteFile({
           projectId,
           path: file,

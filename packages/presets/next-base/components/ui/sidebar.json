@@ -685,7 +685,7 @@
           "dependsOn": ["cn"]
         },
         {
-          "type": "external",
+          "type": "internal",
           "from": "/src/components/ui/skeleton.tsx",
           "dependsOn": ["Skeleton"]
         },

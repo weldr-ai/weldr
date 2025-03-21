@@ -1,6 +1,12 @@
 import { createId } from "@paralleldrive/cuid2";
-import { relations } from "drizzle-orm";
-import { index, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import {
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { declarations } from "./declarations";
 import { projects } from "./projects";
@@ -19,10 +25,13 @@ export const files = pgTable(
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),
+    deletedAt: timestamp("deleted_at"),
   },
   (table) => [
     index("files_created_at_idx").on(table.createdAt),
-    unique("unique_file_in_project").on(table.path, table.projectId),
+    uniqueIndex("not_deleted_unique_file_in_project")
+      .on(table.path, table.projectId)
+      .where(sql`(deleted_at IS NULL)`),
   ],
 );
 

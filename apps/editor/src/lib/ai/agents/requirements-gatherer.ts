@@ -13,10 +13,11 @@ import {
   packages,
   presets,
   projects,
+  versionDeclarations,
   versionFiles,
+  versionPackages,
   versions,
 } from "@weldr/db/schema";
-import { Fly } from "@weldr/shared/fly";
 import { S3 } from "@weldr/shared/s3";
 import type { ToolMessageRawContent } from "@weldr/shared/types";
 import type { addMessageItemSchema } from "@weldr/shared/validators/chats";
@@ -144,6 +145,7 @@ export async function requirementsGatherer({
               await (async () => {
                 switch (toolCall.toolName) {
                   case "initializeProjectTool": {
+                    console.log("Initializing project");
                     stream.update({
                       type: "tool",
                       toolName: toolCall.toolName,
@@ -155,6 +157,7 @@ export async function requirementsGatherer({
 
                     await db.transaction(async (tx) => {
                       // Get the preset
+                      console.log("Getting preset");
                       const preset = await tx.query.presets.findFirst({
                         where: eq(presets.type, "next-base"),
                         with: {
@@ -169,14 +172,21 @@ export async function requirementsGatherer({
                       }
 
                       // Update the project name
+                      console.log("Updating project name");
                       await tx
                         .update(projects)
                         .set({
                           name: toolCall.args.name,
                           // initiatedAt: new Date(),
                         })
-                        .where(eq(projects.id, projectId));
+                        .where(
+                          and(
+                            eq(projects.id, projectId),
+                            eq(projects.userId, session.user.id),
+                          ),
+                        );
 
+                      console.log("Creating version");
                       // Create a new version
                       const [version] = await tx
                         .insert(versions)
@@ -193,12 +203,14 @@ export async function requirementsGatherer({
                         throw new Error("Version not found");
                       }
 
+                      console.log("Copying boilerplate files");
                       // Copy boilerplate files to the project
                       const fileVersions = await S3.copyBoilerplate({
                         boilerplate: "next-base",
                         destinationPath: `${projectId}`,
                       });
 
+                      console.log("Inserting files");
                       // Insert files from preset to the project
                       const insertedFiles = await tx
                         .insert(files)
@@ -211,10 +223,12 @@ export async function requirementsGatherer({
                         )
                         .returning();
 
+                      console.log("Inserting version files");
                       // Insert version files
                       await tx.insert(versionFiles).values(
                         insertedFiles.map((file) => {
-                          const s3VersionId = fileVersions[file.path];
+                          const s3VersionId =
+                            fileVersions[`${projectId}${file.path}`];
 
                           if (!s3VersionId) {
                             throw new Error(
@@ -230,6 +244,7 @@ export async function requirementsGatherer({
                         }),
                       );
 
+                      console.log("Inserting packages");
                       // Insert packages from preset to the project
                       const insertedPkgs = await tx
                         .insert(packages)
@@ -242,6 +257,15 @@ export async function requirementsGatherer({
                         )
                         .returning();
 
+                      // Insert version packages
+                      await tx.insert(versionPackages).values(
+                        insertedPkgs.map((pkg) => ({
+                          versionId: version.id,
+                          packageId: pkg.id,
+                        })),
+                      );
+
+                      console.log("Inserting declarations");
                       // Insert declarations from preset to the project
                       const insertedDeclarations = await tx
                         .insert(declarations)
@@ -269,6 +293,17 @@ export async function requirementsGatherer({
                         )
                         .returning();
 
+                      // Insert version declarations
+                      await tx.insert(versionDeclarations).values(
+                        insertedDeclarations.map((declaration) => ({
+                          versionId: version.id,
+                          declarationId: declaration.id,
+                        })),
+                      );
+
+                      console.log(
+                        "Inserting declaration packages and dependencies",
+                      );
                       // Insert declaration packages and dependencies
                       for (const presetDeclaration of preset.declarations) {
                         const presetDependencies =
@@ -364,23 +399,11 @@ export async function requirementsGatherer({
                         }
                       }
 
-                      const machineId = await Fly.machine.create({
-                        projectId,
-                        versionId: version.id,
-                      });
-
-                      await tx
-                        .update(versions)
-                        .set({
-                          machineId,
-                        })
-                        .where(eq(versions.id, version.id));
-
+                      console.log("Coding");
                       await coder({
                         tx,
                         projectId,
                         versionId: version.id,
-                        machineId,
                         userId: session.user.id,
                         prompt: {
                           role: "user",
@@ -445,7 +468,12 @@ export async function requirementsGatherer({
                         .set({
                           isCurrent: false,
                         })
-                        .where(eq(versions.projectId, projectId));
+                        .where(
+                          and(
+                            eq(versions.projectId, projectId),
+                            eq(versions.userId, session.user.id),
+                          ),
+                        );
 
                       const [version] = await tx
                         .insert(versions)
@@ -462,25 +490,12 @@ export async function requirementsGatherer({
                         throw new Error("Version not found");
                       }
 
-                      const machineId = await Fly.machine.create({
-                        projectId,
-                        versionId: version.id,
-                      });
-
-                      await tx
-                        .update(versions)
-                        .set({
-                          machineId,
-                        })
-                        .where(eq(versions.id, version.id));
-
                       await coder({
                         tx,
                         userId: session.user.id,
                         projectId,
                         versionId: version.id,
                         previousVersionId: previousVersion.id,
-                        machineId,
                         prompt: {
                           role: "user",
                           content: [

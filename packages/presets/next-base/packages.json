@@ -89,6 +89,10 @@
   },
   {
     "type": "runtime",
+    "name": "@radix-ui/react-switch"
+  },
+  {
+    "type": "runtime",
     "name": "@radix-ui/react-tabs"
   },
   {
