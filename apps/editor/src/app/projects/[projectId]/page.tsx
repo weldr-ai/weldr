@@ -16,7 +16,14 @@ export default async function ProjectPage({
     // const integrations = await api.integrations.list();
     const project = await api.projects.byId({ id: projectId });
 
-    const initialNodes: CanvasNode[] = [];
+    const initialNodes: CanvasNode[] = [
+      {
+        id: "preview",
+        type: "preview",
+        data: {},
+        position: { x: 0, y: 0 },
+      },
+    ];
     const initialEdges: Edge[] = [];
 
     return (
@@ -26,6 +33,11 @@ export default async function ProjectPage({
         initialEdges={initialEdges ?? []}
         // integrations={integrations}
       />
+      // <Canvas
+      //   projectId={project.id}
+      //   initialNodes={initialNodes}
+      //   initialEdges={initialEdges ?? []}
+      // />
     );
   } catch (error) {
     console.error(error);

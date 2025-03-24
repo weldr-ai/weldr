@@ -39,6 +39,41 @@ import {
   removePackagesTool,
 } from "../tools";
 
+class FileCache {
+  private cache: Map<string, string> = new Map();
+
+  async getFile({
+    projectId,
+    path,
+  }: { projectId: string; path: string }): Promise<string | undefined> {
+    const key = `${projectId}:${path}`;
+
+    if (this.cache.has(key)) {
+      return this.cache.get(key);
+    }
+
+    const content = await S3.readFile({
+      projectId,
+      path,
+    });
+
+    if (content) {
+      this.cache.set(key, content);
+    }
+
+    return content;
+  }
+
+  setFile({
+    projectId,
+    path,
+    content,
+  }: { projectId: string; path: string; content: string }): void {
+    const key = `${projectId}:${path}`;
+    this.cache.set(key, content);
+  }
+}
+
 interface Edit {
   path: string;
   original: string;
@@ -81,6 +116,7 @@ export async function coder({
 }) {
   console.log("Starting coder agent", { userId, projectId });
   const currentMessages: CoreMessage[] = [prompt];
+  const fileCache = new FileCache();
 
   const installedPackages = await tx.query.packages.findMany({
     where: eq(packages.projectId, projectId),
@@ -98,7 +134,7 @@ export async function coder({
   let finalResult: EditResults = {};
 
   const availableFiles = await tx.query.versionFiles.findMany({
-    where: eq(versionFiles.versionId, versionId),
+    where: eq(versionFiles.versionId, previousVersionId ?? versionId),
     with: {
       file: {
         with: {
@@ -157,7 +193,7 @@ export async function coder({
                   throw new Error("readFiles: Tool result not found");
                 }
 
-                const fileContents = toolResult.args.files;
+                const fileContents = toolResult.result;
 
                 currentMessages.push({
                   role: "user",
@@ -181,7 +217,7 @@ export async function coder({
 
                 currentMessages.push({
                   role: "user",
-                  content: `Finished installing the following packages: ${installedPackages.join(
+                  content: `Finished installing the following packages: ${toolResult.args.pkgs.join(
                     ", ",
                   )}`,
                 });
@@ -267,6 +303,7 @@ export async function coder({
       userId,
       tx,
       deletedDeclarations,
+      fileCache,
     });
 
     // Add results to running totals
@@ -385,39 +422,46 @@ export async function coder({
   }
 
   // Insert version declarations
-  if (previousVersionDeclarations.length > 0) {
+  const filteredPreviousVersionDeclarations =
+    previousVersionDeclarations.filter(
+      (d) => !deletedDeclarations.includes(d.name),
+    );
+
+  if (filteredPreviousVersionDeclarations.length > 0) {
     await tx.insert(versionDeclarations).values([
-      ...previousVersionDeclarations
-        .filter((d) => Object.keys(deletedDeclarations).includes(d.name))
-        .map((d) => ({
-          versionId,
-          declarationId: d.id,
-        })),
+      ...filteredPreviousVersionDeclarations.map((d) => ({
+        versionId,
+        declarationId: d.id,
+      })),
     ]);
   }
 
   // Insert version packages
-  if (previousVersionPackages.length > 0) {
+  const filteredPreviousVersionPackages = previousVersionPackages.filter(
+    (p) => !deletedPackages.includes(p.name),
+  );
+
+  if (filteredPreviousVersionPackages.length > 0) {
     await tx.insert(versionPackages).values([
-      ...previousVersionPackages
-        .filter((p) => Object.keys(deletedDeclarations).includes(p.name))
-        .map((p) => ({
-          versionId,
-          packageId: p.id,
-        })),
+      ...filteredPreviousVersionPackages.map((p) => ({
+        versionId,
+        packageId: p.id,
+      })),
     ]);
   }
 
   // Insert version files
-  if (previousVersionFiles.length > 0) {
+  const filteredPreviousVersionFiles = previousVersionFiles.filter(
+    (f) => !deletedFiles.includes(f.path),
+  );
+
+  if (filteredPreviousVersionFiles.length > 0) {
     await tx.insert(versionFiles).values([
-      ...previousVersionFiles
-        .filter((f) => Object.keys(deletedFiles).includes(f.path))
-        .map((f) => ({
-          versionId,
-          fileId: f.id,
-          s3VersionId: f.s3VersionId,
-        })),
+      ...filteredPreviousVersionFiles.map((f) => ({
+        versionId,
+        fileId: f.id,
+        s3VersionId: f.s3VersionId,
+      })),
     ]);
   }
 
@@ -449,22 +493,30 @@ export async function coder({
     currentPackageDotJson = JSON.parse(currentPackageJson.stdout);
   }
 
-  const filteredPackageDotJson = {
-    dependencies: Object.keys(currentPackageDotJson?.dependencies || {}).filter(
-      (pkg) => !deletedPackages.includes(pkg),
-    ),
-    devDependencies: Object.keys(
-      currentPackageDotJson?.devDependencies || {},
-    ).filter((pkg) => !deletedPackages.includes(pkg)),
-  };
+  const filteredPackageDotJson =
+    deletedPackages.length > 0
+      ? {
+          dependencies: Object.keys(
+            currentPackageDotJson?.dependencies || {},
+          ).filter((pkg) => !deletedPackages.includes(pkg)),
+          devDependencies: Object.keys(
+            currentPackageDotJson?.devDependencies || {},
+          ).filter((pkg) => !deletedPackages.includes(pkg)),
+        }
+      : undefined;
 
   const updatedFiles = [
-    ...(currentMachine?.config?.files || []),
+    ...(currentMachine?.config?.files?.filter(
+      (file) =>
+        !finalResult.passed?.some(
+          (passedFile) => `/app/${passedFile.path}` === file.guest_path,
+        ),
+    ) || []),
     ...(finalResult.passed?.map((file) => ({
       guest_path: `/app/${file.path}`,
       raw_value: Buffer.from(file.updated).toString("base64"),
     })) || []),
-    ...(currentPackageDotJson
+    ...(filteredPackageDotJson
       ? [
           {
             guest_path: "/app/package.json",
@@ -516,6 +568,7 @@ export async function coder({
 
   // Install new runtime packages
   if (runtimePkgs.length > 0) {
+    console.log("Installing runtime packages", runtimePkgs);
     await Fly.machine.executeCommand({
       projectId,
       machineId,
@@ -525,6 +578,7 @@ export async function coder({
 
   // Install new dev packages
   if (devPkgs.length > 0) {
+    console.log("Installing dev packages", devPkgs);
     await Fly.machine.executeCommand({
       projectId,
       machineId,
@@ -892,20 +946,12 @@ export async function applyEdit({
   existingFiles,
   edit,
   projectId,
-  versionId,
-  previousVersionId,
-  userId,
-  tx,
-  deletedDeclarations,
+  fileCache,
 }: {
   existingFiles: string[];
   edit: Edit;
   projectId: string;
-  versionId: string;
-  previousVersionId?: string;
-  userId: string;
-  tx: Tx;
-  deletedDeclarations: string[];
+  fileCache: FileCache;
 }): Promise<EditResult> {
   console.log("Applying edit", { edit });
 
@@ -926,23 +972,12 @@ export async function applyEdit({
       }
 
       console.log("Creating new file", { path: edit.path });
-      // Process declarations for new file
-      await processFile({
-        content: edit.updated,
-        path: edit.path,
-        projectId,
-        versionId,
-        userId,
-        tx,
-        previousVersionId,
-        deletedDeclarations,
-      });
-
-      return { passed: edit, failed };
+      passed = edit;
+      return { passed, failed };
     }
 
     // Handle existing file edits
-    const content = await S3.readFile({
+    const content = await fileCache.getFile({
       projectId,
       path: edit.path,
     });
@@ -958,23 +993,10 @@ export async function applyEdit({
     });
 
     if (newContent) {
-      // Process declarations for updated file
-      await processFile({
-        content: newContent,
-        path: edit.path,
-        projectId,
-        versionId,
-        userId,
-        tx,
-        previousVersionId,
-        deletedDeclarations,
-      });
-
       passed = {
         ...edit,
         updated: newContent,
       };
-
       return { passed, failed };
     }
 
@@ -1020,6 +1042,7 @@ export async function applyEdits({
   userId,
   tx,
   deletedDeclarations,
+  fileCache,
 }: {
   existingFiles: string[];
   edits: Edit[];
@@ -1029,6 +1052,7 @@ export async function applyEdits({
   userId: string;
   tx: Tx;
   deletedDeclarations: string[];
+  fileCache: FileCache;
 }): Promise<{
   passed: Edit[];
   failed: FailedEdit[];
@@ -1041,14 +1065,22 @@ export async function applyEdits({
       existingFiles,
       edit,
       projectId,
-      versionId,
-      previousVersionId,
-      userId,
-      tx,
-      deletedDeclarations,
+      fileCache,
     });
 
     if (result.passed) {
+      // Process file only if edit passed
+      await processFile({
+        content: result.passed.updated,
+        path: result.passed.path,
+        projectId,
+        versionId,
+        userId,
+        tx,
+        previousVersionId,
+        deletedDeclarations,
+        fileCache,
+      });
       passed.push(result.passed);
     }
     if (result.failed) {
@@ -1068,6 +1100,7 @@ async function processFile({
   tx,
   previousVersionId,
   deletedDeclarations,
+  fileCache,
 }: {
   content: string;
   path: string;
@@ -1077,6 +1110,7 @@ async function processFile({
   tx: Tx;
   previousVersionId?: string;
   deletedDeclarations: string[];
+  fileCache: FileCache;
 }) {
   let file = await tx.query.files.findFirst({
     where: and(eq(files.projectId, projectId), eq(files.path, path)),
@@ -1096,7 +1130,7 @@ async function processFile({
 
     file = insertedFile;
   } else {
-    previousContent = await S3.readFile({
+    previousContent = await fileCache.getFile({
       projectId,
       path,
     });
@@ -1116,6 +1150,13 @@ async function processFile({
   if (!s3Version) {
     throw new Error(`Failed to write file ${file.path} to S3`);
   }
+
+  // Cache the new content
+  fileCache.setFile({
+    projectId,
+    path: file.path,
+    content,
+  });
 
   // Add the file to the version
   await tx.insert(versionFiles).values({

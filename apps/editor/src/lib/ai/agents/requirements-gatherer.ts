@@ -115,6 +115,12 @@ export async function requirementsGatherer({
         toolArgs: Record<string, unknown>;
         toolResult: unknown;
       }
+    | {
+        type: "version";
+        versionId: string;
+        versionMessage: string;
+        versionNumber: number;
+      }
   >();
 
   (async () => {
@@ -143,6 +149,15 @@ export async function requirementsGatherer({
 
               // Process each tool call sequentially
               await (async () => {
+                messages.push({
+                  role: "tool",
+                  rawContent: {
+                    toolName: toolCall.toolName,
+                    toolArgs: toolCall.args,
+                    toolResult: toolResult?.result,
+                  },
+                });
+
                 switch (toolCall.toolName) {
                   case "initializeProjectTool": {
                     console.log("Initializing project");
@@ -155,7 +170,7 @@ export async function requirementsGatherer({
                       },
                     });
 
-                    await db.transaction(async (tx) => {
+                    const version = await db.transaction(async (tx) => {
                       // Get the preset
                       console.log("Getting preset");
                       const preset = await tx.query.presets.findFirst({
@@ -177,7 +192,7 @@ export async function requirementsGatherer({
                         .update(projects)
                         .set({
                           name: toolCall.args.name,
-                          // initiatedAt: new Date(),
+                          initiatedAt: new Date(),
                         })
                         .where(
                           and(
@@ -422,8 +437,11 @@ export async function requirementsGatherer({
                           ],
                         },
                       });
+
+                      return version;
                     });
 
+                    console.log("Updating status to success");
                     stream.update({
                       type: "tool",
                       toolName: toolCall.toolName,
@@ -432,6 +450,23 @@ export async function requirementsGatherer({
                         status: "success",
                       },
                     });
+
+                    stream.update({
+                      type: "version",
+                      versionId: version.id,
+                      versionMessage: toolCall.args.commitMessage,
+                      versionNumber: version.number,
+                    });
+
+                    messages.push({
+                      role: "version",
+                      rawContent: {
+                        versionId: version.id,
+                        versionMessage: toolCall.args.commitMessage,
+                        versionNumber: version.number,
+                      },
+                    });
+
                     break;
                   }
                   case "implementTool": {
@@ -444,7 +479,7 @@ export async function requirementsGatherer({
                       },
                     });
 
-                    await db.transaction(async (tx) => {
+                    const version = await db.transaction(async (tx) => {
                       const previousVersion = await tx.query.versions.findFirst(
                         {
                           where: and(
@@ -512,6 +547,8 @@ export async function requirementsGatherer({
                           ],
                         },
                       });
+
+                      return version;
                     });
 
                     stream.update({
@@ -520,6 +557,22 @@ export async function requirementsGatherer({
                       toolArgs: toolCall.args,
                       toolResult: {
                         status: "success",
+                      },
+                    });
+
+                    stream.update({
+                      type: "version",
+                      versionId: version.id,
+                      versionMessage: toolCall.args.commitMessage,
+                      versionNumber: version.number,
+                    });
+
+                    messages.push({
+                      role: "version",
+                      rawContent: {
+                        versionId: version.id,
+                        versionMessage: toolCall.args.commitMessage,
+                        versionNumber: version.number,
                       },
                     });
                     break;
@@ -541,15 +594,6 @@ export async function requirementsGatherer({
                     rawContent: [{ type: "paragraph", value: text }],
                   });
                 }
-
-                messages.push({
-                  role: "tool",
-                  rawContent: {
-                    toolName: toolCall.toolName,
-                    toolArgs: toolCall.args,
-                    toolResult: toolResult?.result,
-                  },
-                });
               })();
             }
           }

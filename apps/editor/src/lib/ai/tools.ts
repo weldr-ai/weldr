@@ -93,7 +93,7 @@ export const installPackagesTool = ({
   tx: Tx;
 }) =>
   tool({
-    description: "Ask the user to install node packages",
+    description: "Use to install node packages",
     parameters: z.object({
       pkgs: z
         .object({
@@ -129,7 +129,7 @@ export const installPackagesTool = ({
   });
 
 export const removePackagesTool = tool({
-  description: "Ask the user to remove node packages",
+  description: "Use to remove node packages",
   parameters: z.object({
     pkgs: z.string().array(),
   }),
@@ -144,7 +144,7 @@ export const readFilesTool = ({
   projectId: string;
 }) =>
   tool({
-    description: "Ask the user to send you the contents of files",
+    description: "Use to read files",
     parameters: z.object({
       files: z.string().array(),
     }),
@@ -176,7 +176,7 @@ export const deleteFilesTool = ({
   tx: Tx;
 }) =>
   tool({
-    description: "Ask the user to delete files",
+    description: "Use to delete files",
     parameters: z.object({
       files: z.string().array(),
     }),

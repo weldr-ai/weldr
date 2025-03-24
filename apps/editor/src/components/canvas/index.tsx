@@ -29,22 +29,25 @@ import "@xyflow/react/dist/base.css";
 import { Button } from "@weldr/ui/button";
 
 import { useFlowBuilder } from "@/lib/store";
+import type { RouterOutputs } from "@weldr/api";
 import { useTheme } from "@weldr/ui/theme-provider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
+import { PreviewNode } from "./nodes/preview";
 
-const nodeTypes = {};
+const nodeTypes = {
+  preview: PreviewNode,
+};
 
 export function Canvas({
-  projectId,
+  project,
   initialNodes,
   initialEdges,
 }: {
-  projectId: string;
+  project: RouterOutputs["projects"]["byId"];
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
 }) {
   const { showEdges, toggleEdges } = useFlowBuilder();
-
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();
@@ -154,6 +157,7 @@ export function Canvas({
 
   return (
     <ReactFlow
+      className="rounded-tl-xl border-t border-l"
       nodes={nodes}
       onNodesChange={onNodesChange}
       edges={showEdges ? edges : []}

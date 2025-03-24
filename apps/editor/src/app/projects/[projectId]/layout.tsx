@@ -2,7 +2,6 @@ import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { CommandCenter } from "@/components/command-center";
-import { Navbar } from "@/components/navbar";
 import { ProjectProvider } from "@/lib/store";
 import { api } from "@/lib/trpc/server";
 
@@ -37,14 +36,11 @@ export default async function ProjectLayout({
             metadata: resource.metadata,
           }))}
         > */}
-        <div className="flex h-screen flex-col">
-          <Navbar project={project} />
-          <main className="flex size-full flex-1 px-2 pb-2">
-            <div className="size-full rounded-xl border dark:bg-muted">
-              {children}
-            </div>
-          </main>
-        </div>
+
+        <main className="flex size-full h-screen ">
+          <div className="size-full flex-1 dark:bg-muted">{children}</div>
+        </main>
+
         <CommandCenter projects={projects} />
         {/* </ResourcesProvider> */}
       </ProjectProvider>

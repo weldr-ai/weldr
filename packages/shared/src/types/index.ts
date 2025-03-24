@@ -7,11 +7,11 @@ import type {
   chatMessageSchema,
   chatSchema,
   messageRawContentSchema,
-  testExecutionMessageRawContentSchema,
   toolMessageRawContentSchema,
   toolMessageSchema,
   userMessageRawContentSchema,
   userMessageSchema,
+  versionMessageRawContentSchema,
 } from "../validators/chats";
 import type { packageSchema, rawContentSchema } from "../validators/common";
 import type { declarationMetadataSchema } from "../validators/declarations";
@@ -33,6 +33,9 @@ export type AssistantMessageRawContent = z.infer<
 >;
 export type MessageRawContent = z.infer<typeof messageRawContentSchema>;
 export type ToolMessageRawContent = z.infer<typeof toolMessageRawContentSchema>;
+export type VersionMessageRawContent = z.infer<
+  typeof versionMessageRawContentSchema
+>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export type UserMessage = z.infer<typeof userMessageSchema>;
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
@@ -52,7 +55,3 @@ export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;
 
 export type RawContent = z.infer<typeof rawContentSchema>;
 export type Package = z.infer<typeof packageSchema>;
-
-export type TestExecutionMessageRawContent = z.infer<
-  typeof testExecutionMessageRawContentSchema
->;

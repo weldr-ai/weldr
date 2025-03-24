@@ -11,7 +11,7 @@ import { cn } from "@weldr/ui/utils";
 import { ChatResourceDialog } from "./chat-resource-dialog";
 import { RawContentViewer } from "./raw-content-viewer";
 
-const PurePreviewMessage = ({
+const PureMessageItem = ({
   message,
   setMessages,
   setPendingMessage,
@@ -67,20 +67,25 @@ const PurePreviewMessage = ({
             )}
           </div>
         )}
+        {message.role === "version" && (
+          <div className="flex max-w-64 items-center gap-1 rounded-md border border-success bg-success/10 p-2 text-success text-xs">
+            <span>{`#${message.rawContent.versionNumber}`}</span>
+            <span className="truncate">
+              {message.rawContent.versionMessage}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export const PreviewMessage = memo(
-  PurePreviewMessage,
-  (prevProps, nextProps) => {
-    if (prevProps.pendingMessage !== nextProps.pendingMessage) return false;
-    if (prevProps.message.rawContent !== nextProps.message.rawContent)
-      return false;
-    return true;
-  },
-);
+export const MessageItem = memo(PureMessageItem, (prevProps, nextProps) => {
+  if (prevProps.pendingMessage !== nextProps.pendingMessage) return false;
+  if (prevProps.message.rawContent !== nextProps.message.rawContent)
+    return false;
+  return true;
+});
 
 const TypingDots = () => {
   const [dots, setDots] = useState("");

@@ -295,10 +295,11 @@ function PureMultimodalInput({
         )}
         rows={2}
         autoFocus
+        disabled={!!pendingMessage}
         onKeyDown={(event) => {
           if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
             event.preventDefault();
-            if (pendingMessage === "thinking" || pendingMessage === "waiting") {
+            if (pendingMessage) {
               toast({
                 description:
                   "Please wait for the model to finish its response!",
@@ -377,7 +378,7 @@ function PureSendButton({
 }) {
   return (
     <Button
-      className="h-fit rounded-full p-1.5"
+      className="h-fit rounded-full p-[7px]"
       onClick={(event) => {
         event.preventDefault();
         submitForm();

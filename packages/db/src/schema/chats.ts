@@ -3,6 +3,7 @@ import type {
   AssistantMessageRawContent,
   ToolMessageRawContent,
   UserMessageRawContent,
+  VersionMessageRawContent,
 } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
@@ -68,6 +69,7 @@ export const chatMessages = pgTable(
         | UserMessageRawContent
         | AssistantMessageRawContent
         | ToolMessageRawContent
+        | VersionMessageRawContent
       >()
       .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

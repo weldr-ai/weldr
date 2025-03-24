@@ -61,10 +61,10 @@ export function Chat({
         continue;
       }
 
-      setPendingMessage(null);
-
       switch (delta.type) {
         case "text": {
+          setPendingMessage(null);
+
           setMessages((prevMessages) => {
             const lastMessage = prevMessages[prevMessages.length - 1];
 
@@ -101,23 +101,39 @@ export function Chat({
           break;
         }
         case "tool": {
-          if (delta.toolName === "setupResource") {
+          if (delta.toolName === "setupResourceTool") {
             setPendingMessage("waiting");
           }
 
-          if (delta.toolName === "initializeProject") {
+          if (delta.toolName === "initializeProjectTool") {
             const status = (
               delta.toolResult as {
                 status: "pending" | "success";
               }
             ).status;
 
+            if (status === "pending") {
+              setPendingMessage("building");
+            }
+
             if (status === "success") {
               setPendingMessage(null);
             }
+          }
+
+          if (delta.toolName === "implementTool") {
+            const status = (
+              delta.toolResult as {
+                status: "pending" | "success";
+              }
+            ).status;
 
             if (status === "pending") {
               setPendingMessage("building");
+            }
+
+            if (status === "success") {
+              setPendingMessage(null);
             }
           }
 
@@ -163,7 +179,6 @@ export function Chat({
       lastMessage.rawContent.toolName === "setupResource" &&
       lastMessage.rawContent.toolResult?.status === "pending"
     ) {
-      console.log("setting waiting to true");
       setPendingMessage("waiting");
     }
   }, [messages]);
@@ -235,7 +250,7 @@ export function Chat({
         setPendingMessage={setPendingMessage}
       />
 
-      <div className="relative px-2 pb-2">
+      <div className="relative px-2">
         <div className="absolute right-0 bottom-full left-0 h-4 bg-gradient-to-t from-muted to-transparent" />
         <MultimodalInput
           chatId={chatId}

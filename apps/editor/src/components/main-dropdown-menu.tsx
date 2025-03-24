@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@weldr/ui/dropdown-menu";
 import { LogoIcon } from "@weldr/ui/icons/logo-icon";
+import { cn } from "@weldr/ui/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -40,17 +41,12 @@ export function MainDropdownMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className={className}>
-          <LogoIcon className="size-10" />
+        <Button variant="ghost" size="icon" className={cn("size-8", className)}>
+          <LogoIcon className="size-8" />
           <span className="sr-only">Weldr</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        className="w-56"
-        align="start"
-        side={side}
-        sideOffset={10}
-      >
+      <DropdownMenuContent className="w-56" align="start" side={side}>
         <DropdownMenuLabel>Projects</DropdownMenuLabel>
         <DropdownMenuItem onClick={() => setOpen("create")}>
           <PlusIcon className="mr-2 size-4 text-muted-foreground" />

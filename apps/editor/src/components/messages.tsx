@@ -3,7 +3,7 @@ import type { ChatMessage } from "@weldr/shared/types";
 import equal from "fast-deep-equal";
 import { memo } from "react";
 import { useScrollToBottom } from "../hooks/use-scroll-to-bottom";
-import { PendingMessage, PreviewMessage } from "./message";
+import { MessageItem, PendingMessage } from "./message";
 
 interface MessagesProps {
   pendingMessage: TPendingMessage;
@@ -26,10 +26,10 @@ function PureMessages({
   return (
     <div
       ref={messagesContainerRef}
-      className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-full max-h-[calc(100vh-200px)] min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-2"
+      className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-full max-h-[calc(100vh-186px)] min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-2"
     >
       {messages.map((message) => (
-        <PreviewMessage
+        <MessageItem
           key={message.id}
           message={message}
           setMessages={setMessages}
