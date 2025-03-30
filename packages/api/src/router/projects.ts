@@ -1,7 +1,13 @@
 import { createId } from "@paralleldrive/cuid2";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { and, eq } from "@weldr/db";
-import { attachments, chatMessages, chats, projects } from "@weldr/db/schema";
+import {
+  attachments,
+  chatMessages,
+  chats,
+  projects,
+  versions,
+} from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import { S3 } from "@weldr/shared/s3";
 import type { ChatMessage } from "@weldr/shared/types";
@@ -38,7 +44,6 @@ export const projectsRouter = {
             .values({
               id: projectId,
               subdomain: projectId,
-              ipAddressV6: app.ipAddressV6,
               userId: ctx.session.user.id,
             })
             .returning();
@@ -53,7 +58,6 @@ export const projectsRouter = {
           const [chat] = await tx
             .insert(chats)
             .values({
-              id: input.chatId,
               userId: ctx.session.user.id,
               projectId: projectId,
             })
@@ -142,7 +146,7 @@ export const projectsRouter = {
             versions: true,
             chats: {
               limit: 1,
-              orderBy: (chats, { desc }) => [desc(chats.createdAt)],
+              orderBy: (chats, { asc }) => [asc(chats.createdAt)],
               with: {
                 messages: {
                   columns: {
@@ -204,12 +208,80 @@ export const projectsRouter = {
           }),
         );
 
+        const getCurrentVersionDeclarations = async (
+          currentVersionId: string,
+        ) => {
+          const currentVersion = await ctx.db.query.versions.findFirst({
+            where: eq(versions.id, currentVersionId),
+            with: {
+              declarations: {
+                with: {
+                  declaration: {
+                    with: {
+                      canvasNode: {
+                        with: {
+                          chats: {
+                            limit: 1,
+                            orderBy: (chats, { asc }) => [asc(chats.createdAt)],
+                            with: {
+                              messages: {
+                                columns: {
+                                  content: false,
+                                },
+                                orderBy: (messages, { asc }) => [
+                                  asc(messages.createdAt),
+                                ],
+                                with: {
+                                  attachments: {
+                                    columns: {
+                                      name: true,
+                                      key: true,
+                                    },
+                                  },
+                                  user: {
+                                    columns: {
+                                      name: true,
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          });
+
+          if (!currentVersion) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Current version not found",
+            });
+          }
+
+          return currentVersion.declarations
+            .filter((declaration) => declaration.declaration.canvasNode)
+            .map((declaration) => declaration.declaration);
+        };
+
+        const currentVersion = project.versions.find(
+          (version) => version.isCurrent,
+        );
+
         const result = {
           ...project,
           chat: {
             ...chat,
             messages: messagesWithAttachments as ChatMessage[],
           },
+          currentVersion,
+          declarations: currentVersion
+            ? await getCurrentVersionDeclarations(currentVersion.id)
+            : undefined,
         };
 
         return result;

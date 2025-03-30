@@ -5,6 +5,14 @@ import { functionSchema } from "./function";
 import { modelSchema } from "./model";
 import { otherSchema } from "./other";
 
+export const declarationTypeSchema = z.enum([
+  "endpoint",
+  "function",
+  "model",
+  "component",
+  "other",
+]);
+
 export const declarationMetadataSchema = z.discriminatedUnion("type", [
   endpointSchema,
   functionSchema,

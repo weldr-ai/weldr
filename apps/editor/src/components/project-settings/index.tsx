@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@weldr/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
 import { SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EnvSection } from "./env-section";
@@ -51,13 +52,34 @@ export function ProjectSettings({
   }, []);
 
   return (
-    <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="size-8">
-          <SettingsIcon className="size-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="flex h-[calc(100vh-100px)] max-w-[calc(100vw-100px)] flex-col">
+    <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} modal>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="icon" className="size-8 bg-muted">
+              <SettingsIcon className="size-4" />
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="border bg-muted">
+          Project Settings
+          <kbd className="pointer-events-none ml-2 inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
+            <span className="text-xs">
+              {typeof window !== "undefined" &&
+              window.navigator?.userAgent.toLowerCase().includes("mac")
+                ? "⌘"
+                : "Ctrl"}
+            </span>
+            ,
+          </kbd>
+        </TooltipContent>
+      </Tooltip>
+      <DialogContent
+        className="flex h-[calc(100vh-100px)] max-w-[calc(100vw-100px)] flex-col"
+        onPointerDownOutside={(e) => {
+          e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Project Settings</DialogTitle>
         </DialogHeader>

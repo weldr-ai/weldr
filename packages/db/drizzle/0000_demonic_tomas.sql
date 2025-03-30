@@ -1,4 +1,5 @@
-CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool', 'version');--> statement-breakpoint
+CREATE TYPE "public"."canvas_node_types" AS ENUM('preview', 'declaration');--> statement-breakpoint
+CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool', 'version', 'code');--> statement-breakpoint
 CREATE TYPE "public"."package_type" AS ENUM('runtime', 'development');--> statement-breakpoint
 CREATE TYPE "public"."preset_type" AS ENUM('next-base');--> statement-breakpoint
 CREATE TYPE "public"."declaration_types" AS ENUM('component', 'endpoint', 'function', 'model', 'other');--> statement-breakpoint
@@ -58,6 +59,14 @@ CREATE TABLE "waitlist" (
 	CONSTRAINT "waitlist_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
+CREATE TABLE "canvas_nodes" (
+	"id" text PRIMARY KEY NOT NULL,
+	"type" "canvas_node_types" NOT NULL,
+	"position" jsonb NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "attachments" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
@@ -82,8 +91,9 @@ CREATE TABLE "chat_messages" (
 CREATE TABLE "chats" (
 	"id" text PRIMARY KEY NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"user_id" text NOT NULL,
-	"project_id" text
+	"project_id" text,
+	"canvas_node_id" text,
+	"user_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "declaration_packages" (
@@ -104,7 +114,8 @@ CREATE TABLE "declarations" (
 	"previous_id" text,
 	"project_id" text NOT NULL,
 	"user_id" text NOT NULL,
-	"file_id" text NOT NULL
+	"file_id" text NOT NULL,
+	"canvas_node_id" text
 );
 --> statement-breakpoint
 CREATE TABLE "dependencies" (
@@ -189,7 +200,6 @@ CREATE TABLE "projects" (
 	"name" text,
 	"thumbnail" text,
 	"subdomain" text NOT NULL,
-	"ip_address_v6" text,
 	"initiated_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
@@ -234,14 +244,16 @@ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_user_id_users_id_fk" FOREI
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_message_id_chat_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "public"."chat_messages"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chats" ADD CONSTRAINT "chats_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "chats" ADD CONSTRAINT "chats_canvas_node_id_canvas_nodes_id_fk" FOREIGN KEY ("canvas_node_id") REFERENCES "public"."canvas_nodes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_packages" ADD CONSTRAINT "declaration_packages_declaration_id_declarations_id_fk" FOREIGN KEY ("declaration_id") REFERENCES "public"."declarations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_packages" ADD CONSTRAINT "declaration_packages_package_id_packages_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."packages"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_previous_id_declarations_id_fk" FOREIGN KEY ("previous_id") REFERENCES "public"."declarations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_file_id_files_id_fk" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "declarations" ADD CONSTRAINT "declarations_canvas_node_id_canvas_nodes_id_fk" FOREIGN KEY ("canvas_node_id") REFERENCES "public"."canvas_nodes"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_dependent_id_declarations_id_fk" FOREIGN KEY ("dependent_id") REFERENCES "public"."declarations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_dependency_id_declarations_id_fk" FOREIGN KEY ("dependency_id") REFERENCES "public"."declarations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_secret_id_secrets_id_fk" FOREIGN KEY ("secret_id") REFERENCES "vault"."secrets"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -263,6 +275,7 @@ ALTER TABLE "version_packages" ADD CONSTRAINT "version_packages_package_id_packa
 ALTER TABLE "versions" ADD CONSTRAINT "versions_parent_version_id_versions_id_fk" FOREIGN KEY ("parent_version_id") REFERENCES "public"."versions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "created_at_idx" ON "canvas_nodes" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "attachments_created_at_idx" ON "attachments" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "chat_messages_created_at_idx" ON "chat_messages" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "chats_created_at_idx" ON "chats" USING btree ("created_at");--> statement-breakpoint

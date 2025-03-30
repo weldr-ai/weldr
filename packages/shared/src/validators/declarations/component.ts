@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { jsonSchema } from "../json-schema";
+import { parameterObjectSchema } from "../openapi";
 
-const baseComponentSchema = z.object({
+export const baseComponentSchema = z.object({
   name: z.string().describe("The name of the component"),
   description: z
     .string()
@@ -48,8 +49,11 @@ const baseComponentSchema = z.object({
     ),
 });
 
-const pageSchema = baseComponentSchema.extend({
+export const pageSchema = baseComponentSchema.extend({
   subtype: z.literal("page"),
+  parameters: parameterObjectSchema
+    .optional()
+    .describe("The path and query parameters of the route"),
   route: z
     .string()
     .describe(
@@ -63,8 +67,11 @@ const pageSchema = baseComponentSchema.extend({
     ),
 });
 
-const layoutSchema = baseComponentSchema.extend({
+export const layoutSchema = baseComponentSchema.extend({
   subtype: z.literal("layout"),
+  parameters: parameterObjectSchema
+    .optional()
+    .describe("The path and query parameters of the route"),
   route: z
     .string()
     .describe(
@@ -79,7 +86,7 @@ const layoutSchema = baseComponentSchema.extend({
     ),
 });
 
-const reusableComponentSchema = baseComponentSchema.extend({
+export const reusableComponentSchema = baseComponentSchema.extend({
   subtype: z.literal("reusable"),
   examples: z
     .string()

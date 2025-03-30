@@ -64,7 +64,7 @@ export const S3 = {
       await Promise.all(copyPromises);
       return fileVersions;
     } catch (error) {
-      console.error("Error copying directory:", error);
+      console.error(`[S3:copyBoilerplate] Error copying directory: ${error}`);
       throw error;
     }
   },
@@ -83,17 +83,13 @@ export const S3 = {
         Key: fullPath,
       });
 
-      console.log("Reading file from S3", {
-        path,
-        fullPath,
-        bucket: "weldr-projects",
-      });
+      console.log(`[S3:readFile:${projectId}] Reading file ${path}`);
 
       const response = await s3Client.send(command);
       const content = await response.Body?.transformToString();
       return content;
     } catch (error) {
-      console.error("Failed to read file from S3", { path, fullPath, error });
+      console.error(`[S3:readFile:${projectId}] Failed to read file ${path}`);
       return undefined;
     }
   },
@@ -116,16 +112,12 @@ export const S3 = {
         ContentType: "text/plain",
       });
 
-      console.log("Writing file to S3", {
-        path,
-        fullPath,
-        bucket: "weldr-projects",
-      });
+      console.log(`[S3:writeFile:${projectId}] Writing file ${path}`);
 
       const response = await s3Client.send(command);
       return response.VersionId;
     } catch (error) {
-      console.error("Failed to write file to S3", { path, fullPath, error });
+      console.error(`[S3:writeFile:${projectId}] Failed to write file ${path}`);
       throw new Error(`Failed to write file ${path} to S3`);
     }
   },
@@ -156,16 +148,14 @@ export const S3 = {
         Key: fullPath,
       });
 
-      console.log("Deleting file from S3", {
-        path,
-        fullPath,
-        bucket: "weldr-projects",
-      });
+      console.log(`[S3:deleteFile:${projectId}] Deleting file ${path}`);
 
       const response = await s3Client.send(command);
       return response.VersionId;
     } catch (error) {
-      console.error("Failed to delete file from S3", { path, fullPath, error });
+      console.error(
+        `[S3:deleteFile:${projectId}] Failed to delete file ${path} - ${error}`,
+      );
       throw new Error(`Failed to delete file ${path} from S3`);
     }
   },

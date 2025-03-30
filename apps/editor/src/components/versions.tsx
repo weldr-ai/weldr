@@ -33,15 +33,20 @@ export function Versions({
           size="sm"
           variant="outline"
           aria-expanded={open}
-          className="w-[256px] justify-between"
+          className="w-[280px] justify-between bg-muted"
         >
-          <span className="truncate">
-            {project.currentVersion?.message ?? "No versions available"}
-          </span>
+          <div className="space-x-2 truncate">
+            <span className="text-muted-foreground">
+              {`#${project.currentVersion?.number ?? ""}`}
+            </span>
+            <span>
+              {project.currentVersion?.message ?? "No versions available"}
+            </span>
+          </div>
           <ChevronsUpDown className="ml-auto size-4 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[256px] p-0">
+      <PopoverContent className="w-[280px] p-0">
         <Command>
           <CommandInput
             className="h-9 border-none text-sm outline-none focus-visible:ring-0"

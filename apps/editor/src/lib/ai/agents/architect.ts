@@ -1,8 +1,8 @@
 import "server-only";
 
 import { type CoreMessage, type CoreUserMessage, streamText } from "ai";
-import { models } from "../models";
 import { prompts } from "../prompts";
+import { registry } from "../registry";
 
 export async function architect(prompt: CoreUserMessage, context: string) {
   const messages: CoreMessage[] = [prompt];
@@ -10,7 +10,9 @@ export async function architect(prompt: CoreUserMessage, context: string) {
   let coderPrompt = "";
 
   const { textStream } = streamText({
-    model: models.deepseekR1,
+    model: registry.languageModel(
+      "fireworks:accounts/fireworks/models/deepseek-v3",
+    ),
     system: prompts.architect(context),
     messages,
   });

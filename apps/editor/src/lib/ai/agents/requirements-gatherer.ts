@@ -1,38 +1,25 @@
 "use server";
 
-import { models } from "@/lib/ai/models";
-import { api } from "@/lib/trpc/server";
+import type { TStreamableValue } from "@/types";
 import { auth } from "@weldr/auth";
-import { type InferInsertModel, and, db, eq } from "@weldr/db";
-import {
-  chats,
-  declarationPackages,
-  declarations,
-  dependencies,
-  files,
-  packages,
-  presets,
-  projects,
-  versionDeclarations,
-  versionFiles,
-  versionPackages,
-  versions,
-} from "@weldr/db/schema";
-import { S3 } from "@weldr/shared/s3";
+import { and, db, eq } from "@weldr/db";
+import { chats, projects } from "@weldr/db/schema";
 import type { ToolMessageRawContent } from "@weldr/shared/types";
-import type { addMessageItemSchema } from "@weldr/shared/validators/chats";
 import { type CoreMessage, streamText } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import type { z } from "zod";
+import { insertMessages } from "../insert-messages";
 import { prompts } from "../prompts";
+import { registry } from "../registry";
 import {
+  implement,
   implementTool,
+  initializeProject,
   initializeProjectTool,
   setupResourceTool,
 } from "../tools";
-import { coder } from "./coder";
+import { setupResource } from "../tools/setup-resource";
 
 export async function requirementsGatherer({
   chatId,
@@ -98,34 +85,27 @@ export async function requirementsGatherer({
 
     if (message.content === null || message.role === "version") continue;
 
+    if (message.role === "code") {
+      for (const code of Object.values(message.rawContent)) {
+        promptMessages.push({
+          role: "assistant",
+          content: code,
+        });
+      }
+      continue;
+    }
+
     promptMessages.push({
       role: message.role,
       content: message.content,
     });
   }
 
-  const stream = createStreamableValue<
-    | {
-        type: "text";
-        text: string;
-      }
-    | {
-        type: "tool";
-        toolName: string;
-        toolArgs: Record<string, unknown>;
-        toolResult: unknown;
-      }
-    | {
-        type: "version";
-        versionId: string;
-        versionMessage: string;
-        versionNumber: number;
-      }
-  >();
+  const stream = createStreamableValue<TStreamableValue>();
 
   (async () => {
-    const { textStream } = streamText({
-      model: models.geminiFlash,
+    const { textStream, usage } = streamText({
+      model: registry.languageModel("openai:gpt-4o"),
       system: prompts.requirementsGatherer,
       messages: promptMessages,
       experimental_activeTools: project.initiatedAt
@@ -139,478 +119,110 @@ export async function requirementsGatherer({
       maxSteps: 3,
       onFinish: async ({ text, finishReason, toolCalls, toolResults }) => {
         try {
-          const messages: z.infer<typeof addMessageItemSchema>[] = [];
-
-          if (finishReason === "tool-calls") {
-            for (const toolCall of toolCalls) {
-              const toolResult = toolResults.find(
-                (toolResult) => toolResult.toolCallId === toolCall.toolCallId,
-              );
-
-              // Process each tool call sequentially
-              await (async () => {
-                messages.push({
-                  role: "tool",
-                  rawContent: {
-                    toolName: toolCall.toolName,
-                    toolArgs: toolCall.args,
-                    toolResult: toolResult?.result,
-                  },
-                });
-
-                switch (toolCall.toolName) {
-                  case "initializeProjectTool": {
-                    console.log("Initializing project");
-                    stream.update({
-                      type: "tool",
-                      toolName: toolCall.toolName,
-                      toolArgs: toolCall.args,
-                      toolResult: {
-                        status: "pending",
-                      },
-                    });
-
-                    const version = await db.transaction(async (tx) => {
-                      // Get the preset
-                      console.log("Getting preset");
-                      const preset = await tx.query.presets.findFirst({
-                        where: eq(presets.type, "next-base"),
-                        with: {
-                          declarations: true,
-                          files: true,
-                          packages: true,
-                        },
-                      });
-
-                      if (!preset) {
-                        throw new Error("Preset not found");
-                      }
-
-                      // Update the project name
-                      console.log("Updating project name");
-                      await tx
-                        .update(projects)
-                        .set({
-                          name: toolCall.args.name,
-                          initiatedAt: new Date(),
-                        })
-                        .where(
-                          and(
-                            eq(projects.id, projectId),
-                            eq(projects.userId, session.user.id),
-                          ),
-                        );
-
-                      console.log("Creating version");
-                      // Create a new version
-                      const [version] = await tx
-                        .insert(versions)
-                        .values({
-                          projectId,
-                          userId: session.user.id,
-                          number: 1,
-                          isCurrent: true,
-                          message: toolCall.args.commitMessage,
-                        })
-                        .returning();
-
-                      if (!version) {
-                        throw new Error("Version not found");
-                      }
-
-                      console.log("Copying boilerplate files");
-                      // Copy boilerplate files to the project
-                      const fileVersions = await S3.copyBoilerplate({
-                        boilerplate: "next-base",
-                        destinationPath: `${projectId}`,
-                      });
-
-                      console.log("Inserting files");
-                      // Insert files from preset to the project
-                      const insertedFiles = await tx
-                        .insert(files)
-                        .values(
-                          preset.files.map((file) => ({
-                            userId: session.user.id,
-                            projectId,
-                            path: file.path,
-                          })),
-                        )
-                        .returning();
-
-                      console.log("Inserting version files");
-                      // Insert version files
-                      await tx.insert(versionFiles).values(
-                        insertedFiles.map((file) => {
-                          const s3VersionId =
-                            fileVersions[`${projectId}${file.path}`];
-
-                          if (!s3VersionId) {
-                            throw new Error(
-                              `S3 version ID not found for file ${file.path}`,
-                            );
-                          }
-
-                          return {
-                            versionId: version.id,
-                            fileId: file.id,
-                            s3VersionId,
-                          };
-                        }),
-                      );
-
-                      console.log("Inserting packages");
-                      // Insert packages from preset to the project
-                      const insertedPkgs = await tx
-                        .insert(packages)
-                        .values(
-                          preset.packages.map((pkg) => ({
-                            name: pkg.name,
-                            type: pkg.type,
-                            projectId,
-                          })),
-                        )
-                        .returning();
-
-                      // Insert version packages
-                      await tx.insert(versionPackages).values(
-                        insertedPkgs.map((pkg) => ({
-                          versionId: version.id,
-                          packageId: pkg.id,
-                        })),
-                      );
-
-                      console.log("Inserting declarations");
-                      // Insert declarations from preset to the project
-                      const insertedDeclarations = await tx
-                        .insert(declarations)
-                        .values(
-                          preset.declarations.map((declaration) => {
-                            const fileId = insertedFiles.find(
-                              (file) => file.path === declaration.file,
-                            )?.id;
-
-                            if (!fileId) {
-                              throw new Error(
-                                `File ID not found for declaration ${declaration.name}`,
-                              );
-                            }
-
-                            return {
-                              name: declaration.name,
-                              type: declaration.type,
-                              metadata: declaration.metadata,
-                              userId: session.user.id,
-                              projectId,
-                              fileId,
-                            } as InferInsertModel<typeof declarations>;
-                          }),
-                        )
-                        .returning();
-
-                      // Insert version declarations
-                      await tx.insert(versionDeclarations).values(
-                        insertedDeclarations.map((declaration) => ({
-                          versionId: version.id,
-                          declarationId: declaration.id,
-                        })),
-                      );
-
-                      console.log(
-                        "Inserting declaration packages and dependencies",
-                      );
-                      // Insert declaration packages and dependencies
-                      for (const presetDeclaration of preset.declarations) {
-                        const presetDependencies =
-                          presetDeclaration.dependencies;
-
-                        if (!presetDependencies) {
-                          continue;
-                        }
-
-                        // Find the corresponding newly created declaration
-                        const insertedDeclaration = insertedDeclarations.find(
-                          (d) =>
-                            d.name === presetDeclaration.name &&
-                            d.fileId ===
-                              insertedFiles.find(
-                                (file) => file.path === presetDeclaration.file,
-                              )?.id,
-                        );
-
-                        if (!insertedDeclaration) {
-                          throw new Error("New declaration not found");
-                        }
-
-                        // Insert node package dependencies
-                        const pkgs = presetDependencies?.filter(
-                          (dependency) => dependency.type === "external",
-                        );
-
-                        if (pkgs.length > 0) {
-                          await tx.insert(declarationPackages).values(
-                            pkgs.map((pkg) => {
-                              const insertedPkg = insertedPkgs.find(
-                                (p) => p.name === pkg.from,
-                              );
-
-                              if (!insertedPkg) {
-                                throw new Error("Package not found");
-                              }
-
-                              return {
-                                declarationId: insertedDeclaration.id,
-                                packageId: insertedPkg.id,
-                                importPath: pkg.from,
-                                declarations: pkg.dependsOn,
-                              } as InferInsertModel<typeof declarationPackages>;
-                            }),
-                          );
-                        }
-
-                        // Insert internal dependencies
-                        const internalDependencies = presetDependencies
-                          ?.filter(
-                            (dependency) => dependency.type === "internal",
-                          )
-                          .flatMap((dependency) => {
-                            return dependency.dependsOn.map((dep) => {
-                              const fileId = insertedFiles.find(
-                                (file) => file.path === dependency.from,
-                              )?.id;
-
-                              if (!fileId) {
-                                throw new Error("File ID not found");
-                              }
-
-                              return {
-                                fileId,
-                                name: dep,
-                              };
-                            });
-                          });
-
-                        if (internalDependencies.length > 0) {
-                          await tx.insert(dependencies).values(
-                            internalDependencies.map((dep) => {
-                              const dependency = insertedDeclarations.find(
-                                (d) =>
-                                  d.fileId === dep.fileId &&
-                                  d.name === dep.name,
-                              );
-
-                              if (!dependency) {
-                                throw new Error("Dependency not found");
-                              }
-
-                              return {
-                                dependentId: insertedDeclaration.id,
-                                dependentType: insertedDeclaration.type,
-                                dependencyId: dependency.id,
-                                dependencyType: dependency.type,
-                              };
-                            }),
-                          );
-                        }
-                      }
-
-                      console.log("Coding");
-                      await coder({
-                        tx,
-                        projectId,
-                        versionId: version.id,
-                        userId: session.user.id,
-                        prompt: {
-                          role: "user",
-                          content: [
-                            {
-                              type: "text",
-                              text: `Please, create this new app: ${toolCall.args.requirements}
-                            You MUST NOT create any database schemas or authentication. THIS IS A PURE CLIENT APP.`,
-                            },
-                            ...(toolCall.args.attachments ?? []).map(
-                              (attachment) => ({
-                                type: "image" as const,
-                                image: attachment,
-                              }),
-                            ),
-                          ],
-                        },
-                      });
-
-                      return version;
-                    });
-
-                    console.log("Updating status to success");
-                    stream.update({
-                      type: "tool",
-                      toolName: toolCall.toolName,
-                      toolArgs: toolCall.args,
-                      toolResult: {
-                        status: "success",
-                      },
-                    });
-
-                    stream.update({
-                      type: "version",
-                      versionId: version.id,
-                      versionMessage: toolCall.args.commitMessage,
-                      versionNumber: version.number,
-                    });
-
-                    messages.push({
-                      role: "version",
-                      rawContent: {
-                        versionId: version.id,
-                        versionMessage: toolCall.args.commitMessage,
-                        versionNumber: version.number,
-                      },
-                    });
-
-                    break;
-                  }
-                  case "implementTool": {
-                    stream.update({
-                      type: "tool",
-                      toolName: toolCall.toolName,
-                      toolArgs: toolCall.args,
-                      toolResult: {
-                        status: "pending",
-                      },
-                    });
-
-                    const version = await db.transaction(async (tx) => {
-                      const previousVersion = await tx.query.versions.findFirst(
-                        {
-                          where: and(
-                            eq(versions.projectId, projectId),
-                            eq(versions.userId, session.user.id),
-                            eq(versions.isCurrent, true),
-                          ),
-                          columns: {
-                            id: true,
-                            number: true,
-                          },
-                        },
-                      );
-
-                      if (!previousVersion) {
-                        throw new Error("Version not found");
-                      }
-
-                      await tx
-                        .update(versions)
-                        .set({
-                          isCurrent: false,
-                        })
-                        .where(
-                          and(
-                            eq(versions.projectId, projectId),
-                            eq(versions.userId, session.user.id),
-                          ),
-                        );
-
-                      const [version] = await tx
-                        .insert(versions)
-                        .values({
-                          projectId,
-                          userId: session.user.id,
-                          number: previousVersion.number + 1,
-                          isCurrent: true,
-                          message: toolCall.args.commitMessage,
-                        })
-                        .returning();
-
-                      if (!version) {
-                        throw new Error("Version not found");
-                      }
-
-                      await coder({
-                        tx,
-                        userId: session.user.id,
-                        projectId,
-                        versionId: version.id,
-                        previousVersionId: previousVersion.id,
-                        prompt: {
-                          role: "user",
-                          content: [
-                            {
-                              type: "text",
-                              text: `Please, do the following changes: ${toolCall.args.requirements}`,
-                            },
-                            ...(toolCall.args.attachments ?? []).map(
-                              (attachment) => ({
-                                type: "image" as const,
-                                image: attachment,
-                              }),
-                            ),
-                          ],
-                        },
-                      });
-
-                      return version;
-                    });
-
-                    stream.update({
-                      type: "tool",
-                      toolName: toolCall.toolName,
-                      toolArgs: toolCall.args,
-                      toolResult: {
-                        status: "success",
-                      },
-                    });
-
-                    stream.update({
-                      type: "version",
-                      versionId: version.id,
-                      versionMessage: toolCall.args.commitMessage,
-                      versionNumber: version.number,
-                    });
-
-                    messages.push({
-                      role: "version",
-                      rawContent: {
-                        versionId: version.id,
-                        versionMessage: toolCall.args.commitMessage,
-                        versionNumber: version.number,
-                      },
-                    });
-                    break;
-                  }
-                  case "setupResourceTool": {
-                    stream.update({
-                      type: "tool",
-                      toolName: toolCall.toolName,
-                      toolArgs: toolCall.args,
-                      toolResult: toolResult?.result,
-                    });
-                    break;
-                  }
-                }
-
-                if (text) {
-                  messages.push({
-                    role: "assistant",
-                    rawContent: [{ type: "paragraph", value: text }],
-                  });
-                }
-              })();
+          await db.transaction(async (tx) => {
+            if (finishReason === "stop" && text) {
+              await insertMessages({
+                tx,
+                input: {
+                  chatId,
+                  userId: session.user.id,
+                  messages: [
+                    {
+                      role: "assistant",
+                      rawContent: [{ type: "paragraph", value: text }],
+                    },
+                  ],
+                },
+              });
             }
-          }
 
-          if (finishReason === "stop" && text) {
-            messages.push({
-              role: "assistant",
-              rawContent: [{ type: "paragraph", value: text }],
-            });
-          }
+            if (finishReason === "tool-calls") {
+              for (const toolCall of toolCalls) {
+                // Process each tool call sequentially
+                await (async () => {
+                  switch (toolCall.toolName) {
+                    case "initializeProjectTool": {
+                      const toolArgs = toolCalls.find(
+                        (toolCall) =>
+                          toolCall.toolName === "initializeProjectTool",
+                      )?.args;
 
-          if (messages.length > 0) {
-            await api.chats.addMessage({
-              chatId,
-              messages,
-            });
-          }
+                      if (!toolArgs) {
+                        throw new Error("Tool args not found");
+                      }
+
+                      await initializeProject({
+                        stream,
+                        tx,
+                        chatId,
+                        userId: session.user.id,
+                        projectId,
+                        toolArgs,
+                      });
+
+                      break;
+                    }
+                    case "implementTool": {
+                      const toolArgs = toolCalls.find(
+                        (toolCall) => toolCall.toolName === "implementTool",
+                      )?.args;
+
+                      if (!toolArgs) {
+                        throw new Error("Tool args not found");
+                      }
+
+                      await implement({
+                        stream,
+                        tx,
+                        chatId,
+                        userId: session.user.id,
+                        projectId,
+                        toolArgs,
+                      });
+
+                      break;
+                    }
+                    case "setupResourceTool": {
+                      const toolResult = toolResults.find(
+                        (toolResult) =>
+                          toolResult.toolName === "setupResourceTool",
+                      );
+
+                      if (!toolResult) {
+                        throw new Error("Tool result not found");
+                      }
+
+                      await setupResource({
+                        stream,
+                        tx,
+                        chatId,
+                        userId: session.user.id,
+                        toolArgs: toolResult.args,
+                      });
+
+                      break;
+                    }
+                  }
+
+                  if (text) {
+                    await insertMessages({
+                      tx,
+                      input: {
+                        chatId,
+                        userId: session.user.id,
+                        messages: [
+                          {
+                            role: "assistant",
+                            rawContent: [{ type: "paragraph", value: text }],
+                          },
+                        ],
+                      },
+                    });
+                  }
+                })();
+              }
+            }
+          });
         } catch (error) {
           console.error("Error in onFinish handler:", error);
           throw error;
@@ -624,6 +236,13 @@ export async function requirementsGatherer({
         text,
       });
     }
+
+    const usageData = await usage;
+
+    // Log usage
+    console.log(
+      `[requirementsGatherer:${projectId}] Usage Prompt: ${usageData.promptTokens} Completion: ${usageData.completionTokens} Total: ${usageData.totalTokens}`,
+    );
 
     stream.done();
   })();

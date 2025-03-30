@@ -11,6 +11,8 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
+import { canvasNodes } from "./canvas-nodes";
+import { chats } from "./chats";
 import { dependencies } from "./dependencies";
 import { files } from "./files";
 import { packages } from "./packages";
@@ -45,6 +47,7 @@ export const declarations = pgTable(
     fileId: text("file_id")
       .references(() => files.id)
       .notNull(),
+    canvasNodeId: text("canvas_node_id").references(() => canvasNodes.id),
   },
   (table) => ({
     createdAtIdx: index("declaration_created_at_idx").on(table.createdAt),
@@ -54,6 +57,10 @@ export const declarations = pgTable(
 export const declarationsRelations = relations(
   declarations,
   ({ one, many }) => ({
+    canvasNode: one(canvasNodes, {
+      fields: [declarations.canvasNodeId],
+      references: [canvasNodes.id],
+    }),
     previous: many(declarations),
     project: one(projects, {
       fields: [declarations.projectId],
@@ -64,10 +71,10 @@ export const declarationsRelations = relations(
       references: [users.id],
     }),
     dependencies: many(dependencies, {
-      relationName: "dependencies",
+      relationName: "dependency_declaration",
     }),
     dependents: many(dependencies, {
-      relationName: "dependents",
+      relationName: "dependent_declaration",
     }),
     file: one(files, {
       fields: [declarations.fileId],
@@ -75,6 +82,7 @@ export const declarationsRelations = relations(
     }),
     declarationPackages: many(declarationPackages),
     versions: many(versionDeclarations),
+    chats: many(chats),
   }),
 );
 

@@ -5,6 +5,7 @@ const connectionString = process.env.DATABASE_URL ?? "";
 export default {
   schema: [
     "./src/schema/auth.ts",
+    "./src/schema/canvas-nodes.ts",
     "./src/schema/chats.ts",
     "./src/schema/declarations.ts",
     "./src/schema/dependencies.ts",

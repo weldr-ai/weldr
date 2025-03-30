@@ -334,10 +334,12 @@ export const Fly = {
       projectId,
       machineId,
       command,
+      timeout = 120,
     }: {
       projectId: string;
       machineId: string;
-      command: string[];
+      command: string;
+      timeout?: number;
     }) => {
       // Start the machine if it's not already running
       await Fly.machine.start({
@@ -356,8 +358,8 @@ export const Fly = {
             Authorization: `Bearer ${flyApiKey}`,
           },
           body: {
-            command: command,
-            timeout: 60,
+            command: ["/bin/sh", "-c", command],
+            timeout,
           } satisfies components["schemas"]["MachineExecRequest"],
         },
       );

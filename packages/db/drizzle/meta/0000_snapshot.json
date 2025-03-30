@@ -1,5 +1,5 @@
 {
-  "id": "83b6ff66-7630-4ec4-8fdf-a8057b589e62",
+  "id": "acd75adf-7ce4-4257-a638-5481f941c433",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -346,6 +346,68 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.canvas_nodes": {
+      "name": "canvas_nodes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "canvas_node_types",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "created_at_idx": {
+          "name": "created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.attachments": {
       "name": "attachments",
       "schema": "",
@@ -552,17 +614,23 @@
           "notNull": true,
           "default": "now()"
         },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "canvas_node_id": {
+          "name": "canvas_node_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {
@@ -583,20 +651,29 @@
         }
       },
       "foreignKeys": {
-        "chats_user_id_users_id_fk": {
-          "name": "chats_user_id_users_id_fk",
-          "tableFrom": "chats",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "chats_project_id_projects_id_fk": {
           "name": "chats_project_id_projects_id_fk",
           "tableFrom": "chats",
           "tableTo": "projects",
           "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "chats_canvas_node_id_canvas_nodes_id_fk": {
+          "name": "chats_canvas_node_id_canvas_nodes_id_fk",
+          "tableFrom": "chats",
+          "tableTo": "canvas_nodes",
+          "columnsFrom": ["canvas_node_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "chats_user_id_users_id_fk": {
+          "name": "chats_user_id_users_id_fk",
+          "tableFrom": "chats",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -735,6 +812,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "canvas_node_id": {
+          "name": "canvas_node_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -787,6 +870,15 @@
           "tableFrom": "declarations",
           "tableTo": "files",
           "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "declarations_canvas_node_id_canvas_nodes_id_fk": {
+          "name": "declarations_canvas_node_id_canvas_nodes_id_fk",
+          "tableFrom": "declarations",
+          "tableTo": "canvas_nodes",
+          "columnsFrom": ["canvas_node_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -1421,12 +1513,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "ip_address_v6": {
-          "name": "ip_address_v6",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "initiated_at": {
           "name": "initiated_at",
           "type": "timestamp",
@@ -1820,10 +1906,15 @@
     }
   },
   "enums": {
+    "public.canvas_node_types": {
+      "name": "canvas_node_types",
+      "schema": "public",
+      "values": ["preview", "declaration"]
+    },
     "public.message_roles": {
       "name": "message_roles",
       "schema": "public",
-      "values": ["user", "assistant", "tool", "version"]
+      "values": ["user", "assistant", "tool", "version", "code"]
     },
     "public.package_type": {
       "name": "package_type",

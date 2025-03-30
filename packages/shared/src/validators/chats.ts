@@ -65,6 +65,14 @@ export const versionMessageRawContentSchema = z.object({
   versionNumber: z.number(),
 });
 
+export const codeMessageRawContentSchema = z.record(
+  z.string(),
+  z.object({
+    originalContent: z.string().optional(),
+    newContent: z.string().optional(),
+  }),
+);
+
 export const messageRawContentSchema = z.union([
   userMessageRawContentElementSchema.array(),
   assistantMessageRawContentElementSchema.array(),
@@ -86,6 +94,14 @@ const baseMessageSchema = z.object({
   createdAt: z.date(),
   chatId: z.string().optional(),
 });
+
+export const messageRoleSchema = z.enum([
+  "user",
+  "assistant",
+  "tool",
+  "version",
+  "code",
+]);
 
 export const userMessageSchema = baseMessageSchema.extend({
   role: z.literal("user"),
@@ -124,11 +140,17 @@ export const versionMessageSchema = baseMessageSchema.extend({
   rawContent: versionMessageRawContentSchema,
 });
 
+export const codeMessageSchema = baseMessageSchema.extend({
+  role: z.literal("code"),
+  rawContent: codeMessageRawContentSchema,
+});
+
 export const chatMessageSchema = z.discriminatedUnion("role", [
   userMessageSchema,
   assistantMessageSchema,
   toolMessageSchema,
   versionMessageSchema,
+  codeMessageSchema,
 ]);
 
 export const chatSchema = z.object({
@@ -155,6 +177,10 @@ export const addMessageItemSchema = z.discriminatedUnion("role", [
   z.object({
     role: z.literal("version"),
     rawContent: versionMessageRawContentSchema,
+  }),
+  z.object({
+    role: z.literal("code"),
+    rawContent: codeMessageRawContentSchema,
   }),
 ]);
 

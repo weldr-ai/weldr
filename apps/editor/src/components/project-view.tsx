@@ -13,8 +13,6 @@ import { api } from "@/lib/trpc/client";
 import type { Edge } from "@xyflow/react";
 import { Chat } from "./chat";
 import { MainDropdownMenu } from "./main-dropdown-menu";
-import { ProjectSettings } from "./project-settings";
-import { Versions } from "./versions";
 
 export function ProjectView({
   project,
@@ -60,15 +58,11 @@ export function ProjectView({
       </ResizablePanel>
       <ResizableHandle className="w-0" withHandle />
       <ResizablePanel
-        className="relative h-full pt-2"
+        className="h-full pt-2"
         defaultSize={75}
         minSize={25}
         order={2}
       >
-        <div className="absolute top-2 right-0 z-50 flex h-10 items-center gap-1 rounded-bl-lg border-b border-l bg-muted p-1">
-          <Versions versions={project.versions} />
-          <ProjectSettings project={project} />
-        </div>
         <Canvas
           project={project}
           initialNodes={initialNodes}

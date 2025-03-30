@@ -1,4 +1,5 @@
 export * from "./auth";
+export * from "./canvas-nodes";
 export * from "./chats";
 export * from "./declarations";
 export * from "./dependencies";

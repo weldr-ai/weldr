@@ -1,6 +1,5 @@
 "use client";
 
-import type { RouterOutputs } from "@weldr/api";
 import {
   type ReactNode,
   createContext,
@@ -38,16 +37,14 @@ export function useCommandCenter() {
   return context;
 }
 
-interface FlowBuilderContextType {
+interface CanvasContextType {
   showEdges: boolean;
   toggleEdges: () => void;
 }
 
-const FlowBuilderContext = createContext<FlowBuilderContextType | undefined>(
-  undefined,
-);
+const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
 
-export function FlowBuilderProvider({ children }: { children: ReactNode }) {
+export function CanvasProvider({ children }: { children: ReactNode }) {
   const [showEdges, setShowEdges] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -72,16 +69,16 @@ export function FlowBuilderProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <FlowBuilderContext.Provider value={{ showEdges, toggleEdges }}>
+    <CanvasContext.Provider value={{ showEdges, toggleEdges }}>
       {children}
-    </FlowBuilderContext.Provider>
+    </CanvasContext.Provider>
   );
 }
 
-export function useFlowBuilder() {
-  const context = useContext(FlowBuilderContext);
+export function useCanvas() {
+  const context = useContext(CanvasContext);
   if (context === undefined) {
-    throw new Error("useFlowBuilder must be used within a FlowBuilderProvider");
+    throw new Error("useCanvas must be used within a CanvasProvider");
   }
   return context;
 }
@@ -92,14 +89,24 @@ interface ProjectContextType {
     id: string;
     name: string | null;
     currentVersion:
-      | RouterOutputs["projects"]["byId"]["versions"][number]
+      | {
+          id: string;
+          number: number;
+          message: string;
+          machineId: string | null;
+        }
       | undefined;
   };
   setProject: (project: {
     id: string;
     name: string | null;
     currentVersion:
-      | RouterOutputs["projects"]["byId"]["versions"][number]
+      | {
+          id: string;
+          number: number;
+          message: string;
+          machineId: string | null;
+        }
       | undefined;
   }) => void;
 }
@@ -115,7 +122,12 @@ export function ProjectProvider({
     id: string;
     name: string | null;
     currentVersion:
-      | RouterOutputs["projects"]["byId"]["versions"][number]
+      | {
+          id: string;
+          number: number;
+          message: string;
+          machineId: string | null;
+        }
       | undefined;
   };
 }) {
@@ -143,7 +155,7 @@ export function AppStateProvider({
 }) {
   return (
     <CommandCenterProvider>
-      <FlowBuilderProvider>{children}</FlowBuilderProvider>
+      <CanvasProvider>{children}</CanvasProvider>
     </CommandCenterProvider>
   );
 }

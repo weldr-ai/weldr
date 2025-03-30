@@ -16,6 +16,7 @@ import type { TPendingMessage } from "@/types";
 import type { Attachment } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
+import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import { Textarea } from "@weldr/ui/textarea";
 import { cn } from "@weldr/ui/utils";
 import equal from "fast-deep-equal";
@@ -228,104 +229,117 @@ function PureMultimodalInput({
   }, [placeholderIndex, message, placeholders]);
 
   return (
-    <form
-      className={cn(
-        "relative flex w-full flex-col rounded-xl border bg-background",
-        formClassName,
-      )}
-    >
-      <input
-        type="file"
-        className="-top-4 -left-4 pointer-events-none fixed size-0.5 opacity-0"
-        ref={fileInputRef}
-        multiple
-        onChange={handleFileChange}
-        tabIndex={-1}
-      />
-
-      {(attachments.length > 0 || uploadQueue.length > 0) && (
-        <div
-          className={cn(
-            "flex flex-row items-end gap-2 overflow-x-scroll rounded-t-xl bg-muted p-2",
-            attachmentsClassName,
-          )}
-        >
-          {attachments.map((attachment) => (
-            <PreviewAttachment
-              key={attachment.id}
-              attachment={attachment}
-              onDelete={() => {
-                if (!attachment.name) return;
-                fetch("/api/attachments", {
-                  method: "DELETE",
-                  body: JSON.stringify({ filename: attachment.name }),
-                });
-                setAttachments((currentAttachments) =>
-                  currentAttachments.filter((a) => a.name !== attachment.name),
-                );
-              }}
-            />
-          ))}
-
-          {uploadQueue.map((filename) => (
-            <PreviewAttachment
-              key={filename}
-              attachment={{
-                id: "",
-                key: "",
-                size: 0,
-                url: "",
-                name: filename,
-                contentType: "",
-              }}
-              isUploading={true}
-            />
-          ))}
+    <div className="flex flex-col items-center justify-center">
+      {pendingMessage && (
+        <div className="flex w-[calc(100%-30px)] items-center gap-1 rounded-t-md border-x border-t bg-background p-1 text-muted-foreground text-xs">
+          <LogoIcon className="size-4 p-0" />
+          <span className="inline-flex w-fit animate-shine bg-[length:200%_100%] bg-[linear-gradient(90deg,hsl(var(--muted-foreground))_0%,hsl(var(--muted-foreground))_40%,hsl(var(--foreground))_50%,hsl(var(--muted-foreground))_60%,hsl(var(--muted-foreground))_100%)] bg-clip-text text-transparent">
+            {pendingMessage.charAt(0).toUpperCase() + pendingMessage.slice(1)}
+            ...
+          </span>
         </div>
       )}
-
-      <Textarea
-        ref={textareaRef}
-        placeholder={currentPlaceholder}
-        value={message}
-        onChange={(event) => setMessage(event.target.value)}
+      <form
         className={cn(
-          "!text-base max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 focus-visible:ring-0",
-          textareaClassName,
+          "relative flex w-full flex-col rounded-xl border bg-background",
+          formClassName,
         )}
-        rows={2}
-        autoFocus
-        disabled={!!pendingMessage}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-            event.preventDefault();
-            if (pendingMessage) {
-              toast({
-                description:
-                  "Please wait for the model to finish its response!",
-              });
-            } else {
-              submitForm();
+      >
+        <input
+          type="file"
+          className="-top-4 -left-4 pointer-events-none fixed size-0.5 opacity-0"
+          ref={fileInputRef}
+          multiple
+          onChange={handleFileChange}
+          tabIndex={-1}
+        />
+
+        {(attachments.length > 0 || uploadQueue.length > 0) && (
+          <div
+            className={cn(
+              "flex flex-row items-end gap-2 overflow-x-scroll rounded-t-xl bg-muted p-2",
+              attachmentsClassName,
+            )}
+          >
+            {attachments.map((attachment) => (
+              <PreviewAttachment
+                key={attachment.id}
+                attachment={attachment}
+                onDelete={() => {
+                  if (!attachment.name) return;
+                  fetch("/api/attachments", {
+                    method: "DELETE",
+                    body: JSON.stringify({ filename: attachment.name }),
+                  });
+                  setAttachments((currentAttachments) =>
+                    currentAttachments.filter(
+                      (a) => a.name !== attachment.name,
+                    ),
+                  );
+                }}
+              />
+            ))}
+
+            {uploadQueue.map((filename) => (
+              <PreviewAttachment
+                key={filename}
+                attachment={{
+                  id: "",
+                  key: "",
+                  size: 0,
+                  url: "",
+                  name: filename,
+                  contentType: "",
+                }}
+                isUploading={true}
+              />
+            ))}
+          </div>
+        )}
+
+        <Textarea
+          ref={textareaRef}
+          placeholder={currentPlaceholder}
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          className={cn(
+            "!text-base max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 focus-visible:ring-0",
+            textareaClassName,
+          )}
+          rows={2}
+          autoFocus
+          disabled={!!pendingMessage}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+              event.preventDefault();
+              if (pendingMessage) {
+                toast({
+                  description:
+                    "Please wait for the model to finish its response!",
+                });
+              } else {
+                submitForm();
+              }
             }
-          }
-        }}
-      />
-
-      <div className="absolute bottom-2 left-2 flex w-fit flex-row justify-start">
-        <AttachmentsButton
-          fileInputRef={fileInputRef}
-          pendingMessage={pendingMessage}
+          }}
         />
-      </div>
 
-      <div className="absolute right-2 bottom-2 flex w-fit flex-row justify-end">
-        <SendButton
-          message={message}
-          submitForm={submitForm}
-          uploadQueue={uploadQueue}
-        />
-      </div>
-    </form>
+        <div className="absolute bottom-2 left-2 flex w-fit flex-row justify-start">
+          <AttachmentsButton
+            fileInputRef={fileInputRef}
+            pendingMessage={pendingMessage}
+          />
+        </div>
+
+        <div className="absolute right-2 bottom-2 flex w-fit flex-row justify-end">
+          <SendButton
+            message={message}
+            submitForm={submitForm}
+            uploadQueue={uploadQueue}
+          />
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -396,3 +410,22 @@ const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
   if (prevProps.message !== nextProps.message) return false;
   return true;
 });
+
+export const PendingMessage = ({
+  type,
+}: {
+  type: Exclude<TPendingMessage, null>;
+}) => {
+  return (
+    <div key="thinking" className="flex w-full flex-col gap-2">
+      <div className="flex items-center gap-1">
+        <LogoIcon className="size-6 p-0" />
+        <span className="text-muted-foreground text-xs">Weldr</span>
+      </div>
+      <span className="inline-flex w-fit animate-shine bg-[length:200%_100%] bg-[linear-gradient(90deg,hsl(var(--muted-foreground))_0%,hsl(var(--muted-foreground))_40%,hsl(var(--foreground))_50%,hsl(var(--muted-foreground))_60%,hsl(var(--muted-foreground))_100%)] bg-clip-text text-transparent">
+        {type.charAt(0).toUpperCase() + type.slice(1)}
+        ...
+      </span>
+    </div>
+  );
+};

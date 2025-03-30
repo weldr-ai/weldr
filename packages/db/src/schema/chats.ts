@@ -1,6 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import type {
   AssistantMessageRawContent,
+  CodeMessageRawContent,
   ToolMessageRawContent,
   UserMessageRawContent,
   VersionMessageRawContent,
@@ -16,6 +17,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
+import { canvasNodes } from "./canvas-nodes";
 import { projects } from "./projects";
 
 export const messageRoles = pgEnum("message_roles", [
@@ -23,6 +25,7 @@ export const messageRoles = pgEnum("message_roles", [
   "assistant",
   "tool",
   "version",
+  "code",
 ]);
 
 export const chats = pgTable(
@@ -32,12 +35,15 @@ export const chats = pgTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    userId: text("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
     projectId: text("project_id").references(() => projects.id, {
       onDelete: "cascade",
     }),
+    canvasNodeId: text("canvas_node_id").references(() => canvasNodes.id, {
+      onDelete: "cascade",
+    }),
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
   },
   (t) => ({
     createdAtIdx: index("chats_created_at_idx").on(t.createdAt),
@@ -53,6 +59,10 @@ export const chatRelations = relations(chats, ({ one, many }) => ({
   project: one(projects, {
     fields: [chats.projectId],
     references: [projects.id],
+  }),
+  canvasNode: one(canvasNodes, {
+    fields: [chats.canvasNodeId],
+    references: [canvasNodes.id],
   }),
 }));
 
@@ -70,6 +80,7 @@ export const chatMessages = pgTable(
         | AssistantMessageRawContent
         | ToolMessageRawContent
         | VersionMessageRawContent
+        | CodeMessageRawContent
       >()
       .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

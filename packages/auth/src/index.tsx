@@ -16,7 +16,9 @@ export const auth = betterAuth({
   }),
   emailVerification: {
     async sendVerificationEmail({ user, url }) {
-      console.log("Sending verification email to", user.email);
+      console.log(
+        `[auth:sendVerificationEmail:${user.id}] Sending verification email to ${user.email}`,
+      );
       await resend.emails.send({
         from: "Weldr <noreply@weldr.ai>",
         to: user.email,

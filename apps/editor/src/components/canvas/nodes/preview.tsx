@@ -1,6 +1,6 @@
 "use client";
 
-import { useProject } from "@/lib/store";
+import type { CanvasNodeProps } from "@/types";
 import { Button, buttonVariants } from "@weldr/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@weldr/ui/dialog";
 import { cn } from "@weldr/ui/utils";
@@ -15,15 +15,19 @@ import {
 } from "lucide-react";
 import { memo, useEffect, useState } from "react";
 
-export const PreviewNode = memo(() => {
-  const { project: projectContext } = useProject();
+export const PreviewNode = memo(({ data }: CanvasNodeProps) => {
+  if (data.type !== "preview") {
+    return null;
+  }
+
+  const { projectId, machineId } = data;
   const [iframeKey, setIframeKey] = useState(0);
   const [currentPath, setCurrentPath] = useState("/");
   const [isMobile, setIsMobile] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const previewUrl = projectContext.currentVersion
-    ? `https://${projectContext.currentVersion.machineId}-${projectContext.id}.preview.weldr.app`
+  const previewUrl = machineId
+    ? `https://${machineId}-${projectId}.preview.weldr.app`
     : "";
 
   // Listen to messages from iframe to track path changes
@@ -69,7 +73,7 @@ export const PreviewNode = memo(() => {
         isMobile ? "h-[844px] w-[390px]" : "h-[800px] w-[1200px]",
       )}
     >
-      {projectContext.currentVersion ? (
+      {machineId ? (
         <>
           <div className="flex h-10 items-center gap-2 rounded-t-lg border px-2">
             <div className="flex items-center gap-1">

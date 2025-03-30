@@ -1,5 +1,16 @@
 "use client";
 
+import "@/styles/flow-builder.css";
+import "@xyflow/react/dist/base.css";
+
+import { useCanvas } from "@/lib/store";
+import { api } from "@/lib/trpc/client";
+import type { CanvasNode } from "@/types";
+import type { RouterOutputs } from "@weldr/api";
+import { Button } from "@weldr/ui/button";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { useTheme } from "@weldr/ui/theme-provider";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
 import type { ColorMode, Edge } from "@xyflow/react";
 import {
   Background,
@@ -10,32 +21,16 @@ import {
   useReactFlow,
   useViewport,
 } from "@xyflow/react";
-import {
-  AppWindowIcon,
-  EyeIcon,
-  EyeOffIcon,
-  FunctionSquareIcon,
-  MinusIcon,
-  PlusIcon,
-} from "lucide-react";
-import type React from "react";
+import { EyeIcon, EyeOffIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useCallback } from "react";
-
-import type { CanvasNode } from "@/types";
-
-import "@/styles/flow-builder.css";
-import "@xyflow/react/dist/base.css";
-
-import { Button } from "@weldr/ui/button";
-
-import { useFlowBuilder } from "@/lib/store";
-import type { RouterOutputs } from "@weldr/api";
-import { useTheme } from "@weldr/ui/theme-provider";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
+import { ProjectSettings } from "../project-settings";
+import { Versions } from "../versions";
+import { DeclarationNode } from "./nodes/declaration";
 import { PreviewNode } from "./nodes/preview";
 
 const nodeTypes = {
   preview: PreviewNode,
+  declaration: DeclarationNode,
 };
 
 export function Canvas({
@@ -47,7 +42,7 @@ export function Canvas({
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
 }) {
-  const { showEdges, toggleEdges } = useFlowBuilder();
+  const { showEdges, toggleEdges } = useCanvas();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();
@@ -55,105 +50,38 @@ export function Canvas({
     useNodesState<CanvasNode>(initialNodes);
   const [edges, _setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
 
-  // const apiUtils = api.useUtils();
+  const updateNode = api.canvasNodes.update.useMutation({
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
-  // const createNode = api.nodes.create.useMutation({
-  //   onSuccess: (data) => {
-  //     updateNodeData(data.id, data);
-  //     apiUtils.nodes.byId.invalidate({ id: data.id });
-  //   },
-  //   onError: (error) => {
-  //     toast({
-  //       title: "Error",
-  //       description: error.message,
-  //       variant: "destructive",
-  //     });
-  //   },
-  // });
+  const onNodeDragStop = useCallback(
+    async (
+      _event: React.MouseEvent,
+      node: CanvasNode,
+      _nodes: CanvasNode[],
+    ) => {
+      const updatedData = {
+        where: {
+          id: node.id,
+        },
+        payload: {
+          position: {
+            x: Math.floor(node.position.x),
+            y: Math.floor(node.position.y),
+          },
+        },
+      };
 
-  // const updateNode = api.nodes.update.useMutation({
-  //   onError: (error) => {
-  //     toast({
-  //       title: "Error",
-  //       description: error.message,
-  //       variant: "destructive",
-  //     });
-  //   },
-  // });
-
-  const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }, []);
-
-  // const onDrop = useCallback(
-  //   async (event: React.DragEvent<HTMLDivElement>) => {
-  //     event.preventDefault();
-
-  //     const position = screenToFlowPosition({
-  //       x: event.clientX,
-  //       y: event.clientY,
-  //     });
-
-  //     const type = event.dataTransfer.getData("type") as
-  //       | "page"
-  //       | "function"
-  //       | "endpoint";
-
-  //     const newNodeId = createId();
-  //     const newNode: CanvasNode = {
-  //       id: newNodeId,
-  //       type,
-  //       position: {
-  //         x: position.x,
-  //         y: position.y,
-  //       },
-  //     } as CanvasNode;
-
-  //     await createNode.mutateAsync({
-  //       id: newNodeId,
-  //       projectId,
-  //       type,
-  //       position: {
-  //         x: position.x,
-  //         y: position.y,
-  //       },
-  //     });
-
-  //     setNodes((nodes) => nodes.concat(newNode));
-  //   },
-  //   [createNode, setNodes, screenToFlowPosition, projectId],
-  // );
-
-  // const onNodeDragStop = useCallback(
-  //   async (
-  //     _event: React.MouseEvent,
-  //     node: ReactFlowNode,
-  //     _nodes: ReactFlowNode[],
-  //   ) => {
-  //     const updatedData = {
-  //       where: {
-  //         id: node.id,
-  //       },
-  //       payload: {
-  //         position: {
-  //           x: Math.floor(node.position.x),
-  //           y: Math.floor(node.position.y),
-  //         },
-  //       },
-  //     };
-  //     await updateNode.mutateAsync(updatedData);
-  //   },
-  //   [updateNode],
-  // );
-
-  const onDragStart = (
-    event: React.DragEvent<HTMLDivElement>,
-    type: "page" | "function" | "endpoint",
-  ) => {
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("type", type);
-  };
+      await updateNode.mutateAsync(updatedData);
+    },
+    [updateNode],
+  );
 
   return (
     <ReactFlow
@@ -162,9 +90,7 @@ export function Canvas({
       onNodesChange={onNodesChange}
       edges={showEdges ? edges : []}
       onEdgesChange={onEdgesChange}
-      // onDrop={onDrop}
-      // onNodeDragStop={onNodeDragStop}
-      onDragOver={onDragOver}
+      onNodeDragStop={onNodeDragStop}
       deleteKeyCode={null}
       nodeTypes={nodeTypes}
       panOnScroll={true}
@@ -180,77 +106,18 @@ export function Canvas({
         className="bg-muted dark:bg-background"
         color="hsl(var(--background))"
       />
-      <Panel
-        position="bottom-center"
-        className="flex items-center gap-1 rounded-md border bg-background p-1 dark:bg-muted"
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className="inline-flex size-8 items-center justify-center rounded-md px-2 text-xs hover:cursor-grab hover:bg-accent hover:text-accent-foreground"
-              onDragStart={(event) => onDragStart(event, "page")}
-              draggable
-            >
-              <AppWindowIcon className="size-4" />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="border bg-muted">
-            <p>Page</p>
-          </TooltipContent>
-        </Tooltip>
 
-        {/* <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className="inline-flex size-8 items-center justify-center rounded-md px-2 text-xs hover:cursor-grab hover:bg-accent hover:text-accent-foreground"
-              onDragStart={(event) => onDragStart(event, "component")}
-              draggable
-            >
-              <ComponentIcon className="size-4" />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="border bg-muted">
-            <p>UI Component</p>
-          </TooltipContent>
-        </Tooltip> */}
+      <Panel position="top-right" className="flex items-center gap-2">
+        <Versions versions={project.versions} />
+        <ProjectSettings project={project} />
+      </Panel>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className="inline-flex size-8 items-center justify-center rounded-md px-2 text-xs hover:cursor-grab hover:bg-accent hover:text-accent-foreground"
-              onDragStart={(event) => onDragStart(event, "function")}
-              draggable
-            >
-              <FunctionSquareIcon className="size-4" />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="border bg-muted">
-            <p>Function</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className="inline-flex size-8 items-center justify-center rounded-md px-2 text-xs hover:cursor-grab hover:bg-accent hover:text-accent-foreground"
-              onDragStart={(event) => onDragStart(event, "endpoint")}
-              draggable
-            >
-              <span className="font-semibold text-[10px]">HTTP</span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="border bg-muted">
-            <p>Endpoint</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <div className="h-9 border-l" />
-
+      <Panel position="bottom-right" className="flex flex-col items-end gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="size-8 rounded-md"
-              variant="ghost"
+              className="size-8 rounded-md bg-muted"
+              variant="outline"
               size="icon"
               onClick={toggleEdges}
             >
@@ -262,41 +129,43 @@ export function Canvas({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="border bg-muted">
-            <p>Show edges</p>
+            <p>Show Dependencies</p>
           </TooltipContent>
         </Tooltip>
 
-        <Button
-          className="size-8 rounded-md"
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            zoomOut();
-          }}
-        >
-          <MinusIcon className="size-4" />
-        </Button>
-        <Button
-          className="h-8 rounded-md px-2 text-xs"
-          variant="ghost"
-          onClick={() => {
-            fitView({
-              maxZoom: 1,
-            });
-          }}
-        >
-          {`${Math.floor(viewPort.zoom * 100)}%`}
-        </Button>
-        <Button
-          className="size-8 rounded-md"
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            zoomIn();
-          }}
-        >
-          <PlusIcon className="size-4" />
-        </Button>
+        <div className="flex items-center gap-1 rounded-md border bg-background p-0.5 dark:bg-muted">
+          <Button
+            className="size-8 rounded-md"
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              zoomOut();
+            }}
+          >
+            <MinusIcon className="size-4" />
+          </Button>
+          <Button
+            className="h-8 rounded-md px-2 text-xs"
+            variant="ghost"
+            onClick={() => {
+              fitView({
+                maxZoom: 1,
+              });
+            }}
+          >
+            {`${Math.floor(viewPort.zoom * 100)}%`}
+          </Button>
+          <Button
+            className="size-8 rounded-md"
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              zoomIn();
+            }}
+          >
+            <PlusIcon className="size-4" />
+          </Button>
+        </div>
       </Panel>
     </ReactFlow>
   );

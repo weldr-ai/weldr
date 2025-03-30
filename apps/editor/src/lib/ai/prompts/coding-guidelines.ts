@@ -80,7 +80,7 @@ export const codingGuidelines = `<current_tech_stack>
   - Prefer using try/catch over .then().catch().
 
   <example_code_style>
-    \`\`\`typescript
+    \`\`\`
     // CORRECT: Type imports
     import type { User } from '@/types'
     import { type Config } from '@/config'
@@ -104,7 +104,7 @@ export const codingGuidelines = `<current_tech_stack>
 
   <example_server_function>
     /src/server/queries/blogs.ts
-    \`\`\`typescript
+    \`\`\`
       import "server-only";
 
       export async function getBlogs() {
@@ -124,7 +124,7 @@ export const codingGuidelines = `<current_tech_stack>
 
   <example_tRPC_router>
     /src/server/api/routers/blogs.ts
-    \`\`\`typescript
+    \`\`\`
     import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
     import { blogs } from "@/server/db/schema";
 
@@ -146,7 +146,7 @@ export const codingGuidelines = `<current_tech_stack>
     - You are provided with an \`api\` object to call the procedures with TanStack Query.
 
     /src/components/blogs-list.tsx
-    \`\`\`typescriptreact
+    \`\`\`
     "use client";
 
     import { api } from "@/trpc/react";
@@ -166,7 +166,7 @@ export const codingGuidelines = `<current_tech_stack>
     - You are provided with an \`api\` object to call the procedures with TanStack Query.
 
     /src/app/blogs/page.tsx
-    \`\`\`typescriptreact
+    \`\`\`
     import { api, HydrateClient } from "@/trpc/server";
 
     function Hydration() {
@@ -218,7 +218,7 @@ export const codingGuidelines = `<current_tech_stack>
 
   <example_getting_session_on_server>
     /src/app/blogs/page.tsx
-    \`\`\`typescriptreact
+    \`\`\`
     import { auth } from "@/lib/auth";
     import { headers } from "next/headers";
 
@@ -243,7 +243,7 @@ export const codingGuidelines = `<current_tech_stack>
 
   <example_getting_session_on_client>
     /src/components/user-button.tsx
-    \`\`\`typescriptreact
+    \`\`\`
     "use client";
 
     import { auth } from "@/lib/auth/react";
@@ -267,7 +267,7 @@ export const codingGuidelines = `<current_tech_stack>
     - Weldr MUST write the relations in the same file of the table.
 
     /src/db/schema/blogs.ts
-    \`\`\`typescript
+    \`\`\`
     import { relations } from "drizzle-orm";
     import { pgTable, serial, text } from "drizzle-orm/pg-core";
     import { users } from "./users";
@@ -290,7 +290,7 @@ export const codingGuidelines = `<current_tech_stack>
     After defining the table, you MUST export it in the index file.
 
     /src/db/schema/index.ts
-    \`\`\`typescript
+    \`\`\`
     export * from "./blogs";
     export * from "./users";
     \`\`\`
@@ -301,7 +301,7 @@ export const codingGuidelines = `<current_tech_stack>
     - You can use anything from the \`drizzle-orm\` package.
 
     /src/server/db/queries/blogs.ts
-    \`\`\`typescript
+    \`\`\`
     import { db } from "@/server/db";
     import { blogs } from "@/server/db/schema";
 
@@ -317,7 +317,7 @@ export const codingGuidelines = `<current_tech_stack>
   - Tailwind CSS for styling
 
   <example_shadcn_ui_color_variables>
-    \`\`\`typescriptreact
+    \`\`\`
     export default function Component() {
       return (
         // CORRECT: Use semantic color variables
@@ -347,7 +347,7 @@ export const codingGuidelines = `<current_tech_stack>
 
 <use_native_apis>
   PREFER Native APIs:
-  \`\`\`typescript
+  \`\`\`
   // CORRECT: Using native fetch
   async function getData() {
     const res = await fetch('/api/data')
@@ -377,7 +377,7 @@ export const codingGuidelines = `<current_tech_stack>
 
   <example_building_forms>
     /src/components/create-bookmark-form.tsx
-    \`\`\`typescriptreact
+    \`\`\`
     "use client";
 
     import { useForm } from "react-hook-form";
@@ -450,7 +450,7 @@ export const codingGuidelines = `<current_tech_stack>
     For example:
 
     /src/app/posts/[slug]/page.tsx
-    \`\`\`typescriptreact
+    \`\`\`
     import { headers } from "next/headers";
     import { cookies } from "next/headers";
 

@@ -47,10 +47,6 @@ export function CommandCenter({
     return () => document.removeEventListener("keydown", down);
   }, [setOpen, asDialog]);
 
-  useEffect(() => {
-    setIsCreateMode(open !== "view");
-  }, [open]);
-
   const content = (
     <div className="flex size-full">
       {isCreateMode ? (
@@ -160,9 +156,16 @@ export function CommandCenter({
       {asDialog ? (
         <CommandDialog
           open={open !== null}
-          onOpenChange={(isOpen) =>
-            setOpen(isOpen ? (isCreateMode ? "create" : "view") : null)
-          }
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setOpen(null);
+              setTimeout(() => {
+                setIsCreateMode(false);
+              }, 300);
+            } else {
+              setOpen(isCreateMode ? "create" : "view");
+            }
+          }}
           className="h-[600px] w-[896px] max-w-4xl"
         >
           {content}

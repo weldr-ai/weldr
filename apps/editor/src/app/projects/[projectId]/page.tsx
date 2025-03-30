@@ -16,28 +16,41 @@ export default async function ProjectPage({
     // const integrations = await api.integrations.list();
     const project = await api.projects.byId({ id: projectId });
 
-    const initialNodes: CanvasNode[] = [
-      {
-        id: "preview",
-        type: "preview",
-        data: {},
-        position: { x: 0, y: 0 },
-      },
-    ];
+    const initialNodes: CanvasNode[] =
+      project.declarations?.map((declaration) => ({
+        id: declaration.canvasNodeId ?? "",
+        type: "declaration" as const,
+        data: declaration,
+        position: declaration.canvasNode?.position ?? {
+          x: 0,
+          y: 0,
+        },
+      })) ?? [];
     const initialEdges: Edge[] = [];
+
+    if (project.currentVersion) {
+      initialNodes.push({
+        id: "preview",
+        type: "preview" as const,
+        position: {
+          x: 0,
+          y: 0,
+        },
+        data: {
+          type: "preview",
+          projectId: project.id,
+          machineId: project.currentVersion.machineId,
+        },
+      });
+    }
 
     return (
       <ProjectView
         project={project}
         initialNodes={initialNodes}
-        initialEdges={initialEdges ?? []}
+        initialEdges={initialEdges}
         // integrations={integrations}
       />
-      // <Canvas
-      //   projectId={project.id}
-      //   initialNodes={initialNodes}
-      //   initialEdges={initialEdges ?? []}
-      // />
     );
   } catch (error) {
     console.error(error);

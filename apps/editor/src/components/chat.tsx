@@ -1,10 +1,11 @@
 import { requirementsGatherer } from "@/lib/ai/agents/requirements-gatherer";
 import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
-import type { TPendingMessage } from "@/types";
+import type { CanvasNode, TPendingMessage } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
+import { useReactFlow } from "@xyflow/react";
 import { readStreamableValue } from "ai/rsc";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Messages } from "./messages";
@@ -21,7 +22,7 @@ export function Chat({
   chatId,
   // integrations
 }: ChatProps) {
-  const { project } = useProject();
+  const { project, setProject } = useProject();
 
   const { data: session } = authClient.useSession();
 
@@ -40,6 +41,9 @@ export function Chat({
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   const generationTriggered = useRef(false);
+
+  const { getNodes, getNode, setNodes, updateNodeData } =
+    useReactFlow<CanvasNode>();
 
   const triggerGeneration = useCallback(async () => {
     setPendingMessage("thinking");
@@ -103,6 +107,20 @@ export function Chat({
         case "tool": {
           if (delta.toolName === "setupResourceTool") {
             setPendingMessage("waiting");
+            setMessages((prevMessages) => {
+              return [
+                ...prevMessages,
+                {
+                  id: createId(),
+                  role: "tool",
+                  createdAt: new Date(),
+                  rawContent: {
+                    toolName: delta.toolName,
+                    toolArgs: delta.toolArgs,
+                  },
+                },
+              ];
+            });
           }
 
           if (delta.toolName === "initializeProjectTool") {
@@ -136,30 +154,123 @@ export function Chat({
               setPendingMessage(null);
             }
           }
-
+          break;
+        }
+        case "version": {
           setMessages((prevMessages) => {
             return [
               ...prevMessages,
               {
-                id: createId(),
-                role: "tool",
+                id: delta.id,
+                role: "version",
                 createdAt: new Date(),
                 rawContent: {
-                  toolName: delta.toolName,
-                  toolArgs: delta.toolArgs,
+                  versionNumber: delta.versionNumber,
+                  versionId: delta.versionId,
+                  versionMessage: delta.versionMessage,
                 },
               },
             ];
           });
+
+          setProject({
+            ...project,
+            currentVersion: {
+              id: delta.versionId,
+              number: delta.versionNumber,
+              message: delta.versionMessage,
+              machineId: delta.machineId,
+            },
+          });
+
+          const previewNode = getNode("preview");
+
+          if (!previewNode) {
+            setNodes((prevNodes) => [
+              ...prevNodes,
+              {
+                id: "preview",
+                type: "preview",
+                position: {
+                  x: 0,
+                  y: 0,
+                },
+                data: {
+                  type: "preview",
+                  projectId: project.id,
+                  machineId: delta.machineId,
+                },
+              },
+            ]);
+          }
+
+          break;
+        }
+        case "code": {
+          setMessages((prevMessages) => {
+            const lastMessage = prevMessages[prevMessages.length - 1];
+
+            if (lastMessage?.role !== "code") {
+              return [
+                ...prevMessages,
+                {
+                  id: delta.id,
+                  role: "code",
+                  createdAt: new Date(),
+                  rawContent: delta.files,
+                },
+              ];
+            }
+
+            const messagesWithoutLast = prevMessages.slice(0, -1);
+
+            const updatedLastMessage = {
+              ...lastMessage,
+              rawContent: {
+                ...lastMessage.rawContent,
+                ...delta.files,
+              },
+            };
+
+            return [...messagesWithoutLast, updatedLastMessage];
+          });
+          break;
+        }
+        case "nodes": {
+          const nodes = getNodes();
+          const existingNode = nodes.find((n) => n.id === delta.node.id);
+
+          if (existingNode) {
+            updateNodeData(existingNode.id, delta.node);
+          } else {
+            const newNode = {
+              id: delta.node.id,
+              type: "declaration" as const,
+              position: delta.node.canvasNode?.position ?? {
+                x: 0,
+                y: 0,
+              },
+              data: delta.node,
+            };
+            setNodes((prevNodes: CanvasNode[]) => [...prevNodes, newNode]);
+          }
           break;
         }
       }
     }
 
     await apiUtils.chats.messages.invalidate({ chatId });
-
     setPendingMessage(null);
-  }, [chatId, project.id, apiUtils]);
+  }, [
+    chatId,
+    apiUtils,
+    getNodes,
+    getNode,
+    setNodes,
+    updateNodeData,
+    project,
+    setProject,
+  ]);
 
   useEffect(() => {
     if (lastMessage?.role === "user" && !generationTriggered.current) {

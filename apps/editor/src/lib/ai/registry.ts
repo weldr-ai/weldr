@@ -1,0 +1,20 @@
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createFireworks } from "@ai-sdk/fireworks";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createProviderRegistry } from "ai";
+
+export const registry = createProviderRegistry({
+  anthropic: createAnthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  }),
+  openai: createOpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  }),
+  google: createGoogleGenerativeAI({
+    apiKey: process.env.GEMINI_API_KEY,
+  }),
+  fireworks: createFireworks({
+    apiKey: process.env.FIREWORKS_API_KEY,
+  }),
+});

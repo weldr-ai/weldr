@@ -19,7 +19,10 @@ const config = {
         hostname: "localhost",
       },
       {
-        hostname: "*.fly.storage.tigris.dev",
+        hostname: "*.s3.eu-central-1.amazonaws.com",
+      },
+      {
+        hostname: "*.s3.us-east-1.amazonaws.com",
       },
     ],
   },

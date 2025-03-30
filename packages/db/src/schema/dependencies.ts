@@ -51,10 +51,12 @@ export const dependencies = pgTable(
 
 export const dependenciesRelations = relations(dependencies, ({ one }) => ({
   dependency: one(declarations, {
+    relationName: "dependency_declaration",
     fields: [dependencies.dependencyId],
     references: [declarations.id],
   }),
   dependent: one(declarations, {
+    relationName: "dependent_declaration",
     fields: [dependencies.dependentId],
     references: [declarations.id],
   }),
