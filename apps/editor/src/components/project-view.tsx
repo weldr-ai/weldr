@@ -9,13 +9,14 @@ import {
 } from "@weldr/ui/resizable";
 
 import { Canvas } from "@/components/canvas";
+import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { Edge } from "@xyflow/react";
 import { Chat } from "./chat";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 
 export function ProjectView({
-  project,
+  project: _project,
   initialNodes,
   initialEdges,
   // integrations,
@@ -25,6 +26,18 @@ export function ProjectView({
   initialEdges: Edge[];
   // integrations: RouterOutputs["integrations"]["list"];
 }) {
+  const { project: projectData } = useProject();
+
+  const { data: project } = api.projects.byId.useQuery(
+    {
+      id: _project.id,
+      currentVersionId: projectData.currentVersion?.id,
+    },
+    {
+      initialData: _project,
+    },
+  );
+
   const { data: messages } = api.chats.messages.useQuery(
     {
       chatId: project.chat.id,

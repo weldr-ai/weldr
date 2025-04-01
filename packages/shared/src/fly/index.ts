@@ -135,6 +135,10 @@ export const Fly = {
               },
               services: [
                 {
+                  protocol: "tcp",
+                  internal_port: 3000,
+                  autostop: "suspend",
+                  autostart: true,
                   ports: [
                     {
                       port: 443,
@@ -145,10 +149,6 @@ export const Fly = {
                       handlers: ["http"],
                     },
                   ],
-                  protocol: "tcp",
-                  internal_port: 3000,
-                  autostart: true,
-                  autostop: "stop",
                 },
               ],
               ...config,

@@ -20,7 +20,7 @@ import {
 import { ScrollArea } from "@weldr/ui/scroll-area";
 import { cn } from "@weldr/ui/utils";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
-import { AppWindowIcon, FunctionSquareIcon } from "lucide-react";
+import { AppWindowIcon, ComponentIcon, FunctionSquareIcon } from "lucide-react";
 import type { OpenAPIV3 } from "openapi-types";
 import { memo } from "react";
 import type { z } from "zod";
@@ -340,8 +340,13 @@ const DeclarationNodeCard = memo(
           ) : metadata.type === "component" ? (
             metadata.definition.subtype === "page" ? (
               <>
-                <AppWindowIcon className="size-4" />
+                <AppWindowIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">Page</span>
+              </>
+            ) : metadata.definition.subtype === "reusable" ? (
+              <>
+                <ComponentIcon className="size-4 text-primary" />
+                <span className="text-muted-foreground">Component</span>
               </>
             ) : null
           ) : null}

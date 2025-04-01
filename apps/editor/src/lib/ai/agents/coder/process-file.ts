@@ -56,6 +56,7 @@ export async function processFile({
         path,
         userId,
       })
+      .onConflictDoNothing()
       .returning();
 
     file = insertedFile;

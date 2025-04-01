@@ -1,5 +1,5 @@
 "use client";
-import { BoxesIcon, ExternalLinkIcon, PlusIcon } from "lucide-react";
+import { BoxesIcon, ExternalLinkIcon, PlusIcon, TrashIcon } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
@@ -14,25 +14,34 @@ import {
 } from "@weldr/ui/command";
 
 import { useCommandCenter } from "@/lib/store";
+import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@weldr/api";
 import { Button, buttonVariants } from "@weldr/ui/button";
+import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import { cn } from "@weldr/ui/utils";
 import Link from "next/link";
 import { CreateProjectForm } from "./create-project-form";
+import { DeleteAlertDialog } from "./delete-alert-dialog";
 
 export function CommandCenter({
-  projects,
+  projects: _projects,
   asDialog = true,
 }: {
   projects: RouterOutputs["projects"]["list"];
   asDialog?: boolean;
 }) {
   const { open, setOpen } = useCommandCenter();
+  const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<
     RouterOutputs["projects"]["list"][0] | null
   >(null);
   const [isCreateMode, setIsCreateMode] = useState(true);
+
+  const apiUtils = api.useUtils();
+  const { data: projects } = api.projects.list.useQuery(undefined, {
+    initialData: _projects,
+  });
 
   useEffect(() => {
     if (!asDialog) return;
@@ -46,6 +55,24 @@ export function CommandCenter({
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, [setOpen, asDialog]);
+
+  const deleteProject = api.projects.delete.useMutation({
+    onSuccess: () => {
+      setDeleteProjectOpen(false);
+      apiUtils.projects.list.invalidate();
+      toast({
+        title: "Project deleted",
+        description: "Your project has been deleted",
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Failed to delete project",
+        description: "Please try again",
+      });
+    },
+  });
 
   const content = (
     <div className="flex size-full">
@@ -122,22 +149,40 @@ export function CommandCenter({
                   )}
                 </Link>
 
-                <div className="flex items-center space-x-2">
-                  <h2 className="font-semibold text-xl">
-                    {selectedProject.name}
-                  </h2>
-                  <Link
-                    href={`/projects/${selectedProject.id}`}
-                    className={cn(
-                      buttonVariants({
-                        variant: "ghost",
-                        size: "icon",
-                      }),
-                      "size-7",
-                    )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <h2 className="font-semibold text-xl">
+                      {selectedProject.name}
+                    </h2>
+                    <Link
+                      href={`/projects/${selectedProject.id}`}
+                      className={cn(
+                        buttonVariants({
+                          variant: "ghost",
+                          size: "icon",
+                        }),
+                        "size-7",
+                      )}
+                    >
+                      <ExternalLinkIcon className="size-3" />
+                    </Link>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-destructive hover:text-destructive"
+                    onClick={() => setDeleteProjectOpen(true)}
                   >
-                    <ExternalLinkIcon className="size-3" />
-                  </Link>
+                    <TrashIcon className="size-3.5" />
+                  </Button>
+                  <DeleteAlertDialog
+                    open={deleteProjectOpen}
+                    setOpen={setDeleteProjectOpen}
+                    onDelete={() => {
+                      deleteProject.mutate({ id: selectedProject.id });
+                    }}
+                    confirmText={selectedProject.name ?? "undefined"}
+                  />
                 </div>
               </div>
             ) : (

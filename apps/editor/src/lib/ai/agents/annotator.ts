@@ -24,7 +24,7 @@ export async function annotator({
   };
   previousVersionDeclarations: InferSelectModel<typeof declarations>[];
 }) {
-  const { object, usage } = streamObject({
+  const { object, usage, partialObjectStream } = streamObject({
     model: registry.languageModel("anthropic:claude-3-5-sonnet-latest"),
     schema: z.object({
       data: z
@@ -55,8 +55,10 @@ export async function annotator({
       You must create metadata for new declarations and update the metadata for updated declarations if needed.
       Important:
       - We are using next.js with app router.
-      - Pages and layouts will only exist under src/app.
-      - REST API routes will only exist under src/app/api.`,
+      - Pages and layouts will ONLY exist under src/app.
+      - REST API routes will ONLY exist under src/app/api.
+      - The codebase is using typescript.
+      - You SHOULD NOT create new metadata for updated declarations if it is not needed.`,
     prompt: `# Code
 
 ${file.path}
@@ -72,13 +74,16 @@ ${
     : ""
 }${
   previousVersionDeclarations.length > 0
-    ? `\n\n# Updated declarations\n${previousVersionDeclarations.map(
-        (declaration) =>
-          `- ${declaration.name}\n${JSON.stringify(declaration.metadata)}`,
-      )}`
+    ? `\n\n# Updated declarations\n${previousVersionDeclarations
+        .map((declaration) => JSON.stringify(declaration, null, 2))
+        .join("\n\n")}`
     : ""
 }`,
   });
+
+  for await (const _ of partialObjectStream) {
+    console.log(`[annotator:${projectId}] Streaming...`);
+  }
 
   const usageData = await usage;
 
@@ -87,5 +92,6 @@ ${
     `[coder:${projectId}] Annotation usage Prompt: ${usageData.promptTokens} Completion: ${usageData.completionTokens} Total: ${usageData.totalTokens}`,
   );
 
-  return (await object).data;
+  const data = (await object).data;
+  return data;
 }

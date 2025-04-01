@@ -15,7 +15,6 @@ import {
   insertProjectSchema,
   updateProjectSchema,
 } from "@weldr/shared/validators/projects";
-import { ofetch } from "ofetch";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
@@ -134,7 +133,9 @@ export const projectsRouter = {
     }
   }),
   byId: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(
+      z.object({ id: z.string(), currentVersionId: z.string().optional() }),
+    )
     .query(async ({ ctx, input }) => {
       try {
         const project = await ctx.db.query.projects.findFirst({
@@ -280,7 +281,9 @@ export const projectsRouter = {
           },
           currentVersion,
           declarations: currentVersion
-            ? await getCurrentVersionDeclarations(currentVersion.id)
+            ? await getCurrentVersionDeclarations(
+                input.currentVersionId ?? currentVersion.id,
+              )
             : undefined,
         };
 
@@ -346,25 +349,6 @@ export const projectsRouter = {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Project not found",
-          });
-        }
-
-        const response = await ofetch(
-          `${process.env.DEPLOYER_API_URL}/projects`,
-          {
-            method: "DELETE",
-            retry: 3,
-            retryDelay: 1000,
-            body: {
-              projectId: input.id,
-            },
-          },
-        );
-
-        if (response.status !== 200) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to delete project",
           });
         }
 

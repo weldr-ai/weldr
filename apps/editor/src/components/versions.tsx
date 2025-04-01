@@ -3,6 +3,7 @@
 import { Check, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 
+import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/button";
 import {
@@ -25,6 +26,7 @@ export function Versions({
 }) {
   const [open, setOpen] = React.useState(false);
   const { project, setProject } = useProject();
+  const apiUtils = api.useUtils();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -60,14 +62,18 @@ export function Versions({
                   <CommandItem
                     key={version.id}
                     value={version.id}
-                    onSelect={(currentValue) => {
+                    onSelect={async (currentValue) => {
+                      setOpen(false);
                       setProject({
                         ...project,
                         currentVersion: versions.find(
                           (version) => version.id === currentValue,
                         ),
                       });
-                      setOpen(false);
+                      await apiUtils.projects.byId.invalidate({
+                        id: project.id,
+                        currentVersionId: version.id,
+                      });
                     }}
                     className="flex min-h-16 items-start justify-start gap-2 rounded-none text-xs"
                   >
@@ -87,6 +93,7 @@ export function Versions({
                     <div className="flex flex-col gap-1">
                       <span className="font-medium">{version.message}</span>
                       <span className="text-muted-foreground">
+                        {version.createdAt.toLocaleTimeString()} ·{" "}
                         {version.createdAt.toLocaleDateString()}
                       </span>
                     </div>

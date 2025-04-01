@@ -2,7 +2,7 @@ import type { TStreamableValue } from "@/types";
 import type { Tx } from "@weldr/db";
 import { and, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
-import { tool } from "ai";
+import { type CoreMessage, tool } from "ai";
 import type { createStreamableValue } from "ai/rsc";
 import { z } from "zod";
 import { coder } from "../agents/coder";
@@ -32,13 +32,6 @@ export const implementTool = tool({
         MUST NOT hallucinate or make assumptions about the changes requested by the user.
         MUST NOT add anything that is not requested by the user.`,
       ),
-    attachments: z
-      .string()
-      .array()
-      .describe(
-        "A list of URLs of attachments of images that the have included in their request.",
-      )
-      .optional(),
   }),
 });
 
@@ -49,18 +42,19 @@ export async function implement({
   chatId,
   userId,
   projectId,
+  promptMessages,
 }: {
   toolArgs: {
     addons: "auth"[];
     commitMessage: string;
     requirements: string;
-    attachments?: string[] | undefined;
   };
   stream: ReturnType<typeof createStreamableValue<TStreamableValue>>;
   tx: Tx;
   chatId: string;
   userId: string;
   projectId: string;
+  promptMessages: CoreMessage[];
 }) {
   const [messageId] = await insertMessages({
     tx,
@@ -142,19 +136,13 @@ export async function implement({
     projectId,
     versionId: version.id,
     previousVersionId: previousVersion.id,
-    prompt: {
-      role: "user",
-      content: [
-        {
-          type: "text",
-          text: `Please, do the following changes: ${toolArgs.requirements}`,
-        },
-        ...(toolArgs.attachments ?? []).map((attachment) => ({
-          type: "image" as const,
-          image: attachment,
-        })),
-      ],
-    },
+    promptMessages: [
+      ...promptMessages,
+      {
+        role: "user",
+        content: `Please, implement the following changes: ${toolArgs.requirements}`,
+      },
+    ],
   });
 
   stream.update({

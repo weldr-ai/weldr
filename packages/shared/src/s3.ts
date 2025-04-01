@@ -71,9 +71,11 @@ export const S3 = {
   readFile: async ({
     projectId,
     path,
+    versionId,
   }: {
     projectId: string;
     path: string;
+    versionId?: string;
   }): Promise<string | undefined> => {
     const fullPath = `${projectId}/${path}`;
 
@@ -81,6 +83,7 @@ export const S3 = {
       const command = new GetObjectCommand({
         Bucket: "weldr-projects",
         Key: fullPath,
+        VersionId: versionId,
       });
 
       console.log(`[S3:readFile:${projectId}] Reading file ${path}`);

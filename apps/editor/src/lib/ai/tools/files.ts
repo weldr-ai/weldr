@@ -1,14 +1,13 @@
-import type { Tx } from "@weldr/db";
-import { and, eq, isNull } from "@weldr/db";
-import { files } from "@weldr/db/schema";
-import { S3 } from "@weldr/shared/s3";
 import { tool } from "ai";
 import { z } from "zod";
+import type { FileCache } from "../agents/coder/file-cache";
 
 export const readFilesTool = ({
   projectId,
+  fileCache,
 }: {
   projectId: string;
+  fileCache: FileCache;
 }) =>
   tool({
     description: "Use to read files",
@@ -16,10 +15,15 @@ export const readFilesTool = ({
       files: z.string().array(),
     }),
     execute: async ({ files }) => {
+      console.log(
+        `[readFilesTool:${projectId}] Reading files`,
+        files.join(", "),
+      );
+
       const fileContents: Record<string, string> = {};
 
       for (const file of files) {
-        const fileContent = await S3.readFile({
+        const fileContent = await fileCache.getFile({
           projectId,
           path: file,
         });
@@ -37,37 +41,19 @@ export const readFilesTool = ({
 
 export const deleteFilesTool = ({
   projectId,
-  tx,
 }: {
   projectId: string;
-  tx: Tx;
 }) =>
   tool({
     description: "Use to delete files",
     parameters: z.object({
       files: z.string().array(),
     }),
-    execute: async ({ files: filesToDelete }) => {
-      for (const file of filesToDelete) {
-        await tx
-          .update(files)
-          .set({
-            deletedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(files.path, file),
-              isNull(files.deletedAt),
-              eq(files.projectId, projectId),
-            ),
-          );
-
-        await S3.deleteFile({
-          projectId,
-          path: file,
-        });
-      }
-
-      return filesToDelete;
+    execute: async ({ files }) => {
+      console.log(
+        `[deleteFilesTool:${projectId}] Deleting files`,
+        files.join(", "),
+      );
+      return files;
     },
   });

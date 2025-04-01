@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "@weldr/db";
+import { and, desc, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
@@ -53,5 +53,14 @@ export const versionRouter = {
         parentVersionId: version.parentVersionId,
         declarations,
       };
+    }),
+  list: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const versionsList = await ctx.db.query.versions.findMany({
+        where: eq(versions.projectId, input.projectId),
+        orderBy: desc(versions.createdAt),
+      });
+      return versionsList;
     }),
 };

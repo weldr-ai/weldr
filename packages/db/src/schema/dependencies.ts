@@ -15,11 +15,11 @@ export const dependencies = pgTable(
   {
     dependentType: declarationTypes("dependent_type").notNull(),
     dependentId: text("dependent_id")
-      .references(() => declarations.id)
+      .references(() => declarations.id, { onDelete: "cascade" })
       .notNull(),
     dependencyType: declarationTypes("dependency_type").notNull(),
     dependencyId: text("dependency_id")
-      .references(() => declarations.id)
+      .references(() => declarations.id, { onDelete: "cascade" })
       .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },

@@ -79,7 +79,9 @@ export const generalCoder = (context: string) => `<role>
     - Adhere to the server functions guidelines in the <server_functions_guidelines> section
     - Adhere to the creating new app guidelines in the <creating_new_app_guidelines> section
 
-  - MUST install any new node packages using the \`installPackages\` tool in the beginning before you write any code.
+  - MUST NOT ASSUME ANYTHING ABOUT PACKAGES BEING INSTALLED.
+  - MUST use \`readPackageJson\` tool to read the package.json file and get the list of installed packages.
+  - MUST install any new node packages using the \`installPackages\` tool.
   - Refer to the <response_format> and <search_replace_rules> sections for the exact format of SEARCH/REPLACE blocks.
   - All changes to files must use this *SEARCH/REPLACE block* format.
   - ONLY EVER RETURN CODE IN A *SEARCH/REPLACE BLOCK*!

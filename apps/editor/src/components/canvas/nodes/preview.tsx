@@ -8,6 +8,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ExternalLinkIcon,
+  LoaderIcon,
   MaximizeIcon,
   MonitorIcon,
   RefreshCwIcon,
@@ -25,6 +26,7 @@ export const PreviewNode = memo(({ data }: CanvasNodeProps) => {
   const [currentPath, setCurrentPath] = useState("/");
   const [isMobile, setIsMobile] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const previewUrl = machineId
     ? `https://${machineId}-${projectId}.preview.weldr.app`
@@ -44,6 +46,7 @@ export const PreviewNode = memo(({ data }: CanvasNodeProps) => {
 
   const handleRefresh = () => {
     setIframeKey((prev) => prev + 1);
+    setIsLoading(true);
   };
 
   const handleBack = () => {
@@ -69,13 +72,13 @@ export const PreviewNode = memo(({ data }: CanvasNodeProps) => {
   return (
     <div
       className={cn(
-        "flex flex-col",
+        "flex flex-col rounded-lg border bg-muted",
         isMobile ? "h-[844px] w-[390px]" : "h-[800px] w-[1200px]",
       )}
     >
       {machineId ? (
         <>
-          <div className="flex h-10 items-center gap-2 rounded-t-lg border px-2">
+          <div className="flex h-10 items-center gap-2 rounded-t-lg border-b px-2">
             <div className="flex items-center gap-1">
               <Button
                 type="button"
@@ -153,16 +156,27 @@ export const PreviewNode = memo(({ data }: CanvasNodeProps) => {
           <iframe
             key={iframeKey}
             src={previewUrl}
-            className="size-full rounded-b-lg"
+            className={cn("size-full rounded-b-lg", {
+              hidden: isLoading,
+            })}
             title="Preview"
             sandbox="allow-same-origin allow-scripts allow-forms"
             referrerPolicy="no-referrer"
+            onLoad={() => setIsLoading(false)}
           />
+          {isLoading && (
+            <div className="flex size-full flex-1 items-center justify-center rounded-b-lg bg-accent">
+              <div className="flex flex-col items-center gap-2">
+                <LoaderIcon className="size-5 animate-spin" />
+                <p className="text-sm">Loading preview...</p>
+              </div>
+            </div>
+          )}
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent
               className={cn(
-                "h-[calc(100vh-100px)] max-w-[calc(100vw-100px)] gap-0 border-none p-0",
+                "h-[calc(100vh-100px)] max-w-[calc(100vw-100px)] gap-0 border p-0",
                 isMobile
                   ? "h-[calc(100vh-100px)] max-w-[390px]"
                   : "h-[calc(100vh-100px)] max-w-[calc(100vw-100px)]",
@@ -170,7 +184,7 @@ export const PreviewNode = memo(({ data }: CanvasNodeProps) => {
               showCloseButton={false}
             >
               <DialogTitle className="sr-only">Preview</DialogTitle>
-              <div className="flex h-10 items-center gap-2 rounded-t-lg border px-2">
+              <div className="flex h-10 items-center gap-2 rounded-t-lg border-b px-2">
                 <div className="flex items-center gap-1">
                   <Button
                     type="button"
@@ -239,11 +253,22 @@ export const PreviewNode = memo(({ data }: CanvasNodeProps) => {
               </div>
               <iframe
                 src={previewUrl}
-                className="h-[calc(100vh-140px)] w-full rounded-b-lg"
+                className={cn("h-[calc(100vh-140px)] w-full rounded-b-lg", {
+                  hidden: isLoading,
+                })}
                 title="Preview"
                 sandbox="allow-same-origin allow-scripts allow-forms"
                 referrerPolicy="no-referrer"
+                onLoad={() => setIsLoading(false)}
               />
+              {isLoading && (
+                <div className="flex size-full flex-1 items-center justify-center rounded-b-lg bg-accent">
+                  <div className="flex flex-col items-center gap-2">
+                    <LoaderIcon className="size-5 animate-spin" />
+                    <p className="text-sm">Loading preview...</p>
+                  </div>
+                </div>
+              )}
             </DialogContent>
           </Dialog>
         </>

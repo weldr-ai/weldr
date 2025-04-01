@@ -1,22 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
 
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
 import { api } from "@/lib/trpc/client";
 import type { TPendingMessage } from "@/types";
 import type { ChatMessage, ToolMessage } from "@weldr/shared/types";
-import { Button } from "@weldr/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@weldr/ui/collapsible";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import { cn } from "@weldr/ui/utils";
-import { ExpandIcon, ShrinkIcon } from "lucide-react";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import js from "react-syntax-highlighter/dist/esm/languages/prism/javascript";
 import json from "react-syntax-highlighter/dist/esm/languages/prism/json";
@@ -102,9 +95,7 @@ const PureMessageItem = ({
           </div>
         )}
 
-        {message.role === "code" && (
-          <CodeBlock id={message.id} files={message.rawContent} />
-        )}
+        {message.role === "code" && <CodeBlock files={message.rawContent} />}
       </div>
     </div>
   );
@@ -117,7 +108,7 @@ export const MessageItem = memo(PureMessageItem, (prevProps, nextProps) => {
   return true;
 });
 
-function SetupResource({
+const PureSetupResource = ({
   message,
   // integrations,
   setMessages,
@@ -127,7 +118,7 @@ function SetupResource({
   // integrations: RouterOutputs["integrations"]["list"];
   setMessages: (messages: ChatMessage[]) => void;
   setPendingMessage: (pendingMessage: "thinking" | "waiting" | null) => void;
-}) {
+}) => {
   const toolInfo = message.rawContent as unknown as {
     toolArgs: { resource: "postgres" };
     toolResult: { status: "pending" | "success" | "error" | "cancelled" };
@@ -190,128 +181,102 @@ function SetupResource({
       );
     }
   }
-}
+};
 
-const CodeFile = memo(
-  ({
-    file,
-    originalContent,
-    newContent,
-    index,
-  }: {
-    file: string;
-    originalContent: string | undefined;
-    newContent: string | undefined;
-    index: number;
-  }) => {
-    const language = useMemo(() => file.split(".").pop() ?? "txt", [file]);
+export const SetupResource = memo(PureSetupResource, (prevProps, nextProps) => {
+  if (prevProps.message !== nextProps.message) return false;
+  return true;
+});
 
-    return (
-      <div className="relative">
-        <h3
-          className={cn(
-            "sticky top-0 z-10 border-b bg-background p-3 font-medium text-muted-foreground text-sm",
-            index !== 0 && "border-t",
-          )}
-        >
-          {file}
-        </h3>
-        {originalContent && originalContent.length > 0 && (
-          <SyntaxHighlighterLazy
-            language={language}
-            style={dracula}
-            customStyle={{
-              padding: "8px",
-              margin: "0px",
-              backgroundColor: "hsl(var(--destructive)/0.1)",
-            }}
-          >
-            {originalContent}
-          </SyntaxHighlighterLazy>
+const PureCodeBlock = ({
+  files,
+}: {
+  files: Record<string, { originalContent?: string; newContent?: string }>;
+}) => {
+  const [containerRef, endRef] = useScrollToBottom<HTMLDivElement>();
+
+  return (
+    <div
+      ref={containerRef}
+      className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-[300px] flex-col overflow-auto rounded-lg border bg-background"
+    >
+      {Object.entries(files).map(
+        ([file, { originalContent, newContent }], index) => (
+          <CodeFile
+            key={file}
+            file={file}
+            originalContent={originalContent}
+            newContent={newContent}
+            index={index}
+          />
+        ),
+      )}
+      <div ref={endRef} />
+    </div>
+  );
+};
+
+export const CodeBlock = memo(PureCodeBlock, (prevProps, nextProps) => {
+  if (prevProps.files !== nextProps.files) return false;
+  return true;
+});
+
+const PureCodeFile = ({
+  file,
+  originalContent,
+  newContent,
+  index,
+}: {
+  file: string;
+  originalContent: string | undefined;
+  newContent: string | undefined;
+  index: number;
+}) => {
+  const language = useMemo(() => file.split(".").pop() ?? "txt", [file]);
+
+  return (
+    <div className="relative">
+      <h3
+        className={cn(
+          "sticky top-0 z-10 border-b bg-background p-3 font-medium text-muted-foreground text-sm",
+          index !== 0 && "border-t",
         )}
-        {newContent && newContent.length > 0 && (
-          <SyntaxHighlighterLazy
-            language={language}
-            style={dracula}
-            customStyle={{
-              padding: "8px",
-              margin: "0px",
-              backgroundColor: "hsl(var(--success)/0.1)",
-            }}
-          >
-            {newContent}
-          </SyntaxHighlighterLazy>
-        )}
-      </div>
-    );
-  },
-);
-
-const CodeBlock = memo(
-  ({
-    id,
-    files,
-  }: {
-    id: string | undefined;
-    files: Record<string, { originalContent?: string; newContent?: string }>;
-  }) => {
-    const [messagesContainerRef, messagesEndRef] =
-      useScrollToBottom<HTMLDivElement>();
-    const [isOpen, setIsOpen] = useState(!id);
-
-    return (
-      <Collapsible
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        className={cn("flex flex-col", {
-          relative: isOpen,
-        })}
       >
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="outline"
-            size={isOpen ? "icon" : "sm"}
-            className={cn("w-fit max-w-64 justify-start gap-2", {
-              "absolute top-2 right-2 z-50 size-7 justify-center bg-muted":
-                isOpen,
-            })}
-          >
-            {!isOpen ? (
-              <>
-                <ExpandIcon
-                  className={cn(
-                    "size-3.5 text-muted-foreground",
-                    isOpen && "rotate-180",
-                  )}
-                />
-                View changes
-              </>
-            ) : (
-              <ShrinkIcon className="size-3.5 text-muted-foreground" />
-            )}
-          </Button>
-        </CollapsibleTrigger>
+        {file}
+      </h3>
+      {originalContent && originalContent.length > 0 && (
+        <SyntaxHighlighterLazy
+          language={language}
+          style={dracula}
+          customStyle={{
+            padding: "8px",
+            margin: "0px",
+            backgroundColor: "hsl(var(--destructive)/0.1)",
+          }}
+        >
+          {originalContent}
+        </SyntaxHighlighterLazy>
+      )}
+      {newContent && newContent.length > 0 && (
+        <SyntaxHighlighterLazy
+          language={language}
+          style={dracula}
+          customStyle={{
+            padding: "8px",
+            margin: "0px",
+            backgroundColor: "hsl(var(--success)/0.1)",
+          }}
+        >
+          {newContent}
+        </SyntaxHighlighterLazy>
+      )}
+    </div>
+  );
+};
 
-        <CollapsibleContent>
-          <div
-            ref={messagesContainerRef}
-            className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-[300px] flex-col overflow-auto rounded-lg border bg-background"
-          >
-            {Object.entries(files).map(
-              ([file, { originalContent, newContent }], index) => (
-                <CodeFile
-                  key={file}
-                  file={file}
-                  originalContent={originalContent}
-                  newContent={newContent}
-                  index={index}
-                />
-              ),
-            )}
-          </div>
-          <div ref={messagesEndRef} />
-        </CollapsibleContent>
-      </Collapsible>
-    );
-  },
-);
+export const CodeFile = memo(PureCodeFile, (prevProps, nextProps) => {
+  if (prevProps.file !== nextProps.file) return false;
+  if (prevProps.originalContent !== nextProps.originalContent) return false;
+  if (prevProps.newContent !== nextProps.newContent) return false;
+  return true;
+});

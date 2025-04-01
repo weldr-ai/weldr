@@ -1,5 +1,3 @@
-import type { InferSelectModel } from "@weldr/db";
-import type { packages } from "@weldr/db/schema";
 import type { declarationMetadataSchema } from "@weldr/shared/validators/declarations/index";
 import type { z } from "zod";
 
@@ -214,7 +212,7 @@ export function getFilesContext({
   `;
 }
 
-export function getFolderContext({
+export function getFolderStructure({
   files,
 }: {
   files: {
@@ -223,18 +221,4 @@ export function getFolderContext({
 }): string {
   return `### Current Folder Structure
   ${files.map((file) => `  - ${file.path}`).join("\n")}`;
-}
-
-export function getInstalledPackages({
-  pkgs,
-}: {
-  pkgs: Omit<InferSelectModel<typeof packages>, "id" | "projectId">[];
-}): string {
-  const runtimePkgs = pkgs.filter((pkg) => pkg.type === "runtime");
-  const devPkgs = pkgs.filter((pkg) => pkg.type === "development");
-  return `### Current Installed Packages
-  - Runtime packages:
-  ${runtimePkgs.map((pkg) => `  - ${pkg.name}`).join("\n")}
-  - Development packages:
-  ${devPkgs.map((pkg) => `  - ${pkg.name}`).join("\n")}`;
 }

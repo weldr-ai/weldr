@@ -13,7 +13,7 @@ import {
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import type { declarationMetadataSchema } from "@weldr/shared/validators/declarations/index";
-import { type CoreMessage, type CoreUserMessage, streamText } from "ai";
+import { type CoreMessage, streamText } from "ai";
 import type { createStreamableValue } from "ai/rsc";
 import type { z } from "zod";
 import { insertMessages } from "../../insert-messages";
@@ -23,13 +23,10 @@ import {
   deleteFilesTool,
   installPackagesTool,
   readFilesTool,
+  readPackageJsonTool,
   removePackagesTool,
 } from "../../tools";
-import {
-  getFilesContext,
-  getFolderContext,
-  getInstalledPackages,
-} from "./context";
+import { getFilesContext, getFolderStructure } from "./context";
 import {
   DIVIDER,
   REPLACE,
@@ -40,6 +37,7 @@ import {
 } from "./editor";
 import { FileCache } from "./file-cache";
 import type { EditResults } from "./types";
+import { BASE_PACKAGE_DOT_JSON, getPackageVersion } from "./utils";
 
 export async function coder({
   stream,
@@ -48,7 +46,7 @@ export async function coder({
   projectId,
   versionId,
   previousVersionId,
-  prompt,
+  promptMessages,
   tx,
 }: {
   stream: ReturnType<typeof createStreamableValue<TStreamableValue>>;
@@ -57,12 +55,12 @@ export async function coder({
   projectId: string;
   versionId: string;
   previousVersionId?: string;
-  prompt: CoreUserMessage;
+  promptMessages: CoreMessage[];
   tx: Tx;
 }) {
   console.log(`[coder:${projectId}] Starting coder agent`);
 
-  const currentMessages: CoreMessage[] = [prompt];
+  const currentMessages: CoreMessage[] = [...promptMessages];
   const fileCache = new FileCache();
   const processedFiles = new Set<string>();
 
@@ -79,7 +77,7 @@ export async function coder({
   const deletedFiles: string[] = [];
 
   let response = "";
-  let finalResult: EditResults = {};
+  const finalResult: EditResults = {};
 
   const availableFiles = await tx.query.versionFiles.findMany({
     where: eq(versionFiles.versionId, previousVersionId ?? versionId),
@@ -167,13 +165,9 @@ export async function coder({
     })),
   }));
 
-  const context =
-    getInstalledPackages({
-      pkgs: installedPackages,
-    }) +
-    getFolderContext({
-      files: flatFiles,
-    });
+  const context = getFolderStructure({
+    files: flatFiles,
+  });
 
   async function generate() {
     const { textStream, usage } = streamText({
@@ -186,26 +180,42 @@ export async function coder({
           versionId,
           tx,
         }),
-        removePackages: removePackagesTool,
+        removePackages: removePackagesTool({
+          projectId,
+        }),
         readFiles: readFilesTool({
           projectId,
+          fileCache,
         }),
         deleteFiles: deleteFilesTool({
           projectId,
-          tx,
+        }),
+        readPackageJson: readPackageJsonTool({
+          projectId,
+          pkgs: installedPackages,
         }),
       },
-      onFinish: async ({ finishReason, text, toolCalls, toolResults }) => {
+      onFinish: async ({
+        finishReason,
+        text,
+        toolCalls,
+        toolResults,
+        files,
+      }) => {
         if (finishReason === "length") {
+          console.log(`[coder:${projectId}]: Reached max tokens retrying...`);
           currentMessages.push({
             role: "assistant",
             content: text,
           });
-
           await generate();
-        }
+        } else if (finishReason === "tool-calls") {
+          console.log(
+            `[coder:${projectId}]: Invoking tools: ${toolCalls
+              .map((t) => t.toolName)
+              .join(", ")}`,
+          );
 
-        if (finishReason === "tool-calls") {
           for (const toolCall of toolCalls) {
             switch (toolCall.toolName) {
               case "readFiles": {
@@ -216,11 +226,6 @@ export async function coder({
                 if (!toolResult) {
                   throw new Error("readFiles: Tool result not found");
                 }
-
-                console.log(
-                  `[coder:${projectId}] Read files`,
-                  toolResult.args.files.join(", "),
-                );
 
                 const fileContents = toolResult.result;
 
@@ -254,11 +259,6 @@ ${fileContext}`,
                   throw new Error("deleteFiles: Tool call not found");
                 }
 
-                console.log(
-                  `[coder:${projectId}] Deleted files`,
-                  toolCall.args.files.join(", "),
-                );
-
                 const deleted = await tx.query.declarations.findMany({
                   where: inArray(declarations.fileId, toolCall.args.files),
                 });
@@ -284,11 +284,6 @@ ${fileContext}`,
                   throw new Error("installPackages: Tool call not found");
                 }
 
-                console.log(
-                  `[coder:${projectId}] Installed packages`,
-                  toolCall.args.pkgs.map((pkg) => pkg.name).join(", "),
-                );
-
                 currentMessages.push({
                   role: "user",
                   content: `Finished installing the following packages: ${toolCall.args.pkgs.join(
@@ -306,11 +301,6 @@ ${fileContext}`,
                 if (!toolCall) {
                   throw new Error("removePackages: Tool call not found");
                 }
-
-                console.log(
-                  `[coder:${projectId}] Removed packages`,
-                  toolCall.args.pkgs.join(", "),
-                );
 
                 deletedPackages.push(...toolCall.args.pkgs);
 
@@ -331,9 +321,18 @@ ${fileContext}`,
           }
 
           await generate();
+        } else {
+          console.log(`[coder:${projectId}] Finished with ${finishReason}`);
         }
       },
     });
+
+    const usageData = await usage;
+
+    // Log usage
+    console.log(
+      `[coder:${projectId}] Usage Prompt: ${usageData.promptTokens} Completion: ${usageData.completionTokens} Total: ${usageData.totalTokens}`,
+    );
 
     let streamValue:
       | {
@@ -360,6 +359,8 @@ ${fileContext}`,
     for await (const text of textStream) {
       response += text;
       currentAccumulatedText += text;
+
+      console.log(response);
 
       // Process the accumulated text line by line
       while (currentAccumulatedText.includes("\n")) {
@@ -505,13 +506,6 @@ ${fileContext}`,
       });
     }
 
-    const usageData = await usage;
-
-    // Log usage
-    console.log(
-      `[coder:${projectId}] Usage Prompt: ${usageData.promptTokens} Completion: ${usageData.completionTokens} Total: ${usageData.totalTokens}`,
-    );
-
     // Process all edits at once
     const edits = getEdits({
       content: response,
@@ -532,34 +526,31 @@ ${fileContext}`,
       stream,
     });
 
-    // Add results to running totals
+    // Add results to running totals by accumulating them
     if (results.passed) {
-      finalResult.passed = results.passed;
+      finalResult.passed = [...(finalResult.passed || []), ...results.passed];
     }
 
     if (results.failed) {
-      finalResult.failed = results.failed;
+      finalResult.failed = [...(finalResult.failed || []), ...results.failed];
     }
   }
 
   await generate();
 
-  console.log(
-    `[coder:${projectId}] Current edits Passed: ${finalResult.passed?.length} Failed: ${finalResult.failed?.length}`,
-  );
-
   let retryCount = 0;
+  let currentFailedEdits = finalResult.failed || [];
 
-  while (finalResult.failed && finalResult.failed.length > 0) {
+  while (currentFailedEdits.length > 0 && retryCount < 3) {
     retryCount++;
 
     console.log(
-      `[coder:${projectId}] Retry attempt ${retryCount} for failed edits Passed: ${finalResult.passed?.length} Failed: ${finalResult.failed?.length}`,
+      `[coder:${projectId}] Retry attempt ${retryCount} for failed edits Passed: ${finalResult.passed?.length} Failed: ${currentFailedEdits.length}`,
     );
 
     // Add failed edits info to messages
-    const failureDetails = finalResult.failed
-      ?.map((f) => `Failed to edit ${f.edit.path}:\n${f.error}`)
+    const failureDetails = currentFailedEdits
+      .map((f) => `Failed to edit ${f.edit.path}:\n${f.error}`)
       .join("\n\n");
 
     currentMessages.push({
@@ -576,16 +567,13 @@ ${fileContext}`,
       Important: You MUST NOT rewrite the files that passed.`,
     });
 
-    // Reset for next attempt but preserve processed files
-    finalResult = {
-      passed: [],
-      failed: [],
-    };
-
     response = "";
 
     // Generate new response
     await generate();
+
+    // Update our failed edits for next iteration
+    currentFailedEdits = finalResult.failed || [];
   }
 
   console.log(
@@ -695,12 +683,10 @@ ${fileContext}`,
   }
 
   let currentMachine: Awaited<ReturnType<typeof Fly.machine.get>> | null = null;
-  let currentPackageDotJson:
-    | {
-        dependencies: Record<string, string>;
-        devDependencies: Record<string, string>;
-      }
-    | undefined = undefined;
+  let currentPackageDotJson: {
+    dependencies: Record<string, string>;
+    devDependencies: Record<string, string>;
+  } = BASE_PACKAGE_DOT_JSON;
 
   if (currentMachineId) {
     currentMachine = await Fly.machine.get({
@@ -722,17 +708,33 @@ ${fileContext}`,
     currentPackageDotJson = JSON.parse(currentPackageJson.stdout);
   }
 
-  const filteredPackageDotJson =
-    deletedPackages.length > 0
-      ? {
-          dependencies: Object.keys(
-            currentPackageDotJson?.dependencies || {},
-          ).filter((pkg) => !deletedPackages.includes(pkg)),
-          devDependencies: Object.keys(
-            currentPackageDotJson?.devDependencies || {},
-          ).filter((pkg) => !deletedPackages.includes(pkg)),
-        }
-      : undefined;
+  // Add new packages to package.json
+  for (const pkg of installedPackages) {
+    const version = await getPackageVersion(pkg.name);
+    if (version) {
+      if (
+        pkg.type === "runtime" &&
+        !currentPackageDotJson?.dependencies[pkg.name]
+      ) {
+        currentPackageDotJson.dependencies[pkg.name] = version;
+      } else if (
+        pkg.type === "development" &&
+        !currentPackageDotJson?.devDependencies[pkg.name]
+      ) {
+        currentPackageDotJson.devDependencies[pkg.name] = version;
+      }
+    }
+  }
+
+  // Filter deleted packages from package.json
+  for (const pkg of deletedPackages) {
+    if (currentPackageDotJson?.dependencies?.[pkg]) {
+      delete currentPackageDotJson.dependencies?.[pkg];
+    }
+    if (currentPackageDotJson?.devDependencies?.[pkg]) {
+      delete currentPackageDotJson.devDependencies?.[pkg];
+    }
+  }
 
   const updatedFiles = [
     ...(currentMachine?.config?.files?.filter(
@@ -745,12 +747,12 @@ ${fileContext}`,
       guest_path: `/app/${file.path}`,
       raw_value: Buffer.from(file.updated).toString("base64"),
     })) || []),
-    ...(filteredPackageDotJson
+    ...(currentPackageDotJson
       ? [
           {
             guest_path: "/app/package.json",
             raw_value: Buffer.from(
-              JSON.stringify(filteredPackageDotJson),
+              JSON.stringify(currentPackageDotJson),
             ).toString("base64"),
           },
         ]
@@ -795,45 +797,6 @@ ${fileContext}`,
     machineId,
     command: "cd app && bun i",
   });
-
-  const runtimePkgs = installedPackages.filter(
-    (pkg) =>
-      pkg.type === "runtime" && !currentPackageDotJson?.dependencies[pkg.name],
-  );
-
-  const devPkgs = installedPackages.filter(
-    (pkg) =>
-      pkg.type === "development" &&
-      !currentPackageDotJson?.devDependencies[pkg.name],
-  );
-
-  // Install new runtime packages
-  if (runtimePkgs.length > 0) {
-    console.log(
-      `[coder:${projectId}] Installing runtime packages ${runtimePkgs.map(
-        (pkg) => pkg.name,
-      )}`,
-    );
-    await Fly.machine.executeCommand({
-      projectId,
-      machineId,
-      command: `cd app && bun i ${runtimePkgs.map((pkg) => pkg.name).join(" ")}`,
-    });
-  }
-
-  // Install new dev packages
-  if (devPkgs.length > 0) {
-    console.log(
-      `[coder:${projectId}] Installing dev packages ${devPkgs.map(
-        (pkg) => pkg.name,
-      )}`,
-    );
-    await Fly.machine.executeCommand({
-      projectId,
-      machineId,
-      command: `cd app && bun i --dev ${devPkgs.map((pkg) => pkg.name).join(" ")}`,
-    });
-  }
 
   return machineId;
 }

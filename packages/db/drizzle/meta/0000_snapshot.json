@@ -1,5 +1,5 @@
 {
-  "id": "acd75adf-7ce4-4257-a638-5481f941c433",
+  "id": "99c7c671-7a4d-4196-9248-2b9a263b7588",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -722,7 +722,7 @@
           "tableTo": "declarations",
           "columnsFrom": ["declaration_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "declaration_packages_package_id_packages_id_fk": {
@@ -731,7 +731,7 @@
           "tableTo": "packages",
           "columnsFrom": ["package_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -853,7 +853,7 @@
           "tableTo": "projects",
           "columnsFrom": ["project_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "declarations_user_id_users_id_fk": {
@@ -952,7 +952,7 @@
           "tableTo": "declarations",
           "columnsFrom": ["dependent_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "dependencies_dependency_id_declarations_id_fk": {
@@ -961,7 +961,7 @@
           "tableTo": "declarations",
           "columnsFrom": ["dependency_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1107,12 +1107,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -1130,28 +1124,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "not_deleted_unique_file_in_project": {
-          "name": "not_deleted_unique_file_in_project",
-          "columns": [
-            {
-              "expression": "path",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "(deleted_at IS NULL)",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -1161,7 +1133,7 @@
           "tableTo": "projects",
           "columnsFrom": ["project_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "files_user_id_users_id_fk": {
@@ -1224,7 +1196,7 @@
           "tableTo": "projects",
           "columnsFrom": ["project_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1605,7 +1577,7 @@
           "tableTo": "versions",
           "columnsFrom": ["version_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "version_declarations_declaration_id_declarations_id_fk": {
@@ -1614,7 +1586,7 @@
           "tableTo": "declarations",
           "columnsFrom": ["declaration_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1660,7 +1632,7 @@
           "tableTo": "versions",
           "columnsFrom": ["version_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "version_files_file_id_files_id_fk": {
@@ -1669,7 +1641,7 @@
           "tableTo": "files",
           "columnsFrom": ["file_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1709,7 +1681,7 @@
           "tableTo": "versions",
           "columnsFrom": ["version_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "version_packages_package_id_packages_id_fk": {
@@ -1718,7 +1690,7 @@
           "tableTo": "packages",
           "columnsFrom": ["package_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1876,7 +1848,7 @@
           "tableTo": "versions",
           "columnsFrom": ["parent_version_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "versions_user_id_users_id_fk": {
@@ -1894,7 +1866,7 @@
           "tableTo": "projects",
           "columnsFrom": ["project_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },

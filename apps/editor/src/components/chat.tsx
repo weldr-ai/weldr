@@ -22,28 +22,24 @@ export function Chat({
   chatId,
   // integrations
 }: ChatProps) {
-  const { project, setProject } = useProject();
-
   const { data: session } = authClient.useSession();
+  const generationTriggered = useRef(false);
 
+  const { project, setProject } = useProject();
   const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(null);
-
-  const apiUtils = api.useUtils();
-
-  const addMessage = api.chats.addMessage.useMutation();
-
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [lastMessage, setLastMessage] = useState<ChatMessage | undefined>(
     messages[messages.length - 1],
   );
-
   const [attachments, setAttachments] = useState<Attachment[]>([]);
-
-  const generationTriggered = useRef(false);
 
   const { getNodes, getNode, setNodes, updateNodeData } =
     useReactFlow<CanvasNode>();
+
+  const addMessage = api.chats.addMessage.useMutation();
+
+  const apiUtils = api.useUtils();
 
   const triggerGeneration = useCallback(async () => {
     setPendingMessage("thinking");
@@ -183,6 +179,11 @@ export function Chat({
             },
           });
 
+          await apiUtils.projects.byId.invalidate({
+            id: project.id,
+            currentVersionId: delta.versionId,
+          });
+
           const previewNode = getNode("preview");
 
           if (!previewNode) {
@@ -259,17 +260,16 @@ export function Chat({
       }
     }
 
-    await apiUtils.chats.messages.invalidate({ chatId });
     setPendingMessage(null);
   }, [
     chatId,
-    apiUtils,
     getNodes,
     getNode,
     setNodes,
     updateNodeData,
     project,
     setProject,
+    apiUtils,
   ]);
 
   useEffect(() => {
@@ -345,8 +345,6 @@ export function Chat({
         },
       ],
     });
-
-    await apiUtils.chats.messages.invalidate({ chatId });
 
     await triggerGeneration();
   };

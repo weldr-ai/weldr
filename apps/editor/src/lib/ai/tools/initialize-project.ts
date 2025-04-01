@@ -14,7 +14,7 @@ import {
   versions,
 } from "@weldr/db/schema";
 import { S3 } from "@weldr/shared/s3";
-import { tool } from "ai";
+import { type CoreMessage, tool } from "ai";
 import type { createStreamableValue } from "ai/rsc";
 import { z } from "zod";
 import { coder } from "../agents/coder";
@@ -45,13 +45,6 @@ export const initializeProjectTool = tool({
         MUST NOT hallucinate or make assumptions about the changes requested by the user.
         MUST NOT add anything that is not requested by the user.`,
       ),
-    attachments: z
-      .string()
-      .array()
-      .describe(
-        "A list of URLs of attachments of images that the have included in their request.",
-      )
-      .optional(),
   }),
 });
 
@@ -62,19 +55,20 @@ export const initializeProject = async ({
   chatId,
   userId,
   projectId,
+  promptMessages,
 }: {
   toolArgs: {
     name: string;
     addons: "auth"[];
     commitMessage: string;
     requirements: string;
-    attachments?: string[] | undefined;
   };
   stream: ReturnType<typeof createStreamableValue<TStreamableValue>>;
   tx: Tx;
   chatId: string;
   userId: string;
   projectId: string;
+  promptMessages: CoreMessage[];
 }) => {
   console.log(`[initializeProject:${projectId}] Initializing project`);
   const [messageId] = await insertMessages({
@@ -171,6 +165,7 @@ export const initializeProject = async ({
         path: file.path,
       })),
     )
+    .onConflictDoNothing()
     .returning();
 
   console.log(`[initializeProject:${projectId}] Inserting version files`);
@@ -347,20 +342,14 @@ export const initializeProject = async ({
     projectId,
     versionId: version.id,
     userId,
-    prompt: {
-      role: "user",
-      content: [
-        {
-          type: "text",
-          text: `Please, create this new app: ${toolArgs.requirements}
-      You MUST NOT create any database schemas or authentication. THIS IS A PURE CLIENT APP.`,
-        },
-        ...(toolArgs.attachments ?? []).map((attachment) => ({
-          type: "image" as const,
-          image: attachment,
-        })),
-      ],
-    },
+    promptMessages: [
+      ...promptMessages,
+      {
+        role: "user",
+        content: `Please, create this new app: ${toolArgs.requirements}
+You MUST NOT create any database schemas or authentication. THIS IS A PURE CLIENT APP.`,
+      },
+    ],
   });
 
   console.log(`[initializeProject:${projectId}] Updating status to success`);

@@ -39,7 +39,7 @@ export const declarations = pgTable(
       (): AnyPgColumn => declarations.id,
     ),
     projectId: text("project_id")
-      .references(() => projects.id)
+      .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
     userId: text("user_id")
       .references(() => users.id)
@@ -90,10 +90,10 @@ export const declarationPackages = pgTable(
   "declaration_packages",
   {
     declarationId: text("declaration_id")
-      .references(() => declarations.id)
+      .references(() => declarations.id, { onDelete: "cascade" })
       .notNull(),
     packageId: text("package_id")
-      .references(() => packages.id)
+      .references(() => packages.id, { onDelete: "cascade" })
       .notNull(),
     importPath: text("import_path").notNull(),
     declarations: text("declarations").array(),

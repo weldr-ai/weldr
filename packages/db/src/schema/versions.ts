@@ -30,13 +30,14 @@ export const versions = pgTable(
     isCurrent: boolean("is_current").default(false).notNull(),
     parentVersionId: text("parent_version_id").references(
       (): AnyPgColumn => versions.id,
+      { onDelete: "cascade" },
     ),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),
     projectId: text("project_id")
-      .references(() => projects.id)
+      .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
   },
   (table) => ({
@@ -78,10 +79,10 @@ export const versionFiles = pgTable(
   "version_files",
   {
     versionId: text("version_id")
-      .references(() => versions.id)
+      .references(() => versions.id, { onDelete: "cascade" })
       .notNull(),
     fileId: text("file_id")
-      .references(() => files.id)
+      .references(() => files.id, { onDelete: "cascade" })
       .notNull(),
     s3VersionId: text("s3_version_id").notNull(),
   },
@@ -107,10 +108,10 @@ export const versionDeclarations = pgTable(
   "version_declarations",
   {
     versionId: text("version_id")
-      .references(() => versions.id)
+      .references(() => versions.id, { onDelete: "cascade" })
       .notNull(),
     declarationId: text("declaration_id")
-      .references(() => declarations.id)
+      .references(() => declarations.id, { onDelete: "cascade" })
       .notNull(),
   },
   (table) => ({
@@ -136,10 +137,10 @@ export const versionPackages = pgTable(
   "version_packages",
   {
     versionId: text("version_id")
-      .references(() => versions.id)
+      .references(() => versions.id, { onDelete: "cascade" })
       .notNull(),
     packageId: text("package_id")
-      .references(() => packages.id)
+      .references(() => packages.id, { onDelete: "cascade" })
       .notNull(),
   },
   (table) => ({

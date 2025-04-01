@@ -6,7 +6,10 @@ export class FileCache {
   async getFile({
     projectId,
     path,
-  }: { projectId: string; path: string }): Promise<string | undefined> {
+    versionId,
+  }: { projectId: string; path: string; versionId?: string }): Promise<
+    string | undefined
+  > {
     const key = `${projectId}:${path}`;
 
     if (this.cache.has(key)) {
@@ -16,6 +19,7 @@ export class FileCache {
     const content = await S3.readFile({
       projectId,
       path,
+      versionId,
     });
 
     if (content) {

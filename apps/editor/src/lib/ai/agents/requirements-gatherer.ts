@@ -4,7 +4,11 @@ import type { TStreamableValue } from "@/types";
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { chats, projects } from "@weldr/db/schema";
-import type { ToolMessageRawContent } from "@weldr/shared/types";
+import type {
+  CodeMessageRawContent,
+  ToolMessageRawContent,
+  VersionMessageRawContent,
+} from "@weldr/shared/types";
 import { type CoreMessage, streamText } from "ai";
 import { createStreamableValue } from "ai/rsc";
 import { headers } from "next/headers";
@@ -78,18 +82,39 @@ export async function requirementsGatherer({
           role: "user",
           content: `Setting up ${toolInfo.toolArgs?.resource} has been ${toolInfo.toolResult?.status}.`,
         });
+      } else if (toolInfo.toolName === "initializeProject") {
+        promptMessages.push({
+          role: "assistant",
+          content: `Initialized project ${toolInfo.toolArgs?.name} with ${toolInfo.toolArgs?.requirements}`,
+        });
+      } else if (toolInfo.toolName === "implement") {
+        promptMessages.push({
+          role: "assistant",
+          content: `Implemented ${toolInfo.toolArgs?.requirements}`,
+        });
       }
 
       continue;
     }
 
-    if (message.content === null || message.role === "version") continue;
+    if (message.role === "version") {
+      const version = message.rawContent as VersionMessageRawContent;
+      promptMessages.push({
+        role: "assistant",
+        content: `Created #${version.versionNumber} ${version.versionMessage}`,
+      });
+      continue;
+    }
+
+    if (message.content === null) continue;
 
     if (message.role === "code") {
-      for (const code of Object.values(message.rawContent)) {
+      const code = message.rawContent as CodeMessageRawContent;
+
+      for (const file of Object.keys(code)) {
         promptMessages.push({
           role: "assistant",
-          content: code,
+          content: `File: ${file}\n${code[file]?.newContent}`,
         });
       }
       continue;
@@ -158,6 +183,7 @@ export async function requirementsGatherer({
                         userId: session.user.id,
                         projectId,
                         toolArgs,
+                        promptMessages,
                       });
 
                       break;
@@ -178,6 +204,7 @@ export async function requirementsGatherer({
                         userId: session.user.id,
                         projectId,
                         toolArgs,
+                        promptMessages,
                       });
 
                       break;
