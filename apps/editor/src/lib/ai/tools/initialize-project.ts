@@ -15,7 +15,6 @@ import {
 } from "@weldr/db/schema";
 import { S3 } from "@weldr/shared/s3";
 import { type CoreMessage, tool } from "ai";
-import type { createStreamableValue } from "ai/rsc";
 import { z } from "zod";
 import { coder } from "../agents/coder";
 import { insertMessages } from "../insert-messages";
@@ -50,7 +49,7 @@ export const initializeProjectTool = tool({
 
 export const initializeProject = async ({
   toolArgs,
-  stream,
+  streamWriter,
   tx,
   chatId,
   userId,
@@ -63,7 +62,7 @@ export const initializeProject = async ({
     commitMessage: string;
     requirements: string;
   };
-  stream: ReturnType<typeof createStreamableValue<TStreamableValue>>;
+  streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
   tx: Tx;
   chatId: string;
   userId: string;
@@ -71,6 +70,7 @@ export const initializeProject = async ({
   promptMessages: CoreMessage[];
 }) => {
   console.log(`[initializeProject:${projectId}] Initializing project`);
+
   const [messageId] = await insertMessages({
     tx,
     input: {
@@ -95,11 +95,10 @@ export const initializeProject = async ({
     throw new Error("Message ID not found");
   }
 
-  stream.update({
+  await streamWriter.write({
     id: messageId,
     type: "tool",
     toolName: "initializeProjectTool",
-    toolArgs,
     toolResult: {
       status: "pending",
     },
@@ -336,7 +335,7 @@ export const initializeProject = async ({
   }
 
   const machineId = await coder({
-    stream,
+    streamWriter,
     tx,
     chatId,
     projectId,
@@ -354,17 +353,16 @@ You MUST NOT create any database schemas or authentication. THIS IS A PURE CLIEN
 
   console.log(`[initializeProject:${projectId}] Updating status to success`);
 
-  stream.update({
+  await streamWriter.write({
     id: messageId,
     type: "tool",
     toolName: "initializeProjectTool",
-    toolArgs,
     toolResult: {
       status: "success",
     },
   });
 
-  stream.update({
+  await streamWriter.write({
     id: version.id,
     type: "version",
     versionId: version.id,

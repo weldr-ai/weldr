@@ -17,6 +17,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@weldr/ui/popover";
 import { ScrollArea } from "@weldr/ui/scroll-area";
 import { cn } from "@weldr/ui/utils";
+import { useReactFlow } from "@xyflow/react";
 import { useProject } from "../lib/store";
 
 export function Versions({
@@ -27,6 +28,7 @@ export function Versions({
   const [open, setOpen] = React.useState(false);
   const { project, setProject } = useProject();
   const apiUtils = api.useUtils();
+  const { updateNodeData } = useReactFlow();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -70,6 +72,13 @@ export function Versions({
                           (version) => version.id === currentValue,
                         ),
                       });
+
+                      updateNodeData("preview", {
+                        type: "preview",
+                        projectId: project.id,
+                        machineId: version.machineId,
+                      });
+
                       await apiUtils.projects.byId.invalidate({
                         id: project.id,
                         currentVersionId: version.id,
@@ -93,8 +102,16 @@ export function Versions({
                     <div className="flex flex-col gap-1">
                       <span className="font-medium">{version.message}</span>
                       <span className="text-muted-foreground">
-                        {version.createdAt.toLocaleTimeString()} ·{" "}
-                        {version.createdAt.toLocaleDateString()}
+                        {version.createdAt.toLocaleTimeString("en-GB", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}{" "}
+                        ·{" "}
+                        {version.createdAt.toLocaleDateString("en-GB", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
                       </span>
                     </div>
                   </CommandItem>

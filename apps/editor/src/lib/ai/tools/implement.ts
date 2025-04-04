@@ -3,7 +3,6 @@ import type { Tx } from "@weldr/db";
 import { and, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { type CoreMessage, tool } from "ai";
-import type { createStreamableValue } from "ai/rsc";
 import { z } from "zod";
 import { coder } from "../agents/coder";
 import { insertMessages } from "../insert-messages";
@@ -37,24 +36,24 @@ export const implementTool = tool({
 
 export async function implement({
   toolArgs,
-  stream,
   tx,
   chatId,
   userId,
   projectId,
   promptMessages,
+  streamWriter,
 }: {
   toolArgs: {
     addons: "auth"[];
     commitMessage: string;
     requirements: string;
   };
-  stream: ReturnType<typeof createStreamableValue<TStreamableValue>>;
   tx: Tx;
   chatId: string;
   userId: string;
   projectId: string;
   promptMessages: CoreMessage[];
+  streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
 }) {
   const [messageId] = await insertMessages({
     tx,
@@ -80,15 +79,18 @@ export async function implement({
     throw new Error("Message ID not found");
   }
 
-  stream.update({
+  await streamWriter.write({
     id: messageId,
     type: "tool",
     toolName: "implementTool",
-    toolArgs: toolArgs,
     toolResult: {
       status: "pending",
     },
   });
+
+  console.log(`[implement:${projectId}] Implementing...`);
+
+  console.log(`[implement:${projectId}] Getting previous version...`);
 
   const previousVersion = await tx.query.versions.findFirst({
     where: and(
@@ -106,12 +108,16 @@ export async function implement({
     throw new Error("Version not found");
   }
 
+  console.log(`[implement:${projectId}] Updating previous versions...`);
+
   await tx
     .update(versions)
     .set({
       isCurrent: false,
     })
     .where(and(eq(versions.projectId, projectId), eq(versions.userId, userId)));
+
+  console.log(`[implement:${projectId}] Creating new version...`);
 
   const [version] = await tx
     .insert(versions)
@@ -128,8 +134,10 @@ export async function implement({
     throw new Error("Version not found");
   }
 
+  console.log(`[implement:${projectId}] Coding...`);
+
   const machineId = await coder({
-    stream,
+    streamWriter,
     tx,
     chatId,
     userId,
@@ -145,17 +153,20 @@ export async function implement({
     ],
   });
 
-  stream.update({
+  console.log(`[implement:${projectId}] Writing to stream...`);
+
+  await streamWriter.write({
     id: messageId,
     type: "tool",
     toolName: "implementTool",
-    toolArgs: toolArgs,
     toolResult: {
       status: "success",
     },
   });
 
-  stream.update({
+  console.log(`[implement:${projectId}] Writing version to stream...`);
+
+  await streamWriter.write({
     id: version.id,
     type: "version",
     versionId: version.id,

@@ -14,7 +14,6 @@ import {
 import { Fly } from "@weldr/shared/fly";
 import type { declarationMetadataSchema } from "@weldr/shared/validators/declarations/index";
 import { type CoreMessage, streamText } from "ai";
-import type { createStreamableValue } from "ai/rsc";
 import type { z } from "zod";
 import { insertMessages } from "../../insert-messages";
 import { prompts } from "../../prompts";
@@ -40,7 +39,7 @@ import type { EditResults } from "./types";
 import { BASE_PACKAGE_DOT_JSON, getPackageVersion } from "./utils";
 
 export async function coder({
-  stream,
+  streamWriter,
   userId,
   chatId,
   projectId,
@@ -49,7 +48,7 @@ export async function coder({
   promptMessages,
   tx,
 }: {
-  stream: ReturnType<typeof createStreamableValue<TStreamableValue>>;
+  streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
   userId: string;
   chatId: string;
   projectId: string;
@@ -72,6 +71,7 @@ export async function coder({
       type: true,
     },
   });
+  const newPackages: { name: string; type: "runtime" | "development" }[] = [];
   const deletedPackages: string[] = [];
   const deletedDeclarations: string[] = [];
   const deletedFiles: string[] = [];
@@ -195,13 +195,7 @@ export async function coder({
           pkgs: installedPackages,
         }),
       },
-      onFinish: async ({
-        finishReason,
-        text,
-        toolCalls,
-        toolResults,
-        files,
-      }) => {
+      onFinish: async ({ finishReason, text, toolCalls, toolResults }) => {
         if (finishReason === "length") {
           console.log(`[coder:${projectId}]: Reached max tokens retrying...`);
           currentMessages.push({
@@ -284,6 +278,8 @@ ${fileContext}`,
                   throw new Error("installPackages: Tool call not found");
                 }
 
+                newPackages.push(...toolCall.args.pkgs);
+
                 currentMessages.push({
                   role: "user",
                   content: `Finished installing the following packages: ${toolCall.args.pkgs.join(
@@ -327,13 +323,6 @@ ${fileContext}`,
       },
     });
 
-    const usageData = await usage;
-
-    // Log usage
-    console.log(
-      `[coder:${projectId}] Usage Prompt: ${usageData.promptTokens} Completion: ${usageData.completionTokens} Total: ${usageData.totalTokens}`,
-    );
-
     let streamValue:
       | {
           type: "code";
@@ -359,8 +348,6 @@ ${fileContext}`,
     for await (const text of textStream) {
       response += text;
       currentAccumulatedText += text;
-
-      console.log(response);
 
       // Process the accumulated text line by line
       while (currentAccumulatedText.includes("\n")) {
@@ -432,16 +419,16 @@ ${fileContext}`,
           if (inSearchBlock) {
             streamOriginalContent += `${line}\n`;
             // Update stream immediately when SEARCH content changes
-            updateStream();
+            await updateStream();
           } else if (inReplaceBlock) {
             streamNewContent += `${line}\n`;
             // Update stream immediately when REPLACE content changes
-            updateStream();
+            await updateStream();
           }
         }
 
         // Helper function to update stream in real-time
-        function updateStream() {
+        async function updateStream() {
           if (streamFilePath && streamFilePath.length > 0) {
             if (!streamValue) {
               streamValue = {
@@ -464,7 +451,9 @@ ${fileContext}`,
             };
 
             // Send immediate update to the UI
-            stream.update({ ...streamValue });
+            await streamWriter.write({
+              ...streamValue,
+            });
           }
         }
       }
@@ -500,7 +489,7 @@ ${fileContext}`,
         throw new Error("Message ID not found");
       }
 
-      stream.update({
+      await streamWriter.write({
         id: messageId,
         ...value,
       });
@@ -512,28 +501,37 @@ ${fileContext}`,
     });
 
     // Apply the edits
-    const results = await applyEdits({
-      existingFiles: filePaths,
-      edits,
-      projectId,
-      versionId,
-      previousVersionId,
-      userId,
-      tx,
-      deletedDeclarations,
-      fileCache,
-      processedFiles,
-      stream,
-    });
+    if (edits.length > 0) {
+      const results = await applyEdits({
+        existingFiles: filePaths,
+        edits,
+        projectId,
+        versionId,
+        previousVersionId,
+        userId,
+        tx,
+        deletedDeclarations,
+        fileCache,
+        processedFiles,
+        streamWriter,
+      });
 
-    // Add results to running totals by accumulating them
-    if (results.passed) {
-      finalResult.passed = [...(finalResult.passed || []), ...results.passed];
+      // Add results to running totals by accumulating them
+      if (results.passed) {
+        finalResult.passed = [...(finalResult.passed || []), ...results.passed];
+      }
+
+      if (results.failed) {
+        finalResult.failed = [...(finalResult.failed || []), ...results.failed];
+      }
     }
 
-    if (results.failed) {
-      finalResult.failed = [...(finalResult.failed || []), ...results.failed];
-    }
+    const usageData = await usage;
+
+    // Log usage
+    console.log(
+      `[coder:${projectId}] Usage Prompt: ${usageData.promptTokens} Completion: ${usageData.completionTokens} Total: ${usageData.totalTokens}`,
+    );
   }
 
   await generate();
@@ -709,8 +707,9 @@ ${fileContext}`,
   }
 
   // Add new packages to package.json
-  for (const pkg of installedPackages) {
+  for (const pkg of newPackages) {
     const version = await getPackageVersion(pkg.name);
+
     if (version) {
       if (
         pkg.type === "runtime" &&

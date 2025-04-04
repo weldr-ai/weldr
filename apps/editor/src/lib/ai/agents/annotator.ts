@@ -10,7 +10,7 @@ import { streamObject } from "ai";
 export async function annotator({
   projectId,
   file,
-  processedDeclarations,
+  newDeclarations,
   previousVersionDeclarations,
 }: {
   projectId: string;
@@ -18,39 +18,34 @@ export async function annotator({
     path: string;
     content: string;
   };
-  processedDeclarations: {
-    newDeclarations: Record<string, DeclarationDependency[]>;
-    deletedDeclarations: Record<string, DeclarationDependency[]>;
-  };
+  newDeclarations: Record<string, DeclarationDependency[]>;
   previousVersionDeclarations: InferSelectModel<typeof declarations>[];
 }) {
-  const { object, usage, partialObjectStream } = streamObject({
+  const result = streamObject({
     model: registry.languageModel("anthropic:claude-3-5-sonnet-latest"),
-    schema: z.object({
-      data: z
-        .object({
-          metadata: declarationMetadataSchema.describe(
-            "The declaration metadata",
-          ),
-          isNode: z.boolean().describe(
-            `Whether the declaration is a node.
-- What are the nodes?
-  - All endpoints and pages are nodes by default.
-  - Functions that are DIRECTLY part of the business logic are nodes.
-  - Reusable UI components that are visual are nodes.
-- What are the non-nodes?
-  - UI Layouts are not nodes.
-  - Context Providers are not nodes.
-  - Utility functions are not nodes.
-  - Models are not nodes.
-  - Other declarations are not nodes.`,
-          ),
-        })
-        .array()
-        .describe(
-          "The list of metadata of the exported declarations. Create the metadata for the provided declarations only. It will be used to generate the documentation. MUST be a valid JSON object not a string.",
+    output: "array",
+    schema: z
+      .object({
+        metadata: declarationMetadataSchema.describe(
+          "The declaration metadata",
         ),
-    }),
+        isNode: z.boolean().describe(
+          `Whether the declaration is a node.
+- What are the nodes?
+- All endpoints and pages are nodes by default.
+- Functions that are DIRECTLY part of the business logic are nodes.
+- Reusable UI components that are important, for example, components with effects.
+- What are the non-nodes?
+- UI Layouts are not nodes.
+- Context Providers are not nodes.
+- Utility functions are not nodes.
+- Models are not nodes.
+- Other declarations are not nodes.`,
+        ),
+      })
+      .describe(
+        "The list of metadata of the exported declarations. Create the metadata for the provided declarations only. It will be used to generate the documentation. MUST be a valid JSON object not a string.",
+      ),
     system: `Please, create metadata for the provided declarations based on the code.
       You must create metadata for new declarations and update the metadata for updated declarations if needed.
       Important:
@@ -58,7 +53,9 @@ export async function annotator({
       - Pages and layouts will ONLY exist under src/app.
       - REST API routes will ONLY exist under src/app/api.
       - The codebase is using typescript.
-      - You SHOULD NOT create new metadata for updated declarations if it is not needed.`,
+      - You SHOULD NOT create new metadata for updated declarations if it is not needed.
+      - Make sure to classify the declarations as nodes or non-nodes.
+      - The isNode flag is part of the parent object, not the metadata object. YOU MUST NOT INCLUDE IT IN THE METADATA.`,
     prompt: `# Code
 
 ${file.path}
@@ -67,10 +64,8 @@ ${file.content}
 \`\`\`
 
 ${
-  Object.keys(processedDeclarations.newDeclarations).length > 0
-    ? `# New declarations\n${Object.keys(
-        processedDeclarations.newDeclarations,
-      ).join("\n")}`
+  Object.keys(newDeclarations).length > 0
+    ? `# New declarations\n${Object.keys(newDeclarations).join("\n")}`
     : ""
 }${
   previousVersionDeclarations.length > 0
@@ -81,17 +76,10 @@ ${
 }`,
   });
 
-  for await (const _ of partialObjectStream) {
+  for await (const _ of result.partialObjectStream) {
     console.log(`[annotator:${projectId}] Streaming...`);
   }
 
-  const usageData = await usage;
-
-  // Log usage
-  console.log(
-    `[coder:${projectId}] Annotation usage Prompt: ${usageData.promptTokens} Completion: ${usageData.completionTokens} Total: ${usageData.totalTokens}`,
-  );
-
-  const data = (await object).data;
+  const data = await result.object;
   return data;
 }

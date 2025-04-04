@@ -1,7 +1,6 @@
 import type { TStreamableValue } from "@/types";
 import type { Tx } from "@weldr/db";
 import { tool } from "ai";
-import type { createStreamableValue } from "ai/rsc";
 import { z } from "zod";
 import { insertMessages } from "../insert-messages";
 
@@ -22,13 +21,13 @@ export async function setupResource({
   tx,
   chatId,
   userId,
-  stream,
+  streamWriter,
   toolArgs,
 }: {
   tx: Tx;
   chatId: string;
   userId: string;
-  stream: ReturnType<typeof createStreamableValue<TStreamableValue>>;
+  streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
   toolArgs: z.infer<(typeof setupResourceTool)["parameters"]>;
 }) {
   const [messageId] = await insertMessages({
@@ -55,7 +54,7 @@ export async function setupResource({
     throw new Error("Message ID not found");
   }
 
-  stream.update({
+  await streamWriter.write({
     id: messageId,
     type: "tool",
     toolName: "setupResourceTool",

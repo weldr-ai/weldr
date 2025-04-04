@@ -14,7 +14,6 @@ import {
   versionFiles,
 } from "@weldr/db/schema";
 import { S3 } from "@weldr/shared/s3";
-import type { createStreamableValue } from "ai/rsc";
 import { annotator } from "../annotator";
 import type { FileCache } from "./file-cache";
 import { processDeclarations } from "./process-declarations";
@@ -29,7 +28,7 @@ export async function processFile({
   previousVersionId,
   deletedDeclarations,
   fileCache,
-  stream,
+  streamWriter,
 }: {
   content: string;
   path: string;
@@ -40,7 +39,7 @@ export async function processFile({
   previousVersionId?: string;
   deletedDeclarations: string[];
   fileCache: FileCache;
-  stream: ReturnType<typeof createStreamableValue<TStreamableValue>>;
+  streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
 }) {
   let file = await tx.query.files.findFirst({
     where: and(eq(files.projectId, projectId), eq(files.path, path)),
@@ -131,10 +130,11 @@ export async function processFile({
     );
   }
 
+  const declarationInsertions: InferInsertModel<typeof declarations>[] = [];
+
   // Annotate the new declarations
   console.log(
-    `[coder:${projectId}] Annotating new declarations`,
-    Object.keys(processedDeclarations.newDeclarations).length,
+    `[processFile:${projectId}] Creating ${Object.keys(processedDeclarations.newDeclarations).length} new annotations and updating ${Object.keys(processedDeclarations.updatedDeclarations).length} annotations`,
   );
   const annotations = await annotator({
     projectId,
@@ -142,14 +142,9 @@ export async function processFile({
       path,
       content,
     },
-    processedDeclarations: {
-      newDeclarations: processedDeclarations.newDeclarations,
-      deletedDeclarations: processedDeclarations.deletedDeclarations,
-    },
+    newDeclarations: processedDeclarations.newDeclarations,
     previousVersionDeclarations,
   });
-
-  const declarationInsertions: InferInsertModel<typeof declarations>[] = [];
 
   for (const { metadata, isNode } of annotations) {
     const declarationId = createId();
@@ -290,7 +285,7 @@ export async function processFile({
         previousId: previousDeclaration?.id ?? null,
       };
 
-      stream.update({
+      await streamWriter.write({
         type: "nodes",
         node: newNode,
       });
@@ -311,21 +306,24 @@ export async function processFile({
     });
   }
 
-  // Insert declarations
-  const insertedDeclarations = await tx
-    .insert(declarations)
-    .values(declarationInsertions)
-    .onConflictDoNothing()
-    .returning();
+  let insertedDeclarations: InferSelectModel<typeof declarations>[] = [];
 
-  // Insert version declarations
-  if (insertedDeclarations.length > 0) {
-    await tx.insert(versionDeclarations).values(
-      insertedDeclarations.map((d) => ({
-        versionId,
-        declarationId: d.id,
-      })),
-    );
+  if (declarationInsertions.length > 0) {
+    insertedDeclarations = await tx
+      .insert(declarations)
+      .values(declarationInsertions)
+      .onConflictDoNothing()
+      .returning();
+
+    // Insert version declarations
+    if (insertedDeclarations.length > 0) {
+      await tx.insert(versionDeclarations).values(
+        insertedDeclarations.map((d) => ({
+          versionId,
+          declarationId: d.id,
+        })),
+      );
+    }
   }
 
   const tempDeclarations = {

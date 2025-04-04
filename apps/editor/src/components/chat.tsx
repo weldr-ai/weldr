@@ -1,12 +1,10 @@
-import { requirementsGatherer } from "@/lib/ai/agents/requirements-gatherer";
 import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
-import type { CanvasNode, TPendingMessage } from "@/types";
+import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
 import { useReactFlow } from "@xyflow/react";
-import { readStreamableValue } from "ai/rsc";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
@@ -44,11 +42,6 @@ export function Chat({
   const triggerGeneration = useCallback(async () => {
     setPendingMessage("thinking");
 
-    const result = await requirementsGatherer({
-      chatId,
-      projectId: project.id,
-    });
-
     const newAssistantMessage: ChatMessage = {
       id: createId(),
       role: "assistant",
@@ -56,12 +49,22 @@ export function Chat({
       createdAt: new Date(),
     };
 
-    for await (const delta of readStreamableValue(result)) {
-      if (!delta) {
-        continue;
-      }
+    const result = await fetch("/api/generate", {
+      method: "POST",
+      body: JSON.stringify({
+        chatId,
+        projectId: project.id,
+      }),
+    });
 
-      switch (delta.type) {
+    if (!result.ok || !result.body) {
+      throw new Error("Failed to trigger generation");
+    }
+
+    const stream = await readStream(result);
+
+    for await (const chunk of stream) {
+      switch (chunk.type) {
         case "text": {
           setPendingMessage(null);
 
@@ -76,7 +79,7 @@ export function Chat({
                   rawContent: [
                     {
                       type: "paragraph",
-                      value: delta.text,
+                      value: chunk.text,
                     },
                   ],
                 },
@@ -91,7 +94,7 @@ export function Chat({
                 ...lastMessage.rawContent,
                 {
                   type: "paragraph",
-                  value: delta.text,
+                  value: chunk.text,
                 },
               ] as RawContent,
             };
@@ -101,7 +104,7 @@ export function Chat({
           break;
         }
         case "tool": {
-          if (delta.toolName === "setupResourceTool") {
+          if (chunk.toolName === "setupResourceTool") {
             setPendingMessage("waiting");
             setMessages((prevMessages) => {
               return [
@@ -111,17 +114,17 @@ export function Chat({
                   role: "tool",
                   createdAt: new Date(),
                   rawContent: {
-                    toolName: delta.toolName,
-                    toolArgs: delta.toolArgs,
+                    toolName: chunk.toolName,
+                    toolArgs: chunk.toolArgs,
                   },
                 },
               ];
             });
           }
 
-          if (delta.toolName === "initializeProjectTool") {
+          if (chunk.toolName === "initializeProjectTool") {
             const status = (
-              delta.toolResult as {
+              chunk.toolResult as {
                 status: "pending" | "success";
               }
             ).status;
@@ -135,9 +138,9 @@ export function Chat({
             }
           }
 
-          if (delta.toolName === "implementTool") {
+          if (chunk.toolName === "implementTool") {
             const status = (
-              delta.toolResult as {
+              chunk.toolResult as {
                 status: "pending" | "success";
               }
             ).status;
@@ -157,13 +160,13 @@ export function Chat({
             return [
               ...prevMessages,
               {
-                id: delta.id,
+                id: chunk.id,
                 role: "version",
                 createdAt: new Date(),
                 rawContent: {
-                  versionNumber: delta.versionNumber,
-                  versionId: delta.versionId,
-                  versionMessage: delta.versionMessage,
+                  versionNumber: chunk.versionNumber,
+                  versionId: chunk.versionId,
+                  versionMessage: chunk.versionMessage,
                 },
               },
             ];
@@ -172,16 +175,16 @@ export function Chat({
           setProject({
             ...project,
             currentVersion: {
-              id: delta.versionId,
-              number: delta.versionNumber,
-              message: delta.versionMessage,
-              machineId: delta.machineId,
+              id: chunk.versionId,
+              number: chunk.versionNumber,
+              message: chunk.versionMessage,
+              machineId: chunk.machineId,
             },
           });
 
           await apiUtils.projects.byId.invalidate({
             id: project.id,
-            currentVersionId: delta.versionId,
+            currentVersionId: chunk.versionId,
           });
 
           const previewNode = getNode("preview");
@@ -199,7 +202,7 @@ export function Chat({
                 data: {
                   type: "preview",
                   projectId: project.id,
-                  machineId: delta.machineId,
+                  machineId: chunk.machineId,
                 },
               },
             ]);
@@ -215,10 +218,10 @@ export function Chat({
               return [
                 ...prevMessages,
                 {
-                  id: delta.id,
+                  id: chunk.id,
                   role: "code",
                   createdAt: new Date(),
-                  rawContent: delta.files,
+                  rawContent: chunk.files,
                 },
               ];
             }
@@ -229,7 +232,7 @@ export function Chat({
               ...lastMessage,
               rawContent: {
                 ...lastMessage.rawContent,
-                ...delta.files,
+                ...chunk.files,
               },
             };
 
@@ -239,19 +242,19 @@ export function Chat({
         }
         case "nodes": {
           const nodes = getNodes();
-          const existingNode = nodes.find((n) => n.id === delta.node.id);
+          const existingNode = nodes.find((n) => n.id === chunk.node.id);
 
           if (existingNode) {
-            updateNodeData(existingNode.id, delta.node);
+            updateNodeData(existingNode.id, chunk.node);
           } else {
             const newNode = {
-              id: delta.node.id,
+              id: chunk.node.id,
               type: "declaration" as const,
-              position: delta.node.canvasNode?.position ?? {
+              position: chunk.node.canvasNode?.position ?? {
                 x: 0,
                 y: 0,
               },
-              data: delta.node,
+              data: chunk.node,
             };
             setNodes((prevNodes: CanvasNode[]) => [...prevNodes, newNode]);
           }
@@ -374,4 +377,30 @@ export function Chat({
       </div>
     </div>
   );
+}
+async function readStream(response: Response) {
+  const reader = response.body?.getReader();
+
+  if (!reader) {
+    throw new Error("No reader found");
+  }
+
+  const stream = {
+    async *[Symbol.asyncIterator]() {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const decodedChunk = new TextDecoder().decode(value);
+        const lines = decodedChunk.split("|CHUNK|");
+        console.log(lines);
+        for (const line of lines) {
+          if (line.trim() === "") continue;
+          const parsedDelta: TStreamableValue = JSON.parse(line);
+          yield parsedDelta;
+        }
+      }
+    },
+  };
+
+  return stream;
 }

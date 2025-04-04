@@ -130,8 +130,8 @@ export const Fly = {
               image: "registry.fly.io/boilerplates:next",
               guest: {
                 cpu_kind: "shared",
-                cpus: 2,
-                memory_mb: 2048,
+                cpus: 1,
+                memory_mb: 1024,
               },
               services: [
                 {

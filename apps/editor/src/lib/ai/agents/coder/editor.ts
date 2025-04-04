@@ -2,7 +2,6 @@ import "server-only";
 
 import type { TStreamableValue } from "@/types";
 import type { Tx } from "@weldr/db";
-import type { createStreamableValue } from "ai/rsc";
 import type { FileCache } from "./file-cache";
 import { processFile } from "./process-file";
 import type { Edit, EditResult, FailedEdit } from "./types";
@@ -183,7 +182,7 @@ export async function applyEdits({
   deletedDeclarations,
   fileCache,
   processedFiles,
-  stream,
+  streamWriter,
 }: {
   existingFiles: string[];
   edits: Edit[];
@@ -195,14 +194,14 @@ export async function applyEdits({
   deletedDeclarations: string[];
   fileCache: FileCache;
   processedFiles: Set<string>;
-  stream: ReturnType<typeof createStreamableValue<TStreamableValue>>;
+  streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
 }): Promise<{
   passed: Edit[];
   failed: FailedEdit[];
 }> {
   console.log(
     `[coder:${projectId}] Applying edits`,
-    edits.map((e) => e.path),
+    edits.map((e) => e),
   );
 
   const passed: Edit[] = [];
@@ -218,7 +217,7 @@ export async function applyEdits({
 
     if (result.passed && !processedFiles.has(result.passed.path)) {
       await processFile({
-        stream,
+        streamWriter,
         content: result.passed.updated,
         path: result.passed.path,
         projectId,

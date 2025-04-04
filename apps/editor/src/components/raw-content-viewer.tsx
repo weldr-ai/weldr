@@ -1,6 +1,7 @@
 import type { RawContent } from "@weldr/shared/types";
 import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
 import { cn } from "@weldr/ui/utils";
+import DOMPurify from "dompurify";
 import { nanoid } from "nanoid";
 import { type ReactNode, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
@@ -37,22 +38,28 @@ export function RawContentViewer({
     let processedContent = markdownText;
     references.forEach((ref, index) => {
       const placeholder = `:::REF${index}:::`;
+      // Sanitize the reference name to prevent XSS
+      const sanitizedName = DOMPurify.sanitize(ref.name);
       processedContent = processedContent
         .split(placeholder)
-        .join(`[REF${index}]`);
+        .join(`[REF${sanitizedName}]`);
     });
 
     const processReferences = (content: ReactNode): ReactNode => {
       if (typeof content !== "string") return content;
 
-      const parts = content.split(/(\[REF\d+\])/);
+      const parts = content.split(/(\[REF[^\]]+\])/);
       if (parts.length === 1) return content;
 
       return parts.map((part) => {
-        const refMatch = part.match(/\[REF(\d+)\]/);
+        const refMatch = part.match(/\[REF([^\]]+)\]/);
         if (refMatch) {
-          // biome-ignore lint/style/noNonNullAssertion: <explanation>
-          const refIndex = Number.parseInt(refMatch[1]!);
+          const refName = refMatch[1];
+          const refIndex = references.findIndex(
+            (ref) => DOMPurify.sanitize(ref.name) === refName,
+          );
+          if (refIndex === -1) return part;
+
           return (
             <span key={nanoid()} className="inline-flex items-center">
               <ReferenceBadge
@@ -69,7 +76,6 @@ export function RawContentViewer({
       <span className={cn("inline", className)}>
         <ReactMarkdown
           components={{
-            // Apply processReferences to all text-containing elements
             p: ({ children }) => (
               <p className="my-0">{processReferences(children)}</p>
             ),
@@ -104,7 +110,7 @@ export function RawContentViewer({
   return (
     <div
       className={cn(
-        "prose prose-headings:my-0 prose-ol:my-0 prose-p:my-0 prose-ul:my-0 cursor-text select-text prose-code:text-foreground prose-strong:text-foreground text-foreground text-sm",
+        "prose prose-headings:my-0 prose-ol:my-0 prose-p:my-0 prose-ul:my-0 cursor-text select-text prose-code:text-foreground prose-headings:text-foreground prose-strong:text-foreground text-foreground text-sm",
         className,
       )}
     >

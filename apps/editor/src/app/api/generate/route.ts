@@ -1,37 +1,26 @@
 "use server";
 
+import { insertMessages } from "@/lib/ai/insert-messages";
+import { prompts } from "@/lib/ai/prompts";
+import { registry } from "@/lib/ai/registry";
+import { setupResource, setupResourceTool } from "@/lib/ai/tools";
+import { implement, implementTool } from "@/lib/ai/tools/implement";
+import {
+  initializeProject,
+  initializeProjectTool,
+} from "@/lib/ai/tools/initialize-project";
+import { convertMessagesToCoreMessages } from "@/lib/ai/utils";
 import type { TStreamableValue } from "@/types";
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { chats, projects } from "@weldr/db/schema";
-import type {
-  CodeMessageRawContent,
-  ToolMessageRawContent,
-  VersionMessageRawContent,
-} from "@weldr/shared/types";
-import { type CoreMessage, streamText } from "ai";
-import { createStreamableValue } from "ai/rsc";
+import { streamText } from "ai";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { insertMessages } from "../insert-messages";
-import { prompts } from "../prompts";
-import { registry } from "../registry";
-import {
-  implement,
-  implementTool,
-  initializeProject,
-  initializeProjectTool,
-  setupResourceTool,
-} from "../tools";
-import { setupResource } from "../tools/setup-resource";
 
-export async function requirementsGatherer({
-  chatId,
-  projectId,
-}: {
-  chatId: string;
-  projectId: string;
-}) {
+export async function POST(request: Request) {
+  const { chatId, projectId } = await request.json();
+
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session) {
@@ -68,82 +57,32 @@ export async function requirementsGatherer({
     throw new Error("Chat not found");
   }
 
-  const promptMessages: CoreMessage[] = [];
+  const promptMessages = convertMessagesToCoreMessages(chat.messages);
 
-  for (const message of chat.messages) {
-    if (message.role === "tool") {
-      const toolInfo = message.rawContent as ToolMessageRawContent;
+  const stream = new TransformStream<TStreamableValue>({
+    async transform(chunk, controller) {
+      controller.enqueue(`${JSON.stringify(chunk)}|CHUNK|`);
+    },
+  });
 
-      if (
-        toolInfo.toolName === "setupResource" &&
-        toolInfo.toolResult?.status !== "pending"
-      ) {
-        promptMessages.push({
-          role: "user",
-          content: `Setting up ${toolInfo.toolArgs?.resource} has been ${toolInfo.toolResult?.status}.`,
-        });
-      } else if (toolInfo.toolName === "initializeProject") {
-        promptMessages.push({
-          role: "assistant",
-          content: `Initialized project ${toolInfo.toolArgs?.name} with ${toolInfo.toolArgs?.requirements}`,
-        });
-      } else if (toolInfo.toolName === "implement") {
-        promptMessages.push({
-          role: "assistant",
-          content: `Implemented ${toolInfo.toolArgs?.requirements}`,
-        });
-      }
-
-      continue;
-    }
-
-    if (message.role === "version") {
-      const version = message.rawContent as VersionMessageRawContent;
-      promptMessages.push({
-        role: "assistant",
-        content: `Created #${version.versionNumber} ${version.versionMessage}`,
-      });
-      continue;
-    }
-
-    if (message.content === null) continue;
-
-    if (message.role === "code") {
-      const code = message.rawContent as CodeMessageRawContent;
-
-      for (const file of Object.keys(code)) {
-        promptMessages.push({
-          role: "assistant",
-          content: `File: ${file}\n${code[file]?.newContent}`,
-        });
-      }
-      continue;
-    }
-
-    promptMessages.push({
-      role: message.role,
-      content: message.content,
-    });
-  }
-
-  const stream = createStreamableValue<TStreamableValue>();
+  const streamWriter = stream.writable.getWriter();
 
   (async () => {
-    const { textStream, usage } = streamText({
-      model: registry.languageModel("openai:gpt-4o"),
-      system: prompts.requirementsGatherer,
-      messages: promptMessages,
-      experimental_activeTools: project.initiatedAt
-        ? ["implementTool", "setupResourceTool"]
-        : ["initializeProjectTool", "setupResourceTool"],
-      tools: {
-        implementTool,
-        initializeProjectTool,
-        setupResourceTool,
-      },
-      maxSteps: 3,
-      onFinish: async ({ text, finishReason, toolCalls, toolResults }) => {
-        try {
+    try {
+      const result = streamText({
+        model: registry.languageModel("openai:gpt-4o"),
+        system: prompts.requirementsGatherer,
+        messages: promptMessages,
+        experimental_activeTools: project.initiatedAt
+          ? ["implementTool", "setupResourceTool"]
+          : ["initializeProjectTool", "setupResourceTool"],
+        tools: {
+          implementTool,
+          initializeProjectTool,
+          setupResourceTool,
+        },
+        maxSteps: 3,
+        onFinish: async ({ text, finishReason, toolCalls, toolResults }) => {
           await db.transaction(async (tx) => {
             if (finishReason === "stop" && text) {
               await insertMessages({
@@ -177,7 +116,7 @@ export async function requirementsGatherer({
                       }
 
                       await initializeProject({
-                        stream,
+                        streamWriter,
                         tx,
                         chatId,
                         userId: session.user.id,
@@ -198,7 +137,7 @@ export async function requirementsGatherer({
                       }
 
                       await implement({
-                        stream,
+                        streamWriter,
                         tx,
                         chatId,
                         userId: session.user.id,
@@ -220,7 +159,7 @@ export async function requirementsGatherer({
                       }
 
                       await setupResource({
-                        stream,
+                        streamWriter,
                         tx,
                         chatId,
                         userId: session.user.id,
@@ -250,29 +189,37 @@ export async function requirementsGatherer({
               }
             }
           });
-        } catch (error) {
-          console.error("Error in onFinish handler:", error);
-          throw error;
-        }
-      },
-    });
-
-    for await (const text of textStream) {
-      stream.update({
-        type: "text",
-        text,
+        },
+        onError: (error) => {
+          console.error(`[api/generate:onError:${projectId}] ${error}`);
+        },
       });
+
+      for await (const chunk of result.textStream) {
+        console.log(
+          `[api/generate:onChunk:${projectId}] ${JSON.stringify(chunk)}`,
+        );
+        await streamWriter.write({
+          type: "text",
+          text: chunk,
+        });
+      }
+
+      const usageData = await result.usage;
+
+      // Log usage
+      console.log(
+        `[api/generate:${projectId}] Usage Prompt: ${usageData.promptTokens} Completion: ${usageData.completionTokens} Total: ${usageData.totalTokens}`,
+      );
+    } finally {
+      await streamWriter.close();
     }
-
-    const usageData = await usage;
-
-    // Log usage
-    console.log(
-      `[requirementsGatherer:${projectId}] Usage Prompt: ${usageData.promptTokens} Completion: ${usageData.completionTokens} Total: ${usageData.totalTokens}`,
-    );
-
-    stream.done();
   })();
 
-  return stream.value;
+  return new Response(stream.readable, {
+    headers: {
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+    },
+  });
 }
