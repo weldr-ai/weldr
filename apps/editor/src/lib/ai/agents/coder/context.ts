@@ -1,4 +1,4 @@
-import type { declarationMetadataSchema } from "@weldr/shared/validators/declarations/index";
+import type { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import type { z } from "zod";
 
 export function getFilesContext({
@@ -7,13 +7,13 @@ export function getFilesContext({
   files: {
     path: string;
     declarations: {
-      metadata: z.infer<typeof declarationMetadataSchema>;
+      specs: z.infer<typeof declarationSpecsSchema>;
       dependencies: {
         dependency: {
           file: {
             path: string;
           };
-          metadata: z.infer<typeof declarationMetadataSchema>;
+          specs: z.infer<typeof declarationSpecsSchema>;
         };
       }[];
       dependents: {
@@ -21,26 +21,26 @@ export function getFilesContext({
           file: {
             path: string;
           };
-          metadata: z.infer<typeof declarationMetadataSchema>;
+          specs: z.infer<typeof declarationSpecsSchema>;
         };
       }[];
     }[];
   }[];
 }): string {
   const declarationName = (
-    declarationMetadata: z.infer<typeof declarationMetadataSchema>,
+    declarationSpecs: z.infer<typeof declarationSpecsSchema>,
   ) => {
-    switch (declarationMetadata.type) {
+    switch (declarationSpecs.type) {
       case "endpoint":
-        return declarationMetadata.definition.subtype === "rest"
-          ? `${declarationMetadata.definition.method.toUpperCase()} ${declarationMetadata.definition.path}`
-          : `RPC ${declarationMetadata.definition.name}`;
+        return declarationSpecs.definition.subtype === "rest"
+          ? `${declarationSpecs.definition.method.toUpperCase()} ${declarationSpecs.definition.path}`
+          : `RPC ${declarationSpecs.definition.name}`;
       case "component":
-        return declarationMetadata.definition.name;
+        return declarationSpecs.definition.name;
       case "function":
       case "model":
       case "other":
-        return declarationMetadata.name;
+        return declarationSpecs.name;
     }
   };
 
@@ -50,7 +50,7 @@ export function getFilesContext({
         file: {
           path: string;
         };
-        metadata: z.infer<typeof declarationMetadataSchema>;
+        specs: z.infer<typeof declarationSpecsSchema>;
       };
     }[],
   ) => {
@@ -59,7 +59,7 @@ export function getFilesContext({
       if (!key) return acc;
       acc[key] = [
         ...(acc[key] || []),
-        declarationName(dependency.dependency.metadata),
+        declarationName(dependency.dependency.specs),
       ];
       return acc;
     }, {});
@@ -71,7 +71,7 @@ export function getFilesContext({
         file: {
           path: string;
         };
-        metadata: z.infer<typeof declarationMetadataSchema>;
+        specs: z.infer<typeof declarationSpecsSchema>;
       };
     }[],
   ) => {
@@ -80,7 +80,7 @@ export function getFilesContext({
       if (!key) return acc;
       acc[key] = [
         ...(acc[key] || []),
-        declarationName(dependent.dependent.metadata),
+        declarationName(dependent.dependent.specs),
       ];
       return acc;
     }, {});
@@ -94,12 +94,12 @@ export function getFilesContext({
         `- ${file.path}
   ${file.declarations
     .map((declaration) => {
-      const metadata = declaration.metadata;
-      if (!metadata) return "";
+      const specs = declaration.specs;
+      if (!specs) return "";
 
-      switch (metadata.type) {
+      switch (specs.type) {
         case "endpoint": {
-          const def = metadata.definition;
+          const def = specs.definition;
           if (def.subtype === "rest") {
             let info = `  • REST Endpoint: ${def.method.toUpperCase()} ${def.path}
   Summary: ${def.summary || "No summary"}
@@ -132,7 +132,7 @@ export function getFilesContext({
         }
 
         case "component": {
-          const def = metadata.definition;
+          const def = specs.definition;
           let info = `  • ${def.subtype === "page" ? "Page" : def.subtype === "layout" ? "Layout" : "Component"}: ${def.name}
       Description: ${def.description}
       Renders on: ${def.rendersOn || "both"}`;
@@ -157,10 +157,10 @@ export function getFilesContext({
         }
 
         case "function": {
-          let info = `  • Function: ${metadata.name}
-      Description: ${metadata.description}
-      ${metadata.parameters ? `Parameters: ${JSON.stringify(metadata.parameters)}` : ""}
-      ${metadata.returns ? `Returns: ${JSON.stringify(metadata.returns)}` : ""}`;
+          let info = `  • Function: ${specs.name}
+      Description: ${specs.description}
+      ${specs.parameters ? `Parameters: ${JSON.stringify(specs.parameters)}` : ""}
+      ${specs.returns ? `Returns: ${JSON.stringify(specs.returns)}` : ""}`;
 
           if (declaration.dependencies.length > 0) {
             info += `\n  Depends on: ${groupedDependencies(declaration.dependencies)}`;
@@ -170,9 +170,9 @@ export function getFilesContext({
         }
 
         case "model": {
-          let info = `  • Model: ${metadata.name}
-  Columns: ${metadata.columns.map((col) => `${col.name} (${col.type})`).join(", ")}
-  ${metadata.relationships ? `Relations: ${metadata.relationships.length} defined` : ""}`;
+          let info = `  • Model: ${specs.name}
+  Columns: ${specs.columns.map((col) => `${col.name} (${col.type})`).join(", ")}
+  ${specs.relationships ? `Relations: ${specs.relationships.length} defined` : ""}`;
 
           if (declaration.dependencies.length > 0) {
             info += `\n  Depends on: ${groupedDependencies(declaration.dependencies)}`;
@@ -186,8 +186,8 @@ export function getFilesContext({
         }
 
         case "other": {
-          let info = `  • ${metadata.declType}: ${metadata.name}
-  Description: ${metadata.description}`;
+          let info = `  • ${specs.declType}: ${specs.name}
+  Description: ${specs.description}`;
 
           if (declaration.dependencies.length > 0) {
             info += `\n  Depends on: ${groupedDependencies(declaration.dependencies)}`;

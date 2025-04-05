@@ -25,12 +25,12 @@ import { EyeIcon, EyeOffIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useCallback } from "react";
 import { ProjectSettings } from "../project-settings";
 import { Versions } from "../versions";
-import { DeclarationNode } from "./nodes/declaration";
+import { DeclarationV1Node } from "./nodes/declaration/v1";
 import { PreviewNode } from "./nodes/preview";
 
 const nodeTypes = {
   preview: PreviewNode,
-  declaration: DeclarationNode,
+  "declaration-v1": DeclarationV1Node,
 };
 
 export function Canvas({

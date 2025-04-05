@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import type { DeclarationMetadata } from "@weldr/shared/types";
+import type { DeclarationSpecs } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
   jsonb,
@@ -58,7 +58,7 @@ export const presetDeclarations = pgTable(
     type: declarationTypes("type").notNull(),
     name: text("name").notNull(),
     file: text("file").notNull(),
-    metadata: jsonb().$type<DeclarationMetadata>(),
+    specs: jsonb().$type<DeclarationSpecs>(),
     dependencies: jsonb().$type<DeclarationDependency[]>(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")

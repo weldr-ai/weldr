@@ -247,9 +247,15 @@ export function Chat({
           if (existingNode) {
             updateNodeData(existingNode.id, chunk.node);
           } else {
+            if (!chunk.node.specs) {
+              throw new Error(
+                `[chat:${project.id}] No specs found for node ${chunk.node.id}`,
+              );
+            }
+
             const newNode = {
               id: chunk.node.id,
-              type: "declaration" as const,
+              type: `declaration-${chunk.node.specs?.version}` as const,
               position: chunk.node.canvasNode?.position ?? {
                 x: 0,
                 y: 0,

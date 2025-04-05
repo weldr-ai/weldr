@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const canvasNodeTypeSchema = z.enum(["preview", "declaration"]);
+export const canvasNodeTypeSchema = z.enum(["preview", "declaration-v1"]);
 
 export const canvasNodeSchema = z.object({
   id: z.string(),

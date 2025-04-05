@@ -146,26 +146,26 @@ export async function processFile({
     previousVersionDeclarations,
   });
 
-  for (const { metadata, isNode } of annotations) {
+  for (const { specs, isNode } of annotations) {
     const declarationId = createId();
 
     const declarationName = (() => {
-      switch (metadata.type) {
+      switch (specs.type) {
         case "component": {
-          return metadata.definition.name;
+          return specs.definition.name;
         }
         case "function":
         case "model":
         case "other": {
-          return metadata.name;
+          return specs.name;
         }
         case "endpoint": {
-          switch (metadata.definition.subtype) {
+          switch (specs.definition.subtype) {
             case "rest": {
-              return `${metadata.definition.method.toUpperCase()}:${metadata.definition.path}`;
+              return `${specs.definition.method.toUpperCase()}:${specs.definition.path}`;
             }
             case "rpc": {
-              return `${metadata.definition.name}`;
+              return `${specs.definition.name}`;
             }
           }
         }
@@ -257,8 +257,11 @@ export async function processFile({
       const newNode: CanvasNodeData = {
         id: declarationId,
         name: declarationName,
-        type: metadata.type,
-        metadata,
+        type: specs.type,
+        specs: {
+          version: "v1",
+          ...specs,
+        },
         canvasNode: {
           id: canvasNode.id,
           type: "declaration",
@@ -295,8 +298,11 @@ export async function processFile({
       id: declarationId,
       fileId: file.id,
       name: declarationName,
-      type: metadata.type,
-      metadata,
+      type: specs.type,
+      specs: {
+        version: "v1",
+        ...specs,
+      },
       projectId,
       userId,
       previousId: previousDeclaration?.id,

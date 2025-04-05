@@ -160,19 +160,39 @@ async function seed() {
       }
 
       for (const declaration of preset.declarations) {
-        const [_, nameWithDelimiter] = declaration.name.split("|");
-        const name = nameWithDelimiter?.split("::")[1];
-
-        if (!name) {
-          throw new Error("Invalid declaration name");
+        if (!declaration.specs) {
+          continue;
         }
 
         await tx
           .update(schema.presetDeclarations)
           .set({
-            name,
+            specs: {
+              ...declaration.specs,
+              version: "v1" as const,
+            },
           })
           .where(eq(schema.presetDeclarations.id, declaration.id));
+      }
+    });
+
+    await db.transaction(async (tx) => {
+      const declarations = await tx.query.declarations.findMany();
+
+      for (const declaration of declarations) {
+        if (!declaration.specs) {
+          continue;
+        }
+
+        await tx
+          .update(schema.declarations)
+          .set({
+            specs: {
+              ...declaration.specs,
+              version: "v1" as const,
+            },
+          })
+          .where(eq(schema.declarations.id, declaration.id));
       }
     });
   } catch (error) {

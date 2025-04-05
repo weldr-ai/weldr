@@ -63,7 +63,7 @@ export async function wouldCreateCycle({
 export async function isDeclarationReady(
   declaration: InferSelectModel<typeof declarations>,
 ): Promise<boolean> {
-  if (!declaration.metadata) {
+  if (!declaration.specs) {
     return false;
   }
   return true;

@@ -12,7 +12,7 @@ import {
   versions,
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
-import type { declarationMetadataSchema } from "@weldr/shared/validators/declarations/index";
+import type { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import { type CoreMessage, streamText } from "ai";
 import type { z } from "zod";
 import { insertMessages } from "../../insert-messages";
@@ -94,14 +94,14 @@ export async function coder({
         with: {
           declarations: {
             columns: {
-              metadata: true,
+              specs: true,
             },
             with: {
               dependencies: {
                 with: {
                   dependency: {
                     columns: {
-                      metadata: true,
+                      specs: true,
                     },
                     with: {
                       file: {
@@ -117,7 +117,7 @@ export async function coder({
                 with: {
                   dependent: {
                     columns: {
-                      metadata: true,
+                      specs: true,
                     },
                     with: {
                       file: {
@@ -141,15 +141,13 @@ export async function coder({
   const flatFiles = availableFiles.map((v) => ({
     path: v.file.path,
     declarations: v.file.declarations.map((d) => ({
-      metadata: d.metadata as z.infer<typeof declarationMetadataSchema>,
+      specs: d.specs as z.infer<typeof declarationSpecsSchema>,
       dependencies: d.dependencies.map((d) => ({
         dependency: {
           file: {
             path: d.dependency.file.path,
           },
-          metadata: d.dependency.metadata as z.infer<
-            typeof declarationMetadataSchema
-          >,
+          specs: d.dependency.specs as z.infer<typeof declarationSpecsSchema>,
         },
       })),
       dependents: d.dependents.map((d) => ({
@@ -157,9 +155,7 @@ export async function coder({
           file: {
             path: d.dependent.file.path,
           },
-          metadata: d.dependent.metadata as z.infer<
-            typeof declarationMetadataSchema
-          >,
+          specs: d.dependent.specs as z.infer<typeof declarationSpecsSchema>,
         },
       })),
     })),

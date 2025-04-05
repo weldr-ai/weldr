@@ -227,7 +227,7 @@ export const initializeProject = async ({
         return {
           name: declaration.name,
           type: declaration.type,
-          metadata: declaration.metadata,
+          specs: declaration.specs,
           userId,
           projectId,
           fileId,

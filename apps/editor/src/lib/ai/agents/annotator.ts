@@ -1,4 +1,4 @@
-import { declarationMetadataSchema } from "@weldr/shared/validators/declarations/index";
+import { declarationSpecsV1Schema } from "@weldr/shared/validators/declarations/index";
 import { z } from "zod";
 
 import { registry } from "../registry";
@@ -26,9 +26,7 @@ export async function annotator({
     output: "array",
     schema: z
       .object({
-        metadata: declarationMetadataSchema.describe(
-          "The declaration metadata",
-        ),
+        specs: declarationSpecsV1Schema.describe("The declaration specs"),
         isNode: z.boolean().describe(
           `Whether the declaration is a node.
 - What are the nodes?
@@ -44,10 +42,10 @@ export async function annotator({
         ),
       })
       .describe(
-        "The list of metadata of the exported declarations. Create the metadata for the provided declarations only. It will be used to generate the documentation. MUST be a valid JSON object not a string.",
+        "The list of specs of the exported declarations. Create the specs for the provided declarations only. It will be used to generate the documentation. MUST be a valid JSON object not a string.",
       ),
-    system: `Please, create metadata for the provided declarations based on the code.
-      You must create metadata for new declarations and update the metadata for updated declarations if needed.
+    system: `Please, create specs for the provided declarations based on the code.
+      You must create specs for new declarations and update the specs for updated declarations if needed.
       Important:
       - We are using next.js with app router.
       - Pages and layouts will ONLY exist under src/app.

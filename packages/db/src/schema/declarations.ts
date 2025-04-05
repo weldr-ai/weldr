@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import type { DeclarationMetadata } from "@weldr/shared/types";
+import type { DeclarationSpecs } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
@@ -29,7 +29,7 @@ export const declarations = pgTable(
       .notNull(),
     type: declarationTypes("type").notNull(),
     name: text("name").notNull(),
-    metadata: jsonb().$type<DeclarationMetadata>(),
+    specs: jsonb().$type<DeclarationSpecs>(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

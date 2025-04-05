@@ -18,7 +18,8 @@ import type {
 } from "../validators/chats";
 import type { packageSchema, rawContentSchema } from "../validators/common";
 import type {
-  declarationMetadataSchema,
+  declarationSpecsSchema,
+  declarationSpecsV1Schema,
   declarationTypeSchema,
 } from "../validators/declarations";
 import type {
@@ -66,18 +67,17 @@ export type Attachment = z.infer<typeof attachmentSchema>;
 
 export type CanvasNodeType = z.infer<typeof canvasNodeTypeSchema>;
 export type DeclarationType = z.infer<typeof declarationTypeSchema>;
-export type DeclarationMetadata = z.infer<typeof declarationMetadataSchema>;
-export type EndpointDeclarationMetadata = z.infer<typeof endpointSchema>;
-export type RestEndpointDeclarationMetadata = z.infer<
-  typeof restEndpointSchema
->;
-export type RpcEndpointDeclarationMetadata = z.infer<typeof rpcEndpointSchema>;
-export type FunctionDeclarationMetadata = z.infer<typeof functionSchema>;
-export type ModelDeclarationMetadata = z.infer<typeof modelSchema>;
-export type ComponentDeclarationMetadata = z.infer<typeof componentSchema>;
-export type PageDeclarationMetadata = z.infer<typeof pageSchema>;
-export type LayoutDeclarationMetadata = z.infer<typeof layoutSchema>;
-export type ReusableComponentDeclarationMetadata = z.infer<
+export type DeclarationSpecs = z.infer<typeof declarationSpecsSchema>;
+export type DeclarationSpecsV1 = z.infer<typeof declarationSpecsV1Schema>;
+export type EndpointDeclarationSpecs = z.infer<typeof endpointSchema>;
+export type RestEndpointDeclarationSpecs = z.infer<typeof restEndpointSchema>;
+export type RpcEndpointDeclarationSpecs = z.infer<typeof rpcEndpointSchema>;
+export type FunctionDeclarationSpecs = z.infer<typeof functionSchema>;
+export type ModelDeclarationSpecs = z.infer<typeof modelSchema>;
+export type ComponentDeclarationSpecs = z.infer<typeof componentSchema>;
+export type PageDeclarationSpecs = z.infer<typeof pageSchema>;
+export type LayoutDeclarationSpecs = z.infer<typeof layoutSchema>;
+export type ReusableComponentDeclarationSpecs = z.infer<
   typeof reusableComponentSchema
 >;
 

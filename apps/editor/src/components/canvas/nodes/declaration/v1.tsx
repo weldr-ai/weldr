@@ -4,6 +4,7 @@ import { useCanvas } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { CanvasNodeProps } from "@/types";
 import type { RouterOutputs } from "@weldr/api";
+import type { DeclarationSpecsV1 } from "@weldr/shared/types";
 import type { functionSchema } from "@weldr/shared/validators/declarations/function";
 import { Button } from "@weldr/ui/button";
 import { Card } from "@weldr/ui/card";
@@ -25,14 +26,14 @@ import type { OpenAPIV3 } from "openapi-types";
 import { memo } from "react";
 import type { z } from "zod";
 
-export const DeclarationNode = memo(
+export const DeclarationV1Node = memo(
   ({
     data: _data,
     selected,
     positionAbsoluteX,
     positionAbsoluteY,
   }: CanvasNodeProps) => {
-    if (_data.type === "preview") {
+    if (_data.type === "preview" || _data.specs?.version !== "v1") {
       return null;
     }
 
@@ -139,53 +140,51 @@ export const DeclarationNode = memo(
 
 const DeclarationExpandableCardHeader = memo(
   ({ declaration }: { declaration: RouterOutputs["declarations"]["byId"] }) => {
-    if (!declaration.metadata) {
+    if (!declaration.specs) {
       return null;
     }
 
-    const title = (
-      metadata: RouterOutputs["declarations"]["byId"]["metadata"],
-    ) => {
-      if (!metadata) {
+    const title = (specs: DeclarationSpecsV1) => {
+      if (!specs) {
         return null;
       }
 
-      switch (metadata.type) {
+      switch (specs.type) {
         case "endpoint":
-          return metadata.definition.subtype === "rest"
-            ? metadata.definition.summary
-            : metadata.definition.name;
+          return specs.definition.subtype === "rest"
+            ? specs.definition.summary
+            : specs.definition.name;
         case "function":
         case "model":
-          return metadata.name;
+          return specs.name;
         case "component":
-          return metadata.definition.name;
+          return specs.definition.name;
         default:
-          return metadata.type.charAt(0).toUpperCase() + metadata.type.slice(1);
+          return specs.type.charAt(0).toUpperCase() + specs.type.slice(1);
       }
     };
 
-    switch (declaration.metadata.type) {
+    switch (declaration.specs.type) {
       case "endpoint":
         return (
           <div className="flex flex-col items-start justify-start gap-2 border-b p-4">
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 text-xs">
                 <span className="font-semibold text-primary text-xs">
-                  {declaration.metadata.definition.subtype.toUpperCase()}
+                  {declaration.specs.definition.subtype.toUpperCase()}
                 </span>
                 <span className="text-muted-foreground">
-                  {declaration.metadata.type.charAt(0).toUpperCase() +
-                    declaration.metadata.type.slice(1)}
+                  {declaration.specs.type.charAt(0).toUpperCase() +
+                    declaration.specs.type.slice(1)}
                 </span>
               </div>
             </div>
             <h3
               className={cn("text-sm", {
-                "text-destructive": !declaration.metadata,
+                "text-destructive": !declaration.specs,
               })}
             >
-              {title(declaration.metadata)}
+              {title(declaration.specs)}
             </h3>
           </div>
         );
@@ -197,17 +196,17 @@ const DeclarationExpandableCardHeader = memo(
 
 const DeclarationExpandableCardContent = memo(
   ({ declaration }: { declaration: RouterOutputs["declarations"]["byId"] }) => {
-    if (!declaration.metadata) {
+    if (!declaration.specs) {
       return null;
     }
 
     return (
       <ScrollArea className="h-[calc(100dvh-398px)] p-4">
-        {declaration.metadata.type === "endpoint" ? (
-          declaration.metadata.definition.subtype === "rest" ? (
+        {declaration.specs.type === "endpoint" ? (
+          declaration.specs.definition.subtype === "rest" ? (
             <OpenApiEndpointDocs
               spec={
-                declaration.metadata.definition
+                declaration.specs.definition
                   ? ({
                       openapi: "3.0.0",
                       info: {
@@ -215,9 +214,9 @@ const DeclarationExpandableCardContent = memo(
                         version: "1.0.0",
                       },
                       paths: {
-                        [declaration.metadata.definition.path]: {
-                          [declaration.metadata.definition.method]:
-                            declaration.metadata.definition,
+                        [declaration.specs.definition.path]: {
+                          [declaration.specs.definition.method]:
+                            declaration.specs.definition,
                         },
                       },
                     } as OpenAPIV3.Document)
@@ -228,20 +227,20 @@ const DeclarationExpandableCardContent = memo(
             <FunctionDetails
               declaration={{
                 type: "function",
-                name: declaration.metadata.definition.name,
-                description: declaration.metadata.definition.description,
-                parameters: declaration.metadata.definition.parameters,
-                returns: declaration.metadata.definition.returns,
-                examples: declaration.metadata.definition.examples,
+                name: declaration.specs.definition.name,
+                description: declaration.specs.definition.description,
+                parameters: declaration.specs.definition.parameters,
+                returns: declaration.specs.definition.returns,
+                examples: declaration.specs.definition.examples,
                 implementationNotes:
-                  declaration.metadata.definition.implementationNotes,
-                remarks: declaration.metadata.definition.remarks,
-                throws: declaration.metadata.definition.throws,
+                  declaration.specs.definition.implementationNotes,
+                remarks: declaration.specs.definition.remarks,
+                throws: declaration.specs.definition.throws,
               }}
             />
           )
-        ) : declaration.metadata.type === "function" ? (
-          <FunctionDetails declaration={declaration.metadata} />
+        ) : declaration.specs.type === "function" ? (
+          <FunctionDetails declaration={declaration.specs} />
         ) : null}
       </ScrollArea>
     );
@@ -268,61 +267,53 @@ const DeclarationNodeCard = memo(
   }) => {
     const { fitBounds } = useReactFlow();
 
-    if (!declaration.metadata) {
+    if (!declaration.specs) {
       return null;
     }
 
-    const title = (
-      metadata: RouterOutputs["declarations"]["byId"]["metadata"],
-    ) => {
-      if (!metadata) {
+    const title = (specs: DeclarationSpecsV1) => {
+      if (!specs) {
         return null;
       }
 
-      switch (metadata.type) {
+      switch (specs.type) {
         case "endpoint":
-          return metadata.definition.subtype === "rest"
-            ? metadata.definition.summary
-            : metadata.definition.name;
+          return specs.definition.subtype === "rest"
+            ? specs.definition.summary
+            : specs.definition.name;
         case "function":
-          return metadata.name;
+          return specs.name;
         case "component":
-          return metadata.definition.name;
+          return specs.definition.name;
         default:
           return null;
       }
     };
 
-    const badge = (
-      metadata: RouterOutputs["declarations"]["byId"]["metadata"],
-    ) => {
-      if (!metadata) {
-        return null;
-      }
-
+    const badge = (specs: DeclarationSpecsV1) => {
       return (
         <div className="flex items-center gap-2 text-xs">
-          {metadata.type === "endpoint" ? (
-            metadata.definition.subtype === "rest" ? (
+          {specs.type === "endpoint" ? (
+            specs.definition.subtype === "rest" ? (
               <>
                 <span
                   className={cn(
                     "rounded-sm px-1.5 py-0.5 font-bold text-xs uppercase",
                     {
                       "bg-primary/30 text-primary":
-                        metadata.definition.method === "get",
+                        specs.definition.method === "get",
                       "bg-success/30 text-success":
-                        metadata.definition.method === "post",
+                        specs.definition.method === "post",
                       "bg-warning/30 text-warning":
-                        metadata.definition.method === "put",
+                        specs.definition.method === "put",
                       "bg-destructive/30 text-destructive":
-                        metadata.definition.method === "delete",
+                        specs.definition.method === "delete",
                       "p-0 font-semibold text-primary text-xs":
-                        !metadata.definition.method,
+                        !specs.definition.method,
                     },
                   )}
                 >
-                  {metadata.definition.method.toUpperCase()}
+                  {specs.definition.method.toUpperCase()}
                 </span>
                 <span className="text-muted-foreground">REST</span>
               </>
@@ -332,18 +323,18 @@ const DeclarationNodeCard = memo(
                 <span className="text-muted-foreground">RPC</span>
               </>
             )
-          ) : metadata.type === "function" ? (
+          ) : specs.type === "function" ? (
             <>
               <FunctionSquareIcon className="size-4" />
               <span className="text-muted-foreground">Function</span>
             </>
-          ) : metadata.type === "component" ? (
-            metadata.definition.subtype === "page" ? (
+          ) : specs.type === "component" ? (
+            specs.definition.subtype === "page" ? (
               <>
                 <AppWindowIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">Page</span>
               </>
-            ) : metadata.definition.subtype === "reusable" ? (
+            ) : specs.definition.subtype === "reusable" ? (
               <>
                 <ComponentIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">Component</span>
@@ -377,10 +368,10 @@ const DeclarationNodeCard = memo(
         }}
       >
         <div className="flex w-full items-center justify-between">
-          {badge(declaration.metadata)}
+          {badge(declaration.specs)}
         </div>
         <span className="w-full truncate text-start text-sm">
-          {title(declaration.metadata)}
+          {title(declaration.specs)}
         </span>
       </Card>
     );
