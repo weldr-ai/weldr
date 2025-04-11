@@ -83,12 +83,26 @@ export const environmentVariablesRouter = {
             eq(environmentVariables.id, input.id),
             eq(environmentVariables.userId, ctx.session.user.id),
           ),
+          with: {
+            integrations: {
+              with: {
+                integration: true,
+              },
+            },
+          },
         });
 
       if (!environmentVariable) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Environment variable not found",
+        });
+      }
+
+      if (environmentVariable.integrations.length > 0) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `Cannot delete environment variable because it is used by the following integrations: ${environmentVariable.integrations.map((i) => i.integration.name).join(", ")}. Please remove it from these integrations first.`,
         });
       }
 

@@ -2,6 +2,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { users } from "./auth";
+import { integrationEnvironmentVariables } from "./integrations";
 import { projects } from "./projects";
 import { secrets } from "./vault";
 
@@ -34,7 +35,7 @@ export const environmentVariables = pgTable(
 
 export const environmentVariablesRelations = relations(
   environmentVariables,
-  ({ one }) => ({
+  ({ one, many }) => ({
     project: one(projects, {
       fields: [environmentVariables.projectId],
       references: [projects.id],
@@ -43,5 +44,6 @@ export const environmentVariablesRelations = relations(
       fields: [environmentVariables.userId],
       references: [users.id],
     }),
+    integrations: many(integrationEnvironmentVariables),
   }),
 );

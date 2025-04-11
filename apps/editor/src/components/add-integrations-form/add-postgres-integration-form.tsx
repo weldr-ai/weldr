@@ -181,7 +181,7 @@ export function AddPostgresIntegrationForm({
                         size="sm"
                         className="w-full justify-start rounded-none rounded-b-md border-x-0 border-b-0 text-xs"
                       >
-                        <PlusIcon className="mr-1.5 size-3.5" />
+                        <PlusIcon className="mr-2 size-3.5" />
                         Add new environment variable
                       </Button>
                     </AddEnvironmentVariableDialog>

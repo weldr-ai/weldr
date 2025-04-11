@@ -27,9 +27,12 @@ export function EnvSection({
   const deleteEnvironmentVariable = api.environmentVariables.delete.useMutation(
     {
       onSuccess: () => {
+        console.log("onSuccess");
         apiUtils.environmentVariables.list.invalidate();
+        setDeleteDialogOpen(false);
       },
       onError: (error) => {
+        console.error(error);
         toast({
           title: "Error",
           description: error.message,
@@ -68,10 +71,8 @@ export function EnvSection({
                 setOpen={setDeleteDialogOpen}
                 onDelete={() => {
                   deleteEnvironmentVariable.mutate({ id: envVar.id });
-                  if (deleteEnvironmentVariable.isSuccess) {
-                    setDeleteDialogOpen(false);
-                  }
                 }}
+                isLoading={deleteEnvironmentVariable.isPending}
               />
             </div>
           ))}

@@ -94,6 +94,24 @@ export async function POST(request: Request) {
                     {
                       role: "assistant",
                       rawContent: [{ type: "paragraph", value: text }],
+                      createdAt: new Date(),
+                    },
+                  ],
+                },
+              });
+            }
+
+            if (text) {
+              await insertMessages({
+                tx,
+                input: {
+                  chatId,
+                  userId: session.user.id,
+                  messages: [
+                    {
+                      role: "assistant",
+                      rawContent: [{ type: "paragraph", value: text }],
+                      createdAt: new Date(),
                     },
                   ],
                 },
@@ -168,22 +186,6 @@ export async function POST(request: Request) {
 
                       break;
                     }
-                  }
-
-                  if (text) {
-                    await insertMessages({
-                      tx,
-                      input: {
-                        chatId,
-                        userId: session.user.id,
-                        messages: [
-                          {
-                            role: "assistant",
-                            rawContent: [{ type: "paragraph", value: text }],
-                          },
-                        ],
-                      },
-                    });
                   }
                 })();
               }

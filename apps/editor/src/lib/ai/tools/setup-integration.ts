@@ -45,6 +45,7 @@ export async function setupIntegration({
               status: "pending",
             },
           },
+          createdAt: new Date(),
         },
       ],
     },

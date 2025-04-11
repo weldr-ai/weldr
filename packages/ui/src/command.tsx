@@ -13,11 +13,11 @@ const Command = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive>
 >(({ className, ...props }, ref) => (
   <CommandPrimitive
+    ref={ref}
     className={cn(
-      "flex size-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
+      "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
       className,
     )}
-    ref={ref}
     {...props}
   />
 ));
@@ -47,14 +47,14 @@ const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
-  <div className="relative flex items-center border-b" cmdk-input-wrapper="">
-    <MagnifyingGlassIcon className="absolute left-2 size-4 shrink-0 opacity-50" />
+  <div className="flex items-center border-b" cmdk-input-wrapper="">
+    <MagnifyingGlassIcon className="ml-3 h-4 w-4 shrink-0 opacity-50" />
     <CommandPrimitive.Input
+      ref={ref}
       className={cn(
-        "flex h-10 w-full rounded-md border-none bg-transparent py-3 pl-8 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-10 w-full rounded-md border-none bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
-      ref={ref}
       {...props}
     />
   </div>
@@ -67,8 +67,8 @@ const CommandList = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.List
-    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
     ref={ref}
+    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
     {...props}
   />
 ));
@@ -80,8 +80,8 @@ const CommandEmpty = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
 >((props, ref) => (
   <CommandPrimitive.Empty
-    className="py-6 text-center text-sm"
     ref={ref}
+    className="py-6 text-center text-sm"
     {...props}
   />
 ));
@@ -93,11 +93,11 @@ const CommandGroup = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.Group
+    ref={ref}
     className={cn(
       "overflow-hidden text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:text-xs",
       className,
     )}
-    ref={ref}
     {...props}
   />
 ));
@@ -109,8 +109,8 @@ const CommandSeparator = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.Separator
-    className={cn("-mx-1 h-px bg-border", className)}
     ref={ref}
+    className={cn("-mx-1 h-px bg-border", className)}
     {...props}
   />
 ));
@@ -121,21 +121,21 @@ const CommandItem = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.Item
+    ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-none px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex cursor-default select-none items-center gap-2 rounded-sm px-3 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
       className,
     )}
-    ref={ref}
     {...props}
   />
 ));
 
 CommandItem.displayName = CommandPrimitive.Item.displayName;
 
-function CommandShortcut({
+const CommandShortcut = ({
   className,
   ...props
-}: React.HTMLAttributes<HTMLSpanElement>) {
+}: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
       className={cn(
@@ -145,7 +145,7 @@ function CommandShortcut({
       {...props}
     />
   );
-}
+};
 CommandShortcut.displayName = "CommandShortcut";
 
 export {

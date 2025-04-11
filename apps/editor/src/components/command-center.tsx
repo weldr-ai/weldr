@@ -91,24 +91,26 @@ export function CommandCenter({
         </div>
       ) : (
         <>
-          <div className="w-80 border-r">
+          <div className="border-r">
             <CommandInput
-              className="border-none focus:ring-0"
+              className="focus:ring-0"
               placeholder="Search projects..."
             />
-            <CommandList className="max-h-[calc(100%-84px)] w-80">
+            <CommandList className="scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-muted max-h-[calc(100%-84px)] w-[320px] overflow-y-auto">
               <CommandEmpty>No projects found.</CommandEmpty>
               <CommandGroup>
                 {projects.map((project) => (
                   <CommandItem
                     key={project.id}
                     value={project.name ?? "New Project"}
-                    className="flex cursor-pointer items-center gap-3 rounded-md p-2"
+                    className={cn("flex items-center gap-3 p-2", {
+                      "bg-accent": selectedProject?.id === project.id,
+                    })}
                     onSelect={() => {
                       setSelectedProject(project);
                     }}
                   >
-                    <div className="flex size-8 items-center justify-center rounded-lg border bg-muted/30">
+                    <div className="flex size-8 items-center justify-center rounded-md border bg-muted/30">
                       <LogoIcon className="size-6" />
                     </div>
                     <span className="font-medium">{project.name}</span>
@@ -117,7 +119,7 @@ export function CommandCenter({
               </CommandGroup>
               <Button
                 variant="ghost"
-                className="absolute bottom-0 w-80 rounded-t-none rounded-br-none border-t border-r bg-background"
+                className="absolute bottom-0 w-80 rounded-t-none rounded-br-none border-t bg-background"
                 onClick={() => {
                   setIsCreateMode(true);
                 }}
@@ -211,12 +213,12 @@ export function CommandCenter({
               setOpen(isCreateMode ? "create" : "view");
             }
           }}
-          className="h-[600px] w-[896px] max-w-4xl"
+          className="h-[600px] w-[896px] max-w-4xl [&_[cmdk-group]]:px-0"
         >
           {content}
         </CommandDialog>
       ) : (
-        <Command className="-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 h-[600px] w-[896px] max-w-4xl rounded-lg border duration-200 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5 ">
+        <Command className="-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 h-[600px] w-[896px] max-w-4xl rounded-lg border duration-200 [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5 ">
           {content}
         </Command>
       )}

@@ -476,6 +476,7 @@ ${fileContext}`,
             {
               role: "code",
               rawContent: value.files,
+              createdAt: new Date(),
             },
           ],
         },

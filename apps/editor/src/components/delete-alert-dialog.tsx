@@ -1,6 +1,7 @@
+"use client";
+
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -8,19 +9,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@weldr/ui/alert-dialog";
-import { buttonVariants } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/button";
 import { Input } from "@weldr/ui/input";
+import { LoaderIcon } from "lucide-react";
 import { useState } from "react";
 
 export function DeleteAlertDialog({
   open,
   setOpen,
   onDelete,
-  confirmText = "Delete",
+  isLoading = false,
+  confirmText = "DELETE",
 }: {
   open: boolean;
   setOpen: (open: boolean) => void;
   onDelete: () => void;
+  isLoading?: boolean;
   confirmText?: string;
 }) {
   const [typedText, setTypedText] = useState("");
@@ -48,16 +52,14 @@ export function DeleteAlertDialog({
         )}
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
+          <Button
             disabled={typedText !== confirmText}
-            onClick={() => {
-              onDelete();
-              setTypedText("");
-            }}
-            className={buttonVariants({ variant: "destructive" })}
+            onClick={onDelete}
+            variant="destructive"
           >
+            {isLoading && <LoaderIcon className="mr-2 size-3.5 animate-spin" />}
             Delete
-          </AlertDialogAction>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
