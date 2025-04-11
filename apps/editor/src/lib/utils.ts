@@ -19,11 +19,11 @@ export function shortenFileName(fileName: string, maxLength = 20): string {
   return start + ellipsis + end;
 }
 
-export function getResourceReferences(
-  resources: {
+export function getIntegrationReferences(
+  integrations: {
     id: string;
     name: string;
-    integrationType: "postgres" | "mysql";
+    integrationType: "postgres";
     metadata?: unknown;
   }[],
 ): z.infer<typeof userMessageRawContentReferenceElementSchema>[] {
@@ -31,39 +31,36 @@ export function getResourceReferences(
     typeof userMessageRawContentReferenceElementSchema
   >[] = [];
 
-  for (const resource of resources ?? []) {
+  for (const integration of integrations ?? []) {
     references.push({
-      id: resource.id,
+      id: integration.id,
       type: "reference",
-      name: resource.name,
-      referenceType: "resource",
-      resourceType: resource.integrationType,
+      name: integration.name,
+      referenceType: "integration",
+      integrationType: integration.integrationType,
     });
 
-    if (
-      resource.integrationType === "postgres" ||
-      resource.integrationType === "mysql"
-    ) {
-      const databaseStructure = resource.metadata;
+    if (integration.integrationType === "postgres") {
+      const databaseStructure = integration.metadata;
 
       // @ts-expect-error - FIXME: fix this
       for (const table of databaseStructure) {
         for (const column of table.columns) {
           references.push({
             type: "reference",
-            name: `${resource.name}.${table.name}.${column.name}`,
+            name: `${integration.name}.${table.name}.${column.name}`,
             referenceType: "database-column",
             dataType: column.dataType,
-            databaseId: resource.id,
+            databaseId: integration.id,
             tableName: table.name,
           });
         }
 
         references.push({
           type: "reference",
-          name: `${resource.name}.${table.name}`,
+          name: `${integration.name}.${table.name}`,
           referenceType: "database-table",
-          databaseId: resource.id,
+          databaseId: integration.id,
         });
       }
     }

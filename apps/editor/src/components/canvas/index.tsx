@@ -37,10 +37,12 @@ export function Canvas({
   project,
   initialNodes,
   initialEdges,
+  integrationTemplates,
 }: {
   project: RouterOutputs["projects"]["byId"];
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
   const { showEdges, toggleEdges } = useCanvas();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
@@ -109,7 +111,10 @@ export function Canvas({
 
       <Panel position="top-right" className="flex items-center gap-2">
         <Versions versions={project.versions} />
-        <ProjectSettings project={project} />
+        <ProjectSettings
+          project={project}
+          integrationTemplates={integrationTemplates}
+        />
       </Panel>
 
       <Panel position="bottom-right" className="flex flex-col items-end gap-2">

@@ -2,6 +2,7 @@ import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
+import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
 import { useReactFlow } from "@xyflow/react";
@@ -12,13 +13,13 @@ import { MultimodalInput } from "./multimodal-input";
 interface ChatProps {
   initialMessages: ChatMessage[];
   chatId: string;
-  // integrations: RouterOutputs["integrations"]["list"];
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }
 
 export function Chat({
   initialMessages,
   chatId,
-  // integrations
+  integrationTemplates,
 }: ChatProps) {
   const { data: session } = authClient.useSession();
   const generationTriggered = useRef(false);
@@ -104,7 +105,7 @@ export function Chat({
           break;
         }
         case "tool": {
-          if (chunk.toolName === "setupResourceTool") {
+          if (chunk.toolName === "setupIntegrationTool") {
             setPendingMessage("waiting");
             setMessages((prevMessages) => {
               return [
@@ -296,7 +297,7 @@ export function Chat({
 
     if (
       lastMessage?.role === "tool" &&
-      lastMessage.rawContent.toolName === "setupResource" &&
+      lastMessage.rawContent.toolName === "setupIntegrationTool" &&
       lastMessage.rawContent.toolResult?.status === "pending"
     ) {
       setPendingMessage("waiting");
@@ -363,7 +364,7 @@ export function Chat({
       <Messages
         messages={messages}
         setMessages={setMessages}
-        // integrations={integrations}
+        integrationTemplates={integrationTemplates}
         pendingMessage={pendingMessage}
         setPendingMessage={setPendingMessage}
       />

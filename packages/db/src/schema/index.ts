@@ -5,6 +5,8 @@ export * from "./declarations";
 export * from "./dependencies";
 export * from "./environment-variables";
 export * from "./files";
+export * from "./integration-templates";
+export * from "./integrations";
 export * from "./packages";
 export * from "./presets";
 export * from "./projects";

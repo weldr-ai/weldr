@@ -25,7 +25,10 @@ export type TStreamableValue =
   | {
       id: string;
       type: "tool";
-      toolName: "initializeProjectTool" | "implementTool" | "setupResourceTool";
+      toolName:
+        | "initializeProjectTool"
+        | "implementTool"
+        | "setupIntegrationTool";
       toolArgs?: Record<string, unknown>;
       toolResult: unknown;
     }

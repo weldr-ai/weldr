@@ -11,6 +11,8 @@ export default {
     "./src/schema/dependencies.ts",
     "./src/schema/environment-variables.ts",
     "./src/schema/files.ts",
+    "./src/schema/integration-templates.ts",
+    "./src/schema/integrations.ts",
     "./src/schema/packages.ts",
     "./src/schema/presets.ts",
     "./src/schema/projects.ts",

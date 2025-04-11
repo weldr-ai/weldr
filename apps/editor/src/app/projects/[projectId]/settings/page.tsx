@@ -16,7 +16,7 @@ export default async function ProjectSettingsPage({
   try {
     const { projectId } = await params;
     const project = await api.projects.byId({ id: projectId });
-    // const integrations = await api.integrations.list();
+    const integrationTemplates = await api.integrationTemplates.list();
 
     return (
       <div className="flex-1 rounded-md bg-background p-6 py-4">
@@ -37,7 +37,7 @@ export default async function ProjectSettingsPage({
           </div>
           <ProjectSettings
             project={project}
-            // integrations={integrations}
+            integrationTemplates={integrationTemplates}
           />
         </div>
       </div>

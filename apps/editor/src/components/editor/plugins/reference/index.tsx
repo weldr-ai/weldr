@@ -94,9 +94,9 @@ export function ReferencesPlugin({
           );
           break;
         }
-        case "resource": {
-          switch (reference.resourceType) {
-            case "postgres":
+        case "integration": {
+          switch (reference.integrationType) {
+            case "postgres": {
               acc.push(
                 new ReferenceOption({
                   reference,
@@ -107,17 +107,7 @@ export function ReferencesPlugin({
                 }),
               );
               break;
-            case "mysql":
-              acc.push(
-                new ReferenceOption({
-                  reference,
-                  options: {
-                    keywords: [reference.name, "resource", "mysql"],
-                    onSelect: () => {},
-                  },
-                }),
-              );
-              break;
+            }
             default:
               break;
           }

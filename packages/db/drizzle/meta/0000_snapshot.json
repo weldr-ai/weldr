@@ -1,5 +1,5 @@
 {
-  "id": "e1c96a32-5dc8-4183-a04a-6a707c55969b",
+  "id": "fea2274c-daed-41c2-a49f-115d42e95726",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -385,8 +385,8 @@
         }
       },
       "indexes": {
-        "created_at_idx": {
-          "name": "created_at_idx",
+        "canvas_nodes_created_at_idx": {
+          "name": "canvas_nodes_created_at_idx",
           "columns": [
             {
               "expression": "created_at",
@@ -680,6 +680,55 @@
         }
       },
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.declaration_integrations": {
+      "name": "declaration_integrations",
+      "schema": "",
+      "columns": {
+        "declaration_id": {
+          "name": "declaration_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "integration_id": {
+          "name": "integration_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "declaration_integrations_declaration_id_declarations_id_fk": {
+          "name": "declaration_integrations_declaration_id_declarations_id_fk",
+          "tableFrom": "declaration_integrations",
+          "tableTo": "declarations",
+          "columnsFrom": ["declaration_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "declaration_integrations_integration_id_integrations_id_fk": {
+          "name": "declaration_integrations_integration_id_integrations_id_fk",
+          "tableFrom": "declaration_integrations",
+          "tableTo": "integrations",
+          "columnsFrom": ["integration_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "declaration_integrations_declaration_id_integration_id_pk": {
+          "name": "declaration_integrations_declaration_id_integration_id_pk",
+          "columns": ["declaration_id", "integration_id"]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -1152,6 +1201,252 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.integration_templates": {
+      "name": "integration_templates",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "llm_txt": {
+          "name": "llm_txt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "docs_url": {
+          "name": "docs_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "config": {
+          "name": "config",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "integration_templates_created_at_idx": {
+          "name": "integration_templates_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.integration_environment_variables": {
+      "name": "integration_environment_variables",
+      "schema": "",
+      "columns": {
+        "map_to": {
+          "name": "map_to",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "integration_id": {
+          "name": "integration_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "environment_variable_id": {
+          "name": "environment_variable_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "integration_environment_variables_integration_id_integrations_id_fk": {
+          "name": "integration_environment_variables_integration_id_integrations_id_fk",
+          "tableFrom": "integration_environment_variables",
+          "tableTo": "integrations",
+          "columnsFrom": ["integration_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "integration_environment_variables_environment_variable_id_environment_variables_id_fk": {
+          "name": "integration_environment_variables_environment_variable_id_environment_variables_id_fk",
+          "tableFrom": "integration_environment_variables",
+          "tableTo": "environment_variables",
+          "columnsFrom": ["environment_variable_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "integration_environment_variables_integration_id_environment_variable_id_map_to_pk": {
+          "name": "integration_environment_variables_integration_id_environment_variable_id_map_to_pk",
+          "columns": ["integration_id", "environment_variable_id", "map_to"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.integrations": {
+      "name": "integrations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "integration_template_id": {
+          "name": "integration_template_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "integrations_created_at_idx": {
+          "name": "integrations_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "integrations_project_id_projects_id_fk": {
+          "name": "integrations_project_id_projects_id_fk",
+          "tableFrom": "integrations",
+          "tableTo": "projects",
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "integrations_user_id_users_id_fk": {
+          "name": "integrations_user_id_users_id_fk",
+          "tableFrom": "integrations",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "integrations_integration_template_id_integration_templates_id_fk": {
+          "name": "integrations_integration_template_id_integration_templates_id_fk",
+          "tableFrom": "integrations",
+          "tableTo": "integration_templates",
+          "columnsFrom": ["integration_template_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.packages": {
       "name": "packages",
       "schema": "",
@@ -1510,6 +1805,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "main_database_id": {
+          "name": "main_database_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1535,6 +1836,15 @@
           "tableFrom": "projects",
           "tableTo": "users",
           "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "projects_main_database_id_integrations_id_fk": {
+          "name": "projects_main_database_id_integrations_id_fk",
+          "tableFrom": "projects",
+          "tableTo": "integrations",
+          "columnsFrom": ["main_database_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"

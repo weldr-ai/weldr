@@ -144,6 +144,27 @@ export const projectsRouter = {
             eq(projects.userId, ctx.session.user.id),
           ),
           with: {
+            integrations: {
+              columns: {
+                id: true,
+                name: true,
+              },
+              with: {
+                environmentVariableMappings: {
+                  columns: {
+                    environmentVariableId: true,
+                    mapTo: true,
+                  },
+                },
+                integrationTemplate: {
+                  columns: {
+                    config: false,
+                    llmTxt: false,
+                    docsUrl: false,
+                  },
+                },
+              },
+            },
             versions: true,
             chats: {
               limit: 1,
@@ -173,6 +194,12 @@ export const projectsRouter = {
             environmentVariables: {
               columns: {
                 secretId: false,
+              },
+            },
+            mainDatabase: {
+              columns: {
+                id: true,
+                name: true,
               },
             },
           },

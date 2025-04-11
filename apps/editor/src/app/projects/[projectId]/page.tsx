@@ -13,8 +13,8 @@ export default async function ProjectPage({
 }): Promise<JSX.Element | undefined> {
   try {
     const { projectId } = await params;
-    // const integrations = await api.integrations.list();
     const project = await api.projects.byId({ id: projectId });
+    const integrationTemplates = await api.integrationTemplates.list();
 
     const initialNodes: CanvasNode[] =
       project.declarations?.reduce<CanvasNode[]>((acc, declaration) => {
@@ -55,7 +55,7 @@ export default async function ProjectPage({
         project={project}
         initialNodes={initialNodes}
         initialEdges={initialEdges}
-        // integrations={integrations}
+        integrationTemplates={integrationTemplates}
       />
     );
   } catch (error) {

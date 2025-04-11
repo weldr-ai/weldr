@@ -3,7 +3,7 @@
 import { insertMessages } from "@/lib/ai/insert-messages";
 import { prompts } from "@/lib/ai/prompts";
 import { registry } from "@/lib/ai/registry";
-import { setupResource, setupResourceTool } from "@/lib/ai/tools";
+import { setupIntegration, setupIntegrationTool } from "@/lib/ai/tools";
 import { implement, implementTool } from "@/lib/ai/tools/implement";
 import {
   initializeProject,
@@ -74,12 +74,12 @@ export async function POST(request: Request) {
         system: prompts.requirementsGatherer,
         messages: promptMessages,
         experimental_activeTools: project.initiatedAt
-          ? ["implementTool", "setupResourceTool"]
-          : ["initializeProjectTool", "setupResourceTool"],
+          ? ["implementTool", "setupIntegrationTool"]
+          : ["initializeProjectTool", "setupIntegrationTool"],
         tools: {
           implementTool,
           initializeProjectTool,
-          setupResourceTool,
+          setupIntegrationTool,
         },
         maxSteps: 3,
         onFinish: async ({ text, finishReason, toolCalls, toolResults }) => {
@@ -148,17 +148,17 @@ export async function POST(request: Request) {
 
                       break;
                     }
-                    case "setupResourceTool": {
+                    case "setupIntegrationTool": {
                       const toolResult = toolResults.find(
                         (toolResult) =>
-                          toolResult.toolName === "setupResourceTool",
+                          toolResult.toolName === "setupIntegrationTool",
                       );
 
                       if (!toolResult) {
                         throw new Error("Tool result not found");
                       }
 
-                      await setupResource({
+                      await setupIntegration({
                         streamWriter,
                         tx,
                         chatId,

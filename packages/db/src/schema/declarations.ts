@@ -15,6 +15,7 @@ import { canvasNodes } from "./canvas-nodes";
 import { chats } from "./chats";
 import { dependencies } from "./dependencies";
 import { files } from "./files";
+import { integrations } from "./integrations";
 import { packages } from "./packages";
 import { projects } from "./projects";
 import { declarationTypes } from "./shared-enums";
@@ -113,6 +114,35 @@ export const declarationPackagesRelations = relations(
     declaration: one(declarations, {
       fields: [declarationPackages.declarationId],
       references: [declarations.id],
+    }),
+  }),
+);
+
+export const declarationIntegrations = pgTable(
+  "declaration_integrations",
+  {
+    declarationId: text("declaration_id")
+      .references(() => declarations.id, { onDelete: "cascade" })
+      .notNull(),
+    integrationId: text("integration_id")
+      .references(() => integrations.id, { onDelete: "cascade" })
+      .notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.declarationId, table.integrationId] }),
+  }),
+);
+
+export const declarationIntegrationsRelations = relations(
+  declarationIntegrations,
+  ({ one }) => ({
+    declaration: one(declarations, {
+      fields: [declarationIntegrations.declarationId],
+      references: [declarations.id],
+    }),
+    integration: one(integrations, {
+      fields: [declarationIntegrations.integrationId],
+      references: [integrations.id],
     }),
   }),
 );

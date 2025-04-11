@@ -1,10 +1,17 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
-import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  type AnyPgColumn,
+  index,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
 import { chats } from "./chats";
 import { environmentVariables } from "./environment-variables";
+import { integrations } from "./integrations";
 import { versions } from "./versions";
 
 export const projects = pgTable(
@@ -25,6 +32,12 @@ export const projects = pgTable(
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
+    mainDatabaseId: text("main_database_id").references(
+      (): AnyPgColumn => integrations.id,
+      {
+        onDelete: "cascade",
+      },
+    ),
   },
   (t) => ({
     createdAtIdx: index("projects_created_at_idx").on(t.createdAt),
@@ -39,4 +52,9 @@ export const projectRelations = relations(projects, ({ many, one }) => ({
   }),
   versions: many(versions),
   chats: many(chats),
+  integrations: many(integrations),
+  mainDatabase: one(integrations, {
+    fields: [projects.mainDatabaseId],
+    references: [integrations.id],
+  }),
 }));

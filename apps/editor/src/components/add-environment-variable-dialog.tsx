@@ -22,17 +22,20 @@ import {
 } from "@weldr/ui/form";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { Input } from "@weldr/ui/input";
-import { LoaderIcon, PlusIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, LoaderIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
 export default function AddEnvironmentVariableDialog({
   projectId,
+  children,
 }: {
   projectId: string;
+  children?: React.ReactNode;
 }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showValue, setShowValue] = useState(false);
 
   const form = useForm<z.infer<typeof insertEnvironmentVariableSchema>>({
     mode: "onChange",
@@ -79,10 +82,12 @@ export default function AddEnvironmentVariableDialog({
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <PlusIcon className="mr-2 size-4" />
-          Add Variable
-        </Button>
+        {children ?? (
+          <Button variant="outline">
+            <PlusIcon className="mr-2 size-3.5" />
+            Add Variable
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -100,7 +105,11 @@ export default function AddEnvironmentVariableDialog({
                 <FormItem>
                   <FormLabel>Key</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter key" {...field} />
+                    <Input
+                      {...field}
+                      placeholder="Enter key"
+                      autoComplete="off"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -113,11 +122,26 @@ export default function AddEnvironmentVariableDialog({
                 <FormItem>
                   <FormLabel>Value</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter value"
-                      {...field}
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showValue ? "text" : "password"}
+                        placeholder="Enter value"
+                        {...field}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-1 right-1 z-10 size-7 rounded-sm"
+                        onClick={() => setShowValue(!showValue)}
+                      >
+                        {showValue ? (
+                          <EyeOffIcon className="size-3.5" />
+                        ) : (
+                          <EyeIcon className="size-3.5" />
+                        )}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

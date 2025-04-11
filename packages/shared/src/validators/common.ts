@@ -6,12 +6,10 @@ export const functionReferenceSchema = z.object({
   name: z.string().describe("The name of the function"),
 });
 
-export const resourceReferenceSchema = z.object({
-  id: z.string().describe("The ID of the resource"),
-  name: z.string().describe("The name of the resource"),
-  resourceType: z
-    .enum(["postgres", "mysql"])
-    .describe("The type of the resource"),
+export const integrationReferenceSchema = z.object({
+  id: z.string().describe("The ID of the integration"),
+  name: z.string().describe("The name of the integration"),
+  integrationType: z.enum(["postgres"]).describe("The type of the integration"),
 });
 
 export const databaseTableReferenceSchema = z.object({
@@ -57,10 +55,10 @@ export const rawContentFunctionReferenceSchema = z.object({
   name: z.string().describe("The name of the function"),
 });
 
-export const rawContentResourceReferenceSchema = z.object({
+export const rawContentIntegrationReferenceSchema = z.object({
   type: z.literal("reference"),
-  referenceType: z.literal("resource"),
-  ...resourceReferenceSchema.shape,
+  referenceType: z.literal("integration"),
+  ...integrationReferenceSchema.shape,
 });
 
 export const rawContentDatabaseTableReferenceSchema = z.object({
@@ -87,8 +85,8 @@ export const rawContentReferenceElementSchema = z.discriminatedUnion(
     rawContentFunctionReferenceSchema.describe(
       "The function reference part of a message or description. Must be used when mentioning a function in a message or description.",
     ),
-    rawContentResourceReferenceSchema.describe(
-      "The resource reference part of a message or description. Must be used when mentioning a resource in a message or description.",
+    rawContentIntegrationReferenceSchema.describe(
+      "The integration reference part of a message or description. Must be used when mentioning an integration in a message or description.",
     ),
     rawContentDatabaseTableReferenceSchema.describe(
       "The database-table reference part of a message or description. Must be used when mentioning a database table in a message or description.",

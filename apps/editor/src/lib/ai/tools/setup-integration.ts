@@ -4,11 +4,11 @@ import { tool } from "ai";
 import { z } from "zod";
 import { insertMessages } from "../insert-messages";
 
-export const setupResourceTool = tool({
+export const setupIntegrationTool = tool({
   description:
-    "Ask the user to setup a resource. MUST REPLY WITH A FRIENDLY MESSAGE TO THE USER WHILE INVOKING.",
+    "Ask the user to setup an integration. MUST REPLY WITH A FRIENDLY MESSAGE TO THE USER WHILE INVOKING.",
   parameters: z.object({
-    resource: z.enum(["postgres"]).describe("The type of resource to setup"),
+    integration: z.enum(["postgres"]).describe("The integration to setup"),
   }),
   execute: async () => {
     return {
@@ -17,7 +17,7 @@ export const setupResourceTool = tool({
   },
 });
 
-export async function setupResource({
+export async function setupIntegration({
   tx,
   chatId,
   userId,
@@ -28,7 +28,7 @@ export async function setupResource({
   chatId: string;
   userId: string;
   streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
-  toolArgs: z.infer<(typeof setupResourceTool)["parameters"]>;
+  toolArgs: z.infer<(typeof setupIntegrationTool)["parameters"]>;
 }) {
   const [messageId] = await insertMessages({
     tx,
@@ -39,7 +39,7 @@ export async function setupResource({
         {
           role: "tool",
           rawContent: {
-            toolName: "setupResourceTool",
+            toolName: "setupIntegrationTool",
             toolArgs,
             toolResult: {
               status: "pending",
@@ -57,7 +57,7 @@ export async function setupResource({
   await streamWriter.write({
     id: messageId,
     type: "tool",
-    toolName: "setupResourceTool",
+    toolName: "setupIntegrationTool",
     toolArgs,
     toolResult: {
       status: "pending",

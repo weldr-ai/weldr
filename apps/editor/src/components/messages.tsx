@@ -1,5 +1,6 @@
 import type { TPendingMessage } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
+import type { RouterOutputs } from "@weldr/api";
 import type { ChatMessage } from "@weldr/shared/types";
 import { cn } from "@weldr/ui/utils";
 import equal from "fast-deep-equal";
@@ -12,7 +13,7 @@ interface MessagesProps {
   setPendingMessage: (pendingMessage: TPendingMessage) => void;
   messages: ChatMessage[];
   setMessages: (messages: ChatMessage[]) => void;
-  // integrations: RouterOutputs["integrations"]["list"];
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }
 
 function PureMessages({
@@ -20,7 +21,7 @@ function PureMessages({
   setMessages,
   pendingMessage,
   setPendingMessage,
-  // integrations,
+  integrationTemplates,
 }: MessagesProps) {
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
@@ -38,7 +39,7 @@ function PureMessages({
           (message) =>
             !(
               message.role === "tool" &&
-              message.rawContent.toolName !== "setupResource"
+              message.rawContent.toolName !== "setupIntegrationTool"
             ),
         )
         .map((message) => (
@@ -48,7 +49,7 @@ function PureMessages({
             setMessages={setMessages}
             pendingMessage={pendingMessage}
             setPendingMessage={setPendingMessage}
-            // integrations={integrations}
+            integrationTemplates={integrationTemplates}
           />
         ))}
       <div ref={messagesEndRef} />

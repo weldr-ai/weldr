@@ -6,6 +6,7 @@ import { memo, useMemo } from "react";
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
 import { api } from "@/lib/trpc/client";
 import type { TPendingMessage } from "@/types";
+import type { RouterOutputs } from "@weldr/api";
 import type { ChatMessage, ToolMessage } from "@weldr/shared/types";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons/logo-icon";
@@ -19,7 +20,7 @@ import tsx from "react-syntax-highlighter/dist/esm/languages/prism/tsx";
 import ts from "react-syntax-highlighter/dist/esm/languages/prism/typescript";
 import yaml from "react-syntax-highlighter/dist/esm/languages/prism/yaml";
 import dracula from "react-syntax-highlighter/dist/esm/styles/prism/dracula";
-import { ChatResourceDialog } from "./chat-resource-dialog";
+import { ChatIntegrationDialog } from "./chat-integration-dialog";
 import { RawContentViewer } from "./raw-content-viewer";
 
 SyntaxHighlighter.registerLanguage("javascript", js);
@@ -39,13 +40,13 @@ const PureMessageItem = ({
   message,
   setMessages,
   setPendingMessage,
-  // integrations,
+  integrationTemplates,
 }: {
   message: ChatMessage;
   setMessages: (messages: ChatMessage[]) => void;
   pendingMessage: TPendingMessage;
   setPendingMessage: (pendingMessage: TPendingMessage) => void;
-  // integrations: RouterOutputs["integrations"]["list"];
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) => {
   return (
     <div
@@ -77,12 +78,12 @@ const PureMessageItem = ({
         )}
 
         {message.role === "tool" &&
-          message.rawContent.toolName === "setupResource" && (
-            <SetupResource
+          message.rawContent.toolName === "setupIntegrationTool" && (
+            <SetupIntegration
               setMessages={setMessages}
               setPendingMessage={setPendingMessage}
               message={message}
-              // integrations={integrations}
+              integrationTemplates={integrationTemplates}
             />
           )}
 
@@ -108,19 +109,19 @@ export const MessageItem = memo(PureMessageItem, (prevProps, nextProps) => {
   return true;
 });
 
-const PureSetupResource = ({
+const PureSetupIntegration = ({
   message,
-  // integrations,
+  integrationTemplates,
   setMessages,
   setPendingMessage,
 }: {
   message: ToolMessage;
-  // integrations: RouterOutputs["integrations"]["list"];
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   setMessages: (messages: ChatMessage[]) => void;
   setPendingMessage: (pendingMessage: "thinking" | "waiting" | null) => void;
 }) => {
   const toolInfo = message.rawContent as unknown as {
-    toolArgs: { resource: "postgres" };
+    toolArgs: { integration: "postgres" };
     toolResult: { status: "pending" | "success" | "error" | "cancelled" };
   };
 
@@ -145,19 +146,19 @@ const PureSetupResource = ({
     },
   });
 
-  switch (toolInfo.toolArgs.resource) {
+  switch (toolInfo.toolArgs.integration) {
     case "postgres": {
-      // const postgresIntegration = integrations?.find(
-      //   (integration) => integration.type === "postgres",
-      // );
+      const postgresIntegrationTemplate = integrationTemplates?.find(
+        (integrationTemplate) => integrationTemplate.type === "postgres",
+      );
 
-      // if (!postgresIntegration) {
-      //   return null;
-      // }
+      if (!postgresIntegrationTemplate) {
+        return null;
+      }
 
       return (
-        <ChatResourceDialog
-          // integration={postgresIntegration}
+        <ChatIntegrationDialog
+          integrationTemplate={postgresIntegrationTemplate}
           status={toolInfo.toolResult.status}
           onSuccess={() => {
             updateMessageMutation.mutate({
@@ -183,10 +184,13 @@ const PureSetupResource = ({
   }
 };
 
-export const SetupResource = memo(PureSetupResource, (prevProps, nextProps) => {
-  if (prevProps.message !== nextProps.message) return false;
-  return true;
-});
+export const SetupIntegration = memo(
+  PureSetupIntegration,
+  (prevProps, nextProps) => {
+    if (prevProps.message !== nextProps.message) return false;
+    return true;
+  },
+);
 
 const PureCodeBlock = ({
   files,

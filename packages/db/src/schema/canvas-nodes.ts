@@ -32,7 +32,7 @@ export const canvasNodes = pgTable(
       .notNull(),
   },
   (t) => ({
-    createdAtIdx: index("created_at_idx").on(t.createdAt),
+    createdAtIdx: index("canvas_nodes_created_at_idx").on(t.createdAt),
   }),
 );
 

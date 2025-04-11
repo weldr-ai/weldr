@@ -16,12 +16,12 @@ export function convertMessagesToCoreMessages(
       const toolInfo = message.rawContent as ToolMessageRawContent;
 
       if (
-        toolInfo.toolName === "setupResource" &&
+        toolInfo.toolName === "setupIntegration" &&
         toolInfo.toolResult?.status !== "pending"
       ) {
         result.push({
           role: "user",
-          content: `Setting up ${toolInfo.toolArgs?.resource} has been ${toolInfo.toolResult?.status}.`,
+          content: `Setting up ${toolInfo.toolArgs?.integration} has been ${toolInfo.toolResult?.status}.`,
         });
       } else if (toolInfo.toolName === "initializeProject") {
         result.push({

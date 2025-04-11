@@ -19,12 +19,12 @@ export function ProjectView({
   project: _project,
   initialNodes,
   initialEdges,
-  // integrations,
+  integrationTemplates,
 }: {
   project: RouterOutputs["projects"]["byId"];
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
-  // integrations: RouterOutputs["integrations"]["list"];
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
   const { project: projectData } = useProject();
 
@@ -66,7 +66,7 @@ export function ProjectView({
         <Chat
           chatId={project.chat.id}
           initialMessages={messages}
-          // integrations={integrations}
+          integrationTemplates={integrationTemplates}
         />
       </ResizablePanel>
       <ResizableHandle className="w-0" withHandle />
@@ -80,6 +80,7 @@ export function ProjectView({
           project={project}
           initialNodes={initialNodes}
           initialEdges={initialEdges ?? []}
+          integrationTemplates={integrationTemplates}
         />
       </ResizablePanel>
     </ResizablePanelGroup>
