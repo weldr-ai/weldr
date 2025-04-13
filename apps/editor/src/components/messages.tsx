@@ -2,10 +2,8 @@ import type { TPendingMessage } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
 import type { RouterOutputs } from "@weldr/api";
 import type { ChatMessage } from "@weldr/shared/types";
-import { cn } from "@weldr/ui/utils";
 import equal from "fast-deep-equal";
 import { memo } from "react";
-import { useScrollToBottom } from "../hooks/use-scroll-to-bottom";
 import { MessageItem } from "./message-item";
 
 interface MessagesProps {
@@ -23,17 +21,8 @@ function PureMessages({
   setPendingMessage,
   integrationTemplates,
 }: MessagesProps) {
-  const [messagesContainerRef, messagesEndRef] =
-    useScrollToBottom<HTMLDivElement>();
-
   return (
-    <div
-      ref={messagesContainerRef}
-      className={cn(
-        "scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-full max-h-[calc(100vh-188px)] min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-2",
-        pendingMessage && "max-h-[calc(100vh-212px)]",
-      )}
-    >
+    <>
       {messages
         .filter(
           (message) =>
@@ -52,8 +41,7 @@ function PureMessages({
             integrationTemplates={integrationTemplates}
           />
         ))}
-      <div ref={messagesEndRef} />
-    </div>
+    </>
   );
 }
 

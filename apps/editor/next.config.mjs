@@ -16,13 +16,7 @@ const config = {
   images: {
     remotePatterns: [
       {
-        hostname: "localhost",
-      },
-      {
         hostname: "weldr-controlled-general.s3.*.amazonaws.com",
-      },
-      {
-        hostname: "integramind.ai",
       },
     ],
   },

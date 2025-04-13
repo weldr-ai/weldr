@@ -1,9 +1,11 @@
+import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
 import { api } from "@/lib/trpc/client";
 import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
+import { cn } from "@weldr/ui/utils";
 import { useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Messages } from "./messages";
@@ -24,6 +26,8 @@ export function Chat({
 }: ChatProps) {
   const { data: session } = authClient.useSession();
   const generationTriggered = useRef(false);
+  const [messagesContainerRef, messagesEndRef] =
+    useScrollToBottom<HTMLDivElement>();
 
   const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(null);
   const [message, setMessage] = useState("");
@@ -313,13 +317,26 @@ export function Chat({
 
   return (
     <div className="flex size-full flex-col">
-      <Messages
-        messages={messages}
-        setMessages={setMessages}
-        integrationTemplates={integrationTemplates}
-        pendingMessage={pendingMessage}
-        setPendingMessage={setPendingMessage}
-      />
+      <div
+        ref={messagesContainerRef}
+        className={cn(
+          "scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-full max-h-[calc(100vh-186px)] min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-2",
+          pendingMessage && "max-h-[calc(100vh-212px)]",
+          attachments.length > 0 && "max-h-[calc(100vh-242px)]",
+          pendingMessage &&
+            attachments.length > 0 &&
+            "max-h-[calc(100vh-268px)]",
+        )}
+      >
+        <Messages
+          messages={messages}
+          setMessages={setMessages}
+          integrationTemplates={integrationTemplates}
+          pendingMessage={pendingMessage}
+          setPendingMessage={setPendingMessage}
+        />
+        <div ref={messagesEndRef} />
+      </div>
 
       <div className="relative px-2">
         <div className="absolute right-0 bottom-full left-0 h-4 bg-gradient-to-t from-muted to-transparent" />
