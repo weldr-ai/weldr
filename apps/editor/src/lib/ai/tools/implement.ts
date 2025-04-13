@@ -1,3 +1,4 @@
+import { takeScreenshot } from "@/lib/take-screenshot";
 import type { TStreamableValue } from "@/types";
 import type { Tx } from "@weldr/db";
 import { and, eq } from "@weldr/db";
@@ -127,6 +128,7 @@ export async function implement({
       userId,
       number: previousVersion.number + 1,
       isCurrent: true,
+      parentVersionId: previousVersion.id,
       message: toolArgs.commitMessage,
     })
     .returning();
@@ -152,6 +154,12 @@ export async function implement({
         content: `Please, implement the following changes: ${toolArgs.requirements}`,
       },
     ],
+  });
+
+  await takeScreenshot({
+    versionId: version.id,
+    projectId,
+    machineId,
   });
 
   console.log(`[implement:${projectId}] Writing to stream...`);

@@ -15,7 +15,6 @@ import { Fly } from "@weldr/shared/fly";
 import type { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import { type CoreMessage, streamText } from "ai";
 import type { z } from "zod";
-import { insertMessages } from "../../insert-messages";
 import { prompts } from "../../prompts";
 import { registry } from "../../registry";
 import {
@@ -453,43 +452,6 @@ ${fileContext}`,
           }
         }
       }
-    }
-
-    if (streamValue) {
-      const value = streamValue as {
-        type: "code";
-        files: Record<
-          string,
-          {
-            originalContent: string | undefined;
-            newContent: string | undefined;
-          }
-        >;
-      };
-
-      const [messageId] = await insertMessages({
-        tx,
-        input: {
-          chatId,
-          userId,
-          messages: [
-            {
-              role: "code",
-              rawContent: value.files,
-              createdAt: new Date(),
-            },
-          ],
-        },
-      });
-
-      if (!messageId) {
-        throw new Error("Message ID not found");
-      }
-
-      await streamWriter.write({
-        id: messageId,
-        ...value,
-      });
     }
 
     // Process all edits at once

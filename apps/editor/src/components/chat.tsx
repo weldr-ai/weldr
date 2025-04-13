@@ -1,4 +1,3 @@
-import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
@@ -14,17 +13,18 @@ interface ChatProps {
   initialMessages: ChatMessage[];
   chatId: string;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  project: RouterOutputs["projects"]["byId"];
 }
 
 export function Chat({
   initialMessages,
   chatId,
   integrationTemplates,
+  project,
 }: ChatProps) {
   const { data: session } = authClient.useSession();
   const generationTriggered = useRef(false);
 
-  const { project, setProject } = useProject();
   const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -173,20 +173,7 @@ export function Chat({
             ];
           });
 
-          setProject({
-            ...project,
-            currentVersion: {
-              id: chunk.versionId,
-              number: chunk.versionNumber,
-              message: chunk.versionMessage,
-              machineId: chunk.machineId,
-            },
-          });
-
-          await apiUtils.projects.byId.invalidate({
-            id: project.id,
-            currentVersionId: chunk.versionId,
-          });
+          await apiUtils.projects.byId.invalidate({ id: project.id });
 
           const previewNode = getNode("preview");
 
@@ -212,33 +199,7 @@ export function Chat({
           break;
         }
         case "code": {
-          setMessages((prevMessages) => {
-            const lastMessage = prevMessages[prevMessages.length - 1];
-
-            if (lastMessage?.role !== "code") {
-              return [
-                ...prevMessages,
-                {
-                  id: chunk.id,
-                  role: "code",
-                  createdAt: new Date(),
-                  rawContent: chunk.files,
-                },
-              ];
-            }
-
-            const messagesWithoutLast = prevMessages.slice(0, -1);
-
-            const updatedLastMessage = {
-              ...lastMessage,
-              rawContent: {
-                ...lastMessage.rawContent,
-                ...chunk.files,
-              },
-            };
-
-            return [...messagesWithoutLast, updatedLastMessage];
-          });
+          // TODO: Stream code changes to the client
           break;
         }
         case "nodes": {
@@ -271,16 +232,7 @@ export function Chat({
     }
 
     setPendingMessage(null);
-  }, [
-    chatId,
-    getNodes,
-    getNode,
-    setNodes,
-    updateNodeData,
-    project,
-    setProject,
-    apiUtils,
-  ]);
+  }, [chatId, getNodes, getNode, setNodes, updateNodeData, project, apiUtils]);
 
   useEffect(() => {
     if (lastMessage?.role === "user" && !generationTriggered.current) {

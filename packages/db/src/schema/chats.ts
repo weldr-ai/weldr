@@ -1,7 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import type {
   AssistantMessageRawContent,
-  CodeMessageRawContent,
   ToolMessageRawContent,
   UserMessageRawContent,
   VersionMessageRawContent,
@@ -25,7 +24,6 @@ export const messageRoles = pgEnum("message_roles", [
   "assistant",
   "tool",
   "version",
-  "code",
 ]);
 
 export const chats = pgTable(
@@ -80,7 +78,6 @@ export const chatMessages = pgTable(
         | AssistantMessageRawContent
         | ToolMessageRawContent
         | VersionMessageRawContent
-        | CodeMessageRawContent
       >()
       .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

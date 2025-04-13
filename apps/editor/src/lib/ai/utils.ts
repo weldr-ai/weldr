@@ -1,6 +1,5 @@
 import type {
   ChatMessage,
-  CodeMessageRawContent,
   ToolMessageRawContent,
   VersionMessageRawContent,
 } from "@weldr/shared/types";
@@ -48,18 +47,6 @@ export function convertMessagesToCoreMessages(
     }
 
     if (message.content === null) continue;
-
-    if (message.role === "code") {
-      const code = message.rawContent as CodeMessageRawContent;
-
-      for (const file of Object.keys(code)) {
-        result.push({
-          role: "assistant",
-          content: `File: ${file}\n${code[file]?.newContent}`,
-        });
-      }
-      continue;
-    }
 
     result.push({
       role: message.role,

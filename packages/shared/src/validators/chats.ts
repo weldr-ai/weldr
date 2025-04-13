@@ -65,14 +65,6 @@ export const versionMessageRawContentSchema = z.object({
   versionNumber: z.number(),
 });
 
-export const codeMessageRawContentSchema = z.record(
-  z.string(),
-  z.object({
-    originalContent: z.string().optional(),
-    newContent: z.string().optional(),
-  }),
-);
-
 export const messageRawContentSchema = z.union([
   userMessageRawContentElementSchema.array(),
   assistantMessageRawContentElementSchema.array(),
@@ -140,17 +132,11 @@ export const versionMessageSchema = baseMessageSchema.extend({
   rawContent: versionMessageRawContentSchema,
 });
 
-export const codeMessageSchema = baseMessageSchema.extend({
-  role: z.literal("code"),
-  rawContent: codeMessageRawContentSchema,
-});
-
 export const chatMessageSchema = z.discriminatedUnion("role", [
   userMessageSchema,
   assistantMessageSchema,
   toolMessageSchema,
   versionMessageSchema,
-  codeMessageSchema,
 ]);
 
 export const chatSchema = z.object({
@@ -180,11 +166,6 @@ export const addMessageItemSchema = z.discriminatedUnion("role", [
   z.object({
     role: z.literal("version"),
     rawContent: versionMessageRawContentSchema,
-    createdAt: z.date().optional(),
-  }),
-  z.object({
-    role: z.literal("code"),
-    rawContent: codeMessageRawContentSchema,
     createdAt: z.date().optional(),
   }),
 ]);

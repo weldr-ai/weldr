@@ -52,11 +52,11 @@ export function ProjectSettings({
   }, []);
 
   return (
-    <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} modal>
+    <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button variant="outline" size="icon" className="size-8 bg-muted">
+            <Button variant="ghost" size="icon" className="size-8 bg-muted">
               <SettingsIcon className="size-4" />
             </Button>
           </DialogTrigger>
@@ -74,12 +74,7 @@ export function ProjectSettings({
           </kbd>
         </TooltipContent>
       </Tooltip>
-      <DialogContent
-        className="flex h-[calc(100vh-100px)] max-w-[calc(100vw-100px)] flex-col"
-        onPointerDownOutside={(e) => {
-          e.preventDefault();
-        }}
-      >
+      <DialogContent className="flex h-[calc(100vh-50px)] max-w-[calc(100vw-50px)] flex-col">
         <DialogHeader>
           <DialogTitle>Project Settings</DialogTitle>
         </DialogHeader>

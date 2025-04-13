@@ -19,10 +19,10 @@ const config = {
         hostname: "localhost",
       },
       {
-        hostname: "*.s3.eu-central-1.amazonaws.com",
+        hostname: "weldr-controlled-general.s3.*.amazonaws.com",
       },
       {
-        hostname: "*.s3.us-east-1.amazonaws.com",
+        hostname: "integramind.ai",
       },
     ],
   },

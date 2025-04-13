@@ -124,14 +124,14 @@ export const S3 = {
       throw new Error(`Failed to write file ${path} to S3`);
     }
   },
-  getAttachmentUrl: async (key: string) => {
+  getSignedUrl: async (bucket: string, key: string, expiresIn = 3600) => {
     const url = await getSignedUrl(
       s3Client,
       new GetObjectCommand({
-        Bucket: "weldr-chat-attachments",
+        Bucket: bucket,
         Key: key,
       }),
-      { expiresIn: 3600 },
+      { expiresIn },
     );
 
     return url;

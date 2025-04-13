@@ -7,7 +7,6 @@ import type {
   attachmentSchema,
   chatMessageSchema,
   chatSchema,
-  codeMessageRawContentSchema,
   messageRawContentSchema,
   messageRoleSchema,
   toolMessageRawContentSchema,
@@ -56,7 +55,6 @@ export type ToolMessageRawContent = z.infer<typeof toolMessageRawContentSchema>;
 export type VersionMessageRawContent = z.infer<
   typeof versionMessageRawContentSchema
 >;
-export type CodeMessageRawContent = z.infer<typeof codeMessageRawContentSchema>;
 export type MessageRole = z.infer<typeof messageRoleSchema>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export type UserMessage = z.infer<typeof userMessageSchema>;

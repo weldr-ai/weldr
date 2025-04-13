@@ -133,9 +133,7 @@ export const projectsRouter = {
     }
   }),
   byId: protectedProcedure
-    .input(
-      z.object({ id: z.string(), currentVersionId: z.string().optional() }),
-    )
+    .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
         const project = await ctx.db.query.projects.findFirst({
@@ -226,7 +224,7 @@ export const projectsRouter = {
             const attachmentsWithUrls = await Promise.all(
               message.attachments.map(async (attachment) => ({
                 name: attachment.name,
-                url: await S3.getAttachmentUrl(attachment.key),
+                url: await S3.getSignedUrl("weldr-general", attachment.key),
               })),
             );
             return {
@@ -234,6 +232,16 @@ export const projectsRouter = {
               attachments: attachmentsWithUrls,
             };
           }),
+        );
+
+        const versionsWithThumbnails = await Promise.all(
+          project.versions.map(async (version) => ({
+            ...version,
+            thumbnail: await S3.getSignedUrl(
+              "weldr-controlled-general",
+              `thumbnails/${project.id}/${version.id}.jpeg`,
+            ),
+          })),
         );
 
         const getCurrentVersionDeclarations = async (
@@ -307,10 +315,9 @@ export const projectsRouter = {
             messages: messagesWithAttachments as ChatMessage[],
           },
           currentVersion,
+          versions: versionsWithThumbnails,
           declarations: currentVersion
-            ? await getCurrentVersionDeclarations(
-                input.currentVersionId ?? currentVersion.id,
-              )
+            ? await getCurrentVersionDeclarations(currentVersion.id)
             : undefined,
         };
 

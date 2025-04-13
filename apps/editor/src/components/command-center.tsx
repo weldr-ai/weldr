@@ -51,6 +51,11 @@ export function CommandCenter({
         e.preventDefault();
         setOpen("view");
       }
+      if (e.key === "n" && (e.metaKey || e.ctrlKey) && e.altKey) {
+        e.preventDefault();
+        setOpen("create");
+        setIsCreateMode(true);
+      }
     };
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);

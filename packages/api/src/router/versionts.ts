@@ -63,4 +63,57 @@ export const versionRouter = {
       });
       return versionsList;
     }),
+  setCurrent: protectedProcedure
+    .input(z.object({ versionId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.transaction(async (tx) => {
+        const previousCurrentVersion = await tx.query.versions.findFirst({
+          where: and(
+            eq(versions.userId, ctx.session.user.id),
+            eq(versions.isCurrent, true),
+          ),
+          columns: {
+            id: true,
+          },
+        });
+
+        if (!previousCurrentVersion) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Current version not found",
+          });
+        }
+
+        const [previousCurrentVersionUpdate] = await tx
+          .update(versions)
+          .set({ isCurrent: false })
+          .where(eq(versions.id, previousCurrentVersion.id))
+          .returning();
+
+        if (!previousCurrentVersionUpdate) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Previous current version not found",
+          });
+        }
+
+        const [newCurrentVersion] = await tx
+          .update(versions)
+          .set({ isCurrent: true })
+          .where(eq(versions.id, input.versionId))
+          .returning();
+
+        if (!newCurrentVersion) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "New current version not found",
+          });
+        }
+
+        return {
+          previousCurrentVersion: previousCurrentVersionUpdate,
+          newCurrentVersion,
+        };
+      });
+    }),
 };

@@ -1,12 +1,8 @@
 "use client";
 
-import "@/styles/flow-builder.css";
-import "@xyflow/react/dist/base.css";
-
 import { useCanvas } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { CanvasNode } from "@/types";
-import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { useTheme } from "@weldr/ui/theme-provider";
@@ -23,26 +19,22 @@ import {
 } from "@xyflow/react";
 import { EyeIcon, EyeOffIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useCallback } from "react";
-import { ProjectSettings } from "../project-settings";
-import { Versions } from "../versions";
 import { DeclarationV1Node } from "./nodes/declaration/v1";
-import { PreviewNode } from "./nodes/preview";
+
+import "@xyflow/react/dist/base.css";
+
+import "@/styles/flow-builder.css";
 
 const nodeTypes = {
-  preview: PreviewNode,
   "declaration-v1": DeclarationV1Node,
 };
 
 export function Canvas({
-  project,
   initialNodes,
   initialEdges,
-  integrationTemplates,
 }: {
-  project: RouterOutputs["projects"]["byId"];
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
-  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
   const { showEdges, toggleEdges } = useCanvas();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
@@ -87,7 +79,7 @@ export function Canvas({
 
   return (
     <ReactFlow
-      className="rounded-tl-xl border-t border-l"
+      className="rounded-tl-xl"
       nodes={nodes}
       onNodesChange={onNodesChange}
       edges={showEdges ? edges : []}
@@ -108,14 +100,6 @@ export function Canvas({
         className="bg-muted dark:bg-background"
         color="hsl(var(--background))"
       />
-
-      <Panel position="top-right" className="flex items-center gap-2">
-        <Versions versions={project.versions} />
-        <ProjectSettings
-          project={project}
-          integrationTemplates={integrationTemplates}
-        />
-      </Panel>
 
       <Panel position="bottom-right" className="flex flex-col items-end gap-2">
         <Tooltip>

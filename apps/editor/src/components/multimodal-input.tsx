@@ -254,48 +254,55 @@ function PureMultimodalInput({
           tabIndex={-1}
         />
 
-        {(attachments.length > 0 || uploadQueue.length > 0) && (
-          <div
-            className={cn(
-              "flex flex-row items-end gap-2 overflow-x-scroll rounded-t-xl bg-muted p-2",
-              attachmentsClassName,
-            )}
-          >
-            {attachments.map((attachment) => (
-              <PreviewAttachment
-                key={attachment.id}
-                attachment={attachment}
-                onDelete={() => {
-                  if (!attachment.name) return;
-                  fetch("/api/attachments", {
-                    method: "DELETE",
-                    body: JSON.stringify({ filename: attachment.name }),
-                  });
-                  setAttachments((currentAttachments) =>
-                    currentAttachments.filter(
-                      (a) => a.name !== attachment.name,
-                    ),
-                  );
-                }}
-              />
-            ))}
+        <div
+          className={cn(
+            "flex flex-row items-end gap-2 overflow-x-scroll rounded-t-xl bg-muted p-2",
+            attachmentsClassName,
+          )}
+        >
+          <PreviewAttachment
+            attachment={{
+              id: "logo",
+              key: "logo",
+              size: 100,
+              url: "https://integramind.ai/logo.svg",
+              name: "logo.svg",
+              contentType: "image/svg+xml",
+            }}
+          />
 
-            {uploadQueue.map((filename) => (
-              <PreviewAttachment
-                key={filename}
-                attachment={{
-                  id: "",
-                  key: "",
-                  size: 0,
-                  url: "",
-                  name: filename,
-                  contentType: "",
-                }}
-                isUploading={true}
-              />
-            ))}
-          </div>
-        )}
+          {attachments.map((attachment) => (
+            <PreviewAttachment
+              key={attachment.id}
+              attachment={attachment}
+              onDelete={() => {
+                if (!attachment.name) return;
+                fetch("/api/attachments", {
+                  method: "DELETE",
+                  body: JSON.stringify({ filename: attachment.name }),
+                });
+                setAttachments((currentAttachments) =>
+                  currentAttachments.filter((a) => a.name !== attachment.name),
+                );
+              }}
+            />
+          ))}
+
+          {uploadQueue.map((filename) => (
+            <PreviewAttachment
+              key={filename}
+              attachment={{
+                id: "",
+                key: "",
+                size: 0,
+                url: "",
+                name: filename,
+                contentType: "",
+              }}
+              isUploading={true}
+            />
+          ))}
+        </div>
 
         <Textarea
           ref={textareaRef}

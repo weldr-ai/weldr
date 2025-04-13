@@ -34,22 +34,6 @@ export default async function ProjectPage({
       }, []) ?? [];
     const initialEdges: Edge[] = [];
 
-    if (project.currentVersion) {
-      initialNodes.push({
-        id: "preview",
-        type: "preview" as const,
-        position: {
-          x: 0,
-          y: 0,
-        },
-        data: {
-          type: "preview",
-          projectId: project.id,
-          machineId: project.currentVersion.machineId,
-        },
-      });
-    }
-
     return (
       <ProjectView
         project={project}

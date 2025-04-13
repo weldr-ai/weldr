@@ -1,3 +1,4 @@
+import { takeScreenshot } from "@/lib/take-screenshot";
 import type { TStreamableValue } from "@/types";
 import { type InferInsertModel, type Tx, and, eq } from "@weldr/db";
 import {
@@ -353,6 +354,12 @@ You MUST NOT create any database schemas or authentication. THIS IS A PURE CLIEN
   });
 
   console.log(`[initializeProject:${projectId}] Updating status to success`);
+
+  await takeScreenshot({
+    versionId: version.id,
+    projectId,
+    machineId,
+  });
 
   await streamWriter.write({
     id: messageId,

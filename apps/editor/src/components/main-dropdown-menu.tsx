@@ -51,6 +51,21 @@ export function MainDropdownMenu({
         <DropdownMenuItem onClick={() => setOpen("create")}>
           <PlusIcon className="mr-2 size-4 text-muted-foreground" />
           Create Project
+          <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
+            <span className="text-xs">
+              {typeof window !== "undefined" &&
+              window.navigator?.userAgent.toLowerCase().includes("mac")
+                ? "⌘"
+                : "Ctrl"}
+            </span>
+            <span className="text-xs">
+              {typeof window !== "undefined" &&
+              window.navigator?.userAgent.toLowerCase().includes("mac")
+                ? "⌥"
+                : "Alt"}
+            </span>
+            <span className="text-xs">n</span>
+          </kbd>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setOpen("view")}>
           <BoxesIcon className="mr-2 size-4 text-muted-foreground" />

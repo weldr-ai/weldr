@@ -46,7 +46,7 @@ export const chatsRouter = {
           const attachments = [];
 
           for (const attachment of message.attachments) {
-            const url = await S3.getAttachmentUrl(attachment.key);
+            const url = await S3.getSignedUrl("weldr-general", attachment.key);
 
             attachments.push({
               name: attachment.name,

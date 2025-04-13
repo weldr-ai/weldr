@@ -2,9 +2,9 @@
 
 import { toast } from "@weldr/ui/hooks/use-toast";
 
-import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@weldr/api";
+import { useParams } from "next/navigation";
 import { AddPostgresIntegrationForm } from "./add-postgres-integration-form";
 
 export function AddIntegrationsForm({
@@ -18,8 +18,7 @@ export function AddIntegrationsForm({
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
   setDialogOpen?: (open: boolean) => void;
 }) {
-  const { project } = useProject();
-
+  const { projectId } = useParams<{ projectId: string }>();
   const apiUtils = api.useUtils();
 
   const addIntegrationMutation = api.integrations.create.useMutation({
@@ -65,7 +64,7 @@ export function AddIntegrationsForm({
   const { data: environmentVariablesOptions } =
     api.environmentVariables.list.useQuery(
       {
-        projectId: project.id,
+        projectId,
       },
       {
         initialData: environmentVariables,

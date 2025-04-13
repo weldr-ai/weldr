@@ -9,11 +9,22 @@ import {
 } from "@weldr/ui/resizable";
 
 import { Canvas } from "@/components/canvas";
-import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@weldr/ui/select";
 import type { Edge } from "@xyflow/react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { Preview } from "./canvas/nodes/preview";
 import { Chat } from "./chat";
 import { MainDropdownMenu } from "./main-dropdown-menu";
+import { ProjectSettings } from "./project-settings";
+import { Versions } from "./versions";
 
 export function ProjectView({
   project: _project,
@@ -26,12 +37,64 @@ export function ProjectView({
   initialEdges: Edge[];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
-  const { project: projectData } = useProject();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value === "preview") {
+        params.delete(name);
+      } else {
+        params.set(name, value);
+      }
+      return params.toString();
+    },
+    [searchParams],
+  );
+
+  const [selectedView, setSelectedView] = useState<
+    "preview" | "canvas" | "versions"
+  >(
+    () =>
+      (searchParams.get("view") as "preview" | "canvas" | "versions") ??
+      "preview",
+  );
+
+  useEffect(() => {
+    router.push(`${pathname}?${createQueryString("view", selectedView)}`, {
+      scroll: false,
+    });
+  }, [selectedView, router, pathname, createQueryString]);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        switch (e.key) {
+          case "1":
+            e.preventDefault();
+            setSelectedView("preview");
+            break;
+          case "2":
+            e.preventDefault();
+            setSelectedView("canvas");
+            break;
+          case "3":
+            e.preventDefault();
+            setSelectedView("versions");
+            break;
+        }
+      }
+    };
+
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   const { data: project } = api.projects.byId.useQuery(
     {
       id: _project.id,
-      currentVersionId: projectData.currentVersion?.id,
     },
     {
       initialData: _project,
@@ -62,11 +125,39 @@ export function ProjectView({
               {project.name ?? "Unnamed Project"}
             </span>
           </div>
+          <div className="flex items-center gap-2">
+            <Select
+              value={selectedView}
+              onValueChange={(value) =>
+                setSelectedView(value as "preview" | "canvas" | "versions")
+              }
+            >
+              <SelectTrigger className="h-8 w-28 text-xs">
+                <SelectValue placeholder="Select a view" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem className="text-xs" value="preview">
+                  Preview
+                </SelectItem>
+                <SelectItem className="text-xs" value="canvas">
+                  Canvas
+                </SelectItem>
+                <SelectItem className="text-xs" value="versions">
+                  Versions
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <ProjectSettings
+              project={project}
+              integrationTemplates={integrationTemplates}
+            />
+          </div>
         </div>
         <Chat
           chatId={project.chat.id}
           initialMessages={messages}
           integrationTemplates={integrationTemplates}
+          project={project}
         />
       </ResizablePanel>
       <ResizableHandle className="w-0" withHandle />
@@ -76,12 +167,18 @@ export function ProjectView({
         minSize={25}
         order={2}
       >
-        <Canvas
-          project={project}
-          initialNodes={initialNodes}
-          initialEdges={initialEdges ?? []}
-          integrationTemplates={integrationTemplates}
-        />
+        <div className="flex size-full rounded-tl-xl border-t border-l">
+          {selectedView === "canvas" && (
+            <Canvas
+              initialNodes={initialNodes}
+              initialEdges={initialEdges ?? []}
+            />
+          )}
+          {selectedView === "preview" && <Preview project={project} />}
+          {selectedView === "versions" && (
+            <Versions versions={project.versions} />
+          )}
+        </div>
       </ResizablePanel>
     </ResizablePanelGroup>
   );

@@ -10,7 +10,6 @@ import { auth } from "@weldr/auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-// Use Blob instead of File since File is not available in Node.js environment
 const attachmentSchema = z.object({
   chatId: z.string().min(1, { message: "Chat ID is required" }),
   file: z
@@ -18,7 +17,6 @@ const attachmentSchema = z.object({
     .refine((file) => file.size <= 5 * 1024 * 1024, {
       message: "File size should be less than 5MB",
     })
-    // Update the file type based on the kind of files you want to accept
     .refine(
       (file) =>
         ["image/jpeg", "image/png", "application/pdf"].includes(file.type),
@@ -28,13 +26,10 @@ const attachmentSchema = z.object({
     ),
 });
 
-const BUCKET_NAME = "weldr-chat-attachments";
+const BUCKET_NAME = "weldr-general";
 
 const s3Client = new S3Client({
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  region: process.env.AWS_REGION!,
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  endpoint: process.env.AWS_ENDPOINT_URL_S3!,
+  region: process.env.AWS_REGION,
   credentials: {
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
@@ -84,9 +79,8 @@ export async function POST(request: Request) {
     try {
       const attachmentId = createId();
 
-      const key = `${session.user.id}/${validatedAttachment.data.chatId}/${attachmentId}.${file.type.split("/")[1]}`;
+      const key = `attachments/${validatedAttachment.data.chatId}/${attachmentId}.${file.type.split("/")[1]}`;
 
-      // Create an upload object to upload the file to the bucket
       const upload = new Upload({
         params: {
           Bucket: BUCKET_NAME,
@@ -97,15 +91,12 @@ export async function POST(request: Request) {
         queueSize: 3,
       });
 
-      // Listen for progress events and log them to the console
       upload.on("httpUploadProgress", (progress) => {
         console.log(progress);
       });
 
-      // Execute the upload and wait for it to complete
       await upload.done();
 
-      // Create a signed URL for the uploaded object
       const imageUrl = await getSignedUrl(
         s3Client,
         new GetObjectCommand({

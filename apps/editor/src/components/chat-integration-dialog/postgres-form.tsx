@@ -5,7 +5,6 @@ import { LoaderIcon, XIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { useProject } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/button";
@@ -17,6 +16,7 @@ import {
   FormMessage,
 } from "@weldr/ui/form";
 import { Input } from "@weldr/ui/input";
+import { useParams } from "next/navigation";
 
 const validationSchema = z.object({
   integrationTemplateId: z.string(),
@@ -37,7 +37,7 @@ export function PostgresForm({
   onCancel,
   onClose,
 }: PostgresFormProps) {
-  const { project } = useProject();
+  const { projectId } = useParams<{ projectId: string }>();
 
   const addIntegrationMutation = api.integrations.create.useMutation({
     onSuccess: () => {
@@ -59,7 +59,7 @@ export function PostgresForm({
   const onSubmit = async (data: z.infer<typeof validationSchema>) => {
     await addIntegrationMutation.mutateAsync({
       ...data,
-      projectId: project.id,
+      projectId,
       environmentVariableMappings: [
         { envVarId: data.DATABASE_URL, configKey: "DATABASE_URL" },
       ],

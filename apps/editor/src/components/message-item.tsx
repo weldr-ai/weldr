@@ -1,9 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { memo, useMemo } from "react";
+import { memo } from "react";
 
-import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
 import { api } from "@/lib/trpc/client";
 import type { TPendingMessage } from "@/types";
 import type { RouterOutputs } from "@weldr/api";
@@ -11,30 +9,8 @@ import type { ChatMessage, ToolMessage } from "@weldr/shared/types";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import { cn } from "@weldr/ui/utils";
-import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import js from "react-syntax-highlighter/dist/esm/languages/prism/javascript";
-import json from "react-syntax-highlighter/dist/esm/languages/prism/json";
-import jsx from "react-syntax-highlighter/dist/esm/languages/prism/jsx";
-import sql from "react-syntax-highlighter/dist/esm/languages/prism/sql";
-import tsx from "react-syntax-highlighter/dist/esm/languages/prism/tsx";
-import ts from "react-syntax-highlighter/dist/esm/languages/prism/typescript";
-import yaml from "react-syntax-highlighter/dist/esm/languages/prism/yaml";
-import dracula from "react-syntax-highlighter/dist/esm/styles/prism/dracula";
 import { ChatIntegrationDialog } from "./chat-integration-dialog";
 import { RawContentViewer } from "./raw-content-viewer";
-
-SyntaxHighlighter.registerLanguage("javascript", js);
-SyntaxHighlighter.registerLanguage("typescript", ts);
-SyntaxHighlighter.registerLanguage("json", json);
-SyntaxHighlighter.registerLanguage("jsx", jsx);
-SyntaxHighlighter.registerLanguage("tsx", tsx);
-SyntaxHighlighter.registerLanguage("yaml", yaml);
-SyntaxHighlighter.registerLanguage("sql", sql);
-
-const SyntaxHighlighterLazy = dynamic(
-  () => import("react-syntax-highlighter").then((mod) => mod.PrismLight),
-  { ssr: false },
-);
 
 const PureMessageItem = ({
   message,
@@ -95,8 +71,6 @@ const PureMessageItem = ({
             </span>
           </div>
         )}
-
-        {message.role === "code" && <CodeBlock files={message.rawContent} />}
       </div>
     </div>
   );
@@ -191,96 +165,3 @@ export const SetupIntegration = memo(
     return true;
   },
 );
-
-const PureCodeBlock = ({
-  files,
-}: {
-  files: Record<string, { originalContent?: string; newContent?: string }>;
-}) => {
-  const [containerRef, endRef] = useScrollToBottom<HTMLDivElement>();
-
-  return (
-    <div
-      ref={containerRef}
-      className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-[300px] flex-col overflow-auto rounded-lg border bg-background"
-    >
-      {Object.entries(files).map(
-        ([file, { originalContent, newContent }], index) => (
-          <CodeFile
-            key={file}
-            file={file}
-            originalContent={originalContent}
-            newContent={newContent}
-            index={index}
-          />
-        ),
-      )}
-      <div ref={endRef} />
-    </div>
-  );
-};
-
-export const CodeBlock = memo(PureCodeBlock, (prevProps, nextProps) => {
-  if (prevProps.files !== nextProps.files) return false;
-  return true;
-});
-
-const PureCodeFile = ({
-  file,
-  originalContent,
-  newContent,
-  index,
-}: {
-  file: string;
-  originalContent: string | undefined;
-  newContent: string | undefined;
-  index: number;
-}) => {
-  const language = useMemo(() => file.split(".").pop() ?? "txt", [file]);
-
-  return (
-    <div className="relative">
-      <h3
-        className={cn(
-          "sticky top-0 z-10 border-b bg-background p-3 font-medium text-muted-foreground text-sm",
-          index !== 0 && "border-t",
-        )}
-      >
-        {file}
-      </h3>
-      {originalContent && originalContent.length > 0 && (
-        <SyntaxHighlighterLazy
-          language={language}
-          style={dracula}
-          customStyle={{
-            padding: "8px",
-            margin: "0px",
-            backgroundColor: "hsl(var(--destructive)/0.1)",
-          }}
-        >
-          {originalContent}
-        </SyntaxHighlighterLazy>
-      )}
-      {newContent && newContent.length > 0 && (
-        <SyntaxHighlighterLazy
-          language={language}
-          style={dracula}
-          customStyle={{
-            padding: "8px",
-            margin: "0px",
-            backgroundColor: "hsl(var(--success)/0.1)",
-          }}
-        >
-          {newContent}
-        </SyntaxHighlighterLazy>
-      )}
-    </div>
-  );
-};
-
-export const CodeFile = memo(PureCodeFile, (prevProps, nextProps) => {
-  if (prevProps.file !== nextProps.file) return false;
-  if (prevProps.originalContent !== nextProps.originalContent) return false;
-  if (prevProps.newContent !== nextProps.newContent) return false;
-  return true;
-});
