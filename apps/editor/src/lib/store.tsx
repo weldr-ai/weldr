@@ -8,32 +8,53 @@ import {
   useState,
 } from "react";
 
+export type CommandCenterView = "create" | "projects";
+
 interface CommandCenterContextType {
-  open: "create" | "view" | null;
-  setOpen: (open: "create" | "view" | null) => void;
+  open: boolean;
+  view: CommandCenterView;
+  setOpen: (open: boolean) => void;
+  setView: (view: CommandCenterView) => void;
 }
 
 const CommandCenterContext = createContext<
   CommandCenterContextType | undefined
 >(undefined);
 
-export function CommandCenterProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState<"create" | "view" | null>(null);
+export function CommandCenterProvider({
+  children,
+  activeView,
+}: {
+  children: ReactNode;
+  activeView?: CommandCenterView;
+}) {
+  const [open, setOpen] = useState(false);
+  const [view, setView] = useState<CommandCenterView>(activeView ?? "projects");
 
   return (
-    <CommandCenterContext.Provider value={{ open, setOpen }}>
+    <CommandCenterContext.Provider value={{ open, view, setOpen, setView }}>
       {children}
     </CommandCenterContext.Provider>
   );
 }
 
-export function useCommandCenter() {
+export function useCommandCenter(activeView?: CommandCenterView) {
   const context = useContext(CommandCenterContext);
+
   if (context === undefined) {
     throw new Error(
       "useCommandCenter must be used within a CommandCenterProvider",
     );
   }
+
+  const { setView } = context;
+
+  useEffect(() => {
+    if (activeView) {
+      setView(activeView);
+    }
+  }, [activeView, setView]);
+
   return context;
 }
 

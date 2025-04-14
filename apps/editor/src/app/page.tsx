@@ -21,7 +21,7 @@ export default async function Home(): Promise<JSX.Element> {
         <MainDropdownMenu />
       </div>
       <div className="fixed inset-0 z-10 flex">
-        <CommandCenter projects={projects} asDialog={false} />
+        <CommandCenter projects={projects} asDialog={false} view="create" />
       </div>
     </div>
   );

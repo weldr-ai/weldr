@@ -36,7 +36,7 @@ export function MainDropdownMenu({
   className?: string;
 }): JSX.Element {
   const router = useRouter();
-  const { setOpen } = useCommandCenter();
+  const { setView, setOpen } = useCommandCenter();
 
   return (
     <DropdownMenu>
@@ -48,7 +48,12 @@ export function MainDropdownMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="start" side={side}>
         <DropdownMenuLabel>Projects</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => setOpen("create")}>
+        <DropdownMenuItem
+          onClick={() => {
+            setView("create");
+            setOpen(true);
+          }}
+        >
           <PlusIcon className="mr-2 size-4 text-muted-foreground" />
           Create Project
           <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
@@ -67,7 +72,12 @@ export function MainDropdownMenu({
             <span className="text-xs">n</span>
           </kbd>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setOpen("view")}>
+        <DropdownMenuItem
+          onClick={() => {
+            setView("projects");
+            setOpen(true);
+          }}
+        >
           <BoxesIcon className="mr-2 size-4 text-muted-foreground" />
           View All Projects
           <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
