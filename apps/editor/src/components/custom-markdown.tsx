@@ -10,18 +10,22 @@ import { ReferenceBadge } from "./editor/reference-badge";
 
 type ReferenceItem = z.infer<typeof rawContentReferenceElementSchema>;
 
-export function RawContentViewer({
-  rawContent,
+export function CustomMarkdown({
+  content,
   className,
 }: {
-  rawContent: RawContent;
+  content: RawContent | string;
   className?: string;
 }) {
   const { markdownText, references } = useMemo(() => {
+    if (typeof content === "string") {
+      return { markdownText: content, references: [] };
+    }
+
     let text = "";
     const references: Array<Omit<ReferenceItem, "type">> = [];
 
-    for (const item of rawContent) {
+    for (const item of content) {
       if (item.type === "paragraph") {
         text += item.value;
       } else {
@@ -32,7 +36,7 @@ export function RawContentViewer({
     }
 
     return { markdownText: text, references };
-  }, [rawContent]);
+  }, [content]);
 
   const processContent = () => {
     let processedContent = markdownText;
@@ -95,7 +99,11 @@ export function RawContentViewer({
             a: ({ children, ...props }) => (
               <a {...props}>{processReferences(children)}</a>
             ),
-            code: ({ children }) => <code>{processReferences(children)}</code>,
+            code: ({ children }) => (
+              <code className="bg-destructive">
+                {processReferences(children)}
+              </code>
+            ),
             blockquote: ({ children }) => (
               <blockquote>{processReferences(children)}</blockquote>
             ),

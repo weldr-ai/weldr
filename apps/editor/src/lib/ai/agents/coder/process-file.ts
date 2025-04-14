@@ -268,16 +268,6 @@ export async function processFile({
           position: canvasNode.position,
           createdAt: canvasNode.createdAt,
           updatedAt: canvasNode.updatedAt,
-          chats: [
-            {
-              id: chat.id,
-              createdAt: chat.createdAt,
-              projectId,
-              canvasNodeId: canvasNode.id,
-              userId,
-              messages: chat.messages ?? [],
-            },
-          ],
         },
         createdAt: declarationCreatedAt,
         updatedAt: declarationUpdatedAt,

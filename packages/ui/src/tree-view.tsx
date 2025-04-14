@@ -62,6 +62,18 @@ export function schemaToTreeData(
   name = "root",
   required = false,
 ): TreeDataItem[] {
+  // Handle unitary schemas (schemas that describe a single value)
+  if (
+    schema.type &&
+    !schema.properties &&
+    !schema.items &&
+    !schema.allOf &&
+    !schema.anyOf &&
+    !schema.oneOf
+  ) {
+    return [createTreeItem(schema, name, required)];
+  }
+
   // Create the root item first
   const root = createTreeItem(schema, name, required);
   // Return root's children or empty array

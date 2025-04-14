@@ -104,6 +104,35 @@ export function useCanvas() {
   return context;
 }
 
+interface ProjectViewContextType {
+  selectedView: "preview" | "canvas" | "versions";
+  setSelectedView: (view: "preview" | "canvas" | "versions") => void;
+}
+
+const ProjectViewContext = createContext<ProjectViewContextType | undefined>(
+  undefined,
+);
+
+export function ProjectViewProvider({ children }: { children: ReactNode }) {
+  const [selectedView, setSelectedView] = useState<
+    "preview" | "canvas" | "versions"
+  >("preview");
+
+  return (
+    <ProjectViewContext.Provider value={{ selectedView, setSelectedView }}>
+      {children}
+    </ProjectViewContext.Provider>
+  );
+}
+
+export function useProjectView() {
+  const context = useContext(ProjectViewContext);
+  if (context === undefined) {
+    throw new Error("useProjectView must be used within a ProjectViewProvider");
+  }
+  return context;
+}
+
 export function AppStateProvider({
   children,
 }: {
@@ -111,7 +140,9 @@ export function AppStateProvider({
 }) {
   return (
     <CommandCenterProvider>
-      <CanvasProvider>{children}</CanvasProvider>
+      <ProjectViewProvider>
+        <CanvasProvider>{children}</CanvasProvider>
+      </ProjectViewProvider>
     </CommandCenterProvider>
   );
 }

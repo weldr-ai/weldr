@@ -6,6 +6,7 @@ import {
   BracesIcon,
   BracketsIcon,
   HashIcon,
+  Layers3Icon,
   TextIcon,
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
@@ -26,6 +27,21 @@ export function cn(...inputs: ClassValue[]): string {
 }
 
 export function getDataTypeIcon(type: DataType) {
+  if (
+    typeof type === "string" &&
+    ![
+      "string",
+      "number",
+      "integer",
+      "array",
+      "boolean",
+      "object",
+      "null",
+    ].includes(type)
+  ) {
+    return Layers3Icon;
+  }
+
   switch (type) {
     case "string":
       return TextIcon;

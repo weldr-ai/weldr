@@ -10,7 +10,7 @@ import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons/logo-icon";
 import { cn } from "@weldr/ui/utils";
 import { ChatIntegrationDialog } from "./chat-integration-dialog";
-import { RawContentViewer } from "./raw-content-viewer";
+import { CustomMarkdown } from "./custom-markdown";
 
 const PureMessageItem = ({
   message,
@@ -43,7 +43,7 @@ const PureMessageItem = ({
         className={cn(message.role === "user" && "rounded-md bg-primary p-2")}
       >
         {Array.isArray(message.rawContent) && (
-          <RawContentViewer rawContent={message.rawContent} />
+          <CustomMarkdown content={message.rawContent} />
         )}
 
         {message.role === "assistant" && message.version && (

@@ -1,4 +1,5 @@
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
+import { useProjectView } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
@@ -10,7 +11,6 @@ import { useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
-
 interface ChatProps {
   initialMessages: ChatMessage[];
   chatId: string;
@@ -24,6 +24,8 @@ export function Chat({
   integrationTemplates,
   project,
 }: ChatProps) {
+  const { setSelectedView } = useProjectView();
+
   const { data: session } = authClient.useSession();
   const generationTriggered = useRef(false);
   const [messagesContainerRef, messagesEndRef] =
@@ -37,8 +39,7 @@ export function Chat({
   );
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
-  const { getNodes, getNode, setNodes, updateNodeData } =
-    useReactFlow<CanvasNode>();
+  const { getNodes, setNodes, updateNodeData } = useReactFlow<CanvasNode>();
 
   const addMessage = api.chats.addMessage.useMutation();
 
@@ -179,26 +180,7 @@ export function Chat({
 
           await apiUtils.projects.byId.invalidate({ id: project.id });
 
-          const previewNode = getNode("preview");
-
-          if (!previewNode) {
-            setNodes((prevNodes) => [
-              ...prevNodes,
-              {
-                id: "preview",
-                type: "preview",
-                position: {
-                  x: 0,
-                  y: 0,
-                },
-                data: {
-                  type: "preview",
-                  projectId: project.id,
-                  machineId: chunk.machineId,
-                },
-              },
-            ]);
-          }
+          setSelectedView("versions");
 
           break;
         }
@@ -236,7 +218,15 @@ export function Chat({
     }
 
     setPendingMessage(null);
-  }, [chatId, getNodes, getNode, setNodes, updateNodeData, project, apiUtils]);
+  }, [
+    chatId,
+    getNodes,
+    setNodes,
+    updateNodeData,
+    project,
+    apiUtils,
+    setSelectedView,
+  ]);
 
   useEffect(() => {
     if (lastMessage?.role === "user" && !generationTriggered.current) {

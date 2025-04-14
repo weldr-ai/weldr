@@ -1,29 +1,32 @@
-import { Editor } from "@/components/editor";
+import { CustomMarkdown } from "@/components/custom-markdown";
 import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
 import { useCanvas } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { CanvasNodeProps } from "@/types";
 import type { RouterOutputs } from "@weldr/api";
-import type { DeclarationSpecsV1 } from "@weldr/shared/types";
+import type { DeclarationSpecsV1, JsonSchema } from "@weldr/shared/types";
+import type { componentSchema } from "@weldr/shared/validators/declarations/component";
 import type { functionSchema } from "@weldr/shared/validators/declarations/function";
-import { Button } from "@weldr/ui/button";
 import { Card } from "@weldr/ui/card";
 import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardTrigger,
 } from "@weldr/ui/expandable-card";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@weldr/ui/resizable";
 import { ScrollArea } from "@weldr/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
+import { TreeView, schemaToTreeData } from "@weldr/ui/tree-view";
 import { cn } from "@weldr/ui/utils";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
-import { AppWindowIcon, ComponentIcon, FunctionSquareIcon } from "lucide-react";
+import {
+  AppWindowIcon,
+  ComponentIcon,
+  FunctionSquareIcon,
+  LockIcon,
+  LockOpenIcon,
+} from "lucide-react";
 import type { OpenAPIV3 } from "openapi-types";
-import { memo } from "react";
+import { memo, useState } from "react";
 import type { z } from "zod";
 
 export const DeclarationV1Node = memo(
@@ -33,7 +36,7 @@ export const DeclarationV1Node = memo(
     positionAbsoluteX,
     positionAbsoluteY,
   }: CanvasNodeProps) => {
-    if (_data.type === "preview" || _data.specs?.version !== "v1") {
+    if (_data.specs?.version !== "v1") {
       return null;
     }
 
@@ -48,9 +51,11 @@ export const DeclarationV1Node = memo(
 
     const { showEdges } = useCanvas();
 
+    const [isExpanded, setIsExpanded] = useState(false);
+
     return (
       <>
-        <ExpandableCard>
+        <ExpandableCard open={isExpanded} onOpenChange={setIsExpanded}>
           <ExpandableCardTrigger>
             <DeclarationNodeCard
               declaration={declaration}
@@ -59,60 +64,9 @@ export const DeclarationV1Node = memo(
               positionAbsoluteY={positionAbsoluteY}
             />
           </ExpandableCardTrigger>
-          <ExpandableCardContent className="nowheel -left-[calc(60vw-650px)] flex h-[600px] w-[60vw] flex-col">
-            <ResizablePanelGroup
-              direction="horizontal"
-              className="flex size-full"
-            >
-              <ResizablePanel
-                defaultSize={65}
-                minSize={20}
-                className="flex flex-col"
-              >
-                <DeclarationExpandableCardHeader declaration={declaration} />
-                <div className="flex h-[calc(100dvh-474px)] flex-col p-4">
-                  <ScrollArea className="mb-4 flex-grow">
-                    {/* TODO: Add message list */}
-                  </ScrollArea>
-
-                  <div className="relative">
-                    <Editor
-                      className="h-full"
-                      id={declaration.id}
-                      references={[]}
-                      placeholder="Chat about your endpoint..."
-                      onChange={() => {}}
-                      onSubmit={async () => {}}
-                    />
-                    <Button
-                      type="submit"
-                      disabled={false}
-                      size="sm"
-                      className="absolute right-2 bottom-2 disabled:bg-muted-foreground"
-                    >
-                      Send
-                      <span className="ml-1">
-                        <span className="rounded-sm bg-white/20 px-1 py-0.5 disabled:text-muted-foreground">
-                          {typeof window !== "undefined" &&
-                          window.navigator?.userAgent
-                            .toLowerCase()
-                            .includes("mac")
-                            ? "⌘"
-                            : "Ctrl"}
-                          ⏎
-                        </span>
-                      </span>
-                    </Button>
-                  </div>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              <ResizablePanel defaultSize={35} minSize={20}>
-                <DeclarationExpandableCardContent declaration={declaration} />
-              </ResizablePanel>
-            </ResizablePanelGroup>
+          <ExpandableCardContent className="nowheel -left-[172px] flex h-[500px] w-[600px] flex-col">
+            <DeclarationExpandableCardHeader declaration={declaration} />
+            <DeclarationExpandableCardContent declaration={declaration} />
           </ExpandableCardContent>
         </ExpandableCard>
         <Handle
@@ -165,7 +119,7 @@ const DeclarationExpandableCardHeader = memo(
     };
 
     switch (declaration.specs.type) {
-      case "endpoint":
+      case "endpoint": {
         return (
           <div className="flex flex-col items-start justify-start gap-2 border-b p-4">
             <div className="flex w-full items-center justify-between">
@@ -178,6 +132,9 @@ const DeclarationExpandableCardHeader = memo(
                     declaration.specs.type.slice(1)}
                 </span>
               </div>
+              <ProtectedBadge
+                protected={declaration.specs.protected ?? false}
+              />
             </div>
             <h3
               className={cn("text-sm", {
@@ -188,8 +145,49 @@ const DeclarationExpandableCardHeader = memo(
             </h3>
           </div>
         );
-      default:
+      }
+      case "function": {
+        return (
+          <div className="flex flex-col items-start justify-start gap-2 border-b p-4">
+            <div className="flex items-center gap-2 text-xs">
+              <FunctionSquareIcon className="size-4 text-primary" />
+              <span className="text-muted-foreground">Function</span>
+            </div>
+            <h3 className="text-sm">{declaration.specs.name}</h3>
+          </div>
+        );
+      }
+      case "component": {
+        return (
+          <div className="flex flex-col items-start justify-start gap-2 border-b p-4">
+            <div className="flex w-full items-center justify-between">
+              <div className="flex items-center gap-2 text-xs">
+                {declaration.specs.definition.subtype === "page" ? (
+                  <AppWindowIcon className="size-4 text-primary" />
+                ) : declaration.specs.definition.subtype === "reusable" ? (
+                  <ComponentIcon className="size-4 text-primary" />
+                ) : null}
+                <span className="text-muted-foreground">
+                  {declaration.specs.definition.subtype === "page"
+                    ? "Page"
+                    : declaration.specs.definition.subtype === "reusable"
+                      ? "Component"
+                      : null}
+                </span>
+              </div>
+              {declaration.specs.definition.subtype === "page" && (
+                <ProtectedBadge
+                  protected={declaration.specs.protected ?? false}
+                />
+              )}
+            </div>
+            <h3 className="text-sm">{declaration.specs.definition.name}</h3>
+          </div>
+        );
+      }
+      default: {
         return null;
+      }
     }
   },
 );
@@ -231,26 +229,133 @@ const DeclarationExpandableCardContent = memo(
                 description: declaration.specs.definition.description,
                 parameters: declaration.specs.definition.parameters,
                 returns: declaration.specs.definition.returns,
-                examples: declaration.specs.definition.examples,
-                implementationNotes:
-                  declaration.specs.definition.implementationNotes,
-                remarks: declaration.specs.definition.remarks,
-                throws: declaration.specs.definition.throws,
               }}
             />
           )
         ) : declaration.specs.type === "function" ? (
           <FunctionDetails declaration={declaration.specs} />
+        ) : declaration.specs.type === "component" ? (
+          <ComponentDetails declaration={declaration.specs} />
         ) : null}
       </ScrollArea>
     );
   },
 );
 
+const ComponentDetails = ({
+  declaration,
+}: { declaration: z.infer<typeof componentSchema> }) => {
+  return (
+    <div className="max-h-[500px] space-y-2">
+      {declaration.definition.subtype === "page" && (
+        <div className="flex flex-col space-y-1">
+          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+            Route:
+          </span>
+          <span className="flex cursor-text select-text items-center gap-2 text-sm">
+            {declaration.definition.route}
+          </span>
+        </div>
+      )}
+      {declaration.definition.description && (
+        <div className="flex flex-col space-y-1">
+          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+            Description:
+          </span>
+          <CustomMarkdown content={declaration.definition.description} />
+        </div>
+      )}
+      {declaration.definition.properties && (
+        <div className="flex flex-col space-y-1">
+          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+            Properties:
+          </span>
+          <TreeView
+            data={schemaToTreeData(
+              declaration.definition.properties as JsonSchema,
+            )}
+          />
+        </div>
+      )}
+      {declaration.definition.events && (
+        <div className="flex flex-col space-y-1">
+          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+            Events:
+          </span>
+          <CustomMarkdown
+            content={declaration.definition.events
+              .map(
+                (event) =>
+                  `- \`${event.name}\`\n${event.description}\n${event.sideEffects?.map((sideEffect) => `- ${sideEffect}`).join("\n")}`,
+              )
+              .join("\n")}
+          />
+        </div>
+      )}
+      {declaration.definition.interactions && (
+        <div className="flex flex-col space-y-1">
+          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+            Interactions:
+          </span>
+          <CustomMarkdown
+            content={declaration.definition.interactions
+              .map((interaction) => `- ${interaction}`)
+              .join("\n")}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
 const FunctionDetails = ({
   declaration,
 }: { declaration: z.infer<typeof functionSchema> }) => {
-  return <div>FunctionDetails</div>;
+  return (
+    <div className="max-h-[500px] space-y-2">
+      {declaration.description && (
+        <div className="flex flex-col space-y-1">
+          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+            Description:
+          </span>
+          <CustomMarkdown content={declaration.description} />
+        </div>
+      )}
+      {declaration.parameters && (
+        <div className="flex flex-col space-y-1">
+          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+            Parameters:
+          </span>
+          <TreeView
+            data={schemaToTreeData(declaration.parameters as JsonSchema)}
+          />
+        </div>
+      )}
+      {declaration.returns && (
+        <div className="flex flex-col space-y-1">
+          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+            Returns:
+          </span>
+          <TreeView
+            data={schemaToTreeData(declaration.returns as JsonSchema)}
+          />
+        </div>
+      )}
+      {declaration.throws && (
+        <div className="flex flex-col space-y-1">
+          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
+            Throws:
+          </span>
+          <CustomMarkdown
+            content={declaration.throws.map((error) => ({
+              type: "paragraph",
+              value: `- \`${error.type}\`: ${error.description}`,
+            }))}
+          />
+        </div>
+      )}
+    </div>
+  );
 };
 
 const DeclarationNodeCard = memo(
@@ -259,11 +364,13 @@ const DeclarationNodeCard = memo(
     selected,
     positionAbsoluteX,
     positionAbsoluteY,
+    className,
   }: {
     declaration: RouterOutputs["declarations"]["byId"];
     selected: boolean | undefined;
     positionAbsoluteX: number;
     positionAbsoluteY: number;
+    className?: string;
   }) => {
     const { fitBounds } = useReactFlow();
 
@@ -319,13 +426,13 @@ const DeclarationNodeCard = memo(
               </>
             ) : (
               <>
-                <FunctionSquareIcon className="size-4" />
+                <FunctionSquareIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">RPC</span>
               </>
             )
           ) : specs.type === "function" ? (
             <>
-              <FunctionSquareIcon className="size-4" />
+              <FunctionSquareIcon className="size-4 text-primary" />
               <span className="text-muted-foreground">Function</span>
             </>
           ) : specs.type === "component" ? (
@@ -352,6 +459,7 @@ const DeclarationNodeCard = memo(
           {
             "border-primary": selected,
           },
+          className,
         )}
         onClick={() => {
           fitBounds(
@@ -377,3 +485,20 @@ const DeclarationNodeCard = memo(
     );
   },
 );
+
+const ProtectedBadge = ({ protected: isProtected }: { protected: boolean }) => {
+  return (
+    <Tooltip>
+      <TooltipTrigger>
+        {isProtected ? (
+          <LockIcon className="size-3 text-success" />
+        ) : (
+          <LockOpenIcon className="size-3 text-destructive" />
+        )}
+      </TooltipTrigger>
+      <TooltipContent className="rounded-sm border bg-muted px-1.5 py-0.5 text-xs">
+        {isProtected ? "Protected" : "Unprotected"}
+      </TooltipContent>
+    </Tooltip>
+  );
+};

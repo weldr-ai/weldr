@@ -254,37 +254,7 @@ export const projectsRouter = {
                 with: {
                   declaration: {
                     with: {
-                      canvasNode: {
-                        with: {
-                          chats: {
-                            limit: 1,
-                            orderBy: (chats, { asc }) => [asc(chats.createdAt)],
-                            with: {
-                              messages: {
-                                columns: {
-                                  content: false,
-                                },
-                                orderBy: (messages, { asc }) => [
-                                  asc(messages.createdAt),
-                                ],
-                                with: {
-                                  attachments: {
-                                    columns: {
-                                      name: true,
-                                      key: true,
-                                    },
-                                  },
-                                  user: {
-                                    columns: {
-                                      name: true,
-                                    },
-                                  },
-                                },
-                              },
-                            },
-                          },
-                        },
-                      },
+                      canvasNode: true,
                     },
                   },
                 },

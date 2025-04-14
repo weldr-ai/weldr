@@ -10,6 +10,7 @@ import { Badge } from "@weldr/ui/badge";
 import { Button } from "@weldr/ui/button";
 import { cn } from "@weldr/ui/utils";
 import { MinusIcon, PlusIcon } from "lucide-react";
+import { nanoid } from "nanoid";
 import type { OpenAPIV3 } from "openapi-types";
 import { useState } from "react";
 import {
@@ -173,22 +174,24 @@ export default function OpenApiEndpointDocs({
       {/* Header */}
       <div className="flex flex-col items-start gap-2">
         {/* Method and Path */}
-        <div className="flex items-center space-x-2">
-          <Badge
-            className={cn("px-1.5 py-0.5 font-semibold text-xs uppercase", {
-              "bg-primary/30 text-primary hover:bg-primary/30":
-                method === "get",
-              "bg-success/30 text-success hover:bg-success/30":
-                method === "post",
-              "bg-warning/30 text-warning hover:bg-warning/30":
-                method === "put" || method === "patch",
-              "bg-destructive/30 text-destructive hover:bg-destructive/30":
-                method === "delete",
-            })}
-          >
-            {method}
-          </Badge>
-          <span className="text-xs">{path}</span>
+        <div className="flex w-full items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Badge
+              className={cn("px-1.5 py-0.5 font-semibold text-xs uppercase", {
+                "bg-primary/30 text-primary hover:bg-primary/30":
+                  method === "get",
+                "bg-success/30 text-success hover:bg-success/30":
+                  method === "post",
+                "bg-warning/30 text-warning hover:bg-warning/30":
+                  method === "put" || method === "patch",
+                "bg-destructive/30 text-destructive hover:bg-destructive/30":
+                  method === "delete",
+              })}
+            >
+              {method}
+            </Badge>
+            <span className="text-xs">{path}</span>
+          </div>
         </div>
         {operation.description && (
           <p className="whitespace-pre-wrap text-muted-foreground text-xs">
@@ -365,25 +368,30 @@ export default function OpenApiEndpointDocs({
           {hasSecurity && (
             <div>
               <span className="font-semibold">Security</span>
-              <div className="space-y-2">
-                {operation.security?.map((requirement) => (
+              <div className="mt-2 flex flex-col gap-2">
+                {operation.security?.map((security) => (
                   <div
-                    key={Object.keys(requirement).join("-")}
-                    className="rounded-lg border p-4"
+                    key={nanoid()}
+                    className="flex flex-col gap-2 rounded-lg border bg-muted/50 p-3"
                   >
-                    {Object.entries(requirement).map(([scheme, scopes]) => (
-                      <div key={scheme}>
-                        <span className="font-semibold text-sm">{scheme}</span>
+                    {Object.entries(security).map(([scheme, scopes]) => (
+                      <div key={scheme} className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {scheme}
+                          </Badge>
+                          <span className="text-muted-foreground text-xs">
+                            {scheme === "bearerAuth"
+                              ? "Bearer Token Authentication"
+                              : scheme}
+                          </span>
+                        </div>
                         {scopes.length > 0 && (
                           <div className="flex flex-wrap gap-1">
                             {scopes.map((scope) => (
-                              <Badge
-                                key={scope}
-                                variant="outline"
-                                className="text-xs"
-                              >
+                              <span key={scope} className="text-xs">
                                 {scope}
-                              </Badge>
+                              </span>
                             ))}
                           </div>
                         )}

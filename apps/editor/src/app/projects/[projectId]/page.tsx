@@ -32,6 +32,7 @@ export default async function ProjectPage({
 
         return acc;
       }, []) ?? [];
+
     const initialEdges: Edge[] = [];
 
     return (

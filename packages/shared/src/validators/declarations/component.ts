@@ -99,6 +99,10 @@ export const reusableComponentSchema = baseComponentSchema.extend({
 
 export const componentSchema = z.object({
   type: z.literal("component"),
+  protected: z
+    .boolean()
+    .optional()
+    .describe("Whether the component is protected"),
   definition: z.discriminatedUnion("subtype", [
     pageSchema,
     layoutSchema,

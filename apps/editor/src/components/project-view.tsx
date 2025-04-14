@@ -9,6 +9,7 @@ import {
 } from "@weldr/ui/resizable";
 
 import { Canvas } from "@/components/canvas";
+import { useProjectView } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import {
   Select,
@@ -19,7 +20,7 @@ import {
 } from "@weldr/ui/select";
 import type { Edge } from "@xyflow/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { Preview } from "./canvas/nodes/preview";
 import { Chat } from "./chat";
 import { MainDropdownMenu } from "./main-dropdown-menu";
@@ -40,6 +41,7 @@ export function ProjectView({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { selectedView, setSelectedView } = useProjectView();
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -54,13 +56,12 @@ export function ProjectView({
     [searchParams],
   );
 
-  const [selectedView, setSelectedView] = useState<
-    "preview" | "canvas" | "versions"
-  >(
-    () =>
+  useEffect(() => {
+    const initialView =
       (searchParams.get("view") as "preview" | "canvas" | "versions") ??
-      "preview",
-  );
+      "preview";
+    setSelectedView(initialView);
+  }, [searchParams, setSelectedView]);
 
   useEffect(() => {
     router.push(`${pathname}?${createQueryString("view", selectedView)}`, {
@@ -90,7 +91,7 @@ export function ProjectView({
 
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, []);
+  }, [setSelectedView]);
 
   const { data: project } = api.projects.byId.useQuery(
     {
