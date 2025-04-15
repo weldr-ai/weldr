@@ -48,7 +48,6 @@ export async function POST(request: Request) {
           content: true,
           rawContent: true,
         },
-        limit: 10,
       },
     },
   });
@@ -94,7 +93,6 @@ export async function POST(request: Request) {
                     {
                       role: "assistant",
                       rawContent: [{ type: "paragraph", value: text }],
-                      createdAt: new Date(),
                     },
                   ],
                 },
@@ -111,7 +109,6 @@ export async function POST(request: Request) {
                     {
                       role: "assistant",
                       rawContent: [{ type: "paragraph", value: text }],
-                      createdAt: new Date(),
                     },
                   ],
                 },

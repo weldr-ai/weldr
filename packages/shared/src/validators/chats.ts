@@ -61,9 +61,9 @@ export const toolMessageRawContentSchema = z.object({
 
 export const versionMessageRawContentSchema = z.object({
   versionId: z.string(),
-  machineId: z.string().optional(),
   versionMessage: z.string(),
   versionNumber: z.number(),
+  versionDescription: z.string(),
   changedFiles: z.array(
     z.object({
       path: z.string(),
@@ -171,6 +171,7 @@ export const addMessageItemSchema = z.discriminatedUnion("role", [
     createdAt: z.date().optional(),
   }),
   z.object({
+    id: z.string().cuid2(),
     role: z.literal("version"),
     rawContent: versionMessageRawContentSchema,
     createdAt: z.date().optional(),

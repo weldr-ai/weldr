@@ -2,6 +2,7 @@ import "server-only";
 
 import { takeScreenshot } from "@/lib/take-screenshot";
 import type { TStreamableValue, VersionStreamableValue } from "@/types";
+import { createId } from "@paralleldrive/cuid2";
 import { type InferSelectModel, type Tx, eq, inArray } from "@weldr/db";
 import {
   declarations,
@@ -31,7 +32,7 @@ import { applyEdits, findFilename, getEdits } from "./editor";
 import { FileCache } from "./file-cache";
 import { processFile } from "./process-file";
 import type { EditResults } from "./types";
-import { BASE_PACKAGE_DOT_JSON, getPackageVersion } from "./utils";
+import { BASE_DEPENDENCIES, getPackageVersion } from "./utils";
 
 export async function coder({
   streamWriter,
@@ -159,11 +160,15 @@ export async function coder({
     files: flatFiles,
   });
 
+  const versionMessageId = createId();
+
   const streamValue: VersionStreamableValue = {
+    id: versionMessageId,
     type: "version",
     versionId: version.id,
     versionMessage: version.message,
     versionNumber: version.number,
+    versionDescription: version.description,
     changedFiles: [],
   };
 
@@ -322,17 +327,26 @@ ${fileContext}`,
     });
 
     let currentFilePath = "";
+    let currentAccumulatedText = "";
     let inCodeBlock = false;
     const previousLines: string[] = [];
 
     for await (const text of textStream) {
-      // Process the accumulated text line by line
-      const lines = text.split("\n");
+      response += text;
+      currentAccumulatedText += text;
 
-      for (const line of lines) {
+      // Process the accumulated text line by line
+      while (currentAccumulatedText.includes("\n")) {
+        const lineEndIndex = currentAccumulatedText.indexOf("\n");
+        const line = currentAccumulatedText.substring(0, lineEndIndex);
+        currentAccumulatedText = currentAccumulatedText.substring(
+          lineEndIndex + 1,
+        );
+
         // Store previous lines for filename detection
         previousLines.push(line);
         if (previousLines.length > 5) {
+          // Keep only the last 5 lines for efficiency
           previousLines.shift();
         }
 
@@ -340,26 +354,36 @@ ${fileContext}`,
         if (line.trim().startsWith("```") && !inCodeBlock) {
           const filename = findFilename({ lines: previousLines });
           if (filename) {
-            console.log(`[coder:${projectId}] Writing to file ${filename}`);
-            currentFilePath = filename;
+            console.log(`[coder:${projectId}] Working on ${filename}`);
             inCodeBlock = true;
+            currentFilePath = filename;
+            const fileIndex = streamValue.changedFiles.findIndex(
+              (f) => f.path === filename,
+            );
 
-            // Add new file with pending status
-            if (
-              !streamValue.changedFiles.some((f) => f.path === currentFilePath)
-            ) {
+            if (fileIndex !== undefined && fileIndex !== -1) {
+              streamValue.changedFiles[fileIndex] = {
+                path: filename,
+                status: "pending",
+              };
+            } else {
               streamValue.changedFiles.push({
-                path: currentFilePath,
+                path: filename,
                 status: "pending",
               });
-              await streamWriter.write(streamValue);
             }
+
+            await streamWriter.write(streamValue);
           }
+
           continue;
         }
 
         // Detect end of code block
         if (line.trim() === "```" && inCodeBlock) {
+          console.log(
+            `[coder:${projectId}] Finished working on ${currentFilePath}`,
+          );
           inCodeBlock = false;
 
           // Update file status to success
@@ -369,40 +393,16 @@ ${fileContext}`,
             );
 
             if (fileIndex !== undefined && fileIndex !== -1) {
-              const file = streamValue.changedFiles[fileIndex];
-              if (file) {
-                file.status = "success";
-                await streamWriter.write(streamValue);
-              }
+              streamValue.changedFiles[fileIndex] = {
+                path: currentFilePath,
+                status: "success",
+              };
+              await streamWriter.write(streamValue);
             }
           }
 
           currentFilePath = "";
         }
-      }
-    }
-
-    // Process all edits at once
-    const edits = getEdits({
-      content: response,
-    });
-
-    // Apply the edits
-    if (edits.length > 0) {
-      const results = await applyEdits({
-        existingFiles: filePaths,
-        edits,
-        projectId,
-        fileCache,
-      });
-
-      // Add results to running totals by accumulating them
-      if (results.passed) {
-        finalResult.passed = [...(finalResult.passed || []), ...results.passed];
-      }
-
-      if (results.failed) {
-        finalResult.failed = [...(finalResult.failed || []), ...results.failed];
       }
     }
 
@@ -415,6 +415,29 @@ ${fileContext}`,
   }
 
   await generate();
+
+  // Process all edits at once
+  const edits = getEdits({
+    content: response,
+  });
+
+  // Apply the edits
+  if (edits.length > 0) {
+    const results = await applyEdits({
+      existingFiles: filePaths,
+      edits,
+      projectId,
+      fileCache,
+    });
+
+    if (results.passed) {
+      finalResult.passed = [...(finalResult.passed || []), ...results.passed];
+    }
+
+    if (results.failed) {
+      finalResult.failed = [...(finalResult.failed || []), ...results.failed];
+    }
+  }
 
   let retryCount = 0;
   let currentFailedEdits = finalResult.failed || [];
@@ -454,24 +477,27 @@ ${fileContext}`,
     currentFailedEdits = finalResult.failed || [];
   }
 
-  for (const file of finalResult.passed || []) {
-    await processFile({
-      streamWriter,
-      content: file.updated,
-      path: file.path,
-      projectId,
-      versionId: version.id,
-      userId,
-      tx,
-      previousVersionId,
-      deletedDeclarations,
-      fileCache,
-    });
-  }
-
   console.log(
     `[coder:${projectId}] Coder agent completed Passed: ${finalResult.passed?.length} Failed: ${finalResult.failed?.length}`,
   );
+
+  console.log(
+    `[coder:${projectId}] Final passed edits`,
+    finalResult.passed?.map((f) => f.path),
+  );
+
+  console.log(
+    `[coder:${projectId}] Final failed edits`,
+    finalResult.failed?.map((f) => f.edit.path),
+  );
+
+  await streamWriter.write({
+    type: "tool",
+    toolName: "implementTool",
+    toolResult: {
+      status: "deploying",
+    },
+  });
 
   // Complete version snapshot
   let previousVersionDeclarations: InferSelectModel<typeof declarations>[] = [];
@@ -576,10 +602,14 @@ ${fileContext}`,
   }
 
   let currentMachine: Awaited<ReturnType<typeof Fly.machine.get>> | null = null;
-  let currentPackageDotJson: {
+  let currentPackageJson: {
+    name: string;
+    version: string;
+    private: boolean;
+    scripts: Record<string, string>;
     dependencies: Record<string, string>;
     devDependencies: Record<string, string>;
-  } = BASE_PACKAGE_DOT_JSON;
+  } = BASE_DEPENDENCIES;
 
   if (currentMachineId) {
     currentMachine = await Fly.machine.get({
@@ -588,17 +618,18 @@ ${fileContext}`,
     });
 
     // Get current package.json
-    const currentPackageJson = await Fly.machine.executeCommand({
-      projectId,
-      machineId: currentMachineId,
-      command: "cat /app/package.json",
-    });
+    const machinePackageJson = Buffer.from(
+      currentMachine?.config?.files?.find(
+        (file) => file.guest_path === "/app/package.json",
+      )?.raw_value ?? "",
+      "base64",
+    ).toString("utf-8");
 
-    if (!currentPackageJson.stdout) {
+    if (!machinePackageJson) {
       throw new Error("Failed to get current package.json");
     }
 
-    currentPackageDotJson = JSON.parse(currentPackageJson.stdout);
+    currentPackageJson = JSON.parse(machinePackageJson);
   }
 
   // Add new packages to package.json
@@ -608,49 +639,55 @@ ${fileContext}`,
     if (version) {
       if (
         pkg.type === "runtime" &&
-        !currentPackageDotJson?.dependencies[pkg.name]
+        !currentPackageJson.dependencies[pkg.name]
       ) {
-        currentPackageDotJson.dependencies[pkg.name] = version;
+        currentPackageJson.dependencies[pkg.name] = version;
       } else if (
         pkg.type === "development" &&
-        !currentPackageDotJson?.devDependencies[pkg.name]
+        !currentPackageJson.devDependencies[pkg.name]
       ) {
-        currentPackageDotJson.devDependencies[pkg.name] = version;
+        currentPackageJson.devDependencies[pkg.name] = version;
       }
     }
   }
 
   // Filter deleted packages from package.json
   for (const pkg of deletedPackages) {
-    if (currentPackageDotJson?.dependencies?.[pkg]) {
-      delete currentPackageDotJson.dependencies?.[pkg];
+    if (currentPackageJson.dependencies?.[pkg]) {
+      delete currentPackageJson.dependencies?.[pkg];
     }
-    if (currentPackageDotJson?.devDependencies?.[pkg]) {
-      delete currentPackageDotJson.devDependencies?.[pkg];
+    if (currentPackageJson.devDependencies?.[pkg]) {
+      delete currentPackageJson.devDependencies?.[pkg];
     }
   }
 
+  // Get all files from current machine except package.json
+  const existingFiles =
+    currentMachine?.config?.files?.filter(
+      (file) => file.guest_path !== "/app/package.json",
+    ) ?? [];
+
+  // Filter out files that will be updated
+  const unchangedFiles = existingFiles.filter(
+    (file) =>
+      !finalResult.passed?.some(
+        (passedFile) => `/app/${passedFile.path}` === file.guest_path,
+      ),
+  );
+
+  // Add updated files
   const updatedFiles = [
-    ...(currentMachine?.config?.files?.filter(
-      (file) =>
-        !finalResult.passed?.some(
-          (passedFile) => `/app/${passedFile.path}` === file.guest_path,
-        ),
-    ) || []),
+    ...unchangedFiles,
     ...(finalResult.passed?.map((file) => ({
       guest_path: `/app/${file.path}`,
       raw_value: Buffer.from(file.updated).toString("base64"),
     })) || []),
-    ...(currentPackageDotJson
-      ? [
-          {
-            guest_path: "/app/package.json",
-            raw_value: Buffer.from(
-              JSON.stringify(currentPackageDotJson),
-            ).toString("base64"),
-          },
-        ]
-      : []),
+    {
+      guest_path: "/app/package.json",
+      raw_value: Buffer.from(JSON.stringify(currentPackageJson)).toString(
+        "base64",
+      ),
+    },
   ];
 
   console.log(
@@ -672,14 +709,6 @@ ${fileContext}`,
     },
   });
 
-  // Update version with new machine ID
-  await tx
-    .update(versions)
-    .set({
-      machineId,
-    })
-    .where(eq(versions.id, version.id));
-
   // Install packages
   console.log(
     `[coder:${projectId}] Installing packages ${installedPackages.map(
@@ -692,43 +721,63 @@ ${fileContext}`,
     command: "cd app && bun i",
   });
 
-  const versionCreatedAt = new Date();
+  // Update version with new machine ID
+  await tx
+    .update(versions)
+    .set({
+      machineId,
+    })
+    .where(eq(versions.id, version.id));
 
-  const [messageId] = await insertMessages({
+  // Enrich files
+  await streamWriter.write({
+    type: "tool",
+    toolName: "implementTool",
+    toolResult: {
+      machineId,
+      status: "enriching",
+    },
+  });
+
+  for (const file of finalResult.passed || []) {
+    await processFile({
+      streamWriter,
+      content: file.updated,
+      path: file.path,
+      projectId,
+      versionId: version.id,
+      userId,
+      tx,
+      previousVersionId,
+      deletedDeclarations,
+      fileCache,
+    });
+  }
+
+  await insertMessages({
     tx,
     input: {
       chatId,
       userId,
       messages: [
         {
+          id: versionMessageId,
           role: "version",
           rawContent: {
             versionId: version.id,
             versionMessage: version.message,
             versionNumber: version.number,
-            machineId,
+            versionDescription: version.description,
             changedFiles: streamValue.changedFiles,
           },
-          createdAt: versionCreatedAt,
         },
       ],
     },
   });
-
-  if (messageId) {
-    await streamWriter.write({
-      ...streamValue,
-      id: messageId,
-      machineId,
-      createdAt: versionCreatedAt,
-    });
-  }
 
   await takeScreenshot({
     versionId: version.id,
     projectId,
     machineId,
   });
-
-  return machineId;
 }

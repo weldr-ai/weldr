@@ -175,7 +175,7 @@ export function ProjectView({
               initialEdges={initialEdges ?? []}
             />
           )}
-          {selectedView === "preview" && <Preview project={project} />}
+          {selectedView === "preview" && <Preview projectId={project.id} />}
           {selectedView === "versions" && (
             <Versions versions={project.versions} />
           )}

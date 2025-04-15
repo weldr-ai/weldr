@@ -7,7 +7,13 @@ export type CanvasNode = Node<CanvasNodeData, CanvasNodeType>;
 export type CanvasEdge = Edge;
 export type CanvasNodeProps = NodeProps<CanvasNode>;
 
-export type TPendingMessage = "thinking" | "waiting" | "building" | null;
+export type TPendingMessage =
+  | "thinking"
+  | "waiting"
+  | "building"
+  | "enriching"
+  | "deploying"
+  | null;
 
 export type TextStreamableValue = {
   type: "paragraph";
@@ -15,9 +21,9 @@ export type TextStreamableValue = {
 };
 
 export type ToolStreamableValue = {
-  id: string;
+  id?: string;
   type: "tool";
-  toolName: "initializeProjectTool" | "implementTool" | "setupIntegrationTool";
+  toolName: "implementTool" | "setupIntegrationTool";
   toolArgs?: Record<string, unknown>;
   toolResult: unknown;
 };
@@ -29,7 +35,7 @@ export type VersionStreamableValue = {
   versionId: string;
   versionMessage: string;
   versionNumber: number;
-  machineId?: string;
+  versionDescription: string;
   changedFiles: {
     path: string;
     status: "pending" | "success";

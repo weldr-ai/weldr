@@ -266,6 +266,7 @@ CREATE TABLE "versions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"number" integer NOT NULL,
 	"message" text NOT NULL,
+	"description" text NOT NULL,
 	"machine_id" text,
 	"is_current" boolean DEFAULT false NOT NULL,
 	"parent_version_id" text,

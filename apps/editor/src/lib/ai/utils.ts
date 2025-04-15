@@ -41,7 +41,9 @@ export function convertMessagesToCoreMessages(
       const version = message.rawContent as VersionMessageRawContent;
       result.push({
         role: "assistant",
-        content: `Created #${version.versionNumber} ${version.versionMessage}\n\nChanged files:\n${version.changedFiles.map((file) => `- ${file.path}`).join("\n")}`,
+        content: `Created #${version.versionNumber} ${version.versionMessage}
+        Description: ${version.versionDescription}
+        Changed files: ${version.changedFiles.map((file) => `- ${file.path}`).join(", ")}`,
       });
       continue;
     }

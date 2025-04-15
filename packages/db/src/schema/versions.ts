@@ -26,6 +26,7 @@ export const versions = pgTable(
       .notNull(),
     number: integer("number").notNull(),
     message: text("message").notNull(),
+    description: text("description").notNull(),
     machineId: text("machine_id"),
     isCurrent: boolean("is_current").default(false).notNull(),
     parentVersionId: text("parent_version_id").references(

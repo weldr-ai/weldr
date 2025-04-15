@@ -107,19 +107,37 @@ export function useCanvas() {
 interface ProjectViewContextType {
   selectedView: "preview" | "canvas" | "versions";
   setSelectedView: (view: "preview" | "canvas" | "versions") => void;
+  setMachineId: (machineId: string | undefined) => void;
+  machineId: string | undefined;
 }
 
 const ProjectViewContext = createContext<ProjectViewContextType | undefined>(
   undefined,
 );
 
-export function ProjectViewProvider({ children }: { children: ReactNode }) {
+export function ProjectViewProvider({
+  children,
+  currentMachineId,
+}: {
+  children: ReactNode;
+  currentMachineId: string | undefined;
+}) {
   const [selectedView, setSelectedView] = useState<
     "preview" | "canvas" | "versions"
   >("preview");
+  const [machineId, setMachineId] = useState<string | undefined>(
+    currentMachineId,
+  );
 
   return (
-    <ProjectViewContext.Provider value={{ selectedView, setSelectedView }}>
+    <ProjectViewContext.Provider
+      value={{
+        selectedView,
+        setSelectedView,
+        machineId,
+        setMachineId,
+      }}
+    >
       {children}
     </ProjectViewContext.Provider>
   );
@@ -140,9 +158,7 @@ export function AppStateProvider({
 }) {
   return (
     <CommandCenterProvider>
-      <ProjectViewProvider>
-        <CanvasProvider>{children}</CanvasProvider>
-      </ProjectViewProvider>
+      <CanvasProvider>{children}</CanvasProvider>
     </CommandCenterProvider>
   );
 }

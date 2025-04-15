@@ -1,4 +1,3 @@
-import { takeScreenshot } from "@/lib/take-screenshot";
 import type { TStreamableValue } from "@/types";
 import { type InferInsertModel, type Tx, and, eq } from "@weldr/db";
 import {
@@ -18,7 +17,6 @@ import { S3 } from "@weldr/shared/s3";
 import { type CoreMessage, tool } from "ai";
 import { z } from "zod";
 import { coder } from "../agents/coder";
-import { insertMessages } from "../insert-messages";
 
 export const initializeProjectTool = tool({
   description:
@@ -72,35 +70,9 @@ export const initializeProject = async ({
 }) => {
   console.log(`[initializeProject:${projectId}] Initializing project`);
 
-  const [messageId] = await insertMessages({
-    tx,
-    input: {
-      chatId,
-      userId,
-      messages: [
-        {
-          role: "tool",
-          rawContent: {
-            toolName: "initializeProjectTool",
-            toolArgs,
-            toolResult: {
-              status: "pending",
-            },
-          },
-          createdAt: new Date(),
-        },
-      ],
-    },
-  });
-
-  if (!messageId) {
-    throw new Error("Message ID not found");
-  }
-
   await streamWriter.write({
-    id: messageId,
     type: "tool",
-    toolName: "initializeProjectTool",
+    toolName: "implementTool",
     toolResult: {
       status: "pending",
     },
@@ -141,6 +113,7 @@ export const initializeProject = async ({
       number: 1,
       isCurrent: true,
       message: toolArgs.commitMessage,
+      description: toolArgs.requirements,
     })
     .returning();
 
@@ -336,7 +309,7 @@ export const initializeProject = async ({
     }
   }
 
-  const machineId = await coder({
+  await coder({
     streamWriter,
     tx,
     chatId,
@@ -355,16 +328,9 @@ You MUST NOT create any database schemas or authentication. THIS IS A PURE CLIEN
 
   console.log(`[initializeProject:${projectId}] Updating status to success`);
 
-  await takeScreenshot({
-    versionId: version.id,
-    projectId,
-    machineId,
-  });
-
   await streamWriter.write({
-    id: messageId,
     type: "tool",
-    toolName: "initializeProjectTool",
+    toolName: "implementTool",
     toolResult: {
       status: "success",
     },

@@ -24,7 +24,7 @@ export function Chat({
   integrationTemplates,
   project,
 }: ChatProps) {
-  const { setSelectedView } = useProjectView();
+  const { setSelectedView, setMachineId } = useProjectView();
 
   const { data: session } = authClient.useSession();
   const generationTriggered = useRef(false);
@@ -123,37 +123,33 @@ export function Chat({
             });
           }
 
-          if (chunk.toolName === "initializeProjectTool") {
-            const status = (
-              chunk.toolResult as {
-                status: "pending" | "success";
-              }
-            ).status;
-
-            if (status === "pending") {
-              setPendingMessage("building");
-            }
-
-            if (status === "success") {
-              setPendingMessage(null);
-            }
-          }
-
           if (chunk.toolName === "implementTool") {
-            const status = (
-              chunk.toolResult as {
-                status: "pending" | "success";
-              }
-            ).status;
+            const toolResult = chunk.toolResult as {
+              status: "pending" | "success" | "enriching" | "deploying";
+              machineId?: string;
+            };
 
-            if (status === "pending") {
+            if (toolResult.status === "pending") {
               setPendingMessage("building");
+              setMachineId(undefined);
             }
 
-            if (status === "success") {
+            if (toolResult.status === "deploying") {
+              setPendingMessage("deploying");
+            }
+
+            if (toolResult.status === "enriching") {
+              setPendingMessage("enriching");
+              setSelectedView("preview");
+              setMachineId(toolResult.machineId);
+            }
+
+            if (toolResult.status === "success") {
+              await apiUtils.projects.byId.invalidate({ id: project.id });
               setPendingMessage(null);
             }
           }
+
           break;
         }
         case "version": {
@@ -171,7 +167,7 @@ export function Chat({
                     versionNumber: chunk.versionNumber,
                     versionId: chunk.versionId,
                     versionMessage: chunk.versionMessage,
-                    machineId: chunk.machineId,
+                    versionDescription: chunk.versionDescription,
                     changedFiles: chunk.changedFiles,
                   },
                 },
@@ -185,13 +181,13 @@ export function Chat({
               {
                 ...lastMessage,
                 ...chunk,
+                rawContent: {
+                  ...lastMessage.rawContent,
+                  ...chunk,
+                },
               },
             ];
           });
-
-          await apiUtils.projects.byId.invalidate({ id: project.id });
-
-          setSelectedView("preview");
 
           break;
         }
@@ -234,6 +230,7 @@ export function Chat({
     project,
     apiUtils,
     setSelectedView,
+    setMachineId,
   ]);
 
   useEffect(() => {

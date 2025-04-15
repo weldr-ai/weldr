@@ -30,17 +30,17 @@ export function getFilesContext({
   const declarationName = (
     declarationSpecs: z.infer<typeof declarationSpecsSchema>,
   ) => {
-    switch (declarationSpecs.type) {
+    switch (declarationSpecs.data.type) {
       case "endpoint":
-        return declarationSpecs.definition.subtype === "rest"
-          ? `${declarationSpecs.definition.method.toUpperCase()} ${declarationSpecs.definition.path}`
-          : `RPC ${declarationSpecs.definition.name}`;
+        return declarationSpecs.data.definition.subtype === "rest"
+          ? `${declarationSpecs.data.definition.method.toUpperCase()} ${declarationSpecs.data.definition.path}`
+          : `RPC ${declarationSpecs.data.definition.name}`;
       case "component":
-        return declarationSpecs.definition.name;
+        return declarationSpecs.data.definition.name;
       case "function":
       case "model":
       case "other":
-        return declarationSpecs.name;
+        return declarationSpecs.data.name;
     }
   };
 
@@ -97,9 +97,9 @@ export function getFilesContext({
       const specs = declaration.specs;
       if (!specs) return "";
 
-      switch (specs.type) {
+      switch (specs.data.type) {
         case "endpoint": {
-          const def = specs.definition;
+          const def = specs.data.definition;
           if (def.subtype === "rest") {
             let info = `  • REST Endpoint: ${def.method.toUpperCase()} ${def.path}
   Summary: ${def.summary || "No summary"}
@@ -132,7 +132,7 @@ export function getFilesContext({
         }
 
         case "component": {
-          const def = specs.definition;
+          const def = specs.data.definition;
           let info = `  • ${def.subtype === "page" ? "Page" : def.subtype === "layout" ? "Layout" : "Component"}: ${def.name}
       Description: ${def.description}
       Renders on: ${def.rendersOn || "both"}`;
@@ -157,10 +157,10 @@ export function getFilesContext({
         }
 
         case "function": {
-          let info = `  • Function: ${specs.name}
-      Description: ${specs.description}
-      ${specs.parameters ? `Parameters: ${JSON.stringify(specs.parameters)}` : ""}
-      ${specs.returns ? `Returns: ${JSON.stringify(specs.returns)}` : ""}`;
+          let info = `  • Function: ${specs.data.name}
+      Description: ${specs.data.description}
+      ${specs.data.parameters ? `Parameters: ${JSON.stringify(specs.data.parameters)}` : ""}
+      ${specs.data.returns ? `Returns: ${JSON.stringify(specs.data.returns)}` : ""}`;
 
           if (declaration.dependencies.length > 0) {
             info += `\n  Depends on: ${groupedDependencies(declaration.dependencies)}`;
@@ -170,9 +170,9 @@ export function getFilesContext({
         }
 
         case "model": {
-          let info = `  • Model: ${specs.name}
-  Columns: ${specs.columns.map((col) => `${col.name} (${col.type})`).join(", ")}
-  ${specs.relationships ? `Relations: ${specs.relationships.length} defined` : ""}`;
+          let info = `  • Model: ${specs.data.name}
+  Columns: ${specs.data.columns.map((col) => `${col.name} (${col.type})`).join(", ")}
+  ${specs.data.relationships ? `Relations: ${specs.data.relationships.length} defined` : ""}`;
 
           if (declaration.dependencies.length > 0) {
             info += `\n  Depends on: ${groupedDependencies(declaration.dependencies)}`;
@@ -186,8 +186,8 @@ export function getFilesContext({
         }
 
         case "other": {
-          let info = `  • ${specs.declType}: ${specs.name}
-  Description: ${specs.description}`;
+          let info = `  • ${specs.data.declType}: ${specs.data.name}
+  Description: ${specs.data.description}`;
 
           if (declaration.dependencies.length > 0) {
             info += `\n  Depends on: ${groupedDependencies(declaration.dependencies)}`;

@@ -13,28 +13,17 @@ export const declarationTypeSchema = z.enum([
   "other",
 ]);
 
-export const declarationSpecsV1Schema = z.discriminatedUnion("type", [
-  endpointSchema,
-  functionSchema,
-  modelSchema,
-  componentSchema,
-  otherSchema,
-]);
+export const declarationSpecsV1Schema = z.object({
+  version: z.literal("v1"),
+  data: z.discriminatedUnion("type", [
+    endpointSchema,
+    functionSchema,
+    modelSchema,
+    componentSchema,
+    otherSchema,
+  ]),
+});
 
 export const declarationSpecsSchema = z.discriminatedUnion("version", [
-  endpointSchema.extend({
-    version: z.literal("v1"),
-  }),
-  functionSchema.extend({
-    version: z.literal("v1"),
-  }),
-  modelSchema.extend({
-    version: z.literal("v1"),
-  }),
-  componentSchema.extend({
-    version: z.literal("v1"),
-  }),
-  otherSchema.extend({
-    version: z.literal("v1"),
-  }),
+  declarationSpecsV1Schema,
 ]);

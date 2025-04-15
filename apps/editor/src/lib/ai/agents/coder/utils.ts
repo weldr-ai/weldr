@@ -18,7 +18,22 @@ export async function getPackageVersion(
   }
 }
 
-export const BASE_PACKAGE_DOT_JSON = {
+export const BASE_DEPENDENCIES = {
+  name: "next-boilerplate",
+  version: "0.0.1",
+  private: true,
+  scripts: {
+    build: "next build",
+    check: "next lint && tsc --noEmit",
+    dev: "next dev --turbo",
+    lint: "next lint",
+    "lint:fix": "next lint --fix",
+    preview: "next build && next start",
+    start: "next start",
+    typecheck: "tsc --noEmit",
+    "format:write": 'prettier --write "**/*.{ts,tsx,js,jsx,mdx}" --cache',
+    "format:check": 'prettier --check "**/*.{ts,tsx,js,jsx,mdx}" --cache',
+  },
   dependencies: {
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "^1.2.2",

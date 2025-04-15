@@ -5,7 +5,6 @@ import { versions } from "@weldr/db/schema";
 import { type CoreMessage, tool } from "ai";
 import { z } from "zod";
 import { coder } from "../agents/coder";
-import { insertMessages } from "../insert-messages";
 
 export const implementTool = tool({
   description:
@@ -55,33 +54,7 @@ export async function implement({
   promptMessages: CoreMessage[];
   streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
 }) {
-  const [messageId] = await insertMessages({
-    tx,
-    input: {
-      chatId,
-      userId,
-      messages: [
-        {
-          role: "tool",
-          rawContent: {
-            toolName: "implementTool",
-            toolArgs,
-            toolResult: {
-              status: "pending",
-            },
-          },
-          createdAt: new Date(),
-        },
-      ],
-    },
-  });
-
-  if (!messageId) {
-    throw new Error("Message ID not found");
-  }
-
   await streamWriter.write({
-    id: messageId,
     type: "tool",
     toolName: "implementTool",
     toolResult: {
@@ -129,6 +102,7 @@ export async function implement({
       isCurrent: true,
       parentVersionId: previousVersion.id,
       message: toolArgs.commitMessage,
+      description: toolArgs.requirements,
     })
     .returning();
 
@@ -155,10 +129,7 @@ export async function implement({
     ],
   });
 
-  console.log(`[implement:${projectId}] Writing to stream...`);
-
   await streamWriter.write({
-    id: messageId,
     type: "tool",
     toolName: "implementTool",
     toolResult: {

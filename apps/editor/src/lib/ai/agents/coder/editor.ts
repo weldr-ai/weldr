@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { FileCache } from "./file-cache";
-import type { Edit, EditResult, FailedEdit } from "./types";
+import type { Edit, FailedEdit } from "./types";
 
 export const SEARCH = /^<{5,9} SEARCH\s*$/;
 export const DIVIDER = /^={5,9}\s*$/;
@@ -75,99 +75,6 @@ export function getEdits({
   ).results;
 }
 
-export async function applyEdit({
-  existingFiles,
-  edit,
-  projectId,
-  fileCache,
-}: {
-  existingFiles: string[];
-  edit: Edit;
-  projectId: string;
-  fileCache: FileCache;
-}): Promise<EditResult> {
-  let passed: Edit | undefined = undefined;
-  let failed: FailedEdit | undefined = undefined;
-
-  try {
-    // Handle new file creation
-    if (!edit.original.trim()) {
-      // If the file already exists, return the edit as failed
-      if (existingFiles.includes(edit.path)) {
-        console.log(`[coder:${projectId}] Cannot create existing file`, {
-          path: edit.path,
-        });
-        failed = {
-          edit,
-          error: `Cannot create ${edit.path} - file already exists`,
-        };
-        return { passed, failed };
-      }
-
-      console.log(`[coder:${projectId}] Creating new file`, {
-        path: edit.path,
-      });
-      passed = edit;
-      return { passed, failed };
-    }
-
-    // Handle existing file edits
-    const content = await fileCache.getFile({
-      projectId,
-      path: edit.path,
-    });
-
-    if (!content) {
-      throw new Error(`File not found: ${edit.path}`);
-    }
-
-    const newContent = doReplace({
-      content,
-      originalText: edit.original,
-      updatedText: edit.updated,
-    });
-
-    if (newContent) {
-      passed = {
-        ...edit,
-        updated: newContent,
-      };
-      return { passed, failed };
-    }
-
-    let errorMsg = `Failed to apply edit to ${edit.path}\n`;
-    errorMsg +=
-      "The SEARCH section must exactly match an existing block of lines including all white space, comments, indentation, docstrings, etc\n";
-
-    const similarLines = findSimilarLines({
-      searchText: edit.original,
-      content,
-    });
-    if (similarLines) {
-      errorMsg += `\nDid you mean to match these lines?\n${similarLines}\n`;
-    }
-
-    if (content.includes(edit.updated.trim()) && edit.updated.trim()) {
-      errorMsg += `\nAre you sure you need this SEARCH/REPLACE block?\nThe REPLACE lines are already in ${edit.path}!\n`;
-    }
-
-    failed = { edit, error: errorMsg };
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Failed to apply edit", {
-      path: edit.path,
-      error: errorMessage,
-    });
-
-    failed = {
-      edit,
-      error: `Error processing ${edit.path}: ${errorMessage}`,
-    };
-  }
-
-  return { passed, failed };
-}
-
 export async function applyEdits({
   existingFiles,
   edits,
@@ -184,26 +91,121 @@ export async function applyEdits({
 }> {
   console.log(
     `[coder:${projectId}] Applying edits`,
-    edits.map((e) => e),
+    edits.map((e) => e.path).join(", "),
   );
+
+  // Group edits by file path with proper type safety
+  const editsByFile = edits.reduce<Record<string, Edit[]>>((acc, edit) => {
+    if (!(edit.path in acc)) {
+      acc[edit.path] = [];
+    }
+    // We know this exists since we just created it if it didn't exist
+    (acc[edit.path] as Edit[]).push(edit);
+    return acc;
+  }, {});
 
   const passed: Edit[] = [];
   const failed: FailedEdit[] = [];
 
-  for (const edit of edits) {
-    const result = await applyEdit({
-      existingFiles,
-      edit,
-      projectId,
-      fileCache,
-    });
+  // Process each file's edits sequentially
+  for (const [filePath, fileEdits] of Object.entries(editsByFile)) {
+    // Skip if no edits for this file
+    if (fileEdits.length === 0) continue;
 
-    if (result.passed) {
-      passed.push(result.passed);
+    let currentContent: string | null = null;
+    // We know this exists since we checked length above
+    const firstEdit = fileEdits[0] as Edit;
+
+    // For new files
+    if (!firstEdit.original.trim()) {
+      if (existingFiles.includes(filePath)) {
+        failed.push({
+          edit: firstEdit,
+          error: `Cannot create ${filePath} - file already exists`,
+        });
+        continue;
+      }
+      passed.push(firstEdit);
+      continue;
     }
 
-    if (result.failed) {
-      failed.push(result.failed);
+    // Get initial file content
+    try {
+      const fileContent = await fileCache.getFile({
+        projectId,
+        path: filePath,
+      });
+
+      if (!fileContent) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+
+      currentContent = fileContent;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      failed.push({
+        edit: firstEdit,
+        error: `Error reading ${filePath}: ${errorMessage}`,
+      });
+      continue;
+    }
+
+    // Apply edits sequentially
+    let hasFailure = false;
+    for (const edit of fileEdits) {
+      try {
+        const newContent = doReplace({
+          content: currentContent,
+          originalText: edit.original,
+          updatedText: edit.updated,
+        });
+
+        if (!newContent) {
+          let errorMsg = `Failed to apply edit to ${edit.path}\n`;
+          errorMsg +=
+            "The SEARCH section must exactly match an existing block of lines including all white space, comments, indentation, docstrings, etc\n";
+
+          const similarLines = findSimilarLines({
+            searchText: edit.original,
+            content: currentContent,
+          });
+          if (similarLines) {
+            errorMsg += `\nDid you mean to match these lines?\n${similarLines}\n`;
+          }
+
+          if (
+            currentContent.includes(edit.updated.trim()) &&
+            edit.updated.trim()
+          ) {
+            errorMsg += `\nAre you sure you need this SEARCH/REPLACE block?\nThe REPLACE lines are already in ${edit.path}!\n`;
+          }
+
+          failed.push({ edit, error: errorMsg });
+          hasFailure = true;
+          break;
+        }
+
+        currentContent = newContent;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        failed.push({
+          edit,
+          error: `Error processing ${edit.path}: ${errorMessage}`,
+        });
+        hasFailure = true;
+        break;
+      }
+    }
+
+    // If all edits succeeded, add a single passed result with the final content
+    if (!hasFailure && currentContent !== null) {
+      passed.push({
+        path: filePath,
+        original: firstEdit.original,
+        updated: currentContent,
+      });
     }
   }
 

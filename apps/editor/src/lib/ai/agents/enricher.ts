@@ -22,7 +22,7 @@ export async function enricher({
   previousVersionDeclarations: InferSelectModel<typeof declarations>[];
 }) {
   const result = streamObject({
-    model: registry.languageModel("openai:gpt-4.1"),
+    model: registry.languageModel("anthropic:claude-3-5-sonnet-latest"),
     output: "array",
     schema: z
       .object({

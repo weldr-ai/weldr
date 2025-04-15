@@ -147,26 +147,29 @@ export async function processFile({
     previousVersionDeclarations,
   });
 
-  for (const { specs, isNode } of enrichedDeclarations) {
+  for (const {
+    specs: { version, data },
+    isNode,
+  } of enrichedDeclarations) {
     const declarationId = createId();
 
     const declarationName = (() => {
-      switch (specs.type) {
+      switch (data.type) {
         case "component": {
-          return specs.definition.name;
+          return data.definition.name;
         }
         case "function":
         case "model":
         case "other": {
-          return specs.name;
+          return data.name;
         }
         case "endpoint": {
-          switch (specs.definition.subtype) {
+          switch (data.definition.subtype) {
             case "rest": {
-              return `${specs.definition.method.toUpperCase()}:${specs.definition.path}`;
+              return `${data.definition.method.toUpperCase()}:${data.definition.path}`;
             }
             case "rpc": {
-              return `${specs.definition.name}`;
+              return `${data.definition.name}`;
             }
           }
         }
@@ -258,10 +261,10 @@ export async function processFile({
       const newNode: CanvasNodeData = {
         id: declarationId,
         name: declarationName,
-        type: specs.type,
+        type: data.type,
         specs: {
-          version: "v1",
-          ...specs,
+          version,
+          data,
         },
         canvasNode: {
           id: canvasNode.id,
@@ -289,10 +292,10 @@ export async function processFile({
       id: declarationId,
       fileId: file.id,
       name: declarationName,
-      type: specs.type,
+      type: data.type,
       specs: {
-        version: "v1",
-        ...specs,
+        version,
+        data,
       },
       projectId,
       userId,

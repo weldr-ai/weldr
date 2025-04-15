@@ -98,43 +98,42 @@ const DeclarationExpandableCardHeader = memo(
       return null;
     }
 
-    const title = (specs: DeclarationSpecsV1) => {
-      if (!specs) {
+    const { data } = declaration.specs;
+
+    const title = ({ data }: DeclarationSpecsV1) => {
+      if (!data) {
         return null;
       }
 
-      switch (specs.type) {
+      switch (data.type) {
         case "endpoint":
-          return specs.definition.subtype === "rest"
-            ? specs.definition.summary
-            : specs.definition.name;
+          return data.definition.subtype === "rest"
+            ? data.definition.summary
+            : data.definition.name;
         case "function":
         case "model":
-          return specs.name;
+          return data.name;
         case "component":
-          return specs.definition.name;
+          return data.definition.name;
         default:
-          return specs.type.charAt(0).toUpperCase() + specs.type.slice(1);
+          return data.type.charAt(0).toUpperCase() + data.type.slice(1);
       }
     };
 
-    switch (declaration.specs.type) {
+    switch (data.type) {
       case "endpoint": {
         return (
           <div className="flex flex-col items-start justify-start gap-2 border-b p-4">
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 text-xs">
                 <span className="font-semibold text-primary text-xs">
-                  {declaration.specs.definition.subtype.toUpperCase()}
+                  {data.definition.subtype.toUpperCase()}
                 </span>
                 <span className="text-muted-foreground">
-                  {declaration.specs.type.charAt(0).toUpperCase() +
-                    declaration.specs.type.slice(1)}
+                  {data.type.charAt(0).toUpperCase() + data.type.slice(1)}
                 </span>
               </div>
-              <ProtectedBadge
-                protected={declaration.specs.protected ?? false}
-              />
+              <ProtectedBadge protected={data.protected ?? false} />
             </div>
             <h3
               className={cn("text-sm", {
@@ -153,7 +152,7 @@ const DeclarationExpandableCardHeader = memo(
               <FunctionSquareIcon className="size-4 text-primary" />
               <span className="text-muted-foreground">Function</span>
             </div>
-            <h3 className="text-sm">{declaration.specs.name}</h3>
+            <h3 className="text-sm">{data.name}</h3>
           </div>
         );
       }
@@ -162,26 +161,24 @@ const DeclarationExpandableCardHeader = memo(
           <div className="flex flex-col items-start justify-start gap-2 border-b p-4">
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 text-xs">
-                {declaration.specs.definition.subtype === "page" ? (
+                {data.definition.subtype === "page" ? (
                   <AppWindowIcon className="size-4 text-primary" />
-                ) : declaration.specs.definition.subtype === "reusable" ? (
+                ) : data.definition.subtype === "reusable" ? (
                   <ComponentIcon className="size-4 text-primary" />
                 ) : null}
                 <span className="text-muted-foreground">
-                  {declaration.specs.definition.subtype === "page"
+                  {data.definition.subtype === "page"
                     ? "Page"
-                    : declaration.specs.definition.subtype === "reusable"
+                    : data.definition.subtype === "reusable"
                       ? "Component"
                       : null}
                 </span>
               </div>
-              {declaration.specs.definition.subtype === "page" && (
-                <ProtectedBadge
-                  protected={declaration.specs.protected ?? false}
-                />
+              {data.definition.subtype === "page" && (
+                <ProtectedBadge protected={data.protected ?? false} />
               )}
             </div>
-            <h3 className="text-sm">{declaration.specs.definition.name}</h3>
+            <h3 className="text-sm">{data.definition.name}</h3>
           </div>
         );
       }
@@ -198,13 +195,15 @@ const DeclarationExpandableCardContent = memo(
       return null;
     }
 
+    const { data } = declaration.specs;
+
     return (
       <ScrollArea className="h-[calc(100dvh-398px)] p-4">
-        {declaration.specs.type === "endpoint" ? (
-          declaration.specs.definition.subtype === "rest" ? (
+        {data.type === "endpoint" ? (
+          data.definition.subtype === "rest" ? (
             <OpenApiEndpointDocs
               spec={
-                declaration.specs.definition
+                data.definition
                   ? ({
                       openapi: "3.0.0",
                       info: {
@@ -212,9 +211,8 @@ const DeclarationExpandableCardContent = memo(
                         version: "1.0.0",
                       },
                       paths: {
-                        [declaration.specs.definition.path]: {
-                          [declaration.specs.definition.method]:
-                            declaration.specs.definition,
+                        [data.definition.path]: {
+                          [data.definition.method]: data.definition,
                         },
                       },
                     } as OpenAPIV3.Document)
@@ -225,17 +223,17 @@ const DeclarationExpandableCardContent = memo(
             <FunctionDetails
               declaration={{
                 type: "function",
-                name: declaration.specs.definition.name,
-                description: declaration.specs.definition.description,
-                parameters: declaration.specs.definition.parameters,
-                returns: declaration.specs.definition.returns,
+                name: data.definition.name,
+                description: data.definition.description,
+                parameters: data.definition.parameters,
+                returns: data.definition.returns,
               }}
             />
           )
-        ) : declaration.specs.type === "function" ? (
-          <FunctionDetails declaration={declaration.specs} />
-        ) : declaration.specs.type === "component" ? (
-          <ComponentDetails declaration={declaration.specs} />
+        ) : data.type === "function" ? (
+          <FunctionDetails declaration={data} />
+        ) : data.type === "component" ? (
+          <ComponentDetails declaration={data} />
         ) : null}
       </ScrollArea>
     );
@@ -383,15 +381,15 @@ const DeclarationNodeCard = memo(
         return null;
       }
 
-      switch (specs.type) {
+      switch (specs.data.type) {
         case "endpoint":
-          return specs.definition.subtype === "rest"
-            ? specs.definition.summary
-            : specs.definition.name;
+          return specs.data.definition.subtype === "rest"
+            ? specs.data.definition.summary
+            : specs.data.definition.name;
         case "function":
-          return specs.name;
+          return specs.data.name;
         case "component":
-          return specs.definition.name;
+          return specs.data.definition.name;
         default:
           return null;
       }
@@ -400,27 +398,27 @@ const DeclarationNodeCard = memo(
     const badge = (specs: DeclarationSpecsV1) => {
       return (
         <div className="flex items-center gap-2 text-xs">
-          {specs.type === "endpoint" ? (
-            specs.definition.subtype === "rest" ? (
+          {specs.data.type === "endpoint" ? (
+            specs.data.definition.subtype === "rest" ? (
               <>
                 <span
                   className={cn(
                     "rounded-sm px-1.5 py-0.5 font-bold text-xs uppercase",
                     {
                       "bg-primary/30 text-primary":
-                        specs.definition.method === "get",
+                        specs.data.definition.method === "get",
                       "bg-success/30 text-success":
-                        specs.definition.method === "post",
+                        specs.data.definition.method === "post",
                       "bg-warning/30 text-warning":
-                        specs.definition.method === "put",
+                        specs.data.definition.method === "put",
                       "bg-destructive/30 text-destructive":
-                        specs.definition.method === "delete",
+                        specs.data.definition.method === "delete",
                       "p-0 font-semibold text-primary text-xs":
-                        !specs.definition.method,
+                        !specs.data.definition.method,
                     },
                   )}
                 >
-                  {specs.definition.method.toUpperCase()}
+                  {specs.data.definition.method.toUpperCase()}
                 </span>
                 <span className="text-muted-foreground">REST</span>
               </>
@@ -430,18 +428,18 @@ const DeclarationNodeCard = memo(
                 <span className="text-muted-foreground">RPC</span>
               </>
             )
-          ) : specs.type === "function" ? (
+          ) : specs.data.type === "function" ? (
             <>
               <FunctionSquareIcon className="size-4 text-primary" />
               <span className="text-muted-foreground">Function</span>
             </>
-          ) : specs.type === "component" ? (
-            specs.definition.subtype === "page" ? (
+          ) : specs.data.type === "component" ? (
+            specs.data.definition.subtype === "page" ? (
               <>
                 <AppWindowIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">Page</span>
               </>
-            ) : specs.definition.subtype === "reusable" ? (
+            ) : specs.data.definition.subtype === "reusable" ? (
               <>
                 <ComponentIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">Component</span>
