@@ -7,7 +7,7 @@ import type { InferSelectModel } from "@weldr/db";
 import type { DeclarationDependency, declarations } from "@weldr/db/schema";
 import { streamObject } from "ai";
 
-export async function annotator({
+export async function enricher({
   projectId,
   file,
   newDeclarations,
@@ -22,7 +22,7 @@ export async function annotator({
   previousVersionDeclarations: InferSelectModel<typeof declarations>[];
 }) {
   const result = streamObject({
-    model: registry.languageModel("anthropic:claude-3-5-sonnet-latest"),
+    model: registry.languageModel("openai:gpt-4.1"),
     output: "array",
     schema: z
       .object({
@@ -75,7 +75,7 @@ ${
   });
 
   for await (const _ of result.partialObjectStream) {
-    console.log(`[annotator:${projectId}] Streaming...`);
+    console.log(`[enricher:${projectId}] Streaming...`);
   }
 
   const data = await result.object;

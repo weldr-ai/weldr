@@ -14,7 +14,7 @@ import {
   versionFiles,
 } from "@weldr/db/schema";
 import { S3 } from "@weldr/shared/s3";
-import { annotator } from "../annotator";
+import { enricher } from "../enricher";
 import type { FileCache } from "./file-cache";
 import { processDeclarations } from "./process-declarations";
 
@@ -132,11 +132,11 @@ export async function processFile({
 
   const declarationInsertions: InferInsertModel<typeof declarations>[] = [];
 
-  // Annotate the new declarations
+  // Enrich the new declarations
   console.log(
-    `[processFile:${projectId}] Creating ${Object.keys(processedDeclarations.newDeclarations).length} new annotations and updating ${Object.keys(processedDeclarations.updatedDeclarations).length} annotations`,
+    `[processFile:${projectId}] Enriching ${Object.keys(processedDeclarations.newDeclarations).length} new declarations and updating ${Object.keys(processedDeclarations.updatedDeclarations).length} declarations`,
   );
-  const annotations = await annotator({
+  const enrichedDeclarations = await enricher({
     projectId,
     file: {
       path,
@@ -146,7 +146,7 @@ export async function processFile({
     previousVersionDeclarations,
   });
 
-  for (const { specs, isNode } of annotations) {
+  for (const { specs, isNode } of enrichedDeclarations) {
     const declarationId = createId();
 
     const declarationName = (() => {
