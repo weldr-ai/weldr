@@ -7,11 +7,12 @@ import {
 import Image from "next/image";
 
 import { Badge } from "@weldr/ui/badge";
-
-import { NotionIcon } from "@weldr/ui/icons/notion-icon";
-import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
-import { SalesforceIcon } from "@weldr/ui/icons/salesforce-icon";
-import { SlackIcon } from "@weldr/ui/icons/slack-icon";
+import {
+  NotionIcon,
+  PostgresIcon,
+  SalesforceIcon,
+  SlackIcon,
+} from "@weldr/ui/icons";
 
 export function Features() {
   return (

@@ -136,6 +136,7 @@ export async function processFile({
   console.log(
     `[processFile:${projectId}] Enriching ${Object.keys(processedDeclarations.newDeclarations).length} new declarations and updating ${Object.keys(processedDeclarations.updatedDeclarations).length} declarations`,
   );
+
   const enrichedDeclarations = await enricher({
     projectId,
     file: {

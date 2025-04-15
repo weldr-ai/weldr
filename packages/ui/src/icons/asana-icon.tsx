@@ -1,10 +1,12 @@
-export function AsanaIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function AsanaIcon(props: ComponentProps<"svg">) {
   return (
     <svg
-      className={className}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 251 232"
+      {...props}
     >
       <title>Asana</title>
       <path

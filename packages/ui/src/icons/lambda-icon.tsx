@@ -1,8 +1,9 @@
-export function LambdaIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function LambdaIcon(props: ComponentProps<"svg">) {
   return (
     <svg
       role="graphics-symbol"
-      className={className}
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
@@ -12,6 +13,7 @@ export function LambdaIcon({ className }: { className?: string }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      {...props}
     >
       <title>Function</title>
       <path d="M6 20l6.5 -9" />

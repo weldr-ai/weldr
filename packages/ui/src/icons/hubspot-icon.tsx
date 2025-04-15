@@ -1,4 +1,6 @@
-export function HubspotIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function HubspotIcon(props: ComponentProps<"svg">) {
   return (
     <svg
       width="256px"
@@ -6,7 +8,7 @@ export function HubspotIcon({ className }: { className?: string }) {
       viewBox="0 0 1024 1024"
       xmlns="http://www.w3.org/2000/svg"
       fill="#000000"
-      className={className}
+      {...props}
     >
       <title>Hubspot</title>
       <g id="SVGRepo_bgCarrier" strokeWidth="0" />

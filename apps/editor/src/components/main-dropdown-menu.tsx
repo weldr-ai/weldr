@@ -23,7 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@weldr/ui/dropdown-menu";
-import { LogoIcon } from "@weldr/ui/icons/logo-icon";
+import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -42,7 +42,7 @@ export function MainDropdownMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className={cn("size-8", className)}>
-          <LogoIcon className="size-8" />
+          <LogoIcon className="size-6" />
           <span className="sr-only">Weldr</span>
         </Button>
       </DropdownMenuTrigger>

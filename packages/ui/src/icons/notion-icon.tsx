@@ -1,11 +1,13 @@
-export function NotionIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function NotionIcon(props: ComponentProps<"svg">) {
   return (
     <svg
       role="graphics-symbol"
-      className={className}
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid"
       viewBox="0 0 256 268"
+      {...props}
     >
       <title>Notion</title>
       <path

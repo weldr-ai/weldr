@@ -18,7 +18,7 @@ import { api } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@weldr/api";
 import { Button, buttonVariants } from "@weldr/ui/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { LogoIcon } from "@weldr/ui/icons/logo-icon";
+import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/utils";
 import Link from "next/link";
 import { CreateProjectForm } from "./create-project-form";

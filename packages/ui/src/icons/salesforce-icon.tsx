@@ -1,10 +1,12 @@
-export function SalesforceIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function SalesforceIcon(props: ComponentProps<"svg">) {
   return (
     <svg
       role="graphics-symbol"
-      className={className}
       xmlns="http://www.w3.org/2000/svg"
       viewBox=".5 .5 999 699.242"
+      {...props}
     >
       <title>Salesforce</title>
       <path

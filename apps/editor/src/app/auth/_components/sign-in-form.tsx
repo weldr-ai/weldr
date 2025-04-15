@@ -29,7 +29,7 @@ import { Input } from "@weldr/ui/input";
 
 import { Checkbox } from "@weldr/ui/checkbox";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { LogoIcon } from "@weldr/ui/icons/logo-icon";
+import { LogoIcon } from "@weldr/ui/icons";
 
 import { Socials } from "../_components/socials";
 import { SupportLinks } from "../_components/support-links";

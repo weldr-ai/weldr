@@ -1,4 +1,6 @@
-export function S3Icon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function S3Icon(props: ComponentProps<"svg">) {
   return (
     <svg
       width="256px"
@@ -7,7 +9,7 @@ export function S3Icon({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid"
       fill="#000000"
-      className={className}
+      {...props}
     >
       <title>S3</title>
       <g id="SVGRepo_bgCarrier" strokeWidth="0" />

@@ -1,9 +1,11 @@
-export function GmailIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function GmailIcon(props: ComponentProps<"svg">) {
   return (
     <svg
-      className={className}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 49.4 512 399.42"
+      {...props}
     >
       <title>Gmail</title>
       <g fill="none" fill-rule="evenodd">

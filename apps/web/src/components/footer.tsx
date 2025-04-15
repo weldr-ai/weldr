@@ -3,8 +3,7 @@ import Link from "next/link";
 import { buttonVariants } from "@weldr/ui/button";
 import { cn } from "@weldr/ui/utils";
 
-import { LinkedInIcon } from "@weldr/ui/icons/linkedin-icon";
-import { XIcon } from "@weldr/ui/icons/x-icon";
+import { LinkedInIcon, XSocialIcon } from "@weldr/ui/icons";
 
 export function Footer() {
   return (
@@ -19,7 +18,7 @@ export function Footer() {
             "p-2 hover:bg-transparent",
           )}
         >
-          <XIcon />
+          <XSocialIcon />
         </Link>
         <Link
           href="https://linkedin.com/company/weldr"

@@ -1,6 +1,7 @@
 import "server-only";
 
-import type { TStreamableValue } from "@/types";
+import { takeScreenshot } from "@/lib/take-screenshot";
+import type { TStreamableValue, VersionStreamableValue } from "@/types";
 import { type InferSelectModel, type Tx, eq, inArray } from "@weldr/db";
 import {
   declarations,
@@ -15,6 +16,7 @@ import { Fly } from "@weldr/shared/fly";
 import type { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import { type CoreMessage, streamText } from "ai";
 import type { z } from "zod";
+import { insertMessages } from "../../insert-messages";
 import { prompts } from "../../prompts";
 import { registry } from "../../registry";
 import {
@@ -25,33 +27,27 @@ import {
   removePackagesTool,
 } from "../../tools";
 import { getFilesContext, getFolderStructure } from "./context";
-import {
-  DIVIDER,
-  REPLACE,
-  SEARCH,
-  applyEdits,
-  findFilename,
-  getEdits,
-} from "./editor";
+import { applyEdits, findFilename, getEdits } from "./editor";
 import { FileCache } from "./file-cache";
+import { processFile } from "./process-file";
 import type { EditResults } from "./types";
 import { BASE_PACKAGE_DOT_JSON, getPackageVersion } from "./utils";
 
 export async function coder({
   streamWriter,
   userId,
-  chatId,
   projectId,
-  versionId,
+  chatId,
+  version,
   previousVersionId,
   promptMessages,
   tx,
 }: {
   streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
   userId: string;
-  chatId: string;
   projectId: string;
-  versionId: string;
+  chatId: string;
+  version: InferSelectModel<typeof versions>;
   previousVersionId?: string;
   promptMessages: CoreMessage[];
   tx: Tx;
@@ -60,7 +56,6 @@ export async function coder({
 
   const currentMessages: CoreMessage[] = [...promptMessages];
   const fileCache = new FileCache();
-  const processedFiles = new Set<string>();
 
   const installedPackages = await tx.query.packages.findMany({
     where: eq(packages.projectId, projectId),
@@ -79,7 +74,7 @@ export async function coder({
   const finalResult: EditResults = {};
 
   const availableFiles = await tx.query.versionFiles.findMany({
-    where: eq(versionFiles.versionId, previousVersionId ?? versionId),
+    where: eq(versionFiles.versionId, previousVersionId ?? version.id),
     columns: {
       fileId: false,
       versionId: false,
@@ -164,6 +159,14 @@ export async function coder({
     files: flatFiles,
   });
 
+  const streamValue: VersionStreamableValue = {
+    type: "version",
+    versionId: version.id,
+    versionMessage: version.message,
+    versionNumber: version.number,
+    changedFiles: [],
+  };
+
   async function generate() {
     const { textStream, usage } = streamText({
       model: registry.languageModel("anthropic:claude-3-5-sonnet-latest"),
@@ -172,7 +175,7 @@ export async function coder({
       tools: {
         installPackages: installPackagesTool({
           projectId,
-          versionId,
+          versionId: version.id,
           tx,
         }),
         removePackages: removePackagesTool({
@@ -318,138 +321,63 @@ ${fileContext}`,
       },
     });
 
-    let streamValue:
-      | {
-          type: "code";
-          files: Record<
-            string,
-            {
-              originalContent: string | undefined;
-              newContent: string | undefined;
-            }
-          >;
-        }
-      | undefined = undefined;
-
-    let streamFilePath = "";
-    let streamOriginalContent = "";
-    let streamNewContent = "";
-    let currentAccumulatedText = "";
-    let inSearchBlock = false;
-    let inReplaceBlock = false;
+    let currentFilePath = "";
     let inCodeBlock = false;
     const previousLines: string[] = [];
 
     for await (const text of textStream) {
-      response += text;
-      currentAccumulatedText += text;
-
       // Process the accumulated text line by line
-      while (currentAccumulatedText.includes("\n")) {
-        const lineEndIndex = currentAccumulatedText.indexOf("\n");
-        const line = currentAccumulatedText.substring(0, lineEndIndex);
-        currentAccumulatedText = currentAccumulatedText.substring(
-          lineEndIndex + 1,
-        );
+      const lines = text.split("\n");
 
+      for (const line of lines) {
         // Store previous lines for filename detection
         previousLines.push(line);
         if (previousLines.length > 5) {
-          // Keep only the last 5 lines for efficiency
           previousLines.shift();
         }
 
         // Detect filename at the start of a code block
         if (line.trim().startsWith("```") && !inCodeBlock) {
           const filename = findFilename({ lines: previousLines });
-
           if (filename) {
             console.log(`[coder:${projectId}] Writing to file ${filename}`);
-            streamFilePath = filename;
-            streamOriginalContent = "";
-            streamNewContent = "";
-            inSearchBlock = false;
-            inReplaceBlock = false;
+            currentFilePath = filename;
             inCodeBlock = true;
-          }
 
+            // Add new file with pending status
+            if (
+              !streamValue.changedFiles.some((f) => f.path === currentFilePath)
+            ) {
+              streamValue.changedFiles.push({
+                path: currentFilePath,
+                status: "pending",
+              });
+              await streamWriter.write(streamValue);
+            }
+          }
           continue;
         }
 
         // Detect end of code block
         if (line.trim() === "```" && inCodeBlock) {
           inCodeBlock = false;
-          inSearchBlock = false;
-          inReplaceBlock = false;
-          streamFilePath = "";
-          continue;
-        }
 
-        // Only process SEARCH/REPLACE patterns if we're inside a code block
-        if (inCodeBlock) {
-          // Detect SEARCH marker
-          if (SEARCH.test(line.trim())) {
-            inSearchBlock = true;
-            inReplaceBlock = false;
-            continue;
-          }
+          // Update file status to success
+          if (currentFilePath) {
+            const fileIndex = streamValue.changedFiles.findIndex(
+              (f) => f.path === currentFilePath,
+            );
 
-          // Detect divider between SEARCH and REPLACE
-          if (DIVIDER.test(line.trim()) && inSearchBlock) {
-            inSearchBlock = false;
-            inReplaceBlock = true;
-            continue;
-          }
-
-          // Detect REPLACE marker (end of the block)
-          if (REPLACE.test(line.trim())) {
-            inCodeBlock = false;
-            inSearchBlock = false;
-            inReplaceBlock = false;
-            streamFilePath = "";
-            continue;
-          }
-
-          // Add content to the appropriate section
-          if (inSearchBlock) {
-            streamOriginalContent += `${line}\n`;
-            // Update stream immediately when SEARCH content changes
-            await updateStream();
-          } else if (inReplaceBlock) {
-            streamNewContent += `${line}\n`;
-            // Update stream immediately when REPLACE content changes
-            await updateStream();
-          }
-        }
-
-        // Helper function to update stream in real-time
-        async function updateStream() {
-          if (streamFilePath && streamFilePath.length > 0) {
-            if (!streamValue) {
-              streamValue = {
-                type: "code",
-                files: {},
-              };
+            if (fileIndex !== undefined && fileIndex !== -1) {
+              const file = streamValue.changedFiles[fileIndex];
+              if (file) {
+                file.status = "success";
+                await streamWriter.write(streamValue);
+              }
             }
-
-            // Make sure we're sending the full content, not just the first line
-            streamValue.files = {
-              ...streamValue.files,
-              [streamFilePath]: {
-                originalContent:
-                  streamOriginalContent.length > 0
-                    ? streamOriginalContent
-                    : undefined,
-                newContent:
-                  streamNewContent.length > 0 ? streamNewContent : undefined,
-              },
-            };
-
-            // Send immediate update to the UI
-            await streamWriter.write({
-              ...streamValue,
-            });
           }
+
+          currentFilePath = "";
         }
       }
     }
@@ -465,14 +393,7 @@ ${fileContext}`,
         existingFiles: filePaths,
         edits,
         projectId,
-        versionId,
-        previousVersionId,
-        userId,
-        tx,
-        deletedDeclarations,
         fileCache,
-        processedFiles,
-        streamWriter,
       });
 
       // Add results to running totals by accumulating them
@@ -531,6 +452,21 @@ ${fileContext}`,
 
     // Update our failed edits for next iteration
     currentFailedEdits = finalResult.failed || [];
+  }
+
+  for (const file of finalResult.passed || []) {
+    await processFile({
+      streamWriter,
+      content: file.updated,
+      path: file.path,
+      projectId,
+      versionId: version.id,
+      userId,
+      tx,
+      previousVersionId,
+      deletedDeclarations,
+      fileCache,
+    });
   }
 
   console.log(
@@ -604,7 +540,7 @@ ${fileContext}`,
   if (filteredPreviousVersionDeclarations.length > 0) {
     await tx.insert(versionDeclarations).values([
       ...filteredPreviousVersionDeclarations.map((d) => ({
-        versionId,
+        versionId: version.id,
         declarationId: d.id,
       })),
     ]);
@@ -618,7 +554,7 @@ ${fileContext}`,
   if (filteredPreviousVersionPackages.length > 0) {
     await tx.insert(versionPackages).values([
       ...filteredPreviousVersionPackages.map((p) => ({
-        versionId,
+        versionId: version.id,
         packageId: p.id,
       })),
     ]);
@@ -632,7 +568,7 @@ ${fileContext}`,
   if (filteredPreviousVersionFiles.length > 0) {
     await tx.insert(versionFiles).values([
       ...filteredPreviousVersionFiles.map((f) => ({
-        versionId,
+        versionId: version.id,
         fileId: f.id,
         s3VersionId: f.s3VersionId,
       })),
@@ -729,7 +665,7 @@ ${fileContext}`,
 
   const machineId = await Fly.machine.create({
     projectId,
-    versionId,
+    versionId: version.id,
     config: {
       image: "registry.fly.io/boilerplates:next",
       files: updatedFiles,
@@ -742,7 +678,7 @@ ${fileContext}`,
     .set({
       machineId,
     })
-    .where(eq(versions.id, versionId));
+    .where(eq(versions.id, version.id));
 
   // Install packages
   console.log(
@@ -754,6 +690,44 @@ ${fileContext}`,
     projectId,
     machineId,
     command: "cd app && bun i",
+  });
+
+  const versionCreatedAt = new Date();
+
+  const [messageId] = await insertMessages({
+    tx,
+    input: {
+      chatId,
+      userId,
+      messages: [
+        {
+          role: "version",
+          rawContent: {
+            versionId: version.id,
+            versionMessage: version.message,
+            versionNumber: version.number,
+            machineId,
+            changedFiles: streamValue.changedFiles,
+          },
+          createdAt: versionCreatedAt,
+        },
+      ],
+    },
+  });
+
+  if (messageId) {
+    await streamWriter.write({
+      ...streamValue,
+      id: messageId,
+      machineId,
+      createdAt: versionCreatedAt,
+    });
+  }
+
+  await takeScreenshot({
+    versionId: version.id,
+    projectId,
+    machineId,
   });
 
   return machineId;

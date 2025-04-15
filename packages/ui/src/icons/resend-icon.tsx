@@ -1,10 +1,11 @@
 "use client";
 
+import type { ComponentProps } from "react";
+
 export function ResendIcon({
-  className,
   theme,
-}: {
-  className?: string;
+  ...props
+}: ComponentProps<"svg"> & {
   theme: "light" | "dark";
 }) {
   return (
@@ -16,7 +17,7 @@ export function ResendIcon({
           viewBox="0 0 600 600"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className={className}
+          {...props}
         >
           <title>Resend</title>
           <path
@@ -31,7 +32,7 @@ export function ResendIcon({
           viewBox="0 0 600 600"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className={className}
+          {...props}
         >
           <title>Resend</title>
           <path

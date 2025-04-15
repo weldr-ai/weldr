@@ -14,7 +14,7 @@ import {
 } from "@weldr/ui/dialog";
 
 import type { RouterOutputs } from "@weldr/api";
-import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
+import { PostgresIcon } from "@weldr/ui/icons";
 import { AddIntegrationsForm } from "./add-integrations-form";
 
 export function AddIntegrationDialog({

@@ -1,12 +1,14 @@
-export function LinearIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function LinearIcon(props: ComponentProps<"svg">) {
   return (
     <svg
-      className={className}
       xmlns="http://www.w3.org/2000/svg"
       width="200"
       height="200"
       fill="none"
       viewBox="0 0 100 100"
+      {...props}
     >
       <title>Linear</title>
       <path

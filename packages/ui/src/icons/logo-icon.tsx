@@ -1,20 +1,18 @@
 "use client";
 
+import type { ComponentProps } from "react";
 import { cn } from "../utils";
 
-export function LogoIcon({
-  className,
-}: {
-  className?: string;
-}) {
+export function LogoIcon(props: ComponentProps<"svg">) {
   return (
     <svg
-      className={cn("p-1", className)}
+      className={cn("p-1", props.className)}
       width="1024"
       height="1024"
       viewBox="0 0 1024 1024"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      {...props}
     >
       <title>Weldr Logo</title>
       <path

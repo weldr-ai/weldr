@@ -1,13 +1,15 @@
-export function GoogleIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function GoogleIcon(props: ComponentProps<"svg">) {
   return (
     <svg
       role="graphics-symbol"
-      className={className}
       width="256"
       height="262"
       viewBox="0 0 256 262"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid"
+      {...props}
     >
       <title>Google</title>
       <path

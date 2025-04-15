@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@weldr/ui/form";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { LogoIcon } from "@weldr/ui/icons/logo-icon";
+import { LogoIcon } from "@weldr/ui/icons";
 import { Input } from "@weldr/ui/input";
 import { useRouter } from "next/navigation";
 import { SupportLinks } from "../_components/support-links";

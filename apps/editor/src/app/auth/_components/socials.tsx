@@ -5,9 +5,7 @@ import { useState } from "react";
 import { authClient } from "@weldr/auth/client";
 import { Button } from "@weldr/ui/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { GithubIcon } from "@weldr/ui/icons/github-icon";
-import { GoogleIcon } from "@weldr/ui/icons/google-icon";
-import { MicrosoftIcon } from "@weldr/ui/icons/microsoft-icon";
+import { GithubIcon, GoogleIcon, MicrosoftIcon } from "@weldr/ui/icons";
 
 export function Socials() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);

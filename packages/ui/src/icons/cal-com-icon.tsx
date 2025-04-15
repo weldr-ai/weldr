@@ -1,12 +1,13 @@
 "use client";
 
+import type { ComponentProps } from "react";
+
 export function CalComIcon({
-  className,
   theme,
+  ...props
 }: {
-  className?: string;
   theme?: "light" | "dark";
-}) {
+} & ComponentProps<"svg">) {
   return (
     <>
       {theme === "light" ? (
@@ -16,7 +17,7 @@ export function CalComIcon({
           viewBox="0 0 101 21"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className={className}
+          {...props}
         >
           <title>Cal.com</title>
           <path
@@ -52,7 +53,7 @@ export function CalComIcon({
           viewBox="0 0 150 32"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className={className}
+          {...props}
         >
           <title>Cal.com</title>
           <path

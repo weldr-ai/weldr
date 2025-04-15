@@ -9,41 +9,40 @@ export type CanvasNodeProps = NodeProps<CanvasNode>;
 
 export type TPendingMessage = "thinking" | "waiting" | "building" | null;
 
+export type TextStreamableValue = {
+  type: "paragraph";
+  text: string;
+};
+
+export type ToolStreamableValue = {
+  id: string;
+  type: "tool";
+  toolName: "initializeProjectTool" | "implementTool" | "setupIntegrationTool";
+  toolArgs?: Record<string, unknown>;
+  toolResult: unknown;
+};
+
+export type VersionStreamableValue = {
+  id?: string;
+  createdAt?: Date;
+  type: "version";
+  versionId: string;
+  versionMessage: string;
+  versionNumber: number;
+  machineId?: string;
+  changedFiles: {
+    path: string;
+    status: "pending" | "success";
+  }[];
+};
+
+export type NodesStreamableValue = {
+  type: "nodes";
+  node: CanvasNodeData;
+};
+
 export type TStreamableValue =
-  | {
-      type: "text";
-      text: string;
-    }
-  | {
-      id: string;
-      type: "tool";
-      toolName:
-        | "initializeProjectTool"
-        | "implementTool"
-        | "setupIntegrationTool";
-      toolArgs?: Record<string, unknown>;
-      toolResult: unknown;
-    }
-  | {
-      id: string;
-      type: "version";
-      versionId: string;
-      versionMessage: string;
-      versionNumber: number;
-      machineId: string;
-    }
-  | {
-      id?: string;
-      type: "code";
-      files: Record<
-        string,
-        {
-          originalContent: string | undefined;
-          newContent: string | undefined;
-        }
-      >;
-    }
-  | {
-      type: "nodes";
-      node: CanvasNodeData;
-    };
+  | TextStreamableValue
+  | ToolStreamableValue
+  | VersionStreamableValue
+  | NodesStreamableValue;

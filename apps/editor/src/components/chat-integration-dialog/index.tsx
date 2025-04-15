@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@weldr/ui/dialog";
-import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
+import { PostgresIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/utils";
 import { useState } from "react";
 import { PostgresForm } from "./postgres-form";

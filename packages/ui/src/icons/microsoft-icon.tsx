@@ -1,13 +1,15 @@
-export function MicrosoftIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function MicrosoftIcon(props: ComponentProps<"svg">) {
   return (
     <svg
       role="graphics-symbol"
-      className={className}
       viewBox="0 0 256 256"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
       preserveAspectRatio="xMidYMid"
+      {...props}
     >
       <title>Microsoft</title>
       <path fill="#F1511B" d="M121.666 121.666H0V0h121.666z" />

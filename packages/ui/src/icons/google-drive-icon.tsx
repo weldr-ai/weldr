@@ -1,10 +1,8 @@
-export function GoogleDriveIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function GoogleDriveIcon(props: ComponentProps<"svg">) {
   return (
-    <svg
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 87.3 78"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 87.3 78" {...props}>
       <title>Google Drive</title>
       <path
         fill="#0066da"

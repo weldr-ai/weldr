@@ -1,4 +1,3 @@
-import { takeScreenshot } from "@/lib/take-screenshot";
 import type { TStreamableValue } from "@/types";
 import type { Tx } from "@weldr/db";
 import { and, eq } from "@weldr/db";
@@ -139,13 +138,13 @@ export async function implement({
 
   console.log(`[implement:${projectId}] Coding...`);
 
-  const machineId = await coder({
+  await coder({
     streamWriter,
     tx,
-    chatId,
     userId,
     projectId,
-    versionId: version.id,
+    chatId,
+    version,
     previousVersionId: previousVersion.id,
     promptMessages: [
       ...promptMessages,
@@ -156,12 +155,6 @@ export async function implement({
     ],
   });
 
-  await takeScreenshot({
-    versionId: version.id,
-    projectId,
-    machineId,
-  });
-
   console.log(`[implement:${projectId}] Writing to stream...`);
 
   await streamWriter.write({
@@ -170,36 +163,6 @@ export async function implement({
     toolName: "implementTool",
     toolResult: {
       status: "success",
-    },
-  });
-
-  console.log(`[implement:${projectId}] Writing version to stream...`);
-
-  await streamWriter.write({
-    id: version.id,
-    type: "version",
-    versionId: version.id,
-    versionMessage: toolArgs.commitMessage,
-    versionNumber: version.number,
-    machineId,
-  });
-
-  await insertMessages({
-    tx,
-    input: {
-      chatId,
-      userId,
-      messages: [
-        {
-          role: "version",
-          rawContent: {
-            versionId: version.id,
-            versionMessage: toolArgs.commitMessage,
-            versionNumber: version.number,
-          },
-          createdAt: new Date(),
-        },
-      ],
     },
   });
 }

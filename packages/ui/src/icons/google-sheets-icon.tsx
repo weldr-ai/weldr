@@ -1,4 +1,6 @@
-export function GoogleSheetsIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function GoogleSheetsIcon(props: ComponentProps<"svg">) {
   return (
     <svg
       width="49px"
@@ -7,7 +9,7 @@ export function GoogleSheetsIcon({ className }: { className?: string }) {
       version="1.1"
       xmlns="http://www.w3.org/2000/svg"
       xmlnsXlink="http://www.w3.org/1999/xlink"
-      className={className}
+      {...props}
     >
       <title>Sheets-icon</title>
       <desc>Created with Sketch.</desc>

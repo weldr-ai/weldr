@@ -1,9 +1,6 @@
 import "server-only";
 
-import type { TStreamableValue } from "@/types";
-import type { Tx } from "@weldr/db";
 import type { FileCache } from "./file-cache";
-import { processFile } from "./process-file";
 import type { Edit, EditResult, FailedEdit } from "./types";
 
 export const SEARCH = /^<{5,9} SEARCH\s*$/;
@@ -175,26 +172,12 @@ export async function applyEdits({
   existingFiles,
   edits,
   projectId,
-  versionId,
-  previousVersionId,
-  userId,
-  tx,
-  deletedDeclarations,
   fileCache,
-  processedFiles,
-  streamWriter,
 }: {
   existingFiles: string[];
   edits: Edit[];
   projectId: string;
-  versionId: string;
-  previousVersionId?: string;
-  userId: string;
-  tx: Tx;
-  deletedDeclarations: string[];
   fileCache: FileCache;
-  processedFiles: Set<string>;
-  streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
 }): Promise<{
   passed: Edit[];
   failed: FailedEdit[];
@@ -215,21 +198,7 @@ export async function applyEdits({
       fileCache,
     });
 
-    if (result.passed && !processedFiles.has(result.passed.path)) {
-      await processFile({
-        streamWriter,
-        content: result.passed.updated,
-        path: result.passed.path,
-        projectId,
-        versionId,
-        userId,
-        tx,
-        previousVersionId,
-        deletedDeclarations,
-        fileCache,
-      });
-
-      processedFiles.add(result.passed.path);
+    if (result.passed) {
       passed.push(result.passed);
     }
 

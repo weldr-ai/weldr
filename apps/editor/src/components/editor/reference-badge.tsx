@@ -1,5 +1,5 @@
 import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
-import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
+import { PostgresIcon } from "@weldr/ui/icons";
 import { cn, renderDataTypeIcon } from "@weldr/ui/utils";
 import { ColumnsIcon, FunctionSquareIcon, TableIcon } from "lucide-react";
 import React from "react";

@@ -341,7 +341,7 @@ export const initializeProject = async ({
     tx,
     chatId,
     projectId,
-    versionId: version.id,
+    version,
     userId,
     promptMessages: [
       ...promptMessages,
@@ -367,34 +367,6 @@ You MUST NOT create any database schemas or authentication. THIS IS A PURE CLIEN
     toolName: "initializeProjectTool",
     toolResult: {
       status: "success",
-    },
-  });
-
-  await streamWriter.write({
-    id: version.id,
-    type: "version",
-    versionId: version.id,
-    versionMessage: toolArgs.commitMessage,
-    versionNumber: version.number,
-    machineId: machineId,
-  });
-
-  await insertMessages({
-    tx,
-    input: {
-      chatId,
-      userId,
-      messages: [
-        {
-          role: "version",
-          rawContent: {
-            versionId: version.id,
-            versionMessage: toolArgs.commitMessage,
-            versionNumber: version.number,
-          },
-          createdAt: new Date(),
-        },
-      ],
     },
   });
 };

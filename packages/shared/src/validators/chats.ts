@@ -61,8 +61,15 @@ export const toolMessageRawContentSchema = z.object({
 
 export const versionMessageRawContentSchema = z.object({
   versionId: z.string(),
+  machineId: z.string().optional(),
   versionMessage: z.string(),
   versionNumber: z.number(),
+  changedFiles: z.array(
+    z.object({
+      path: z.string(),
+      status: z.enum(["pending", "success"]),
+    }),
+  ),
 });
 
 export const messageRawContentSchema = z.union([
@@ -92,7 +99,7 @@ export const messageRoleSchema = z.enum([
   "assistant",
   "tool",
   "version",
-  "code",
+  "files",
 ]);
 
 export const userMessageSchema = baseMessageSchema.extend({

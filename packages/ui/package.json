@@ -6,7 +6,7 @@
   "exports": {
     "./*": "./src/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
-    "./icons/*": "./src/icons/*.tsx",
+    "./icons": "./src/icons/index.ts",
     "./styles/globals.css": "./src/styles/globals.css",
     "./utils": "./src/utils.tsx"
   },

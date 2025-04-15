@@ -1,11 +1,13 @@
-export function SlackIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function SlackIcon(props: ComponentProps<"svg">) {
   return (
     <svg
       role="graphics-symbol"
-      className={className}
       enableBackground="new 0 0 2447.6 2452.5"
       viewBox="0 0 2447.6 2452.5"
       xmlns="http://www.w3.org/2000/svg"
+      {...props}
     >
       <title>Slack</title>
       <g clipRule="evenodd" fillRule="evenodd">

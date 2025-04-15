@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@weldr/ui/card";
-import { LogoIcon } from "@weldr/ui/icons/logo-icon";
+import { LogoIcon } from "@weldr/ui/icons";
 import Link from "next/link";
 import { SupportLinks } from "../../_components/support-links";
 

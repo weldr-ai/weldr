@@ -1,5 +1,5 @@
 {
-  "id": "fea2274c-daed-41c2-a49f-115d42e95726",
+  "id": "4f39c8e0-d41f-4d31-bba7-fd4da3e92cd7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2196,7 +2196,7 @@
     "public.message_roles": {
       "name": "message_roles",
       "schema": "public",
-      "values": ["user", "assistant", "tool", "version", "code"]
+      "values": ["user", "assistant", "tool", "version"]
     },
     "public.package_type": {
       "name": "package_type",

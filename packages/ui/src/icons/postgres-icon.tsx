@@ -1,6 +1,6 @@
-import type { SVGProps } from "react";
+import type { ComponentProps } from "react";
 
-export const PostgresIcon = (props: SVGProps<SVGSVGElement>) => (
+export const PostgresIcon = (props: ComponentProps<"svg">) => (
   <svg
     role="graphics-symbol"
     xmlns="http://www.w3.org/2000/svg"

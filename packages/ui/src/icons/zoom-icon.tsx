@@ -1,4 +1,6 @@
-export function ZoomIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function ZoomIcon(props: ComponentProps<"svg">) {
   return (
     <svg
       width="256px"
@@ -6,7 +8,7 @@ export function ZoomIcon({ className }: { className?: string }) {
       viewBox="0 0 32 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      {...props}
     >
       <title>Zoom</title>
       <g id="SVGRepo_bgCarrier" strokeWidth="0" />

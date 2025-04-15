@@ -7,8 +7,20 @@ import type { TPendingMessage } from "@/types";
 import type { RouterOutputs } from "@weldr/api";
 import type { ChatMessage, ToolMessage } from "@weldr/shared/types";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { LogoIcon } from "@weldr/ui/icons/logo-icon";
+import {
+  JsonIcon,
+  LogoIcon,
+  MarkdownIcon,
+  MdxIcon,
+  SvgIcon,
+  TsxIcon,
+  TypescriptIcon,
+  XmlIcon,
+  YamlIcon,
+} from "@weldr/ui/icons";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
 import { cn } from "@weldr/ui/utils";
+import { CheckIcon, CodeIcon, GitCommitIcon, LoaderIcon } from "lucide-react";
 import { ChatIntegrationDialog } from "./chat-integration-dialog";
 import { CustomMarkdown } from "./custom-markdown";
 
@@ -34,7 +46,7 @@ const PureMessageItem = ({
     >
       {message.role === "assistant" && (
         <div className="flex items-center gap-1">
-          <LogoIcon className="size-6 p-0" />
+          <LogoIcon className="size-5" />
           <span className="text-muted-foreground text-xs">Weldr</span>
         </div>
       )}
@@ -64,11 +76,72 @@ const PureMessageItem = ({
           )}
 
         {message.role === "version" && (
-          <div className="flex max-w-64 items-center gap-1 rounded-md border border-success bg-success/10 p-2 text-success text-xs">
-            <span>{`#${message.rawContent.versionNumber}`}</span>
-            <span className="truncate">
-              {message.rawContent.versionMessage}
-            </span>
+          <div className="flex flex-col rounded-md border bg-background text-xs">
+            <div className="grid grid-cols-[auto_auto_1fr_auto] items-center justify-between gap-1 rounded-t-md border-b bg-muted px-2 py-1 text-muted-foreground">
+              <GitCommitIcon className="size-3.5 text-success" />
+
+              <span className="text-muted-foreground">
+                {`#${message.rawContent.versionNumber}`}
+              </span>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="max-w-64 truncate text-foreground">
+                    {message.rawContent.versionMessage}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="space-x-1 border bg-muted px-1 py-0.5 text-xs">
+                  <span className="text-muted-foreground">
+                    {`#${message.rawContent.versionNumber}`}
+                  </span>
+                  <span>{message.rawContent.versionMessage}</span>
+                </TooltipContent>
+              </Tooltip>
+
+              <span className="flex items-center gap-1">
+                {message.rawContent.changedFiles.length} files changed
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1 p-2">
+              {message.rawContent.changedFiles.map((file) => (
+                <div
+                  key={file.path}
+                  className="grid grid-cols-[auto_auto_1fr] items-center gap-1"
+                >
+                  <CheckIcon
+                    className={cn("size-4 text-success", {
+                      hidden: file.status !== "success",
+                    })}
+                  />
+                  <LoaderIcon
+                    className={cn("size-4 animate-spin text-primary", {
+                      hidden: file.status !== "pending",
+                    })}
+                  />
+                  {file.path.endsWith(".ts") ? (
+                    <TypescriptIcon className="size-4" />
+                  ) : file.path.endsWith(".tsx") ? (
+                    <TsxIcon className="size-4" />
+                  ) : file.path.endsWith(".mdx") ? (
+                    <MdxIcon className="size-4" />
+                  ) : file.path.endsWith(".md") ? (
+                    <MarkdownIcon className="size-4" />
+                  ) : file.path.endsWith(".yaml") ? (
+                    <YamlIcon className="size-4" />
+                  ) : file.path.endsWith(".svg") ? (
+                    <SvgIcon className="size-4" />
+                  ) : file.path.endsWith(".xml") ? (
+                    <XmlIcon className="size-4" />
+                  ) : file.path.endsWith(".json") ? (
+                    <JsonIcon className="size-4" />
+                  ) : (
+                    <CodeIcon className="size-4" />
+                  )}
+                  <span className="truncate">{file.path}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

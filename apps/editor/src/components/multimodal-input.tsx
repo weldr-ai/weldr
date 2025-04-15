@@ -16,7 +16,7 @@ import type { TPendingMessage } from "@/types";
 import type { Attachment } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { LogoIcon } from "@weldr/ui/icons/logo-icon";
+import { LogoIcon } from "@weldr/ui/icons";
 import { Textarea } from "@weldr/ui/textarea";
 import { cn } from "@weldr/ui/utils";
 import equal from "fast-deep-equal";
@@ -232,7 +232,7 @@ function PureMultimodalInput({
     <div className="flex flex-col items-center justify-center">
       {pendingMessage && (
         <div className="flex w-[calc(100%-30px)] items-center gap-1 rounded-t-md border-x border-t bg-background p-1 text-muted-foreground text-xs">
-          <LogoIcon className="size-4 p-0" />
+          <LogoIcon className="size-4" />
           <span className="inline-flex w-fit animate-shine bg-[length:200%_100%] bg-[linear-gradient(90deg,hsl(var(--muted-foreground))_0%,hsl(var(--muted-foreground))_40%,hsl(var(--foreground))_50%,hsl(var(--muted-foreground))_60%,hsl(var(--muted-foreground))_100%)] bg-clip-text text-transparent">
             {pendingMessage.charAt(0).toUpperCase() + pendingMessage.slice(1)}
             ...
@@ -410,22 +410,3 @@ const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
   if (prevProps.message !== nextProps.message) return false;
   return true;
 });
-
-export const PendingMessage = ({
-  type,
-}: {
-  type: Exclude<TPendingMessage, null>;
-}) => {
-  return (
-    <div key="thinking" className="flex w-full flex-col gap-2">
-      <div className="flex items-center gap-1">
-        <LogoIcon className="size-6 p-0" />
-        <span className="text-muted-foreground text-xs">Weldr</span>
-      </div>
-      <span className="inline-flex w-fit animate-shine bg-[length:200%_100%] bg-[linear-gradient(90deg,hsl(var(--muted-foreground))_0%,hsl(var(--muted-foreground))_40%,hsl(var(--foreground))_50%,hsl(var(--muted-foreground))_60%,hsl(var(--muted-foreground))_100%)] bg-clip-text text-transparent">
-        {type.charAt(0).toUpperCase() + type.slice(1)}
-        ...
-      </span>
-    </div>
-  );
-};

@@ -202,7 +202,7 @@ export async function POST(request: Request) {
           `[api/generate:onChunk:${projectId}] ${JSON.stringify(chunk)}`,
         );
         await streamWriter.write({
-          type: "text",
+          type: "paragraph",
           text: chunk,
         });
       }

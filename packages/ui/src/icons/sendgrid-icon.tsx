@@ -1,4 +1,6 @@
-export function SendgridIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function SendgridIcon(props: ComponentProps<"svg">) {
   return (
     <svg
       width="256px"
@@ -9,7 +11,7 @@ export function SendgridIcon({ className }: { className?: string }) {
       xmlnsXlink="http://www.w3.org/1999/xlink"
       preserveAspectRatio="xMidYMid"
       fill="#000000"
-      className={className}
+      {...props}
     >
       <title>Sendgrid</title>
       <g id="SVGRepo_bgCarrier" strokeWidth="0" />

@@ -1,11 +1,13 @@
-export function TwilioIcon({ className }: { className?: string }) {
+import type { ComponentProps } from "react";
+
+export function TwilioIcon(props: ComponentProps<"svg">) {
   return (
     <svg
       viewBox="0 0 64 64"
       xmlns="http://www.w3.org/2000/svg"
       width="64"
       height="64"
-      className={className}
+      {...props}
     >
       <title>Twilio</title>
       <g transform="translate(0 .047) scale(.93704)" fill="#e31e26">

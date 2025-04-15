@@ -48,13 +48,6 @@ export function Chat({
   const triggerGeneration = useCallback(async () => {
     setPendingMessage("thinking");
 
-    const newAssistantMessage: ChatMessage = {
-      id: createId(),
-      role: "assistant",
-      rawContent: [],
-      createdAt: new Date(),
-    };
-
     const result = await fetch("/api/generate", {
       method: "POST",
       body: JSON.stringify({
@@ -71,7 +64,7 @@ export function Chat({
 
     for await (const chunk of stream) {
       switch (chunk.type) {
-        case "text": {
+        case "paragraph": {
           setPendingMessage(null);
 
           setMessages((prevMessages) => {
@@ -81,7 +74,9 @@ export function Chat({
               return [
                 ...prevMessages,
                 {
-                  ...newAssistantMessage,
+                  id: createId(),
+                  role: "assistant",
+                  createdAt: new Date(),
                   rawContent: [
                     {
                       type: "paragraph",
@@ -116,7 +111,7 @@ export function Chat({
               return [
                 ...prevMessages,
                 {
-                  id: createId(),
+                  id: chunk.id,
                   role: "tool",
                   createdAt: new Date(),
                   rawContent: {
@@ -163,29 +158,41 @@ export function Chat({
         }
         case "version": {
           setMessages((prevMessages) => {
-            return [
-              ...prevMessages,
-              {
-                id: chunk.id,
-                role: "version",
-                createdAt: new Date(),
-                rawContent: {
-                  versionNumber: chunk.versionNumber,
-                  versionId: chunk.versionId,
-                  versionMessage: chunk.versionMessage,
+            const lastMessage = prevMessages[prevMessages.length - 1];
+
+            if (lastMessage?.role !== "version") {
+              return [
+                ...prevMessages,
+                {
+                  id: chunk.id,
+                  role: "version",
+                  createdAt: chunk.createdAt ?? new Date(),
+                  rawContent: {
+                    versionNumber: chunk.versionNumber,
+                    versionId: chunk.versionId,
+                    versionMessage: chunk.versionMessage,
+                    machineId: chunk.machineId,
+                    changedFiles: chunk.changedFiles,
+                  },
                 },
+              ];
+            }
+
+            const messagesWithoutLast = prevMessages.slice(0, -1);
+
+            return [
+              ...messagesWithoutLast,
+              {
+                ...lastMessage,
+                ...chunk,
               },
             ];
           });
 
           await apiUtils.projects.byId.invalidate({ id: project.id });
 
-          setSelectedView("versions");
+          setSelectedView("preview");
 
-          break;
-        }
-        case "code": {
-          // TODO: Stream code changes to the client
           break;
         }
         case "nodes": {
@@ -210,6 +217,7 @@ export function Chat({
               },
               data: chunk.node,
             };
+
             setNodes((prevNodes: CanvasNode[]) => [...prevNodes, newNode]);
           }
           break;

@@ -1,12 +1,8 @@
+import type { ComponentProps } from "react";
 import { cn } from "../utils";
 
-export function GradientSparklesIcon({
-  className,
-}: {
-  className?: string;
-}) {
+export function GradientSparklesIcon(props: ComponentProps<"svg">) {
   return (
-    // biome-ignore lint/a11y/noSvgWithoutTitle: <explanation>
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="24"
@@ -17,8 +13,10 @@ export function GradientSparklesIcon({
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={cn("size-8", className)}
+      className={cn("size-8", props.className)}
+      {...props}
     >
+      <title>Gradient Sparkles</title>
       <defs>
         <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style={{ stopColor: "#f43f5e" }} />

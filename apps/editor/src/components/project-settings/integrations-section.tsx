@@ -18,24 +18,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@weldr/ui/dialog";
-import { AirtableIcon } from "@weldr/ui/icons/airtable-icon";
-import { AsanaIcon } from "@weldr/ui/icons/asana-icon";
-import { CalComIcon } from "@weldr/ui/icons/cal-com-icon";
-import { GithubIcon } from "@weldr/ui/icons/github-icon";
-import { GoogleDriveIcon } from "@weldr/ui/icons/google-drive-icon";
-import { GoogleSheetsIcon } from "@weldr/ui/icons/google-sheets-icon";
-import { HubspotIcon } from "@weldr/ui/icons/hubspot-icon";
-import { JiraIcon } from "@weldr/ui/icons/jira-icon";
-import { LinearIcon } from "@weldr/ui/icons/linear-icon";
-import { NotionIcon } from "@weldr/ui/icons/notion-icon";
-import { PostgresIcon } from "@weldr/ui/icons/postgres-icon";
-import { ResendIcon } from "@weldr/ui/icons/resend-icon";
-import { S3Icon } from "@weldr/ui/icons/s3-icon";
-import { SalesforceIcon } from "@weldr/ui/icons/salesforce-icon";
-import { SendgridIcon } from "@weldr/ui/icons/sendgrid-icon";
-import { SlackIcon } from "@weldr/ui/icons/slack-icon";
-import { StripeIcon } from "@weldr/ui/icons/stripe-icon";
-import { TwilioIcon } from "@weldr/ui/icons/twilio-icon";
+import {
+  AirtableIcon,
+  AsanaIcon,
+  CalComIcon,
+  GithubIcon,
+  GoogleDriveIcon,
+  GoogleSheetsIcon,
+  HubspotIcon,
+  JiraIcon,
+  LinearIcon,
+  NotionIcon,
+  PostgresIcon,
+  ResendIcon,
+  S3Icon,
+  SalesforceIcon,
+  SendgridIcon,
+  SlackIcon,
+  StripeIcon,
+  TwilioIcon,
+} from "@weldr/ui/icons";
 import { ScrollArea } from "@weldr/ui/scroll-area";
 import { useTheme } from "@weldr/ui/theme-provider";
 import { AddIntegrationDialog } from "../add-integration-dialog";
