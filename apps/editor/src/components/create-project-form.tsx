@@ -1,5 +1,6 @@
 "use client";
 
+import { useCommandCenter } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import { createId } from "@paralleldrive/cuid2";
 import type { Attachment } from "@weldr/shared/types";
@@ -36,6 +37,7 @@ const quickStartTemplates = [
 
 export function CreateProjectForm() {
   const router = useRouter();
+  const { setOpen } = useCommandCenter();
   const projectChatId = createId();
 
   const [message, setMessage] = useState("");
@@ -48,6 +50,7 @@ export function CreateProjectForm() {
         description: "Project created successfully.",
         duration: 2000,
       });
+      setOpen(false);
       router.push(`/projects/${data.id}`);
     },
     onError: (error) => {

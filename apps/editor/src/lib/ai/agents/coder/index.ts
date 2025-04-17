@@ -312,6 +312,24 @@ ${fileContext}`,
 
                 break;
               }
+              case "readPackageJson": {
+                const toolResult = toolResults.find(
+                  (toolResult) => toolResult.toolName === "readPackageJson",
+                );
+
+                if (!toolResult) {
+                  throw new Error("readPackageJson: Tool result not found");
+                }
+
+                const packageJson = toolResult.result;
+
+                currentMessages.push({
+                  role: "user",
+                  content: packageJson,
+                });
+
+                break;
+              }
               default: {
                 console.log(`[coder:${projectId}] Unknown tool call`);
                 break;
