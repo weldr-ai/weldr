@@ -147,10 +147,7 @@ export async function processFile({
     previousVersionDeclarations,
   });
 
-  for (const {
-    specs: { version, data },
-    isNode,
-  } of enrichedDeclarations) {
+  for (const { version, data, isNode } of enrichedDeclarations) {
     const declarationId = createId();
 
     const declarationName = (() => {
@@ -265,6 +262,7 @@ export async function processFile({
         specs: {
           version,
           data,
+          isNode,
         },
         canvasNode: {
           id: canvasNode.id,
@@ -296,6 +294,7 @@ export async function processFile({
       specs: {
         version,
         data,
+        isNode,
       },
       projectId,
       userId,

@@ -1,5 +1,4 @@
 import { declarationSpecsV1Schema } from "@weldr/shared/validators/declarations/index";
-import { z } from "zod";
 
 import { registry } from "../registry";
 
@@ -22,28 +21,9 @@ export async function enricher({
   previousVersionDeclarations: InferSelectModel<typeof declarations>[];
 }) {
   const result = streamObject({
-    model: registry.languageModel("anthropic:claude-3-5-sonnet-latest"),
     output: "array",
-    schema: z
-      .object({
-        specs: declarationSpecsV1Schema.describe("The declaration specs"),
-        isNode: z.boolean().describe(
-          `Whether the declaration is a node.
-- What are the nodes?
-- All endpoints and pages are nodes by default.
-- Functions that are DIRECTLY part of the business logic are nodes.
-- Reusable UI components that are important, for example, components with effects.
-- What are the non-nodes?
-- UI Layouts are not nodes.
-- Context Providers are not nodes.
-- Utility functions are not nodes.
-- Models are not nodes.
-- Other declarations are not nodes.`,
-        ),
-      })
-      .describe(
-        "The list of specs of the exported declarations. Create the specs for the provided declarations only. It will be used to generate the documentation. MUST be a valid JSON object not a string.",
-      ),
+    model: registry.languageModel("anthropic:claude-3-5-sonnet-latest"),
+    schema: declarationSpecsV1Schema.describe("The list of declaration specs"),
     system: `Please, create specs for the provided declarations based on the code.
       You must create specs for new declarations and update the specs for updated declarations if needed.
       Important:
