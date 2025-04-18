@@ -275,31 +275,12 @@ const ComponentDetails = ({
           />
         </div>
       )}
-      {declaration.definition.events && (
+      {declaration.definition.transitions && (
         <div className="flex flex-col space-y-1">
           <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
-            Events:
+            Transitions:
           </span>
-          <CustomMarkdown
-            content={declaration.definition.events
-              .map(
-                (event) =>
-                  `- \`${event.name}\`\n${event.description}\n${event.sideEffects?.map((sideEffect) => `- ${sideEffect}`).join("\n")}`,
-              )
-              .join("\n")}
-          />
-        </div>
-      )}
-      {declaration.definition.interactions && (
-        <div className="flex flex-col space-y-1">
-          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
-            Interactions:
-          </span>
-          <CustomMarkdown
-            content={declaration.definition.interactions
-              .map((interaction) => `- ${interaction}`)
-              .join("\n")}
-          />
+          {/* TODO: Render transitions */}
         </div>
       )}
     </div>
