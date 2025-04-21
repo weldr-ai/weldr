@@ -1,5 +1,5 @@
 {
-  "id": "4777ef14-6435-4484-beed-195ade473450",
+  "id": "a810710b-7756-45a4-8252-ca7cd6128b97",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1476,6 +1476,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "project_id": {
           "name": "project_id",
           "type": "text",
@@ -1659,6 +1665,12 @@
         },
         "name": {
           "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -2049,6 +2061,21 @@
           "primaryKey": false,
           "notNull": false
         },
+        "progress": {
+          "name": "progress",
+          "type": "version_progress",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'initiated'"
+        },
+        "changed_files": {
+          "name": "changed_files",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
         "is_current": {
           "name": "is_current",
           "type": "boolean",
@@ -2218,6 +2245,18 @@
       "name": "declaration_types",
       "schema": "public",
       "values": ["component", "endpoint", "function", "model", "other"]
+    },
+    "public.version_progress": {
+      "name": "version_progress",
+      "schema": "public",
+      "values": [
+        "initiated",
+        "coded",
+        "enriched",
+        "deployed",
+        "succeeded",
+        "failed"
+      ]
     }
   },
   "schemas": {},

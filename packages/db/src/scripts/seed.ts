@@ -67,136 +67,91 @@ export const db = drizzle(conn, { schema });
 //   return files;
 // }
 
+const deps = {
+  "@hookform/resolvers": "^3.9.1",
+  "@radix-ui/react-accordion": "^1.2.2",
+  "@radix-ui/react-alert-dialog": "^1.1.3",
+  "@radix-ui/react-aspect-ratio": "^1.1.1",
+  "@radix-ui/react-avatar": "^1.1.2",
+  "@radix-ui/react-checkbox": "^1.1.3",
+  "@radix-ui/react-collapsible": "^1.1.2",
+  "@radix-ui/react-context-menu": "^2.2.3",
+  "@radix-ui/react-dialog": "^1.1.3",
+  "@radix-ui/react-dropdown-menu": "^2.1.3",
+  "@radix-ui/react-hover-card": "^1.1.3",
+  "@radix-ui/react-label": "^2.1.1",
+  "@radix-ui/react-menubar": "^1.1.3",
+  "@radix-ui/react-navigation-menu": "^1.2.2",
+  "@radix-ui/react-popover": "^1.1.3",
+  "@radix-ui/react-progress": "^1.1.1",
+  "@radix-ui/react-radio-group": "^1.2.2",
+  "@radix-ui/react-scroll-area": "^1.2.2",
+  "@radix-ui/react-select": "^2.1.3",
+  "@radix-ui/react-separator": "^1.1.1",
+  "@radix-ui/react-slider": "^1.2.2",
+  "@radix-ui/react-slot": "^1.1.1",
+  "@radix-ui/react-switch": "^1.1.2",
+  "@radix-ui/react-tabs": "^1.1.2",
+  "@radix-ui/react-toast": "^1.2.3",
+  "@radix-ui/react-toggle": "^1.1.1",
+  "@radix-ui/react-toggle-group": "^1.1.1",
+  "@radix-ui/react-tooltip": "^1.1.5",
+  "class-variance-authority": "^0.7.1",
+  clsx: "^2.1.1",
+  cmdk: "^1.0.0",
+  "date-fns": "^3.6.0",
+  "embla-carousel-react": "^8.5.1",
+  "input-otp": "^1.4.1",
+  "lucide-react": "^0.468.0",
+  next: "15.1.0",
+  "next-themes": "^0.4.4",
+  react: "^18.3.1",
+  "react-day-picker": "^8.10.1",
+  "react-dom": "^18.3.1",
+  "react-hook-form": "^7.54.1",
+  "react-resizable-panels": "^2.1.7",
+  recharts: "^2.15.0",
+  "server-only": "^0.0.1",
+  sonner: "^1.7.1",
+  "tailwind-merge": "^2.5.5",
+  "tailwindcss-animate": "^1.0.7",
+  vaul: "^1.1.2",
+  zod: "^3.24.1",
+  "@types/eslint": "^8.56.10",
+  "@types/node": "^22.10.9",
+  "@types/react": "^18.3.16",
+  "@types/react-dom": "^18.3.5",
+  "@typescript-eslint/eslint-plugin": "^8.1.0",
+  "@typescript-eslint/parser": "^8.1.0",
+  eslint: "^8.57.0",
+  "eslint-config-next": "^15.0.1",
+  postcss: "^8.4.39",
+  prettier: "^3.3.2",
+  "prettier-plugin-tailwindcss": "^0.6.5",
+  tailwindcss: "^3.4.3",
+  typescript: "^5.5.3",
+};
+
 async function seed() {
   try {
-    // await db.transaction(async (tx) => {
-    //   const metadataPath = path.join(
-    //     __dirname,
-    //     "../../..",
-    //     "presets",
-    //     "next-base",
-    //   );
-    //   const packagesPath = path.join(
-    //     __dirname,
-    //     "../../..",
-    //     "presets",
-    //     "next-base",
-    //     "packages.json",
-    //   );
-    //   const files = await readMetadataFiles(metadataPath);
-
-    //   const packages = JSON.parse(await fs.readFile(packagesPath, "utf-8")) as {
-    //     type: "runtime" | "development";
-    //     name: string;
-    //   }[];
-
-    //   const [nextBasePreset] = await tx
-    //     .insert(schema.presets)
-    //     .values({
-    //       type: "next-base",
-    //       name: "Next.js Base",
-    //       description: "A preset for Next.js projects",
-    //     })
-    //     .returning();
-
-    //   if (!nextBasePreset) {
-    //     throw new Error("Next.js Base preset not found");
-    //   }
-
-    //   for (const file of files) {
-    //     await tx
-    //       .insert(schema.presetDeclarations)
-    //       .values(
-    //         Object.entries(file.declarations).map(([name, declaration]) => ({
-    //           presetId: nextBasePreset.id,
-    //           dependencies: declaration.dependencies,
-    //           metadata: declaration.metadata,
-    //           file: file.file,
-    //           type: declaration.metadata.type,
-    //           link: `${file.file}#${name}`,
-    //         })),
-    //       )
-    //       .onConflictDoNothing({
-    //         target: [
-    //           schema.presetDeclarations.link,
-    //           schema.presetDeclarations.presetId,
-    //         ],
-    //       });
-
-    //     await tx
-    //       .insert(schema.presetFiles)
-    //       .values({
-    //         presetId: nextBasePreset.id,
-    //         file: file.file,
-    //       })
-    //       .onConflictDoNothing({
-    //         target: [schema.presetFiles.presetId, schema.presetFiles.file],
-    //       });
-    //   }
-
-    //   await tx.insert(schema.presetPackages).values(
-    //     packages.map((pkg) => ({
-    //       presetId: nextBasePreset.id,
-    //       type: pkg.type,
-    //       name: pkg.name,
-    //     })),
-    //   );
-
-    //   console.log(
-    //     "Successfully updated preset with UI component declarations and packages",
-    //   );
-    // });
-
     await db.transaction(async (tx) => {
-      const preset = await tx.query.presets.findFirst({
-        where: eq(schema.presets.type, "next-base"),
-        with: {
-          declarations: true,
-        },
-      });
-
-      if (!preset) {
-        throw new Error("Next.js Base preset not found");
-      }
-
-      for (const declaration of preset.declarations) {
-        if (!declaration.specs) {
-          continue;
-        }
+      // Update existing packages with versions from deps
+      for (const [name, version] of Object.entries(deps)) {
+        await tx
+          .update(schema.presetPackages)
+          .set({ version })
+          .where(eq(schema.presetPackages.name, name));
 
         await tx
-          .update(schema.presetDeclarations)
-          .set({
-            specs: {
-              ...declaration.specs,
-              version: "v1" as const,
-            },
-          })
-          .where(eq(schema.presetDeclarations.id, declaration.id));
+          .update(schema.packages)
+          .set({ version })
+          .where(eq(schema.packages.name, name));
       }
-    });
 
-    await db.transaction(async (tx) => {
-      const declarations = await tx.query.declarations.findMany();
-
-      for (const declaration of declarations) {
-        if (!declaration.specs) {
-          continue;
-        }
-
-        await tx
-          .update(schema.declarations)
-          .set({
-            specs: {
-              ...declaration.specs,
-              version: "v1" as const,
-            },
-          })
-          .where(eq(schema.declarations.id, declaration.id));
-      }
+      console.log("Successfully updated preset packages with versions");
     });
   } catch (error) {
-    console.error("Error seeding predefined declarations:", error);
+    console.error("Error updating package versions:", error);
     throw error;
   } finally {
     await conn.end();

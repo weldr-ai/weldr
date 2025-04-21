@@ -23,10 +23,23 @@ export type TextStreamableValue = {
 export type ToolStreamableValue = {
   id?: string;
   type: "tool";
-  toolName: "implementTool" | "setupIntegrationTool";
+  toolName: "setupIntegrationTool";
   toolArgs?: Record<string, unknown>;
   toolResult: unknown;
 };
+
+export type CoderStreamableValue =
+  | {
+      id?: string;
+      type: "coder";
+      status: "initiated" | "coded" | "enriched" | "succeeded" | "failed";
+    }
+  | {
+      id?: string;
+      type: "coder";
+      status: "deployed";
+      machineId: string;
+    };
 
 export type VersionStreamableValue = {
   id?: string;
@@ -51,4 +64,5 @@ export type TStreamableValue =
   | TextStreamableValue
   | ToolStreamableValue
   | VersionStreamableValue
-  | NodesStreamableValue;
+  | NodesStreamableValue
+  | CoderStreamableValue;

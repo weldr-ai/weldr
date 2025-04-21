@@ -5,6 +5,8 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
+  pgEnum,
   pgTable,
   primaryKey,
   text,
@@ -17,6 +19,15 @@ import { files } from "./files";
 import { packages } from "./packages";
 import { projects } from "./projects";
 
+export const versionProgress = pgEnum("version_progress", [
+  "initiated",
+  "coded",
+  "enriched",
+  "deployed",
+  "succeeded",
+  "failed",
+]);
+
 export const versions = pgTable(
   "versions",
   {
@@ -28,6 +39,11 @@ export const versions = pgTable(
     message: text("message").notNull(),
     description: text("description").notNull(),
     machineId: text("machine_id"),
+    progress: versionProgress("progress").default("initiated").notNull(),
+    changedFiles: jsonb("changed_files")
+      .$type<string[]>()
+      .default([])
+      .notNull(),
     isCurrent: boolean("is_current").default(false).notNull(),
     parentVersionId: text("parent_version_id").references(
       (): AnyPgColumn => versions.id,
@@ -55,13 +71,13 @@ export const versions = pgTable(
 );
 
 export const versionsRelations = relations(versions, ({ one, many }) => ({
-  version: one(versions, {
+  parent: one(versions, {
     fields: [versions.parentVersionId],
     references: [versions.id],
-    relationName: "versions_parentVersionId_versions_id",
+    relationName: "version_parent",
   }),
-  versions: many(versions, {
-    relationName: "versions_parentVersionId_versions_id",
+  children: many(versions, {
+    relationName: "version_children",
   }),
   project: one(projects, {
     fields: [versions.projectId],

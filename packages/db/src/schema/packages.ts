@@ -14,6 +14,7 @@ export const packages = pgTable(
     type: packageType("type").notNull(),
     name: text("name").notNull(),
     description: text("description"),
+    version: text("version").notNull(),
     projectId: text("project_id")
       .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),

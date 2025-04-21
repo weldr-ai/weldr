@@ -2,6 +2,7 @@ import type { InferSelectModel, Tx } from "@weldr/db";
 import { packages, versionPackages } from "@weldr/db/schema";
 import { tool } from "ai";
 import { z } from "zod";
+import { getPackageVersion } from "../agents/coder/utils";
 
 export const installPackagesTool = ({
   projectId,
@@ -28,30 +29,50 @@ export const installPackagesTool = ({
         `[installPackagesTool:${projectId}] Installing packages`,
         pkgs.map((pkg) => pkg.name).join(", "),
       );
+      const result: {
+        success: boolean;
+        error?: string;
+        package?: InferSelectModel<typeof packages>;
+      }[] = [];
 
       for (const pkg of pkgs) {
-        const [insertedPkg] = await tx
-          .insert(packages)
-          .values({
-            projectId,
-            name: pkg.name,
-            type: pkg.type,
-            description: pkg.description,
-          })
-          .onConflictDoNothing()
-          .returning();
+        const packageVersion = await getPackageVersion(pkg.name);
 
-        if (!insertedPkg) {
-          throw new Error("Failed to insert package");
+        if (!packageVersion) {
+          result.push({
+            success: false,
+            error: "Could not find package on npm",
+          });
+        } else {
+          const [insertedPkg] = await tx
+            .insert(packages)
+            .values({
+              projectId,
+              name: pkg.name,
+              type: pkg.type,
+              description: pkg.description,
+              version: packageVersion,
+            })
+            .onConflictDoNothing()
+            .returning();
+
+          if (!insertedPkg) {
+            throw new Error("Failed to insert package");
+          }
+
+          await tx.insert(versionPackages).values({
+            versionId,
+            packageId: insertedPkg.id,
+          });
+
+          result.push({
+            success: true,
+            package: insertedPkg,
+          });
         }
-
-        await tx.insert(versionPackages).values({
-          versionId,
-          packageId: insertedPkg.id,
-        });
       }
 
-      return pkgs;
+      return result;
     },
   });
 
@@ -80,7 +101,10 @@ export const readPackageJsonTool = ({
   pkgs,
 }: {
   projectId: string;
-  pkgs: Omit<InferSelectModel<typeof packages>, "id" | "projectId">[];
+  pkgs: Omit<
+    InferSelectModel<typeof packages>,
+    "id" | "projectId" | "version"
+  >[];
 }) =>
   tool({
     description: "Use to read package.json",

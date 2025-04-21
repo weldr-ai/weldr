@@ -31,7 +31,17 @@ export function Chat({
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
 
-  const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(null);
+  const currentVersionProgress = project.currentVersion?.progress;
+  const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(
+    currentVersionProgress === "initiated"
+      ? "building"
+      : currentVersionProgress === "coded"
+        ? "deploying"
+        : currentVersionProgress === "deployed"
+          ? "enriching"
+          : null,
+  );
+
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [lastMessage, setLastMessage] = useState<ChatMessage | undefined>(
@@ -46,7 +56,7 @@ export function Chat({
   const apiUtils = api.useUtils();
 
   const triggerGeneration = useCallback(async () => {
-    setPendingMessage("thinking");
+    setPendingMessage(pendingMessage ?? "thinking");
 
     const result = await fetch("/api/generate", {
       method: "POST",
@@ -104,6 +114,28 @@ export function Chat({
           });
           break;
         }
+        case "coder": {
+          if (chunk.status === "initiated") {
+            setPendingMessage("building");
+            setMachineId(undefined);
+          }
+
+          if (chunk.status === "coded") {
+            setPendingMessage("deploying");
+          }
+
+          if (chunk.status === "deployed") {
+            setPendingMessage("enriching");
+            setSelectedView("preview");
+            setMachineId(chunk.machineId);
+          }
+
+          if (chunk.status === "succeeded") {
+            await apiUtils.projects.byId.invalidate({ id: project.id });
+            setPendingMessage(null);
+          }
+          break;
+        }
         case "tool": {
           if (chunk.toolName === "setupIntegrationTool") {
             setPendingMessage("waiting");
@@ -121,33 +153,6 @@ export function Chat({
                 },
               ];
             });
-          }
-
-          if (chunk.toolName === "implementTool") {
-            const toolResult = chunk.toolResult as {
-              status: "pending" | "success" | "enriching" | "deploying";
-              machineId?: string;
-            };
-
-            if (toolResult.status === "pending") {
-              setPendingMessage("building");
-              setMachineId(undefined);
-            }
-
-            if (toolResult.status === "deploying") {
-              setPendingMessage("deploying");
-            }
-
-            if (toolResult.status === "enriching") {
-              setPendingMessage("enriching");
-              setSelectedView("preview");
-              setMachineId(toolResult.machineId);
-            }
-
-            if (toolResult.status === "success") {
-              await apiUtils.projects.byId.invalidate({ id: project.id });
-              setPendingMessage(null);
-            }
           }
 
           break;
@@ -231,6 +236,7 @@ export function Chat({
     apiUtils,
     setSelectedView,
     setMachineId,
+    pendingMessage,
   ]);
 
   useEffect(() => {
@@ -242,6 +248,18 @@ export function Chat({
       });
     }
   }, [lastMessage, triggerGeneration]);
+
+  useEffect(() => {
+    if (
+      currentVersionProgress !== "succeeded" &&
+      !generationTriggered.current
+    ) {
+      generationTriggered.current = true;
+      void triggerGeneration().finally(() => {
+        generationTriggered.current = false;
+      });
+    }
+  }, [currentVersionProgress, triggerGeneration]);
 
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
@@ -360,6 +378,8 @@ async function readStream(response: Response) {
     async *[Symbol.asyncIterator]() {
       while (true) {
         const { done, value } = await reader.read();
+        console.log("value", value);
+        console.log("done", done);
         if (done) break;
         const decodedChunk = new TextDecoder().decode(value);
         const lines = decodedChunk.split("|CHUNK|");

@@ -3,6 +3,7 @@ CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool', 'versi
 CREATE TYPE "public"."package_type" AS ENUM('runtime', 'development');--> statement-breakpoint
 CREATE TYPE "public"."preset_type" AS ENUM('next-base');--> statement-breakpoint
 CREATE TYPE "public"."declaration_types" AS ENUM('component', 'endpoint', 'function', 'model', 'other');--> statement-breakpoint
+CREATE TYPE "public"."version_progress" AS ENUM('initiated', 'coded', 'enriched', 'deployed', 'succeeded', 'failed');--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -188,6 +189,7 @@ CREATE TABLE "packages" (
 	"type" "package_type" NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
+	"version" text NOT NULL,
 	"project_id" text NOT NULL,
 	CONSTRAINT "packages_project_id_name_unique" UNIQUE("project_id","name")
 );
@@ -216,6 +218,7 @@ CREATE TABLE "preset_packages" (
 	"id" text PRIMARY KEY NOT NULL,
 	"type" "package_type" NOT NULL,
 	"name" text NOT NULL,
+	"version" text NOT NULL,
 	"preset_id" text NOT NULL,
 	CONSTRAINT "unique_preset_package" UNIQUE("name","preset_id")
 );
@@ -268,6 +271,8 @@ CREATE TABLE "versions" (
 	"message" text NOT NULL,
 	"description" text NOT NULL,
 	"machine_id" text,
+	"progress" "version_progress" DEFAULT 'initiated' NOT NULL,
+	"changed_files" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"is_current" boolean DEFAULT false NOT NULL,
 	"parent_version_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,

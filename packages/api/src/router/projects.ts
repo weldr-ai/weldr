@@ -1,6 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
-import { and, eq } from "@weldr/db";
+import { and, db, eq } from "@weldr/db";
 import {
   attachments,
   chatMessages,
@@ -163,7 +163,9 @@ export const projectsRouter = {
                 },
               },
             },
-            versions: true,
+            versions: {
+              where: eq(versions.progress, "succeeded"),
+            },
             chats: {
               limit: 1,
               orderBy: (chats, { asc }) => [asc(chats.createdAt)],
@@ -274,9 +276,12 @@ export const projectsRouter = {
             .map((declaration) => declaration.declaration);
         };
 
-        const currentVersion = project.versions.find(
-          (version) => version.isCurrent,
-        );
+        const currentVersion = await db.query.versions.findFirst({
+          where: and(
+            eq(versions.projectId, project.id),
+            eq(versions.isCurrent, true),
+          ),
+        });
 
         const result = {
           ...project,

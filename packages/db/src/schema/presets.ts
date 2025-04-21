@@ -92,6 +92,7 @@ export const presetPackages = pgTable(
       .$defaultFn(() => createId()),
     type: packageType("type").notNull(),
     name: text("name").notNull(),
+    version: text("version").notNull(),
     presetId: text("preset_id")
       .references(() => presets.id)
       .notNull(),

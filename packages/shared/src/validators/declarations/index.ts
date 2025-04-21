@@ -14,7 +14,7 @@ export const declarationTypeSchema = z.enum([
 ]);
 
 export const declarationSpecsV1Schema = z.object({
-  version: z.literal("v1"),
+  version: z.literal("v1").describe("MUST always be v1"),
   data: z.discriminatedUnion("type", [
     endpointSchema,
     functionSchema,
@@ -26,11 +26,8 @@ export const declarationSpecsV1Schema = z.object({
     `Whether the declaration is a node.
 - What are the nodes?
 - All endpoints and pages are nodes by default.
-- Functions that are DIRECTLY part of the business logic are nodes.
-- Reusable UI components that are important, for example, components with effects.
-- What are the non-nodes?
-- UI Layouts are not nodes.
-- Context Providers are not nodes.`,
+- UI components are nodes.
+- Functions that are DIRECTLY part of the business logic are nodes.`,
   ),
 });
 

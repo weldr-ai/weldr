@@ -1,4 +1,11 @@
-import { type InferInsertModel, type Tx, and, eq } from "@weldr/db";
+import {
+  type Db,
+  type InferInsertModel,
+  type Tx,
+  and,
+  db,
+  eq,
+} from "@weldr/db";
 import { chatMessages, chats } from "@weldr/db/schema";
 import { assistantMessageRawContentToText } from "@weldr/shared/utils";
 import type { addMessagesInputSchema } from "@weldr/shared/validators/chats";
@@ -8,7 +15,7 @@ export async function insertMessages({
   tx,
   input,
 }: {
-  tx: Tx;
+  tx?: Tx;
   input: z.infer<typeof addMessagesInputSchema> & {
     userId: string;
   };
@@ -17,7 +24,13 @@ export async function insertMessages({
     return [];
   }
 
-  const chat = await tx.query.chats.findFirst({
+  let database: Tx | Db | undefined = tx;
+
+  if (!database) {
+    database = db;
+  }
+
+  const chat = await database.query.chats.findFirst({
     where: and(eq(chats.id, input.chatId), eq(chats.userId, input.userId)),
   });
 
@@ -53,7 +66,7 @@ export async function insertMessages({
     });
   }
 
-  const insertedMessages = await tx
+  const insertedMessages = await database
     .insert(chatMessages)
     .values(messages)
     .returning({

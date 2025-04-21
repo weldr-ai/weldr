@@ -2,23 +2,20 @@ import { declarationSpecsV1Schema } from "@weldr/shared/validators/declarations/
 
 import { registry } from "../registry";
 
-import type { InferSelectModel } from "@weldr/db";
 import type { DeclarationDependency, declarations } from "@weldr/db/schema";
 import { streamObject } from "ai";
 
 export async function enricher({
-  projectId,
   file,
   newDeclarations,
-  previousVersionDeclarations,
+  updatedDeclarations,
 }: {
-  projectId: string;
   file: {
     path: string;
     content: string;
   };
   newDeclarations: Record<string, DeclarationDependency[]>;
-  previousVersionDeclarations: InferSelectModel<typeof declarations>[];
+  updatedDeclarations: (typeof declarations.$inferSelect)[];
 }) {
   const result = streamObject({
     output: "array",
@@ -31,7 +28,7 @@ export async function enricher({
       - Pages and layouts will ONLY exist under src/app.
       - REST API routes will ONLY exist under src/app/api.
       - The codebase is using typescript.
-      - You SHOULD NOT create new metadata for updated declarations if it is not needed.
+      - You SHOULD NOT create new metadata for current declarations if it is not needed.
       - Make sure to classify the declarations as nodes or non-nodes.
       - The isNode flag is part of the parent object, not the metadata object. YOU MUST NOT INCLUDE IT IN THE METADATA.`,
     prompt: `# Code
@@ -43,20 +40,23 @@ ${file.content}
 
 ${
   Object.keys(newDeclarations).length > 0
-    ? `# New declarations\n${Object.keys(newDeclarations).join("\n")}`
+    ? `# Declarations to enrich\n${Object.keys(newDeclarations).join("\n")}`
     : ""
 }${
-  previousVersionDeclarations.length > 0
-    ? `\n\n# Updated declarations\n${previousVersionDeclarations
-        .map((declaration) => JSON.stringify(declaration, null, 2))
-        .join("\n\n")}`
+  updatedDeclarations.length > 0
+    ? `\n\n# Declarations to update\n${updatedDeclarations
+        .map(
+          (d) =>
+            `- ${d.name}
+\`\`\`
+${d.specs}
+\`\`\`
+`,
+        )
+        .join("\n")}`
     : ""
 }`,
   });
-
-  for await (const _ of result.partialObjectStream) {
-    console.log(`[enricher:${projectId}] Streaming...`);
-  }
 
   const data = await result.object;
   return data;

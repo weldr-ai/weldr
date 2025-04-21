@@ -33,7 +33,7 @@ function extractPackageName(importPath: string): string {
   return firstPart || importPath; // Return full path if split fails
 }
 
-interface DeclarationChanges {
+export interface DeclarationChanges {
   newDeclarations: Record<string, DeclarationDependency[]>;
   updatedDeclarations: Record<string, DeclarationDependency[]>;
   deletedDeclarations: Record<string, DeclarationDependency[]>;

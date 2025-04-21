@@ -41,6 +41,13 @@ export function Preview({
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  useEffect(() => {
+    if (machineId) {
+      setIframeKey((prev) => prev + 1);
+      setIsLoading(true);
+    }
+  }, [machineId]);
+
   const handleRefresh = () => {
     setIframeKey((prev) => prev + 1);
     setIsLoading(true);
