@@ -23,6 +23,7 @@
     "@aws-sdk/s3-request-presigner": "^3.758.0",
     "@paralleldrive/cuid2": "^2.2.2",
     "json-schema": "^0.4.0",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.460.0",
     "ofetch": "^1.4.1",
     "pg": "^8.13.1",

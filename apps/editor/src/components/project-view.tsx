@@ -23,6 +23,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { Preview } from "./canvas/nodes/preview";
 import { Chat } from "./chat";
+import { DownloadButton } from "./download-button";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 import { ProjectSettings } from "./project-settings";
 import { Versions } from "./versions";
@@ -148,6 +149,7 @@ export function ProjectView({
                 </SelectItem>
               </SelectContent>
             </Select>
+            <DownloadButton projectId={project.id} />
             <ProjectSettings
               project={project}
               integrationTemplates={integrationTemplates}

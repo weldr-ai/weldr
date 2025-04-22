@@ -130,15 +130,6 @@ export function GeneralSection({
             </div>
           </form>
         </Form>
-        <div className="flex items-center justify-between rounded-lg border p-4">
-          <div>
-            <h2 className="font-medium text-lg">Database</h2>
-            <p className="text-muted-foreground text-sm">
-              Connect your database to your project
-            </p>
-          </div>
-          <Button>Connect Database</Button>
-        </div>
       </CardContent>
     </Card>
   );

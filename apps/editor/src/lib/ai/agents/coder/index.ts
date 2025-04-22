@@ -590,7 +590,7 @@ ${fileContext}`,
         .insert(files)
         .values({
           projectId,
-          path: file.path,
+          path: file.path.startsWith("/") ? file.path : `/${file.path}`,
           userId,
         })
         .onConflictDoNothing()

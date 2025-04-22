@@ -18,9 +18,8 @@ export async function getPackageVersion(
   }
 }
 
-export const BASE_PACKAGE_JSON = {
-  name: "next-boilerplate",
-  version: "0.0.1",
+export const getBasePackageJson = (name: string) => ({
+  name,
   private: true,
   scripts: {
     build: "next build",
@@ -34,4 +33,4 @@ export const BASE_PACKAGE_JSON = {
     "format:write": 'prettier --write "**/*.{ts,tsx,js,jsx,mdx}" --cache',
     "format:check": 'prettier --check "**/*.{ts,tsx,js,jsx,mdx}" --cache',
   },
-};
+});

@@ -1,3 +1,5 @@
+import "server-only";
+
 import {
   CopyObjectCommand,
   DeleteObjectCommand,
@@ -6,8 +8,8 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import JSZip from "jszip";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
@@ -77,7 +79,7 @@ export const S3 = {
     path: string;
     versionId?: string;
   }): Promise<string | undefined> => {
-    const fullPath = `${projectId}/${path}`;
+    const fullPath = `${projectId}/${path.startsWith("/") ? path.slice(1) : path}`;
 
     try {
       const command = new GetObjectCommand({
@@ -160,6 +162,77 @@ export const S3 = {
         `[S3:deleteFile:${projectId}] Failed to delete file ${path} - ${error}`,
       );
       throw new Error(`Failed to delete file ${path} from S3`);
+    }
+  },
+  downloadProject: async ({
+    projectId,
+    projectName,
+    files,
+  }: {
+    projectId: string;
+    projectName: string;
+    files: {
+      path: string;
+      versionId?: string;
+    }[];
+  }): Promise<string> => {
+    try {
+      // Create a new zip file
+      const zip = new JSZip();
+
+      // Download and add each file to the zip
+      const downloadPromises = files.map(async (file) => {
+        const command = new GetObjectCommand({
+          Bucket: "weldr-projects",
+          Key: `${projectId}/${file.path.startsWith("/") ? file.path.slice(1) : file.path}`,
+          VersionId: file.versionId,
+        });
+
+        const response = await s3Client.send(command);
+        const content = await response.Body?.transformToString();
+
+        if (content) {
+          zip.file(file.path, content);
+        }
+      });
+
+      await Promise.all(downloadPromises);
+
+      // Generate zip content
+      const zipContent = await zip.generateAsync({ type: "nodebuffer" });
+
+      // Calculate expiration time (1 hour from now)
+      const expirationDate = new Date();
+      expirationDate.setHours(expirationDate.getHours() + 1);
+
+      // Upload zip file to S3 with expiration
+      const zipKey = `temp-downloads/${projectId}/${projectName}.zip`;
+
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: "weldr-controlled-general",
+          Key: zipKey,
+          Body: zipContent,
+          ContentType: "application/zip",
+          Expires: expirationDate,
+          Metadata: {
+            temporary: "true",
+          },
+        }),
+      );
+
+      // Generate signed URL for download (matching the expiration time)
+      const signedUrl = await S3.getSignedUrl(
+        "weldr-controlled-general",
+        zipKey,
+        3600,
+      );
+      return signedUrl;
+    } catch (error) {
+      console.error(
+        `[S3:downloadProject] Error downloading project ${projectId}: ${error}`,
+      );
+      throw error;
     }
   },
 };

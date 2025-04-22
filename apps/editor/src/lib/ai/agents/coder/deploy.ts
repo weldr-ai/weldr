@@ -1,8 +1,13 @@
 import { and, db, eq } from "@weldr/db";
-import { versionPackages, versions } from "@weldr/db/schema";
+import {
+  files,
+  versionFiles,
+  versionPackages,
+  versions,
+} from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import { S3 } from "@weldr/shared/s3";
-import { BASE_PACKAGE_JSON } from "./utils";
+import { getBasePackageJson } from "./utils";
 
 export async function deploy({
   projectId,
@@ -17,6 +22,13 @@ export async function deploy({
     try {
       const version = await tx.query.versions.findFirst({
         where: eq(versions.id, versionId),
+        with: {
+          project: {
+            columns: {
+              name: true,
+            },
+          },
+        },
       });
 
       if (!version) {
@@ -63,7 +75,7 @@ export async function deploy({
       );
 
       const packageJson = JSON.stringify({
-        ...BASE_PACKAGE_JSON,
+        ...getBasePackageJson(version.project.name ?? "weldr-app"),
         dependencies: dependencies.reduce(
           (acc, p) => {
             acc[p.package.name] = p.package.version;
@@ -119,7 +131,7 @@ export async function deploy({
           [] as { guest_path: string; raw_value: string }[],
         ) ?? [];
 
-      const files = [
+      const newMachineFiles = [
         ...changedFiles,
         ...filteredMachineFiles,
         {
@@ -130,7 +142,7 @@ export async function deploy({
 
       console.log(
         `[coder:${projectId}] Files`,
-        files.map((f) => f.guest_path),
+        newMachineFiles.map((f) => f.guest_path),
       );
 
       // Create a new machine
@@ -139,7 +151,7 @@ export async function deploy({
         versionId,
         config: {
           image: "registry.fly.io/boilerplates:next",
-          files,
+          files: newMachineFiles,
         },
       });
 
@@ -147,6 +159,62 @@ export async function deploy({
         projectId,
         machineId,
         command: "cd app && bun i",
+      });
+
+      // Write bun.lockb and package.json to S3
+      const bunDotLock = await Fly.machine.executeCommand({
+        projectId,
+        machineId,
+        command: "cat /app/bun.lock",
+      });
+
+      if (bunDotLock.stdout) {
+        const bunDotLockVersionId = await S3.writeFile({
+          projectId,
+          path: "/bun.lock",
+          content: bunDotLock.stdout,
+        });
+
+        const bunDotLockFile = await tx.query.files.findFirst({
+          where: and(
+            eq(files.path, "/bun.lock"),
+            eq(files.projectId, projectId),
+          ),
+        });
+
+        if (!bunDotLockFile || !bunDotLockVersionId) {
+          throw new Error("Bun.lock file not found");
+        }
+
+        await tx.insert(versionFiles).values({
+          versionId: version.id,
+          fileId: bunDotLockFile.id,
+          s3VersionId: bunDotLockVersionId,
+        });
+      }
+
+      const packageJsonVersionId = await S3.writeFile({
+        projectId,
+        path: "/package.json",
+        content: packageJson,
+      });
+
+      const packageJsonFile = await tx.query.files.findFirst({
+        where: and(
+          eq(files.path, "/package.json"),
+          eq(files.projectId, projectId),
+        ),
+      });
+
+      if (!packageJsonFile || !packageJsonVersionId) {
+        throw new Error("Package.json file not found");
+      }
+
+      // Write package.json to S3
+      await tx.insert(versionFiles).values({
+        versionId: version.id,
+        fileId: packageJsonFile.id,
+        s3VersionId: packageJsonVersionId,
       });
 
       await tx
