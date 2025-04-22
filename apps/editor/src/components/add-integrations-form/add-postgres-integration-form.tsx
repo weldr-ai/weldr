@@ -198,6 +198,7 @@ export function AddPostgresIntegrationForm({
           name="projectId"
           render={({ field }) => <Input {...field} className="hidden" />}
         />
+
         <FormField
           control={form.control}
           name="integrationId"
@@ -205,7 +206,15 @@ export function AddPostgresIntegrationForm({
         />
 
         <div className="flex w-full justify-end">
-          <Button type="submit">
+          <Button
+            type="submit"
+            disabled={
+              addIntegrationMutation.isPending ||
+              updateIntegrationMutation.isPending ||
+              !form.formState.isValid ||
+              !form.formState.isDirty
+            }
+          >
             {addIntegrationMutation.isPending && (
               <LoaderIcon className="mr-1 size-3 animate-spin" />
             )}

@@ -26,6 +26,21 @@ export const integrationsRouter = createTRPCRouter({
           environmentVariableMappings,
         } = input;
 
+        const doesIntegrationExist = await tx.query.integrations.findFirst({
+          where: and(
+            eq(integrations.projectId, projectId),
+            eq(integrations.userId, ctx.session.user.id),
+            eq(integrations.integrationTemplateId, integrationTemplateId),
+          ),
+        });
+
+        if (doesIntegrationExist) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Integration already exists",
+          });
+        }
+
         const [integration] = await tx
           .insert(integrations)
           .values({
@@ -136,9 +151,25 @@ export const integrationsRouter = createTRPCRouter({
           eq(integrations.projectId, projectId),
           eq(integrations.userId, ctx.session.user.id),
         ),
+        columns: {
+          id: true,
+          name: true,
+        },
         with: {
-          project: true,
-          integrationTemplate: true,
+          environmentVariableMappings: {
+            columns: {
+              environmentVariableId: true,
+              mapTo: true,
+            },
+          },
+          integrationTemplate: {
+            columns: {
+              config: false,
+              llmTxt: false,
+              docsUrl: false,
+              version: false,
+            },
+          },
         },
         orderBy: desc(integrations.id),
       });

@@ -159,6 +159,7 @@ export const projectsRouter = {
                     config: false,
                     llmTxt: false,
                     docsUrl: false,
+                    version: false,
                   },
                 },
               },

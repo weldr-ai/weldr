@@ -1,6 +1,7 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { and, eq } from "@weldr/db";
 import { environmentVariables, secrets } from "@weldr/db/schema";
+import { Fly } from "@weldr/shared/fly";
 import { insertEnvironmentVariableSchema } from "@weldr/shared/validators/environment-variables";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
@@ -61,6 +62,12 @@ export const environmentVariablesRouter = {
         });
       }
 
+      await Fly.secrets.create({
+        projectId: input.projectId,
+        key: input.key,
+        value: input.value,
+      });
+
       return environmentVariable;
     }),
   list: protectedProcedure
@@ -113,5 +120,10 @@ export const environmentVariablesRouter = {
       await ctx.db
         .delete(environmentVariables)
         .where(eq(environmentVariables.id, input.id));
+
+      await Fly.secrets.destroy({
+        projectId: environmentVariable.projectId,
+        secretKeys: [environmentVariable.key],
+      });
     }),
 } satisfies TRPCRouterRecord;

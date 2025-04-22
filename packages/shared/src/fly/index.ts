@@ -367,4 +367,92 @@ export const Fly = {
       return response;
     },
   },
+  secrets: {
+    create: async ({
+      projectId,
+      key,
+      value,
+    }: {
+      projectId: string;
+      key: string;
+      value: string;
+    }) => {
+      await ofetch<{
+        data: {
+          setSecrets: {
+            app: {
+              id: string;
+            };
+          };
+        };
+      }>("https://api.fly.io/graphql", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${flyApiKey}`,
+        },
+        body: {
+          query: `
+            mutation($input: SetSecretsInput!) {
+              setSecrets(input: $input) {
+                app {
+                  id
+                }
+              }
+            }
+          `,
+          variables: {
+            input: {
+              appId: `preview-app-${projectId}`,
+              secrets: [
+                {
+                  key,
+                  value,
+                },
+              ],
+              replaceAll: false,
+            },
+          },
+        },
+      });
+    },
+    destroy: async ({
+      projectId,
+      secretKeys,
+    }: {
+      projectId: string;
+      secretKeys: string[];
+    }) => {
+      await ofetch<{
+        data: {
+          unsetSecrets: {
+            app: {
+              id: string;
+            };
+          };
+        };
+      }>("https://api.fly.io/graphql", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${flyApiKey}`,
+        },
+        body: {
+          query: `
+            mutation($input: UnsetSecretsInput!) {
+              unsetSecrets(input: $input) {
+                app {
+                  id
+                }
+              }
+            }
+          `,
+          variables: {
+            input: {
+              appId: `preview-app-${projectId}`,
+              keys: secretKeys,
+            },
+          },
+        },
+      });
+    },
+  },
 };
