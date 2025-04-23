@@ -64,12 +64,13 @@ export function CommandCenter({
         <CommandDialog
           open={open}
           onOpenChange={setOpen}
-          className="h-[600px] w-[896px] max-w-4xl [&_[cmdk-group]]:px-0"
+          dialogClassName="h-[600px] w-[896px] max-w-4xl"
+          commandClassName="size-full [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0"
         >
           <CommandCenterContent view={view} projects={_projects} />
         </CommandDialog>
       ) : (
-        <Command className="-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 h-[600px] w-[896px] max-w-4xl rounded-lg border duration-200 [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5 ">
+        <Command className="-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 h-[600px] w-[896px] max-w-4xl rounded-lg border duration-200 [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0">
           <CommandCenterContent view={view} projects={_projects} />
         </Command>
       )}
@@ -152,17 +153,17 @@ function ProjectsContent({
     <>
       <div className="border-r">
         <CommandInput
-          className="focus:ring-0"
+          className="border-0 focus:ring-0"
           placeholder="Search projects..."
         />
         <CommandList className="scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-muted max-h-[calc(100%-84px)] w-[320px] overflow-y-auto">
           <CommandEmpty>No projects found.</CommandEmpty>
-          <CommandGroup>
+          <CommandGroup className="p-0 [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group-heading]]:py-0">
             {projects.map((project) => (
               <CommandItem
                 key={project.id}
                 value={project.name ?? "New Project"}
-                className={cn("flex items-center gap-3 p-2", {
+                className={cn("flex items-center gap-3 rounded-none p-2", {
                   "bg-accent": selectedProject?.id === project.id,
                 })}
                 onSelect={() => {

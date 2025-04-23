@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./src/*.tsx",
+    "./*": "./src/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
     "./icons": "./src/icons/index.ts",
     "./styles/globals.css": "./src/styles/globals.css",
-    "./utils": "./src/utils.tsx"
+    "./utils": "./src/lib/utils.tsx"
   },
   "scripts": {
     "add-component": "pnpm dlx shadcn-ui add",
@@ -60,6 +60,7 @@
     "react-dom": "18.3.1",
     "react-hook-form": "^7.51.2",
     "react-resizable-panels": "^2.0.16",
+    "recharts": "^2.15.3",
     "sonner": "^1.4.41",
     "tailwind-merge": "^2.2.2",
     "tailwindcss-animate": "^1.0.7",

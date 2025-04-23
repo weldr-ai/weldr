@@ -19,7 +19,7 @@ import {
 } from "@weldr/ui/form";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { Input } from "@weldr/ui/input";
-import { DownloadIcon, LoaderIcon, TrashIcon } from "lucide-react";
+import { DownloadIcon, LoaderIcon, PaletteIcon, TrashIcon } from "lucide-react";
 
 import { getProjectDownloadUrl } from "@/lib/actions/get-project-download-url";
 import { api } from "@/lib/trpc/client";
@@ -158,6 +158,18 @@ export function GeneralSection({
         </div>
         <div className="flex items-center justify-between gap-2 rounded-lg border p-4">
           <div className="flex flex-col">
+            <h3 className="font-medium">Theme</h3>
+            <p className="text-muted-foreground text-sm">
+              Customize your project theme.
+            </p>
+          </div>
+          <Button size="sm" variant="outline">
+            <PaletteIcon className="mr-2 size-3.5" />
+            Edit Theme
+          </Button>
+        </div>
+        <div className="flex items-center justify-between gap-2 rounded-lg border p-4">
+          <div className="flex flex-col">
             <h3 className="font-medium">Download Project</h3>
             <p className="text-muted-foreground text-sm">
               Download your project code.
@@ -165,6 +177,7 @@ export function GeneralSection({
           </div>
           <Button
             size="sm"
+            variant="outline"
             disabled={isDownloading}
             onClick={async () => {
               setIsDownloading(true);
@@ -176,9 +189,9 @@ export function GeneralSection({
             }}
           >
             {isDownloading ? (
-              <LoaderIcon className="mr-2 size-4 animate-spin" />
+              <LoaderIcon className="mr-2 size-3.5 animate-spin" />
             ) : (
-              <DownloadIcon className="mr-2 size-4" />
+              <DownloadIcon className="mr-2 size-3.5" />
             )}
             Download
           </Button>
@@ -191,7 +204,7 @@ export function GeneralSection({
             </p>
           </div>
           <Button
-            variant="destructive"
+            variant="outline"
             size="sm"
             onClick={async () => {
               await deleteProject.mutateAsync({
@@ -202,7 +215,7 @@ export function GeneralSection({
             {deleteProject.isPending ? (
               <LoaderIcon className="mr-2 size-3.5 animate-spin" />
             ) : (
-              <TrashIcon className="mr-2 size-3.5" />
+              <TrashIcon className="mr-2 size-3.5 text-destructive" />
             )}
             Delete Project
           </Button>

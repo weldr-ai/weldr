@@ -1,4 +1,5 @@
 export { AirtableIcon } from "./airtable-icon";
+export { AppleIcon } from "./apple-icon";
 export { AsanaIcon } from "./asana-icon";
 export { CalComIcon } from "./cal-com-icon";
 export { CodeIcon } from "./code-icon";
@@ -22,6 +23,7 @@ export { MarkdownIcon } from "./markdown-icon";
 export { MdxIcon } from "./mdx-icon";
 export { MicrosoftIcon } from "./microsoft-icon";
 export { NotionIcon } from "./notion-icon";
+export { PaypalIcon } from "./paypal-icon";
 export { PostgresIcon } from "./postgres-icon";
 export { ResendIcon } from "./resend-icon";
 export { S3Icon } from "./s3-icon";

@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { cn } from "../utils";
+import { cn } from "../lib/utils";
 
 export function GradientSparklesIcon(props: ComponentProps<"svg">) {
   return (
