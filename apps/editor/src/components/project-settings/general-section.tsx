@@ -19,7 +19,7 @@ import {
 } from "@weldr/ui/form";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { Input } from "@weldr/ui/input";
-import { DownloadIcon, LoaderIcon } from "lucide-react";
+import { DownloadIcon, LoaderIcon, TrashIcon } from "lucide-react";
 
 import { getProjectDownloadUrl } from "@/lib/actions/get-project-download-url";
 import { api } from "@/lib/trpc/client";
@@ -44,6 +44,18 @@ export function GeneralSection({
         description: error.message,
         variant: "destructive",
         duration: 2000,
+      });
+    },
+  });
+
+  const deleteProject = api.projects.delete.useMutation({
+    onSuccess: () => {
+      router.push("/");
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
       });
     },
   });
@@ -178,7 +190,20 @@ export function GeneralSection({
               Permanently delete your project and all associated data.
             </p>
           </div>
-          <Button variant="destructive" size="sm">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={async () => {
+              await deleteProject.mutateAsync({
+                id: project.id,
+              });
+            }}
+          >
+            {deleteProject.isPending ? (
+              <LoaderIcon className="mr-2 size-3.5 animate-spin" />
+            ) : (
+              <TrashIcon className="mr-2 size-3.5" />
+            )}
             Delete Project
           </Button>
         </div>
