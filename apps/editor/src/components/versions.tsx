@@ -289,7 +289,7 @@ export function Versions({
 
   return (
     <ReactFlow
-      className="rounded-tl-xl"
+      className="rounded-xl border"
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}

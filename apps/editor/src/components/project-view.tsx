@@ -163,12 +163,12 @@ export function ProjectView({
       </ResizablePanel>
       <ResizableHandle className="w-0" withHandle />
       <ResizablePanel
-        className="h-full pt-2"
+        className="h-full py-2 pr-2"
         defaultSize={75}
         minSize={25}
         order={2}
       >
-        <div className="flex size-full rounded-tl-xl border-t border-l">
+        <div className="flex size-full rounded-xl">
           {selectedView === "canvas" && (
             <Canvas
               initialNodes={initialNodes}

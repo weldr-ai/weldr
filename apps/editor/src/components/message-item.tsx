@@ -58,13 +58,6 @@ const PureMessageItem = ({
           <CustomMarkdown content={message.rawContent} />
         )}
 
-        {message.role === "assistant" && message.version && (
-          <div className="inline-flex h-7 cursor-text select-text items-center justify-center rounded-md bg-success/10 px-1.5 py-0.5 font-semibold text-success text-xs">
-            {`#${message.version.versionNumber} `}
-            {message.version.versionName}
-          </div>
-        )}
-
         {message.role === "tool" &&
           message.rawContent.toolName === "setupIntegrationTool" && (
             <SetupIntegration
@@ -76,7 +69,7 @@ const PureMessageItem = ({
           )}
 
         {message.role === "version" && (
-          <div className="flex flex-col rounded-md border bg-background text-xs">
+          <div className="flex max-w-96 flex-col rounded-md border bg-background text-xs">
             <div className="grid grid-cols-[auto_auto_1fr_auto] items-center justify-between gap-1 rounded-t-md border-b bg-muted px-2 py-1 text-muted-foreground">
               <GitCommitIcon className="size-3.5 text-success" />
 

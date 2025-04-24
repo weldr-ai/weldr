@@ -79,7 +79,7 @@ export function Canvas({
 
   return (
     <ReactFlow
-      className="rounded-tl-xl"
+      className="rounded-xl border"
       nodes={nodes}
       onNodesChange={onNodesChange}
       edges={showEdges ? edges : []}
