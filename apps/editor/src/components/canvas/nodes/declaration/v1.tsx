@@ -1,5 +1,6 @@
 import { CustomMarkdown } from "@/components/custom-markdown";
 import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
+import { UiTransitionVisualizer } from "@/components/ui-transition-visualizer";
 import { useCanvas } from "@/lib/store";
 import { api } from "@/lib/trpc/client";
 import type { CanvasNodeProps } from "@/types";
@@ -263,24 +264,14 @@ const ComponentDetails = ({
           <CustomMarkdown content={declaration.definition.description} />
         </div>
       )}
-      {declaration.definition.properties && (
-        <div className="flex flex-col space-y-1">
-          <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
-            Properties:
-          </span>
-          <TreeView
-            data={schemaToTreeData(
-              declaration.definition.properties as JsonSchema,
-            )}
-          />
-        </div>
-      )}
       {declaration.definition.transitions && (
         <div className="flex flex-col space-y-1">
           <span className="cursor-text select-text font-semibold text-muted-foreground text-sm">
             Transitions:
           </span>
-          {/* TODO: Render transitions */}
+          <UiTransitionVisualizer
+            transitions={declaration.definition.transitions}
+          />
         </div>
       )}
     </div>

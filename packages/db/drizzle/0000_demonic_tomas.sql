@@ -65,7 +65,8 @@ CREATE TABLE "canvas_nodes" (
 	"type" "canvas_node_types" NOT NULL,
 	"position" jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"project_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "attachments" (
@@ -256,7 +257,7 @@ CREATE TABLE "version_files" (
 	"version_id" text NOT NULL,
 	"file_id" text NOT NULL,
 	"s3_version_id" text NOT NULL,
-	CONSTRAINT "version_files_version_id_file_id_s3_version_id_pk" PRIMARY KEY("version_id","file_id","s3_version_id")
+	CONSTRAINT "version_files_version_id_file_id_pk" PRIMARY KEY("version_id","file_id")
 );
 --> statement-breakpoint
 CREATE TABLE "version_packages" (
@@ -282,6 +283,7 @@ CREATE TABLE "versions" (
 --> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "canvas_nodes" ADD CONSTRAINT "canvas_nodes_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_message_id_chat_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "public"."chat_messages"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -332,6 +334,7 @@ CREATE INDEX "chats_created_at_idx" ON "chats" USING btree ("created_at");--> st
 CREATE INDEX "declaration_created_at_idx" ON "declarations" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "dependencies_created_at_idx" ON "dependencies" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "files_created_at_idx" ON "files" USING btree ("created_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "unique_path" ON "files" USING btree ("project_id","path");--> statement-breakpoint
 CREATE INDEX "integration_templates_created_at_idx" ON "integration_templates" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "integrations_created_at_idx" ON "integrations" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "projects_created_at_idx" ON "projects" USING btree ("created_at");--> statement-breakpoint

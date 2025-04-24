@@ -42,6 +42,7 @@ import {
   AlertDialogTrigger,
 } from "@weldr/ui/alert-dialog";
 import { toast } from "@weldr/ui/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
 
 type VersionNode = Node<RouterOutputs["projects"]["byId"]["versions"][number]>;
 
@@ -122,25 +123,39 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
           },
         )}
       >
-        <div className="flex items-center justify-between px-3 pt-3">
+        <div className="flex justify-between px-3 pt-3">
           <div className="flex items-center gap-2">
             <GitCommitIcon className="size-4" />
             <div className="flex flex-col">
               <span className={cn("font-medium", isCurrent && "text-primary")}>
                 Version {data.number}
               </span>
-              <span className="text-muted-foreground text-sm">
-                {data.message}
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="max-w-[300px] truncate text-muted-foreground text-sm">
+                    {data.message}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="border bg-muted px-1 py-0.5 text-xs">
+                  <span>{data.message}</span>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
           {!isCurrent && (
             <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-8">
-                  <Undo2Icon className="size-3.5" />
-                </Button>
-              </AlertDialogTrigger>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="size-8">
+                      <Undo2Icon className="size-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="border bg-muted px-1 py-0.5 text-xs">
+                  Restore Version
+                </TooltipContent>
+              </Tooltip>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Restore Version</AlertDialogTitle>

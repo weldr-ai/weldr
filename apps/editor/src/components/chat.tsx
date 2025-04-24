@@ -32,6 +32,7 @@ export function Chat({
     useScrollToBottom<HTMLDivElement>();
 
   const currentVersionProgress = project.currentVersion?.progress;
+
   const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(
     currentVersionProgress === "initiated"
       ? "building"
@@ -73,10 +74,12 @@ export function Chat({
     const stream = await readStream(result);
 
     for await (const chunk of stream) {
+      if (pendingMessage === null || pendingMessage === "thinking") {
+        setPendingMessage("generating");
+      }
+
       switch (chunk.type) {
         case "paragraph": {
-          setPendingMessage(null);
-
           setMessages((prevMessages) => {
             const lastMessage = prevMessages[prevMessages.length - 1];
 
@@ -251,7 +254,10 @@ export function Chat({
 
   useEffect(() => {
     if (
-      currentVersionProgress !== "succeeded" &&
+      (currentVersionProgress === "initiated" ||
+        currentVersionProgress === "deployed" ||
+        currentVersionProgress === "coded" ||
+        currentVersionProgress === "enriched") &&
       !generationTriggered.current
     ) {
       generationTriggered.current = true;
@@ -308,7 +314,7 @@ export function Chat({
       newMessageUser as ChatMessage,
     ]);
 
-    addMessage.mutate({
+    await addMessage.mutateAsync({
       chatId,
       messages: [
         {
@@ -378,12 +384,9 @@ async function readStream(response: Response) {
     async *[Symbol.asyncIterator]() {
       while (true) {
         const { done, value } = await reader.read();
-        console.log("value", value);
-        console.log("done", done);
         if (done) break;
         const decodedChunk = new TextDecoder().decode(value);
         const lines = decodedChunk.split("|CHUNK|");
-        console.log(lines);
         for (const line of lines) {
           if (line.trim() === "") continue;
           const parsedDelta: TStreamableValue = JSON.parse(line);

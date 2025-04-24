@@ -18,13 +18,13 @@ export function DeleteAlertDialog({
   open,
   setOpen,
   onDelete,
-  isLoading = false,
+  isPending = false,
   confirmText = "DELETE",
 }: {
   open: boolean;
   setOpen: (open: boolean) => void;
   onDelete: () => void;
-  isLoading?: boolean;
+  isPending?: boolean;
   confirmText?: string;
 }) {
   const [typedText, setTypedText] = useState("");
@@ -53,11 +53,11 @@ export function DeleteAlertDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <Button
-            disabled={typedText !== confirmText}
+            disabled={typedText !== confirmText || isPending}
             onClick={onDelete}
             variant="destructive"
           >
-            {isLoading && <LoaderIcon className="mr-2 size-3.5 animate-spin" />}
+            {isPending && <LoaderIcon className="mr-2 size-3.5 animate-spin" />}
             Delete
           </Button>
         </AlertDialogFooter>

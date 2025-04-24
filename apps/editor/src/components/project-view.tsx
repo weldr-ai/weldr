@@ -123,7 +123,7 @@ export function ProjectView({
           <div className="flex items-center gap-2">
             <MainDropdownMenu />
             <span className="font-medium text-sm">
-              {project.name ?? "Unnamed Project"}
+              {project.name ?? "Untitled Project"}
             </span>
           </div>
           <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import type { InferSelectModel, Tx } from "@weldr/db";
+import type { Tx } from "@weldr/db";
 import { packages, versionPackages } from "@weldr/db/schema";
 import { tool } from "ai";
 import { z } from "zod";
@@ -32,7 +32,7 @@ export const installPackagesTool = ({
       const result: {
         success: boolean;
         error?: string;
-        package?: InferSelectModel<typeof packages>;
+        package?: typeof packages.$inferSelect;
       }[] = [];
 
       for (const pkg of pkgs) {
@@ -93,32 +93,5 @@ export const removePackagesTool = ({
       );
 
       return pkgs;
-    },
-  });
-
-export const readPackageJsonTool = ({
-  projectId,
-  pkgs,
-}: {
-  projectId: string;
-  pkgs: Omit<
-    InferSelectModel<typeof packages>,
-    "id" | "projectId" | "version"
-  >[];
-}) =>
-  tool({
-    description: "Use to read package.json",
-    parameters: z.object({
-      read: z.boolean(),
-    }),
-    execute: async () => {
-      console.log(`[readPackageJsonTool:${projectId}] Reading package.json`);
-      const runtimePkgs = pkgs.filter((pkg) => pkg.type === "runtime");
-      const devPkgs = pkgs.filter((pkg) => pkg.type === "development");
-      return `### Current Installed Packages
-- Runtime packages:
-${runtimePkgs.map((pkg) => `  - ${pkg.name}`).join("\n")}
-- Development packages:
-${devPkgs.map((pkg) => `  - ${pkg.name}`).join("\n")}`;
     },
   });

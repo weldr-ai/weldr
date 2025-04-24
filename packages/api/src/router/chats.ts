@@ -6,7 +6,7 @@ import { S3 } from "@weldr/shared/s3";
 import type { ChatMessage } from "@weldr/shared/types";
 import { assistantMessageRawContentToText } from "@weldr/shared/utils";
 import { addMessagesInputSchema } from "@weldr/shared/validators/chats";
-import { type InferInsertModel, and, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure } from "../trpc";
 
@@ -84,7 +84,7 @@ export const chatsRouter = {
         });
       }
 
-      const messages: InferInsertModel<typeof chatMessages>[] = [];
+      const messages: (typeof chatMessages.$inferInsert)[] = [];
 
       for (const item of input.messages) {
         // const resolvedRawContent: ResolvedRawContent[] = [];

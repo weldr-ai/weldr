@@ -27,12 +27,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
+import { DeleteAlertDialog } from "../delete-alert-dialog";
 
 export function GeneralSection({
   project,
 }: { project: RouterOutputs["projects"]["byId"] }) {
   const router = useRouter();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const updateProject = api.projects.update.useMutation({
     onSuccess: () => {
@@ -204,21 +206,22 @@ export function GeneralSection({
             </p>
           </div>
           <Button
-            variant="outline"
             size="sm"
-            onClick={async () => {
-              await deleteProject.mutateAsync({
-                id: project.id,
-              });
-            }}
+            variant="outline"
+            onClick={() => setDeleteDialogOpen(true)}
           >
-            {deleteProject.isPending ? (
-              <LoaderIcon className="mr-2 size-3.5 animate-spin" />
-            ) : (
-              <TrashIcon className="mr-2 size-3.5 text-destructive" />
-            )}
+            <TrashIcon className="mr-2 size-3.5 text-destructive" />
             Delete Project
           </Button>
+          <DeleteAlertDialog
+            open={deleteDialogOpen}
+            setOpen={setDeleteDialogOpen}
+            confirmText={project.name ?? "delete"}
+            isPending={deleteProject.isPending}
+            onDelete={() => {
+              deleteProject.mutateAsync({ id: project.id });
+            }}
+          />
         </div>
       </CardContent>
     </Card>

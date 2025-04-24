@@ -362,6 +362,10 @@ export const projectsRouter = {
           });
         }
 
+        await Fly.app.delete({
+          appName: `preview-app-${project.id}`,
+        });
+
         await ctx.db
           .delete(projects)
           .where(

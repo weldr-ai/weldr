@@ -2,83 +2,93 @@ import { z } from "zod";
 import { jsonSchema } from "../json-schema";
 import { parameterObjectSchema } from "../openapi";
 
-const transitionSchema = z
-  .object({
-    when: z
-      .object({
-        description: z
-          .string()
-          .describe(
-            "What causes this change to happen (e.g., 'When the user submits the form', 'When new data arrives').",
-          ),
-        guard: z
-          .array(z.string())
-          .optional()
-          .describe(
-            "What conditions need to be true for this change to occur.",
-          ),
-      })
-      .describe("The trigger for this change."),
+export const uiTransitionSchema = z.object({
+  when: z.object({
+    description: z
+      .string()
+      .describe(
+        "A clear explanation of what the user does or what happens in the system that causes this change (e.g., 'The user clicks the blue Submit button at the bottom of the form', 'The system detects an error while processing the request', 'All required fields have been properly filled out')",
+      ),
+    event: z
+      .string()
+      .describe(
+        "A simple description of the action or occurrence that triggers this change (e.g., 'The form has been submitted', 'An error occurred', 'The form is now complete')",
+      ),
+    guard: z
+      .array(z.string())
+      .nullable()
+      .optional()
+      .describe(
+        "A list of requirements that must be met before this change can happen (e.g., ['All required fields are filled out', 'The user has an active account', 'There is at least one item selected'])",
+      ),
+  }),
 
-    from: z
-      .object({
-        data: z
-          .string()
-          .describe(
-            "Description of the information and content shown in this state (e.g., 'Empty form fields', 'User's profile information', 'List of recent orders').",
-          ),
-        ui: z
-          .object({
-            visible: z
-              .array(z.string())
-              .describe("What the user can see in this state."),
-            enabled: z
-              .array(z.string())
-              .describe("What the user can do in this state."),
-          })
-          .describe("How the interface looks and behaves in this state."),
-      })
-      .describe("The starting state before the change."),
+  from: z.object({
+    state: z
+      .string()
+      .describe(
+        "A description of the current situation before the change occurs (e.g., 'The user is filling out the form', 'The system is checking the information', 'The error message is being shown')",
+      ),
+    data: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        "A description of the information present before the change (e.g., 'The form is blank', 'Some fields have incorrect information', 'All information is filled in correctly')",
+      ),
+    visible: z
+      .array(z.string())
+      .nullable()
+      .optional()
+      .describe(
+        "A list of interface elements the user can see in this state (e.g., ['SubmitButton', 'ErrorMessage', 'LoadingSpinner'])",
+      ),
+    enabled: z
+      .array(z.string())
+      .nullable()
+      .optional()
+      .describe(
+        "A list of interface elements the user can interact with in this state (e.g., ['EmailInput', 'SubmitButton', 'CancelLink'])",
+      ),
+  }),
 
-    to: z
-      .object({
-        data: z
-          .string()
-          .describe(
-            "Description of the information and content that will be shown after the change.",
-          ),
-        ui: z
-          .object({
-            visible: z
-              .array(z.string())
-              .describe("What the user will see after the change."),
-            enabled: z
-              .array(z.string())
-              .describe("What the user can do after the change."),
-          })
-          .describe("How the interface will look and behave after the change."),
-      })
-      .describe("The end state after the change."),
+  to: z.object({
+    state: z
+      .string()
+      .describe(
+        "A description of the new situation after the change occurs (e.g., 'The system is processing the submitted information', 'The confirmation message is being displayed', 'The error details are being shown')",
+      ),
+    data: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        "A description of the information present after the change (e.g., 'The submitted information is being processed', 'The information has been saved successfully', 'The system encountered a problem')",
+      ),
+    visible: z
+      .array(z.string())
+      .nullable()
+      .optional()
+      .describe(
+        "A list of interface elements the user can see after the change (e.g., ['LoadingSpinner', 'SuccessMessage', 'RetryButton'])",
+      ),
+    enabled: z
+      .array(z.string())
+      .nullable()
+      .optional()
+      .describe(
+        "A list of interface elements the user can interact with after the change (e.g., ['RetryButton', 'CloseButton'])",
+      ),
+  }),
 
-    effects: z
-      .array(
-        z.object({
-          description: z
-            .string()
-            .describe(
-              "What happens during this change and why it matters to the user.",
-            ),
-          target: z
-            .string()
-            .optional()
-            .describe(
-              "Which part of the interface or system is affected by this change.",
-            ),
-        }),
-      )
-      .describe("What happens during this change."),
-  })
-  .describe("Describes a change in the interface from one state to another.");
+  effects: z
+    .array(z.string())
+    .nullable()
+    .optional()
+    .describe(
+      "A list of important side effects (e.g., 'The information is sent to be stored', 'The user's preferences are saved', 'The page address is updated'). Just an English description and DOES NOT include any code.",
+    ),
+});
 
 export const baseComponentSchema = z.object({
   name: z.string().describe("A unique name for this piece of the interface."),
@@ -91,10 +101,12 @@ export const baseComponentSchema = z.object({
       "An overview of what this part of the interface does and how it works.",
     ),
   properties: jsonSchema
+    .nullable()
     .optional()
     .describe("What information this interface piece needs to work."),
   rendersOn: z
     .enum(["server", "client", "both"])
+    .nullable()
     .optional()
     .describe("Where this interface piece is displayed."),
 
@@ -119,17 +131,19 @@ export const baseComponentSchema = z.object({
     .describe("The starting state of this interface piece."),
 
   transitions: z
-    .array(transitionSchema)
+    .array(uiTransitionSchema)
     .describe(
       "All the ways this interface piece can change in response to user actions or other events.",
     ),
 
   visualLayout: z
     .string()
+    .nullable()
     .optional()
     .describe("How this piece of the interface is arranged visually."),
   implementationNotes: z
     .string()
+    .nullable()
     .optional()
     .describe("Important technical details for building this interface piece."),
 });
@@ -137,6 +151,7 @@ export const baseComponentSchema = z.object({
 export const pageSchema = baseComponentSchema.extend({
   subtype: z.literal("page"),
   parameters: parameterObjectSchema
+    .nullable()
     .optional()
     .describe("The path and query parameters of the route"),
   route: z
@@ -146,6 +161,7 @@ export const pageSchema = baseComponentSchema.extend({
     ),
   meta: z
     .string()
+    .nullable()
     .optional()
     .describe(
       "Information about this page for search engines and social sharing.",
@@ -155,6 +171,7 @@ export const pageSchema = baseComponentSchema.extend({
 export const layoutSchema = baseComponentSchema.extend({
   subtype: z.literal("layout"),
   parameters: parameterObjectSchema
+    .nullable()
     .optional()
     .describe("The path and query parameters of the route"),
   route: z
@@ -165,6 +182,7 @@ export const layoutSchema = baseComponentSchema.extend({
   rendersOn: z.literal("server"),
   meta: z
     .string()
+    .nullable()
     .optional()
     .describe(
       "Default page information for search engines and social sharing.",
@@ -176,6 +194,7 @@ export const reusableComponentSchema = baseComponentSchema.extend({
   examples: z
     .string()
     .array()
+    .nullable()
     .optional()
     .describe(
       "Usage examples of the component WITHOUT imports. Just the component usage. For example: <Button>Click me</Button>",
@@ -186,6 +205,7 @@ export const componentSchema = z.object({
   type: z.literal("component"),
   protected: z
     .boolean()
+    .nullable()
     .optional()
     .describe("Whether users need to be logged in to see this."),
   definition: z.discriminatedUnion("subtype", [

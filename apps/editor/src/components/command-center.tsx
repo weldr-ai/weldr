@@ -243,7 +243,8 @@ function ProjectsContent({
                 onDelete={() => {
                   deleteProject.mutate({ id: selectedProject.id });
                 }}
-                confirmText={selectedProject.name ?? "undefined"}
+                confirmText={selectedProject.name ?? "delete"}
+                isPending={deleteProject.isPending}
               />
             </div>
           </div>

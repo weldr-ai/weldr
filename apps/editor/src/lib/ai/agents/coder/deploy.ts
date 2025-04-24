@@ -186,11 +186,19 @@ export async function deploy({
           throw new Error("Bun.lock file not found");
         }
 
-        await tx.insert(versionFiles).values({
-          versionId: version.id,
-          fileId: bunDotLockFile.id,
-          s3VersionId: bunDotLockVersionId,
-        });
+        await tx
+          .insert(versionFiles)
+          .values({
+            versionId: version.id,
+            fileId: bunDotLockFile.id,
+            s3VersionId: bunDotLockVersionId,
+          })
+          .onConflictDoUpdate({
+            target: [versionFiles.versionId, versionFiles.fileId],
+            set: {
+              s3VersionId: bunDotLockVersionId,
+            },
+          });
       }
 
       const packageJsonVersionId = await S3.writeFile({
@@ -211,11 +219,19 @@ export async function deploy({
       }
 
       // Write package.json to S3
-      await tx.insert(versionFiles).values({
-        versionId: version.id,
-        fileId: packageJsonFile.id,
-        s3VersionId: packageJsonVersionId,
-      });
+      await tx
+        .insert(versionFiles)
+        .values({
+          versionId: version.id,
+          fileId: packageJsonFile.id,
+          s3VersionId: packageJsonVersionId,
+        })
+        .onConflictDoUpdate({
+          target: [versionFiles.versionId, versionFiles.fileId],
+          set: {
+            s3VersionId: packageJsonVersionId,
+          },
+        });
 
       await tx
         .update(versions)

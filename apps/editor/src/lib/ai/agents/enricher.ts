@@ -6,10 +6,12 @@ import type { DeclarationDependency, declarations } from "@weldr/db/schema";
 import { streamObject } from "ai";
 
 export async function enricher({
+  projectId,
   file,
   newDeclarations,
   updatedDeclarations,
 }: {
+  projectId: string;
   file: {
     path: string;
     content: string;
@@ -58,6 +60,17 @@ ${d.specs}
 }`,
   });
 
+  for await (const _ of result.partialObjectStream) {
+    // DO NOTHING
+  }
+
   const data = await result.object;
+
+  const usage = await result.usage;
+
+  console.log(
+    `[enricher:${projectId}:${file.path}] prompt tokens: ${usage.promptTokens}, completion tokens: ${usage.completionTokens}, total tokens: ${usage.totalTokens}`,
+  );
+
   return data;
 }

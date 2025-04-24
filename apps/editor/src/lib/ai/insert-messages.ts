@@ -1,11 +1,4 @@
-import {
-  type Db,
-  type InferInsertModel,
-  type Tx,
-  and,
-  db,
-  eq,
-} from "@weldr/db";
+import { type Db, type Tx, and, db, eq } from "@weldr/db";
 import { chatMessages, chats } from "@weldr/db/schema";
 import { assistantMessageRawContentToText } from "@weldr/shared/utils";
 import type { addMessagesInputSchema } from "@weldr/shared/validators/chats";
@@ -38,7 +31,7 @@ export async function insertMessages({
     throw new Error("Chat not found");
   }
 
-  const messages: InferInsertModel<typeof chatMessages>[] = [];
+  const messages: (typeof chatMessages.$inferInsert)[] = [];
 
   for (const item of input.messages) {
     // const resolvedRawContent: ResolvedRawContent[] = [];

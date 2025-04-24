@@ -1,6 +1,5 @@
 import { takeScreenshot } from "@/lib/take-screenshot";
 import type { TStreamableValue } from "@/types";
-import type { InferInsertModel, InferSelectModel } from "@weldr/db";
 import { and, db, eq, not } from "@weldr/db";
 import {
   declarationPackages,
@@ -24,10 +23,11 @@ import { enrich } from "../agents/coder/enrich";
 
 export const coderTool = tool({
   description:
-    "Ask the coder agent to implement the request. MUST BE CALLED TO IMPLEMENT ANYTHING.",
+    "Ask the coder agent to implement the request. MUST BE CALLED AFTER THE USER HAS PROVIDED THE REQUIREMENTS.",
   parameters: z.object({
     name: z
       .string()
+      .nullable()
       .optional()
       .describe("The name of the project if it's a new project."),
     commitMessage: z
@@ -137,7 +137,6 @@ export const executeCoderTool = async ({
       versionId: version.id,
       streamWriter,
       userId,
-      paths: version.changedFiles,
     });
     versionStatus = "enriched";
     await streamWriter.write({
@@ -176,7 +175,7 @@ const initializeVersion = async ({
   projectId: string;
   userId: string;
   toolArgs: z.infer<typeof coderTool.parameters>;
-}): Promise<InferSelectModel<typeof versions>> => {
+}): Promise<typeof versions.$inferSelect> => {
   return db.transaction(async (tx) => {
     const project = await tx.query.projects.findFirst({
       where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
@@ -188,7 +187,6 @@ const initializeVersion = async ({
 
     if (project.initiatedAt) {
       console.log(`[coderTool:${projectId}] Getting previous version...`);
-
       const previousVersion = await tx.query.versions.findFirst({
         where: and(
           eq(versions.projectId, projectId),
@@ -210,8 +208,20 @@ const initializeVersion = async ({
         throw new Error("Version not found");
       }
 
-      console.log(`[coderTool:${projectId}] Updating previous versions...`);
+      console.log(`[coderTool:${projectId}] Getting latest version number...`);
+      const latestNumber = await tx.query.versions.findFirst({
+        where: eq(versions.projectId, projectId),
+        orderBy: (versions, { desc }) => [desc(versions.number)],
+        columns: {
+          number: true,
+        },
+      });
 
+      if (!latestNumber) {
+        throw new Error("Latest version not found");
+      }
+
+      console.log(`[coderTool:${projectId}] Updating previous versions...`);
       await tx
         .update(versions)
         .set({
@@ -222,13 +232,12 @@ const initializeVersion = async ({
         );
 
       console.log(`[coderTool:${projectId}] Creating new version...`);
-
       const [version] = await tx
         .insert(versions)
         .values({
           projectId,
           userId,
-          number: previousVersion.number + 1,
+          number: latestNumber.number + 1,
           isCurrent: true,
           parentVersionId: previousVersion.id,
           message: toolArgs.commitMessage,
@@ -240,6 +249,9 @@ const initializeVersion = async ({
         throw new Error("Version not found");
       }
 
+      console.log(
+        `[coderTool:${projectId}] Copying ${previousVersion.files.length} files...`,
+      );
       await tx.insert(versionFiles).values(
         previousVersion.files.map((file) => ({
           versionId: version.id,
@@ -248,6 +260,9 @@ const initializeVersion = async ({
         })),
       );
 
+      console.log(
+        `[coderTool:${projectId}] Copying ${previousVersion.packages.length} packages...`,
+      );
       await tx.insert(versionPackages).values(
         previousVersion.packages.map((pkg) => ({
           versionId: version.id,
@@ -255,6 +270,9 @@ const initializeVersion = async ({
         })),
       );
 
+      console.log(
+        `[coderTool:${projectId}] Copying ${previousVersion.declarations.length} declarations...`,
+      );
       await tx.insert(versionDeclarations).values(
         previousVersion.declarations.map((declaration) => ({
           versionId: version.id,
@@ -333,6 +351,7 @@ const initializeVersion = async ({
             `[coderTool:${projectId}] S3 version ID not found for file ${file.path}`,
           );
         }
+
         return {
           versionId: version.id,
           fileId: file.id,
@@ -381,7 +400,7 @@ const initializeVersion = async ({
             userId,
             projectId,
             fileId,
-          } as InferInsertModel<typeof declarations>;
+          } as typeof declarations.$inferInsert;
         }),
       )
       .returning();
@@ -407,6 +426,7 @@ const initializeVersion = async ({
             insertedFiles.find((file) => file.path === presetDeclaration.file)
               ?.id,
       );
+
       if (!insertedDeclaration) throw new Error("New declaration not found");
 
       const pkgs = presetDependencies.filter((dep) => dep.type === "external");
@@ -420,7 +440,7 @@ const initializeVersion = async ({
               packageId: insertedPkg.id,
               importPath: pkg.from,
               declarations: pkg.dependsOn,
-            } as InferInsertModel<typeof declarationPackages>;
+            } as typeof declarationPackages.$inferInsert;
           }),
         );
       }

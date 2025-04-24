@@ -2,7 +2,7 @@ import "server-only";
 
 import type { TStreamableValue, VersionStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
-import { type InferSelectModel, and, db, eq, inArray } from "@weldr/db";
+import { and, db, eq, inArray } from "@weldr/db";
 import {
   files,
   packages,
@@ -22,7 +22,6 @@ import {
   deleteFilesTool,
   installPackagesTool,
   readFilesTool,
-  readPackageJsonTool,
   removePackagesTool,
 } from "../../tools";
 import { getFilesContext, getFolderStructure } from "./context";
@@ -42,7 +41,7 @@ export async function coder({
   userId: string;
   projectId: string;
   chatId: string;
-  version: InferSelectModel<typeof versions>;
+  version: typeof versions.$inferSelect;
   promptMessages: CoreMessage[];
 }) {
   return await db.transaction(async (tx) => {
@@ -193,10 +192,6 @@ export async function coder({
           deleteFiles: deleteFilesTool({
             projectId,
           }),
-          readPackageJson: readPackageJsonTool({
-            projectId,
-            pkgs: installedPackages,
-          }),
         },
         onFinish: async ({ finishReason, text, toolCalls, toolResults }) => {
           if (finishReason === "length") {
@@ -338,27 +333,10 @@ ${fileContext}`,
 
                   break;
                 }
-                case "readPackageJson": {
-                  const toolResult = toolResults.find(
-                    (toolResult) => toolResult.toolName === "readPackageJson",
-                  );
-
-                  if (!toolResult) {
-                    throw new Error("readPackageJson: Tool result not found");
-                  }
-
-                  const packageJson = toolResult.result;
-
-                  currentMessages.push({
-                    role: "user",
-                    content: packageJson,
-                  });
-
-                  break;
-                }
-                default:
+                default: {
                   console.log(`[coder:${projectId}] Unknown tool call`);
                   break;
+                }
               }
             }
 
@@ -586,40 +564,61 @@ ${fileContext}`,
       );
 
     for (const file of finalResult.passed || []) {
-      const [resultFile] = await tx
-        .insert(files)
-        .values({
-          projectId,
-          path: file.path.startsWith("/") ? file.path : `/${file.path}`,
-          userId,
-        })
-        .onConflictDoNothing()
-        .returning();
+      let resultFile = await tx.query.files.findFirst({
+        where: and(
+          eq(
+            files.path,
+            file.path.startsWith("/") ? file.path : `/${file.path}`,
+          ),
+          eq(files.projectId, projectId),
+        ),
+      });
 
       if (!resultFile) {
-        throw new Error(
-          `[processFile:${projectId}] Failed to insert/select file ${file.path}`,
-        );
+        const [newFile] = await tx
+          .insert(files)
+          .values({
+            projectId,
+            path: file.path.startsWith("/") ? file.path : `/${file.path}`,
+            userId,
+          })
+          .returning();
+
+        if (!newFile) {
+          throw new Error(
+            `[processFile:${projectId}] Failed to insert file ${file.path}`,
+          );
+        }
+
+        resultFile = newFile;
       }
 
-      const s3Version = await S3.writeFile({
+      const s3VersionId = await S3.writeFile({
         projectId,
         path: resultFile.path,
         content: file.updated,
       });
 
-      if (!s3Version) {
+      if (!s3VersionId) {
         throw new Error(
           `[processFile:${projectId}] Failed to write file ${file.path}`,
         );
       }
 
       // Add the file to the version
-      await tx.insert(versionFiles).values({
-        versionId: version.id,
-        fileId: resultFile.id,
-        s3VersionId: s3Version,
-      });
+      await tx
+        .insert(versionFiles)
+        .values({
+          versionId: version.id,
+          fileId: resultFile.id,
+          s3VersionId,
+        })
+        .onConflictDoUpdate({
+          target: [versionFiles.versionId, versionFiles.fileId],
+          set: {
+            s3VersionId,
+          },
+        });
     }
 
     await tx

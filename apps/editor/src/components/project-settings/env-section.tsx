@@ -72,7 +72,7 @@ export function EnvSection({
                 onDelete={() => {
                   deleteEnvironmentVariable.mutate({ id: envVar.id });
                 }}
-                isLoading={deleteEnvironmentVariable.isPending}
+                isPending={deleteEnvironmentVariable.isPending}
               />
             </div>
           ))}

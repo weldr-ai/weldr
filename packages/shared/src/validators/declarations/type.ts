@@ -4,5 +4,9 @@ export const typeSchema = z.object({
   type: z.literal("type"),
   name: z.string().describe("The name of the type"),
   description: z.string().describe("The description of the type"),
-  metadata: z.any().optional().describe("Any metadata about the type"),
+  metadata: z
+    .any()
+    .nullable()
+    .optional()
+    .describe("Any metadata about the type"),
 });

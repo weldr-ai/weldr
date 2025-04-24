@@ -53,6 +53,7 @@ export const codingGuidelines = `<current_tech_stack>
   │   ├── hooks                         # Folder containing the custom React hooks
   │   ├── types                         # Folder containing the TypeScript types
   │   └── styles                        # Folder containing the global styles
+  │       └── globals.css               # Global styles
   ├── .eslintrc.cjs
   ├── .gitignore
   ├── bun.lockb

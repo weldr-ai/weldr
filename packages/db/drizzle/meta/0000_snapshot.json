@@ -1,5 +1,5 @@
 {
-  "id": "a810710b-7756-45a4-8252-ca7cd6128b97",
+  "id": "46e30c06-300e-4e87-96e8-c373fc8f3237",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -382,6 +382,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {
@@ -401,7 +407,17 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "canvas_nodes_project_id_projects_id_fk": {
+          "name": "canvas_nodes_project_id_projects_id_fk",
+          "tableFrom": "canvas_nodes",
+          "tableTo": "projects",
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1170,6 +1186,27 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "unique_path": {
+          "name": "unique_path",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "path",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1968,9 +2005,9 @@
         }
       },
       "compositePrimaryKeys": {
-        "version_files_version_id_file_id_s3_version_id_pk": {
-          "name": "version_files_version_id_file_id_s3_version_id_pk",
-          "columns": ["version_id", "file_id", "s3_version_id"]
+        "version_files_version_id_file_id_pk": {
+          "name": "version_files_version_id_file_id_pk",
+          "columns": ["version_id", "file_id"]
         }
       },
       "uniqueConstraints": {},

@@ -107,7 +107,7 @@ export const S3 = {
     path: string;
     content: string;
   }): Promise<string | undefined> => {
-    const fullPath = `${projectId}/${path}`;
+    const fullPath = `${projectId}/${path.startsWith("/") ? path.slice(1) : path}`;
 
     try {
       const command = new PutObjectCommand({

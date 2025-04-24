@@ -78,21 +78,26 @@ export async function POST(request: Request) {
           promptMessages,
           streamWriter,
           toolArgs: {
+            name: project.name,
             requirements: currentVersion.description,
             commitMessage: currentVersion.message,
           },
         });
       } else {
         const result = streamText({
-          model: registry.languageModel("google:gemini-2.0-flash-001"),
-          system: prompts.requirementsGatherer,
+          model: registry.languageModel("openai:gpt-4.1"),
+          system: prompts.requirementsGatherer(
+            project.initiatedAt
+              ? `You are working on a project called ${project.name} that was initiated at ${project.initiatedAt.toISOString()}`
+              : "This is a new project",
+          ),
           messages: promptMessages,
           tools: {
             coderTool,
             setupIntegrationTool,
           },
           maxSteps: 3,
-          onFinish: async ({ text, finishReason, toolCalls, toolResults }) => {
+          onFinish: async ({ text, finishReason, toolCalls }) => {
             if (finishReason === "stop" && text) {
               console.log(`[api/generate:onFinish:${projectId}] ${text}`);
               await insertMessages({
@@ -113,6 +118,21 @@ export async function POST(request: Request) {
               console.log(
                 `[api/generate:onFinish:${projectId}] Tool calls: ${JSON.stringify(toolCalls)}`,
               );
+
+              if (text) {
+                await insertMessages({
+                  input: {
+                    chatId,
+                    userId: session.user.id,
+                    messages: [
+                      {
+                        role: "assistant",
+                        rawContent: [{ type: "paragraph", value: text }],
+                      },
+                    ],
+                  },
+                });
+              }
 
               for (const toolCall of toolCalls) {
                 switch (toolCall.toolName) {
@@ -148,7 +168,7 @@ export async function POST(request: Request) {
           },
           onError: (error) => {
             console.error(
-              `[api/generate:onError:${projectId}] ${JSON.stringify(error)}`,
+              `[api/generate:onError:${projectId}] ${JSON.stringify(error, null, 2)}`,
             );
           },
         });
@@ -161,8 +181,9 @@ export async function POST(request: Request) {
         }
 
         const usageData = await result.usage;
+
         console.log(
-          `[api/generate:${projectId}] Usage Prompt: ${usageData.promptTokens} Completion: ${usageData.completionTokens} Total: ${usageData.totalTokens}`,
+          `[api/generate:${projectId}] Prompt Tokens: ${usageData.promptTokens} + Completion Tokens: ${usageData.completionTokens} = Total Tokens: ${usageData.totalTokens}`,
         );
       }
     } finally {

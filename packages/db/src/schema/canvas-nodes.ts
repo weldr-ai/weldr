@@ -8,8 +8,8 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
-import { chats } from "./chats";
 import { declarations } from "./declarations";
+import { projects } from "./projects";
 
 export const canvasNodeTypes = pgEnum("canvas_node_types", [
   "preview",
@@ -30,6 +30,9 @@ export const canvasNodes = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
   },
   (t) => ({
     createdAtIdx: index("canvas_nodes_created_at_idx").on(t.createdAt),
@@ -38,5 +41,4 @@ export const canvasNodes = pgTable(
 
 export const canvasNodeRelations = relations(canvasNodes, ({ many }) => ({
   declarations: many(declarations),
-  chats: many(chats),
 }));

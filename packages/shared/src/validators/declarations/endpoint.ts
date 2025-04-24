@@ -18,6 +18,7 @@ export const endpointSchema = z.object({
   type: z.literal("endpoint"),
   protected: z
     .boolean()
+    .nullable()
     .optional()
     .describe("Whether the endpoint is protected"),
   definition: z.discriminatedUnion("subtype", [

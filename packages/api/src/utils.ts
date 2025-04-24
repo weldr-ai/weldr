@@ -1,12 +1,4 @@
-import {
-  type Db,
-  type InferSelectModel,
-  type Tx,
-  and,
-  db,
-  eq,
-  inArray,
-} from "@weldr/db";
+import { type Db, type Tx, and, db, eq, inArray } from "@weldr/db";
 import { type declarations, dependencies } from "@weldr/db/schema";
 
 export async function wouldCreateCycle({
@@ -61,7 +53,7 @@ export async function wouldCreateCycle({
 }
 
 export async function isDeclarationReady(
-  declaration: InferSelectModel<typeof declarations>,
+  declaration: typeof declarations.$inferSelect,
 ): Promise<boolean> {
   if (!declaration.specs) {
     return false;

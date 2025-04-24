@@ -105,7 +105,7 @@ export const versionFiles = pgTable(
   },
   (table) => ({
     pk: primaryKey({
-      columns: [table.versionId, table.fileId, table.s3VersionId],
+      columns: [table.versionId, table.fileId],
     }),
   }),
 );

@@ -9,6 +9,7 @@ export type CanvasNodeProps = NodeProps<CanvasNode>;
 
 export type TPendingMessage =
   | "thinking"
+  | "generating"
   | "waiting"
   | "building"
   | "enriching"

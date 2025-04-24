@@ -84,6 +84,18 @@ export const Fly = {
         throw error;
       }
     },
+    delete: async ({
+      appName,
+    }: {
+      appName: string;
+    }) => {
+      await ofetch(`${flyApiHostname}/v1/apps/${appName}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${flyApiKey}`,
+        },
+      });
+    },
   },
   machine: {
     get: async ({
