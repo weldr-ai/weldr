@@ -25,7 +25,7 @@ export function ResetPasswordEmail({
   return (
     <Html>
       <Head />
-      <Preview>Reset your Integramind password</Preview>
+      <Preview>Reset your Weldr password</Preview>
       <Tailwind config={tailwindConfig}>
         <Body>
           <Container className="mx-auto px-4 py-8">

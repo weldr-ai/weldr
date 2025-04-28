@@ -82,7 +82,7 @@ export function SignUpForm() {
         <CardHeader className="flex flex-col items-start justify-start">
           <CardTitle className="flex flex-col gap-4">
             <LogoIcon className="size-10" />
-            <span className="text-xl">Sign up to Integramind</span>
+            <span className="text-xl">Sign up to Weldr</span>
           </CardTitle>
           <CardDescription className="text-center">
             Welcome! Please fill in the details to get started.

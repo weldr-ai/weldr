@@ -78,7 +78,7 @@ export function SignInForm() {
         <CardHeader className="flex flex-col items-start justify-start">
           <CardTitle className="flex flex-col gap-4">
             <LogoIcon className="size-10" />
-            <span className="text-xl">Sign in to Integramind</span>
+            <span className="text-xl">Sign in to Weldr</span>
           </CardTitle>
           <CardDescription className="text-center">
             Welcome back! Please sign in to continue

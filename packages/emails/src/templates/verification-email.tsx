@@ -25,7 +25,7 @@ export function VerificationEmail({
   return (
     <Html>
       <Head />
-      <Preview>Welcome to Integramind! Please verify your email</Preview>
+      <Preview>Welcome to Weldr! Please verify your email</Preview>
       <Tailwind config={tailwindConfig}>
         <Body>
           <Container className="mx-auto px-4 py-8">
