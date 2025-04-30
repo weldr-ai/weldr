@@ -7,6 +7,11 @@ import type { TPendingMessage } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import type { ChatMessage, ToolMessage } from "@weldr/shared/types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@weldr/ui/components/tooltip";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import {
   JsonIcon,
@@ -19,8 +24,7 @@ import {
   XmlIcon,
   YamlIcon,
 } from "@weldr/ui/icons";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
-import { cn } from "@weldr/ui/utils";
+import { cn } from "@weldr/ui/lib/utils";
 import { CheckIcon, CodeIcon, GitCommitIcon, LoaderIcon } from "lucide-react";
 import { ChatIntegrationDialog } from "./chat-integration-dialog";
 import { CustomMarkdown } from "./custom-markdown";
@@ -40,23 +44,31 @@ const PureMessageItem = ({
   return (
     <div
       className={cn(
-        "flex w-full flex-col text-sm",
+        "flex flex-col text-sm",
         message.role === "user" && "items-end",
       )}
       key={message.id}
     >
-      {message.role === "assistant" && (
-        <div className="flex items-center gap-1">
+      {(message.role === "assistant" || message.role === "version") && (
+        <div className="flex items-center gap-1 pb-2">
           <LogoIcon className="size-5" />
           <span className="text-muted-foreground text-xs">Weldr</span>
         </div>
       )}
 
       <div
-        className={cn(message.role === "user" && "rounded-md bg-primary p-2")}
+        className={cn({
+          "rounded-md bg-primary p-2 text-primary-foreground":
+            message.role === "user",
+        })}
       >
         {Array.isArray(message.rawContent) && (
-          <CustomMarkdown content={message.rawContent} />
+          <CustomMarkdown
+            className={cn({
+              "text-primary-foreground": message.role === "user",
+            })}
+            content={message.rawContent}
+          />
         )}
 
         {message.role === "tool" &&
@@ -84,7 +96,7 @@ const PureMessageItem = ({
                     {message.rawContent.versionMessage}
                   </span>
                 </TooltipTrigger>
-                <TooltipContent className="space-x-1 border bg-muted px-1 py-0.5 text-xs">
+                <TooltipContent className="space-x-1 rounded-sm border bg-muted text-foreground text-xs">
                   <span className="text-muted-foreground">
                     {`#${message.rawContent.versionNumber}`}
                   </span>

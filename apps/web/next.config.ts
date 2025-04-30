@@ -1,6 +1,5 @@
-// @ts-check
+import type { NextConfig } from "next";
 
-/** @type {import("next").NextConfig} */
 const config = {
   reactStrictMode: true,
 
@@ -9,6 +8,6 @@ const config = {
 
   /** We already do linting and typechecking as separate tasks in CI */
   typescript: { ignoreBuildErrors: true },
-};
+} satisfies NextConfig;
 
 export default config;

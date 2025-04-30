@@ -1,6 +1,6 @@
 import type { uiTransitionSchema } from "@weldr/shared/validators/declarations/component";
-import { Card } from "@weldr/ui/card";
-import { cn } from "@weldr/ui/utils";
+import { Card } from "@weldr/ui/components/card";
+import { cn } from "@weldr/ui/lib/utils";
 import { ArrowDownIcon } from "lucide-react";
 import type { z } from "zod";
 
@@ -18,7 +18,7 @@ export function UiTransitionVisualizer({
       {transitions.map((transition, index) => (
         <Card
           key={`transition-${transition.when.description}-${index}`}
-          className="space-y-2 p-3"
+          className="gap-0 space-y-2 p-3"
         >
           {/* Trigger Condition */}
           <div className="flex items-start gap-2">

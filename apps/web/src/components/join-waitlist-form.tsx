@@ -7,10 +7,15 @@ import { useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Button } from "@weldr/ui/button";
-import { Form, FormControl, FormField, FormItem } from "@weldr/ui/form";
+import { Button } from "@weldr/ui/components/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+} from "@weldr/ui/components/form";
+import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { Input } from "@weldr/ui/input";
 
 import { joinWaitlist } from "@/lib/actions/waitlist";
 

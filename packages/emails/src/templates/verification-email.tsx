@@ -1,5 +1,3 @@
-import { tailwindConfig } from "../tailwind";
-
 import {
   Body,
   Button,
@@ -26,7 +24,17 @@ export function VerificationEmail({
     <Html>
       <Head />
       <Preview>Welcome to Weldr! Please verify your email</Preview>
-      <Tailwind config={tailwindConfig}>
+      <Tailwind
+        config={{
+          theme: {
+            extend: {
+              colors: {
+                primary: "#3E63DD",
+              },
+            },
+          },
+        }}
+      >
         <Body>
           <Container className="mx-auto px-4 py-8">
             <Img

@@ -1,15 +1,16 @@
-import { Button } from "@weldr/ui/button";
-import { Card, CardContent } from "@weldr/ui/card";
-import { Input } from "@weldr/ui/input";
+import { Button } from "@weldr/ui/components/button";
+import { Card, CardContent } from "@weldr/ui/components/card";
+import { Input } from "@weldr/ui/components/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@weldr/ui/select";
-import { Switch } from "@weldr/ui/switch";
-import { Textarea } from "@weldr/ui/textarea";
+} from "@weldr/ui/components/select";
+import { Switch } from "@weldr/ui/components/switch";
+import { Textarea } from "@weldr/ui/components/textarea";
+import type { JSONSchema7Type } from "json-schema";
 import { Minus, Plus } from "lucide-react";
 import type { FormFieldProps } from "./types";
 
@@ -36,7 +37,7 @@ export function FormField({
               <SelectValue placeholder={`Select ${schema.title || name}`} />
             </SelectTrigger>
             <SelectContent>
-              {schema.enum.map((option) => (
+              {schema.enum.map((option: JSONSchema7Type) => (
                 <SelectItem key={String(option)} value={String(option)}>
                   {String(option)}
                 </SelectItem>

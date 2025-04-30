@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-import { Button } from "@weldr/ui/button";
-import { cn } from "@weldr/ui/utils";
+import { Button } from "@weldr/ui/components/button";
+import { cn } from "@weldr/ui/lib/utils";
 
 export function Navbar(): JSX.Element {
   const [isTop, setIsTop] = useState<boolean>(true);

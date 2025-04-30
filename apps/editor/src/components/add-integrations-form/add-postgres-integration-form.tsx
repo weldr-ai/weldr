@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import {
   Command,
   CommandEmpty,
@@ -15,7 +15,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@weldr/ui/command";
+} from "@weldr/ui/components/command";
 import {
   Form,
   FormControl,
@@ -23,15 +23,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@weldr/ui/form";
-import { Input } from "@weldr/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@weldr/ui/popover";
+} from "@weldr/ui/components/form";
+import { Input } from "@weldr/ui/components/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@weldr/ui/components/popover";
 
 import { useTRPC } from "@/lib/trpc/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { cn } from "@weldr/ui/utils";
+import { cn } from "@weldr/ui/lib/utils";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 
 const validationSchema = z.object({
@@ -170,7 +174,7 @@ export function AddPostgresIntegrationForm({
           control={form.control}
           name="DATABASE_URL"
           render={({ field }) => (
-            <FormItem className="grid grid-cols-2 items-center gap-y-2 space-y-0 text-xs">
+            <FormItem className="grid grid-cols-2 items-center gap-0 gap-y-2 space-y-0 text-xs">
               <div className="flex h-9 items-center rounded-l-md border-y border-l px-3">
                 DATABASE_URL
               </div>

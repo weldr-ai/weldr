@@ -1,22 +1,29 @@
-import "@weldr/ui/styles/globals.css";
-
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-
-import { Toaster } from "@weldr/ui/toaster";
-import { cn } from "@weldr/ui/utils";
 
 import { QueryProvider } from "@/components/query-client-provider";
 import { AppStateProvider } from "@/lib/store";
 import { TRPCReactProvider } from "@/lib/trpc/react";
 import { HydrateClient } from "@/lib/trpc/server";
-import { TooltipProvider } from "@weldr/ui/tooltip";
+import { Toaster } from "@weldr/ui/components/toaster";
+import { TooltipProvider } from "@weldr/ui/components/tooltip";
+import { cn } from "@weldr/ui/lib/utils";
 import { ReactFlowProvider } from "@xyflow/react";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 
-const poppins = Poppins({
+import "@weldr/ui/styles/globals.css";
+
+const fontSans = Poppins({
   subsets: ["latin"],
   weight: ["400"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+const fontMono = Poppins({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-mono",
   display: "swap",
 });
 
@@ -32,13 +39,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }): Promise<JSX.Element> {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          "flex min-h-screen w-full flex-col bg-background font-sans antialiased",
-          poppins.variable,
+          "flex min-h-screen w-full flex-col font-sans antialiased",
+          fontSans.variable,
+          fontMono.variable,
         )}
-        suppressHydrationWarning
       >
         <AppStateProvider>
           <TRPCReactProvider>
@@ -46,8 +53,16 @@ export default async function RootLayout({
               <HydrateClient>
                 <TooltipProvider delayDuration={200}>
                   <ReactFlowProvider>
-                    {children}
-                    <Toaster />
+                    <NextThemesProvider
+                      attribute="class"
+                      defaultTheme="system"
+                      enableSystem
+                      disableTransitionOnChange
+                      enableColorScheme
+                    >
+                      {children}
+                      <Toaster />
+                    </NextThemesProvider>
                   </ReactFlowProvider>
                 </TooltipProvider>
               </HydrateClient>

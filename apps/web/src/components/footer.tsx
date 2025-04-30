@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import { buttonVariants } from "@weldr/ui/button";
-import { cn } from "@weldr/ui/utils";
+import { buttonVariants } from "@weldr/ui/components/button";
+import { cn } from "@weldr/ui/lib/utils";
 
 import { LinkedInIcon, XSocialIcon } from "@weldr/ui/icons";
 

@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-import { Badge } from "@weldr/ui/badge";
+import { Badge } from "@weldr/ui/components/badge";
 import {
   NotionIcon,
   PostgresIcon,

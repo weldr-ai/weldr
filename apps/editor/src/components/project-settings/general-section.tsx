@@ -1,14 +1,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { RouterOutputs } from "@weldr/api";
 import { updateProjectSchema } from "@weldr/shared/validators/projects";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@weldr/ui/card";
+} from "@weldr/ui/components/card";
 import {
   Form,
   FormControl,
@@ -16,9 +16,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@weldr/ui/form";
+} from "@weldr/ui/components/form";
+import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { Input } from "@weldr/ui/input";
 import { DownloadIcon, LoaderIcon, PaletteIcon, TrashIcon } from "lucide-react";
 
 import { getProjectDownloadUrl } from "@/lib/actions/get-project-download-url";

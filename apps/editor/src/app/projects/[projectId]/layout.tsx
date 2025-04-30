@@ -26,8 +26,10 @@ export default async function ProjectLayout({
           }))}
         > */}
 
-        <main className="flex size-full h-screen ">
-          <div className="size-full flex-1 dark:bg-muted">{children}</div>
+        <main className="flex size-full h-screen">
+          <div className="size-full flex-1 bg-background dark:bg-muted">
+            {children}
+          </div>
         </main>
 
         <CommandCenter projects={projects} />

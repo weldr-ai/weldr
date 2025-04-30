@@ -44,6 +44,7 @@
     "lucide-react": "^0.503.0",
     "nanoid": "^5.1.5",
     "next": "^15.3.1",
+    "next-themes": "^0.3.0",
     "openapi-types": "^12.1.3",
     "perfect-debounce": "^1.0.0",
     "playwright": "^1.52.0",
@@ -57,16 +58,13 @@
   },
   "devDependencies": {
     "@types/d3-hierarchy": "^3.1.7",
+    "@types/json-schema": "^7.0.15",
     "@types/node": "^20.17.32",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.6",
-    "@weldr/tailwind-config": "workspace:^",
     "@weldr/tsconfig": "workspace:*",
     "autoprefixer": "^10.4.21",
     "dotenv-cli": "^7.4.4",
-    "eslint": "^8.57.1",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3"
   }
 }

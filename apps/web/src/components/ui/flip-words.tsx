@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 
-import { cn } from "@weldr/ui/utils";
+import { cn } from "@weldr/ui/lib/utils";
 
 export const FlipWords = ({
   words,

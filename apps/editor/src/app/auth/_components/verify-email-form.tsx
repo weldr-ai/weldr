@@ -1,8 +1,8 @@
 "use client";
 
-import { buttonVariants } from "@weldr/ui/button";
+import { buttonVariants } from "@weldr/ui/components/button";
 import { LogoIcon } from "@weldr/ui/icons";
-import { cn } from "@weldr/ui/utils";
+import { cn } from "@weldr/ui/lib/utils";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import type { RouterOutputs } from "@weldr/api";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@weldr/ui/dialog";
+} from "@weldr/ui/components/dialog";
 import { PostgresIcon } from "@weldr/ui/icons";
-import { cn } from "@weldr/ui/utils";
+import { cn } from "@weldr/ui/lib/utils";
 import { useState } from "react";
 import { PostgresForm } from "./postgres-form";
 

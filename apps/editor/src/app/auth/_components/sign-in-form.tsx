@@ -9,14 +9,15 @@ import type { z } from "zod";
 
 import { authClient } from "@weldr/auth/client";
 import { signInSchema } from "@weldr/shared/validators/auth";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@weldr/ui/card";
+} from "@weldr/ui/components/card";
+import { Checkbox } from "@weldr/ui/components/checkbox";
 import {
   Form,
   FormControl,
@@ -24,10 +25,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@weldr/ui/form";
-import { Input } from "@weldr/ui/input";
-
-import { Checkbox } from "@weldr/ui/checkbox";
+} from "@weldr/ui/components/form";
+import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 

@@ -11,16 +11,16 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@weldr/ui/command";
+} from "@weldr/ui/components/command";
 
 import { type CommandCenterView, useCommandCenter } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
-import { Button, buttonVariants } from "@weldr/ui/button";
+import { Button, buttonVariants } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
-import { cn } from "@weldr/ui/utils";
+import { cn } from "@weldr/ui/lib/utils";
 import Link from "next/link";
 import { CreateProjectForm } from "./create-project-form";
 import { DeleteAlertDialog } from "./delete-alert-dialog";

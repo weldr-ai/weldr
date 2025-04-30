@@ -5,7 +5,7 @@ import { useTRPC } from "@/lib/trpc/react";
 import { createId } from "@paralleldrive/cuid2";
 import { useMutation } from "@tanstack/react-query";
 import type { Attachment } from "@weldr/shared/types";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -112,7 +112,7 @@ export function CreateProjectForm() {
               key={template.label}
               type="button"
               variant="outline"
-              className="rounded-full bg-muted"
+              className="rounded-full"
               size="sm"
               onClick={() => setMessage(template.content)}
             >

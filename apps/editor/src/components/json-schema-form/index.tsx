@@ -1,6 +1,6 @@
 import type { JsonSchema } from "@weldr/shared/types";
-import { Button } from "@weldr/ui/button";
-import { Card } from "@weldr/ui/card";
+import { Button } from "@weldr/ui/components/button";
+import { Card } from "@weldr/ui/components/card";
 import { useState } from "react";
 import { FieldWrapper } from "./field-wrapper";
 import type { RecordValue, ValidationError } from "./types";

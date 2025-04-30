@@ -3,8 +3,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@weldr/ui/accordion";
-import { Badge } from "@weldr/ui/badge";
+} from "@weldr/ui/components/accordion";
+import { Badge } from "@weldr/ui/components/badge";
 
 export function FAQs() {
   return (

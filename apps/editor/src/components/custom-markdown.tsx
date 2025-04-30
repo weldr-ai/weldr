@@ -1,6 +1,6 @@
 import type { RawContent } from "@weldr/shared/types";
 import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
-import { cn } from "@weldr/ui/utils";
+import { cn } from "@weldr/ui/lib/utils";
 import DOMPurify from "dompurify";
 import { nanoid } from "nanoid";
 import { type ReactNode, useMemo } from "react";

@@ -8,15 +8,15 @@ import { z } from "zod";
 import { useTRPC } from "@/lib/trpc/react";
 import { useMutation } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from "@weldr/ui/form";
-import { Input } from "@weldr/ui/input";
+} from "@weldr/ui/components/form";
+import { Input } from "@weldr/ui/components/input";
 import { useParams } from "next/navigation";
 
 const validationSchema = z.object({

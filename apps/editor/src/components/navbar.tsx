@@ -1,7 +1,7 @@
 "use client";
 
 import type { RouterOutputs } from "@weldr/api";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import { RocketIcon } from "lucide-react";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 

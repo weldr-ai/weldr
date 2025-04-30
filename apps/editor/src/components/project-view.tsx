@@ -6,7 +6,7 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@weldr/ui/resizable";
+} from "@weldr/ui/components/resizable";
 
 import { Canvas } from "@/components/canvas";
 import { useProjectView } from "@/lib/store";
@@ -18,7 +18,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@weldr/ui/select";
+} from "@weldr/ui/components/select";
 import type { Edge } from "@xyflow/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect } from "react";
@@ -133,14 +133,14 @@ export function ProjectView({
               {project.name ?? "Untitled Project"}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Select
               value={selectedView}
               onValueChange={(value) =>
                 setSelectedView(value as "preview" | "canvas" | "versions")
               }
             >
-              <SelectTrigger className="h-8 w-28 text-xs">
+              <SelectTrigger className="max-h-8 w-28 text-xs dark:bg-muted">
                 <SelectValue placeholder="Select a view" />
               </SelectTrigger>
               <SelectContent>

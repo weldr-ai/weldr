@@ -9,22 +9,32 @@ import {
   ExternalLinkIcon,
   HelpCircleIcon,
   LogOutIcon,
+  MonitorIcon,
+  MoonIcon,
+  PaletteIcon,
   PlusIcon,
   SettingsIcon,
+  SunIcon,
 } from "lucide-react";
 
 import { useCommandCenter } from "@/lib/store";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@weldr/ui/dropdown-menu";
+} from "@weldr/ui/components/dropdown-menu";
 import { LogoIcon } from "@weldr/ui/icons";
-import { cn } from "@weldr/ui/utils";
+import { cn } from "@weldr/ui/lib/utils";
+import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -37,6 +47,8 @@ export function MainDropdownMenu({
 }): JSX.Element {
   const router = useRouter();
   const { setView, setOpen } = useCommandCenter();
+
+  const { theme, setTheme } = useTheme();
 
   return (
     <DropdownMenu>
@@ -119,6 +131,33 @@ export function MainDropdownMenu({
           </DropdownMenuItem>
         </Link>
 
+        <DropdownMenuLabel>Settings</DropdownMenuLabel>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <PaletteIcon className="mr-2 size-4 text-muted-foreground" />
+            Appearance
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-40">
+            <DropdownMenuRadioGroup
+              value={theme}
+              onValueChange={(value) => setTheme(value)}
+            >
+              <DropdownMenuRadioItem value="light">
+                Light
+                <SunIcon className="ml-auto size-4 text-muted-foreground" />
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dark">
+                Dark
+                <MoonIcon className="ml-auto size-4 text-muted-foreground" />
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system">
+                System
+                <MonitorIcon className="ml-auto size-4 text-muted-foreground" />
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () =>
@@ -131,7 +170,7 @@ export function MainDropdownMenu({
             })
           }
         >
-          <LogOutIcon className="mr-2 size-4 text-muted-foreground" />
+          <LogOutIcon className="mr-2 size-4 text-destructive" />
           Logout
         </DropdownMenuItem>
       </DropdownMenuContent>

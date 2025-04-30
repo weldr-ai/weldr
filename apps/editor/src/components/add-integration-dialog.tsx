@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@weldr/ui/dialog";
+} from "@weldr/ui/components/dialog";
 
 import type { RouterOutputs } from "@weldr/api";
-import { Badge } from "@weldr/ui/badge";
+import { Badge } from "@weldr/ui/components/badge";
 import { PostgresIcon } from "@weldr/ui/icons";
 import { CheckCircle2Icon } from "lucide-react";
 import { AddIntegrationsForm } from "./add-integrations-form";
@@ -21,12 +21,10 @@ import { AddIntegrationsForm } from "./add-integrations-form";
 export function AddIntegrationDialog({
   integrationTemplate,
   integration,
-  className,
   environmentVariables,
 }: {
   integrationTemplate: RouterOutputs["integrationTemplates"]["byId"];
   integration?: RouterOutputs["projects"]["byId"]["integrations"][number];
-  className?: string;
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -57,7 +55,7 @@ export function AddIntegrationDialog({
             </span>
           </div>
           <Badge variant="outline" className="rounded-full px-3 py-2">
-            {integrationTemplate.name}
+            {integrationTemplate.type.toLocaleUpperCase()}
           </Badge>
         </Button>
       </DialogTrigger>

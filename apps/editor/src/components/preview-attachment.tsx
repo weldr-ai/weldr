@@ -1,6 +1,6 @@
 import { shortenFileName } from "@/lib/utils";
 import type { Attachment } from "@weldr/shared/types";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import { filesize } from "filesize";
 import { LoaderIcon, XIcon } from "lucide-react";
 import Image from "next/image";
@@ -22,7 +22,8 @@ export const PreviewAttachment = ({
     <div className="group relative flex h-10 w-[150px] shrink-0 items-center justify-center gap-1 rounded-lg border bg-background py-1 pr-3 pl-1">
       <Button
         variant="outline"
-        className="-right-1.5 -top-1.5 absolute h-fit rounded-full bg-background p-0.5 opacity-0 group-hover:opacity-100"
+        size="icon"
+        className="-right-1.5 -top-1.5 absolute size-4 rounded-full bg-background opacity-0 group-hover:opacity-100"
         onClick={onDelete}
       >
         <XIcon className="size-2.5" />

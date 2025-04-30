@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { authClient } from "@weldr/auth/client";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { GithubIcon, GoogleIcon, MicrosoftIcon } from "@weldr/ui/icons";
 

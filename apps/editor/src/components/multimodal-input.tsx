@@ -14,11 +14,11 @@ import {
 
 import type { TPendingMessage } from "@/types";
 import type { Attachment } from "@weldr/shared/types";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
+import { Textarea } from "@weldr/ui/components/textarea";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
-import { Textarea } from "@weldr/ui/textarea";
-import { cn } from "@weldr/ui/utils";
+import { cn } from "@weldr/ui/lib/utils";
 import equal from "fast-deep-equal";
 import { ArrowUpIcon, PaperclipIcon } from "lucide-react";
 import { PreviewAttachment } from "./preview-attachment";
@@ -231,9 +231,9 @@ function PureMultimodalInput({
   return (
     <div className="flex flex-col items-center justify-center">
       {pendingMessage && (
-        <div className="flex w-[calc(100%-30px)] items-center gap-1 rounded-t-md border-x border-t bg-background p-1 text-muted-foreground text-xs">
+        <div className="flex w-[calc(100%-30px)] items-center gap-1 rounded-t-md border-x border-t bg-background p-1 text-xs">
           <LogoIcon className="size-4" />
-          <span className="inline-flex w-fit animate-shine bg-[length:200%_100%] bg-[linear-gradient(90deg,hsl(var(--muted-foreground))_0%,hsl(var(--muted-foreground))_40%,hsl(var(--foreground))_50%,hsl(var(--muted-foreground))_60%,hsl(var(--muted-foreground))_100%)] bg-clip-text text-transparent">
+          <span className="inline-flex w-fit animate-shine bg-[length:200%_100%] bg-[linear-gradient(90deg,var(--color-muted-foreground)_0%,var(--color-muted-foreground)_40%,var(--color-foreground)_50%,var(--color-muted-foreground)_60%,var(--color-muted-foreground)_100%)] bg-clip-text text-transparent">
             {pendingMessage.charAt(0).toUpperCase() + pendingMessage.slice(1)}
             ...
           </span>
@@ -241,13 +241,13 @@ function PureMultimodalInput({
       )}
       <form
         className={cn(
-          "relative flex w-full flex-col rounded-xl border bg-background",
+          "relative flex w-full flex-col rounded-xl border",
           formClassName,
         )}
       >
         <input
           type="file"
-          className="-top-4 -left-4 pointer-events-none fixed size-0.5 opacity-0"
+          className="hidden"
           ref={fileInputRef}
           multiple
           onChange={handleFileChange}
@@ -257,8 +257,11 @@ function PureMultimodalInput({
         {(attachments.length > 0 || uploadQueue.length > 0) && (
           <div
             className={cn(
-              "flex flex-row items-end gap-2 overflow-x-scroll rounded-t-xl bg-muted p-2",
+              "scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex flex-row items-start gap-2 overflow-x-auto rounded-t-xl border-b p-2 dark:bg-muted",
               attachmentsClassName,
+              {
+                "pb-0": attachments.length > 2,
+              },
             )}
           >
             {attachments.map((attachment) => (
@@ -303,7 +306,10 @@ function PureMultimodalInput({
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           className={cn(
-            "!text-base max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 focus-visible:ring-0",
+            "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 dark:bg-background",
+            {
+              "rounded-t-none border-t-0": attachments.length > 0,
+            },
             textareaClassName,
           )}
           rows={2}
@@ -363,7 +369,7 @@ function PureAttachmentsButton({
   return (
     <Button
       variant="outline"
-      className="h-fit rounded-lg bg-background p-[7px]"
+      className="size-7 rounded-full"
       onClick={(event) => {
         event.preventDefault();
         fileInputRef.current?.click();
@@ -392,7 +398,7 @@ function PureSendButton({
 }) {
   return (
     <Button
-      className="h-fit rounded-full p-[7px]"
+      className="size-7 rounded-full"
       onClick={(event) => {
         event.preventDefault();
         submitForm();

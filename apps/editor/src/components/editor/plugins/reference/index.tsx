@@ -9,8 +9,8 @@ import {
 import type { TextNode } from "lexical";
 import { useCallback, useMemo, useState } from "react";
 
-import { ScrollArea } from "@weldr/ui/scroll-area";
-import { cn } from "@weldr/ui/utils";
+import { ScrollArea } from "@weldr/ui/components/scroll-area";
+import { cn } from "@weldr/ui/lib/utils";
 
 import { $createReferenceNode } from "@/components/editor/plugins/reference/node";
 import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/chats";

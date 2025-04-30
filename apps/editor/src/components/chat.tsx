@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
-import { cn } from "@weldr/ui/utils";
+import { cn } from "@weldr/ui/lib/utils";
 import { useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Messages } from "./messages";
@@ -354,7 +354,8 @@ export function Chat({
         className={cn(
           "scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-full max-h-[calc(100vh-186px)] min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-2",
           pendingMessage && "max-h-[calc(100vh-212px)]",
-          attachments.length > 0 && "max-h-[calc(100vh-242px)]",
+          attachments.length > 0 && "max-h-[calc(100vh-243px)]",
+          attachments.length > 2 && "max-h-[calc(100vh-246px)]",
           pendingMessage &&
             attachments.length > 0 &&
             "max-h-[calc(100vh-268px)]",
@@ -371,7 +372,7 @@ export function Chat({
       </div>
 
       <div className="relative px-2">
-        <div className="absolute right-0 bottom-full left-0 h-4 bg-gradient-to-t from-muted to-transparent" />
+        <div className="absolute right-0 bottom-full left-0 h-4 bg-gradient-to-t from-background to-transparent dark:from-muted" />
         <MultimodalInput
           chatId={chatId}
           message={message}

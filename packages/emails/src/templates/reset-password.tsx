@@ -1,5 +1,3 @@
-import { tailwindConfig } from "../tailwind";
-
 import {
   Body,
   Button,
@@ -26,7 +24,17 @@ export function ResetPasswordEmail({
     <Html>
       <Head />
       <Preview>Reset your Weldr password</Preview>
-      <Tailwind config={tailwindConfig}>
+      <Tailwind
+        config={{
+          theme: {
+            extend: {
+              colors: {
+                primary: "#3E63DD",
+              },
+            },
+          },
+        }}
+      >
         <Body>
           <Container className="mx-auto px-4 py-8">
             <Img
@@ -63,5 +71,10 @@ export function ResetPasswordEmail({
     </Html>
   );
 }
+
+ResetPasswordEmail.PreviewProps = {
+  firstName: "Bob",
+  resetPasswordLink: "http://localhost:3001/auth/reset-password",
+} as ResetPasswordEmailProps;
 
 export default ResetPasswordEmail;

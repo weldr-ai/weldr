@@ -5,15 +5,15 @@ import Link from "next/link";
 import { useState } from "react";
 import { SupportLinks } from "../_components/support-links";
 
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@weldr/ui/card";
-import { Input } from "@weldr/ui/input";
+} from "@weldr/ui/components/card";
+import { Input } from "@weldr/ui/components/input";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { authClient } from "@weldr/auth/client";
@@ -25,7 +25,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@weldr/ui/form";
+} from "@weldr/ui/components/form";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 import { useRouter } from "next/navigation";

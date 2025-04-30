@@ -4,7 +4,7 @@ import { useTRPC } from "@/lib/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { insertEnvironmentVariableSchema } from "@weldr/shared/validators/environment-variables";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@weldr/ui/dialog";
+} from "@weldr/ui/components/dialog";
 import {
   Form,
   FormControl,
@@ -20,9 +20,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@weldr/ui/form";
+} from "@weldr/ui/components/form";
+import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { Input } from "@weldr/ui/input";
 import { EyeIcon, EyeOffIcon, LoaderIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";

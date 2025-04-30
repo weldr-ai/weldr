@@ -3,16 +3,25 @@
 import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@weldr/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
+} from "@weldr/ui/components/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@weldr/ui/components/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@weldr/ui/components/tooltip";
 import { SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EnvSection } from "./env-section";
@@ -61,12 +70,19 @@ export function ProjectSettings({
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-8 bg-muted">
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-8 dark:bg-muted"
+            >
               <SettingsIcon className="size-4" />
             </Button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent side="top" className="border bg-muted">
+        <TooltipContent
+          side="top"
+          className="rounded-sm border bg-muted text-foreground"
+        >
           Project Settings
           <kbd className="pointer-events-none ml-2 inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
             <span className="text-xs">
@@ -79,11 +95,11 @@ export function ProjectSettings({
           </kbd>
         </TooltipContent>
       </Tooltip>
-      <DialogContent className="flex h-[calc(100vh-50px)] max-w-[calc(100vw-50px)] flex-col">
+      <DialogContent className="flex min-h-[calc(100vh-50px)] min-w-[calc(100vw-50px)] flex-col">
         <DialogHeader>
           <DialogTitle>Project Settings</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="general" className="flex flex-1 gap-4">
+        <Tabs defaultValue="general" className="flex flex-1 flex-row gap-4">
           <TabsList className="flex h-fit w-[230px] flex-col gap-2 p-2.5">
             <TabsTrigger className="w-full justify-start" value="general">
               General

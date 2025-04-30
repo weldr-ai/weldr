@@ -3,10 +3,13 @@
 import { useCanvas } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode } from "@/types";
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@weldr/ui/components/tooltip";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { useTheme } from "@weldr/ui/theme-provider";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
 import type { ColorMode, Edge } from "@xyflow/react";
 import {
   Background,
@@ -21,10 +24,12 @@ import { EyeIcon, EyeOffIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useCallback } from "react";
 import { DeclarationV1Node } from "./nodes/declaration/v1";
 
-import "@xyflow/react/dist/base.css";
-
-import "@/styles/flow-builder.css";
 import { useMutation } from "@tanstack/react-query";
+
+import "@xyflow/react/dist/base.css";
+import { useTheme } from "next-themes";
+
+import "@weldr/ui/styles/flow-builder.css";
 
 const nodeTypes = {
   "declaration-v1": DeclarationV1Node,
@@ -84,7 +89,7 @@ export function Canvas({
 
   return (
     <ReactFlow
-      className="rounded-xl border"
+      className="scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent rounded-xl border bg-background dark:bg-muted"
       nodes={nodes}
       onNodesChange={onNodesChange}
       edges={showEdges ? edges : []}
@@ -102,15 +107,23 @@ export function Canvas({
       colorMode={resolvedTheme as ColorMode}
     >
       <Background
-        className="bg-muted dark:bg-background"
-        color="hsl(var(--background))"
+        color={
+          resolvedTheme === "dark"
+            ? "var(--color-background)"
+            : "var(--color-muted)"
+        }
+        bgColor={
+          resolvedTheme === "dark"
+            ? "var(--color-background)"
+            : "var(--color-muted)"
+        }
       />
 
       <Panel position="bottom-right" className="flex flex-col items-end gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="size-8 rounded-md bg-muted"
+              className="size-8 rounded-md bg-background dark:bg-background"
               variant="outline"
               size="icon"
               onClick={toggleEdges}
@@ -122,12 +135,15 @@ export function Canvas({
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="border bg-muted">
+          <TooltipContent
+            side="top"
+            className="rounded-sm border bg-muted text-foreground"
+          >
             <p>Show Dependencies</p>
           </TooltipContent>
         </Tooltip>
 
-        <div className="flex items-center gap-1 rounded-md border bg-background p-0.5 dark:bg-muted">
+        <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
           <Button
             className="size-8 rounded-md"
             variant="ghost"

@@ -1,5 +1,3 @@
-import "server-only";
-
 import { ofetch } from "ofetch/node";
 import type { components, paths } from "./types";
 

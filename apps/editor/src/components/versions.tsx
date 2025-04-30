@@ -1,9 +1,9 @@
 "use client";
 
 import type { RouterOutputs } from "@weldr/api";
-import { Button } from "@weldr/ui/button";
-import { cn } from "@weldr/ui/utils";
-import type { Edge, Node, NodeProps } from "@xyflow/react";
+import { Button } from "@weldr/ui/components/button";
+import { cn } from "@weldr/ui/lib/utils";
+import type { ColorMode, Edge, Node, NodeProps } from "@xyflow/react";
 import {
   Background,
   Handle,
@@ -26,10 +26,8 @@ import {
 import Image from "next/image";
 import { memo } from "react";
 
-import "@xyflow/react/dist/base.css";
-
 import { useTRPC } from "@/lib/trpc/react";
-import "@/styles/flow-builder.css";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -41,9 +39,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@weldr/ui/alert-dialog";
+} from "@weldr/ui/components/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@weldr/ui/components/tooltip";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
+
+import "@xyflow/react/dist/base.css";
+
+import "@weldr/ui/styles/flow-builder.css";
+import { useTheme } from "next-themes";
 
 type VersionNode = Node<RouterOutputs["projects"]["byId"]["versions"][number]>;
 
@@ -142,7 +149,7 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
                     {data.message}
                   </span>
                 </TooltipTrigger>
-                <TooltipContent className="border bg-muted px-1 py-0.5 text-xs">
+                <TooltipContent className="rounded-sm border bg-muted text-foreground text-xs">
                   <span>{data.message}</span>
                 </TooltipContent>
               </Tooltip>
@@ -158,7 +165,7 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
                     </Button>
                   </AlertDialogTrigger>
                 </TooltipTrigger>
-                <TooltipContent className="border bg-muted px-1 py-0.5 text-xs">
+                <TooltipContent className="rounded-sm border bg-muted text-foreground text-xs">
                   Restore Version
                 </TooltipContent>
               </Tooltip>
@@ -240,6 +247,8 @@ export function Versions({
 }: {
   versions: RouterOutputs["projects"]["byId"]["versions"];
 }) {
+  const { resolvedTheme } = useTheme();
+
   const rootVersions = versions.filter((v) => !v.parentVersionId);
 
   const buildHierarchy = (
@@ -313,10 +322,19 @@ export function Versions({
       defaultEdgeOptions={{
         type: "smoothstep",
       }}
+      colorMode={resolvedTheme as ColorMode}
     >
       <Background
-        className="bg-muted dark:bg-background"
-        color="hsl(var(--background))"
+        color={
+          resolvedTheme === "dark"
+            ? "var(--color-background)"
+            : "var(--color-muted)"
+        }
+        bgColor={
+          resolvedTheme === "dark"
+            ? "var(--color-background)"
+            : "var(--color-muted)"
+        }
       />
 
       <Panel position="bottom-right" className="flex flex-col items-end gap-2">

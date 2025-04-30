@@ -11,7 +11,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, LexicalEditor } from "lexical";
 import { useEffect } from "react";
 
-import { cn } from "@weldr/ui/utils";
+import { cn } from "@weldr/ui/lib/utils";
 
 import type { UserMessageRawContent } from "@weldr/shared/types";
 import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/chats";
@@ -64,7 +64,7 @@ export function Editor({ ...props }: EditorProps) {
           contentEditable={
             <ContentEditable
               className={cn(
-                "size-full h-full min-h-[100px] cursor-text flex-col overflow-y-auto rounded-lg border border-input bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                "size-full h-full min-h-[100px] cursor-text flex-col overflow-y-auto rounded-lg border bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
                 props.className,
               )}
             />

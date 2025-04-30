@@ -9,8 +9,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@weldr/ui/card";
-import { ScrollArea } from "@weldr/ui/scroll-area";
+} from "@weldr/ui/components/card";
+import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import { useMemo } from "react";
 import { AddIntegrationDialog } from "../add-integration-dialog";
 

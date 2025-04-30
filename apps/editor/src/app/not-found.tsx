@@ -1,4 +1,4 @@
-import { Button } from "@weldr/ui/button";
+import { Button } from "@weldr/ui/components/button";
 import Link from "next/link";
 
 export default function NotFoundPage() {

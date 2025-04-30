@@ -9,16 +9,20 @@ import type { RouterOutputs } from "@weldr/api";
 import type { DeclarationSpecsV1, JsonSchema } from "@weldr/shared/types";
 import type { componentSchema } from "@weldr/shared/validators/declarations/component";
 import type { functionSchema } from "@weldr/shared/validators/declarations/function";
-import { Card } from "@weldr/ui/card";
+import { Card } from "@weldr/ui/components/card";
 import {
   ExpandableCard,
   ExpandableCardContent,
   ExpandableCardTrigger,
-} from "@weldr/ui/expandable-card";
-import { ScrollArea } from "@weldr/ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@weldr/ui/tooltip";
-import { TreeView, schemaToTreeData } from "@weldr/ui/tree-view";
-import { cn } from "@weldr/ui/utils";
+} from "@weldr/ui/components/expandable-card";
+import { ScrollArea } from "@weldr/ui/components/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@weldr/ui/components/tooltip";
+import { TreeView, schemaToTreeData } from "@weldr/ui/components/tree-view";
+import { cn } from "@weldr/ui/lib/utils";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import {
   AppWindowIcon,
@@ -204,7 +208,7 @@ const DeclarationExpandableCardContent = memo(
     const { data } = declaration.specs;
 
     return (
-      <ScrollArea className="h-[calc(100dvh-398px)] p-4">
+      <ScrollArea className="max-h-[calc(100svh-578px)] p-4">
         {data.type === "endpoint" ? (
           data.definition.subtype === "rest" ? (
             <OpenApiEndpointDocs
@@ -471,7 +475,7 @@ const ProtectedBadge = ({ protected: isProtected }: { protected: boolean }) => {
           <LockOpenIcon className="size-3 text-destructive" />
         )}
       </TooltipTrigger>
-      <TooltipContent className="rounded-sm border bg-muted px-1.5 py-0.5 text-xs">
+      <TooltipContent className="rounded-sm border bg-muted text-foreground text-xs">
         {isProtected ? "Protected" : "Unprotected"}
       </TooltipContent>
     </Tooltip>

@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { buttonVariants } from "@weldr/ui/button";
+import { buttonVariants } from "@weldr/ui/components/button";
 
 export default function WaitlistConfirmationPage() {
   return (

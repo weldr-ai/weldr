@@ -8,9 +8,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@weldr/ui/alert-dialog";
-import { Button } from "@weldr/ui/button";
-import { Input } from "@weldr/ui/input";
+} from "@weldr/ui/components/alert-dialog";
+import { Button } from "@weldr/ui/components/button";
+import { Input } from "@weldr/ui/components/input";
 import { LoaderIcon } from "lucide-react";
 import { useState } from "react";
 

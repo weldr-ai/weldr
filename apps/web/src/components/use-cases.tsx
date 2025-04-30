@@ -1,8 +1,13 @@
 import { AppWindowMacIcon, ServerIcon, WebhookIcon } from "lucide-react";
 import Image from "next/image";
 
-import { Badge } from "@weldr/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@weldr/ui/tabs";
+import { Badge } from "@weldr/ui/components/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@weldr/ui/components/tabs";
 
 export function UseCases() {
   return (

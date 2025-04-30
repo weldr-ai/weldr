@@ -1,20 +1,16 @@
 // @ts-check
 
-// import { fileURLToPath } from "node:url";
-// import createJiti from "jiti";
+import type { NextConfig } from "next";
 
-// Import env files to validate at build time. Use jiti so we can load .ts files in here.
-// createJiti(fileURLToPath(import.meta.url))("./src/env");
-
-/** @type {import("next").NextConfig} */
 const config = {
-  reactStrictMode: true,
-
   /** Enables hot reloading for local packages without a build step */
   transpilePackages: ["@weldr/api", "@weldr/auth", "@weldr/db", "@weldr/ui"],
 
   images: {
     remotePatterns: [
+      {
+        hostname: "weldr-general.s3.*.amazonaws.com",
+      },
       {
         hostname: "weldr-controlled-general.s3.*.amazonaws.com",
       },
@@ -23,6 +19,6 @@ const config = {
 
   /** We already do linting and typechecking as separate tasks in CI */
   typescript: { ignoreBuildErrors: true },
-};
+} satisfies NextConfig;
 
 export default config;
