@@ -10,7 +10,8 @@ import {
 
 import { Canvas } from "@/components/canvas";
 import { useProjectView } from "@/lib/store";
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Select,
   SelectContent,
@@ -93,22 +94,28 @@ export function ProjectView({
     return () => document.removeEventListener("keydown", down);
   }, [setSelectedView]);
 
-  const { data: project } = api.projects.byId.useQuery(
-    {
-      id: _project.id,
-    },
-    {
-      initialData: _project,
-    },
+  const trpc = useTRPC();
+
+  const { data: project } = useQuery(
+    trpc.projects.byId.queryOptions(
+      {
+        id: _project.id,
+      },
+      {
+        initialData: _project,
+      },
+    ),
   );
 
-  const { data: messages } = api.chats.messages.useQuery(
-    {
-      chatId: project.chat.id,
-    },
-    {
-      initialData: project.chat.messages,
-    },
+  const { data: messages } = useQuery(
+    trpc.chats.messages.queryOptions(
+      {
+        chatId: project.chat.id,
+      },
+      {
+        initialData: project.chat.messages,
+      },
+    ),
   );
 
   return (

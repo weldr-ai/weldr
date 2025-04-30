@@ -5,7 +5,8 @@ import { LoaderIcon, XIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
+import { useMutation } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/button";
 import {
@@ -39,12 +40,16 @@ export function PostgresForm({
 }: PostgresFormProps) {
   const { projectId } = useParams<{ projectId: string }>();
 
-  const addIntegrationMutation = api.integrations.create.useMutation({
-    onSuccess: () => {
-      onSuccess?.();
-      onClose();
-    },
-  });
+  const trpc = useTRPC();
+
+  const addIntegrationMutation = useMutation(
+    trpc.integrations.create.mutationOptions({
+      onSuccess: () => {
+        onSuccess?.();
+        onClose();
+      },
+    }),
+  );
 
   const form = useForm<z.infer<typeof validationSchema>>({
     mode: "onChange",

@@ -2,8 +2,9 @@
 
 import { memo } from "react";
 
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
 import type { TPendingMessage } from "@/types";
+import { useMutation } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import type { ChatMessage, ToolMessage } from "@weldr/shared/types";
 import { toast } from "@weldr/ui/hooks/use-toast";
@@ -165,26 +166,30 @@ const PureSetupIntegration = ({
     toolResult: { status: "pending" | "success" | "error" | "cancelled" };
   };
 
-  const updateMessageMutation = api.chats.updateMessage.useMutation({
-    onSuccess: (data) => {
-      // @ts-expect-error
-      setMessages((messages: ChatMessage[]) => {
-        const message = messages.find((m) => m.id === data.id);
-        if (message) {
-          message.rawContent = data.rawContent;
-        }
-        return messages;
-      });
-      setPendingMessage(null);
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update message",
-      });
-      setPendingMessage(null);
-    },
-  });
+  const trpc = useTRPC();
+
+  const updateMessageMutation = useMutation(
+    trpc.chats.updateMessage.mutationOptions({
+      onSuccess: (data) => {
+        // @ts-expect-error
+        setMessages((messages: ChatMessage[]) => {
+          const message = messages.find((m) => m.id === data.id);
+          if (message) {
+            message.rawContent = data.rawContent;
+          }
+          return messages;
+        });
+        setPendingMessage(null);
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to update message",
+        });
+        setPendingMessage(null);
+      },
+    }),
+  );
 
   switch (toolInfo.toolArgs.integration) {
     case "postgres": {

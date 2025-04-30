@@ -11,7 +11,6 @@ import SuperJSON from "superjson";
 import { ZodError } from "zod";
 
 import type { Session } from "@weldr/auth";
-import { auth } from "@weldr/auth";
 import { db } from "@weldr/db";
 
 /**
@@ -28,13 +27,13 @@ import { db } from "@weldr/db";
  */
 export const createTRPCContext: (opts: {
   headers: Headers;
+  session: Session | null;
 }) => Promise<{
   session: Session | null;
   db: typeof db;
 }> = async (opts) => {
-  const session = await auth.api.getSession({ headers: opts.headers });
   return {
-    session,
+    session: opts.session,
     db,
   };
 };

@@ -4,10 +4,9 @@ import { createHydrationHelpers } from "@trpc/react-query/rsc";
 import { headers } from "next/headers";
 import { cache } from "react";
 
-import type { AppRouter } from "@weldr/api";
-import { createCaller, createTRPCContext } from "@weldr/api";
-
-import { createQueryClient } from "@/lib/trpc/react-query";
+import { type AppRouter, createCaller, createTRPCContext } from "@weldr/api";
+import { auth } from "@weldr/auth";
+import { createQueryClient } from "./query-client";
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
@@ -16,7 +15,12 @@ import { createQueryClient } from "@/lib/trpc/react-query";
 const createContext = cache(async () => {
   const heads = new Headers(await headers());
   heads.set("x-trpc-source", "rsc");
-  return createTRPCContext({ headers: heads });
+  const session = await auth.api.getSession({ headers: heads });
+
+  return createTRPCContext({
+    headers: heads,
+    session,
+  });
 });
 
 const getQueryClient = cache(createQueryClient);

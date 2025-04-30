@@ -1,8 +1,9 @@
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
 import { useProjectView } from "@/lib/store";
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
@@ -52,9 +53,18 @@ export function Chat({
 
   const { getNodes, setNodes, updateNodeData } = useReactFlow<CanvasNode>();
 
-  const addMessage = api.chats.addMessage.useMutation();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const apiUtils = api.useUtils();
+  const addMessage = useMutation(
+    trpc.chats.addMessage.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(
+          trpc.chats.messages.queryFilter({ chatId }),
+        );
+      },
+    }),
+  );
 
   const triggerGeneration = useCallback(async () => {
     setPendingMessage(pendingMessage ?? "thinking");
@@ -134,7 +144,9 @@ export function Chat({
           }
 
           if (chunk.status === "succeeded") {
-            await apiUtils.projects.byId.invalidate({ id: project.id });
+            await queryClient.invalidateQueries(
+              trpc.projects.byId.queryFilter({ id: project.id }),
+            );
             setPendingMessage(null);
           }
           break;
@@ -236,7 +248,8 @@ export function Chat({
     setNodes,
     updateNodeData,
     project,
-    apiUtils,
+    queryClient,
+    trpc,
     setSelectedView,
     setMachineId,
     pendingMessage,

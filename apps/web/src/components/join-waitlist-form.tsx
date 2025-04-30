@@ -5,15 +5,18 @@ import { LoaderIcon } from "lucide-react";
 import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
-import type { z } from "zod";
+import { z } from "zod";
 
-import { insertWaitlistSchema } from "@weldr/db/schema";
 import { Button } from "@weldr/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@weldr/ui/form";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { Input } from "@weldr/ui/input";
 
 import { joinWaitlist } from "@/lib/actions/waitlist";
+
+const insertWaitlistSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+});
 
 export function JoinWaitlistForm({
   variant = "default",

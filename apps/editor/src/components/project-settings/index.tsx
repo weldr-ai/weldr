@@ -1,6 +1,7 @@
 "use client";
 
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
+import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/button";
 import {
@@ -25,13 +26,17 @@ export function ProjectSettings({
   project: RouterOutputs["projects"]["byId"];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
-  const { data: env } = api.environmentVariables.list.useQuery(
-    {
-      projectId: project.id,
-    },
-    {
-      initialData: project.environmentVariables,
-    },
+  const trpc = useTRPC();
+
+  const { data: env } = useQuery(
+    trpc.environmentVariables.list.queryOptions(
+      {
+        projectId: project.id,
+      },
+      {
+        initialData: project.environmentVariables,
+      },
+    ),
   );
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);

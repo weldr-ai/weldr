@@ -1,7 +1,7 @@
 "use client";
 
 import { useCanvas } from "@/lib/store";
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode } from "@/types";
 import { Button } from "@weldr/ui/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
@@ -24,6 +24,7 @@ import { DeclarationV1Node } from "./nodes/declaration/v1";
 import "@xyflow/react/dist/base.css";
 
 import "@/styles/flow-builder.css";
+import { useMutation } from "@tanstack/react-query";
 
 const nodeTypes = {
   "declaration-v1": DeclarationV1Node,
@@ -44,15 +45,19 @@ export function Canvas({
     useNodesState<CanvasNode>(initialNodes);
   const [edges, _setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
 
-  const updateNode = api.canvasNodes.update.useMutation({
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const trpc = useTRPC();
+
+  const updateNode = useMutation(
+    trpc.canvasNodes.update.mutationOptions({
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      },
+    }),
+  );
 
   const onNodeDragStop = useCallback(
     async (

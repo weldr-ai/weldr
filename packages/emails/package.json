@@ -19,11 +19,11 @@
     "react-email": "3.0.2"
   },
   "devDependencies": {
+    "@types/react": "^18.3.20",
+    "@types/react-dom": "^18.3.6",
     "@weldr/tailwind-config": "workspace:*",
     "@weldr/tsconfig": "workspace:*",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
     "tailwindcss": "3.4.11",
-    "typescript": "^5.7.2"
+    "typescript": "^5.8.3"
   }
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { insertEnvironmentVariableSchema } from "@weldr/shared/validators/environment-variables";
 import { Button } from "@weldr/ui/button";
 import {
@@ -47,12 +48,15 @@ export default function AddEnvironmentVariableDialog({
     },
   });
 
-  const apiUtils = api.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const createEnvironmentVariable = api.environmentVariables.create.useMutation(
-    {
+  const createEnvironmentVariable = useMutation(
+    trpc.environmentVariables.create.mutationOptions({
       onSuccess: (data) => {
-        apiUtils.environmentVariables.list.invalidate();
+        void queryClient.invalidateQueries(
+          trpc.environmentVariables.list.queryFilter(),
+        );
         if (data.id) {
           setIsDialogOpen(false);
           form.reset();
@@ -66,7 +70,7 @@ export default function AddEnvironmentVariableDialog({
           duration: 2000,
         });
       },
-    },
+    }),
   );
 
   const onSubmit = async (

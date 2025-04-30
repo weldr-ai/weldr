@@ -22,7 +22,8 @@ import { Input } from "@weldr/ui/input";
 import { DownloadIcon, LoaderIcon, PaletteIcon, TrashIcon } from "lucide-react";
 
 import { getProjectDownloadUrl } from "@/lib/actions/get-project-download-url";
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -36,31 +37,38 @@ export function GeneralSection({
   const [isDownloading, setIsDownloading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const updateProject = api.projects.update.useMutation({
-    onSuccess: () => {
-      router.refresh();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-        duration: 2000,
-      });
-    },
-  });
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const deleteProject = api.projects.delete.useMutation({
-    onSuccess: () => {
-      router.push("/");
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-      });
-    },
-  });
+  const updateProject = useMutation(
+    trpc.projects.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.projects.byId.queryFilter());
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+          duration: 2000,
+        });
+      },
+    }),
+  );
+
+  const deleteProject = useMutation(
+    trpc.projects.delete.mutationOptions({
+      onSuccess: () => {
+        router.push("/");
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+        });
+      },
+    }),
+  );
 
   const form = useForm<z.infer<typeof updateProjectSchema>>({
     mode: "onChange",

@@ -28,8 +28,9 @@ import { memo } from "react";
 
 import "@xyflow/react/dist/base.css";
 
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
 import "@/styles/flow-builder.css";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,43 +69,48 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
   const hasIncomingEdges = edges.some((edge) => edge.target === data.id);
   const hasOutgoingEdges = edges.some((edge) => edge.source === data.id);
 
-  const apiUtils = api.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const setCurrentVersion = api.versions.setCurrent.useMutation({
-    onSuccess: (data) => {
-      apiUtils.projects.byId.invalidate({
-        id: data.newCurrentVersion.projectId,
-      });
-      setNodes((nodes) =>
-        nodes.map((node) =>
-          node.id === data.newCurrentVersion.id
-            ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  ...data.newCurrentVersion,
-                },
-              }
-            : node.id === data.previousCurrentVersion.id
+  const setCurrentVersion = useMutation(
+    trpc.versions.setCurrent.mutationOptions({
+      onSuccess: (data) => {
+        void queryClient.invalidateQueries(
+          trpc.projects.byId.queryFilter({
+            id: data.newCurrentVersion.projectId,
+          }),
+        );
+        setNodes((nodes) =>
+          nodes.map((node) =>
+            node.id === data.newCurrentVersion.id
               ? {
                   ...node,
                   data: {
                     ...node.data,
-                    ...data.previousCurrentVersion,
+                    ...data.newCurrentVersion,
                   },
                 }
-              : node,
-        ),
-      );
-    },
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Error setting current version",
-        description: error.message,
-      });
-    },
-  });
+              : node.id === data.previousCurrentVersion.id
+                ? {
+                    ...node,
+                    data: {
+                      ...node.data,
+                      ...data.previousCurrentVersion,
+                    },
+                  }
+                : node,
+          ),
+        );
+      },
+      onError: (error) => {
+        toast({
+          variant: "destructive",
+          title: "Error setting current version",
+          description: error.message,
+        });
+      },
+    }),
+  );
 
   return (
     <>

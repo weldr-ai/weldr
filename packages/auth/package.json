@@ -15,17 +15,17 @@
   "dependencies": {
     "@weldr/db": "workspace:*",
     "@weldr/emails": "workspace:*",
-    "better-auth": "1.1.9",
+    "better-auth": "1.2.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "resend": "^3.3.0",
-    "zod": "^3.24.1"
+    "resend": "^3.5.0",
+    "zod": "^3.24.3"
   },
   "devDependencies": {
+    "@types/react": "^18.3.20",
+    "@types/react-dom": "^18.3.6",
     "@weldr/tsconfig": "workspace:*",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
     "esbuild": "^0.24.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.8.3"
   }
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import { useCommandCenter } from "@/lib/store";
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
 import { createId } from "@paralleldrive/cuid2";
+import { useMutation } from "@tanstack/react-query";
 import type { Attachment } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
@@ -43,25 +44,29 @@ export function CreateProjectForm() {
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
-  const createProjectMutation = api.projects.create.useMutation({
-    onSuccess: async (data) => {
-      toast({
-        title: "Success",
-        description: "Project created successfully.",
-        duration: 2000,
-      });
-      setOpen(false);
-      router.push(`/projects/${data.id}`);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-        duration: 2000,
-      });
-    },
-  });
+  const trpc = useTRPC();
+
+  const createProjectMutation = useMutation(
+    trpc.projects.create.mutationOptions({
+      onSuccess: async (data) => {
+        toast({
+          title: "Success",
+          description: "Project created successfully.",
+          duration: 2000,
+        });
+        setOpen(false);
+        router.push(`/projects/${data.id}`);
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+          duration: 2000,
+        });
+      },
+    }),
+  );
 
   const handleSubmit = () => {
     createProjectMutation.mutate({

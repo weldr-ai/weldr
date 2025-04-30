@@ -27,8 +27,10 @@ import {
 import { Input } from "@weldr/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@weldr/ui/popover";
 
-import type { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
+import { toast } from "@weldr/ui/hooks/use-toast";
 import { cn } from "@weldr/ui/utils";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 
@@ -41,18 +43,12 @@ const validationSchema = z.object({
 
 export function AddPostgresIntegrationForm({
   postgresIntegration,
-  addIntegrationMutation,
-  updateIntegrationMutation,
+  setDialogOpen,
   integration,
   environmentVariables,
 }: {
   postgresIntegration: RouterOutputs["integrationTemplates"]["byId"];
-  addIntegrationMutation: ReturnType<
-    typeof api.integrations.create.useMutation
-  >;
-  updateIntegrationMutation: ReturnType<
-    typeof api.integrations.update.useMutation
-  >;
+  setDialogOpen?: (open: boolean) => void;
   integration?: RouterOutputs["projects"]["byId"]["integrations"][number];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) {
@@ -72,6 +68,57 @@ export function AddPostgresIntegrationForm({
         )?.environmentVariableId ?? "",
     },
   });
+
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const addIntegrationMutation = useMutation(
+    trpc.integrations.create.mutationOptions({
+      onSuccess: async () => {
+        toast({
+          title: "Success",
+          description: "Integration created successfully.",
+          duration: 2000,
+        });
+        setDialogOpen?.(false);
+        await queryClient.invalidateQueries(
+          trpc.integrations.list.queryFilter(),
+        );
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+          duration: 2000,
+        });
+      },
+    }),
+  );
+
+  const updateIntegrationMutation = useMutation(
+    trpc.integrations.update.mutationOptions({
+      onSuccess: async () => {
+        toast({
+          title: "Success",
+          description: "Integration updated successfully.",
+          duration: 2000,
+        });
+        setDialogOpen?.(false);
+        await queryClient.invalidateQueries(
+          trpc.integrations.list.queryFilter(),
+        );
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+          duration: 2000,
+        });
+      },
+    }),
+  );
 
   const onSubmit = async (data: z.infer<typeof validationSchema>) => {
     const environmentVariableMappings = [
@@ -145,7 +192,7 @@ export function AddPostgresIntegrationForm({
                   <PopoverContent className="w-[230px] p-0">
                     <Command>
                       <CommandInput
-                        className="h-8 border-none text-xs ring-0"
+                        className="h-8 text-xs"
                         placeholder="Search environment variables..."
                       />
                       <CommandList className="min-h-[150px] overflow-y-auto">

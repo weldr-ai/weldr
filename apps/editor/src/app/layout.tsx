@@ -8,7 +8,7 @@ import { cn } from "@weldr/ui/utils";
 
 import { QueryProvider } from "@/components/query-client-provider";
 import { AppStateProvider } from "@/lib/store";
-import { TRPCReactProvider } from "@/lib/trpc/client";
+import { TRPCReactProvider } from "@/lib/trpc/react";
 import { HydrateClient } from "@/lib/trpc/server";
 import { TooltipProvider } from "@weldr/ui/tooltip";
 import { ReactFlowProvider } from "@xyflow/react";

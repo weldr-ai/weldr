@@ -1,6 +1,7 @@
 "use client";
 
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/button";
 import {
@@ -22,13 +23,16 @@ export function EnvSection({
 }: { env: RouterOutputs["environmentVariables"]["list"]; projectId: string }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const apiUtils = api.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const deleteEnvironmentVariable = api.environmentVariables.delete.useMutation(
-    {
+  const deleteEnvironmentVariable = useMutation(
+    trpc.environmentVariables.delete.mutationOptions({
       onSuccess: () => {
         console.log("onSuccess");
-        apiUtils.environmentVariables.list.invalidate();
+        queryClient.invalidateQueries(
+          trpc.environmentVariables.list.queryFilter(),
+        );
         setDeleteDialogOpen(false);
       },
       onError: (error) => {
@@ -40,7 +44,7 @@ export function EnvSection({
           duration: 2000,
         });
       },
-    },
+    }),
   );
 
   return (

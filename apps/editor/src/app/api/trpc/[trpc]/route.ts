@@ -1,6 +1,8 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 import { appRouter, createTRPCContext } from "@weldr/api";
+import { auth } from "@weldr/auth";
+import { headers } from "next/headers";
 
 /**
  * Configure basic CORS headers
@@ -22,11 +24,17 @@ export const OPTIONS = () => {
 };
 
 const handler = async (req: Request) => {
+  const session = await auth.api.getSession({ headers: await headers() });
+
   const response = await fetchRequestHandler({
     endpoint: "/api/trpc",
     router: appRouter,
     req,
-    createContext: async () => createTRPCContext({ headers: req.headers }),
+    createContext: () =>
+      createTRPCContext({
+        headers: req.headers,
+        session,
+      }),
     onError({ error, path }) {
       console.error(`>>> tRPC Error on '${path}'`, error);
     },

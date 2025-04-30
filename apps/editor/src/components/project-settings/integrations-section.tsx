@@ -1,6 +1,7 @@
 "use client";
 
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
+import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import {
   Card,
@@ -24,13 +25,17 @@ export function IntegrationsSection({
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) {
-  const { data: integrations } = api.integrations.list.useQuery(
-    {
-      projectId,
-    },
-    {
-      initialData: initialIntegrations,
-    },
+  const trpc = useTRPC();
+
+  const { data: integrations } = useQuery(
+    trpc.integrations.list.queryOptions(
+      {
+        projectId,
+      },
+      {
+        initialData: initialIntegrations,
+      },
+    ),
   );
 
   const mappedIntegrations = useMemo(() => {

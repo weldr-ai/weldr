@@ -14,7 +14,8 @@ import {
 } from "@weldr/ui/command";
 
 import { type CommandCenterView, useCommandCenter } from "@/lib/store";
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { Button, buttonVariants } from "@weldr/ui/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
@@ -125,29 +126,35 @@ function ProjectsContent({
   const [selectedProject, setSelectedProject] = useState<
     RouterOutputs["projects"]["list"][0] | null
   >(null);
-  const { data: projects } = api.projects.list.useQuery(undefined, {
-    initialData: _projects,
-  });
 
-  const apiUtils = api.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const deleteProject = api.projects.delete.useMutation({
-    onSuccess: () => {
-      setDeleteProjectOpen(false);
-      apiUtils.projects.list.invalidate();
-      toast({
-        title: "Project deleted",
-        description: "Your project has been deleted",
-      });
-    },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Failed to delete project",
-        description: "Please try again",
-      });
-    },
-  });
+  const { data: projects } = useQuery(
+    trpc.projects.list.queryOptions(undefined, {
+      initialData: _projects,
+    }),
+  );
+
+  const deleteProject = useMutation(
+    trpc.projects.delete.mutationOptions({
+      onSuccess: () => {
+        setDeleteProjectOpen(false);
+        queryClient.invalidateQueries(trpc.projects.list.queryFilter());
+        toast({
+          title: "Project deleted",
+          description: "Your project has been deleted",
+        });
+      },
+      onError: () => {
+        toast({
+          variant: "destructive",
+          title: "Failed to delete project",
+          description: "Please try again",
+        });
+      },
+    }),
+  );
 
   return (
     <>

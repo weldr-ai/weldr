@@ -1,8 +1,7 @@
 "use client";
 
-import { toast } from "@weldr/ui/hooks/use-toast";
-
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
+import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { useParams } from "next/navigation";
 import { AddPostgresIntegrationForm } from "./add-postgres-integration-form";
@@ -19,65 +18,26 @@ export function AddIntegrationsForm({
   setDialogOpen?: (open: boolean) => void;
 }) {
   const { projectId } = useParams<{ projectId: string }>();
-  const apiUtils = api.useUtils();
 
-  const addIntegrationMutation = api.integrations.create.useMutation({
-    onSuccess: async () => {
-      toast({
-        title: "Success",
-        description: "Integration created successfully.",
-        duration: 2000,
-      });
-      setDialogOpen?.(false);
-      await apiUtils.integrations.list.invalidate();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-        duration: 2000,
-      });
-    },
-  });
+  const trpc = useTRPC();
 
-  const updateIntegrationMutation = api.integrations.update.useMutation({
-    onSuccess: async () => {
-      toast({
-        title: "Success",
-        description: "Integration updated successfully.",
-        duration: 2000,
-      });
-      setDialogOpen?.(false);
-      await apiUtils.integrations.list.invalidate();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-        duration: 2000,
-      });
-    },
-  });
-
-  const { data: environmentVariablesOptions } =
-    api.environmentVariables.list.useQuery(
+  const { data: environmentVariablesOptions } = useQuery(
+    trpc.environmentVariables.list.queryOptions(
       {
         projectId,
       },
       {
         initialData: environmentVariables,
       },
-    );
+    ),
+  );
 
   switch (integrationTemplate.key) {
     case "postgresql": {
       return (
         <AddPostgresIntegrationForm
           postgresIntegration={integrationTemplate}
-          addIntegrationMutation={addIntegrationMutation}
-          updateIntegrationMutation={updateIntegrationMutation}
+          setDialogOpen={setDialogOpen}
           integration={integration}
           environmentVariables={environmentVariablesOptions}
         />

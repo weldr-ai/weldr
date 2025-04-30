@@ -2,12 +2,16 @@
 
 import { redirect } from "next/navigation";
 import { Resend } from "resend";
-import type { z } from "zod";
+import { z } from "zod";
 
 import { db, eq } from "@weldr/db";
-import { insertWaitlistSchema, waitlist } from "@weldr/db/schema";
+import { waitlist } from "@weldr/db/schema";
 
 const resend = new Resend(process.env.RESEND_API_KEY ?? "");
+
+const insertWaitlistSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+});
 
 type FormState =
   | {

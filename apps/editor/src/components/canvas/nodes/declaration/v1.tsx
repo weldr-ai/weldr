@@ -2,8 +2,9 @@ import { CustomMarkdown } from "@/components/custom-markdown";
 import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
 import { UiTransitionVisualizer } from "@/components/ui-transition-visualizer";
 import { useCanvas } from "@/lib/store";
-import { api } from "@/lib/trpc/client";
+import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
+import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import type { DeclarationSpecsV1, JsonSchema } from "@weldr/shared/types";
 import type { componentSchema } from "@weldr/shared/validators/declarations/component";
@@ -41,13 +42,17 @@ export const DeclarationV1Node = memo(
       return null;
     }
 
-    const { data: declaration } = api.declarations.byId.useQuery(
-      {
-        id: _data.id,
-      },
-      {
-        initialData: _data,
-      },
+    const trpc = useTRPC();
+
+    const { data: declaration } = useQuery(
+      trpc.declarations.byId.queryOptions(
+        {
+          id: _data.id,
+        },
+        {
+          initialData: _data,
+        },
+      ),
     );
 
     const { showEdges } = useCanvas();
