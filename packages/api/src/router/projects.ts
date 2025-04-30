@@ -1,6 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
-import { and, db, eq } from "@weldr/db";
+import { and, eq } from "@weldr/db";
 import {
   attachments,
   chatMessages,
@@ -277,11 +277,14 @@ export const projectsRouter = {
             .map((declaration) => declaration.declaration);
         };
 
-        const currentVersion = await db.query.versions.findFirst({
+        const currentVersion = await ctx.db.query.versions.findFirst({
           where: and(
             eq(versions.projectId, project.id),
             eq(versions.isCurrent, true),
           ),
+          with: {
+            theme: true,
+          },
         });
 
         const result = {

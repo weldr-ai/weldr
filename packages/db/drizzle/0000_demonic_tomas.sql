@@ -247,6 +247,15 @@ CREATE TABLE "projects" (
 	CONSTRAINT "projects_subdomain_unique" UNIQUE("subdomain")
 );
 --> statement-breakpoint
+CREATE TABLE "themes" (
+	"id" text PRIMARY KEY NOT NULL,
+	"data" jsonb NOT NULL,
+	"project_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "version_declarations" (
 	"version_id" text NOT NULL,
 	"declaration_id" text NOT NULL,
@@ -277,6 +286,7 @@ CREATE TABLE "versions" (
 	"is_current" boolean DEFAULT false NOT NULL,
 	"parent_version_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
+	"theme_id" text NOT NULL,
 	"user_id" text NOT NULL,
 	"project_id" text NOT NULL
 );
@@ -318,6 +328,8 @@ ALTER TABLE "preset_files" ADD CONSTRAINT "preset_files_preset_id_presets_id_fk"
 ALTER TABLE "preset_packages" ADD CONSTRAINT "preset_packages_preset_id_presets_id_fk" FOREIGN KEY ("preset_id") REFERENCES "public"."presets"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_main_database_id_integrations_id_fk" FOREIGN KEY ("main_database_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "themes" ADD CONSTRAINT "themes_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "themes" ADD CONSTRAINT "themes_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "version_declarations" ADD CONSTRAINT "version_declarations_version_id_versions_id_fk" FOREIGN KEY ("version_id") REFERENCES "public"."versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "version_declarations" ADD CONSTRAINT "version_declarations_declaration_id_declarations_id_fk" FOREIGN KEY ("declaration_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "version_files" ADD CONSTRAINT "version_files_version_id_versions_id_fk" FOREIGN KEY ("version_id") REFERENCES "public"."versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -325,6 +337,7 @@ ALTER TABLE "version_files" ADD CONSTRAINT "version_files_file_id_files_id_fk" F
 ALTER TABLE "version_packages" ADD CONSTRAINT "version_packages_version_id_versions_id_fk" FOREIGN KEY ("version_id") REFERENCES "public"."versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "version_packages" ADD CONSTRAINT "version_packages_package_id_packages_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."packages"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_parent_version_id_versions_id_fk" FOREIGN KEY ("parent_version_id") REFERENCES "public"."versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "versions" ADD CONSTRAINT "versions_theme_id_themes_id_fk" FOREIGN KEY ("theme_id") REFERENCES "public"."themes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "canvas_nodes_created_at_idx" ON "canvas_nodes" USING btree ("created_at");--> statement-breakpoint

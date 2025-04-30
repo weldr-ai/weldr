@@ -18,6 +18,7 @@ import { declarations } from "./declarations";
 import { files } from "./files";
 import { packages } from "./packages";
 import { projects } from "./projects";
+import { themes } from "./themes";
 
 export const versionProgress = pgEnum("version_progress", [
   "initiated",
@@ -50,6 +51,11 @@ export const versions = pgTable(
       { onDelete: "cascade" },
     ),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    themeId: text("theme_id")
+      .references(() => themes.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),
@@ -90,6 +96,10 @@ export const versionsRelations = relations(versions, ({ one, many }) => ({
   declarations: many(versionDeclarations),
   packages: many(versionPackages),
   files: many(versionFiles),
+  theme: one(themes, {
+    fields: [versions.themeId],
+    references: [themes.id],
+  }),
 }));
 
 export const versionFiles = pgTable(

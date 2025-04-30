@@ -19,7 +19,7 @@ import {
 } from "@weldr/ui/components/form";
 import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { DownloadIcon, LoaderIcon, PaletteIcon, TrashIcon } from "lucide-react";
+import { DownloadIcon, LoaderIcon, TrashIcon } from "lucide-react";
 
 import { getProjectDownloadUrl } from "@/lib/actions/get-project-download-url";
 import { useTRPC } from "@/lib/trpc/react";
@@ -29,6 +29,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { DeleteAlertDialog } from "../delete-alert-dialog";
+import { ThemeCustomization } from "./theme-customization";
 
 export function GeneralSection({
   project,
@@ -173,10 +174,7 @@ export function GeneralSection({
               Customize your project theme.
             </p>
           </div>
-          <Button size="sm" variant="outline">
-            <PaletteIcon className="mr-2 size-3.5" />
-            Edit Theme
-          </Button>
+          <ThemeCustomization project={project} />
         </div>
         <div className="flex items-center justify-between gap-2 rounded-lg border p-4">
           <div className="flex flex-col">

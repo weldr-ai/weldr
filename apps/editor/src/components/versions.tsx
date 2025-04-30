@@ -81,8 +81,8 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
 
   const setCurrentVersion = useMutation(
     trpc.versions.setCurrent.mutationOptions({
-      onSuccess: (data) => {
-        void queryClient.invalidateQueries(
+      onSuccess: async (data) => {
+        await queryClient.invalidateQueries(
           trpc.projects.byId.queryFilter({
             id: data.newCurrentVersion.projectId,
           }),

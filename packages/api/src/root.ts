@@ -6,7 +6,8 @@ import { environmentVariablesRouter } from "./router/environment-variables";
 import { integrationTemplatesRouter } from "./router/integration-templates";
 import { integrationsRouter } from "./router/integrations";
 import { projectsRouter } from "./router/projects";
-import { versionRouter } from "./router/versionts";
+import { themesRouter } from "./router/themes";
+import { versionRouter } from "./router/versions";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   canvasNodes: canvasNodeRouter,
   integrations: integrationsRouter,
   integrationTemplates: integrationTemplatesRouter,
+  themes: themesRouter,
 });
 
 // export type definition of API

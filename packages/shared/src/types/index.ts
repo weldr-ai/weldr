@@ -38,6 +38,7 @@ import type { environmentVariableSchema } from "../validators/environment-variab
 import type { dataTypeSchema } from "../validators/json-schema";
 import type { openApiEndpointSpecSchema } from "../validators/openapi";
 import type { projectSchema } from "../validators/projects";
+import type { themeDataSchema, themeSchema } from "../validators/themes";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
 
@@ -82,3 +83,7 @@ export type ReusableComponentDeclarationSpecs = z.infer<
 export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;
 export type RawContent = z.infer<typeof rawContentSchema>;
 export type Package = z.infer<typeof packageSchema>;
+
+export type Theme = z.infer<typeof themeSchema>;
+export type ThemeData = z.infer<typeof themeDataSchema>;
+export type ThemeMode = keyof Theme;

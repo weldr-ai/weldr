@@ -17,6 +17,7 @@ export default {
     "./src/schema/presets.ts",
     "./src/schema/projects.ts",
     "./src/schema/shared-enums.ts",
+    "./src/schema/themes.ts",
     "./src/schema/versions.ts",
   ],
   out: "./drizzle",

@@ -11,5 +11,6 @@ export * from "./packages";
 export * from "./presets";
 export * from "./projects";
 export * from "./shared-enums";
+export * from "./themes";
 export * from "./vault";
 export * from "./versions";
