@@ -36,7 +36,7 @@ const validationSchema = z.object({
   projectId: z.string(),
   integrationId: z.string(),
   name: z.string().min(1),
-  DATABASE_URL: z.string(),
+  DATABASE_URL: z.string().min(1),
 });
 
 export function AddPostgresIntegrationForm({
@@ -145,7 +145,7 @@ export function AddPostgresIntegrationForm({
                   <PopoverContent className="w-[230px] p-0">
                     <Command>
                       <CommandInput
-                        className="h-8 text-xs"
+                        className="h-8 border-none text-xs ring-0"
                         placeholder="Search environment variables..."
                       />
                       <CommandList className="min-h-[150px] overflow-y-auto">
@@ -181,8 +181,8 @@ export function AddPostgresIntegrationForm({
                         size="sm"
                         className="w-full justify-start rounded-none rounded-b-md border-x-0 border-b-0 text-xs"
                       >
-                        <PlusIcon className="mr-2 size-3.5" />
-                        Add new environment variable
+                        <PlusIcon className="mr-1 size-3.5" />
+                        Add new environment
                       </Button>
                     </AddEnvironmentVariableDialog>
                   </PopoverContent>
