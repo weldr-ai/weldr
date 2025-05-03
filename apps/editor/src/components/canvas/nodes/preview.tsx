@@ -161,7 +161,7 @@ export function Preview({
             {isLoading && (
               <div
                 className={cn(
-                  "flex size-full flex-1 items-center justify-center rounded-xl border bg-background",
+                  "flex size-full flex-1 items-center justify-center rounded-xl bg-background",
                   {
                     "mx-auto max-w-[375px]": isMobile,
                   },
@@ -175,7 +175,7 @@ export function Preview({
             )}
           </>
         ) : (
-          <div className="flex size-full flex-1 items-center justify-center rounded-xl border bg-background">
+          <div className="flex size-full flex-1 items-center justify-center rounded-xl bg-background">
             <p className="text-muted-foreground text-sm">
               Your app will appear here!
             </p>
