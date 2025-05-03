@@ -65,7 +65,7 @@ export function CommandCenter({
         <CommandDialog
           open={open}
           onOpenChange={setOpen}
-          dialogClassName="h-[600px] w-[896px] max-w-4xl"
+          dialogClassName="min-h-[600px] min-w-[896px] max-w-4xl"
           commandClassName="size-full [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0"
         >
           <CommandCenterContent view={view} projects={_projects} />
