@@ -9,6 +9,7 @@ import {
   packages,
   presets,
   projects,
+  themes,
   versionDeclarations,
   versionFiles,
   versionPackages,
@@ -196,6 +197,7 @@ const initializeVersion = async ({
         columns: {
           id: true,
           number: true,
+          themeId: true,
         },
         with: {
           files: true,
@@ -242,6 +244,7 @@ const initializeVersion = async ({
           parentVersionId: previousVersion.id,
           message: toolArgs.commitMessage,
           description: toolArgs.requirements,
+          themeId: previousVersion.themeId,
         })
         .returning();
 
@@ -306,6 +309,29 @@ const initializeVersion = async ({
       })
       .where(and(eq(projects.id, projectId), eq(projects.userId, userId)));
 
+    const presetThemes = await tx.query.presetThemes.findMany();
+
+    const randomNumber = Math.floor(Math.random() * presetThemes.length);
+
+    const presetTheme = presetThemes[randomNumber];
+
+    if (!presetTheme) {
+      throw new Error("Theme not found");
+    }
+
+    const [projectTheme] = await tx
+      .insert(themes)
+      .values({
+        data: presetTheme.data,
+        userId,
+        projectId,
+      })
+      .returning();
+
+    if (!projectTheme) {
+      throw new Error("Project theme not found");
+    }
+
     console.log(`[coderTool:${projectId}] Creating version`);
     const [version] = await tx
       .insert(versions)
@@ -316,6 +342,7 @@ const initializeVersion = async ({
         isCurrent: true,
         message: toolArgs.commitMessage,
         description: toolArgs.requirements,
+        themeId: projectTheme.id,
       })
       .returning();
 

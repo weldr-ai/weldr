@@ -57,7 +57,6 @@ import { useCallback, useState } from "react";
 import { HslStringColorPicker } from "react-colorful";
 import { type UseFormReturn, useForm } from "react-hook-form";
 import type { z } from "zod";
-import { bluePreset } from "./presets";
 import { ThemePreview } from "./theme-preview";
 
 type ThemeFieldPath = `${ThemeMode}.${keyof ThemeData}`;
@@ -73,9 +72,10 @@ export function ThemeCustomization({
   >("cards");
 
   const form = useForm<Theme>({
+    mode: "onChange",
     resolver: zodResolver(themeSchema),
     defaultValues: {
-      ...(project.currentVersion?.theme?.data ?? bluePreset),
+      ...project.currentVersion?.theme?.data,
     },
   });
 

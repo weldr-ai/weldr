@@ -1,10 +1,11 @@
 import { createId } from "@paralleldrive/cuid2";
-import type { DeclarationSpecs } from "@weldr/shared/types";
+import type { DeclarationSpecs, Theme } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
   jsonb,
   pgEnum,
   pgTable,
+  serial,
   text,
   timestamp,
   unique,
@@ -131,3 +132,14 @@ export const presetFilesRelations = relations(presetFiles, ({ one }) => ({
     references: [presets.id],
   }),
 }));
+
+export const presetThemes = pgTable("preset_themes", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  data: jsonb("data").$type<Theme>().notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});

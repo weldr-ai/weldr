@@ -224,6 +224,14 @@ CREATE TABLE "preset_packages" (
 	CONSTRAINT "unique_preset_package" UNIQUE("name","preset_id")
 );
 --> statement-breakpoint
+CREATE TABLE "preset_themes" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"data" jsonb NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "presets" (
 	"id" text PRIMARY KEY NOT NULL,
 	"type" "preset_type" NOT NULL,
