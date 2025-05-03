@@ -1,32 +1,4 @@
 import { z } from "zod";
-import { dataTypeSchema } from "./json-schema";
-
-export const functionReferenceSchema = z.object({
-  id: z.string().describe("The ID of the function"),
-  name: z.string().describe("The name of the function"),
-});
-
-export const integrationReferenceSchema = z.object({
-  id: z.string().describe("The ID of the integration"),
-  name: z.string().describe("The name of the integration"),
-  integrationType: z.enum(["postgres"]).describe("The type of the integration"),
-});
-
-export const databaseTableReferenceSchema = z.object({
-  name: z.string().min(1).describe("The name of the table"),
-  databaseId: z.string().min(1).describe("The ID of the database"),
-});
-
-export const databaseColumnReferenceSchema = z.object({
-  name: z
-    .string()
-    .describe(
-      "When referencing a database column, the name must follow the pattern '[TABLE_NAME].[COLUMN_NAME]' (e.g. 'users.email', 'orders.status').",
-    ),
-  dataType: z.string().describe("The SQL data type of the column"),
-  databaseId: z.string().min(1).describe("The ID of the database"),
-  tableName: z.string().min(1).describe("The name of the table"),
-});
 
 export const packageSchema = z.object({
   type: z.enum(["runtime", "development"]),
@@ -42,58 +14,29 @@ export const rawContentParagraphElementSchema = z.object({
     .describe("The value of the text. Should be valid markdown."),
 });
 
-export const rawContentVariableReferenceSchema = z.object({
+const baseRawContentReferenceElementSchema = z.object({
   type: z.literal("reference"),
-  referenceType: z.literal("variable"),
-  name: z.string().describe("The name of the variable. Must be in camelCase."),
-  dataType: dataTypeSchema.describe("The data type of the variable"),
-});
-
-export const rawContentFunctionReferenceSchema = z.object({
-  type: z.literal("reference"),
-  referenceType: z.literal("function"),
-  name: z.string().describe("The name of the function"),
-});
-
-export const rawContentIntegrationReferenceSchema = z.object({
-  type: z.literal("reference"),
-  referenceType: z.literal("integration"),
-  ...integrationReferenceSchema.shape,
-});
-
-export const rawContentDatabaseTableReferenceSchema = z.object({
-  type: z.literal("reference"),
-  referenceType: z.literal("database-table"),
-  ...databaseTableReferenceSchema.omit({
-    databaseId: true,
-  }).shape,
-});
-
-export const rawContentDatabaseColumnReferenceSchema = z.object({
-  type: z.literal("reference"),
-  referenceType: z.literal("database-column"),
-  ...databaseColumnReferenceSchema.omit({ databaseId: true, tableName: true })
-    .shape,
+  id: z.string().describe("The ID of the reference"),
+  name: z.string().describe("The name of the reference"),
 });
 
 export const rawContentReferenceElementSchema = z.discriminatedUnion(
   "referenceType",
   [
-    rawContentVariableReferenceSchema.describe(
-      "The variable reference part of a message or description. Must be used when mentioning a variable in a message or description.",
-    ),
-    rawContentFunctionReferenceSchema.describe(
-      "The function reference part of a message or description. Must be used when mentioning a function in a message or description.",
-    ),
-    rawContentIntegrationReferenceSchema.describe(
-      "The integration reference part of a message or description. Must be used when mentioning an integration in a message or description.",
-    ),
-    rawContentDatabaseTableReferenceSchema.describe(
-      "The database-table reference part of a message or description. Must be used when mentioning a database table in a message or description.",
-    ),
-    rawContentDatabaseColumnReferenceSchema.describe(
-      "The database-column reference part of a message or description. Must be used when mentioning a database column in a message or description.",
-    ),
+    baseRawContentReferenceElementSchema.extend({
+      referenceType: z.literal("function"),
+    }),
+    baseRawContentReferenceElementSchema.extend({
+      referenceType: z.literal("model"),
+    }),
+    baseRawContentReferenceElementSchema.extend({
+      referenceType: z.literal("component"),
+      subtype: z.enum(["page", "reusable"]),
+    }),
+    baseRawContentReferenceElementSchema.extend({
+      referenceType: z.literal("endpoint"),
+      subtype: z.enum(["rest", "rpc"]),
+    }),
   ],
 );
 

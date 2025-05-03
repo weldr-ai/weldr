@@ -1,42 +1,12 @@
 import { z } from "zod";
 import {
-  databaseColumnReferenceSchema,
-  databaseTableReferenceSchema,
-  functionReferenceSchema,
-  integrationReferenceSchema,
   rawContentParagraphElementSchema,
   rawContentReferenceElementSchema,
 } from "./common";
 
-export const userMessageRawContentReferenceElementSchema = z.discriminatedUnion(
-  "referenceType",
-  [
-    z.object({
-      type: z.literal("reference"),
-      referenceType: z.literal("function"),
-      ...functionReferenceSchema.shape,
-    }),
-    z.object({
-      type: z.literal("reference"),
-      referenceType: z.literal("integration"),
-      ...integrationReferenceSchema.shape,
-    }),
-    z.object({
-      type: z.literal("reference"),
-      referenceType: z.literal("database-table"),
-      ...databaseTableReferenceSchema.shape,
-    }),
-    z.object({
-      type: z.literal("reference"),
-      referenceType: z.literal("database-column"),
-      ...databaseColumnReferenceSchema.shape,
-    }),
-  ],
-);
-
 export const userMessageRawContentElementSchema = z.union([
   rawContentParagraphElementSchema,
-  userMessageRawContentReferenceElementSchema,
+  rawContentReferenceElementSchema,
 ]);
 
 export const userMessageRawContentSchema =
@@ -45,10 +15,8 @@ export const userMessageRawContentSchema =
 export const assistantMessageRawContentReferenceElementSchema =
   rawContentReferenceElementSchema;
 
-export const assistantMessageRawContentElementSchema = z.union([
-  rawContentParagraphElementSchema,
-  assistantMessageRawContentReferenceElementSchema,
-]);
+export const assistantMessageRawContentElementSchema =
+  rawContentParagraphElementSchema;
 
 export const assistantMessageRawContentSchema =
   assistantMessageRawContentElementSchema.array();

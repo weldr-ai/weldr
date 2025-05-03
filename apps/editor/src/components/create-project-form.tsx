@@ -95,6 +95,7 @@ export function CreateProjectForm() {
         <div className="relative">
           <div className="absolute inset-1 animate-pulse bg-gradient-to-r from-orange-500 via-amber-200 to-100% to-blue-500 blur-lg" />
           <MultimodalInput
+            type="textarea"
             chatId={projectChatId}
             handleSubmit={handleSubmit}
             pendingMessage={null}

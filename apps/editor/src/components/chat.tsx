@@ -6,10 +6,17 @@ import { createId } from "@paralleldrive/cuid2";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
-import type { Attachment, ChatMessage, RawContent } from "@weldr/shared/types";
+import type {
+  AssistantMessageRawContent,
+  Attachment,
+  ChatMessage,
+  UserMessageRawContent,
+} from "@weldr/shared/types";
+import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
 import { cn } from "@weldr/ui/lib/utils";
 import { useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { z } from "zod";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
 interface ChatProps {
@@ -44,8 +51,63 @@ export function Chat({
           : null,
   );
 
-  const [message, setMessage] = useState("");
+  const editorReferences = project.declarations?.reduce(
+    (acc, declaration) => {
+      switch (declaration.specs?.data.type) {
+        case "function": {
+          acc.push({
+            type: "reference",
+            id: declaration.id,
+            name: declaration.name,
+            referenceType: "function",
+          });
+          break;
+        }
+        case "model": {
+          acc.push({
+            type: "reference",
+            id: declaration.id,
+            name: declaration.name,
+            referenceType: "model",
+          });
+          break;
+        }
+        case "component": {
+          const subtype = declaration.specs?.data.definition.subtype;
+          if (subtype === "page" || subtype === "reusable") {
+            acc.push({
+              type: "reference",
+              id: declaration.id,
+              name: declaration.name,
+              referenceType: "component",
+              subtype,
+            });
+          }
+          break;
+        }
+        case "endpoint": {
+          acc.push({
+            type: "reference",
+            id: declaration.id,
+            name: declaration.name,
+            referenceType: "endpoint",
+            subtype: declaration.specs?.data.definition.subtype,
+          });
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+
+      return acc;
+    },
+    [] as z.infer<typeof rawContentReferenceElementSchema>[],
+  );
+
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [userMessageRawContent, setUserMessageRawContent] =
+    useState<UserMessageRawContent>([]);
   const [lastMessage, setLastMessage] = useState<ChatMessage | undefined>(
     messages[messages.length - 1],
   );
@@ -120,7 +182,7 @@ export function Chat({
                   type: "paragraph",
                   value: chunk.text,
                 },
-              ] as RawContent,
+              ] as AssistantMessageRawContent,
             };
 
             return [...messagesWithoutLast, updatedLastMessage];
@@ -295,7 +357,7 @@ export function Chat({
   const handleSubmit = async () => {
     setPendingMessage("thinking");
 
-    if (!message) {
+    if (userMessageRawContent.length === 0) {
       return;
     }
 
@@ -303,12 +365,7 @@ export function Chat({
       id: createId(),
       role: "user",
       createdAt: new Date(),
-      rawContent: [
-        {
-          type: "paragraph",
-          value: message,
-        },
-      ],
+      rawContent: userMessageRawContent,
       attachments,
       chatId,
       userId: session?.user.id,
@@ -333,12 +390,7 @@ export function Chat({
         {
           id: newMessageUser.id,
           role: "user",
-          rawContent: [
-            {
-              type: "paragraph",
-              value: message,
-            },
-          ],
+          rawContent: userMessageRawContent,
           attachmentIds: attachments.map((attachment) => attachment.id),
         },
       ],
@@ -374,14 +426,16 @@ export function Chat({
       <div className="relative px-2">
         <div className="absolute right-0 bottom-full left-0 h-4 bg-gradient-to-t from-background to-transparent dark:from-muted" />
         <MultimodalInput
+          type="editor"
           chatId={chatId}
-          message={message}
-          setMessage={setMessage}
+          message={userMessageRawContent}
+          setMessage={setUserMessageRawContent}
           attachments={attachments}
           setAttachments={setAttachments}
           pendingMessage={pendingMessage}
           handleSubmit={handleSubmit}
           placeholder="Build with Weldr..."
+          references={editorReferences}
         />
       </div>
     </div>

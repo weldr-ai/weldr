@@ -273,7 +273,11 @@ export const projectsRouter = {
           }
 
           return currentVersion.declarations
-            .filter((declaration) => declaration.declaration.canvasNode)
+            .filter(
+              (declaration) =>
+                declaration.declaration.canvasNode &&
+                declaration.declaration.type !== "other",
+            )
             .map((declaration) => declaration.declaration);
         };
 

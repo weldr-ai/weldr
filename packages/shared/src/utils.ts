@@ -42,9 +42,6 @@ export function assistantMessageRawContentToText(
         case "paragraph": {
           return element.value;
         }
-        case "reference": {
-          return element.name;
-        }
       }
     })
     .join("");

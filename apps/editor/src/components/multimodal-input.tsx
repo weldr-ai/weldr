@@ -13,59 +13,105 @@ import {
 } from "react";
 
 import type { TPendingMessage } from "@/types";
-import type { Attachment } from "@weldr/shared/types";
+import type { Attachment, UserMessageRawContent } from "@weldr/shared/types";
+import { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
 import { Button } from "@weldr/ui/components/button";
 import { Textarea } from "@weldr/ui/components/textarea";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
 import equal from "fast-deep-equal";
+import {
+  $getRoot,
+  type EditorState,
+  type LexicalEditor,
+  type ParagraphNode,
+} from "lexical";
 import { ArrowUpIcon, PaperclipIcon } from "lucide-react";
+import type { z } from "zod";
+import { Editor } from "./editor";
+import type { ReferenceNode } from "./editor/plugins/reference/node";
 import { PreviewAttachment } from "./preview-attachment";
 
-function PureMultimodalInput({
-  chatId,
-  message,
-  setMessage,
-  attachments,
-  setAttachments,
-  pendingMessage,
-  handleSubmit,
-  placeholder,
-  placeholders,
-  formClassName,
-  attachmentsClassName,
-  textareaClassName,
-}: {
+type BaseMultimodalInputProps = {
+  type: "textarea" | "editor";
   chatId: string;
-  message: string;
-  setMessage: (message: string) => void;
   attachments: Attachment[];
   setAttachments: Dispatch<SetStateAction<Attachment[]>>;
   handleSubmit: (event?: { preventDefault?: () => void }) => void;
   pendingMessage: TPendingMessage;
   placeholder?: string;
   placeholders?: string[];
+  references?: z.infer<typeof rawContentReferenceElementSchema>[];
   formClassName?: string;
   attachmentsClassName?: string;
   textareaClassName?: string;
-}) {
+};
+
+type EditorMultimodalInputProps = BaseMultimodalInputProps & {
+  type: "editor";
+  message: UserMessageRawContent;
+  setMessage: Dispatch<SetStateAction<UserMessageRawContent>>;
+};
+
+type TextareaMultimodalInputProps = BaseMultimodalInputProps & {
+  type: "textarea";
+  message: string;
+  setMessage: (message: string) => void;
+};
+
+type MultimodalInputProps =
+  | EditorMultimodalInputProps
+  | TextareaMultimodalInputProps;
+
+function PureMultimodalInput({
+  type,
+  chatId,
+  attachments,
+  setAttachments,
+  pendingMessage,
+  handleSubmit,
+  message,
+  setMessage,
+  placeholder,
+  placeholders,
+  references,
+  formClassName,
+  attachmentsClassName,
+  textareaClassName,
+}: MultimodalInputProps) {
   const [currentPlaceholder, setCurrentPlaceholder] = useState(
     placeholder ?? "Send a message...",
   );
 
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
-
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
+  const editorRef = useRef<LexicalEditor | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
 
   const submitForm = useCallback(() => {
     handleSubmit();
-    setMessage("");
+
+    const editor = editorRef.current;
+
+    if (editor !== null) {
+      editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+      });
+    }
+
+    if (type === "editor") {
+      setMessage([]);
+    }
+
+    if (type === "textarea") {
+      setMessage("");
+    }
+
     setAttachments([]);
-  }, [handleSubmit, setAttachments, setMessage]);
+  }, [handleSubmit, setAttachments, setMessage, type]);
 
   const uploadFile = async (file: File) => {
     const formData = new FormData();
@@ -199,7 +245,7 @@ function PureMultimodalInput({
     let isDeleting = false;
     const currentPlaceholder = placeholders[placeholderIndex];
 
-    if (message) {
+    if (message.length > 0) {
       setCurrentPlaceholder("");
       return;
     }
@@ -227,6 +273,35 @@ function PureMultimodalInput({
 
     return () => clearInterval(interval);
   }, [placeholderIndex, message, placeholders]);
+
+  function onChange(editorState: EditorState) {
+    if (type !== "editor") return;
+
+    editorState.read(async () => {
+      const root = $getRoot();
+      const children = (root.getChildren()[0] as ParagraphNode)?.getChildren();
+
+      const message = children?.reduce((acc, child) => {
+        if (child.__type === "text") {
+          acc.push({
+            type: "paragraph",
+            value: child.getTextContent(),
+          });
+        }
+
+        if (child.__type === "reference") {
+          const referenceNode = child as ReferenceNode;
+          acc.push(
+            rawContentReferenceElementSchema.parse(referenceNode.__reference),
+          );
+        }
+
+        return acc;
+      }, [] as UserMessageRawContent);
+
+      setMessage(message);
+    });
+  }
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -300,35 +375,57 @@ function PureMultimodalInput({
           </div>
         )}
 
-        <Textarea
-          ref={textareaRef}
-          placeholder={currentPlaceholder}
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          className={cn(
-            "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 dark:bg-background",
-            {
-              "rounded-t-none border-t-0": attachments.length > 0,
-            },
-            textareaClassName,
-          )}
-          rows={2}
-          autoFocus
-          disabled={!!pendingMessage}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-              event.preventDefault();
-              if (pendingMessage) {
-                toast({
-                  description:
-                    "Please wait for the model to finish its response!",
-                });
-              } else {
-                submitForm();
+        {type === "editor" && (
+          <Editor
+            id="general-chat-input"
+            placeholder={currentPlaceholder}
+            onChange={onChange}
+            className={cn(
+              "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 dark:bg-background",
+              {
+                "rounded-t-none border-t-0": attachments.length > 0,
+              },
+              textareaClassName,
+            )}
+            editorRef={editorRef}
+            disabled={!!pendingMessage}
+            onSubmit={handleSubmit}
+            references={references}
+            typeaheadPosition={"bottom"}
+          />
+        )}
+
+        {type === "textarea" && (
+          <Textarea
+            ref={textareaRef}
+            placeholder={currentPlaceholder}
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            className={cn(
+              "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 dark:bg-background",
+              {
+                "rounded-t-none border-t-0": attachments.length > 0,
+              },
+              textareaClassName,
+            )}
+            rows={2}
+            autoFocus
+            disabled={!!pendingMessage}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                event.preventDefault();
+                if (pendingMessage) {
+                  toast({
+                    description:
+                      "Please wait for the model to finish its response!",
+                  });
+                } else {
+                  submitForm();
+                }
               }
-            }
-          }}
-        />
+            }}
+          />
+        )}
 
         <div className="absolute bottom-2 left-2 flex w-fit flex-row justify-start">
           <AttachmentsButton
@@ -352,7 +449,7 @@ function PureMultimodalInput({
 export const MultimodalInput = memo(
   PureMultimodalInput,
   (prevProps, nextProps) => {
-    if (prevProps.message !== nextProps.message) return false;
+    if (!equal(prevProps.message, nextProps.message)) return false;
     if (prevProps.pendingMessage !== nextProps.pendingMessage) return false;
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;
     return true;
@@ -387,15 +484,13 @@ function PureAttachmentsButton({
 
 const AttachmentsButton = memo(PureAttachmentsButton);
 
-function PureSendButton({
-  submitForm,
-  message,
-  uploadQueue,
-}: {
+type SendButtonProps = {
   submitForm: () => void;
-  message: string;
+  message: UserMessageRawContent | string;
   uploadQueue: string[];
-}) {
+};
+
+function PureSendButton({ submitForm, message, uploadQueue }: SendButtonProps) {
   return (
     <Button
       className="size-7 rounded-full"
@@ -403,7 +498,7 @@ function PureSendButton({
         event.preventDefault();
         submitForm();
       }}
-      disabled={message.length === 0 || uploadQueue.length > 0}
+      disabled={(message && message.length === 0) || uploadQueue.length > 0}
     >
       <ArrowUpIcon className="size-3" />
     </Button>
@@ -411,8 +506,25 @@ function PureSendButton({
 }
 
 const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
-  if (prevProps.uploadQueue.length !== nextProps.uploadQueue.length)
+  if (prevProps.uploadQueue.length !== nextProps.uploadQueue.length) {
     return false;
-  if (prevProps.message !== nextProps.message) return false;
+  }
+
+  if (
+    typeof prevProps.message === "string" &&
+    typeof nextProps.message === "string" &&
+    prevProps.message === nextProps.message
+  ) {
+    return false;
+  }
+
+  if (
+    Array.isArray(prevProps.message) &&
+    Array.isArray(nextProps.message) &&
+    !equal(prevProps.message, nextProps.message)
+  ) {
+    return false;
+  }
+
   return true;
 });

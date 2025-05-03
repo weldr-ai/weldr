@@ -13,8 +13,7 @@ import { useEffect } from "react";
 
 import { cn } from "@weldr/ui/lib/utils";
 
-import type { UserMessageRawContent } from "@weldr/shared/types";
-import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/chats";
+import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
 import type { z } from "zod";
 import { ReferencesPlugin } from "./plugins/reference";
 import { ReferenceNode } from "./plugins/reference/node";
@@ -25,10 +24,10 @@ interface EditorProps {
   onChange?: (editorState: EditorState) => void;
   className?: string;
   editorRef?: { current: null | LexicalEditor };
-  rawMessage?: UserMessageRawContent;
-  references?: z.infer<typeof userMessageRawContentReferenceElementSchema>[];
+  references?: z.infer<typeof rawContentReferenceElementSchema>[];
   typeaheadPosition?: "bottom" | "top";
   onSubmit?: () => void;
+  disabled?: boolean;
 }
 
 export function Editor({ ...props }: EditorProps) {
@@ -67,6 +66,7 @@ export function Editor({ ...props }: EditorProps) {
                 "size-full h-full min-h-[100px] cursor-text flex-col overflow-y-auto rounded-lg border bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
                 props.className,
               )}
+              disabled={props.disabled}
             />
           }
           placeholder={

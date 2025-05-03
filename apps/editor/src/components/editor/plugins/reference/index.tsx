@@ -13,33 +13,29 @@ import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import { cn } from "@weldr/ui/lib/utils";
 
 import { $createReferenceNode } from "@/components/editor/plugins/reference/node";
-import type { userMessageRawContentReferenceElementSchema } from "@weldr/shared/validators/chats";
+import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
 import { nanoid } from "nanoid";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";
 import { ReferenceBadge } from "../../reference-badge";
 
 export class ReferenceOption extends MenuOption {
-  reference: z.infer<typeof userMessageRawContentReferenceElementSchema>;
+  reference: z.infer<typeof rawContentReferenceElementSchema>;
   // For extra searching.
   keywords: string[];
-  // What happens when you select this option?
-  onSelect: (queryString: string) => void;
 
   constructor({
     reference,
     options,
   }: {
-    reference: z.infer<typeof userMessageRawContentReferenceElementSchema>;
+    reference: z.infer<typeof rawContentReferenceElementSchema>;
     options: {
       keywords?: string[];
-      onSelect: (queryString: string) => void;
     };
   }) {
     super(reference.name);
     this.reference = reference;
     this.keywords = options.keywords ?? [];
-    this.onSelect = options.onSelect.bind(this);
   }
 }
 
@@ -47,7 +43,7 @@ export function ReferencesPlugin({
   references,
   position = "top",
 }: {
-  references: z.infer<typeof userMessageRawContentReferenceElementSchema>[];
+  references: z.infer<typeof rawContentReferenceElementSchema>[];
   position?: "bottom" | "top";
 }) {
   const [editor] = useLexicalComposerContext();
@@ -87,51 +83,45 @@ export function ReferencesPlugin({
             new ReferenceOption({
               reference,
               options: {
-                keywords: [reference.name, "function", "helper"],
-                onSelect: () => {},
+                keywords: [reference.name, "function"],
               },
             }),
           );
           break;
         }
-        case "integration": {
-          switch (reference.integrationType) {
-            case "postgres": {
-              acc.push(
-                new ReferenceOption({
-                  reference,
-                  options: {
-                    keywords: [reference.name, "resource", "postgres"],
-                    onSelect: () => {},
-                  },
-                }),
-              );
-              break;
-            }
-            default:
-              break;
-          }
+        case "endpoint": {
+          acc.push(
+            new ReferenceOption({
+              reference,
+              options: {
+                keywords: [
+                  reference.name,
+                  reference.subtype,
+                  "endpoint",
+                  "api",
+                ],
+              },
+            }),
+          );
           break;
         }
-        case "database-table": {
+        case "model": {
           acc.push(
             new ReferenceOption({
               reference,
               options: {
                 keywords: [reference.name, "database", "table"],
-                onSelect: () => {},
               },
             }),
           );
           break;
         }
-        case "database-column": {
+        case "component": {
           acc.push(
             new ReferenceOption({
               reference,
               options: {
-                keywords: [reference.name, "database", "column"],
-                onSelect: () => {},
+                keywords: [reference.name, reference.subtype, "component"],
               },
             }),
           );

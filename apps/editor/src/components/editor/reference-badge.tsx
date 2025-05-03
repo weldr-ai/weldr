@@ -1,8 +1,11 @@
 import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
-import { PostgresIcon } from "@weldr/ui/icons";
-import { cn, renderDataTypeIcon } from "@weldr/ui/lib/utils";
-import { ColumnsIcon, FunctionSquareIcon, TableIcon } from "lucide-react";
-import React from "react";
+import { cn } from "@weldr/ui/lib/utils";
+import {
+  AppWindowIcon,
+  ComponentIcon,
+  FunctionSquareIcon,
+  TableIcon,
+} from "lucide-react";
 import type { z } from "zod";
 
 interface ReferenceBadgeProps {
@@ -18,31 +21,30 @@ export function ReferenceBadge({ reference, className }: ReferenceBadgeProps) {
         className,
       )}
     >
-      {reference.referenceType === "variable" ? (
-        Array.isArray(reference.dataType) ? (
-          reference.dataType.map((type, index) => (
-            <React.Fragment key={type}>
-              {index > 0 && " | "}
-              {renderDataTypeIcon(type)}
-            </React.Fragment>
-          ))
-        ) : (
-          renderDataTypeIcon(reference.dataType)
-        )
-      ) : reference.referenceType === "integration" ? (
+      {reference.referenceType === "function" ? (
+        <FunctionSquareIcon className="mr-1 size-3 text-primary" />
+      ) : reference.referenceType === "model" ? (
+        <TableIcon className="mr-1 size-3 text-primary" />
+      ) : reference.referenceType === "component" ? (
         <>
-          {reference.integrationType === "postgres" ? (
-            <PostgresIcon className="mr-1 size-3 text-primary" />
+          {reference.subtype === "page" ? (
+            <AppWindowIcon className="mr-1 size-3 text-primary" />
+          ) : reference.subtype === "reusable" ? (
+            <ComponentIcon className="mr-1 size-3 text-primary" />
           ) : (
             <></>
           )}
         </>
-      ) : reference.referenceType === "database-column" ? (
-        <ColumnsIcon className="mr-1 size-3 text-primary" />
-      ) : reference.referenceType === "database-table" ? (
-        <TableIcon className="mr-1 size-3 text-primary" />
-      ) : reference.referenceType === "function" ? (
-        <FunctionSquareIcon className="mr-1 size-3 text-primary" />
+      ) : reference.referenceType === "endpoint" ? (
+        <>
+          {reference.subtype === "rest" ? (
+            <span className="mr-1 text-primary text-xs">REST</span>
+          ) : reference.subtype === "rpc" ? (
+            <FunctionSquareIcon className="mr-1 size-3 text-primary" />
+          ) : (
+            <></>
+          )}
+        </>
       ) : (
         <></>
       )}
