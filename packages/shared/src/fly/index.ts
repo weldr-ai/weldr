@@ -172,7 +172,7 @@ export const Fly = {
                   {
                     protocol: "tcp",
                     internal_port: 3000,
-                    autostop: "suspend",
+                    autostop: "stop",
                     autostart: true,
                     ports: [
                       {
