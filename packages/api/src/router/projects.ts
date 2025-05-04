@@ -237,16 +237,6 @@ export const projectsRouter = {
           }),
         );
 
-        const versionsWithThumbnails = await Promise.all(
-          project.versions.map(async (version) => ({
-            ...version,
-            thumbnail: await S3.getSignedUrl(
-              "weldr-controlled-general",
-              `thumbnails/${project.id}/${version.id}.jpeg`,
-            ),
-          })),
-        );
-
         const getCurrentVersionDeclarations = async (
           currentVersionId: string,
         ) => {
@@ -298,7 +288,7 @@ export const projectsRouter = {
             messages: messagesWithAttachments as ChatMessage[],
           },
           currentVersion,
-          versions: versionsWithThumbnails,
+          versions: project.versions,
           declarations: currentVersion
             ? await getCurrentVersionDeclarations(currentVersion.id)
             : undefined,

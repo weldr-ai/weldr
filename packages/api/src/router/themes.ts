@@ -78,8 +78,8 @@ export const themesRouter = createTRPCRouter({
             progress: "succeeded",
             parentVersionId: currentVersion.id,
             number: currentVersion.number + 1,
-            description: "Created new theme",
-            message: "Created new theme",
+            description: "Updated theme",
+            message: "Updated theme",
           })
           .returning();
 

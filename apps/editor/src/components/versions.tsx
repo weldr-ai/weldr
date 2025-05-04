@@ -1,7 +1,7 @@
 "use client";
 
 import type { RouterOutputs } from "@weldr/api";
-import { Button } from "@weldr/ui/components/button";
+import { Button, buttonVariants } from "@weldr/ui/components/button";
 import { cn } from "@weldr/ui/lib/utils";
 import type { ColorMode, Edge, Node, NodeProps } from "@xyflow/react";
 import {
@@ -17,13 +17,13 @@ import {
 } from "@xyflow/react";
 import { hierarchy, tree } from "d3-hierarchy";
 import {
+  ExternalLinkIcon,
   GitCommitIcon,
   LoaderIcon,
   MinusIcon,
   PlusIcon,
   Undo2Icon,
 } from "lucide-react";
-import Image from "next/image";
 import { memo } from "react";
 
 import { useTRPC } from "@/lib/trpc/react";
@@ -130,102 +130,86 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
       )}
       <div
         className={cn(
-          "flex h-[300px] w-[400px] flex-col gap-4 rounded-md border bg-muted",
+          "flex h-[106px] w-[400px] cursor-default flex-col gap-2 rounded-md border bg-muted px-4 py-3",
           {
             "border-primary": isCurrent,
           },
         )}
       >
-        <div className="flex justify-between px-3 pt-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GitCommitIcon className="size-4" />
             <div className="flex flex-col">
               <span className={cn("font-medium", isCurrent && "text-primary")}>
                 Version {data.number}
               </span>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="max-w-[300px] truncate text-muted-foreground text-sm">
-                    {data.message}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="rounded-sm border bg-muted text-foreground text-xs">
-                  <span>{data.message}</span>
-                </TooltipContent>
-              </Tooltip>
             </div>
           </div>
-          {!isCurrent && (
-            <AlertDialog>
+          <div className="flex items-center gap-1">
+            {previewUrl && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="size-8">
-                      <Undo2Icon className="size-3.5" />
-                    </Button>
-                  </AlertDialogTrigger>
+                  <a
+                    href={previewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      buttonVariants({ variant: "ghost", size: "icon" }),
+                      "size-8",
+                    )}
+                  >
+                    <ExternalLinkIcon className="size-3.5" />
+                  </a>
                 </TooltipTrigger>
                 <TooltipContent className="rounded-sm border bg-muted text-foreground text-xs">
-                  Restore Version
+                  Open Preview
                 </TooltipContent>
               </Tooltip>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Restore Version</AlertDialogTitle>
-                </AlertDialogHeader>
-                <AlertDialogDescription>
-                  Are you sure you want to restore this version? This will
-                  replace the current version with the selected version.
-                </AlertDialogDescription>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => {
-                      setCurrentVersion.mutate({ versionId: data.id });
-                    }}
-                    disabled={setCurrentVersion.isPending}
-                  >
-                    {setCurrentVersion.isPending && (
-                      <LoaderIcon className="mr-2 size-4 animate-spin" />
-                    )}
-                    Restore
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
-
-        <div className="flex size-full items-center justify-center px-2 pb-2">
-          <div className="flex size-full items-center justify-center overflow-hidden rounded-md bg-background">
-            {data.thumbnail && previewUrl ? (
-              <a
-                href={previewUrl}
-                className="group relative flex size-full items-center justify-center"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Image
-                  src={data.thumbnail}
-                  alt={`Version ${data.number} preview`}
-                  width={512}
-                  height={512}
-                  className="object-cover transition-transform duration-200 group-hover:scale-[1.05]"
-                  priority
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-background/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                  <span className="font-medium">View Preview</span>
-                </div>
-              </a>
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <span className="text-muted-foreground text-sm">
-                  No preview available
-                </span>
-              </div>
+            )}
+            {!isCurrent && (
+              <AlertDialog>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="size-8">
+                        <Undo2Icon className="size-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent className="rounded-sm border bg-muted text-foreground text-xs">
+                    Restore Version
+                  </TooltipContent>
+                </Tooltip>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Restore Version</AlertDialogTitle>
+                  </AlertDialogHeader>
+                  <AlertDialogDescription>
+                    Are you sure you want to restore this version? This will
+                    replace the current version with the selected version.
+                  </AlertDialogDescription>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        setCurrentVersion.mutate({ versionId: data.id });
+                      }}
+                      disabled={setCurrentVersion.isPending}
+                    >
+                      {setCurrentVersion.isPending && (
+                        <LoaderIcon className="mr-2 size-4 animate-spin" />
+                      )}
+                      Restore
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         </div>
+        <p className="w-full text-muted-foreground text-sm">
+          {`${(data.message).slice(0, 94)}${data.message.length > 94 ? "..." : ""}`}
+        </p>
       </div>
       {hasOutgoingEdges && (
         <Handle
@@ -269,7 +253,7 @@ export function Versions({
 
   const hierarchies = rootNodes.map((root) => hierarchy(root));
 
-  const treeLayout = tree<HierarchyNode>().nodeSize([500, 400]);
+  const treeLayout = tree<HierarchyNode>().nodeSize([500, 150]);
 
   const layouts = hierarchies.map((h) => treeLayout(h));
 

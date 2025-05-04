@@ -1,4 +1,3 @@
-import { takeScreenshot } from "@/lib/take-screenshot";
 import type { TStreamableValue } from "@/types";
 import { and, db, eq, not } from "@weldr/db";
 import {
@@ -147,24 +146,17 @@ export const executeCoderTool = async ({
   }
 
   if (versionStatus === "enriched") {
-    if (version.machineId) {
-      await takeScreenshot({
-        versionId: version.id,
-        projectId,
-        machineId: version.machineId,
-      });
-      await db
-        .update(versions)
-        .set({
-          progress: "succeeded",
-        })
-        .where(eq(versions.id, version.id));
-      versionStatus = "succeeded";
-      await streamWriter.write({
-        type: "coder",
-        status: "succeeded",
-      });
-    }
+    await db
+      .update(versions)
+      .set({
+        progress: "succeeded",
+      })
+      .where(eq(versions.id, version.id));
+    versionStatus = "succeeded";
+    await streamWriter.write({
+      type: "coder",
+      status: "succeeded",
+    });
   }
 };
 
