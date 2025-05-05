@@ -5,7 +5,7 @@ import VerificationEmail from "@weldr/emails/verification-email";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { admin, oAuthProxy, openAPI } from "better-auth/plugins";
+import { admin, oAuthProxy, openAPI, organization } from "better-auth/plugins";
 import { Resend } from "resend";
 import Stripe from "stripe";
 
@@ -77,6 +77,7 @@ export const auth = betterAuth({
     nextCookies(),
     admin(),
     openAPI(),
+    organization(),
     stripe({
       stripeClient,
       stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET as string,
