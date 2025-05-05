@@ -100,7 +100,7 @@ export function ProjectSettings({
           <DialogTitle>Project Settings</DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="general" className="flex flex-1 flex-row gap-4">
-          <TabsList className="flex h-fit w-[230px] flex-col gap-2 p-2.5">
+          <TabsList className="flex h-fit w-[230px] flex-col p-2.5">
             <TabsTrigger className="w-full justify-start" value="general">
               General
             </TabsTrigger>

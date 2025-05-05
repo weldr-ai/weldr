@@ -1,28 +1,20 @@
-import { auth } from "@weldr/auth";
-import { headers } from "next/headers";
-
-import { AccountSettings } from "@/components/account-settings";
-import { CommandCenter } from "@/components/command-center";
 import { MainDropdownMenu } from "@/components/main-dropdown-menu";
-import { UpgradeButton } from "@/components/upgrade-button";
+import { SubscriptionPlans } from "@/components/subscription-plans";
 import { getActiveSubscription } from "@/lib/actions/get-active-subscription";
-import { api } from "@/lib/trpc/server";
+import { auth } from "@weldr/auth";
 import { buttonVariants } from "@weldr/ui/components/button";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
+import { headers } from "next/headers";
 import Link from "next/link";
 
-export default async function Home(): Promise<JSX.Element> {
+export default async function PricingPage() {
   const session = await auth.api.getSession({ headers: await headers() });
-  const sessions = session
-    ? await auth.api.listSessions({ headers: await headers() })
-    : null;
-  const projects = session ? await api.projects.list() : [];
   const activeSubscription = await getActiveSubscription();
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col items-center justify-between">
-      <div className="flex w-full items-center justify-between p-2">
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <div className="z-50 flex w-full items-center justify-between p-2">
         {session && <MainDropdownMenu />}
         {!session && (
           <>
@@ -60,8 +52,18 @@ export default async function Home(): Promise<JSX.Element> {
           </>
         )}
       </div>
-      <div className="flex w-full flex-1 items-center justify-center">
-        <CommandCenter projects={projects} asDialog={false} view="create" />
+      <div className="flex w-full flex-1 flex-col items-center justify-center gap-6 px-2">
+        <div className="flex flex-col items-center justify-center gap-2">
+          <LogoIcon className="size-12" />
+          <h1 className="font-bold text-2xl">Pricing</h1>
+        </div>
+        <p className="max-w-lg text-center text-muted-foreground">
+          Choose a plan that works best for you and start building today.
+        </p>
+        <SubscriptionPlans
+          activeSubscription={activeSubscription}
+          session={session}
+        />
       </div>
       <div className="flex w-full items-center justify-between p-2">
         <p className="text-muted-foreground text-xs">
@@ -103,17 +105,6 @@ export default async function Home(): Promise<JSX.Element> {
           </Link>
         </div>
       </div>
-      {!activeSubscription && session && (
-        <div className="absolute right-2 bottom-2 z-50 flex w-64 items-center justify-between gap-2 rounded-lg border bg-muted p-2 text-xs">
-          <h3 className="font-semibold">Upgrade to Pro</h3>
-          <UpgradeButton>Upgrade</UpgradeButton>
-        </div>
-      )}
-      <AccountSettings
-        session={session}
-        sessions={sessions}
-        activeSubscription={activeSubscription}
-      />
     </div>
   );
 }

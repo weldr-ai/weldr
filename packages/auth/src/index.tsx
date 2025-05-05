@@ -1,3 +1,4 @@
+import { stripe } from "@better-auth/stripe";
 import { db } from "@weldr/db";
 import ResetPasswordEmail from "@weldr/emails/reset-password";
 import VerificationEmail from "@weldr/emails/verification-email";
@@ -6,10 +7,17 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin, oAuthProxy, openAPI } from "better-auth/plugins";
 import { Resend } from "resend";
+import Stripe from "stripe";
+
+const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: "2025-02-24.acacia",
+});
 
 const resend = new Resend(process.env.RESEND_API_KEY ?? "");
 
 export const auth = betterAuth({
+  baseURL: process.env.NEXT_PUBLIC_BASE_URL,
+  trustedOrigins: ["https://weldr.ai", "http://localhost:3000"],
   database: drizzleAdapter(db, {
     provider: "pg",
     usePlural: true,
@@ -32,11 +40,6 @@ export const auth = betterAuth({
       });
     },
     sendOnSignUp: true,
-  },
-  account: {
-    accountLinking: {
-      trustedProviders: ["google", "github", "microsoft"],
-    },
   },
   emailAndPassword: {
     enabled: true,
@@ -69,7 +72,54 @@ export const auth = betterAuth({
     //   clientSecret: process.env.MICROSOFT_CLIENT_SECRET as string,
     // },
   },
-  plugins: [oAuthProxy(), nextCookies(), admin(), openAPI()],
+  plugins: [
+    oAuthProxy(),
+    nextCookies(),
+    admin(),
+    openAPI(),
+    stripe({
+      stripeClient,
+      stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET as string,
+      createCustomerOnSignUp: true,
+      subscription: {
+        enabled: true,
+        plans: [
+          {
+            name: "pro",
+            priceId: "price_1RLJHkRK2VN7oq4xQzgKTrCy",
+            limits: {
+              credits: 100,
+            },
+          },
+        ],
+      },
+    }),
+  ],
 });
 
 export type Session = typeof auth.$Infer.Session;
+export type Subscription = {
+  limits: Record<string, number> | undefined;
+  id: string;
+  plan: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  trialStart?: Date;
+  trialEnd?: Date;
+  priceId?: string;
+  referenceId: string;
+  status:
+    | "active"
+    | "canceled"
+    | "incomplete"
+    | "incomplete_expired"
+    | "past_due"
+    | "paused"
+    | "trialing"
+    | "unpaid";
+  periodStart?: Date;
+  periodEnd?: Date;
+  cancelAtPeriodEnd?: boolean;
+  groupId?: string;
+  seats?: number;
+};

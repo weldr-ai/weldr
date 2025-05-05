@@ -74,7 +74,7 @@ export function ResetPasswordEmail({
 
 ResetPasswordEmail.PreviewProps = {
   firstName: "Bob",
-  resetPasswordLink: "http://localhost:3001/auth/reset-password",
+  resetPasswordLink: "http://localhost:3000/auth/reset-password",
 } as ResetPasswordEmailProps;
 
 export default ResetPasswordEmail;

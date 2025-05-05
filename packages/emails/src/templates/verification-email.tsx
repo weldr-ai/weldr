@@ -77,7 +77,7 @@ export function VerificationEmail({
 
 VerificationEmail.PreviewProps = {
   firstName: "Bob",
-  verificationLink: "http://localhost:3001/auth/verify-email",
+  verificationLink: "http://localhost:3000/auth/verify-email",
 } as VerificationEmailProps;
 
 export default VerificationEmail;

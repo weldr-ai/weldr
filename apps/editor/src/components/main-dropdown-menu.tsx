@@ -3,11 +3,7 @@
 import { authClient } from "@weldr/auth/client";
 
 import {
-  BookOpenIcon,
   BoxesIcon,
-  CreditCardIcon,
-  ExternalLinkIcon,
-  HelpCircleIcon,
   LogOutIcon,
   MonitorIcon,
   MoonIcon,
@@ -17,7 +13,7 @@ import {
   SunIcon,
 } from "lucide-react";
 
-import { useCommandCenter } from "@/lib/store";
+import { useAccountSettings, useCommandCenter } from "@/lib/store";
 import { Button } from "@weldr/ui/components/button";
 import {
   DropdownMenu,
@@ -35,7 +31,6 @@ import {
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
 import { useTheme } from "next-themes";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export function MainDropdownMenu({
@@ -46,7 +41,10 @@ export function MainDropdownMenu({
   className?: string;
 }): JSX.Element {
   const router = useRouter();
-  const { setView, setOpen } = useCommandCenter();
+  const { setView: setCommandCenterView, setOpen: setCommandCenterOpen } =
+    useCommandCenter();
+
+  const { setOpen: setAccountSettingsOpen } = useAccountSettings();
 
   const { theme, setTheme } = useTheme();
 
@@ -62,8 +60,8 @@ export function MainDropdownMenu({
         <DropdownMenuLabel>Projects</DropdownMenuLabel>
         <DropdownMenuItem
           onClick={() => {
-            setView("create");
-            setOpen(true);
+            setCommandCenterView("create");
+            setCommandCenterOpen(true);
           }}
         >
           <PlusIcon className="mr-2 size-4 text-muted-foreground" />
@@ -86,8 +84,8 @@ export function MainDropdownMenu({
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
-            setView("projects");
-            setOpen(true);
+            setCommandCenterView("projects");
+            setCommandCenterOpen(true);
           }}
         >
           <BoxesIcon className="mr-2 size-4 text-muted-foreground" />
@@ -103,37 +101,15 @@ export function MainDropdownMenu({
           </kbd>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>Account</DropdownMenuLabel>
-        <Link href="/auth/settings">
-          <DropdownMenuItem>
-            <SettingsIcon className="mr-2 size-4 text-muted-foreground" />
-            Account Settings
-          </DropdownMenuItem>
-        </Link>
-        <DropdownMenuItem>
-          <CreditCardIcon className="mr-2 size-4 text-muted-foreground" />
-          Billing
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Support</DropdownMenuLabel>
-
-        <Link href="https://weldr.ai/support" target="_blank">
-          <DropdownMenuItem>
-            <HelpCircleIcon className="mr-2 size-4 text-muted-foreground" />
-            Help
-            <ExternalLinkIcon className="ml-auto size-3 text-muted-foreground" />
-          </DropdownMenuItem>
-        </Link>
-
-        <Link href="https://docs.weldr.ai" target="_blank">
-          <DropdownMenuItem>
-            <BookOpenIcon className="mr-2 size-4 text-muted-foreground" />
-            Docs
-            <ExternalLinkIcon className="ml-auto size-3 text-muted-foreground" />
-          </DropdownMenuItem>
-        </Link>
-
         <DropdownMenuLabel>Settings</DropdownMenuLabel>
+        <DropdownMenuItem
+          onClick={() => {
+            setAccountSettingsOpen(true);
+          }}
+        >
+          <SettingsIcon className="mr-2 size-4 text-muted-foreground" />
+          Account Settings
+        </DropdownMenuItem>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <PaletteIcon className="mr-2 size-4 text-muted-foreground" />
@@ -159,6 +135,24 @@ export function MainDropdownMenu({
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
+
+        {/* <DropdownMenuSeparator />
+        <DropdownMenuLabel>Support</DropdownMenuLabel>
+        <Link href="https://weldr.ai/support" target="_blank">
+          <DropdownMenuItem>
+            <HelpCircleIcon className="mr-2 size-4 text-muted-foreground" />
+            Help
+            <ExternalLinkIcon className="ml-auto size-3 text-muted-foreground" />
+          </DropdownMenuItem>
+        </Link>
+
+        <Link href="https://docs.weldr.ai" target="_blank">
+          <DropdownMenuItem>
+            <BookOpenIcon className="mr-2 size-4 text-muted-foreground" />
+            Docs
+            <ExternalLinkIcon className="ml-auto size-3 text-muted-foreground" />
+          </DropdownMenuItem>
+        </Link> */}
 
         <DropdownMenuSeparator />
         <DropdownMenuItem

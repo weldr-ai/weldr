@@ -104,9 +104,9 @@ function CommandCenterContent({
     <div className="flex size-full">
       {view === "projects" ? (
         <ProjectsContent projects={projects} />
-      ) : (
+      ) : view === "create" ? (
         <CreateContent session={session} />
-      )}
+      ) : null}
     </div>
   );
 }

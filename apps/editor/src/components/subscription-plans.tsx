@@ -1,0 +1,118 @@
+import { CheckIcon } from "lucide-react";
+
+import type { Session, Subscription } from "@weldr/auth";
+import { Badge } from "@weldr/ui/components/badge";
+import { buttonVariants } from "@weldr/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@weldr/ui/components/card";
+import { cn } from "@weldr/ui/lib/utils";
+import Link from "next/link";
+import { CancelSubscriptionButton } from "./cancel-subscription-button";
+import { RestoreSubscriptionButton } from "./restore-subscription-button";
+import { UpgradeButton } from "./upgrade-button";
+
+export function SubscriptionPlans({
+  activeSubscription,
+  session,
+}: {
+  activeSubscription: Subscription | null;
+  session: Session | null;
+}) {
+  return (
+    <div className="flex w-full flex-col items-center justify-center gap-4 md:flex-row">
+      <Card className="w-full max-w-sm gap-4">
+        <CardHeader>
+          <CardTitle className="flex flex-col gap-2">
+            <span className="pb-1 font-medium text-sm">Free</span>
+            <span className="block font-semibold text-2xl">$0 / mo</span>
+          </CardTitle>
+          <CardDescription className="text-sm">
+            For getting started
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Link
+            href="/auth/sign-up"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "w-full",
+            )}
+          >
+            Get Started
+          </Link>
+          <ul className="list-outside space-y-3 text-sm">
+            {["Limited to 1 project", "2 generations per day"].map(
+              (item, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                <li key={index} className="flex items-center gap-2">
+                  <CheckIcon className="size-3" />
+                  {item}
+                </li>
+              ),
+            )}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card className="w-full max-w-sm gap-4">
+        <CardHeader>
+          <CardTitle className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-sm">Pro</span>
+              <Badge variant="outline">Popular</Badge>
+            </div>
+            <span className="block font-semibold text-2xl">$25 / mo</span>
+          </CardTitle>
+          <CardDescription className="text-sm">
+            For more generations and projects
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!session && !activeSubscription ? (
+            <Link
+              href="/auth/sign-up"
+              className={cn(
+                buttonVariants({ variant: "default", size: "sm" }),
+                "w-full",
+              )}
+            >
+              Get Started
+            </Link>
+          ) : session && !activeSubscription ? (
+            <UpgradeButton
+              className={cn(
+                buttonVariants({
+                  variant: "default",
+                  size: "sm",
+                }),
+                "w-full",
+              )}
+            >
+              Get Started
+            </UpgradeButton>
+          ) : session && activeSubscription?.cancelAtPeriodEnd ? (
+            <RestoreSubscriptionButton className="w-full" />
+          ) : session && !activeSubscription?.cancelAtPeriodEnd ? (
+            <CancelSubscriptionButton className="w-full" />
+          ) : null}
+          <ul className="list-outside space-y-3 text-sm">
+            {["Unlimited projects", "Unlimited generations per day"].map(
+              (item, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                <li key={index} className="flex items-center gap-2">
+                  <CheckIcon className="size-3" />
+                  {item}
+                </li>
+              ),
+            )}
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

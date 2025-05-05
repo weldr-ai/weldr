@@ -33,6 +33,19 @@ CREATE TABLE "sessions" (
 	CONSTRAINT "sessions_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
+CREATE TABLE "subscriptions" (
+	"id" text PRIMARY KEY NOT NULL,
+	"plan" text NOT NULL,
+	"reference_id" text NOT NULL,
+	"stripe_customer_id" text,
+	"stripe_subscription_id" text,
+	"status" text,
+	"period_start" timestamp,
+	"period_end" timestamp,
+	"cancel_at_period_end" boolean,
+	"seats" integer
+);
+--> statement-breakpoint
 CREATE TABLE "users" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text,
@@ -43,6 +56,7 @@ CREATE TABLE "users" (
 	"banned" boolean,
 	"ban_reason" text,
 	"ban_expires" timestamp,
+	"stripe_customer_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_email_unique" UNIQUE("email")

@@ -151,6 +151,44 @@ export function useProjectView() {
   return context;
 }
 
+interface AccountSettingsContextType {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}
+
+const AccountSettingsContext = createContext<
+  AccountSettingsContextType | undefined
+>(undefined);
+
+export function AccountSettingsProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <AccountSettingsContext.Provider
+      value={{
+        open,
+        setOpen,
+      }}
+    >
+      {children}
+    </AccountSettingsContext.Provider>
+  );
+}
+
+export function useAccountSettings() {
+  const context = useContext(AccountSettingsContext);
+  if (context === undefined) {
+    throw new Error(
+      "useAccountSettings must be used within an AccountSettingsProvider",
+    );
+  }
+  return context;
+}
+
 export function AppStateProvider({
   children,
 }: {
@@ -158,7 +196,9 @@ export function AppStateProvider({
 }) {
   return (
     <CommandCenterProvider>
-      <CanvasProvider>{children}</CanvasProvider>
+      <CanvasProvider>
+        <AccountSettingsProvider>{children}</AccountSettingsProvider>
+      </CanvasProvider>
     </CommandCenterProvider>
   );
 }
