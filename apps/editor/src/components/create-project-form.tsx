@@ -4,6 +4,7 @@ import { useCommandCenter } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import { createId } from "@paralleldrive/cuid2";
 import { useMutation } from "@tanstack/react-query";
+import type { Session } from "@weldr/auth";
 import type { Attachment } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
@@ -36,7 +37,7 @@ const quickStartTemplates = [
   },
 ];
 
-export function CreateProjectForm() {
+export function CreateProjectForm({ session }: { session: Session | null }) {
   const router = useRouter();
   const { setOpen } = useCommandCenter();
   const projectChatId = createId();
@@ -69,6 +70,11 @@ export function CreateProjectForm() {
   );
 
   const handleSubmit = () => {
+    if (!session) {
+      router.push("/auth/sign-in");
+      return;
+    }
+
     createProjectMutation.mutate({
       chatId: projectChatId,
       message,
@@ -84,12 +90,12 @@ export function CreateProjectForm() {
   return (
     <>
       <div className="flex size-full flex-col items-center justify-center gap-16">
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-2">
           <div className="font-semibold text-3xl">
-            What can I forge for you today?
+            What can I build for you today?
           </div>
           <p className="text-muted-foreground">
-            Forge your visions into reality with Weldr.
+            Turn your ideas into reality with Weldr.
           </p>
         </div>
         <div className="relative">

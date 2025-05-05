@@ -17,6 +17,8 @@ import { type CommandCenterView, useCommandCenter } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
+import type { Session } from "@weldr/auth";
+import { authClient } from "@weldr/auth/client";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
@@ -34,6 +36,8 @@ export function CommandCenter({
   asDialog?: boolean;
   view?: CommandCenterView;
 }) {
+  const { data: session } = authClient.useSession();
+
   const { open, view, setOpen, setView } = useCommandCenter(activeView);
 
   const handleKeyDown = useCallback(
@@ -68,11 +72,19 @@ export function CommandCenter({
           dialogClassName="min-h-[600px] min-w-[896px] max-w-4xl"
           commandClassName="size-full [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0"
         >
-          <CommandCenterContent view={view} projects={_projects} />
+          <CommandCenterContent
+            view={view}
+            projects={_projects}
+            session={session}
+          />
         </CommandDialog>
       ) : (
         <Command className="-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 h-[600px] w-[896px] max-w-4xl rounded-lg border duration-200 [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0">
-          <CommandCenterContent view={view} projects={_projects} />
+          <CommandCenterContent
+            view={view}
+            projects={_projects}
+            session={session}
+          />
         </Command>
       )}
     </>
@@ -82,36 +94,40 @@ export function CommandCenter({
 function CommandCenterContent({
   view,
   projects,
+  session,
 }: {
   view: CommandCenterView;
   projects: RouterOutputs["projects"]["list"];
+  session: Session | null;
 }) {
   return (
     <div className="flex size-full">
       {view === "projects" ? (
         <ProjectsContent projects={projects} />
       ) : (
-        <CreateContent />
+        <CreateContent session={session} />
       )}
     </div>
   );
 }
 
-function CreateContent() {
+function CreateContent({ session }: { session: Session | null }) {
   const { setView } = useCommandCenter();
 
   return (
     <div className="relative flex size-full items-center justify-center">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="absolute top-3 right-3"
-        onClick={() => setView("projects")}
-      >
-        <BoxesIcon className="mr-2 size-4" />
-        View Projects
-      </Button>
-      <CreateProjectForm />
+      {session && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-3 right-3"
+          onClick={() => setView("projects")}
+        >
+          <BoxesIcon className="mr-2 size-4" />
+          View Projects
+        </Button>
+      )}
+      <CreateProjectForm session={session} />
     </div>
   );
 }

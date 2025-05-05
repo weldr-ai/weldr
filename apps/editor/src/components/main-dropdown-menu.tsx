@@ -104,10 +104,12 @@ export function MainDropdownMenu({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Account</DropdownMenuLabel>
-        <DropdownMenuItem>
-          <SettingsIcon className="mr-2 size-4 text-muted-foreground" />
-          Account Settings
-        </DropdownMenuItem>
+        <Link href="/auth/settings">
+          <DropdownMenuItem>
+            <SettingsIcon className="mr-2 size-4 text-muted-foreground" />
+            Account Settings
+          </DropdownMenuItem>
+        </Link>
         <DropdownMenuItem>
           <CreditCardIcon className="mr-2 size-4 text-muted-foreground" />
           Billing

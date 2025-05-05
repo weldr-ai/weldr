@@ -4,7 +4,7 @@ import VerificationEmail from "@weldr/emails/verification-email";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { oAuthProxy } from "better-auth/plugins";
+import { admin, oAuthProxy, openAPI } from "better-auth/plugins";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY ?? "");
@@ -55,21 +55,21 @@ export const auth = betterAuth({
       });
     },
   },
-  // socialProviders: {
-  //   github: {
-  //     clientId: process.env.GITHUB_CLIENT_ID || "",
-  //     clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-  //   },
-  //   google: {
-  //     clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
-  //     clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-  //   },
-  //   microsoft: {
-  //     clientId: process.env.MICROSOFT_CLIENT_ID || "",
-  //     clientSecret: process.env.MICROSOFT_CLIENT_SECRET || "",
-  //   },
-  // },
-  plugins: [oAuthProxy(), nextCookies()],
+  socialProviders: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+    },
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    },
+    // microsoft: {
+    //   clientId: process.env.MICROSOFT_CLIENT_ID as string,
+    //   clientSecret: process.env.MICROSOFT_CLIENT_SECRET as string,
+    // },
+  },
+  plugins: [oAuthProxy(), nextCookies(), admin(), openAPI()],
 });
 
 export type Session = typeof auth.$Infer.Session;

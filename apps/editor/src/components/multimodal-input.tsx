@@ -381,7 +381,7 @@ function PureMultimodalInput({
             placeholder={currentPlaceholder}
             onChange={onChange}
             className={cn(
-              "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 dark:bg-background",
+              "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 focus-visible:ring-0 dark:bg-background",
               {
                 "rounded-t-none border-t-0": attachments.length > 0,
               },
@@ -402,7 +402,7 @@ function PureMultimodalInput({
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             className={cn(
-              "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 dark:bg-background",
+              "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 focus-visible:ring-0 dark:bg-background",
               {
                 "rounded-t-none border-t-0": attachments.length > 0,
               },
@@ -491,6 +491,7 @@ type SendButtonProps = {
 };
 
 function PureSendButton({ submitForm, message, uploadQueue }: SendButtonProps) {
+  console.log(message);
   return (
     <Button
       className="size-7 rounded-full"
@@ -498,7 +499,11 @@ function PureSendButton({ submitForm, message, uploadQueue }: SendButtonProps) {
         event.preventDefault();
         submitForm();
       }}
-      disabled={(message && message.length === 0) || uploadQueue.length > 0}
+      disabled={
+        (typeof message === "string" && message.length === 0) ||
+        (Array.isArray(message) && message.length === 0) ||
+        uploadQueue.length > 0
+      }
     >
       <ArrowUpIcon className="size-3" />
     </Button>
@@ -510,19 +515,7 @@ const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
     return false;
   }
 
-  if (
-    typeof prevProps.message === "string" &&
-    typeof nextProps.message === "string" &&
-    prevProps.message === nextProps.message
-  ) {
-    return false;
-  }
-
-  if (
-    Array.isArray(prevProps.message) &&
-    Array.isArray(nextProps.message) &&
-    !equal(prevProps.message, nextProps.message)
-  ) {
+  if (!equal(prevProps.message, nextProps.message)) {
     return false;
   }
 

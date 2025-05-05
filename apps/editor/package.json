@@ -5,7 +5,7 @@
   "scripts": {
     "build": "next build",
     "clean": "git clean -xdf .next .turbo node_modules dist",
-    "dev": "pnpm with-env next dev --turbopack -p 3001",
+    "dev": "pnpm with-env next dev --turbopack -p 3000",
     "start": "next start",
     "check-types": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
@@ -60,6 +60,7 @@
     "react-markdown": "^9.1.0",
     "server-only": "^0.0.1",
     "superjson": "^2.2.2",
+    "ua-parser-js": "^2.0.3",
     "zod": "^3.24.3"
   },
   "devDependencies": {

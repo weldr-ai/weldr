@@ -1,3 +1,4 @@
+import { auth } from "@weldr/auth";
 import {
   Card,
   CardContent,
@@ -6,10 +7,18 @@ import {
   CardTitle,
 } from "@weldr/ui/components/card";
 import { LogoIcon } from "@weldr/ui/icons";
+import { headers } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SupportLinks } from "../../_components/support-links";
 
 export default async function ForgotPasswordConfirmPage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (session) {
+    redirect("/");
+  }
+
   return (
     <main className="flex min-h-screen w-full items-center justify-center">
       <Card className="mx-auto w-full max-w-lg border-hidden bg-transparent p-8 shadow-none md:border-solid md:bg-card md:shadow-sm">
