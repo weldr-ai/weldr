@@ -13,6 +13,7 @@ import { Fly } from "@weldr/shared/fly";
 import { S3 } from "@weldr/shared/s3";
 import { themeSchema } from "@weldr/shared/validators/themes";
 import { z } from "zod";
+import { takeScreenshot } from "../take-screenshot";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const themesRouter = createTRPCRouter({
@@ -218,6 +219,11 @@ export const themesRouter = createTRPCRouter({
             message: "New machine not found",
           });
         }
+
+        await takeScreenshot({
+          versionId: newVersion.id,
+          projectId: input.projectId,
+        });
 
         await tx
           .update(versions)

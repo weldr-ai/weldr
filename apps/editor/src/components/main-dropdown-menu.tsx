@@ -112,10 +112,10 @@ export function MainDropdownMenu({
         </DropdownMenuItem>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
-            <PaletteIcon className="mr-2 size-4 text-muted-foreground" />
+            <PaletteIcon className="mr-4 size-4 text-muted-foreground" />
             Appearance
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-40">
+          <DropdownMenuSubContent>
             <DropdownMenuRadioGroup
               value={theme}
               onValueChange={(value) => setTheme(value)}

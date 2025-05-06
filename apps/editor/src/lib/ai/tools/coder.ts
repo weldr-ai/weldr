@@ -1,3 +1,4 @@
+import { takeScreenshot } from "@/lib/take-screenshot";
 import type { TStreamableValue } from "@/types";
 import { and, db, eq, not } from "@weldr/db";
 import {
@@ -146,6 +147,11 @@ export const executeCoderTool = async ({
   }
 
   if (versionStatus === "enriched") {
+    console.log(`[coderTool:${projectId}] Taking screenshot`);
+    await takeScreenshot({
+      versionId: version.id,
+      projectId,
+    });
     await db
       .update(versions)
       .set({

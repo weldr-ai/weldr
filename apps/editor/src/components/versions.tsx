@@ -1,7 +1,7 @@
 "use client";
 
 import type { RouterOutputs } from "@weldr/api";
-import { Button, buttonVariants } from "@weldr/ui/components/button";
+import { Button } from "@weldr/ui/components/button";
 import { cn } from "@weldr/ui/lib/utils";
 import type { ColorMode, Edge, Node, NodeProps } from "@xyflow/react";
 import {
@@ -17,18 +17,21 @@ import {
 } from "@xyflow/react";
 import { hierarchy, tree } from "d3-hierarchy";
 import {
-  ExternalLinkIcon,
   GitCommitIcon,
   LoaderIcon,
   MinusIcon,
   PlusIcon,
   Undo2Icon,
 } from "lucide-react";
-import { memo } from "react";
+import { memo, useState } from "react";
 
 import { useTRPC } from "@/lib/trpc/react";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "@weldr/ui/hooks/use-toast";
+
+import "@xyflow/react/dist/base.css";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,12 +48,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
-import { toast } from "@weldr/ui/hooks/use-toast";
-
-import "@xyflow/react/dist/base.css";
-
 import "@weldr/ui/styles/flow-builder.css";
 import { useTheme } from "next-themes";
+import Image from "next/image";
 
 type VersionNode = Node<RouterOutputs["projects"]["byId"]["versions"][number]>;
 
@@ -66,6 +66,7 @@ interface HierarchyNode {
 }
 
 const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
+  const [imageError, setImageError] = useState(false);
   const isCurrent = data.isCurrent;
   const previewUrl = data.machineId
     ? `https://${data.machineId}-${data.projectId}.preview.weldr.app`
@@ -122,84 +123,58 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
   return (
     <>
       {hasIncomingEdges && (
-        <Handle
-          type="target"
-          position={Position.Top}
-          className="rounded-full border bg-background p-1"
-        />
+        <Handle type="target" position={Position.Top} className="opacity-0" />
       )}
-      <div
-        className={cn(
-          "flex h-[106px] w-[400px] cursor-default flex-col gap-2 rounded-md border bg-muted px-4 py-3",
-          {
-            "border-primary": isCurrent,
-          },
-        )}
-      >
-        <div className="flex items-center justify-between">
+      <div className="flex w-[350px] flex-col rounded-lg border bg-muted">
+        <div className="flex h-7 items-center justify-between gap-2 rounded-t-lg border-b px-2 text-xs">
           <div className="flex items-center gap-2">
-            <GitCommitIcon className="size-4" />
-            <div className="flex flex-col">
-              <span className={cn("font-medium", isCurrent && "text-primary")}>
-                Version {data.number}
-              </span>
-            </div>
+            <GitCommitIcon className="size-3.5 text-primary" />
+            <span className="text-muted-foreground">{`#${data.number}`}</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="max-w-[230px] truncate">{data.message}</span>
+              </TooltipTrigger>
+              <TooltipContent className="border bg-muted">
+                <span className="mr-1 text-muted-foreground">
+                  {`#${data.number}`}
+                </span>
+                {data.message}
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="flex items-center gap-1">
-            {previewUrl && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <a
-                    href={previewUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={cn(
-                      buttonVariants({ variant: "ghost", size: "icon" }),
-                      "size-8",
-                    )}
-                  >
-                    <ExternalLinkIcon className="size-3.5" />
-                  </a>
-                </TooltipTrigger>
-                <TooltipContent className="rounded-sm border bg-muted text-foreground text-xs">
-                  Open Preview
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {!isCurrent && (
+            {!data.isCurrent && (
               <AlertDialog>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-8">
-                        <Undo2Icon className="size-3.5" />
-                      </Button>
-                    </AlertDialogTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent className="rounded-sm border bg-muted text-foreground text-xs">
-                    Restore Version
-                  </TooltipContent>
-                </Tooltip>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-5 rounded-sm text-muted-foreground"
+                  >
+                    <Undo2Icon className="size-3" />
+                  </Button>
+                </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Restore Version</AlertDialogTitle>
+                    <AlertDialogTitle>Set as current version</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to set this version as the current
+                      version?
+                    </AlertDialogDescription>
                   </AlertDialogHeader>
-                  <AlertDialogDescription>
-                    Are you sure you want to restore this version? This will
-                    replace the current version with the selected version.
-                  </AlertDialogDescription>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={() => {
-                        setCurrentVersion.mutate({ versionId: data.id });
+                        setCurrentVersion.mutate({
+                          versionId: data.id,
+                        });
                       }}
-                      disabled={setCurrentVersion.isPending}
                     >
                       {setCurrentVersion.isPending && (
-                        <LoaderIcon className="mr-2 size-4 animate-spin" />
+                        <LoaderIcon className="size-4 animate-spin" />
                       )}
-                      Restore
+                      Revert
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -207,15 +182,55 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
             )}
           </div>
         </div>
-        <p className="w-full text-muted-foreground text-sm">
-          {`${(data.message).slice(0, 94)}${data.message.length > 94 ? "..." : ""}`}
-        </p>
+        <a
+          href={previewUrl ?? undefined}
+          target="_blank"
+          rel="noreferrer"
+          className="group relative"
+        >
+          {!imageError ? (
+            <>
+              <Image
+                src={data.thumbnail}
+                alt={`Version ${data.number}`}
+                width={350}
+                height={200}
+                className={cn(
+                  "flex h-[200px] w-[350px] flex-col gap-2 rounded-b-lg bg-muted",
+                  {
+                    "border-primary": isCurrent,
+                  },
+                )}
+                onError={() => setImageError(true)}
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-background/30 opacity-0 transition-all duration-300 ease-in-out group-hover:opacity-100">
+                <p className="font-medium text-sm text-white">Open Preview</p>
+              </div>
+            </>
+          ) : (
+            <div
+              className={cn(
+                "flex h-[200px] w-[348px] items-center justify-center rounded-b-lg bg-muted",
+                {
+                  "border-primary": isCurrent,
+                },
+              )}
+            >
+              <span className="absolute text-muted-foreground transition-opacity duration-300 ease-in-out group-hover:opacity-0">
+                No thumbnail available
+              </span>
+              <span className="absolute text-muted-foreground opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100">
+                Open Preview
+              </span>
+            </div>
+          )}
+        </a>
       </div>
       {hasOutgoingEdges && (
         <Handle
           type="source"
           position={Position.Bottom}
-          className="rounded-full border bg-background p-1"
+          className="opacity-0"
         />
       )}
     </>
@@ -253,7 +268,7 @@ export function Versions({
 
   const hierarchies = rootNodes.map((root) => hierarchy(root));
 
-  const treeLayout = tree<HierarchyNode>().nodeSize([500, 150]);
+  const treeLayout = tree<HierarchyNode>().nodeSize([500, 300]);
 
   const layouts = hierarchies.map((h) => treeLayout(h));
 

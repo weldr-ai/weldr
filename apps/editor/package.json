@@ -71,9 +71,7 @@
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.6",
     "@weldr/tsconfig": "workspace:*",
-    "autoprefixer": "^10.4.21",
     "dotenv-cli": "^7.4.4",
-    "tailwind": "^4.0.0",
     "typescript": "^5.8.3"
   }
 }
