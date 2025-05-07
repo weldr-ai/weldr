@@ -4,6 +4,7 @@
     "quickfix.biome": "always",
     "source.fixAll": "always"
   },
+  "tailwindCSS.experimental.configFile": "packages/ui/src/styles/globals.css",
   "editor.defaultFormatter": "biomejs.biome",
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome"
