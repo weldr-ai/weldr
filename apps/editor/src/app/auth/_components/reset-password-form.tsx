@@ -28,11 +28,13 @@ import {
 import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SupportLinks } from "../_components/support-links";
 
 export function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -49,6 +51,7 @@ export function ResetPasswordForm() {
   async function onSubmit(data: z.infer<typeof resetPasswordSchema>) {
     await authClient.resetPassword({
       newPassword: data.password,
+      token: token ?? undefined,
       fetchOptions: {
         onResponse: () => {
           setIsSubmitting(false);
