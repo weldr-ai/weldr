@@ -10,195 +10,156 @@ import {
 
 export type CommandCenterView = "create" | "projects";
 
-interface CommandCenterContextType {
-  open: boolean;
-  view: CommandCenterView;
-  setOpen: (open: boolean) => void;
-  setView: (view: CommandCenterView) => void;
+interface UIStateContextType {
+  // Auth Dialog
+  authDialogOpen: boolean;
+  setAuthDialogOpen: (open: boolean) => void;
+  authDialogView: "sign-in" | "sign-up";
+  setAuthDialogView: (view: "sign-in" | "sign-up") => void;
+
+  // Account Settings
+  accountSettingsOpen: boolean;
+  setAccountSettingsOpen: (open: boolean) => void;
+
+  // Command Center
+  commandCenterOpen: boolean;
+  setCommandCenterOpen: (open: boolean) => void;
+  commandCenterView: CommandCenterView;
+  setCommandCenterView: (view: CommandCenterView) => void;
+
+  // Project View
+  projectView: "preview" | "canvas" | "versions";
+  setProjectView: (view: "preview" | "canvas" | "versions") => void;
+
+  // Canvas
+  showCanvasEdges: boolean;
+  toggleCanvasEdges: () => void;
 }
 
-const CommandCenterContext = createContext<
-  CommandCenterContextType | undefined
->(undefined);
+const UIStateContext = createContext<UIStateContextType | undefined>(undefined);
 
-export function CommandCenterProvider({
-  children,
-  activeView,
-}: {
-  children: ReactNode;
-  activeView?: CommandCenterView;
+export function useUIState(props?: {
+  commandCenterActiveView?: CommandCenterView;
 }) {
-  const [open, setOpen] = useState(false);
-  const [view, setView] = useState<CommandCenterView>(activeView ?? "projects");
+  const { commandCenterActiveView } = props ?? {};
 
-  return (
-    <CommandCenterContext.Provider value={{ open, view, setOpen, setView }}>
-      {children}
-    </CommandCenterContext.Provider>
-  );
-}
-
-export function useCommandCenter(activeView?: CommandCenterView) {
-  const context = useContext(CommandCenterContext);
-
+  const context = useContext(UIStateContext);
   if (context === undefined) {
-    throw new Error(
-      "useCommandCenter must be used within a CommandCenterProvider",
-    );
+    throw new Error("useUIState must be used within an UIStateProvider");
   }
 
-  const { setView } = context;
+  const { setCommandCenterView } = context;
 
   useEffect(() => {
-    if (activeView) {
-      setView(activeView);
+    if (commandCenterActiveView) {
+      setCommandCenterView(commandCenterActiveView);
     }
-  }, [activeView, setView]);
+  }, [commandCenterActiveView, setCommandCenterView]);
 
   return context;
 }
 
-interface CanvasContextType {
-  showEdges: boolean;
-  toggleEdges: () => void;
-}
-
-const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
-
-export function CanvasProvider({ children }: { children: ReactNode }) {
-  const [showEdges, setShowEdges] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
+export function UIStateProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [authDialogView, setAuthDialogView] = useState<"sign-in" | "sign-up">(
+    "sign-in",
+  );
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+  const [commandCenterOpen, setCommandCenterOpen] = useState(false);
+  const [commandCenterView, setCommandCenterView] =
+    useState<CommandCenterView>("create");
+  const [projectView, setProjectView] = useState<
+    "preview" | "canvas" | "versions"
+  >("canvas");
+  const [showCanvasEdges, setShowCanvasEdges] = useState(true);
+  const [isCanvasInitialized, setIsCanvasInitialized] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("flowBuilder.showEdges");
     if (stored !== null) {
-      setShowEdges(stored === "true");
+      setShowCanvasEdges(stored === "true");
     }
-    setIsInitialized(true);
+    setIsCanvasInitialized(true);
   }, []);
 
-  const toggleEdges = () => {
-    setShowEdges((prev) => {
+  const toggleCanvasEdges = () => {
+    setShowCanvasEdges((prev) => {
       const newValue = !prev;
       localStorage.setItem("flowBuilder.showEdges", String(newValue));
       return newValue;
     });
   };
 
-  if (!isInitialized) {
+  if (!isCanvasInitialized) {
     return null;
   }
 
   return (
-    <CanvasContext.Provider value={{ showEdges, toggleEdges }}>
+    <UIStateContext.Provider
+      value={{
+        // Auth Dialog
+        authDialogOpen,
+        setAuthDialogOpen,
+        authDialogView,
+        setAuthDialogView,
+
+        // Account Settings
+        accountSettingsOpen,
+        setAccountSettingsOpen,
+
+        // Command Center
+        commandCenterOpen,
+        setCommandCenterOpen,
+        commandCenterView,
+        setCommandCenterView,
+
+        // Project View
+        projectView,
+        setProjectView,
+
+        // Canvas
+        showCanvasEdges,
+        toggleCanvasEdges,
+      }}
+    >
       {children}
-    </CanvasContext.Provider>
+    </UIStateContext.Provider>
   );
 }
 
-export function useCanvas() {
-  const context = useContext(CanvasContext);
-  if (context === undefined) {
-    throw new Error("useCanvas must be used within a CanvasProvider");
-  }
-  return context;
+interface ProjectDataContextType {
+  machineId: string | null;
+  setMachineId: (machineId: string | null) => void;
 }
 
-interface ProjectViewContextType {
-  selectedView: "preview" | "canvas" | "versions";
-  setSelectedView: (view: "preview" | "canvas" | "versions") => void;
-  setMachineId: (machineId: string | undefined) => void;
-  machineId: string | undefined;
-}
-
-const ProjectViewContext = createContext<ProjectViewContextType | undefined>(
+const ProjectDataContext = createContext<ProjectDataContextType | undefined>(
   undefined,
 );
 
-export function ProjectViewProvider({
-  children,
-  currentMachineId,
-}: {
-  children: ReactNode;
-  currentMachineId: string | undefined;
-}) {
-  const [selectedView, setSelectedView] = useState<
-    "preview" | "canvas" | "versions"
-  >("preview");
-  const [machineId, setMachineId] = useState<string | undefined>(
-    currentMachineId,
-  );
-
-  return (
-    <ProjectViewContext.Provider
-      value={{
-        selectedView,
-        setSelectedView,
-        machineId,
-        setMachineId,
-      }}
-    >
-      {children}
-    </ProjectViewContext.Provider>
-  );
-}
-
-export function useProjectView() {
-  const context = useContext(ProjectViewContext);
+export function useProjectData() {
+  const context = useContext(ProjectDataContext);
   if (context === undefined) {
-    throw new Error("useProjectView must be used within a ProjectViewProvider");
+    throw new Error("useProjectData must be used within a ProjectDataProvider");
   }
   return context;
 }
 
-interface AccountSettingsContextType {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-}
-
-const AccountSettingsContext = createContext<
-  AccountSettingsContextType | undefined
->(undefined);
-
-export function AccountSettingsProvider({
+export function ProjectDataProvider({
+  initialMachineId,
   children,
 }: {
+  initialMachineId: string | null;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [machineId, setMachineId] = useState<string | null>(initialMachineId);
 
   return (
-    <AccountSettingsContext.Provider
-      value={{
-        open,
-        setOpen,
-      }}
-    >
+    <ProjectDataContext.Provider value={{ machineId, setMachineId }}>
       {children}
-    </AccountSettingsContext.Provider>
-  );
-}
-
-export function useAccountSettings() {
-  const context = useContext(AccountSettingsContext);
-  if (context === undefined) {
-    throw new Error(
-      "useAccountSettings must be used within an AccountSettingsProvider",
-    );
-  }
-  return context;
-}
-
-export function AppStateProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  return (
-    <CommandCenterProvider>
-      <CanvasProvider>
-        <AccountSettingsProvider>{children}</AccountSettingsProvider>
-      </CanvasProvider>
-    </CommandCenterProvider>
+    </ProjectDataContext.Provider>
   );
 }

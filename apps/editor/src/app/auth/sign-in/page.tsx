@@ -1,7 +1,7 @@
+import { SignInForm } from "@/components/auth/sign-in-form";
 import { auth } from "@weldr/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { SignInForm } from "../_components/sign-in-form";
 
 export default async function SignInPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -10,5 +10,9 @@ export default async function SignInPage() {
     redirect("/");
   }
 
-  return <SignInForm />;
+  return (
+    <main className="flex min-h-screen w-full flex-col items-center justify-center">
+      <SignInForm />
+    </main>
+  );
 }

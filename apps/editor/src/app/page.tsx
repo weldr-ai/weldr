@@ -2,13 +2,13 @@ import { auth } from "@weldr/auth";
 import { headers } from "next/headers";
 
 import { AccountSettings } from "@/components/account-settings";
+import { AuthDialog } from "@/components/auth/auth-dialog";
 import { CommandCenter } from "@/components/command-center";
 import { MainDropdownMenu } from "@/components/main-dropdown-menu";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { getActiveSubscription } from "@/lib/actions/get-active-subscription";
 import { api } from "@/lib/trpc/server";
 import { buttonVariants } from "@weldr/ui/components/button";
-import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
 import Link from "next/link";
 
@@ -23,41 +23,30 @@ export default async function Home(): Promise<JSX.Element> {
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-between">
       <div className="flex w-full items-center justify-between p-2">
-        {session && <MainDropdownMenu />}
+        <MainDropdownMenu />
         {!session && (
-          <>
-            <div
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "icon" }),
-                "size-8",
-              )}
-            >
-              <LogoIcon className="size-6" />
-              <span className="sr-only">Weldr</span>
-            </div>
-            <div className="flex gap-2">
-              {!session && (
-                <Link
-                  href="/pricing"
-                  className={buttonVariants({ variant: "ghost", size: "sm" })}
-                >
-                  Pricing
-                </Link>
-              )}
+          <div className="flex gap-2">
+            {!session && (
               <Link
-                href="/auth/sign-in"
+                href="/pricing"
                 className={buttonVariants({ variant: "ghost", size: "sm" })}
               >
-                Login
+                Pricing
               </Link>
-              <Link
-                href="/auth/sign-up"
-                className={buttonVariants({ variant: "default", size: "sm" })}
-              >
-                Sign Up
-              </Link>
-            </div>
-          </>
+            )}
+            <Link
+              href="/auth/sign-in"
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
+              Login
+            </Link>
+            <Link
+              href="/auth/sign-up"
+              className={buttonVariants({ variant: "default", size: "sm" })}
+            >
+              Sign Up
+            </Link>
+          </div>
         )}
       </div>
       <div className="flex w-full flex-1 items-center justify-center">
@@ -114,6 +103,7 @@ export default async function Home(): Promise<JSX.Element> {
         sessions={sessions}
         activeSubscription={activeSubscription}
       />
+      <AuthDialog />
     </div>
   );
 }

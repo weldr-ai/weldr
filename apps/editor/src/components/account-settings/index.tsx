@@ -1,6 +1,6 @@
 "use client";
 
-import { useAccountSettings } from "@/lib/store";
+import { useUIState } from "@/lib/store";
 import type { Session, Subscription, auth } from "@weldr/auth";
 import {
   Dialog,
@@ -29,14 +29,14 @@ export function AccountSettings({
   session: Session | null;
   activeSubscription: Subscription | null;
 }) {
-  const { open, setOpen } = useAccountSettings();
+  const { accountSettingsOpen, setAccountSettingsOpen } = useUIState();
 
   if (!session || !sessions) {
     return null;
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={accountSettingsOpen} onOpenChange={setAccountSettingsOpen}>
       <DialogContent className="flex size-full max-h-[600px] min-w-[896px] flex-col">
         <DialogHeader>
           <DialogTitle>Account Settings</DialogTitle>

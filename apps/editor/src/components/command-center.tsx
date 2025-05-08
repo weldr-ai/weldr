@@ -13,7 +13,7 @@ import {
   CommandList,
 } from "@weldr/ui/components/command";
 
-import { type CommandCenterView, useCommandCenter } from "@/lib/store";
+import { type CommandCenterView, useUIState } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
@@ -38,23 +38,28 @@ export function CommandCenter({
 }) {
   const { data: session } = authClient.useSession();
 
-  const { open, view, setOpen, setView } = useCommandCenter(activeView);
+  const {
+    commandCenterOpen,
+    commandCenterView,
+    setCommandCenterOpen,
+    setCommandCenterView,
+  } = useUIState();
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setView("projects");
-        setOpen(true);
+        setCommandCenterView("projects");
+        setCommandCenterOpen(true);
       }
 
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "p") {
         e.preventDefault();
-        setView("create");
-        setOpen(true);
+        setCommandCenterView("create");
+        setCommandCenterOpen(true);
       }
     },
-    [setOpen, setView],
+    [setCommandCenterOpen, setCommandCenterView],
   );
 
   useEffect(() => {
@@ -67,13 +72,13 @@ export function CommandCenter({
     <>
       {asDialog ? (
         <CommandDialog
-          open={open}
-          onOpenChange={setOpen}
+          open={commandCenterOpen}
+          onOpenChange={setCommandCenterOpen}
           dialogClassName="min-h-[600px] min-w-[896px] max-w-4xl"
           commandClassName="size-full [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0"
         >
           <CommandCenterContent
-            view={view}
+            view={commandCenterView}
             projects={_projects}
             session={session}
           />
@@ -81,7 +86,7 @@ export function CommandCenter({
       ) : (
         <Command className="-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 h-[600px] w-[896px] max-w-4xl rounded-lg border duration-200 [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0">
           <CommandCenterContent
-            view={view}
+            view={commandCenterView}
             projects={_projects}
             session={session}
           />
@@ -112,7 +117,7 @@ function CommandCenterContent({
 }
 
 function CreateContent({ session }: { session: Session | null }) {
-  const { setView } = useCommandCenter();
+  const { setCommandCenterView } = useUIState();
 
   return (
     <div className="relative flex size-full items-center justify-center">
@@ -121,7 +126,7 @@ function CreateContent({ session }: { session: Session | null }) {
           variant="ghost"
           size="sm"
           className="absolute top-3 right-3"
-          onClick={() => setView("projects")}
+          onClick={() => setCommandCenterView("projects")}
         >
           <BoxesIcon className="mr-2 size-4" />
           View Projects
@@ -137,7 +142,7 @@ function ProjectsContent({
 }: {
   projects: RouterOutputs["projects"]["list"];
 }) {
-  const { setView } = useCommandCenter();
+  const { setCommandCenterView } = useUIState();
   const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<
     RouterOutputs["projects"]["list"][0] | null
@@ -204,7 +209,7 @@ function ProjectsContent({
             variant="ghost"
             className="absolute bottom-0 w-80 rounded-t-none rounded-br-none rounded-bl-lg border-t bg-background"
             onClick={() => {
-              setView("create");
+              setCommandCenterView("create");
             }}
           >
             <PlusIcon className="mr-2 size-4" />

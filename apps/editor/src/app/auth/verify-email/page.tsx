@@ -1,7 +1,7 @@
+import { VerifyEmailForm } from "@/components/auth/verify-email-form";
 import { auth } from "@weldr/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { VerifyEmailForm } from "../_components/verify-email-form";
 
 export default async function VerifyEmailPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -10,5 +10,9 @@ export default async function VerifyEmailPage() {
     redirect("/");
   }
 
-  return <VerifyEmailForm />;
+  return (
+    <main className="flex min-h-screen w-full flex-col items-center justify-center">
+      <VerifyEmailForm />
+    </main>
+  );
 }

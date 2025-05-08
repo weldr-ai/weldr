@@ -1,6 +1,6 @@
 "use client";
 
-import { useProjectView } from "@/lib/store";
+import { useProjectData } from "@/lib/store";
 import { Button } from "@weldr/ui/components/button";
 import {
   DropdownMenu,
@@ -25,15 +25,11 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function Preview({
-  projectId,
-}: {
-  projectId: string;
-}) {
+export function Preview({ projectId }: { projectId: string }) {
   const [iframeKey, setIframeKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { machineId } = useProjectView();
+  const { machineId } = useProjectData();
 
   const [controlsPosition, setControlsPosition] = useState<
     "top-right" | "bottom-right" | "top-left" | "bottom-left"

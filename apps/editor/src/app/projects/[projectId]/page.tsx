@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { ProjectView } from "@/components/project-view";
-import { ProjectViewProvider } from "@/lib/store";
+import { ProjectDataProvider } from "@/lib/store";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
 import type { Edge } from "@xyflow/react";
@@ -49,8 +49,8 @@ export default async function ProjectPage({
     const initialEdges: Edge[] = [];
 
     return (
-      <ProjectViewProvider
-        currentMachineId={project.currentVersion?.machineId ?? undefined}
+      <ProjectDataProvider
+        initialMachineId={project.currentVersion?.machineId ?? null}
       >
         <ProjectView
           project={project}
@@ -58,7 +58,7 @@ export default async function ProjectPage({
           initialEdges={initialEdges}
           integrationTemplates={integrationTemplates}
         />
-      </ProjectViewProvider>
+      </ProjectDataProvider>
     );
   } catch (error) {
     console.error(error);

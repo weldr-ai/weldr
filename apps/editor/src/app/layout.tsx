@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 
 import { QueryProvider } from "@/components/query-client-provider";
-import { AppStateProvider } from "@/lib/store";
+import { UIStateProvider } from "@/lib/store";
 import { TRPCReactProvider } from "@/lib/trpc/react";
 import { HydrateClient } from "@/lib/trpc/server";
 import { Toaster } from "@weldr/ui/components/toaster";
@@ -47,7 +47,7 @@ export default async function RootLayout({
           fontMono.variable,
         )}
       >
-        <AppStateProvider>
+        <UIStateProvider>
           <TRPCReactProvider>
             <QueryProvider>
               <HydrateClient>
@@ -68,7 +68,7 @@ export default async function RootLayout({
               </HydrateClient>
             </QueryProvider>
           </TRPCReactProvider>
-        </AppStateProvider>
+        </UIStateProvider>
       </body>
     </html>
   );

@@ -15,7 +15,7 @@ export default async function PricingPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">
       <div className="z-50 flex w-full items-center justify-between p-2">
-        {session && <MainDropdownMenu />}
+        <MainDropdownMenu />
         {!session && (
           <>
             <div

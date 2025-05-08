@@ -1,6 +1,5 @@
 "use client";
 
-import { useCanvas } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode } from "@/types";
 import { Button } from "@weldr/ui/components/button";
@@ -29,6 +28,7 @@ import { useMutation } from "@tanstack/react-query";
 import "@xyflow/react/dist/base.css";
 import { useTheme } from "next-themes";
 
+import { useUIState } from "@/lib/store";
 import "@weldr/ui/styles/flow-builder.css";
 
 const nodeTypes = {
@@ -42,7 +42,7 @@ export function Canvas({
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
 }) {
-  const { showEdges, toggleEdges } = useCanvas();
+  const { showCanvasEdges, toggleCanvasEdges } = useUIState();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();
@@ -92,7 +92,7 @@ export function Canvas({
       className="scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent rounded-xl border bg-background dark:bg-muted"
       nodes={nodes}
       onNodesChange={onNodesChange}
-      edges={showEdges ? edges : []}
+      edges={showCanvasEdges ? edges : []}
       onEdgesChange={onEdgesChange}
       onNodeDragStop={onNodeDragStop}
       deleteKeyCode={null}
@@ -126,9 +126,9 @@ export function Canvas({
               className="size-8 rounded-md bg-background dark:bg-background"
               variant="outline"
               size="icon"
-              onClick={toggleEdges}
+              onClick={toggleCanvasEdges}
             >
-              {showEdges ? (
+              {showCanvasEdges ? (
                 <EyeIcon className="size-4" />
               ) : (
                 <EyeOffIcon className="size-4" />

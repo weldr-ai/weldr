@@ -4,16 +4,20 @@ import { authClient } from "@weldr/auth/client";
 
 import {
   BoxesIcon,
+  ExternalLinkIcon,
+  FileTextIcon,
+  HelpCircleIcon,
   LogOutIcon,
   MonitorIcon,
   MoonIcon,
   PaletteIcon,
   PlusIcon,
+  RssIcon,
   SettingsIcon,
   SunIcon,
 } from "lucide-react";
 
-import { useAccountSettings, useCommandCenter } from "@/lib/store";
+import { useUIState } from "@/lib/store";
 import { Button } from "@weldr/ui/components/button";
 import {
   DropdownMenu,
@@ -31,6 +35,7 @@ import {
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
 import { useTheme } from "next-themes";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export function MainDropdownMenu({
@@ -41,11 +46,9 @@ export function MainDropdownMenu({
   className?: string;
 }): JSX.Element {
   const router = useRouter();
-  const { setView: setCommandCenterView, setOpen: setCommandCenterOpen } =
-    useCommandCenter();
-
-  const { setOpen: setAccountSettingsOpen } = useAccountSettings();
-
+  const { data: session } = authClient.useSession();
+  const { setCommandCenterView, setCommandCenterOpen, setAccountSettingsOpen } =
+    useUIState();
   const { theme, setTheme } = useTheme();
 
   return (
@@ -57,118 +60,139 @@ export function MainDropdownMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="start" side={side}>
-        <DropdownMenuLabel>Projects</DropdownMenuLabel>
-        <DropdownMenuItem
-          onClick={() => {
-            setCommandCenterView("create");
-            setCommandCenterOpen(true);
-          }}
-        >
-          <PlusIcon className="mr-2 size-4 text-muted-foreground" />
-          Create Project
-          <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
-            <span className="text-xs">
-              {typeof window !== "undefined" &&
-              window.navigator?.userAgent.toLowerCase().includes("mac")
-                ? "⌘"
-                : "Ctrl"}
-            </span>
-            <span className="text-xs">
-              {typeof window !== "undefined" &&
-              window.navigator?.userAgent.toLowerCase().includes("mac")
-                ? "⌥"
-                : "Alt"}
-            </span>
-            <span className="text-xs">n</span>
-          </kbd>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => {
-            setCommandCenterView("projects");
-            setCommandCenterOpen(true);
-          }}
-        >
-          <BoxesIcon className="mr-2 size-4 text-muted-foreground" />
-          View All Projects
-          <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
-            <span className="text-xs">
-              {typeof window !== "undefined" &&
-              window.navigator?.userAgent.toLowerCase().includes("mac")
-                ? "⌘"
-                : "Ctrl"}
-            </span>
-            k
-          </kbd>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Settings</DropdownMenuLabel>
-        <DropdownMenuItem
-          onClick={() => {
-            setAccountSettingsOpen(true);
-          }}
-        >
-          <SettingsIcon className="mr-2 size-4 text-muted-foreground" />
-          Account Settings
-        </DropdownMenuItem>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <PaletteIcon className="mr-4 size-4 text-muted-foreground" />
-            Appearance
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup
-              value={theme}
-              onValueChange={(value) => setTheme(value)}
+        {session && (
+          <>
+            <DropdownMenuLabel>Projects</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => {
+                setCommandCenterView("create");
+                setCommandCenterOpen(true);
+              }}
             >
-              <DropdownMenuRadioItem value="light">
-                Light
-                <SunIcon className="ml-auto size-4 text-muted-foreground" />
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="dark">
-                Dark
-                <MoonIcon className="ml-auto size-4 text-muted-foreground" />
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="system">
-                System
-                <MonitorIcon className="ml-auto size-4 text-muted-foreground" />
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+              <PlusIcon className="mr-2 size-3.5 text-muted-foreground" />
+              Create Project
+              <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
+                <span className="text-xs">
+                  {typeof window !== "undefined" &&
+                  window.navigator?.userAgent.toLowerCase().includes("mac")
+                    ? "⌘"
+                    : "Ctrl"}
+                </span>
+                <span className="text-xs">
+                  {typeof window !== "undefined" &&
+                  window.navigator?.userAgent.toLowerCase().includes("mac")
+                    ? "⌥"
+                    : "Alt"}
+                </span>
+                <span className="text-xs">n</span>
+              </kbd>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setCommandCenterView("projects");
+                setCommandCenterOpen(true);
+              }}
+            >
+              <BoxesIcon className="mr-2 size-3.5 text-muted-foreground" />
+              View All Projects
+              <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
+                <span className="text-xs">
+                  {typeof window !== "undefined" &&
+                  window.navigator?.userAgent.toLowerCase().includes("mac")
+                    ? "⌘"
+                    : "Ctrl"}
+                </span>
+                k
+              </kbd>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
 
-        {/* <DropdownMenuSeparator />
+        {session && (
+          <>
+            <DropdownMenuLabel>Settings</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => {
+                setAccountSettingsOpen(true);
+              }}
+            >
+              <SettingsIcon className="mr-2 size-4 text-muted-foreground" />
+              Account Settings
+            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <PaletteIcon className="mr-3.5 size-4 text-muted-foreground" />
+                Appearance
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup
+                  value={theme}
+                  onValueChange={(value) => setTheme(value)}
+                >
+                  <DropdownMenuRadioItem value="light">
+                    Light
+                    <SunIcon className="ml-auto size-3.5 text-muted-foreground" />
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="dark">
+                    Dark
+                    <MoonIcon className="ml-auto size-3.5 text-muted-foreground" />
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="system">
+                    System
+                    <MonitorIcon className="ml-auto size-3.5 text-muted-foreground" />
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuSeparator />
+          </>
+        )}
+
         <DropdownMenuLabel>Support</DropdownMenuLabel>
         <Link href="https://weldr.ai/support" target="_blank">
           <DropdownMenuItem>
-            <HelpCircleIcon className="mr-2 size-4 text-muted-foreground" />
+            <HelpCircleIcon className="mr-2 size-3.5 text-muted-foreground" />
             Help
+            <ExternalLinkIcon className="ml-auto size-3 text-muted-foreground" />
+          </DropdownMenuItem>
+        </Link>
+
+        <Link href="https://blog.weldr.ai" target="_blank">
+          <DropdownMenuItem>
+            <RssIcon className="mr-2 size-3.5 text-muted-foreground" />
+            Blog
             <ExternalLinkIcon className="ml-auto size-3 text-muted-foreground" />
           </DropdownMenuItem>
         </Link>
 
         <Link href="https://docs.weldr.ai" target="_blank">
           <DropdownMenuItem>
-            <BookOpenIcon className="mr-2 size-4 text-muted-foreground" />
+            <FileTextIcon className="mr-2 size-3.5 text-muted-foreground" />
             Docs
             <ExternalLinkIcon className="ml-auto size-3 text-muted-foreground" />
           </DropdownMenuItem>
-        </Link> */}
+        </Link>
 
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={async () =>
-            await authClient.signOut({
-              fetchOptions: {
-                onSuccess: () => {
-                  router.push("/auth/sign-in");
-                },
-              },
-            })
-          }
-        >
-          <LogOutIcon className="mr-2 size-4 text-destructive" />
-          Logout
-        </DropdownMenuItem>
+        {session && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={async () =>
+                await authClient.signOut({
+                  fetchOptions: {
+                    onSuccess: () => {
+                      router.push("/auth/sign-in");
+                    },
+                  },
+                })
+              }
+            >
+              <LogOutIcon className="mr-2 size-3.5 text-destructive" />
+              Logout
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

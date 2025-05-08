@@ -12,7 +12,9 @@ import {
   useState,
 } from "react";
 
+import { useUIState } from "@/lib/store";
 import type { TPendingMessage } from "@/types";
+import { authClient } from "@weldr/auth/client";
 import type { Attachment, UserMessageRawContent } from "@weldr/shared/types";
 import { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
 import { Button } from "@weldr/ui/components/button";
@@ -83,14 +85,21 @@ function PureMultimodalInput({
   const [currentPlaceholder, setCurrentPlaceholder] = useState(
     placeholder ?? "Send a message...",
   );
-
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const editorRef = useRef<LexicalEditor | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
+  const { setAuthDialogOpen } = useUIState();
+
+  const { data: session } = authClient.useSession();
 
   const submitForm = useCallback(() => {
+    if (!session) {
+      setAuthDialogOpen(true);
+      return;
+    }
+
     handleSubmit();
 
     const editor = editorRef.current;
@@ -111,7 +120,14 @@ function PureMultimodalInput({
     }
 
     setAttachments([]);
-  }, [handleSubmit, setAttachments, setMessage, type]);
+  }, [
+    handleSubmit,
+    setAttachments,
+    setMessage,
+    type,
+    session,
+    setAuthDialogOpen,
+  ]);
 
   const uploadFile = async (file: File) => {
     const formData = new FormData();

@@ -1,5 +1,5 @@
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
-import { useProjectView } from "@/lib/store";
+import { useProjectData, useUIState } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
@@ -32,7 +32,8 @@ export function Chat({
   integrationTemplates,
   project,
 }: ChatProps) {
-  const { setSelectedView, setMachineId } = useProjectView();
+  const { setProjectView } = useUIState();
+  const { setMachineId } = useProjectData();
 
   const { data: session } = authClient.useSession();
   const generationTriggered = useRef(false);
@@ -192,7 +193,7 @@ export function Chat({
         case "coder": {
           if (chunk.status === "initiated") {
             setPendingMessage("building");
-            setMachineId(undefined);
+            setMachineId(null);
           }
 
           if (chunk.status === "coded") {
@@ -201,7 +202,7 @@ export function Chat({
 
           if (chunk.status === "deployed") {
             setPendingMessage("enriching");
-            setSelectedView("preview");
+            setProjectView("preview");
             setMachineId(chunk.machineId);
           }
 
@@ -312,7 +313,7 @@ export function Chat({
     project,
     queryClient,
     trpc,
-    setSelectedView,
+    setProjectView,
     setMachineId,
     pendingMessage,
   ]);

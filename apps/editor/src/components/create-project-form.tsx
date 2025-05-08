@@ -1,6 +1,6 @@
 "use client";
 
-import { useCommandCenter } from "@/lib/store";
+import { useUIState } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import { createId } from "@paralleldrive/cuid2";
 import { useMutation } from "@tanstack/react-query";
@@ -39,7 +39,7 @@ const quickStartTemplates = [
 
 export function CreateProjectForm({ session }: { session: Session | null }) {
   const router = useRouter();
-  const { setOpen } = useCommandCenter();
+  const { setCommandCenterOpen } = useUIState();
   const projectChatId = createId();
 
   const [message, setMessage] = useState("");
@@ -55,7 +55,7 @@ export function CreateProjectForm({ session }: { session: Session | null }) {
           description: "Project created successfully.",
           duration: 2000,
         });
-        setOpen(false);
+        setCommandCenterOpen(false);
         router.push(`/projects/${data.id}`);
       },
       onError: (error) => {

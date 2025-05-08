@@ -9,7 +9,7 @@ import {
 } from "@weldr/ui/components/resizable";
 
 import { Canvas } from "@/components/canvas";
-import { useProjectView } from "@/lib/store";
+import { useUIState } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -42,7 +42,7 @@ export function ProjectView({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { selectedView, setSelectedView } = useProjectView();
+  const { projectView, setProjectView } = useUIState();
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -61,14 +61,14 @@ export function ProjectView({
     const initialView =
       (searchParams.get("view") as "preview" | "canvas" | "versions") ??
       "preview";
-    setSelectedView(initialView);
-  }, [searchParams, setSelectedView]);
+    setProjectView(initialView);
+  }, [searchParams, setProjectView]);
 
   useEffect(() => {
-    router.push(`${pathname}?${createQueryString("view", selectedView)}`, {
+    router.push(`${pathname}?${createQueryString("view", projectView)}`, {
       scroll: false,
     });
-  }, [selectedView, router, pathname, createQueryString]);
+  }, [projectView, router, pathname, createQueryString]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -76,15 +76,15 @@ export function ProjectView({
         switch (e.key) {
           case "1":
             e.preventDefault();
-            setSelectedView("preview");
+            setProjectView("preview");
             break;
           case "2":
             e.preventDefault();
-            setSelectedView("canvas");
+            setProjectView("canvas");
             break;
           case "3":
             e.preventDefault();
-            setSelectedView("versions");
+            setProjectView("versions");
             break;
         }
       }
@@ -92,7 +92,7 @@ export function ProjectView({
 
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, [setSelectedView]);
+  }, [setProjectView]);
 
   const trpc = useTRPC();
 
@@ -135,9 +135,9 @@ export function ProjectView({
           </div>
           <div className="flex items-center gap-1">
             <Select
-              value={selectedView}
+              value={projectView}
               onValueChange={(value) =>
-                setSelectedView(value as "preview" | "canvas" | "versions")
+                setProjectView(value as "preview" | "canvas" | "versions")
               }
             >
               <SelectTrigger className="max-h-8 w-28 text-xs dark:bg-muted">
@@ -176,14 +176,14 @@ export function ProjectView({
         order={2}
       >
         <div className="flex size-full rounded-xl">
-          {selectedView === "canvas" && (
+          {projectView === "canvas" && (
             <Canvas
               initialNodes={initialNodes}
               initialEdges={initialEdges ?? []}
             />
           )}
-          {selectedView === "preview" && <Preview projectId={project.id} />}
-          {selectedView === "versions" && (
+          {projectView === "preview" && <Preview projectId={project.id} />}
+          {projectView === "versions" && (
             <Versions versions={project.versions} />
           )}
         </div>

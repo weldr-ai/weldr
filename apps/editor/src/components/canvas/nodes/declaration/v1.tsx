@@ -1,7 +1,7 @@
 import { CustomMarkdown } from "@/components/custom-markdown";
 import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
 import { UiTransitionVisualizer } from "@/components/ui-transition-visualizer";
-import { useCanvas } from "@/lib/store";
+import { useUIState } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
 import { useQuery } from "@tanstack/react-query";
@@ -59,7 +59,7 @@ export const DeclarationV1Node = memo(
       ),
     );
 
-    const { showEdges } = useCanvas();
+    const { showCanvasEdges } = useUIState();
 
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -82,7 +82,7 @@ export const DeclarationV1Node = memo(
         <Handle
           className={cn(
             "rounded-full border bg-background p-1",
-            showEdges ? "" : "opacity-0",
+            showCanvasEdges ? "" : "opacity-0",
           )}
           type="target"
           position={Position.Left}
@@ -91,7 +91,7 @@ export const DeclarationV1Node = memo(
         <Handle
           className={cn(
             "rounded-full border bg-background p-1",
-            showEdges ? "" : "opacity-0",
+            showCanvasEdges ? "" : "opacity-0",
           )}
           type="source"
           position={Position.Right}
