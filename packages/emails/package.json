@@ -7,7 +7,7 @@
     "./*": "./src/templates/*.tsx"
   },
   "scripts": {
-    "dev": "email dev -p 3004 --dir ./src/templates",
+    "dev": "email dev -p 3001 --dir ./src/templates",
     "export": "email export",
     "clean": "git clean -xdf .turbo node_modules dist",
     "check-types": "tsc --noEmit --emitDeclarationOnly false"

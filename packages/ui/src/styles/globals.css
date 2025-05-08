@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 
 @plugin "tailwind-scrollbar";
+@plugin "@tailwindcss/typography";
 
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../../../components/**/*.{ts,tsx}";

@@ -243,22 +243,17 @@ function processAllDeclarations(
   }
 
   function resolveImportPath(importPath: string, currentFile: string): string {
+    // Handle @/ paths
     if (importPath.startsWith("@/")) {
-      const importFile = importPath.replace("@/", "/src/");
-      return !importPath.endsWith(".ts") && !importPath.endsWith(".tsx")
-        ? `${importFile}.ts`
-        : importFile;
+      return importPath.replace("@/", "/src/");
     }
 
+    // Handle relative paths
     if (importPath.startsWith(".")) {
-      if (!importPath.endsWith(".ts") && !importPath.endsWith(".tsx")) {
-        const basePath = resolveToProjectPath(importPath, currentFile);
-        // Always default to .ts extension since we can't check filesystem
-        return `${basePath}.ts`;
-      }
       return resolveToProjectPath(importPath, currentFile);
     }
 
+    // Return unchanged for external modules
     return importPath;
   }
 

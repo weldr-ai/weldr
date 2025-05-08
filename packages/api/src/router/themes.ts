@@ -221,6 +221,7 @@ export const themesRouter = createTRPCRouter({
         }
 
         await takeScreenshot({
+          tx,
           versionId: newVersion.id,
           projectId: input.projectId,
         });

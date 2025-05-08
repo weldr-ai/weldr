@@ -26,11 +26,18 @@ export const declarationSpecsV1Schema = z.object({
   ]),
   isNode: z.boolean().describe(
     `Whether the declaration is a node.
-- What are the nodes?
+
+What are the nodes?
 - All endpoints and pages are nodes by default.
-- UI components are nodes.
-- All models are nodes.
-- Functions that are DIRECTLY part of the business logic are nodes.`,
+- UI components that are visual are nodes.
+- All models are nodes by default.
+- Functions that are DIRECTLY part of the business logic are nodes.
+
+What are NOT nodes?
+- Other declarations are not nodes.
+- Layouts ARE NOT nodes.
+- Components that are not visual are not nodes.
+- Functions that are not part of the business logic are not nodes.`,
   ),
 });
 

@@ -119,7 +119,7 @@ export const Fly = {
       projectId,
       versionId,
       config,
-      region = "eu",
+      region = "us",
     }: {
       projectId: string;
       versionId: string;

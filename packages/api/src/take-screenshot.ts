@@ -4,7 +4,7 @@ import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { auth } from "@weldr/auth";
-import { db, eq } from "@weldr/db";
+import { type Tx, db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { headers } from "next/headers";
 import { chromium } from "playwright";
@@ -22,9 +22,11 @@ const s3Client = new S3Client({
 });
 
 export async function takeScreenshot({
+  tx,
   projectId,
   versionId,
 }: {
+  tx?: Tx;
   projectId: string;
   versionId: string;
 }) {
@@ -34,7 +36,7 @@ export async function takeScreenshot({
     throw new Error("Unauthorized");
   }
 
-  const version = await db.query.versions.findFirst({
+  const version = await (tx ?? db).query.versions.findFirst({
     where: eq(versions.id, versionId),
   });
 
@@ -114,56 +116,6 @@ export async function takeScreenshot({
     return imageUrl;
   } catch (error) {
     console.error("Error generating screenshot:", error);
-    return null;
-  }
-}
-
-export async function uploadScreenshot({
-  projectId,
-  versionId,
-  screenshot,
-}: {
-  projectId: string;
-  versionId: string;
-  screenshot: Uint8Array;
-}) {
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-
-  try {
-    const key = `thumbnails/${projectId}/${versionId}.jpeg`;
-
-    const upload = new Upload({
-      params: {
-        Bucket: BUCKET_NAME,
-        Key: key,
-        Body: screenshot,
-      },
-      client: s3Client,
-      queueSize: 3,
-    });
-
-    upload.on("httpUploadProgress", (progress) => {
-      console.log(progress);
-    });
-
-    await upload.done();
-
-    const imageUrl = await getSignedUrl(
-      s3Client,
-      new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key,
-      }),
-      { expiresIn: 3600 },
-    );
-
-    return imageUrl;
-  } catch (error) {
-    console.error("Error uploading screenshot:", error);
     return null;
   }
 }

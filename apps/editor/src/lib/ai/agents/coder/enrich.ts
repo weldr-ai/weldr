@@ -3,6 +3,7 @@ import { and, db, eq, inArray } from "@weldr/db";
 import type { CanvasNodeData, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
 import {
+  type DeclarationDependency,
   canvasNodes,
   declarationPackages,
   declarations,
@@ -73,10 +74,14 @@ export async function enrich({
       ),
     });
 
+    const insertDeclarations: (typeof declarations.$inferSelect)[] = [];
+    let newAndUpdatedDeclarations: Record<string, DeclarationDependency[]> = {};
+
     for (const file of changedFiles) {
       console.log(`[enrich:${projectId}] Processing file ${file.path}`);
       let previousContent: string | undefined;
 
+      // If the previous version exists, read the previous content from the S3 version
       if (previousVersion) {
         const fileS3Version = await tx.query.versionFiles.findFirst({
           where: and(
@@ -94,6 +99,7 @@ export async function enrich({
         }
       }
 
+      // Read the current content from the S3 file
       const content = await S3.readFile({
         projectId,
         path: file.path,
@@ -104,11 +110,19 @@ export async function enrich({
       }
 
       console.log(`[enrich:${projectId}] Processing file ${file.path}`);
+
+      // Process the declarations
       const processedDeclarations = await processDeclarations({
         fileContent: content,
         filePath: file.path,
         previousContent,
       });
+
+      newAndUpdatedDeclarations = {
+        ...newAndUpdatedDeclarations,
+        ...processedDeclarations.newDeclarations,
+        ...processedDeclarations.updatedDeclarations,
+      };
 
       // Delete all deleted and updated declarations
       const deletedAndUpdatedDeclarations = [
@@ -116,6 +130,7 @@ export async function enrich({
         ...Object.keys(processedDeclarations.updatedDeclarations),
       ];
 
+      // Delete all deleted and updated declarations
       if (deletedAndUpdatedDeclarations.length > 0) {
         await tx.delete(versionDeclarations).where(
           and(
@@ -137,7 +152,14 @@ export async function enrich({
       }
 
       // Enrich the new and updated declarations
-      console.log(`[enrich:${projectId}] Enriching declarations`);
+      console.log(
+        `[enrich:${projectId}] Enriching declarations new: ${Object.keys(
+          processedDeclarations.newDeclarations,
+        ).join(", ")} updated: ${Object.keys(
+          processedDeclarations.updatedDeclarations,
+        ).join(", ")}`,
+      );
+
       const enrichedDeclarations = await enricher({
         projectId: version.projectId,
         file: {
@@ -158,8 +180,6 @@ export async function enrich({
       console.log(
         `[enrich:${projectId}] Found ${enrichedDeclarations.length} enriched declarations`,
       );
-
-      const insertDeclarations: (typeof declarations.$inferSelect)[] = [];
 
       for (const {
         version: specVersion,
@@ -279,91 +299,108 @@ export async function enrich({
           updatedAt: declarationUpdatedAt,
         });
       }
+    }
 
-      if (insertDeclarations.length > 0) {
-        await tx.insert(declarations).values(insertDeclarations);
+    if (insertDeclarations.length > 0) {
+      await tx.insert(declarations).values(insertDeclarations);
 
-        await tx.insert(versionDeclarations).values(
-          insertDeclarations.map((declaration) => ({
-            versionId,
-            declarationId: declaration.id,
-          })),
+      await tx.insert(versionDeclarations).values(
+        insertDeclarations.map((declaration) => ({
+          versionId,
+          declarationId: declaration.id,
+        })),
+      );
+
+      // Insert declaration dependencies
+      for (const declaration of insertDeclarations) {
+        const declarationDependencies =
+          newAndUpdatedDeclarations[declaration.name] ?? [];
+
+        // Insert the external declaration packages
+        const pkgs = declarationDependencies.filter(
+          (dependency) => dependency.type === "external",
         );
 
-        const newAndUpdatedDeclarations = {
-          ...processedDeclarations.newDeclarations,
-          ...processedDeclarations.updatedDeclarations,
-        };
+        const savedPkgs = await tx.query.packages.findMany({
+          where: and(
+            inArray(
+              packages.name,
+              pkgs.map((pkg) => pkg.name),
+            ),
+            eq(packages.projectId, projectId),
+          ),
+        });
+
+        if (pkgs.length > 0) {
+          await tx.insert(declarationPackages).values(
+            pkgs.map((pkg) => {
+              const pkgId = savedPkgs.find(
+                (savedPkg) => savedPkg.name === pkg.name,
+              )?.id;
+
+              if (!pkgId) {
+                throw new Error(`Package not found: ${pkg.name}`);
+              }
+
+              return {
+                declarationId: declaration.id,
+                packageId: pkgId,
+                importPath: pkg.name,
+                declarations: pkg.dependsOn,
+              };
+            }),
+          );
+        }
 
         // Insert declaration dependencies
-        for (const declaration of insertDeclarations) {
-          const declarationDependencies =
-            newAndUpdatedDeclarations[declaration.name] ?? [];
+        const internalDependencies = declarationDependencies.filter(
+          (dependency) => dependency.type === "internal",
+        );
 
-          // Insert the declaration packages
-          const pkgs = declarationDependencies.filter(
-            (dependency) => dependency.type === "external",
-          );
-
-          const savedPkgs = await tx.query.packages.findMany({
-            where: and(
-              inArray(
-                packages.name,
-                pkgs.map((pkg) => pkg.name),
-              ),
-              eq(packages.projectId, projectId),
-            ),
+        // Get all declarations after inserting the new declarations
+        const versionNewDeclarations =
+          await tx.query.versionDeclarations.findMany({
+            where: eq(versionDeclarations.versionId, versionId),
+            with: {
+              declaration: {
+                with: {
+                  file: true,
+                },
+              },
+            },
           });
 
-          if (pkgs.length > 0) {
-            await tx.insert(declarationPackages).values(
-              pkgs.map((pkg) => {
-                const pkgId = savedPkgs.find(
-                  (savedPkg) => savedPkg.name === pkg.name,
-                )?.id;
+        for (const dependency of internalDependencies) {
+          // Get the dependencies that match the dependency name and file path
+          const tempDependencies = versionNewDeclarations.filter(
+            (declaration) => {
+              const declarationNormalizedFilePath =
+                declaration.declaration.file.path.startsWith("/")
+                  ? declaration.declaration.file.path.replace(/\.[^/.]+$/, "")
+                  : `/${declaration.declaration.file.path.replace(/\.[^/.]+$/, "")}`;
 
-                if (!pkgId) {
-                  throw new Error(`Package not found: ${pkg.name}`);
-                }
+              const dependencyNormalizedFilePath = dependency.from.startsWith(
+                "/",
+              )
+                ? dependency.from.replace(/\.[^/.]+$/, "")
+                : `/${dependency.from.replace(/\.[^/.]+$/, "")}`;
 
-                return {
-                  declarationId: declaration.id,
-                  packageId: pkgId,
-                  importPath: pkg.name,
-                  declarations: pkg.dependsOn,
-                };
-              }),
-            );
-          }
-
-          // Insert declaration dependencies
-          const internalDependencies = declarationDependencies.filter(
-            (dependency) => dependency.type === "internal",
+              return (
+                dependency.dependsOn.includes(declaration.declaration.name) &&
+                declarationNormalizedFilePath === dependencyNormalizedFilePath
+              );
+            },
           );
 
-          for (const dependency of internalDependencies) {
-            // Get the dependencies that match the dependency name and file path
-            const tempDependencies = version.declarations.filter(
-              (declaration) =>
-                dependency.dependsOn.includes(declaration.declaration.name) &&
-                (declaration.declaration.file.path.startsWith("/")
-                  ? declaration.declaration.file.path
-                  : `/${declaration.declaration.file.path}`) ===
-                  (dependency.from.startsWith("/")
-                    ? dependency.from
-                    : `/${dependency.from}`),
+          if (tempDependencies.length > 0) {
+            await tx.insert(dependencies).values(
+              tempDependencies.map((dependency) => ({
+                dependentType: declaration.type,
+                dependentId: declaration.id,
+                dependencyType: dependency.declaration.type,
+                dependencyId: dependency.declaration.id,
+              })),
             );
-
-            if (tempDependencies.length > 0) {
-              await tx.insert(dependencies).values(
-                tempDependencies.map((dependency) => ({
-                  dependentType: declaration.type,
-                  dependentId: declaration.id,
-                  dependencyType: dependency.declaration.type,
-                  dependencyId: dependency.declaration.id,
-                })),
-              );
-            }
           }
         }
       }
