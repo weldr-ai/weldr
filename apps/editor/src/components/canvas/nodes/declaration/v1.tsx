@@ -110,7 +110,7 @@ const DeclarationExpandableCardHeader = memo(
 
     const { data } = declaration.specs;
 
-    const title = ({ data }: DeclarationSpecsV1) => {
+    const title = (data: DeclarationSpecsV1) => {
       if (!data) {
         return null;
       }
@@ -150,7 +150,7 @@ const DeclarationExpandableCardHeader = memo(
                 "text-destructive": !declaration.specs,
               })}
             >
-              {title(declaration.specs)}
+              {title(declaration.specs.data)}
             </h3>
           </div>
         );
@@ -362,15 +362,15 @@ const DeclarationNodeCard = memo(
         return null;
       }
 
-      switch (specs.data.type) {
+      switch (specs.type) {
         case "endpoint":
-          return specs.data.definition.subtype === "rest"
-            ? specs.data.definition.summary
-            : specs.data.definition.name;
+          return specs.definition.subtype === "rest"
+            ? specs.definition.summary
+            : specs.definition.name;
         case "function":
-          return specs.data.name;
+          return specs.name;
         case "component":
-          return specs.data.definition.name;
+          return specs.definition.name;
         default:
           return null;
       }
@@ -379,27 +379,27 @@ const DeclarationNodeCard = memo(
     const badge = (specs: DeclarationSpecsV1) => {
       return (
         <div className="flex items-center gap-2 text-xs">
-          {specs.data.type === "endpoint" ? (
-            specs.data.definition.subtype === "rest" ? (
+          {specs.type === "endpoint" ? (
+            specs.definition.subtype === "rest" ? (
               <>
                 <span
                   className={cn(
                     "rounded-sm px-1.5 py-0.5 font-bold text-xs uppercase",
                     {
                       "bg-primary/30 text-primary":
-                        specs.data.definition.method === "get",
+                        specs.definition.method === "get",
                       "bg-success/30 text-success":
-                        specs.data.definition.method === "post",
+                        specs.definition.method === "post",
                       "bg-warning/30 text-warning":
-                        specs.data.definition.method === "put",
+                        specs.definition.method === "put",
                       "bg-destructive/30 text-destructive":
-                        specs.data.definition.method === "delete",
+                        specs.definition.method === "delete",
                       "p-0 font-semibold text-primary text-xs":
-                        !specs.data.definition.method,
+                        !specs.definition.method,
                     },
                   )}
                 >
-                  {specs.data.definition.method.toUpperCase()}
+                  {specs.definition.method.toUpperCase()}
                 </span>
                 <span className="text-muted-foreground">REST</span>
               </>
@@ -409,18 +409,18 @@ const DeclarationNodeCard = memo(
                 <span className="text-muted-foreground">RPC</span>
               </>
             )
-          ) : specs.data.type === "function" ? (
+          ) : specs.type === "function" ? (
             <>
               <FunctionSquareIcon className="size-4 text-primary" />
               <span className="text-muted-foreground">Function</span>
             </>
-          ) : specs.data.type === "component" ? (
-            specs.data.definition.subtype === "page" ? (
+          ) : specs.type === "component" ? (
+            specs.definition.subtype === "page" ? (
               <>
                 <AppWindowIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">Page</span>
               </>
-            ) : specs.data.definition.subtype === "reusable" ? (
+            ) : specs.definition.subtype === "reusable" ? (
               <>
                 <ComponentIcon className="size-4 text-primary" />
                 <span className="text-muted-foreground">Component</span>
@@ -455,10 +455,10 @@ const DeclarationNodeCard = memo(
         }}
       >
         <div className="flex w-full items-center justify-between">
-          {badge(declaration.specs)}
+          {badge(declaration.specs.data)}
         </div>
         <span className="w-full truncate text-start text-sm">
-          {title(declaration.specs)}
+          {title(declaration.specs.data)}
         </span>
       </Card>
     );

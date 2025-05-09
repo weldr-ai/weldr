@@ -16,7 +16,6 @@ export const uiTransitionSchema = z.object({
       ),
     guard: z
       .array(z.string())
-      .nullable()
       .optional()
       .describe(
         "A list of requirements that must be met before this change can happen (e.g., ['All required fields are filled out', 'The user has an active account', 'There is at least one item selected'])",
@@ -31,21 +30,18 @@ export const uiTransitionSchema = z.object({
       ),
     data: z
       .string()
-      .nullable()
       .optional()
       .describe(
         "A description of the information present before the change (e.g., 'The form is blank', 'Some fields have incorrect information', 'All information is filled in correctly')",
       ),
     visible: z
       .array(z.string())
-      .nullable()
       .optional()
       .describe(
         "A list of interface elements the user can see in this state (e.g., ['SubmitButton', 'ErrorMessage', 'LoadingSpinner'])",
       ),
     enabled: z
       .array(z.string())
-      .nullable()
       .optional()
       .describe(
         "A list of interface elements the user can interact with in this state (e.g., ['EmailInput', 'SubmitButton', 'CancelLink'])",
@@ -60,21 +56,18 @@ export const uiTransitionSchema = z.object({
       ),
     data: z
       .string()
-      .nullable()
       .optional()
       .describe(
         "A description of the information present after the change (e.g., 'The submitted information is being processed', 'The information has been saved successfully', 'The system encountered a problem')",
       ),
     visible: z
       .array(z.string())
-      .nullable()
       .optional()
       .describe(
         "A list of interface elements the user can see after the change (e.g., ['LoadingSpinner', 'SuccessMessage', 'RetryButton'])",
       ),
     enabled: z
       .array(z.string())
-      .nullable()
       .optional()
       .describe(
         "A list of interface elements the user can interact with after the change (e.g., ['RetryButton', 'CloseButton'])",
@@ -83,7 +76,6 @@ export const uiTransitionSchema = z.object({
 
   effects: z
     .array(z.string())
-    .nullable()
     .optional()
     .describe(
       "A list of important side effects (e.g., 'The information is sent to be stored', 'The user's preferences are saved', 'The page address is updated'). Just an English description and DOES NOT include any code.",
@@ -101,12 +93,10 @@ export const baseComponentSchema = z.object({
       "An overview of what this part of the interface does and how it works.",
     ),
   properties: jsonSchema
-    .nullable()
     .optional()
     .describe("What information this interface piece needs to work."),
   rendersOn: z
     .enum(["server", "client", "both"])
-    .nullable()
     .optional()
     .describe("Where this interface piece is displayed."),
 
@@ -138,12 +128,10 @@ export const baseComponentSchema = z.object({
 
   visualLayout: z
     .string()
-    .nullable()
     .optional()
     .describe("How this piece of the interface is arranged visually."),
   implementationNotes: z
     .string()
-    .nullable()
     .optional()
     .describe("Important technical details for building this interface piece."),
 });
@@ -151,7 +139,6 @@ export const baseComponentSchema = z.object({
 export const pageSchema = baseComponentSchema.extend({
   subtype: z.literal("page"),
   parameters: parameterObjectSchema
-    .nullable()
     .optional()
     .describe("The path and query parameters of the route"),
   route: z
@@ -161,7 +148,6 @@ export const pageSchema = baseComponentSchema.extend({
     ),
   meta: z
     .string()
-    .nullable()
     .optional()
     .describe(
       "Information about this page for search engines and social sharing.",
@@ -171,7 +157,6 @@ export const pageSchema = baseComponentSchema.extend({
 export const layoutSchema = baseComponentSchema.extend({
   subtype: z.literal("layout"),
   parameters: parameterObjectSchema
-    .nullable()
     .optional()
     .describe("The path and query parameters of the route"),
   route: z
@@ -182,7 +167,6 @@ export const layoutSchema = baseComponentSchema.extend({
   rendersOn: z.literal("server"),
   meta: z
     .string()
-    .nullable()
     .optional()
     .describe(
       "Default page information for search engines and social sharing.",
@@ -194,7 +178,6 @@ export const reusableComponentSchema = baseComponentSchema.extend({
   examples: z
     .string()
     .array()
-    .nullable()
     .optional()
     .describe(
       "Usage examples of the component WITHOUT imports. Just the component usage. For example: <Button>Click me</Button>",
@@ -205,7 +188,6 @@ export const componentSchema = z.object({
   type: z.literal("component"),
   protected: z
     .boolean()
-    .nullable()
     .optional()
     .describe("Whether users need to be logged in to see this."),
   definition: z.discriminatedUnion("subtype", [

@@ -38,73 +38,73 @@ export const basicValueSchema = z.union([
 // Schema for simple validations (no nested schemas)
 export const simpleValidationSchema = z.object({
   // Basic schema properties
-  type: dataTypeSchema.nullable().optional(),
-  title: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
+  type: dataTypeSchema.optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
 
   // String validations
-  minLength: z.number().int().nonnegative().nullable().optional(),
-  maxLength: z.number().int().nonnegative().nullable().optional(),
-  pattern: z.string().nullable().optional(),
-  format: z.string().nullable().optional(),
+  minLength: z.number().int().nonnegative().optional(),
+  maxLength: z.number().int().nonnegative().optional(),
+  pattern: z.string().optional(),
+  format: z.string().optional(),
 
   // Number validations
-  minimum: z.number().nullable().optional(),
-  maximum: z.number().nullable().optional(),
-  exclusiveMinimum: z.number().nullable().optional(),
-  exclusiveMaximum: z.number().nullable().optional(),
-  multipleOf: z.number().positive().nullable().optional(),
+  minimum: z.number().optional(),
+  maximum: z.number().optional(),
+  exclusiveMinimum: z.number().optional(),
+  exclusiveMaximum: z.number().optional(),
+  multipleOf: z.number().positive().optional(),
 
   // Enum and const
-  enum: z.array(basicValueSchema).nullable().optional(),
-  const: basicValueSchema.nullable().optional(),
+  enum: z.array(basicValueSchema).optional(),
+  const: basicValueSchema.optional(),
 
   // Schema metadata
-  $id: z.string().nullable().optional(),
-  $schema: z.string().nullable().optional(),
-  $ref: z.string().nullable().optional(),
-  $comment: z.string().nullable().optional(),
+  $id: z.string().optional(),
+  $schema: z.string().optional(),
+  $ref: z.string().optional(),
+  $comment: z.string().optional(),
 
   // Content
-  contentMediaType: z.string().nullable().optional(),
-  contentEncoding: z.string().nullable().optional(),
+  contentMediaType: z.string().optional(),
+  contentEncoding: z.string().optional(),
 
   // Additional metadata
-  readOnly: z.boolean().nullable().optional(),
-  writeOnly: z.boolean().nullable().optional(),
-  examples: z.array(z.any()).nullable().optional(),
-  default: z.any().nullable().optional(),
+  readOnly: z.boolean().optional(),
+  writeOnly: z.boolean().optional(),
+  examples: z.array(z.unknown()).optional(),
+  default: z.unknown().optional(),
 });
 
 // Final JSON Schema without recursion
 export const jsonSchema = simpleValidationSchema.extend({
   // For objects
-  required: z.array(z.string()).nullable().optional(),
-  properties: z.record(z.any()).nullable().optional(),
-  additionalProperties: z.union([z.boolean(), z.any()]).nullable().optional(),
+  required: z.array(z.string()).optional(),
+  properties: z.record(z.unknown()).optional(),
+  additionalProperties: z.union([z.boolean(), z.unknown()]).optional(),
 
   // For arrays
   items: z
-    .union([z.any(), z.array(z.any())])
-    .nullable()
+    .union([z.unknown(), z.array(z.unknown())])
+
     .optional(),
-  minItems: z.number().int().positive().nullable().optional(),
-  maxItems: z.number().int().positive().nullable().optional(),
-  uniqueItems: z.boolean().nullable().optional(),
+  minItems: z.number().int().positive().optional(),
+  maxItems: z.number().int().positive().optional(),
+  uniqueItems: z.boolean().optional(),
 
   // Combiners
-  oneOf: z.array(z.any()).nullable().optional(),
-  anyOf: z.array(z.any()).nullable().optional(),
-  allOf: z.array(z.any()).nullable().optional(),
-  not: z.any().nullable().optional(),
+  oneOf: z.array(z.unknown()).optional(),
+  unknownOf: z.array(z.unknown()).optional(),
+  allOf: z.array(z.unknown()).optional(),
+  not: z.unknown().optional(),
 
   // Conditionals
-  if: z.any().nullable().optional(),
+  if: z.unknown().optional(),
   // biome-ignore lint/suspicious/noThenProperty: Required for JSON Schema conditional
-  then: z.any().nullable().optional(),
-  else: z.any().nullable().optional(),
+  then: z.unknown().optional(),
+  else: z.unknown().optional(),
 
   // Schema definitions
-  $defs: z.record(z.any()).nullable().optional(),
-  definitions: z.record(z.any()).nullable().optional(),
+  $defs: z.record(z.unknown()).optional(),
+  definitions: z.record(z.unknown()).optional(),
 });

@@ -3,7 +3,6 @@ import { and, db, eq, inArray } from "@weldr/db";
 import type { CanvasNodeData, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
 import {
-  type DeclarationDependency,
   canvasNodes,
   declarationPackages,
   declarations,
@@ -14,8 +13,36 @@ import {
   versions,
 } from "@weldr/db/schema";
 import { S3 } from "@weldr/shared/s3";
-import { enricher } from "../enricher";
-import { processDeclarations } from "./process-declarations";
+import type { z } from "zod";
+import {
+  type declarationSpecsWithDependenciesSchema,
+  enricher,
+} from "../enricher";
+
+const getDeclarationName = (
+  enrichedDeclaration: z.infer<typeof declarationSpecsWithDependenciesSchema>,
+) => {
+  switch (enrichedDeclaration.type) {
+    case "component": {
+      return enrichedDeclaration.definition.name;
+    }
+    case "function":
+    case "model":
+    case "other": {
+      return enrichedDeclaration.name;
+    }
+    case "endpoint": {
+      switch (enrichedDeclaration.definition.subtype) {
+        case "rest": {
+          return `${enrichedDeclaration.definition.method.toUpperCase()}:${enrichedDeclaration.definition.path}`;
+        }
+        case "rpc": {
+          return `${enrichedDeclaration.definition.name}`;
+        }
+      }
+    }
+  }
+};
 
 export async function enrich({
   streamWriter,
@@ -75,7 +102,9 @@ export async function enrich({
     });
 
     const insertDeclarations: (typeof declarations.$inferSelect)[] = [];
-    let newAndUpdatedDeclarations: Record<string, DeclarationDependency[]> = {};
+    const allEnrichedDeclarations: z.infer<
+      typeof declarationSpecsWithDependenciesSchema
+    >[] = [];
 
     for (const file of changedFiles) {
       console.log(`[enrich:${projectId}] Processing file ${file.path}`);
@@ -111,105 +140,59 @@ export async function enrich({
 
       console.log(`[enrich:${projectId}] Processing file ${file.path}`);
 
-      // Process the declarations
-      const processedDeclarations = await processDeclarations({
-        fileContent: content,
-        filePath: file.path,
+      const {
+        declarations: enrichedDeclarations,
+        metadata: { deletedDeclarations, updatedDeclarations },
+      } = await enricher({
+        projectId: version.projectId,
+        path: file.path,
+        currentContent: content,
         previousContent,
       });
 
-      newAndUpdatedDeclarations = {
-        ...newAndUpdatedDeclarations,
-        ...processedDeclarations.newDeclarations,
-        ...processedDeclarations.updatedDeclarations,
-      };
+      allEnrichedDeclarations.push(...enrichedDeclarations);
 
-      // Delete all deleted and updated declarations
+      // Delete all declarations that are deleted or updated from the current version
       const deletedAndUpdatedDeclarations = [
-        ...Object.keys(processedDeclarations.deletedDeclarations),
-        ...Object.keys(processedDeclarations.updatedDeclarations),
+        ...deletedDeclarations,
+        ...updatedDeclarations,
       ];
 
-      // Delete all deleted and updated declarations
       if (deletedAndUpdatedDeclarations.length > 0) {
-        await tx.delete(versionDeclarations).where(
-          and(
-            eq(versionDeclarations.versionId, versionId),
-            inArray(
-              versionDeclarations.declarationId,
-              version.declarations
-                .filter(
-                  (declaration) =>
-                    declaration.declaration.fileId === file.id &&
-                    deletedAndUpdatedDeclarations.includes(
-                      declaration.declaration.name,
-                    ),
-                )
-                .map((declaration) => declaration.declarationId),
-            ),
-          ),
-        );
-      }
-
-      // Enrich the new and updated declarations
-      console.log(
-        `[enrich:${projectId}] Enriching declarations new: ${Object.keys(
-          processedDeclarations.newDeclarations,
-        ).join(", ")} updated: ${Object.keys(
-          processedDeclarations.updatedDeclarations,
-        ).join(", ")}`,
-      );
-
-      const enrichedDeclarations = await enricher({
-        projectId: version.projectId,
-        file: {
-          path: file.path,
-          content,
-        },
-        newDeclarations: processedDeclarations.newDeclarations,
-        updatedDeclarations: version.declarations
-          .filter(
+        const versionDeletedAndUpdatedDeclarations =
+          version.declarations.filter(
             (declaration) =>
-              Object.keys(processedDeclarations.updatedDeclarations).includes(
+              declaration.declaration.file.path === file.path &&
+              deletedAndUpdatedDeclarations.includes(
                 declaration.declaration.name,
-              ) && declaration.declaration.fileId === file.id,
-          )
-          .map((declaration) => declaration.declaration),
-      });
+              ),
+          );
+
+        // Delete the version declarations
+        if (versionDeletedAndUpdatedDeclarations.length > 0) {
+          await tx.delete(versionDeclarations).where(
+            and(
+              eq(versionDeclarations.versionId, versionId),
+              inArray(
+                versionDeclarations.declarationId,
+                versionDeletedAndUpdatedDeclarations.map(
+                  (declaration) => declaration.declaration.id,
+                ),
+              ),
+            ),
+          );
+        }
+      }
 
       console.log(
         `[enrich:${projectId}] Found ${enrichedDeclarations.length} enriched declarations`,
       );
 
-      for (const {
-        version: specVersion,
-        data,
-        isNode,
-      } of enrichedDeclarations) {
+      // Insert the new enriched declarations
+      for (const enrichedDeclaration of enrichedDeclarations) {
         const declarationId = createId();
 
-        const declarationName = (() => {
-          switch (data.type) {
-            case "component": {
-              return data.definition.name;
-            }
-            case "function":
-            case "model":
-            case "other": {
-              return data.name;
-            }
-            case "endpoint": {
-              switch (data.definition.subtype) {
-                case "rest": {
-                  return `${data.definition.method.toUpperCase()}:${data.definition.path}`;
-                }
-                case "rpc": {
-                  return `${data.definition.name}`;
-                }
-              }
-            }
-          }
-        })();
+        const declarationName = getDeclarationName(enrichedDeclaration);
 
         const declarationCreatedAt = new Date();
         const declarationUpdatedAt = new Date();
@@ -227,7 +210,7 @@ export async function enrich({
               })
             : undefined;
 
-        if (isNode) {
+        if (enrichedDeclaration.isNode) {
           // Insert the canvas node if it doesn't exist
           if (!canvasNode) {
             const [insertedCanvasNode] = await tx
@@ -252,11 +235,10 @@ export async function enrich({
           const newNode: CanvasNodeData = {
             id: declarationId,
             name: declarationName,
-            type: data.type,
+            type: enrichedDeclaration.type,
             specs: {
-              version: specVersion,
-              data,
-              isNode,
+              version: "v1",
+              data: enrichedDeclaration,
             },
             canvasNode: {
               id: canvasNode.id,
@@ -285,11 +267,10 @@ export async function enrich({
           id: declarationId,
           fileId: file.id,
           name: declarationName,
-          type: data.type,
+          type: enrichedDeclaration.type,
           specs: {
-            version: specVersion,
-            data,
-            isNode,
+            version: "v1",
+            data: enrichedDeclaration,
           },
           projectId,
           userId,
@@ -313,29 +294,33 @@ export async function enrich({
 
       // Insert declaration dependencies
       for (const declaration of insertDeclarations) {
-        const declarationDependencies =
-          newAndUpdatedDeclarations[declaration.name] ?? [];
-
-        // Insert the external declaration packages
-        const pkgs = declarationDependencies.filter(
-          (dependency) => dependency.type === "external",
+        const enrichedDeclaration = allEnrichedDeclarations.find(
+          (enrichedDeclaration) => {
+            const declarationName = getDeclarationName(enrichedDeclaration);
+            return declarationName === declaration.name;
+          },
         );
 
-        const savedPkgs = await tx.query.packages.findMany({
+        if (!enrichedDeclaration) {
+          throw new Error(`Declaration not found: ${declaration.name}`);
+        }
+
+        // Get the stored packages
+        const storedPkgs = await tx.query.packages.findMany({
           where: and(
             inArray(
               packages.name,
-              pkgs.map((pkg) => pkg.name),
+              enrichedDeclaration.dependencies.external.map((pkg) => pkg.name),
             ),
             eq(packages.projectId, projectId),
           ),
         });
 
-        if (pkgs.length > 0) {
+        if (enrichedDeclaration.dependencies.external.length > 0) {
           await tx.insert(declarationPackages).values(
-            pkgs.map((pkg) => {
-              const pkgId = savedPkgs.find(
-                (savedPkg) => savedPkg.name === pkg.name,
+            enrichedDeclaration.dependencies.external.map((pkg) => {
+              const pkgId = storedPkgs.find(
+                (storedPkg) => storedPkg.name === pkg.name,
               )?.id;
 
               if (!pkgId) {
@@ -352,11 +337,6 @@ export async function enrich({
           );
         }
 
-        // Insert declaration dependencies
-        const internalDependencies = declarationDependencies.filter(
-          (dependency) => dependency.type === "internal",
-        );
-
         // Get all declarations after inserting the new declarations
         const versionNewDeclarations =
           await tx.query.versionDeclarations.findMany({
@@ -370,7 +350,7 @@ export async function enrich({
             },
           });
 
-        for (const dependency of internalDependencies) {
+        for (const dependency of enrichedDeclaration.dependencies.internal) {
           // Get the dependencies that match the dependency name and file path
           const tempDependencies = versionNewDeclarations.filter(
             (declaration) => {
@@ -379,11 +359,10 @@ export async function enrich({
                   ? declaration.declaration.file.path.replace(/\.[^/.]+$/, "")
                   : `/${declaration.declaration.file.path.replace(/\.[^/.]+$/, "")}`;
 
-              const dependencyNormalizedFilePath = dependency.from.startsWith(
-                "/",
-              )
-                ? dependency.from.replace(/\.[^/.]+$/, "")
-                : `/${dependency.from.replace(/\.[^/.]+$/, "")}`;
+              const dependencyNormalizedFilePath =
+                dependency.importPath.startsWith("/")
+                  ? dependency.importPath.replace(/\.[^/.]+$/, "")
+                  : `/${dependency.importPath.replace(/\.[^/.]+$/, "")}`;
 
               return (
                 dependency.dependsOn.includes(declaration.declaration.name) &&

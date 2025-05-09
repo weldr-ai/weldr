@@ -177,10 +177,7 @@ export function ProjectView({
       >
         <div className="flex size-full rounded-xl">
           {projectView === "canvas" && (
-            <Canvas
-              initialNodes={initialNodes}
-              initialEdges={initialEdges ?? []}
-            />
+            <Canvas initialNodes={initialNodes} initialEdges={initialEdges} />
           )}
           {projectView === "preview" && <Preview projectId={project.id} />}
           {projectView === "versions" && (

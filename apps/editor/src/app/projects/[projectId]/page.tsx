@@ -46,7 +46,12 @@ export default async function ProjectPage({
         return acc;
       }, []) ?? [];
 
-    const initialEdges: Edge[] = [];
+    const initialEdges: Edge[] =
+      project.edges?.map((edge) => ({
+        id: `${edge.dependencyId}-${edge.dependentId}`,
+        source: edge.dependencyId,
+        target: edge.dependentId,
+      })) ?? [];
 
     return (
       <ProjectDataProvider

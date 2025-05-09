@@ -248,6 +248,7 @@ export const projectsRouter = {
                   declaration: {
                     with: {
                       canvasNode: true,
+                      dependencies: true,
                     },
                   },
                 },
@@ -262,13 +263,32 @@ export const projectsRouter = {
             });
           }
 
-          return currentVersion.declarations
+          const declarations = currentVersion.declarations
             .filter(
               (declaration) =>
                 declaration.declaration.canvasNode &&
                 declaration.declaration.type !== "other",
             )
             .map((declaration) => declaration.declaration);
+
+          const declarationToCanvasNodeMap = new Map(
+            declarations.map((declaration) => [
+              declaration.id,
+              declaration.canvasNode?.id,
+            ]),
+          );
+
+          return declarations.map((declaration) => ({
+            declaration,
+            edges: declaration.dependencies.map((dependency) => ({
+              dependencyId: declarationToCanvasNodeMap.get(
+                dependency.dependencyId,
+              ),
+              dependentId: declarationToCanvasNodeMap.get(
+                dependency.dependentId,
+              ),
+            })),
+          }));
         };
 
         const currentVersion = await ctx.db.query.versions.findFirst({
@@ -291,6 +311,27 @@ export const projectsRouter = {
           })),
         );
 
+        const currentVersionDeclarations = currentVersion
+          ? await getCurrentVersionDeclarations(currentVersion.id)
+          : [];
+
+        const uniqueEdges = Array.from(
+          new Map(
+            currentVersionDeclarations
+              .flatMap((decl) => decl.edges)
+              .map((edge) => [
+                `${edge.dependencyId}-${edge.dependentId}`,
+                edge,
+              ]),
+          ).values(),
+        ).filter(
+          (edge) =>
+            edge.dependencyId !== undefined && edge.dependentId !== undefined,
+        ) as {
+          dependencyId: string;
+          dependentId: string;
+        }[];
+
         const result = {
           ...project,
           chat: {
@@ -299,9 +340,10 @@ export const projectsRouter = {
           },
           currentVersion,
           versions: versionsWithThumbnails,
-          declarations: currentVersion
-            ? await getCurrentVersionDeclarations(currentVersion.id)
-            : undefined,
+          declarations: currentVersionDeclarations.map(
+            (decl) => decl.declaration,
+          ),
+          edges: uniqueEdges,
         };
 
         return result;

@@ -9,33 +9,24 @@ export const modelSchema = z.object({
       type: z.string().describe("The type of the column"),
       required: z
         .boolean()
-        .nullable()
         .optional()
         .describe("Whether the field is required"),
       nullable: z
         .boolean()
-        .nullable()
         .optional()
         .default(true)
         .describe("Whether the field is nullable"),
-      unique: z
-        .boolean()
-        .optional()
-        .nullable()
-        .describe("Whether the field is unique"),
+      unique: z.boolean().optional().describe("Whether the field is unique"),
       default: z
-        .any()
-        .nullable()
+        .unknown()
         .optional()
         .describe("The default value of the field"),
       isPrimaryKey: z
         .boolean()
-        .nullable()
         .optional()
         .describe("Whether the field is a primary key"),
       autoIncrement: z
         .boolean()
-        .nullable()
         .optional()
         .describe("Whether the field is auto-incremented"),
     })
@@ -50,17 +41,14 @@ export const modelSchema = z.object({
         .describe("The column name in the related model"),
       onDelete: z
         .enum(["CASCADE", "SET_NULL", "RESTRICT", "NO_ACTION"])
-        .nullable()
         .optional()
         .describe("The deletion behavior for related records"),
       onUpdate: z
         .enum(["CASCADE", "SET_NULL", "RESTRICT", "NO_ACTION"])
-        .nullable()
         .optional()
         .describe("The update behavior for related records"),
     })
     .array()
-    .nullable()
     .optional()
     .describe("The relationships of the model"),
   indexes: z
@@ -69,14 +57,9 @@ export const modelSchema = z.object({
       columns: z
         .array(z.string())
         .describe("The columns that make up the index"),
-      unique: z
-        .boolean()
-        .nullable()
-        .optional()
-        .describe("Whether the index is unique"),
+      unique: z.boolean().optional().describe("Whether the index is unique"),
     })
     .array()
-    .nullable()
     .optional()
     .describe("The indexes of the model"),
 });

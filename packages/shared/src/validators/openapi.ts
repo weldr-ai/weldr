@@ -24,12 +24,10 @@ export const parameterObjectSchema = z.object({
   in: parameterInSchema,
   description: z
     .string()
-    .nullable()
     .optional()
     .describe("A detailed explanation of the parameter's purpose and usage"),
   required: z
     .boolean()
-    .nullable()
     .optional()
     .describe("Whether this parameter is mandatory (defaults to false)"),
   schema: jsonSchema.describe(
@@ -58,12 +56,10 @@ export const contentTypeSchema = z
 export const requestBodyObjectSchema = z.object({
   description: z
     .string()
-    .nullable()
     .optional()
     .describe("A detailed explanation of the request body"),
   required: z
     .boolean()
-    .nullable()
     .optional()
     .describe("Whether the request body is required (defaults to false)"),
   content: z
@@ -74,8 +70,7 @@ export const requestBodyObjectSchema = z.object({
           "JSON Schema defining the structure and validation rules for this content type",
         ),
         example: z
-          .any()
-          .nullable()
+          .unknown()
           .optional()
           .describe(
             "An example of a valid request payload for this content type",
@@ -100,13 +95,11 @@ export const responseObjectSchema = z.object({
           "JSON Schema defining the structure of the response for this content type",
         ),
         example: z
-          .any()
-          .nullable()
+          .unknown()
           .optional()
           .describe("An example of a response payload for this content type"),
       }),
     )
-    .nullable()
     .optional()
     .describe(
       "Response specifications for different content types (e.g., application/json)",
@@ -136,18 +129,15 @@ export const openApiEndpointSpecSchema = z.object({
     ),
   tags: z
     .array(z.string())
-    .nullable()
     .optional()
     .describe(
       "Tags for organizing and categorizing the endpoint (e.g., ['users', 'admin'])",
     ),
   parameters: z
     .array(parameterObjectSchema)
-    .nullable()
     .optional()
     .describe("List of parameters that can be used with this endpoint"),
   requestBody: requestBodyObjectSchema
-    .nullable()
     .optional()
     .describe(
       "Specification of the request body, if this endpoint accepts one",
@@ -159,7 +149,6 @@ export const openApiEndpointSpecSchema = z.object({
     ),
   security: z
     .array(securityRequirementSchema)
-    .nullable()
     .optional()
     .describe("Security requirements for this specific endpoint"),
 });

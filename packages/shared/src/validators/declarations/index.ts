@@ -13,9 +13,8 @@ export const declarationTypeSchema = z.enum([
   "other",
 ]);
 
-export const declarationSpecsV1Schema = z.object({
-  version: z.literal("v1").describe("MUST always be v1"),
-  data: z.discriminatedUnion("type", [
+export const declarationSpecsV1Schema = z
+  .discriminatedUnion("type", [
     endpointSchema.describe("A REST/RPC API endpoint"),
     functionSchema,
     modelSchema.describe("A database model"),
@@ -23,24 +22,12 @@ export const declarationSpecsV1Schema = z.object({
     otherSchema.describe(
       "Any other declaration like a type, validation schema, etc.",
     ),
-  ]),
-  isNode: z.boolean().describe(
-    `Whether the declaration is a node.
-
-What are the nodes?
-- All endpoints and pages are nodes by default.
-- UI components that are visual are nodes.
-- All models are nodes by default.
-- Functions that are DIRECTLY part of the business logic are nodes.
-
-What are NOT nodes?
-- Other declarations are not nodes.
-- Layouts ARE NOT nodes.
-- Components that are not visual are not nodes.
-- Functions that are not part of the business logic are not nodes.`,
-  ),
-});
+  ])
+  .describe("The data of the declaration");
 
 export const declarationSpecsSchema = z.discriminatedUnion("version", [
-  declarationSpecsV1Schema,
+  z.object({
+    version: z.literal("v1").describe("MUST always be v1"),
+    data: declarationSpecsV1Schema,
+  }),
 ]);
