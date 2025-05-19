@@ -1,0 +1,94 @@
+{
+  "path": "/src/web/components/ui/switch.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Switch",
+        "purpose": "Allow users to toggle a boolean value on or off",
+        "description": "A stylized, accessible switch component built on top of Radix UI's SwitchPrimitive. It supports all props of SwitchPrimitive.Root and can be customized with a className. The switch visually indicates checked and unchecked states and is keyboard accessible.",
+        "properties": {
+          "type": "object",
+          "description": "All props from React.ComponentProps<typeof SwitchPrimitive.Root> are supported.",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the switch root element"
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Unchecked state by default unless otherwise specified by the 'checked' prop.",
+          "ui": {
+            "visible": [
+              "A horizontal pill-shaped switch with a thumb on the left (unchecked) or right (checked)."
+            ],
+            "enabled": [
+              "Clicking or tapping the switch toggles its state",
+              "Keyboard navigation and toggling via space/enter"
+            ]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User clicks or taps the switch, or toggles it via keyboard",
+              "event": "Switch toggled"
+            },
+            "from": {
+              "state": "Unchecked or checked",
+              "visible": ["Switch in current state (checked or unchecked)"]
+            },
+            "to": {
+              "state": "Checked if previously unchecked, unchecked if previously checked",
+              "visible": ["Switch in toggled state"]
+            },
+            "effects": [
+              "onChange handler is called if provided",
+              "Visual state updates to reflect checked/unchecked"
+            ]
+          },
+          {
+            "when": {
+              "description": "Switch is disabled",
+              "event": "Disabled prop set"
+            },
+            "from": {
+              "state": "Enabled",
+              "visible": ["Switch appears interactive"]
+            },
+            "to": {
+              "state": "Disabled",
+              "visible": ["Switch appears dimmed and non-interactive"]
+            },
+            "effects": ["User cannot toggle the switch"]
+          }
+        ],
+        "visualLayout": "A horizontally oriented pill-shaped track with a circular thumb that slides left/right to indicate off/on. The component uses theme colors for checked/unchecked states and supports dark mode.",
+        "implementationNotes": "Wraps Radix UI's SwitchPrimitive.Root and Thumb. Accepts all props from SwitchPrimitive.Root. Uses a utility function 'cn' for className merging. Designed for accessibility and keyboard navigation.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-switch",
+            "importPath": "@radix-ui/react-switch",
+            "dependsOn": ["SwitchPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["React"]
+          }
+        ]
+      }
+    }
+  ]
+}

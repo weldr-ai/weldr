@@ -1,0 +1,584 @@
+{
+  "path": "/src/web/components/ui/dialog.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Dialog",
+        "purpose": "Provides a root dialog component for displaying modal dialogs.",
+        "description": "A wrapper around Radix UI's DialogPrimitive.Root, used to create modal dialogs. It passes all props to the underlying primitive and adds a data-slot for styling or testing.",
+        "properties": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Dialog is closed by default.",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Dialog is triggered to open.",
+              "event": "Dialog open triggered"
+            },
+            "from": {
+              "state": "Dialog closed"
+            },
+            "to": {
+              "state": "Dialog open"
+            },
+            "effects": ["Dialog content is rendered and visible to the user."]
+          },
+          {
+            "when": {
+              "description": "Dialog is closed by user action or programmatically.",
+              "event": "Dialog close triggered"
+            },
+            "from": {
+              "state": "Dialog open"
+            },
+            "to": {
+              "state": "Dialog closed"
+            },
+            "effects": ["Dialog content is removed from the DOM."]
+          }
+        ],
+        "visualLayout": "No visual layout by itself; acts as a container for dialog content.",
+        "implementationNotes": "Wraps Radix UI DialogPrimitive.Root. Use with DialogTrigger, DialogContent, etc. for full dialog functionality.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dialog",
+            "importPath": "@radix-ui/react-dialog",
+            "dependsOn": ["Root"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DialogTrigger",
+        "purpose": "Provides a trigger element to open the dialog.",
+        "description": "A wrapper around Radix UI's DialogPrimitive.Trigger, used to open the dialog when interacted with. Adds a data-slot for styling or testing.",
+        "properties": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Dialog is closed.",
+          "ui": {
+            "visible": ["Trigger element (e.g., button)"],
+            "enabled": ["Trigger element"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User interacts with the trigger (e.g., clicks).",
+              "event": "Trigger activated"
+            },
+            "from": {
+              "state": "Dialog closed"
+            },
+            "to": {
+              "state": "Dialog open"
+            },
+            "effects": ["Dialog opens and content is displayed."]
+          }
+        ],
+        "visualLayout": "No layout; renders its children.",
+        "implementationNotes": "Wraps Radix UI DialogPrimitive.Trigger. Use inside Dialog.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-dialog",
+            "importPath": "@radix-ui/react-dialog",
+            "dependsOn": ["Trigger"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DialogPortal",
+        "purpose": "Renders dialog content in a React portal.",
+        "description": "A wrapper around Radix UI's DialogPrimitive.Portal, used to render dialog content outside the DOM hierarchy of the parent component. Adds a data-slot for styling or testing.",
+        "properties": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Portal is not rendered until dialog is open.",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Dialog is opened.",
+              "event": "Dialog open"
+            },
+            "from": {
+              "state": "Dialog closed"
+            },
+            "to": {
+              "state": "Dialog open"
+            },
+            "effects": ["Dialog content is rendered in a portal."]
+          }
+        ],
+        "visualLayout": "No layout; acts as a container for dialog content.",
+        "implementationNotes": "Wraps Radix UI DialogPrimitive.Portal.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-dialog",
+            "importPath": "@radix-ui/react-dialog",
+            "dependsOn": ["Portal"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DialogClose",
+        "purpose": "Provides a button or element to close the dialog.",
+        "description": "A wrapper around Radix UI's DialogPrimitive.Close, used to close the dialog when interacted with. Adds a data-slot for styling or testing.",
+        "properties": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Dialog is open.",
+          "ui": {
+            "visible": ["Close button or element"],
+            "enabled": ["Close button or element"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User interacts with the close element.",
+              "event": "Close triggered"
+            },
+            "from": {
+              "state": "Dialog open"
+            },
+            "to": {
+              "state": "Dialog closed"
+            },
+            "effects": ["Dialog closes and content is removed."]
+          }
+        ],
+        "visualLayout": "No layout; renders its children.",
+        "implementationNotes": "Wraps Radix UI DialogPrimitive.Close. Use inside DialogContent.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-dialog",
+            "importPath": "@radix-ui/react-dialog",
+            "dependsOn": ["Close"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DialogOverlay",
+        "purpose": "Renders a semi-transparent overlay behind the dialog.",
+        "description": "A wrapper around Radix UI's DialogPrimitive.Overlay, providing a styled overlay with fade and animation effects. Adds a data-slot for styling or testing.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the overlay."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Overlay is not visible until dialog is open.",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Dialog is opened.",
+              "event": "Dialog open"
+            },
+            "from": {
+              "state": "Dialog closed"
+            },
+            "to": {
+              "state": "Dialog open"
+            },
+            "effects": ["Overlay is rendered with fade-in animation."]
+          },
+          {
+            "when": {
+              "description": "Dialog is closed.",
+              "event": "Dialog close"
+            },
+            "from": {
+              "state": "Dialog open"
+            },
+            "to": {
+              "state": "Dialog closed"
+            },
+            "effects": ["Overlay is removed with fade-out animation."]
+          }
+        ],
+        "visualLayout": "Covers the entire viewport behind the dialog content.",
+        "implementationNotes": "Wraps Radix UI DialogPrimitive.Overlay. Uses cn utility for className merging.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dialog",
+            "importPath": "@radix-ui/react-dialog",
+            "dependsOn": ["Overlay"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DialogContent",
+        "purpose": "Renders the main content of the dialog, including children and a close button.",
+        "description": "A wrapper around Radix UI's DialogPrimitive.Content, providing a styled modal content area. Includes a close button with an X icon and uses DialogPortal and DialogOverlay for proper layering.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the content."
+            },
+            "children": {
+              "type": "any",
+              "description": "Content to display inside the dialog."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Dialog content is not rendered until dialog is open.",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Dialog is opened.",
+              "event": "Dialog open"
+            },
+            "from": {
+              "state": "Dialog closed"
+            },
+            "to": {
+              "state": "Dialog open"
+            },
+            "effects": [
+              "Dialog content is rendered in a portal with overlay and close button."
+            ]
+          },
+          {
+            "when": {
+              "description": "User clicks the close button.",
+              "event": "Close button clicked"
+            },
+            "from": {
+              "state": "Dialog open"
+            },
+            "to": {
+              "state": "Dialog closed"
+            },
+            "effects": ["Dialog closes and content is removed."]
+          }
+        ],
+        "visualLayout": "Centered modal with padding, rounded corners, and a close button in the top-right corner.",
+        "implementationNotes": "Uses DialogPortal, DialogOverlay, and DialogPrimitive.Content. Includes a styled close button with XIcon.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dialog",
+            "importPath": "@radix-ui/react-dialog",
+            "dependsOn": ["Content", "Close"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["XIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DialogHeader",
+        "purpose": "Renders a header section for the dialog.",
+        "description": "A styled div for the dialog header, typically used to display the dialog title or introductory content. Adds a data-slot for styling or testing.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the header."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Header is rendered as part of dialog content.",
+          "ui": {
+            "visible": ["Header section"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Flex column, gap between elements, centered or left-aligned text.",
+        "implementationNotes": "Styled div using cn utility. Use inside DialogContent.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DialogFooter",
+        "purpose": "Renders a footer section for the dialog, typically for actions.",
+        "description": "A styled div for the dialog footer, usually containing action buttons. Adds a data-slot for styling or testing.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the footer."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Footer is rendered as part of dialog content.",
+          "ui": {
+            "visible": ["Footer section"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Flex row (on small screens, column-reverse), gap between elements, right-aligned on larger screens.",
+        "implementationNotes": "Styled div using cn utility. Use inside DialogContent.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DialogTitle",
+        "purpose": "Renders the title of the dialog.",
+        "description": "A wrapper around Radix UI's DialogPrimitive.Title, styled for use as the dialog's main heading. Adds a data-slot for styling or testing.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the title."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Title is rendered as part of dialog content.",
+          "ui": {
+            "visible": ["Dialog title"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Large, bold text for the dialog heading.",
+        "implementationNotes": "Wraps Radix UI DialogPrimitive.Title. Use inside DialogHeader.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dialog",
+            "importPath": "@radix-ui/react-dialog",
+            "dependsOn": ["Title"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DialogDescription",
+        "purpose": "Renders a description or supporting text for the dialog.",
+        "description": "A wrapper around Radix UI's DialogPrimitive.Description, styled for use as supporting text in the dialog. Adds a data-slot for styling or testing.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the description."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Description is rendered as part of dialog content.",
+          "ui": {
+            "visible": ["Dialog description"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Smaller, muted text for additional dialog information.",
+        "implementationNotes": "Wraps Radix UI DialogPrimitive.Description. Use inside DialogHeader or DialogContent.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dialog",
+            "importPath": "@radix-ui/react-dialog",
+            "dependsOn": ["Description"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    }
+  ]
+}

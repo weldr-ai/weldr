@@ -1,0 +1,272 @@
+{
+  "path": "/src/web/components/ui/tooltip.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Tooltip",
+        "purpose": "Display contextual information when users hover or focus on an element",
+        "description": "A reusable tooltip component that wraps its children and shows a tooltip on hover or focus. It uses Radix UI's Tooltip primitives and provides a consistent style and animation.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "No tooltip is visible. The trigger element is rendered.",
+          "ui": {
+            "visible": ["Trigger element"],
+            "enabled": ["Trigger element"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User hovers or focuses on the trigger element",
+              "event": "Tooltip trigger hovered or focused"
+            },
+            "from": {
+              "state": "Tooltip hidden",
+              "visible": ["Trigger element"]
+            },
+            "to": {
+              "state": "Tooltip visible",
+              "visible": ["Trigger element", "Tooltip content"]
+            },
+            "effects": ["Tooltip content is displayed near the trigger element"]
+          },
+          {
+            "when": {
+              "description": "User moves mouse away or blurs the trigger element",
+              "event": "Tooltip trigger unhovered or blurred"
+            },
+            "from": {
+              "state": "Tooltip visible",
+              "visible": ["Trigger element", "Tooltip content"]
+            },
+            "to": {
+              "state": "Tooltip hidden",
+              "visible": ["Trigger element"]
+            },
+            "effects": ["Tooltip content is hidden"]
+          }
+        ],
+        "visualLayout": "The trigger element is wrapped, and the tooltip content appears above, below, left, or right of the trigger with animation.",
+        "implementationNotes": "Composes TooltipProvider and TooltipPrimitive.Root. All props are passed to the underlying Radix Tooltip Root.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-tooltip",
+            "importPath": "@radix-ui/react-tooltip",
+            "dependsOn": [
+              "Provider",
+              "Root",
+              "Trigger",
+              "Content",
+              "Portal",
+              "Arrow"
+            ]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "TooltipContent",
+        "purpose": "Render the content of a tooltip with custom styling and animation",
+        "description": "A reusable component for the content of a tooltip, providing custom styles, animation, and an arrow. It is rendered inside a portal and composes Radix UI's Tooltip.Content.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the tooltip content"
+            },
+            "sideOffset": {
+              "type": "number",
+              "description": "Offset distance from the trigger element",
+              "default": 0
+            },
+            "children": {
+              "type": "any",
+              "description": "Tooltip content to display"
+            }
+          }
+        },
+        "initial": {
+          "data": "Tooltip content is not rendered until triggered.",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Tooltip is triggered to show",
+              "event": "Tooltip becomes visible"
+            },
+            "from": {
+              "state": "Tooltip content hidden"
+            },
+            "to": {
+              "state": "Tooltip content visible",
+              "visible": ["Tooltip content", "Tooltip arrow"]
+            },
+            "effects": [
+              "Tooltip content and arrow are rendered in a portal with animation"
+            ]
+          }
+        ],
+        "visualLayout": "Tooltip content appears in a floating layer with rounded corners, background color, and an arrow pointing to the trigger.",
+        "implementationNotes": "Uses Radix Tooltip.Portal and Tooltip.Content. Applies custom classes and supports sideOffset and className props.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-tooltip",
+            "importPath": "@radix-ui/react-tooltip",
+            "dependsOn": ["Content", "Portal", "Arrow"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "TooltipProvider",
+        "purpose": "Provide context for tooltip components and manage delay duration",
+        "description": "A provider component for tooltips that sets up context and manages delay duration for showing tooltips. Wraps Radix UI's Tooltip.Provider.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "delayDuration": {
+              "type": "number",
+              "description": "Delay in milliseconds before showing the tooltip",
+              "default": 0
+            }
+          }
+        },
+        "initial": {
+          "data": "Tooltip context is provided to all children.",
+          "ui": {
+            "visible": ["Children components"],
+            "enabled": ["Children components"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "TooltipProvider is mounted",
+              "event": "Component mounted"
+            },
+            "from": {
+              "state": "No tooltip context"
+            },
+            "to": {
+              "state": "Tooltip context available"
+            },
+            "effects": [
+              "All nested tooltips receive context and delay configuration"
+            ]
+          }
+        ],
+        "visualLayout": "Wraps children in a context provider for tooltips.",
+        "implementationNotes": "Passes delayDuration and other props to Radix Tooltip.Provider.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-tooltip",
+            "importPath": "@radix-ui/react-tooltip",
+            "dependsOn": ["Provider"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "TooltipTrigger",
+        "purpose": "Designate an element as the trigger for a tooltip",
+        "description": "A reusable component that marks its child as the trigger for a tooltip. Composes Radix UI's Tooltip.Trigger and adds a data attribute for styling or testing.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Trigger element is rendered and ready to activate tooltip.",
+          "ui": {
+            "visible": ["Trigger element"],
+            "enabled": ["Trigger element"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User hovers or focuses the trigger",
+              "event": "Trigger hovered or focused"
+            },
+            "from": {
+              "state": "Tooltip hidden"
+            },
+            "to": {
+              "state": "Tooltip visible"
+            },
+            "effects": ["Tooltip is shown"]
+          }
+        ],
+        "visualLayout": "Renders the trigger element, which can be any React node.",
+        "implementationNotes": "All props are passed to Radix Tooltip.Trigger. Adds data-slot attribute for targeting.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-tooltip",
+            "importPath": "@radix-ui/react-tooltip",
+            "dependsOn": ["Trigger"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      }
+    }
+  ]
+}

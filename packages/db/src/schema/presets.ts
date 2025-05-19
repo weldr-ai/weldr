@@ -28,7 +28,7 @@ interface ExternalDependency {
 
 export type DeclarationDependency = InternalDependency | ExternalDependency;
 
-export const presetTypes = pgEnum("preset_type", ["next-base"]);
+export const presetTypes = pgEnum("preset_type", ["base"]);
 
 export const presets = pgTable("presets", {
   id: text("id")

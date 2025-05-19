@@ -1,0 +1,89 @@
+{
+  "path": "/src/web/components/ui/label.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Label",
+        "purpose": "Display a styled label for form elements",
+        "description": "A reusable UI component that renders a styled label using Radix UI's LabelPrimitive. It supports custom class names and passes all props to the underlying primitive. The label is visually styled for accessibility and disabled states.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the label"
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "No label text or children by default",
+          "ui": {
+            "visible": ["A styled label element"],
+            "enabled": ["All props supported by Radix LabelPrimitive.Root"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "The component is rendered with children",
+              "event": "Component rendered"
+            },
+            "from": {
+              "state": "Initial render",
+              "visible": ["Empty label or with children"]
+            },
+            "to": {
+              "state": "Label displayed",
+              "visible": ["Label text or children are visible"]
+            },
+            "effects": [
+              "Label is associated with a form element if used with htmlFor"
+            ]
+          },
+          {
+            "when": {
+              "description": "The label is rendered in a disabled context (peer-disabled or group-data-[disabled=true])",
+              "event": "Disabled state applied"
+            },
+            "from": {
+              "state": "Enabled",
+              "visible": ["Label with normal opacity and pointer events"]
+            },
+            "to": {
+              "state": "Disabled",
+              "visible": [
+                "Label with reduced opacity and pointer events disabled"
+              ]
+            },
+            "effects": ["Label visually indicates disabled state"]
+          }
+        ],
+        "visualLayout": "A flex container with gap, font styling, and disabled state styles",
+        "implementationNotes": "Wraps Radix UI LabelPrimitive.Root and applies custom utility classes for consistent styling. Accepts all props supported by the primitive.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-label",
+            "importPath": "@radix-ui/react-label",
+            "dependsOn": ["LabelPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      }
+    }
+  ]
+}

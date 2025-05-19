@@ -1,0 +1,114 @@
+{
+  "path": "/src/web/client.tsx",
+  "declarations": [
+    {
+      "type": "function",
+      "name": "createRouter",
+      "description": "Creates and configures the application's Tanstack Router instance for client-side routing. Used to provide routing context to the React application.",
+      "parameters": {},
+      "returns": {
+        "type": "object",
+        "description": "A configured Tanstack Router instance."
+      },
+      "signature": "function createRouter(): Router",
+      "implementationNotes": "This function is imported from './router' and is used to instantiate the router for the client application. It is passed to <StartClient> for hydration.",
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/router",
+            "dependsOn": ["createRouter"]
+          }
+        ],
+        "external": []
+      }
+    },
+    {
+      "type": "function",
+      "name": "hydrateRoot",
+      "description": "Hydrates a server-rendered React application on the client, attaching event listeners and enabling interactivity.",
+      "parameters": {
+        "type": "object",
+        "required": ["container", "initialChildren"],
+        "properties": {
+          "container": {
+            "type": "any",
+            "description": "The DOM element to hydrate into."
+          },
+          "initialChildren": {
+            "type": "any",
+            "description": "The React element tree to hydrate."
+          }
+        }
+      },
+      "returns": {
+        "type": "void",
+        "description": "No return value."
+      },
+      "signature": "function hydrateRoot(container: any, initialChildren: any): void",
+      "implementationNotes": "Called with the document and the <StartClient router={router} /> element to hydrate the React app on the client.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "react-dom",
+            "importPath": "react-dom/client",
+            "dependsOn": ["hydrateRoot"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "StartClient",
+        "purpose": "Bootstraps and hydrates a Tanstack Router-based React application on the client.",
+        "description": "A React component that initializes the client-side application using Tanstack Router, enabling routing and navigation after hydration.",
+        "properties": {
+          "type": "object",
+          "required": ["router"],
+          "properties": {
+            "router": {
+              "type": "object",
+              "description": "The Tanstack Router instance to use for routing."
+            }
+          }
+        },
+        "initial": {
+          "data": "The application is hydrated and routing is enabled.",
+          "ui": {
+            "visible": ["The root of the React application"],
+            "enabled": ["Navigation and routing"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "The application is loaded and hydrated on the client.",
+              "event": "Hydration complete"
+            },
+            "from": {
+              "state": "Server-rendered static markup"
+            },
+            "to": {
+              "state": "Interactive client application"
+            },
+            "effects": ["Event listeners are attached and routing is enabled"]
+          }
+        ],
+        "visualLayout": "Wraps the root of the React application, providing routing context.",
+        "implementationNotes": "Imported from '@tanstack/react-start', this component is used as the root for client-side hydration with Tanstack Router.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@tanstack/react-start",
+            "importPath": "@tanstack/react-start",
+            "dependsOn": ["StartClient"]
+          }
+        ]
+      }
+    }
+  ]
+}

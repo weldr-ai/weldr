@@ -1,0 +1,70 @@
+{
+  "path": "/src/web/router.tsx",
+  "declarations": [
+    {
+      "type": "function",
+      "name": "createRouter",
+      "description": "Creates and configures a Tanstack Router instance integrated with React Query context and custom error/not-found components. The router is set up with scroll restoration, a default preload stale time, and a custom provider for context. Returns the configured router instance.",
+      "parameters": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "returns": {
+        "type": "object",
+        "description": "A configured Tanstack Router instance with React Query integration and custom error handling."
+      },
+      "signature": "(): Router",
+      "implementationNotes": "Uses routerWithQueryClient to integrate Tanstack Router with React Query. The context is provided by TanstackQuery.getContext(). Custom error and not found components are set. The Wrap property injects the TanstackQuery.Provider around all route children.",
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/integrations/tanstack-query",
+            "dependsOn": ["getContext", "Provider"]
+          },
+          {
+            "importPath": "src/web/routeTree.gen",
+            "dependsOn": ["routeTree"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@tanstack/react-router",
+            "importPath": "@tanstack/react-router",
+            "dependsOn": [
+              "DefaultGlobalNotFound",
+              "ErrorComponent",
+              "createRouter"
+            ]
+          },
+          {
+            "name": "@tanstack/react-router-with-query",
+            "importPath": "@tanstack/react-router-with-query",
+            "dependsOn": ["routerWithQueryClient"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["React"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "other",
+      "declType": "module augmentation",
+      "name": "Register (Tanstack Router type safety)",
+      "description": "Augments the @tanstack/react-router module to register the application's router type for improved type safety. This ensures that the router instance returned by createRouter is recognized by Tanstack Router's type system.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@tanstack/react-router",
+            "importPath": "@tanstack/react-router",
+            "dependsOn": []
+          }
+        ]
+      }
+    }
+  ]
+}

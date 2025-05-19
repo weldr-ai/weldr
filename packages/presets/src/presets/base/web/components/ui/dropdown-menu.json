@@ -1,0 +1,915 @@
+{
+  "path": "/src/web/components/ui/dropdown-menu.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenu",
+        "purpose": "Provides a root context for a dropdown menu UI component",
+        "description": "A wrapper component for the Radix UI DropdownMenuPrimitive.Root, used to create a dropdown menu context. It is the entry point for dropdown menu interactions and state management.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Dropdown menu is closed and not rendered",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User interacts with the trigger element (e.g., clicks or presses)",
+              "event": "Dropdown menu trigger activated"
+            },
+            "from": {
+              "state": "Dropdown menu closed"
+            },
+            "to": {
+              "state": "Dropdown menu open"
+            },
+            "effects": ["Dropdown menu content is rendered and visible"]
+          },
+          {
+            "when": {
+              "description": "User clicks outside the menu or selects an item",
+              "event": "Dropdown menu dismissed"
+            },
+            "from": {
+              "state": "Dropdown menu open"
+            },
+            "to": {
+              "state": "Dropdown menu closed"
+            },
+            "effects": ["Dropdown menu content is hidden"]
+          }
+        ],
+        "visualLayout": "No visual output itself; provides context for dropdown menu children.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.Root and passes all props through.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["Root"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuPortal",
+        "purpose": "Renders dropdown menu content in a React portal",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.Portal, used to render dropdown menu content outside the DOM hierarchy of the parent component for proper positioning and stacking.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "No portal content rendered",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Dropdown menu is opened and content needs to be rendered in a portal",
+              "event": "Dropdown menu open"
+            },
+            "from": {
+              "state": "Portal not rendered"
+            },
+            "to": {
+              "state": "Portal rendered"
+            },
+            "effects": ["Dropdown menu content is rendered in a portal"]
+          }
+        ],
+        "visualLayout": "No visual output itself; provides a portal context for dropdown menu content.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.Portal and passes all props through.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["Portal"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuTrigger",
+        "purpose": "Provides a trigger element for opening the dropdown menu",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.Trigger, used as the interactive element that opens the dropdown menu when activated.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Trigger is rendered and menu is closed",
+          "ui": {
+            "visible": ["Trigger element"],
+            "enabled": ["Trigger element"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User interacts with the trigger (e.g., click, keyboard)",
+              "event": "Trigger activated"
+            },
+            "from": {
+              "state": "Menu closed"
+            },
+            "to": {
+              "state": "Menu open"
+            },
+            "effects": ["Dropdown menu content is shown"]
+          }
+        ],
+        "visualLayout": "Renders a trigger element (e.g., button) for the dropdown menu.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.Trigger and passes all props through.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["Trigger"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuContent",
+        "purpose": "Displays the content of the dropdown menu",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.Content, used to render the dropdown menu's content with custom styling and animation. Supports side offset and custom class names.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            },
+            "sideOffset": {
+              "type": "number"
+            }
+          }
+        },
+        "initial": {
+          "data": "Dropdown menu content is hidden",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Dropdown menu is opened",
+              "event": "Menu open"
+            },
+            "from": {
+              "state": "Content hidden"
+            },
+            "to": {
+              "state": "Content visible"
+            },
+            "effects": ["Dropdown menu content is rendered and visible"]
+          }
+        ],
+        "visualLayout": "Renders a styled dropdown menu panel with animation and positioning.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.Content inside a Portal and applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["Portal", "Content"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuGroup",
+        "purpose": "Groups dropdown menu items together",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.Group, used to group related dropdown menu items for accessibility and styling purposes.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "No group rendered",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Dropdown menu group is rendered",
+              "event": "Group rendered"
+            },
+            "from": {
+              "state": "No group"
+            },
+            "to": {
+              "state": "Group present"
+            },
+            "effects": ["Group of menu items is rendered"]
+          }
+        ],
+        "visualLayout": "No visual output itself; groups child menu items.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.Group and passes all props through.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["Group"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuItem",
+        "purpose": "Represents an actionable item in the dropdown menu",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.Item, used to render a selectable item in the dropdown menu. Supports 'inset' and 'variant' props for styling (e.g., destructive actions).",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            },
+            "inset": {
+              "type": "boolean"
+            },
+            "variant": {
+              "type": "string",
+              "enum": ["default", "destructive"]
+            }
+          }
+        },
+        "initial": {
+          "data": "Menu item is rendered and enabled",
+          "ui": {
+            "visible": ["Menu item"],
+            "enabled": ["Menu item"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User selects the menu item",
+              "event": "Menu item selected"
+            },
+            "from": {
+              "state": "Item enabled"
+            },
+            "to": {
+              "state": "Item action triggered"
+            },
+            "effects": ["Associated action is performed and menu may close"]
+          }
+        ],
+        "visualLayout": "Renders a styled menu item with optional destructive styling and inset padding.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.Item and applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["Item"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuCheckboxItem",
+        "purpose": "Represents a checkbox item in the dropdown menu",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.CheckboxItem, used to render a menu item with a checkbox indicator. Supports checked state and custom children.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            },
+            "checked": {
+              "type": "boolean"
+            }
+          }
+        },
+        "initial": {
+          "data": "Checkbox item is rendered, checked or unchecked",
+          "ui": {
+            "visible": ["Checkbox item"],
+            "enabled": ["Checkbox item"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User toggles the checkbox item",
+              "event": "Checkbox toggled"
+            },
+            "from": {
+              "state": "Checked or unchecked"
+            },
+            "to": {
+              "state": "Toggled"
+            },
+            "effects": [
+              "Checked state is updated and indicator is shown or hidden"
+            ]
+          }
+        ],
+        "visualLayout": "Renders a menu item with a checkbox indicator and custom content.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.CheckboxItem and shows a CheckIcon when checked.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["CheckboxItem", "ItemIndicator"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["CheckIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuRadioGroup",
+        "purpose": "Groups radio items in the dropdown menu",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.RadioGroup, used to group related radio items for exclusive selection within the dropdown menu.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Radio group is rendered",
+          "ui": {
+            "visible": ["Radio group"],
+            "enabled": ["Radio group"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User selects a radio item",
+              "event": "Radio item selected"
+            },
+            "from": {
+              "state": "One item selected"
+            },
+            "to": {
+              "state": "Another item selected"
+            },
+            "effects": ["Selected radio item is updated"]
+          }
+        ],
+        "visualLayout": "Renders a group of radio items for exclusive selection.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.RadioGroup and passes all props through.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["RadioGroup"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuRadioItem",
+        "purpose": "Represents a radio item in the dropdown menu",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.RadioItem, used to render a selectable radio item with an indicator. Supports custom children and class names.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Radio item is rendered, selected or not",
+          "ui": {
+            "visible": ["Radio item"],
+            "enabled": ["Radio item"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User selects the radio item",
+              "event": "Radio item selected"
+            },
+            "from": {
+              "state": "Not selected"
+            },
+            "to": {
+              "state": "Selected"
+            },
+            "effects": ["Radio indicator is shown and selection is updated"]
+          }
+        ],
+        "visualLayout": "Renders a menu item with a radio indicator and custom content.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.RadioItem and shows a CircleIcon when selected.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["RadioItem", "ItemIndicator"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["CircleIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuLabel",
+        "purpose": "Displays a label within the dropdown menu",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.Label, used to render a non-interactive label for grouping or describing menu items. Supports optional inset styling.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            },
+            "inset": {
+              "type": "boolean"
+            }
+          }
+        },
+        "initial": {
+          "data": "Label is rendered",
+          "ui": {
+            "visible": ["Label"],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Label is rendered in the menu",
+              "event": "Label rendered"
+            },
+            "from": {
+              "state": "No label"
+            },
+            "to": {
+              "state": "Label present"
+            },
+            "effects": ["Label is visible in the menu"]
+          }
+        ],
+        "visualLayout": "Renders a styled label for menu sections or groups.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.Label and applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["Label"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuSeparator",
+        "purpose": "Visually separates groups of items in the dropdown menu",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.Separator, used to render a horizontal line that separates groups of menu items.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Separator is rendered",
+          "ui": {
+            "visible": ["Separator"],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Separator is rendered in the menu",
+              "event": "Separator rendered"
+            },
+            "from": {
+              "state": "No separator"
+            },
+            "to": {
+              "state": "Separator present"
+            },
+            "effects": ["Separator is visible in the menu"]
+          }
+        ],
+        "visualLayout": "Renders a horizontal line as a separator between menu items.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.Separator and applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["Separator"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuShortcut",
+        "purpose": "Displays a keyboard shortcut hint in the dropdown menu",
+        "description": "A span element styled to show keyboard shortcut hints for menu items. Not interactive, purely visual.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Shortcut is rendered",
+          "ui": {
+            "visible": ["Shortcut"],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Shortcut is rendered in the menu",
+              "event": "Shortcut rendered"
+            },
+            "from": {
+              "state": "No shortcut"
+            },
+            "to": {
+              "state": "Shortcut present"
+            },
+            "effects": ["Shortcut is visible in the menu"]
+          }
+        ],
+        "visualLayout": "Renders a right-aligned text hint for keyboard shortcuts.",
+        "implementationNotes": "Renders a styled span for shortcut hints, using the cn utility for class names.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuSub",
+        "purpose": "Provides a sub-menu context within the dropdown menu",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.Sub, used to create nested sub-menus within a dropdown menu.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Sub-menu is not rendered",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User interacts with a sub-menu trigger",
+              "event": "Sub-menu trigger activated"
+            },
+            "from": {
+              "state": "Sub-menu closed"
+            },
+            "to": {
+              "state": "Sub-menu open"
+            },
+            "effects": ["Sub-menu content is rendered and visible"]
+          }
+        ],
+        "visualLayout": "No visual output itself; provides context for sub-menu children.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.Sub and passes all props through.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["Sub"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuSubTrigger",
+        "purpose": "Provides a trigger for opening a sub-menu in the dropdown menu",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.SubTrigger, used as the interactive element that opens a sub-menu. Supports optional inset styling and displays a right arrow icon.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            },
+            "inset": {
+              "type": "boolean"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sub-menu trigger is rendered and sub-menu is closed",
+          "ui": {
+            "visible": ["Sub-menu trigger"],
+            "enabled": ["Sub-menu trigger"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User interacts with the sub-menu trigger",
+              "event": "Sub-menu trigger activated"
+            },
+            "from": {
+              "state": "Sub-menu closed"
+            },
+            "to": {
+              "state": "Sub-menu open"
+            },
+            "effects": ["Sub-menu content is shown"]
+          }
+        ],
+        "visualLayout": "Renders a trigger element with a right arrow icon for sub-menus.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.SubTrigger, applies custom class names, and displays a ChevronRightIcon.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["SubTrigger"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["ChevronRightIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "DropdownMenuSubContent",
+        "purpose": "Displays the content of a sub-menu in the dropdown menu",
+        "description": "A wrapper for Radix UI DropdownMenuPrimitive.SubContent, used to render the content of a nested sub-menu with custom styling and animation.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sub-menu content is hidden",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Sub-menu is opened",
+              "event": "Sub-menu open"
+            },
+            "from": {
+              "state": "Sub-menu content hidden"
+            },
+            "to": {
+              "state": "Sub-menu content visible"
+            },
+            "effects": ["Sub-menu content is rendered and visible"]
+          }
+        ],
+        "visualLayout": "Renders a styled sub-menu panel with animation and positioning.",
+        "implementationNotes": "Wraps Radix UI DropdownMenuPrimitive.SubContent and applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-dropdown-menu",
+            "importPath": "@radix-ui/react-dropdown-menu",
+            "dependsOn": ["SubContent"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    }
+  ]
+}

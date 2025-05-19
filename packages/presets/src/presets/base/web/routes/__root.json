@@ -1,0 +1,151 @@
+{
+  "path": "/src/web/routes/__root.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "protected": false,
+      "definition": {
+        "name": "RootDocument",
+        "purpose": "Provides the root HTML document structure and layout for the app",
+        "description": "A layout component that wraps the application in a standard HTML document structure, including <html>, <head>, and <body> tags. It injects Tanstack Router's HeadContent and Scripts, and renders the current route's content via children.",
+        "properties": {
+          "type": "object",
+          "required": ["children"],
+          "properties": {
+            "children": {
+              "type": "any",
+              "description": "The content to render inside the document body, typically the current route's component tree."
+            }
+          }
+        },
+        "initial": {
+          "data": "No route content rendered yet",
+          "ui": {
+            "visible": [
+              "HTML document structure with <head> and <body>",
+              "HeadContent for meta/links",
+              "Scripts for client-side routing"
+            ],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "A route is matched and rendered",
+              "event": "Route content is rendered as children"
+            },
+            "from": {
+              "state": "Empty document",
+              "visible": ["HTML structure with empty body"]
+            },
+            "to": {
+              "state": "Document with route content",
+              "visible": ["HTML structure with route content in body"]
+            },
+            "effects": [
+              "The current route's component tree is rendered inside the document body"
+            ]
+          }
+        ],
+        "visualLayout": "Standard HTML document with head and body. HeadContent injects meta tags and links. Body contains the route content and Scripts.",
+        "implementationNotes": "Used as the root layout for all routes. Integrates Tanstack Router's HeadContent and Scripts for SSR/CSR.",
+        "subtype": "layout",
+        "route": "/",
+        "meta": "Weldr App root layout"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/routes/__root.tsx",
+            "dependsOn": ["HeadContent", "Scripts"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "protected": false,
+      "definition": {
+        "name": "Route",
+        "purpose": "Root route layout for the application, providing global head tags and wrapping all routes in the RootDocument",
+        "description": "Defines the root route for the Tanstack Router app. Sets up global meta tags, favicon, font links, and CSS. Renders the RootDocument layout and the current route's Outlet.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "No route content rendered yet",
+          "ui": {
+            "visible": [
+              "Global meta tags and links in <head>",
+              "RootDocument layout",
+              "Outlet for nested routes"
+            ],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "A nested route is matched",
+              "event": "Nested route rendered in Outlet"
+            },
+            "from": {
+              "state": "Root layout with empty Outlet",
+              "visible": ["RootDocument with empty Outlet"]
+            },
+            "to": {
+              "state": "Root layout with nested route content",
+              "visible": ["RootDocument with nested route content in Outlet"]
+            },
+            "effects": [
+              "Nested route's component tree is rendered inside the Outlet"
+            ]
+          }
+        ],
+        "visualLayout": "RootDocument wrapping an Outlet. Head tags and links are set globally.",
+        "implementationNotes": "Uses Tanstack Router's createRootRouteWithContext for context injection. Head tags and links are set for the entire app.",
+        "subtype": "layout",
+        "route": "/",
+        "meta": "Weldr App root route"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/routes/__root.tsx",
+            "dependsOn": ["RootDocument"]
+          },
+          {
+            "importPath": "src/web/styles.css?url",
+            "dependsOn": ["default"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@tanstack/react-router",
+            "importPath": "@tanstack/react-router",
+            "dependsOn": [
+              "HeadContent",
+              "Outlet",
+              "Scripts",
+              "createRootRouteWithContext"
+            ]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      }
+    }
+  ]
+}

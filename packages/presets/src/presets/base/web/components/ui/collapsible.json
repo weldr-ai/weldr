@@ -1,0 +1,176 @@
+{
+  "path": "/src/web/components/ui/collapsible.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Collapsible",
+        "purpose": "Provides a collapsible container for showing and hiding content.",
+        "description": "A reusable UI component that wraps Radix UI's Collapsible.Root, allowing content to be expanded or collapsed. Accepts all props supported by Radix's Collapsible.Root.",
+        "properties": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Collapsed or expanded state as determined by props.",
+          "ui": {
+            "visible": ["Collapsible container"],
+            "enabled": ["All props passed to CollapsiblePrimitive.Root"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "The user interacts with the trigger or a controlled prop changes.",
+              "event": "Toggle collapsible"
+            },
+            "from": {
+              "state": "Collapsed or expanded",
+              "visible": ["Collapsible container"]
+            },
+            "to": {
+              "state": "Expanded or collapsed",
+              "visible": ["Collapsible container with updated state"]
+            },
+            "effects": [
+              "Content is shown or hidden based on the expanded/collapsed state."
+            ]
+          }
+        ],
+        "visualLayout": "A container that can expand or collapse its children.",
+        "implementationNotes": "Wraps Radix UI's Collapsible.Root. Passes all props through.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-collapsible",
+            "importPath": "@radix-ui/react-collapsible",
+            "dependsOn": ["Root"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CollapsibleTrigger",
+        "purpose": "Provides a trigger element to toggle the collapsible state.",
+        "description": "A reusable UI component that wraps Radix UI's CollapsibleTrigger, used to toggle the expanded/collapsed state of a Collapsible. Accepts all props supported by Radix's CollapsibleTrigger.",
+        "properties": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Trigger is rendered and ready for user interaction.",
+          "ui": {
+            "visible": ["Collapsible trigger element"],
+            "enabled": [
+              "All props passed to CollapsiblePrimitive.CollapsibleTrigger"
+            ]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "The user clicks or interacts with the trigger.",
+              "event": "Trigger clicked"
+            },
+            "from": {
+              "state": "Idle",
+              "visible": ["Collapsible trigger element"]
+            },
+            "to": {
+              "state": "Toggled",
+              "visible": ["Collapsible trigger element"]
+            },
+            "effects": ["Collapsible state is toggled."]
+          }
+        ],
+        "visualLayout": "A button or interactive element to toggle collapsible content.",
+        "implementationNotes": "Wraps Radix UI's CollapsibleTrigger. Passes all props through.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-collapsible",
+            "importPath": "@radix-ui/react-collapsible",
+            "dependsOn": ["CollapsibleTrigger"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CollapsibleContent",
+        "purpose": "Displays the content that is shown or hidden by the collapsible state.",
+        "description": "A reusable UI component that wraps Radix UI's CollapsibleContent, rendering the content that is conditionally shown or hidden based on the collapsible state. Accepts all props supported by Radix's CollapsibleContent.",
+        "properties": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Content is hidden or shown based on the collapsible state.",
+          "ui": {
+            "visible": ["Collapsible content element"],
+            "enabled": [
+              "All props passed to CollapsiblePrimitive.CollapsibleContent"
+            ]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "The collapsible state changes.",
+              "event": "Collapsible toggled"
+            },
+            "from": {
+              "state": "Collapsed or expanded",
+              "visible": ["Collapsible content element"]
+            },
+            "to": {
+              "state": "Expanded or collapsed",
+              "visible": ["Collapsible content element with updated visibility"]
+            },
+            "effects": ["Content is shown or hidden."]
+          }
+        ],
+        "visualLayout": "A container for content that is conditionally rendered.",
+        "implementationNotes": "Wraps Radix UI's CollapsibleContent. Passes all props through.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-collapsible",
+            "importPath": "@radix-ui/react-collapsible",
+            "dependsOn": ["CollapsibleContent"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      }
+    }
+  ]
+}

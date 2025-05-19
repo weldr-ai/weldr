@@ -1,0 +1,102 @@
+{
+  "path": "/src/web/components/ui/input.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Input",
+        "purpose": "Reusable styled input field for forms and user input",
+        "description": "A React component that renders a styled <input> element with consistent design, focus, and accessibility states. Accepts all standard input props and allows custom class names for further styling.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the input"
+            },
+            "type": {
+              "type": "string",
+              "description": "The type of the input (e.g., text, password, email, etc.)"
+            }
+          }
+        },
+        "initial": {
+          "data": "Empty input field",
+          "ui": {
+            "visible": ["A single input field"],
+            "enabled": ["Input field is enabled unless disabled prop is set"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User types in the input field",
+              "event": "Input value changes"
+            },
+            "from": {
+              "state": "Input is empty or has previous value",
+              "visible": ["Input field"]
+            },
+            "to": {
+              "state": "Input value updated",
+              "visible": ["Input field with new value"]
+            },
+            "effects": [
+              "Input value is updated in the component's state or parent form"
+            ]
+          },
+          {
+            "when": {
+              "description": "Input receives focus",
+              "event": "Input is focused"
+            },
+            "from": {
+              "state": "Input is not focused",
+              "visible": ["Input field"]
+            },
+            "to": {
+              "state": "Input is focused",
+              "visible": ["Input field with focus ring and border color change"]
+            },
+            "effects": ["Visual focus styles are applied"]
+          },
+          {
+            "when": {
+              "description": "Input is disabled",
+              "event": "Input is disabled"
+            },
+            "from": {
+              "state": "Input is enabled",
+              "visible": ["Input field"]
+            },
+            "to": {
+              "state": "Input is disabled",
+              "visible": [
+                "Input field with reduced opacity and disabled cursor"
+              ]
+            },
+            "effects": ["Input cannot be interacted with"]
+          }
+        ],
+        "visualLayout": "A single-line input field styled with rounded borders, padding, and focus/invalid/disabled states.",
+        "implementationNotes": "Uses a utility function 'cn' to merge class names and applies accessibility and state-based styles. Accepts all native input props via React.ComponentProps<'input'>.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    }
+  ]
+}

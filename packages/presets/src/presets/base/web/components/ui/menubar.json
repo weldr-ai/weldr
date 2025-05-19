@@ -1,0 +1,1011 @@
+{
+  "path": "/src/web/components/ui/menubar.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Menubar",
+        "purpose": "Provides a styled menubar root component for building accessible menus.",
+        "description": "A flexible and accessible menubar root component based on Radix UI's MenubarPrimitive.Root. It applies custom styling and allows passing additional props and className for further customization.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the menubar root."
+            }
+          }
+        },
+        "initial": {
+          "data": "Renders an empty menubar container.",
+          "ui": {
+            "visible": ["A horizontal menubar container with default styling."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Props or children are updated.",
+              "event": "Component re-renders with new props or children."
+            },
+            "from": {
+              "state": "Initial render or previous state."
+            },
+            "to": {
+              "state": "Updated menubar with new props or children."
+            },
+            "effects": ["The menubar updates its appearance or content."]
+          }
+        ],
+        "visualLayout": "A flex row container with gap, border, background, and shadow.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.Root and applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarMenu",
+        "purpose": "Provides a styled menu container for the menubar.",
+        "description": "A wrapper around Radix UI's MenubarPrimitive.Menu, adding a data-slot for styling and accessibility.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {}
+        },
+        "initial": {
+          "data": "Renders an empty menu container.",
+          "ui": {
+            "visible": ["A menu container for menubar items."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Props or children are updated.",
+              "event": "Component re-renders with new props or children."
+            },
+            "from": {
+              "state": "Initial render or previous state."
+            },
+            "to": {
+              "state": "Updated menu with new props or children."
+            },
+            "effects": ["The menu updates its appearance or content."]
+          }
+        ],
+        "visualLayout": "A container for menu items.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.Menu.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarGroup",
+        "purpose": "Groups related menubar items together.",
+        "description": "A wrapper around Radix UI's MenubarPrimitive.Group, used to group related menu items for accessibility and styling.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {}
+        },
+        "initial": {
+          "data": "Renders a group container for menu items.",
+          "ui": {
+            "visible": ["A group container for related menu items."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Props or children are updated.",
+              "event": "Component re-renders with new props or children."
+            },
+            "from": {
+              "state": "Initial render or previous state."
+            },
+            "to": {
+              "state": "Updated group with new props or children."
+            },
+            "effects": ["The group updates its appearance or content."]
+          }
+        ],
+        "visualLayout": "A container for grouping menu items.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.Group.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarPortal",
+        "purpose": "Renders menubar content in a React portal.",
+        "description": "A wrapper around Radix UI's MenubarPrimitive.Portal, used to render menu content outside the DOM hierarchy for accessibility and layering.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {}
+        },
+        "initial": {
+          "data": "Renders a portal for menu content.",
+          "ui": {
+            "visible": ["A portal container for menu content."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Props or children are updated.",
+              "event": "Component re-renders with new props or children."
+            },
+            "from": {
+              "state": "Initial render or previous state."
+            },
+            "to": {
+              "state": "Updated portal with new props or children."
+            },
+            "effects": ["The portal updates its content."]
+          }
+        ],
+        "visualLayout": "A React portal for menu content.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.Portal.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarRadioGroup",
+        "purpose": "Groups radio items in the menubar for exclusive selection.",
+        "description": "A wrapper around Radix UI's MenubarPrimitive.RadioGroup, allowing only one radio item to be selected at a time within the group.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {}
+        },
+        "initial": {
+          "data": "Renders a radio group container.",
+          "ui": {
+            "visible": ["A container for radio menu items."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Props or children are updated.",
+              "event": "Component re-renders with new props or children."
+            },
+            "from": {
+              "state": "Initial render or previous state."
+            },
+            "to": {
+              "state": "Updated radio group with new props or children."
+            },
+            "effects": ["The radio group updates its content."]
+          }
+        ],
+        "visualLayout": "A container for radio menu items.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.RadioGroup.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarTrigger",
+        "purpose": "Acts as a trigger for opening a menubar menu.",
+        "description": "A styled trigger button for opening a menubar menu, wrapping Radix UI's MenubarPrimitive.Trigger and applying custom styles.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the trigger."
+            }
+          }
+        },
+        "initial": {
+          "data": "Renders a trigger button.",
+          "ui": {
+            "visible": ["A trigger button for the menubar."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User interacts with the trigger.",
+              "event": "Trigger is clicked or focused."
+            },
+            "from": {
+              "state": "Menu is closed."
+            },
+            "to": {
+              "state": "Menu is open."
+            },
+            "effects": ["The associated menu is displayed."]
+          }
+        ],
+        "visualLayout": "A styled button or element for opening a menu.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.Trigger and applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarContent",
+        "purpose": "Displays the content of a menubar menu.",
+        "description": "A styled container for the content of a menubar menu, wrapping Radix UI's MenubarPrimitive.Content and rendered in a portal. Supports alignment and offset props.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the content."
+            },
+            "align": {
+              "type": "string",
+              "description": "Alignment of the menu content. Default is 'start'."
+            },
+            "alignOffset": {
+              "type": "number",
+              "description": "Offset for alignment. Default is -4."
+            },
+            "sideOffset": {
+              "type": "number",
+              "description": "Offset for the side. Default is 8."
+            }
+          }
+        },
+        "initial": {
+          "data": "Renders the menu content in a portal.",
+          "ui": {
+            "visible": ["A styled menu content container."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Menu is opened or closed.",
+              "event": "Menu state changes."
+            },
+            "from": {
+              "state": "Menu is closed."
+            },
+            "to": {
+              "state": "Menu is open and content is visible."
+            },
+            "effects": ["The menu content is displayed or hidden."]
+          }
+        ],
+        "visualLayout": "A floating container for menu items, rendered in a portal.",
+        "implementationNotes": "Wraps MenubarPrimitive.Content and MenubarPortal, applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarItem",
+        "purpose": "Represents an individual item in the menubar.",
+        "description": "A styled menu item for the menubar, supporting 'inset' and 'variant' props for additional styling. Wraps Radix UI's MenubarPrimitive.Item.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the item."
+            },
+            "inset": {
+              "type": "boolean",
+              "description": "Whether the item is inset (indented)."
+            },
+            "variant": {
+              "type": "string",
+              "description": "Visual variant of the item. Can be 'default' or 'destructive'."
+            }
+          }
+        },
+        "initial": {
+          "data": "Renders a menu item.",
+          "ui": {
+            "visible": ["A styled menu item."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User interacts with the item.",
+              "event": "Item is clicked, focused, or hovered."
+            },
+            "from": {
+              "state": "Item is idle."
+            },
+            "to": {
+              "state": "Item is active or selected."
+            },
+            "effects": ["The item responds visually and may trigger an action."]
+          }
+        ],
+        "visualLayout": "A flex row menu item with optional inset and variant styling.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.Item and applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarCheckboxItem",
+        "purpose": "Represents a checkbox item in the menubar.",
+        "description": "A styled checkbox menu item for the menubar, wrapping Radix UI's MenubarPrimitive.CheckboxItem. Displays a check icon when checked.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the checkbox item."
+            },
+            "checked": {
+              "type": "boolean",
+              "description": "Whether the checkbox is checked."
+            }
+          }
+        },
+        "initial": {
+          "data": "Renders a checkbox menu item.",
+          "ui": {
+            "visible": [
+              "A styled checkbox menu item with optional check icon."
+            ],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User toggles the checkbox item.",
+              "event": "Checkbox is checked or unchecked."
+            },
+            "from": {
+              "state": "Checkbox is unchecked or checked."
+            },
+            "to": {
+              "state": "Checkbox is checked or unchecked."
+            },
+            "effects": [
+              "The check icon is shown or hidden, and the checked state changes."
+            ]
+          }
+        ],
+        "visualLayout": "A flex row checkbox menu item with a check icon indicator.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.CheckboxItem and uses CheckIcon from lucide-react.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["CheckIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarRadioItem",
+        "purpose": "Represents a radio item in the menubar.",
+        "description": "A styled radio menu item for the menubar, wrapping Radix UI's MenubarPrimitive.RadioItem. Displays a circle icon when selected.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the radio item."
+            }
+          }
+        },
+        "initial": {
+          "data": "Renders a radio menu item.",
+          "ui": {
+            "visible": ["A styled radio menu item with optional circle icon."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User selects the radio item.",
+              "event": "Radio item is selected."
+            },
+            "from": {
+              "state": "Radio item is unselected."
+            },
+            "to": {
+              "state": "Radio item is selected."
+            },
+            "effects": [
+              "The circle icon is shown, and the selected state changes."
+            ]
+          }
+        ],
+        "visualLayout": "A flex row radio menu item with a circle icon indicator.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.RadioItem and uses CircleIcon from lucide-react.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["CircleIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarLabel",
+        "purpose": "Displays a label within the menubar.",
+        "description": "A styled label for grouping or describing menu items, wrapping Radix UI's MenubarPrimitive.Label. Supports optional inset styling.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the label."
+            },
+            "inset": {
+              "type": "boolean",
+              "description": "Whether the label is inset (indented)."
+            }
+          }
+        },
+        "initial": {
+          "data": "Renders a label for menu items.",
+          "ui": {
+            "visible": ["A styled label for menu items."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Props or children are updated.",
+              "event": "Component re-renders with new props or children."
+            },
+            "from": {
+              "state": "Initial render or previous state."
+            },
+            "to": {
+              "state": "Updated label with new props or children."
+            },
+            "effects": ["The label updates its appearance or content."]
+          }
+        ],
+        "visualLayout": "A text label with optional inset styling.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.Label and applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarSeparator",
+        "purpose": "Visually separates groups of menu items.",
+        "description": "A styled separator for dividing groups of menu items, wrapping Radix UI's MenubarPrimitive.Separator.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the separator."
+            }
+          }
+        },
+        "initial": {
+          "data": "Renders a separator line.",
+          "ui": {
+            "visible": ["A horizontal separator line."],
+            "enabled": ["All props passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Props are updated.",
+              "event": "Component re-renders with new props."
+            },
+            "from": {
+              "state": "Initial render or previous state."
+            },
+            "to": {
+              "state": "Updated separator with new props."
+            },
+            "effects": ["The separator updates its appearance."]
+          }
+        ],
+        "visualLayout": "A horizontal line with margin and background color.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.Separator and applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarShortcut",
+        "purpose": "Displays a keyboard shortcut hint in a menu item.",
+        "description": "A styled span for displaying keyboard shortcut hints within a menu item.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the shortcut."
+            }
+          }
+        },
+        "initial": {
+          "data": "Renders a shortcut hint.",
+          "ui": {
+            "visible": ["A text hint for keyboard shortcuts."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Props or children are updated.",
+              "event": "Component re-renders with new props or children."
+            },
+            "from": {
+              "state": "Initial render or previous state."
+            },
+            "to": {
+              "state": "Updated shortcut with new props or children."
+            },
+            "effects": ["The shortcut updates its appearance or content."]
+          }
+        ],
+        "visualLayout": "A right-aligned text hint in a menu item.",
+        "implementationNotes": "Renders a styled span for shortcut hints, using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarSub",
+        "purpose": "Provides a submenu container in the menubar.",
+        "description": "A wrapper around Radix UI's MenubarPrimitive.Sub, used to create nested submenus within the menubar.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {}
+        },
+        "initial": {
+          "data": "Renders a submenu container.",
+          "ui": {
+            "visible": ["A container for submenu items."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Props or children are updated.",
+              "event": "Component re-renders with new props or children."
+            },
+            "from": {
+              "state": "Initial render or previous state."
+            },
+            "to": {
+              "state": "Updated submenu with new props or children."
+            },
+            "effects": ["The submenu updates its content."]
+          }
+        ],
+        "visualLayout": "A container for nested submenu items.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.Sub.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarSubTrigger",
+        "purpose": "Acts as a trigger for opening a submenu in the menubar.",
+        "description": "A styled trigger for opening a submenu, wrapping Radix UI's MenubarPrimitive.SubTrigger. Supports optional inset styling and displays a chevron icon.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the sub trigger."
+            },
+            "inset": {
+              "type": "boolean",
+              "description": "Whether the trigger is inset (indented)."
+            }
+          }
+        },
+        "initial": {
+          "data": "Renders a submenu trigger.",
+          "ui": {
+            "visible": ["A styled submenu trigger with chevron icon."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User interacts with the sub trigger.",
+              "event": "Sub trigger is clicked or focused."
+            },
+            "from": {
+              "state": "Submenu is closed."
+            },
+            "to": {
+              "state": "Submenu is open."
+            },
+            "effects": ["The associated submenu is displayed."]
+          }
+        ],
+        "visualLayout": "A flex row trigger with chevron icon for opening a submenu.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.SubTrigger and uses ChevronRightIcon from lucide-react. Applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["ChevronRightIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "MenubarSubContent",
+        "purpose": "Displays the content of a submenu in the menubar.",
+        "description": "A styled container for the content of a submenu, wrapping Radix UI's MenubarPrimitive.SubContent.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the sub content."
+            }
+          }
+        },
+        "initial": {
+          "data": "Renders the submenu content.",
+          "ui": {
+            "visible": ["A styled submenu content container."],
+            "enabled": ["All props and children passed to the component."]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Submenu is opened or closed.",
+              "event": "Submenu state changes."
+            },
+            "from": {
+              "state": "Submenu is closed."
+            },
+            "to": {
+              "state": "Submenu is open and content is visible."
+            },
+            "effects": ["The submenu content is displayed or hidden."]
+          }
+        ],
+        "visualLayout": "A floating container for submenu items.",
+        "implementationNotes": "Wraps Radix UI's MenubarPrimitive.SubContent and applies custom class names using the cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-menubar",
+            "importPath": "@radix-ui/react-menubar",
+            "dependsOn": ["MenubarPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    }
+  ]
+}

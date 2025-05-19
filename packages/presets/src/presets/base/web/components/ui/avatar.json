@@ -1,0 +1,232 @@
+{
+  "path": "/src/web/components/ui/avatar.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Avatar",
+        "purpose": "Display a user's avatar image or fallback in a circular frame",
+        "description": "A reusable avatar component that displays a user's profile image in a circular frame. If the image is not available, a fallback is shown. Built on top of Radix UI's Avatar primitives.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the avatar root element"
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Avatar with no image or fallback content",
+          "ui": {
+            "visible": ["Circular avatar frame"],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "An image source is provided and loads successfully",
+              "event": "Avatar image loads"
+            },
+            "from": {
+              "state": "Avatar with no image",
+              "visible": ["Circular avatar frame"]
+            },
+            "to": {
+              "state": "Avatar with image",
+              "visible": ["Circular avatar frame with user image"]
+            },
+            "effects": ["User's profile image is displayed in the avatar frame"]
+          },
+          {
+            "when": {
+              "description": "No image source is provided or image fails to load",
+              "event": "Avatar image fails to load or is missing"
+            },
+            "from": {
+              "state": "Avatar with no image",
+              "visible": ["Circular avatar frame"]
+            },
+            "to": {
+              "state": "Avatar with fallback",
+              "visible": ["Circular avatar frame with fallback content"]
+            },
+            "effects": ["Fallback content is displayed in the avatar frame"]
+          }
+        ],
+        "visualLayout": "A circular frame with either an image or fallback content centered inside",
+        "implementationNotes": "Uses Radix UI Avatar primitives for accessibility and composability. Accepts all props supported by Radix Avatar Root.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-avatar",
+            "importPath": "@radix-ui/react-avatar",
+            "dependsOn": ["Root"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "AvatarImage",
+        "purpose": "Display the image inside the avatar frame",
+        "description": "A subcomponent for rendering the user's image within the avatar. Should be used as a child of the Avatar component. Built on top of Radix UI's Avatar.Image.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the image element"
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "No image loaded",
+          "ui": {
+            "visible": ["Empty avatar image area"],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Image source is provided and loads successfully",
+              "event": "Image loads"
+            },
+            "from": {
+              "state": "No image loaded",
+              "visible": ["Empty avatar image area"]
+            },
+            "to": {
+              "state": "Image loaded",
+              "visible": ["Avatar image is displayed"]
+            },
+            "effects": ["The user's image is shown in the avatar"]
+          },
+          {
+            "when": {
+              "description": "Image fails to load",
+              "event": "Image load error"
+            },
+            "from": {
+              "state": "Image loading",
+              "visible": ["Avatar image area"]
+            },
+            "to": {
+              "state": "Fallback displayed",
+              "visible": ["Fallback content is shown"]
+            },
+            "effects": ["Fallback content is displayed instead of the image"]
+          }
+        ],
+        "visualLayout": "Fills the avatar frame with the user's image, maintaining aspect ratio",
+        "implementationNotes": "Uses Radix UI Avatar.Image. Accepts all props supported by Radix Avatar Image.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-avatar",
+            "importPath": "@radix-ui/react-avatar",
+            "dependsOn": ["Image"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "AvatarFallback",
+        "purpose": "Display fallback content when the avatar image is unavailable",
+        "description": "A subcomponent for rendering fallback content (such as initials or an icon) inside the avatar frame when the image is not available. Should be used as a child of the Avatar component. Built on top of Radix UI's Avatar.Fallback.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the fallback element"
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "No fallback content",
+          "ui": {
+            "visible": ["Empty avatar fallback area"],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Image fails to load or is not provided",
+              "event": "Fallback triggered"
+            },
+            "from": {
+              "state": "No fallback content",
+              "visible": ["Empty avatar fallback area"]
+            },
+            "to": {
+              "state": "Fallback displayed",
+              "visible": ["Fallback content is shown in the avatar frame"]
+            },
+            "effects": [
+              "Fallback content (e.g., initials or icon) is displayed"
+            ]
+          }
+        ],
+        "visualLayout": "Fills the avatar frame with centered fallback content and muted background",
+        "implementationNotes": "Uses Radix UI Avatar.Fallback. Accepts all props supported by Radix Avatar Fallback.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-avatar",
+            "importPath": "@radix-ui/react-avatar",
+            "dependsOn": ["Fallback"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,302 @@
+[
+  {
+    "name": "@hono/trpc-server",
+    "type": "runtime"
+  },
+  {
+    "name": "@hono/zod-openapi",
+    "type": "runtime"
+  },
+  {
+    "name": "@hookform/resolvers",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-accordion",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-alert-dialog",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-aspect-ratio",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-avatar",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-checkbox",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-collapsible",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-context-menu",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-dialog",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-dropdown-menu",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-hover-card",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-label",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-menubar",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-navigation-menu",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-popover",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-progress",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-radio-group",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-scroll-area",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-select",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-separator",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-slider",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-slot",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-switch",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-tabs",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-toggle",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-toggle-group",
+    "type": "runtime"
+  },
+  {
+    "name": "@radix-ui/react-tooltip",
+    "type": "runtime"
+  },
+  {
+    "name": "@tailwindcss/vite",
+    "type": "runtime"
+  },
+  {
+    "name": "@tanstack/react-query",
+    "type": "runtime"
+  },
+  {
+    "name": "@tanstack/react-router",
+    "type": "runtime"
+  },
+  {
+    "name": "@tanstack/react-router-with-query",
+    "type": "runtime"
+  },
+  {
+    "name": "@tanstack/react-start",
+    "type": "runtime"
+  },
+  {
+    "name": "@tanstack/router-plugin",
+    "type": "runtime"
+  },
+  {
+    "name": "@trpc/client",
+    "type": "runtime"
+  },
+  {
+    "name": "@trpc/server",
+    "type": "runtime"
+  },
+  {
+    "name": "@trpc/tanstack-react-query",
+    "type": "runtime"
+  },
+  {
+    "name": "better-auth",
+    "type": "runtime"
+  },
+  {
+    "name": "class-variance-authority",
+    "type": "runtime"
+  },
+  {
+    "name": "clsx",
+    "type": "runtime"
+  },
+  {
+    "name": "cmdk",
+    "type": "runtime"
+  },
+  {
+    "name": "date-fns",
+    "type": "runtime"
+  },
+  {
+    "name": "drizzle-orm",
+    "type": "runtime"
+  },
+  {
+    "name": "drizzle-zod",
+    "type": "runtime"
+  },
+  {
+    "name": "embla-carousel-react",
+    "type": "runtime"
+  },
+  {
+    "name": "hono",
+    "type": "runtime"
+  },
+  {
+    "name": "input-otp",
+    "type": "runtime"
+  },
+  {
+    "name": "lucide-react",
+    "type": "runtime"
+  },
+  {
+    "name": "next-themes",
+    "type": "runtime"
+  },
+  {
+    "name": "postgres",
+    "type": "runtime"
+  },
+  {
+    "name": "react",
+    "type": "runtime"
+  },
+  {
+    "name": "react-day-picker",
+    "type": "runtime"
+  },
+  {
+    "name": "react-dom",
+    "type": "runtime"
+  },
+  {
+    "name": "react-hook-form",
+    "type": "runtime"
+  },
+  {
+    "name": "react-resizable-panels",
+    "type": "runtime"
+  },
+  {
+    "name": "recharts",
+    "type": "runtime"
+  },
+  {
+    "name": "sonner",
+    "type": "runtime"
+  },
+  {
+    "name": "superjson",
+    "type": "runtime"
+  },
+  {
+    "name": "tailwind-merge",
+    "type": "runtime"
+  },
+  {
+    "name": "tailwindcss",
+    "type": "runtime"
+  },
+  {
+    "name": "tailwindcss-animate",
+    "type": "runtime"
+  },
+  {
+    "name": "vaul",
+    "type": "runtime"
+  },
+  {
+    "name": "vinxi",
+    "type": "runtime"
+  },
+  {
+    "name": "vite-tsconfig-paths",
+    "type": "runtime"
+  },
+  {
+    "name": "zod",
+    "type": "runtime"
+  },
+  {
+    "name": "@biomejs/biome",
+    "type": "development"
+  },
+  {
+    "name": "@types/react",
+    "type": "development"
+  },
+  {
+    "name": "@types/react-dom",
+    "type": "development"
+  },
+  {
+    "name": "@vitejs/plugin-react",
+    "type": "development"
+  },
+  {
+    "name": "drizzle-kit",
+    "type": "development"
+  },
+  {
+    "name": "jsdom",
+    "type": "development"
+  },
+  {
+    "name": "typescript",
+    "type": "development"
+  },
+  {
+    "name": "vite",
+    "type": "development"
+  },
+  {
+    "name": "web-vitals",
+    "type": "development"
+  }
+]

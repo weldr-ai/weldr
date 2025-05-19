@@ -1,5 +1,5 @@
 {
-  "id": "2c667574-9972-46e1-b983-d3b18c68bc0a",
+  "id": "7876f12c-c999-47d7-a669-bcbec1fcc475",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2668,7 +2668,7 @@
     "public.preset_type": {
       "name": "preset_type",
       "schema": "public",
-      "values": ["next-base"]
+      "values": ["base"]
     },
     "public.declaration_types": {
       "name": "declaration_types",
