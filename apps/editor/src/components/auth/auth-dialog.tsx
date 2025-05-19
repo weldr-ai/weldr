@@ -1,6 +1,6 @@
 "use client";
 
-import { useUIState } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import { SignInForm } from "./sign-in-form";
 import { SignUpForm } from "./sign-up-form";
 
 export function AuthDialog() {
-  const { authDialogOpen, setAuthDialogOpen, authDialogView } = useUIState();
+  const { authDialogOpen, setAuthDialogOpen, authDialogView } = useUIStore();
 
   return (
     <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>

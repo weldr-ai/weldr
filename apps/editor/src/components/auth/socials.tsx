@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 
+import { useUIStore } from "@/lib/store";
 import { authClient } from "@weldr/auth/client";
 import { Button } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { GithubIcon, GoogleIcon } from "@weldr/ui/icons";
 import { LoaderIcon } from "lucide-react";
+import { useTheme } from "next-themes";
 
-export function Socials() {
+export function Socials({ asDialog }: { asDialog: boolean }) {
+  const { resolvedTheme } = useTheme();
+  const { setAuthDialogOpen } = useUIStore();
   const [isSubmitting, setIsSubmitting] = useState<
     "github" | "microsoft" | "google" | null
   >(null);
@@ -23,6 +27,11 @@ export function Socials() {
         },
         onRequest: () => {
           setIsSubmitting(provider);
+        },
+        onSuccess: () => {
+          if (asDialog) {
+            setAuthDialogOpen(false);
+          }
         },
         onError: (ctx) => {
           toast({
@@ -63,7 +72,10 @@ export function Socials() {
         {isSubmitting === "github" ? (
           <LoaderIcon className="size-4 animate-spin" />
         ) : (
-          <GithubIcon className="size-4 fill-white" />
+          <GithubIcon
+            className="size-4"
+            theme={resolvedTheme as "light" | "dark"}
+          />
         )}
         <span className="sr-only">Github Logo</span>
       </Button>

@@ -21,7 +21,6 @@ export const projects = pgTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     name: text("name"),
-    thumbnail: text("thumbnail"),
     subdomain: text("subdomain").unique().notNull(),
     initiatedAt: timestamp("initiated_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

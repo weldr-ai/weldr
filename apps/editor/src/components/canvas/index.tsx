@@ -28,7 +28,7 @@ import { useMutation } from "@tanstack/react-query";
 import "@xyflow/react/dist/base.css";
 import { useTheme } from "next-themes";
 
-import { useUIState } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import "@weldr/ui/styles/flow-builder.css";
 
 const nodeTypes = {
@@ -42,7 +42,7 @@ export function Canvas({
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
 }) {
-  const { showCanvasEdges, toggleCanvasEdges } = useUIState();
+  const { showCanvasEdges, toggleCanvasEdges } = useUIStore();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();

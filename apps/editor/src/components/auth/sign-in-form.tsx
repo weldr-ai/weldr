@@ -30,7 +30,7 @@ import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 
-import { useUIState } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import { cn } from "@weldr/ui/lib/utils";
 import { Socials } from "./socials";
 import { SupportLinks } from "./support-links";
@@ -44,7 +44,7 @@ export function SignInForm({
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const { setAuthDialogView } = useUIState();
+  const { setAuthDialogView } = useUIStore();
 
   const form = useForm<z.infer<typeof signInSchema>>({
     mode: "onChange",
@@ -61,7 +61,7 @@ export function SignInForm({
       email: data.email,
       password: data.password,
       rememberMe: data.rememberMe === "true",
-      callbackURL: "/",
+      callbackURL: asDialog ? "/" : undefined,
       fetchOptions: {
         onResponse: () => {
           setIsSubmitting(false);
@@ -97,7 +97,7 @@ export function SignInForm({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <Socials />
+        <Socials asDialog={asDialog} />
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />

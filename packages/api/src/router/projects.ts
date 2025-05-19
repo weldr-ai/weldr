@@ -122,8 +122,22 @@ export const projectsRouter = {
     try {
       const result = await ctx.db.query.projects.findMany({
         where: eq(projects.userId, ctx.session.user.id),
+        with: {
+          versions: {
+            where: eq(versions.isCurrent, true),
+          },
+        },
       });
-      return result;
+
+      return Promise.all(
+        result.map(async (project) => ({
+          ...project,
+          thumbnail: await S3.getSignedUrl(
+            "weldr-controlled-general",
+            `thumbnails/${project.id}/${project.versions[0]?.id}.jpeg`,
+          ),
+        })),
+      );
     } catch (error) {
       console.error(error);
       throw new TRPCError({

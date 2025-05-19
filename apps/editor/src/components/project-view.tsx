@@ -9,7 +9,7 @@ import {
 } from "@weldr/ui/components/resizable";
 
 import { Canvas } from "@/components/canvas";
-import { useUIState } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -42,7 +42,7 @@ export function ProjectView({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { projectView, setProjectView } = useUIState();
+  const { projectView, setProjectView } = useUIStore();
 
   const createQueryString = useCallback(
     (name: string, value: string) => {

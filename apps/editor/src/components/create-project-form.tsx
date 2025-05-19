@@ -1,6 +1,6 @@
 "use client";
 
-import { useUIState } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import { createId } from "@paralleldrive/cuid2";
 import { useMutation } from "@tanstack/react-query";
@@ -39,7 +39,7 @@ const quickStartTemplates = [
 
 export function CreateProjectForm({ session }: { session: Session | null }) {
   const router = useRouter();
-  const { setCommandCenterOpen } = useUIState();
+  const { setCommandCenterOpen } = useUIStore();
   const projectChatId = createId();
 
   const [message, setMessage] = useState("");
@@ -89,7 +89,7 @@ export function CreateProjectForm({ session }: { session: Session | null }) {
 
   return (
     <>
-      <div className="flex size-full flex-col items-center justify-center gap-16">
+      <div className="flex size-full flex-col items-center justify-center gap-10">
         <div className="flex flex-col items-center gap-2">
           <div className="font-semibold text-3xl">
             What can I build for you today?
@@ -98,7 +98,7 @@ export function CreateProjectForm({ session }: { session: Session | null }) {
             Turn your ideas into reality with Weldr.
           </p>
         </div>
-        <div className="relative">
+        <div className="relative w-full max-w-3xl">
           <div className="absolute inset-1 animate-pulse bg-gradient-to-r from-orange-500 via-amber-200 to-100% to-blue-500 blur-lg" />
           <MultimodalInput
             type="textarea"
@@ -109,7 +109,6 @@ export function CreateProjectForm({ session }: { session: Session | null }) {
             setMessage={setMessage}
             attachments={attachments}
             setAttachments={setAttachments}
-            formClassName="relative border w-[650px]"
             placeholders={placeholders}
           />
         </div>

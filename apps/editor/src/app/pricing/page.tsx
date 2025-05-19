@@ -17,39 +17,36 @@ export default async function PricingPage() {
       <div className="z-50 flex w-full items-center justify-between p-2">
         <MainDropdownMenu />
         {!session && (
-          <>
-            <div
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "icon" }),
-                "size-8",
-              )}
-            >
-              <LogoIcon className="size-6" />
-              <span className="sr-only">Weldr</span>
-            </div>
-            <div className="flex gap-2">
-              {!session && (
+          <div className="flex gap-2">
+            {!session && (
+              <>
+                <Link
+                  href="/"
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
+                >
+                  Home
+                </Link>
                 <Link
                   href="/pricing"
                   className={buttonVariants({ variant: "ghost", size: "sm" })}
                 >
                   Pricing
                 </Link>
-              )}
-              <Link
-                href="/auth/sign-in"
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
-              >
-                Login
-              </Link>
-              <Link
-                href="/auth/sign-up"
-                className={buttonVariants({ variant: "default", size: "sm" })}
-              >
-                Sign Up
-              </Link>
-            </div>
-          </>
+              </>
+            )}
+            <Link
+              href="/auth/sign-in"
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
+              Login
+            </Link>
+            <Link
+              href="/auth/sign-up"
+              className={buttonVariants({ variant: "default", size: "sm" })}
+            >
+              Sign Up
+            </Link>
+          </div>
         )}
       </div>
       <div className="flex w-full flex-1 flex-col items-center justify-center gap-6 px-2">

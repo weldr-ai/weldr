@@ -285,7 +285,6 @@ CREATE TABLE "presets" (
 CREATE TABLE "projects" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text,
-	"thumbnail" text,
 	"subdomain" text NOT NULL,
 	"initiated_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,

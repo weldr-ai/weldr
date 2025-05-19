@@ -10,7 +10,7 @@ import {
 
 export type CommandCenterView = "create" | "projects";
 
-interface UIStateContextType {
+interface UIStoreContextType {
   // Auth Dialog
   authDialogOpen: boolean;
   setAuthDialogOpen: (open: boolean) => void;
@@ -36,16 +36,16 @@ interface UIStateContextType {
   toggleCanvasEdges: () => void;
 }
 
-const UIStateContext = createContext<UIStateContextType | undefined>(undefined);
+const UIStoreContext = createContext<UIStoreContextType | undefined>(undefined);
 
-export function useUIState(props?: {
+export function useUIStore(props?: {
   commandCenterActiveView?: CommandCenterView;
 }) {
   const { commandCenterActiveView } = props ?? {};
 
-  const context = useContext(UIStateContext);
+  const context = useContext(UIStoreContext);
   if (context === undefined) {
-    throw new Error("useUIState must be used within an UIStateProvider");
+    throw new Error("useUIStore must be used within an UIStoreProvider");
   }
 
   const { setCommandCenterView } = context;
@@ -59,7 +59,7 @@ export function useUIState(props?: {
   return context;
 }
 
-export function UIStateProvider({
+export function UIStoreProvider({
   children,
 }: {
   children: ReactNode;
@@ -99,7 +99,7 @@ export function UIStateProvider({
   }
 
   return (
-    <UIStateContext.Provider
+    <UIStoreContext.Provider
       value={{
         // Auth Dialog
         authDialogOpen,
@@ -127,7 +127,7 @@ export function UIStateProvider({
       }}
     >
       {children}
-    </UIStateContext.Provider>
+    </UIStoreContext.Provider>
   );
 }
 

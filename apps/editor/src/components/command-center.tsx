@@ -1,10 +1,8 @@
 "use client";
 import { BoxesIcon, ExternalLinkIcon, PlusIcon, TrashIcon } from "lucide-react";
-import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
 import {
-  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -13,12 +11,17 @@ import {
   CommandList,
 } from "@weldr/ui/components/command";
 
-import { type CommandCenterView, useUIState } from "@/lib/store";
+import { type CommandCenterView, useUIStore } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import type { Session } from "@weldr/auth";
 import { authClient } from "@weldr/auth/client";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@weldr/ui/components/avatar";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
@@ -29,12 +32,8 @@ import { DeleteAlertDialog } from "./delete-alert-dialog";
 
 export function CommandCenter({
   projects: _projects,
-  asDialog = true,
-  view: activeView,
 }: {
   projects: RouterOutputs["projects"]["list"];
-  asDialog?: boolean;
-  view?: CommandCenterView;
 }) {
   const { data: session } = authClient.useSession();
 
@@ -43,11 +42,11 @@ export function CommandCenter({
     commandCenterView,
     setCommandCenterOpen,
     setCommandCenterView,
-  } = useUIState();
+  } = useUIStore();
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k" && session) {
         e.preventDefault();
         setCommandCenterView("projects");
         setCommandCenterOpen(true);
@@ -59,7 +58,7 @@ export function CommandCenter({
         setCommandCenterOpen(true);
       }
     },
-    [setCommandCenterOpen, setCommandCenterView],
+    [setCommandCenterOpen, setCommandCenterView, session],
   );
 
   useEffect(() => {
@@ -69,30 +68,18 @@ export function CommandCenter({
   }, [handleKeyDown]);
 
   return (
-    <>
-      {asDialog ? (
-        <CommandDialog
-          open={commandCenterOpen}
-          onOpenChange={setCommandCenterOpen}
-          dialogClassName="min-h-[600px] min-w-[896px] max-w-4xl"
-          commandClassName="size-full [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0"
-        >
-          <CommandCenterContent
-            view={commandCenterView}
-            projects={_projects}
-            session={session}
-          />
-        </CommandDialog>
-      ) : (
-        <Command className="-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 h-[600px] w-[896px] max-w-4xl rounded-lg border duration-200 [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0">
-          <CommandCenterContent
-            view={commandCenterView}
-            projects={_projects}
-            session={session}
-          />
-        </Command>
-      )}
-    </>
+    <CommandDialog
+      open={commandCenterOpen}
+      onOpenChange={setCommandCenterOpen}
+      dialogClassName="min-h-[600px] min-w-[896px] max-w-4xl"
+      commandClassName="size-full [&_[cmdk-group-heading]]:px-0 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-0"
+    >
+      <CommandCenterContent
+        view={commandCenterView}
+        projects={_projects}
+        session={session}
+      />
+    </CommandDialog>
   );
 }
 
@@ -117,7 +104,7 @@ function CommandCenterContent({
 }
 
 function CreateContent({ session }: { session: Session | null }) {
-  const { setCommandCenterView } = useUIState();
+  const { setCommandCenterView } = useUIStore();
 
   return (
     <div className="relative flex size-full items-center justify-center">
@@ -142,10 +129,10 @@ function ProjectsContent({
 }: {
   projects: RouterOutputs["projects"]["list"];
 }) {
-  const { setCommandCenterView } = useUIState();
+  const { setCommandCenterView } = useUIStore();
   const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<
-    RouterOutputs["projects"]["list"][0] | null
+    RouterOutputs["projects"]["list"][number] | null
   >(null);
 
   const trpc = useTRPC();
@@ -225,13 +212,13 @@ function ProjectsContent({
               className="block overflow-hidden rounded-lg border"
             >
               {selectedProject.thumbnail ? (
-                <Image
-                  src={selectedProject.thumbnail}
-                  alt={selectedProject.name ?? "New Project"}
-                  width={400}
-                  height={300}
-                  className="rounded-lg object-cover transition-transform duration-200 hover:scale-[1.1]"
-                />
+                <Avatar className="group h-[300px] w-full rounded-lg bg-muted transition-transform duration-200 hover:scale-[1.3]">
+                  <div className="absolute inset-0 bg-foreground/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                  <AvatarImage src={selectedProject.thumbnail} />
+                  <AvatarFallback>
+                    <LogoIcon className="size-16" />
+                  </AvatarFallback>
+                </Avatar>
               ) : (
                 <div className="flex aspect-video h-[250px] w-full items-center justify-center rounded-lg bg-muted/30 transition-transform duration-200 hover:scale-[1.1]">
                   <LogoIcon className="size-24" />

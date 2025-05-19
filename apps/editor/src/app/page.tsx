@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { AccountSettings } from "@/components/account-settings";
 import { AuthDialog } from "@/components/auth/auth-dialog";
 import { CommandCenter } from "@/components/command-center";
+import { CreateProjectForm } from "@/components/create-project-form";
 import { MainDropdownMenu } from "@/components/main-dropdown-menu";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { getActiveSubscription } from "@/lib/actions/get-active-subscription";
@@ -27,12 +28,20 @@ export default async function Home(): Promise<JSX.Element> {
         {!session && (
           <div className="flex gap-2">
             {!session && (
-              <Link
-                href="/pricing"
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
-              >
-                Pricing
-              </Link>
+              <>
+                <Link
+                  href="/"
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
+                >
+                  Home
+                </Link>
+                <Link
+                  href="/pricing"
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
+                >
+                  Pricing
+                </Link>
+              </>
             )}
             <Link
               href="/auth/sign-in"
@@ -49,8 +58,8 @@ export default async function Home(): Promise<JSX.Element> {
           </div>
         )}
       </div>
-      <div className="flex w-full flex-1 items-center justify-center">
-        <CommandCenter projects={projects} asDialog={false} view="create" />
+      <div className="flex w-full flex-col items-center justify-center gap-16">
+        <CreateProjectForm session={session} />
       </div>
       <div className="flex w-full items-center justify-between p-2">
         <p className="text-muted-foreground text-xs">
@@ -103,6 +112,7 @@ export default async function Home(): Promise<JSX.Element> {
         sessions={sessions}
         activeSubscription={activeSubscription}
       />
+      {session && <CommandCenter projects={projects} />}
       <AuthDialog />
     </div>
   );

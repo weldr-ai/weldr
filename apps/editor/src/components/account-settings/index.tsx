@@ -1,6 +1,6 @@
 "use client";
 
-import { useUIState } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import type { Session, Subscription, auth } from "@weldr/auth";
 import {
   Dialog,
@@ -29,7 +29,7 @@ export function AccountSettings({
   session: Session | null;
   activeSubscription: Subscription | null;
 }) {
-  const { accountSettingsOpen, setAccountSettingsOpen } = useUIState();
+  const { accountSettingsOpen, setAccountSettingsOpen } = useUIStore();
 
   if (!session || !sessions) {
     return null;

@@ -15,7 +15,7 @@ import {
 } from "@weldr/ui/components/card";
 import { Input } from "@weldr/ui/components/input";
 
-import { useUIState } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { authClient } from "@weldr/auth/client";
 import { signUpSchema } from "@weldr/shared/validators/auth";
@@ -45,7 +45,7 @@ export function SignUpForm({
   const router = useRouter();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const { setAuthDialogView } = useUIState();
+  const { setAuthDialogView } = useUIStore();
 
   const form = useForm<z.infer<typeof signUpSchema>>({
     mode: "onChange",
@@ -102,7 +102,7 @@ export function SignUpForm({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <Socials />
+        <Socials asDialog={asDialog} />
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border border-t" />

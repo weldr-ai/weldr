@@ -12,7 +12,7 @@ import {
   useState,
 } from "react";
 
-import { useUIState } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import type { TPendingMessage } from "@/types";
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, UserMessageRawContent } from "@weldr/shared/types";
@@ -90,16 +90,8 @@ function PureMultimodalInput({
   const editorRef = useRef<LexicalEditor | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
-  const { setAuthDialogOpen } = useUIState();
-
-  const { data: session } = authClient.useSession();
 
   const submitForm = useCallback(() => {
-    if (!session) {
-      setAuthDialogOpen(true);
-      return;
-    }
-
     handleSubmit();
 
     const editor = editorRef.current;
@@ -120,14 +112,7 @@ function PureMultimodalInput({
     }
 
     setAttachments([]);
-  }, [
-    handleSubmit,
-    setAttachments,
-    setMessage,
-    type,
-    session,
-    setAuthDialogOpen,
-  ]);
+  }, [handleSubmit, setAttachments, setMessage, type]);
 
   const uploadFile = async (file: File) => {
     const formData = new FormData();
@@ -320,7 +305,7 @@ function PureMultimodalInput({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="flex w-full flex-col items-center justify-center">
       {pendingMessage && (
         <div className="flex w-[calc(100%-30px)] items-center gap-1 rounded-t-md border-x border-t bg-background p-1 text-xs">
           <LogoIcon className="size-4" />
@@ -479,12 +464,21 @@ function PureAttachmentsButton({
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
   pendingMessage: TPendingMessage;
 }) {
+  const { data: session } = authClient.useSession();
+  const { setAuthDialogOpen } = useUIStore();
+
   return (
     <Button
       variant="outline"
       className="size-7 rounded-full"
       onClick={(event) => {
         event.preventDefault();
+
+        if (!session) {
+          setAuthDialogOpen(true);
+          return;
+        }
+
         fileInputRef.current?.click();
       }}
       disabled={
@@ -507,12 +501,20 @@ type SendButtonProps = {
 };
 
 function PureSendButton({ submitForm, message, uploadQueue }: SendButtonProps) {
-  console.log(message);
+  const { data: session } = authClient.useSession();
+  const { setAuthDialogOpen } = useUIStore();
+
   return (
     <Button
       className="size-7 rounded-full"
       onClick={(event) => {
         event.preventDefault();
+
+        if (!session) {
+          setAuthDialogOpen(true);
+          return;
+        }
+
         submitForm();
       }}
       disabled={

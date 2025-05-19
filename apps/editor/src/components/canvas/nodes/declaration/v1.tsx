@@ -1,7 +1,7 @@
 import { CustomMarkdown } from "@/components/custom-markdown";
 import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
 import { UiTransitionVisualizer } from "@/components/ui-transition-visualizer";
-import { useUIState } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
 import { useQuery } from "@tanstack/react-query";
@@ -59,7 +59,7 @@ export const DeclarationV1Node = memo(
       ),
     );
 
-    const { showCanvasEdges } = useUIState();
+    const { showCanvasEdges } = useUIStore();
 
     const [isExpanded, setIsExpanded] = useState(false);
 

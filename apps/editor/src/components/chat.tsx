@@ -1,5 +1,5 @@
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
-import { useProjectData, useUIState } from "@/lib/store";
+import { useProjectData, useUIStore } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
@@ -32,7 +32,7 @@ export function Chat({
   integrationTemplates,
   project,
 }: ChatProps) {
-  const { setProjectView } = useUIState();
+  const { setProjectView } = useUIStore();
   const { setMachineId } = useProjectData();
 
   const { data: session } = authClient.useSession();

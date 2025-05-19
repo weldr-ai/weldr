@@ -17,7 +17,7 @@ import {
   SunIcon,
 } from "lucide-react";
 
-import { useUIState } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import { Button } from "@weldr/ui/components/button";
 import {
   DropdownMenu,
@@ -48,7 +48,7 @@ export function MainDropdownMenu({
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const { setCommandCenterView, setCommandCenterOpen, setAccountSettingsOpen } =
-    useUIState();
+    useUIStore();
   const { theme, setTheme } = useTheme();
 
   return (
@@ -120,34 +120,35 @@ export function MainDropdownMenu({
               <SettingsIcon className="mr-2 size-4 text-muted-foreground" />
               Account Settings
             </DropdownMenuItem>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <PaletteIcon className="mr-3.5 size-4 text-muted-foreground" />
-                Appearance
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuRadioGroup
-                  value={theme}
-                  onValueChange={(value) => setTheme(value)}
-                >
-                  <DropdownMenuRadioItem value="light">
-                    Light
-                    <SunIcon className="ml-auto size-3.5 text-muted-foreground" />
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dark">
-                    Dark
-                    <MoonIcon className="ml-auto size-3.5 text-muted-foreground" />
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="system">
-                    System
-                    <MonitorIcon className="ml-auto size-3.5 text-muted-foreground" />
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-            <DropdownMenuSeparator />
           </>
         )}
+
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <PaletteIcon className="mr-3.5 size-4 text-muted-foreground" />
+            Appearance
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup
+              value={theme}
+              onValueChange={(value) => setTheme(value)}
+            >
+              <DropdownMenuRadioItem value="light">
+                Light
+                <SunIcon className="ml-auto size-3.5 text-muted-foreground" />
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dark">
+                Dark
+                <MoonIcon className="ml-auto size-3.5 text-muted-foreground" />
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system">
+                System
+                <MonitorIcon className="ml-auto size-3.5 text-muted-foreground" />
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSeparator />
 
         <DropdownMenuLabel>Support</DropdownMenuLabel>
         <Link href="https://weldr.ai/support" target="_blank">
