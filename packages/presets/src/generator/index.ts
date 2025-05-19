@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import type { ProjectConfig } from "@weldr/shared/types";
 import Handlebars from "handlebars";
 
 // Register Handlebars helpers
@@ -17,16 +18,6 @@ Handlebars.registerHelper("not", (value) => {
   return !value;
 });
 
-type AppOptions = { web: true; server: true } | { web: false; server: true };
-
-type DatabaseOptions =
-  | { database: true; env: { DATABASE_URL: string } }
-  | { database: false };
-
-type AuthOptions = { auth: true; database: true } | { auth: false };
-
-export type GeneratorConfig = AppOptions & DatabaseOptions & AuthOptions;
-
 type GeneratedFile = {
   path: string;
   content: string;
@@ -35,8 +26,8 @@ type GeneratedFile = {
 function processTemplateFile(
   templatePath: string,
   relativePath: string,
-  config: GeneratorConfig,
-  fileConditions: { [filename: string]: (cfg: GeneratorConfig) => boolean },
+  config: ProjectConfig,
+  fileConditions: { [filename: string]: (cfg: ProjectConfig) => boolean },
 ): GeneratedFile | null {
   const condition = fileConditions[relativePath];
   if (condition && !condition(config)) {
@@ -60,8 +51,8 @@ function processTemplateFile(
 function processDirectory(
   dirPath: string,
   baseDir: string,
-  config: GeneratorConfig,
-  fileConditions: { [filename: string]: (cfg: GeneratorConfig) => boolean },
+  config: ProjectConfig,
+  fileConditions: { [filename: string]: (cfg: ProjectConfig) => boolean },
 ): GeneratedFile[] {
   const results: GeneratedFile[] = [];
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
@@ -109,9 +100,9 @@ function writeFilesToTempDir(generatedFiles: GeneratedFile[]) {
   }
 }
 
-export function generate(config: GeneratorConfig): GeneratedFile[] {
+export function generate(config: ProjectConfig): GeneratedFile[] {
   const fileConditions: {
-    [filename: string]: (cfg: GeneratorConfig) => boolean;
+    [filename: string]: (cfg: ProjectConfig) => boolean;
   } = {
     "server/db/index.ts.hbs": (cfg) => cfg.database || cfg.auth,
     "drizzle.config.ts.hbs": (cfg) => cfg.database || cfg.auth,

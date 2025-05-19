@@ -3,11 +3,13 @@ import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
 
+import type { ProjectConfig } from "@weldr/shared/types";
 import { users } from "./auth";
 import { chats } from "./chats";
 import { environmentVariables } from "./environment-variables";
@@ -22,6 +24,7 @@ export const projects = pgTable(
       .$defaultFn(() => createId()),
     name: text("name"),
     subdomain: text("subdomain").unique().notNull(),
+    config: jsonb("config").$type<ProjectConfig>(),
     initiatedAt: timestamp("initiated_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

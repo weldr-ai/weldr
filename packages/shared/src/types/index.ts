@@ -47,6 +47,16 @@ export type JsonSchema = JSONSchema7;
 
 export type Project = z.infer<typeof projectSchema>;
 
+type AppOptions = { web: true; server: true } | { web: false; server: true };
+
+type DatabaseOptions =
+  | { database: true; env: { DATABASE_URL: string } }
+  | { database: false };
+
+type AuthOptions = { auth: true; database: true } | { auth: false };
+
+export type ProjectConfig = AppOptions & DatabaseOptions & AuthOptions;
+
 export type UserMessageRawContent = z.infer<typeof userMessageRawContentSchema>;
 export type AssistantMessageRawContent = z.infer<
   typeof assistantMessageRawContentSchema
