@@ -20,7 +20,7 @@ env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
 
 jobs:
-  format-and-lint:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,8 +32,8 @@ jobs:
         shell: bash
         run: cp .env.example .env
 
-      - name: Format and lint
-        run: pnpm format-and-lint
+      - name: Format and Lint
+        run: pnpm check
 
   check-types:
     runs-on: ubuntu-latest

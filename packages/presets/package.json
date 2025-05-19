@@ -1,0 +1,21 @@
+{
+  "name": "@weldr/presets",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .turbo node_modules dist",
+    "check-types": "tsc --noEmit --emitDeclarationOnly false"
+  },
+  "dependencies": {
+    "handlebar": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/json-schema": "^7.0.15",
+    "@weldr/tsconfig": "workspace:*",
+    "typescript": "^5.8.3"
+  }
+}

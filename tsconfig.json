@@ -3,16 +3,7 @@
   "files": [],
   "references": [
     {
-      "path": "apps/web"
-    },
-    {
       "path": "apps/editor"
-    },
-    {
-      "path": "apps/deployer"
-    },
-    {
-      "path": "apps/engine"
     },
     {
       "path": "packages/api"

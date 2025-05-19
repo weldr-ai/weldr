@@ -1,4 +1,4 @@
-const buildBiomeCommand = () => "pnpm format-and-lint";
+const buildBiomeCommand = () => "pnpm check";
 const buildCheckTypesCommand = () => "pnpm check-types";
 
 export default {
