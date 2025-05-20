@@ -1,0 +1,38 @@
+{
+  "path": "/src/server/index.ts",
+  "declarations": [
+    {
+      "type": "other",
+      "name": "app",
+      "description": "The main Hono application instance for the server, configured with OpenAPI, logging, tRPC, and all REST routes. This is the entry point for all API requests under the /api base path.",
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/server/lib/utils",
+            "dependsOn": ["configureOpenAPI", "createRouter"]
+          },
+          {
+            "importPath": "src/server/routes",
+            "dependsOn": ["default"]
+          },
+          {
+            "importPath": "src/server/trpc/index",
+            "dependsOn": ["trpcRouter"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@hono/trpc-server",
+            "importPath": "@hono/trpc-server",
+            "dependsOn": ["trpcServer"]
+          },
+          {
+            "name": "hono",
+            "importPath": "hono/logger",
+            "dependsOn": ["logger"]
+          }
+        ]
+      }
+    }
+  ]
+}

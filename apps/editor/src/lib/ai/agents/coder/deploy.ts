@@ -140,17 +140,11 @@ export async function deploy({
         },
       ];
 
-      console.log(
-        `[coder:${projectId}] Files`,
-        newMachineFiles.map((f) => f.guest_path),
-      );
-
       // Create a new machine
       machineId = await Fly.machine.create({
         projectId,
         versionId,
         config: {
-          image: "registry.fly.io/boilerplates:next",
           files: newMachineFiles,
         },
       });

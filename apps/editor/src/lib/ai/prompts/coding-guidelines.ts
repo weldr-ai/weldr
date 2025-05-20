@@ -1,12 +1,16 @@
 export const codingGuidelines = `<current_tech_stack>
   - TypeScript
   - React
-  - Next.js 14+ App Router
+  - Tanstack Router
+  - Hono
   - shadcn/ui
   - Lucide Icons
   - Tailwind CSS
   - tRPC
   - TanStack Query
+  - Drizzle ORM
+  - PostgreSQL
+  - better-auth
 </current_tech_stack>
 
 <folder_structure_guidelines>
@@ -15,54 +19,57 @@ export const codingGuidelines = `<current_tech_stack>
   Project root directory:
   ├── public                            # Folder containing the static assets (images, fonts, etc.)
   ├── src                               # Folder containing the source code
-  │   ├── app                           # Folder containing the app routes
-  │   │   ├── api                       # Folder containing the API routes
-  │   │   └── ...                       # App routes
   │   ├── server                        # Folder containing the server-side code
-  │   │   ├── api                       # Folder containing the tRPC API
-  │   │   │   ├── root.ts               # tRPC API index file (Register all the routers here)
-  │   │   │   ├── trpc.ts               # tRPC API trpc file
-  │   │   │   └── router                # Folder containing the tRPC API routers
-  │   │   │       ├── [router-name].ts  # tRPC API router file
-  │   │   │       └── ...               # Other tRPC API router files
   │   │   ├── db                        # Folder containing the database (Drizzle ORM)
   │   │   │   ├── schema                # Folder containing the database schema
   │   │   │   │   ├── [table-name].ts   # Database table file
   │   │   │   │   └── index.ts          # Database schema index file (Re-exports all the files in the schema folder)
   │   │   │   └── index.ts              # Database index file
-  │   │   ├── queries                   # Folder containing the database queries
-  │   │   └── ...                       # Other server-side code like services, integrations, etc. For example: google-sheets.ts, stripe.ts, etc.
-  │   ├── components                    # Folder containing the React components
-  │   │   ├── ui                        # Folder containing the shadcn/ui components
-  │   │   ├── forms                     # Folder containing the form components
-  │   │   └── ...                       # Other components
-  │   ├── lib                           # Folder containing the utility functions
+  │   │   ├── lib                       # Folder containing the utility functions
+  │   │   │   ├── utils.ts              # Utility functions
+  │   │   │   ├── auth.ts               # Initialize authentication
+  │   │   │   └── ...                   # Other utility functions
   │   │   ├── trpc                      # Folder containing the tRPC utilities
-  │   │   │   ├── server.ts             # tRPC server-side utilities
-  │   │   │   ├── react.ts              # tRPC client-side utilities
-  │   │   │   └── query-client.ts       # tRPC query client
-  │   │   ├── auth                      # Folder containing the authentication utilities
-  │   │   │   ├── index.tsx             # Better-Auth config file and exports the \`auth\` instance for server-side use
-  │   │   │   └── react.ts              # Exports the \`auth\` instance for client-side use
-  │   │   ├── validators                # Folder containing the zod validations
-  │   │   │   ├── [module-name].ts      # Module for a group of zod validation schemas
-  │   │   │   └── ...                   # Other zod validation modules
-  │   │   ├── utils.ts                  # Simple utility functions like cn, formatDate, etc.
-  │   │   └── ...                       # Other utility functions
-  │   ├── context                       # Folder containing the context providers
-  │   ├── hooks                         # Folder containing the custom React hooks
-  │   ├── types                         # Folder containing the TypeScript types
-  │   └── styles                        # Folder containing the global styles
-  │       └── globals.css               # Global styles
-  ├── .eslintrc.cjs
+  │   │   │   ├── routers               # Folder containing the tRPC API routers
+  │   │   │   │   ├── root.ts           # tRPC API index file (Register all the routers here)
+  │   │   │   │   ├── [router-name].ts  # tRPC API router file
+  │   │   │   │   └── ...               # Other tRPC API router files
+  │   │   │   ├── index.ts              # exports the tRPC router and types
+  │   │   │   └── init.ts               # tRPC server-side initialization file
+  │   │   ├── types.ts                  # TypeScript types
+  │   │   └── index.ts                  # Index file containing the main hono app
+  │   ├── web                           # Tanstack Router client app
+  │   │   ├── components                # Folder containing the shared components
+  │   │   │   ├── ui                    # Folder containing the UI components
+  │   │   │   │   ├── button.tsx        # Button component
+  │   │   │   │   └── ...               # Other UI components
+  │   │   ├── hooks                     # Folder containing the shared hooks
+  │   │   │   ├── use-bookmarks.ts      # useBookmarks hook
+  │   │   │   └── ...                   # Other shared hooks
+  │   │   ├── integrations              # Folder containing the integrations
+  │   │   │   ├── trpc.ts               # tRPC integration
+  │   │   │   └── tanstack-query.ts     # TanStack Query integration
+  │   │   ├── lib                       # Folder containing the utility functions
+  │   │   │   ├── utils.ts              # Utility functions
+  │   │   │   ├── auth                  # Authentication client
+  │   │   │   │   ├── client.ts         # Authentication client contains authClient instance
+  │   │   │   │   └── index.ts          # Contains getSession server function which can be used in beforeLoad
+  │   │   │   └── ...                   # Other utility functions
+  │   │   ├── routes                    # Folder containing the routes
+  │   │   │   ├── [route-name].ts       # Route file
+  │   │   │   └── __root.ts             # Root route file (READ ONLY)
+  │   │   ├── api.ts                    # API entry file (READ ONLY)
+  │   │   ├── client.ts                 # Client entry file (READ ONLY)
+  │   │   ├── router.tsx                # Main router file (READ ONLY)
+  │   │   ├── ssr.ts                    # SSR entry file (READ ONLY)
+  │   │   └── styles.ts                 # Global styles (READ ONLY)
   ├── .gitignore
-  ├── bun.lockb
+  ├── app.config.ts
+  ├── drizzle.config.ts
+  ├── biome.json
+  ├── bun.lock
   ├── components.json
-  ├── next.config.ts
   ├── package.json
-  ├── postcss.config.ts
-  ├── prettier.config.cjs
-  ├── tailwind.config.ts
   └── tsconfig.json
 </folder_structure_guidelines>
 
@@ -71,7 +78,7 @@ export const codingGuidelines = `<current_tech_stack>
   - MUST use functions and modules to implement the code.
   - MUST use named exports for utilities and sub-components
   - MUST use default exports for pages and layouts only
-  - MUST use path aliases for imports with @/ prefix
+  - MUST use path aliases for imports with @/web/ prefix for client files (src/web) and @/server/ prefix for server files (src/server)
   - SHOULD avoid imperative programming as much as possible.
   - SHOULD use declarative programming instead.
   - SHOULD use functional programming concepts like immutability, higher-order functions, etc.
@@ -99,34 +106,191 @@ export const codingGuidelines = `<current_tech_stack>
   </example_code_style>
 </coding_style_guidelines>
 
-<server_functions_guidelines>
-  - MUST import the \`server-only\` package on top of the file to ensure that the function is only executed on the server.
-  - MUST create all server-related files in the \`/src/server\` directory.
+<tanstack_router_guidelines>
+  - MUST create all route files in the \`/src/web/routes\` directory
+  - MUST use \`createFileRoute\` to create routes
+  - MUST use absolute paths for route definitions
+  - MUST use kebab-case for route file names
+  - MUST use camelCase for route parameter names
+  - MUST use snake_case for search parameter names
 
-  <example_server_function>
-    /src/server/queries/blogs.ts
+  <route_naming_conventions>
+    Rules:
+    - __root.tsx: Root route file must be named __root.tsx and placed in routes root
+    - . Separator: Use . to denote nested routes (e.g. blog.post -> /blog/post)
+    - $ Token: Use $ for parameterized routes (e.g. $userId -> :userId)
+    - _ Prefix: Use _ prefix for pathless layout routes
+    - _ Suffix: Use _ suffix to exclude route from parent nesting
+    - - Prefix: Use - prefix to exclude files/folders from route tree
+    - (folder): Use parentheses for route groups (excluded from URL path)
+    - index Token: Use index for matching parent route exactly
+    - .route.tsx: Alternative way to define routes using route suffix
+
+    Examples:
+    - \`/src/web/routes/__root.tsx\` -> Root route file
+    - \`/src/web/routes/users/index.tsx\` -> \`/users\`
+    - \`/src/web/routes/users/$userId.tsx\` -> \`/users/:userId\`
+    - \`/src/web/routes/users/$userId/posts/$postId.tsx\` -> \`/users/:userId/posts/:postId\`
+    - \`/src/web/routes/users/$userId/posts/$postId/comments.tsx\` -> \`/users/:userId/posts/:postId/comments\`
+
+    Pathless Layout Examples:
+    - \`/src/web/routes/_app/route.tsx\` -> Pathless layout for all routes
+    - \`/src/web/routes/_app/dashboard.tsx\` -> \`/dashboard\` (inherits app layout)
+    - \`/src/web/routes/_app/settings.tsx\` -> \`/settings\` (inherits app layout)
+    - \`/src/web/routes/_auth/route.tsx\` -> Pathless layout for auth routes
+    - \`/src/web/routes/_auth/login.tsx\` -> \`/login\` (inherits auth layout)
+    - \`/src/web/routes/_auth/register.tsx\` -> \`/register\` (inherits auth layout)
+  </route_naming_conventions>
+
+  <params_validation>
+    - MUST use zod for params validation
+    - MUST transform params to the correct type if needed
+    - MUST use descriptive error messages
+
+    Example:
+    \`\`\`typescript
+    export const Route = createFileRoute("/users/$userId")({
+      params: z.object({
+        userId: z.string()
+          .min(1, "User ID is required")
+          .transform(Number)
+          .refine((n) => !isNaN(n), "User ID must be a number"),
+      }),
+    });
     \`\`\`
-      import "server-only";
+  </params_validation>
 
-      export async function getBlogs() {
-        const blogs = await db.query.blogs.findMany();
-        return blogs;
+  <search_validation>
+    - MUST use zod for search params validation
+    - MUST provide default values when appropriate
+    - MUST use snake_case for search param names
+
+    Example:
+    \`\`\`typescript
+    export const Route = createFileRoute("/users")({
+      search: z.object({
+        page: z.number().default(1),
+        per_page: z.number().default(10),
+        sort_by: z.enum(["name", "email", "created_at"]).default("created_at"),
+        sort_order: z.enum(["asc", "desc"]).default("desc"),
+        search: z.string().optional(),
+      }),
+    });
+    \`\`\`
+  </search_validation>
+
+  <using_loaders>
+    - MUST use loaders to prefetch data
+    - MUST use the context object to access services
+    - MUST handle errors appropriately
+    - SHOULD use TanStack Query for data fetching
+
+    Example:
+    \`\`\`typescript
+    export const Route = createFileRoute("/users/$userId")({
+      params: z.object({
+        userId: z.string().transform(Number),
+      }),
+      loader: async ({ context, params }) => {
+        // Prefetch user data
+        await context.queryClient.prefetchQuery(
+          context.trpc.users.getById.queryOptions(params.userId)
+        );
+
+        // Prefetch user posts
+        await context.queryClient.prefetchQuery(
+          context.trpc.posts.getByUserId.queryOptions(params.userId)
+        );
+      },
+      component: UserPage,
+    });
+    \`\`\`
+  </using_loaders>
+
+  <error_handling>
+    - MUST handle errors in loaders
+    - MUST provide meaningful error messages
+    - SHOULD use error boundaries for component errors
+
+    Example:
+    \`\`\`typescript
+    export const Route = createFileRoute("/users/$userId")({
+      loader: async ({ context, params }) => {
+        try {
+          await context.queryClient.prefetchQuery(
+            context.trpc.users.getById.queryOptions(params.userId)
+          );
+        } catch (error) {
+          throw new Error("Failed to load user data");
+        }
+      },
+      component: UserPage,
+      errorComponent: ({ error }) => (
+        <div className="text-destructive">
+          <h1>Error</h1>
+          <p>{error.message}</p>
+        </div>
+      ),
+    });
+    \`\`\`
+  </error_handling>
+
+  <auth_guidelines>
+    - Use the \`getSession\` function from \`@/web/lib/auth\` to get the current session
+    - Handle unauthenticated users by redirecting them to the sign-in page
+    - Use the \`beforeLoad\` hook to check authentication before loading the route
+
+    Example:
+    \`\`\`typescript
+    import { getSession } from "@/web/lib/auth";
+    import { redirect } from "@tanstack/react-router";
+
+    export const Route = createFileRoute("/protected")({
+      beforeLoad: async () => {
+        const session = await getSession();
+        if (!session) {
+          throw redirect({ to: "/auth/sign-in" });
+        }
+      },
+      component: ProtectedPage,
+    });
+    \`\`\`
+
+    Get the current session on the client:
+    <example_getting_session_on_client>
+    /src/web/components/user-button.tsx
+    \`\`\`
+    import { authClient } from "@/web/lib/auth/client";
+
+    function AccountSettings() {
+      const { data: session, isPending } = authClient.useSession();
+
+      if (isPending) {
+        return <div>Loading...</div>;
       }
+
+      if (!session) {
+        return <div>Not signed in</div>;
+      }
+
+      return <div>{session?.user?.email}</div>;
+    }
     \`\`\`
-  </example_server_function>
-</server_functions_guidelines>
+  </example_getting_session_on_client>
+  </auth_guidelines>
+</tanstack_router_guidelines>
 
 <tRPC_guidelines>
   - tRPC is already configured in the project.
-  - MUST create all tRPC related files in the \`/src/server/api\` directory.
+  - MUST create all tRPC related files in the \`/src/server/trpc\` directory.
   - MUST use the \`createTRPCRouter\` function to create your routers.
   - MUST use the \`protectedProcedure\` and \`publicProcedure\` to create your procedures.
   - MUST use the \`api\` object to call the procedures.
 
   <example_tRPC_router>
-    /src/server/api/routers/blogs.ts
+    /src/server/trpc/routers/blogs.ts
     \`\`\`
-    import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
+    import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/trpc/init";
     import { blogs } from "@/server/db/schema";
 
     export const blogsRouter = createTRPCRouter({
@@ -144,119 +308,191 @@ export const codingGuidelines = `<current_tech_stack>
   </example_tRPC_router>
 
   <example_calling_tRPC_procedures_on_client>
-    - You are provided with an \`api\` object to call the procedures with TanStack Query.
+    - You are provided with an \`useTRPC\` hook to get the tRPC client instance and use it to call the procedures using TanStack Query.
 
-    /src/components/blogs-list.tsx
+    /src/web/routes/todos/index.tsx
     \`\`\`
-    "use client";
+    import { Button } from "@/web/components/ui/button";
+    import { Card, CardContent, CardHeader, CardTitle } from "@/web/components/ui/card";
+    import { useTRPC } from "@/web/integrations/trpc";
+    import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+    import { createFileRoute } from "@tanstack/react-router";
+    import { Loader2 } from "lucide-react";
+    import { useState } from "react";
 
-    import { api } from "@/trpc/react";
+    export const Route = createFileRoute("/todos/")({
+      loader: async ({ context }) => {
+        // Prefetch todos data
+        await context.queryClient.prefetchQuery(
+          context.trpc.todos.getAll.queryOptions()
+        );
+      },
+      component: TodosList,
+    });
 
-    async function ClientComponent() {
-      const { data, isPending, error } = api.posts.list.useQuery()
+    function TodosList() {
+      const [newTodoText, setNewTodoText] = useState("");
+      const trpc = useTRPC();
+      const queryClient = useQueryClient();
 
-      if (isPending) return <div>Loading...</div>
-      if (error) return <div>Error: {error.message}</div>
+      // Fetch todos
+      const todos = useQuery(trpc.todos.getAll.queryOptions());
 
-      return <div>{data}</div>
+      // Create mutation
+      const createMutation = useMutation(
+        trpc.todos.create.mutationOptions({
+          onSuccess: () => {
+            // Invalidate and refetch todos after creating
+            queryClient.invalidateQueries(trpc.todos.getAll.queryFilter());
+            setNewTodoText("");
+          },
+        })
+      );
+
+      // Toggle mutation
+      const toggleMutation = useMutation(
+        trpc.todos.toggle.mutationOptions({
+          onSuccess: () => {
+            // Invalidate and refetch todos after toggling
+            queryClient.invalidateQueries(trpc.todos.getAll.queryFilter());
+          },
+        })
+      );
+
+      const handleAddTodo = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newTodoText.trim()) {
+          createMutation.mutate({ text: newTodoText });
+        }
+      };
+
+      const handleToggleTodo = (id: number, completed: boolean) => {
+        toggleMutation.mutate({ id, completed: !completed });
+      };
+
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Todo List</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAddTodo}>
+              <input
+                value={newTodoText}
+                onChange={(e) => setNewTodoText(e.target.value)}
+                placeholder="Add a new task..."
+                disabled={createMutation.isPending}
+              />
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending ? <Loader2 className="animate-spin" /> : "Add"}
+              </Button>
+            </form>
+
+            {todos.isLoading ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <ul>
+                {todos.data?.map((todo) => (
+                  <li key={todo.id}>
+                    <input
+                      type="checkbox"
+                      checked={todo.completed}
+                      onChange={() => handleToggleTodo(todo.id, todo.completed)}
+                    />
+                    <span>{todo.text}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      );
+    }
+    \`\`\`
+
+    - Parametrized example:
+    /src/web/routes/todos/$id.tsx
+    \`\`\`
+    import { createFileRoute } from "@tanstack/react-router";
+
+    export const Route = createFileRoute("/todos/$id")({
+      // Validate the params
+    	params: z.object({
+        id: z.string().transform(Number),
+      }),
+      loader: async ({ context, params }) => {
+        await context.queryClient.prefetchQuery(
+          context.trpc.todos.getById.queryOptions(params.id)
+        );
+      },
+      component: TodoPage,
+    });
+
+    function TodoPage() {
+      const { id } = Route.useParams();
+      const trpc = useTRPC();
+      const { data, error } = useQuery(trpc.todos.getById.queryOptions({ id }));
+
+      if (error) {
+        return <div>Error: {error.message}</div>;
+      }
+
+      return <div>{data?.title}</div>;
     }
     \`\`\`
   </example_calling_tRPC_procedures_on_client>
-
-  <example_fetching_data_and_hydrating_client_on_server>
-    - You are provided with an \`api\` object to call the procedures with TanStack Query.
-
-    /src/app/blogs/page.tsx
-    \`\`\`
-    import { api, HydrateClient } from "@/trpc/server";
-
-    function Hydration() {
-      // Fetching data on the server using tRPC and TanStack Query
-      const { data: hello } = api.hello.get.useQuery()
-
-      // Prefetching data on the server using tRPC and TanStack Query
-      void api.posts.list.prefetch()
-
-      // This will hydrate the client component <PostsList /> with the data fetched on the server
-      return (
-        <HydrateClient>
-          <div>{hello}</div>
-          <PostsList />
-        </HydrateClient>
-      )
-    }
-    \`\`\`
-  </example_fetching_data_and_hydrating_client_on_server>
 </tRPC_guidelines>
 
-<authentication_guidelines>
-  - When setting up or updating authentication, you MUST use the \`configure-authentication\` tool.
-  - You can only use the \`auth\` object at \`src/lib/auth/index.ts\` to get the current session on the server.
-  - You can only use the \`auth\` object at \`src/lib/auth/react.ts\` to get the current session on the client.
-  - MUST NOT use next.js middleware to handle authentication. Instead, you should check the session in routes.
-  - Here is how the session object looks like:
-    {
-      session: {
-          id: string;
-          createdAt: Date;
-          updatedAt: Date;
-          userId: string;
-          expiresAt: Date;
-          token: string;
-          ipAddress?: string | null | undefined | undefined;
-          userAgent?: string | null | undefined | undefined;
-      };
-      user: {
-          id: string;
-          email: string;
-          emailVerified: boolean;
-          name: string;
-          createdAt: Date;
-          updatedAt: Date;
-          image?: string | null | undefined | undefined;
-      };
-    } | null
+<forms_guidelines>
+  - Use shadcn/ui form components
+  - Use zod for schema validation
+  - Use react-hook-form for form handling
 
-  <example_getting_session_on_server>
-    /src/app/blogs/page.tsx
+  <example_building_forms>
+    /src/web/components/create-bookmark-form.tsx
     \`\`\`
-    import { auth } from "@/lib/auth";
-    import { headers } from "next/headers";
+    import { useForm } from "react-hook-form";
+    import { zodResolver } from "@hookform/resolvers/zod";
+    import { api } from "@/trpc/react";
+    import { z } from "zod";
 
-    // This is the ONLY way to get the session on the server
-    const session = await auth.api.getSession({ headers: await headers() });
+    const formSchema = z.object({
+      link: z.string().url(),
+    });
 
-    if (!session) {
-      redirect("/login");
-    }
+    export function CreateBookmarkForm() {
+      const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+      });
 
-    // To get the user
-    const user = session.user;
+      const utils = api.useUtils();
 
-    return (
-      <div>
-        <h1>Protected Page</h1>
-        <p>User: {user.email}</p>
-      </div>
-    );
-    \`\`\`
-  </example_getting_session_on_server>
+      const createPost = api.bookmarks.create.useMutation({
+        onSuccess: () => {
+          reset();
+          void utils.bookmarks.list.invalidate();
+        },
+      });
 
-  <example_getting_session_on_client>
-    /src/components/user-button.tsx
-    \`\`\`
-    "use client";
-
-    import { auth } from "@/lib/auth/react";
-
-    function AccountSettings() {
-      const { data: session } = auth.useSession();
-
-      return <div>{session?.user?.email}</div>;
+      return (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit((data) => createPost.mutate(data))}>
+            <FormField control={form.control} name="link" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Link</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </form>
+        </Form>
+      );
     }
     \`\`\`
-  </example_getting_session_on_client>
-</authentication_guidelines>
+  </example_building_forms>
+</forms_guidelines>
 
 <database_guidelines>
   - You MUST NOT configure Drizzle ORM, it can only be configured by calling the \`configure-database\` tool.
@@ -267,7 +503,7 @@ export const codingGuidelines = `<current_tech_stack>
     - Weldr MUST write each table in a separate file and export it in the index file.
     - Weldr MUST write the relations in the same file of the table.
 
-    /src/db/schema/blogs.ts
+    /src/server/db/schema/blogs.ts
     \`\`\`
     import { relations } from "drizzle-orm";
     import { pgTable, serial, text } from "drizzle-orm/pg-core";
@@ -290,25 +526,12 @@ export const codingGuidelines = `<current_tech_stack>
 
     After defining the table, you MUST export it in the index file.
 
-    /src/db/schema/index.ts
+    /src/server/db/schema/index.ts
     \`\`\`
     export * from "./blogs";
     export * from "./users";
     \`\`\`
   </defining_tables>
-
-  <using_database>
-    - You can use the database instance in the \`src/server/db/index.ts\` file.
-    - You can use anything from the \`drizzle-orm\` package.
-
-    /src/server/db/queries/blogs.ts
-    \`\`\`
-    import { db } from "@/server/db";
-    import { blogs } from "@/server/db/schema";
-
-    const blogs = await db.select().from(blogs);
-    \`\`\`
-  </using_database>
 </database_guidelines>
 
 <styling_guidelines>
@@ -371,112 +594,10 @@ export const codingGuidelines = `<current_tech_stack>
   - Jotai for atomic state
 </state_management_guidelines>
 
-<forms_guidelines>
-  - Use shadcn/ui form components
-  - Use zod for schema validation
-  - Use react-hook-form for form handling
-
-  <example_building_forms>
-    /src/components/create-bookmark-form.tsx
-    \`\`\`
-    "use client";
-
-    import { useForm } from "react-hook-form";
-    import { zodResolver } from "@hookform/resolvers/zod";
-    import { api } from "@/trpc/react";
-    import { z } from "zod";
-
-    const formSchema = z.object({
-      link: z.string().url(),
-    });
-
-    export function CreateBookmarkForm() {
-      const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-      });
-
-      const utils = api.useUtils();
-
-      const createPost = api.bookmarks.create.useMutation({
-        onSuccess: () => {
-          reset();
-          void utils.bookmarks.list.invalidate();
-        },
-      });
-
-      return (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit((data) => createPost.mutate(data))}>
-            <FormField control={form.control} name="link" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Link</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-          </form>
-        </Form>
-      );
-    }
-    \`\`\`
-  </example_building_forms>
-</forms_guidelines>
-
-<performance_guidelines>
-  - Native lazy loading
-  - Built-in Next.js image optimization
-</performance_guidelines>
-
 <accessibility_guidelines>
   - Weldr implements accessibility best practices.
   - Use semantic HTML elements when appropriate, like main and header.
   - Make sure to use the correct ARIA roles and attributes.
   - Remember to use the "sr-only" Tailwind class for screen reader only text.
   - Add alt text for all images, unless they are purely decorative or unless it would be repetitive for screen readers.
-</accessibility_guidelines>
-
-<nextjs_app_router_guidelines>
-  - MUST use Next.js 14+ App Router conventions
-  - MUST group related routes in parentheses
-  - MUST root layout at \`/src/app/layout.tsx\` when creating a new app.
-  - MUST use proper file conventions:
-    - page.tsx for pages
-    - layout.tsx for layouts
-    - loading.tsx for loading states
-    - error.tsx for error states
-    - not-found.tsx for 404 pages
-  - MUST await headers(), cookies(), params, and searchParams.
-    For example:
-
-    /src/app/posts/[slug]/page.tsx
-    \`\`\`
-    import { headers } from "next/headers";
-    import { cookies } from "next/headers";
-
-    export default async function Page({
-      params,
-    }: {
-      params: Promise<{ slug: string }>
-    }) {
-      const { slug } = await params
-      const headersList = await headers()
-      const userAgent = headersList.get('user-agent')
-
-      return (
-        <div>
-          My Post: {slug}
-          <br />
-          User Agent: {userAgent}
-        </div>
-      )
-    }
-    \`\`\`
-</nextjs_app_router_guidelines>
-
-<creating_new_app_guidelines>
-  - MUST always start by defining the root layout at \`/src/app/layout.tsx\`
-  - MUST NOT add any extra features unless explicitly asked.
-  - MUST keep everything as simple as possible.
-</creating_new_app_guidelines>`;
+</accessibility_guidelines>`;

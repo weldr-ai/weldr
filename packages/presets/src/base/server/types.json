@@ -1,0 +1,59 @@
+{
+  "path": "/src/server/types.ts",
+  "declarations": [
+    {
+      "type": "other",
+      "declType": "type",
+      "name": "AppBindings",
+      "description": "A TypeScript type defining the bindings for the application, specifically the Variables object for Hono context. Used to type the context variables available in the app's request handlers.",
+      "dependencies": {
+        "internal": [],
+        "external": []
+      }
+    },
+    {
+      "type": "other",
+      "declType": "type",
+      "name": "AppOpenAPI",
+      "description": "A generic TypeScript type alias for OpenAPIHono, parameterized by a Schema (defaulting to an empty object). It provides a strongly-typed Hono instance with the application's bindings and schema for OpenAPI integration.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@hono/zod-openapi",
+            "importPath": "@hono/zod-openapi",
+            "dependsOn": [
+              "OpenAPIHono"
+            ]
+          },
+          {
+            "name": "hono",
+            "importPath": "hono",
+            "dependsOn": [
+              "Schema"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "other",
+      "declType": "type",
+      "name": "AppRouteHandler",
+      "description": "A generic TypeScript type alias for a RouteHandler, parameterized by a RouteConfig and using the application's bindings. Used to type REST or OpenAPI route handlers in the app.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@hono/zod-openapi",
+            "importPath": "@hono/zod-openapi",
+            "dependsOn": [
+              "RouteHandler",
+              "RouteConfig"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

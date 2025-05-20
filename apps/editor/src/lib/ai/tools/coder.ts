@@ -286,7 +286,7 @@ const initializeVersion = async ({
 
     console.log(`[coderTool:${projectId}] Getting preset`);
     const preset = await tx.query.presets.findFirst({
-      where: eq(presets.type, "next-base"),
+      where: eq(presets.type, "base"),
       with: {
         declarations: true,
         files: true,
@@ -350,7 +350,7 @@ const initializeVersion = async ({
 
     console.log(`[coderTool:${projectId}] Copying boilerplate files`);
     const fileVersions = await S3.copyBoilerplate({
-      boilerplate: "next-base",
+      boilerplate: preset.type,
       destinationPath: `${projectId}`,
     });
 
@@ -370,7 +370,14 @@ const initializeVersion = async ({
     console.log(`[coderTool:${projectId}] Inserting version files`);
     await tx.insert(versionFiles).values(
       insertedFiles.map((file) => {
-        const s3VersionId = fileVersions[`${projectId}${file.path}`];
+        console.log(
+          `${projectId}${file.path.startsWith("/") ? file.path : `/${file.path}`}`,
+        );
+
+        const s3VersionId =
+          fileVersions[
+            `${projectId}${file.path.startsWith("/") ? file.path : `/${file.path}`}`
+          ];
         if (!s3VersionId) {
           throw new Error(
             `[coderTool:${projectId}] S3 version ID not found for file ${file.path}`,
@@ -454,35 +461,59 @@ const initializeVersion = async ({
 
       if (!insertedDeclaration) throw new Error("New declaration not found");
 
-      const pkgs = presetDependencies.filter((dep) => dep.type === "external");
-      if (pkgs.length > 0) {
+      if (
+        presetDependencies.external &&
+        presetDependencies.external.length > 0
+      ) {
         await tx.insert(declarationPackages).values(
-          pkgs.map((pkg) => {
-            const insertedPkg = insertedPkgs.find((p) => p.name === pkg.from);
+          presetDependencies.external.map((pkg) => {
+            const insertedPkg = insertedPkgs.find((p) => p.name === pkg.name);
+            console.log("insertedPkg", pkg.name);
             if (!insertedPkg) throw new Error("Package not found");
             return {
               declarationId: insertedDeclaration.id,
               packageId: insertedPkg.id,
-              importPath: pkg.from,
+              importPath: pkg.importPath,
               declarations: pkg.dependsOn,
             } as typeof declarationPackages.$inferInsert;
           }),
         );
       }
 
-      const internalDependencies = presetDependencies
-        .filter((dep) => dep.type === "internal")
-        .flatMap((dependency) =>
+      console.log(
+        "presetDependencies.internal for",
+        insertedDeclaration.name,
+        presetDependencies.internal,
+      );
+
+      const internalDependencies = presetDependencies.internal?.flatMap(
+        (dependency) =>
           dependency.dependsOn.map((dep) => {
-            const fileId = insertedFiles.find(
-              (file) => file.path === dependency.from,
-            )?.id;
+            const fileId = insertedFiles.find((file) => {
+              const normalizedFilePath = file.path.replace(/\.[^/.]+$/, "");
+              const normalizedImportPath = dependency.importPath?.startsWith(
+                "/",
+              )
+                ? dependency.importPath?.replace(/\.[^/.]+$/, "")
+                : `/${dependency.importPath?.replace(/\.[^/.]+$/, "")}`;
+
+              return (
+                normalizedFilePath === normalizedImportPath ||
+                normalizedFilePath === `${normalizedImportPath}/index`
+              );
+            })?.id;
             if (!fileId) throw new Error("File ID not found");
             return { fileId, name: dep };
           }),
-        );
+      );
 
-      if (internalDependencies.length > 0) {
+      console.log(
+        "internalDependencies for",
+        insertedDeclaration.name,
+        internalDependencies,
+      );
+
+      if (internalDependencies && internalDependencies.length > 0) {
         await tx.insert(dependencies).values(
           internalDependencies.map((dep) => {
             const dependency = insertedDeclarations.find(

@@ -7,7 +7,7 @@ export const setupIntegrationTool = tool({
   description:
     "Ask the user to setup an integration. MUST REPLY WITH A FRIENDLY MESSAGE TO THE USER WHILE INVOKING.",
   parameters: z.object({
-    integration: z.enum(["postgres"]).describe("The integration to setup"),
+    integration: z.enum(["postgresql"]).describe("The integration to setup"),
   }),
 });
 

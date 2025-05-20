@@ -14,19 +14,20 @@ import { packageType } from "./packages";
 import { declarationTypes } from "./shared-enums";
 
 interface InternalDependency {
-  type: "internal";
-  from: string;
+  importPath?: string;
   dependsOn: string[];
 }
 
 interface ExternalDependency {
-  type: "external";
-  from: string;
-  dependsOn: string[];
   name: string;
+  importPath: string;
+  dependsOn: string[];
 }
 
-export type DeclarationDependency = InternalDependency | ExternalDependency;
+export type DeclarationDependencies = {
+  internal?: InternalDependency[];
+  external?: ExternalDependency[];
+};
 
 export const presetTypes = pgEnum("preset_type", ["base"]);
 
@@ -60,7 +61,7 @@ export const presetDeclarations = pgTable(
     name: text("name").notNull(),
     file: text("file").notNull(),
     specs: jsonb().$type<DeclarationSpecs>(),
-    dependencies: jsonb().$type<DeclarationDependency[]>(),
+    dependencies: jsonb().$type<DeclarationDependencies>(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")
       .notNull()

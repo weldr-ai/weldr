@@ -1,7 +1,7 @@
-import type { ProjectConfig } from "@weldr/shared/types";
-import Handlebars from "handlebars";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import type { ProjectConfig } from "@weldr/shared/types";
+import Handlebars from "handlebars";
 
 // Register Handlebars helpers
 Handlebars.registerHelper("or", (...args) => {

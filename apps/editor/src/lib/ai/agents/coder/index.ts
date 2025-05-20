@@ -193,7 +193,13 @@ export async function coder({
             projectId,
           }),
         },
-        onFinish: async ({ finishReason, text, toolCalls, toolResults }) => {
+        onFinish: async ({
+          finishReason,
+          text,
+          toolCalls,
+          toolResults,
+          response,
+        }) => {
           if (finishReason === "length") {
             console.log(`[coder:${projectId}]: Reached max tokens retrying...`);
             currentMessages.push({
@@ -341,8 +347,16 @@ ${fileContext}`,
             }
 
             await generate();
-          } else
-            console.log(`[coder:$projectId] Finished with ${finishReason}`);
+          } else if (finishReason === "error") {
+            console.log(
+              `[coder:${projectId}] Error: ${JSON.stringify(response)}`,
+            );
+            throw new Error(
+              `[coder:${projectId}] Error: ${JSON.stringify(response)}`,
+            );
+          } else {
+            console.log(`[coder:${projectId}] Finished with ${finishReason}`);
+          }
         },
       });
 

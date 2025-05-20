@@ -6,6 +6,7 @@ import {
   integrationTemplates,
   integrations,
 } from "@weldr/db/schema";
+import { S3 } from "@weldr/shared/s3";
 import {
   createIntegrationSchema,
   updateIntegrationSchema,
@@ -110,6 +111,23 @@ export const integrationsRouter = createTRPCRouter({
             mapTo: mapping.configKey,
             environmentVariableId: envVarKey.id,
           });
+        }
+
+        switch (integrationTemplate.type) {
+          case "postgresql": {
+            S3.writeFile({
+              projectId,
+              path: `integrations/${integration.id}/config.json`,
+              content: JSON.stringify(integrationTemplate.config, null, 2),
+            });
+            break;
+          }
+          default: {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Unsupported integration template type",
+            });
+          }
         }
 
         return integration;

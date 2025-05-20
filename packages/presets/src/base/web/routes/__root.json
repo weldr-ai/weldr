@@ -57,7 +57,7 @@
           },
           {
             "importPath": "src/web/styles.css?url",
-            "dependsOn": ["default"]
+            "dependsOn": []
           }
         ],
         "external": [

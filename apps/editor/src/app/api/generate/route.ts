@@ -12,7 +12,7 @@ import { convertMessagesToCoreMessages } from "@/lib/ai/utils";
 import type { TStreamableValue } from "@/types";
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
-import { chats, projects, versions } from "@weldr/db/schema";
+import { chats, integrations, projects, versions } from "@weldr/db/schema";
 import { streamText } from "ai";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -35,6 +35,16 @@ export async function POST(request: Request) {
   if (!project) {
     throw new Error("Project not found");
   }
+
+  const integrationsList = await db.query.integrations.findMany({
+    where: eq(integrations.projectId, projectId),
+    with: {
+      integrationTemplate: true,
+    },
+  });
+
+  const allIntegrationTemplates =
+    await db.query.integrationTemplates.findMany();
 
   const chat = await db.query.chats.findFirst({
     where: eq(chats.id, chatId),
@@ -88,8 +98,21 @@ export async function POST(request: Request) {
           model: registry.languageModel("openai:gpt-4.1"),
           system: prompts.requirementsGatherer(
             project.initiatedAt
-              ? `You are working on a project called ${project.name} that was initiated at ${project.initiatedAt.toISOString()}`
+              ? `You are working on a project called ${project.name} that was initiated at ${project.initiatedAt.toISOString()}
+
+This project has the following integrations setup:
+${integrationsList
+  .map((integration) => `- ${integration.integrationTemplate.name}`)
+  .join(", ")}`
               : "This is a new project",
+            allIntegrationTemplates
+              .map(
+                (integrationTemplate) =>
+                  `- ${integrationTemplate.name} (key: ${integrationTemplate.key}):
+Type: ${integrationTemplate.type}
+Description: ${integrationTemplate.description}`,
+              )
+              .join("\n\n"),
           ),
           messages: promptMessages,
           tools: {

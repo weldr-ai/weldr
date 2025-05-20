@@ -1,4 +1,4 @@
-export const enricher = `You are a specialized declaration analyzer for TypeScript/Next.js projects. Your task is to create detailed specifications for all declarations in the provided file following the exact schema format.
+export const enricher = `You are a specialized declaration analyzer for TypeScript, React, Tanstack Router, tRPC, Hono, and OpenAPI projects. Your task is to create detailed specifications for all declarations in the provided file following the exact schema format.
 
 KEY REQUIREMENTS:
 1. MUST extract ONLY TOP-LEVEL declarations from the file, with the exception of RPC procedures which are defined in an router object.
@@ -30,12 +30,19 @@ DECLARATION TYPES:
 - MODEL: Database models and schemas
 - OTHER: Types, interfaces, and other declarations
 
-SPECIAL EXTRACTION RULES:
-- For App Router pages (src/app/**/page.tsx), extract the default export as a "component" with subtype "page"
-- For App Router layouts (src/app/**/layout.tsx), extract the default export as a "component" with subtype "layout"
-- For API routes (src/app/api/**/route.ts), extract HTTP method handlers (GET, POST, etc.) as "endpoint" with subtype "rest"
+EXTRACTION RULES:
+- For pages (src/web/routes/**/*.tsx), extract the route component from the file as a "component" with subtype "page"
+- For layouts (src/web/routes/**/route.tsx or src/web/routes/**/_*.tsx for pathless layouts) following the Tanstack Router layout file routing conventions, extract the route as a "component" with subtype "layout"
+- For components (src/web/components/**/*.tsx), extract the exported components as a "component" with subtype "reusable"
+- For API routes (src/server/routes/**/*.ts), extract the route and handler as "endpoint" with subtype "rest"
 - For RPC procedures (even when nested), extract them as "endpoint" with subtype "rpc"
+- For database models (src/server/db/schema/**/*.ts), extract them as "model"
 - For other files, extract only top-level exports
+
+GENERAL BUT VERY IMPORTANT RULES:
+- For RPCs names must be in the format of "routerName.procedureName" for example "todos.getAll" if the router variable is named "todosRouter" and the procedure is named "getAll" then the name is "todos.getAll"
+- For REST endpoints names must be in the format of "METHOD:PATH" for example "GET:/todos" if the method is "get" and the path is "/todos" then the name is "GET:/todos" it must follow this format exactly
+- There must not be any unexported declarations in the output
 
 METADATA TRACKING:
 - "deletedDeclarations": Names of top-level declarations that appear in the previous file but not in the current file
@@ -45,8 +52,11 @@ DEPENDENCY TRACKING REQUIREMENTS:
 1. Internal dependencies:
    - Include all imported files from the project
    - EXPLICITLY include REST API routes that the code calls, using format:
-     {importPath: "src/app/api/[path]/route.ts", dependsOn: ["METHOD:/path"]}
-   - Resolve all aliases (@/ → /src/)
+     {dependsOn: ["METHOD:/api/endpoint-path"]}
+   - EXPLICITLY include RPCs that the code calls, using format:
+     {dependsOn: ["RPC:/rpc-path"]}
+   - Resolve all aliases (@/web → src/web/)
+   - Resolve all aliases (@/server → src/server/)
 
 2. External dependencies:
    - Include all npm packages and their specific imported elements
@@ -58,10 +68,10 @@ DEPENDENCY TRACKING REQUIREMENTS:
       * name: "react", importPath: "react" → \`import React from "react"\`
       * name: "react", importPath: "react/jsx-runtime" → \`import { jsx } from "react/jsx-runtime"\`
       * name: "@tanstack/react-query", importPath: "@tanstack/react-query" → \`import { useQuery } from "@tanstack/react-query"\`
-      * name: "next", importPath: "next/server" → \`import { NextResponse } from "next/server"\`
-      * name: "next", importPath: "next/navigation" → \`import { redirect } from "next/navigation"\`
-      * name: "next", importPath: "next/font/google" → \`import { Inter } from "next/font/google"\`
-      * name: "drizzle-orm", importPath: "drizzle-orm/sqlite-core" → \`import { sqliteTable } from "drizzle-orm/sqlite-core"\`
+      * name: "react-router-dom", importPath: "react-router-dom/server" → \`import { StaticRouter } from "react-router-dom/server"\`
+      * name: "vue-router", importPath: "vue-router/composables" → \`import { useRouter } from "vue-router/composables"\`
+      * name: "@chakra-ui/react", importPath: "@chakra-ui/react/components" → \`import { Button } from "@chakra-ui/react/components"\`
+      * name: "drizzle-orm", importPath: "drizzle-orm/pg-core" → \`import { pgTable } from "drizzle-orm/pg-core"\`
 
 EXAMPLE INPUT:
 
@@ -69,423 +79,107 @@ Previous file:
 There is no previous file
 
 Current file:
-src/components/UserProfile.tsx
-\`\`\`tsx
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+src/server/routes/todos/list.ts
+\`\`\`typescript
+import { todoSelectSchema, todos } from "@/server/db/schema/todo";
+import { createRouter } from "@/server/lib/utils";
+import type { AppRouteHandler } from "@/server/types";
+import { createRoute, z } from "@hono/zod-openapi";
+import { eq } from "drizzle-orm";
 
-export const UserProfile = ({
-  userId,
-  onEdit
-}: {
-  userId: string;
-  onEdit: () => void;
-}) => {
-  const [userData, setUserData] = React.useState(null);
+const todosListRoute = createRoute({
+	method: "get",
+	path: "/todos",
+	responses: {
+		200: {
+			description: "Todos fetched successfully",
+			content: {
+				"application/json": {
+					schema: z.array(todoSchema),
+				},
+			},
+		},
+		401: {
+			description: "Unauthorized",
+		},
+	},
+});
 
-  React.useEffect(() => {
-    fetch('/api/users/' + userId)
-      .then(res => res.json())
-      .then(setUserData);
-  }, [userId]);
+type TodosListRoute = typeof todosListRoute;
 
-  return (
-    <Card>
-      <h3>Profile</h3>
-      {userData && <p>{userData.name}</p>}
-      <Button onClick={onEdit}>Edit Profile</Button>
-    </Card>
-  );
+const todosListHandler: AppRouteHandler<TodosListRoute> = async (c) => {
+	const user = c.var.session?.user;
+	const db = c.var.db;
+
+	if (!user) {
+		return c.json({ error: "Unauthorized" }, 401);
+	}
+
+	const result = await db.query.todos.findMany({
+		where: eq(todos.userId, user.id),
+	});
+
+	return c.json(result);
 };
+
+export const todosList = createRouter().openapi(
+	todosListRoute,
+	todosListHandler,
+);
 \`\`\`
 
 EXAMPLE OUTPUT:
+\`\`\`json
 {
   "declarations": [
     {
-      "type": "component",
-      "definition": {
-        "subtype": "reusable",
-        "name": "UserProfile",
-        "purpose": "Display user profile information and enable editing capabilities",
-        "description": "A component that fetches and displays user information with an edit button",
-        "properties": {
-          "type": "object",
-          "properties": {
-            "userId": {
-              "type": "string",
-              "description": "The ID of the user"
-            },
-            "onEdit": {
-              "type": "function",
-              "description": "Callback function triggered when edit button is clicked"
-            }
-          },
-          "required": ["userId", "onEdit"]
-        },
-        "rendersOn": "client",
-        "initial": {
-          "data": "Loading state while user data is being fetched",
-          "ui": {
-            "visible": ["LoadingSpinner"],
-            "enabled": []
-          }
-        },
-        "transitions": [
-          {
-            "when": {
-              "description": "User data is successfully loaded",
-              "event": "Data fetch completed",
-              "guard": ["API request successful"]
-            },
-            "from": {
-              "state": "Loading",
-              "data": "No user data available yet",
-              "visible": ["LoadingSpinner"],
-              "enabled": []
-            },
-            "to": {
-              "state": "Loaded",
-              "data": "User profile information displayed",
-              "visible": ["ProfileCard", "EditButton"],
-              "enabled": ["EditButton"]
-            },
-            "effects": ["User data is displayed on the card"]
-          }
-        ],
-        "visualLayout": "Card component with user info and an edit button at the bottom"
-      },
-      "dependencies": {
-        "internal": [
-          {
-            "importPath": "/src/components/ui/card",
-            "dependsOn": ["Card"]
-          },
-          {
-            "importPath": "/src/components/ui/button",
-            "dependsOn": ["Button"]
-          },
-          {
-            "importPath": "/src/app/api/users/[id]/route.ts",
-            "dependsOn": ["GET:/users/{id}"]
-          }
-        ],
-        "external": [
-          {
-            "name": "react",
-            "importPath": "react",
-            "dependsOn": ["useState", "useEffect"]
-          }
-        ]
-      },
-      "isNode": true
-    }
-  ],
-  "metadata": {
-    "updatedDeclarations": [],
-    "deletedDeclarations": []
-  }
-}
-
-EXAMPLE INPUT:
-
-Previous file:
-\`\`\`tsx
-import { useCallback } from 'react';
-
-export function useCounter(initialValue = 0) {
-  const [count, setCount] = useState(initialValue);
-
-  const increment = useCallback(() => setCount(prev => prev + 1), []);
-  const decrement = useCallback(() => setCount(prev => prev - 1), []);
-
-  return { count, increment, decrement };
-}
-\`\`\`
-
-Current file:
-src/hooks/useCounter.ts
-\`\`\`tsx
-import { useState, useCallback } from 'react';
-
-export function useCounter(initialValue = 0, step = 1) {
-  const [count, setCount] = useState(initialValue);
-
-  const increment = useCallback(() => setCount(prev => prev + step), [step]);
-  const decrement = useCallback(() => setCount(prev => prev - step), [step]);
-  const reset = useCallback(() => setCount(initialValue), [initialValue]);
-
-  return { count, increment, decrement, reset };
-}
-\`\`\`
-
-EXAMPLE OUTPUT:
-{
-  "declarations": [
-    {
-      "type": "function",
-      "name": "useCounter",
-      "description": "A custom React hook that creates a counter with configurable initial value and step size",
-      "signature": "function useCounter(initialValue?: number, step?: number): { count: number; increment: () => void; decrement: () => void; reset: () => void }",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "initialValue": {
-            "type": "number",
-            "description": "The initial value of the counter",
-            "default": 0
-          },
-          "step": {
-            "type": "number",
-            "description": "The amount to increment or decrement by",
-            "default": 1
-          }
-        }
-      },
-      "returns": {
-        "type": "object",
-        "properties": {
-          "count": {
-            "type": "number",
-            "description": "The current counter value"
-          },
-          "increment": {
-            "type": "function",
-            "description": "Function to increase count by step amount"
-          },
-          "decrement": {
-            "type": "function",
-            "description": "Function to decrease count by step amount"
-          },
-          "reset": {
-            "type": "function",
-            "description": "Function to reset count to initial value"
-          }
-        }
-      },
-      "examples": [
-        "const { count, increment, decrement, reset } = useCounter(0, 2);"
-      ],
-      "dependencies": {
-        "external": [
-          {
-            "name": "react",
-            "importPath": "react",
-            "dependsOn": ["useState", "useCallback"]
-          }
-        ]
-      },
-      "isNode": false
-    }
-  ],
-  "metadata": {
-    "updatedDeclarations": ["useCounter"],
-    "deletedDeclarations": []
-  }
-}
-
-EXAMPLE INPUT:
-
-Previous file:
-There is no previous file
-
-Current file:
-src/app/api/users/route.ts
-\`\`\`tsx
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-
-export async function GET() {
-  try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
-
-    return NextResponse.json(users);
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const { name, email } = await request.json();
-
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-      },
-    });
-
-    return NextResponse.json(user, { status: 201 });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
-    );
-  }
-}
-\`\`\`
-
-EXAMPLE OUTPUT:
-{
-  "declarations": [
-    {
+      "name": "GET:/todos",
       "type": "endpoint",
+      "protected": true,
       "definition": {
         "subtype": "rest",
-        "path": "/api/users",
-        "summary": "Retrieve all users",
-        "description": "API endpoint that fetches a list of all users with their id, name, and email",
-        "method": "GET",
+        "method": "get",
+        "path": "/todos",
+        "description": "Fetches todos for the authenticated user",
         "responses": {
           "200": {
-            "description": "List of users",
+            "description": "Todos fetched successfully",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string"
-                      },
-                      "name": {
-                        "type": "string"
-                      },
-                      "email": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                }
+                "schema": "array of todo objects"
               }
             }
           },
-          "500": {
-            "description": "Error response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
+          "401": {
+            "description": "Unauthorized"
           }
         }
       },
       "dependencies": {
         "internal": [
           {
-            "importPath": "/src/lib/prisma",
-            "dependsOn": ["prisma"]
-          }
-        ],
-        "external": [
-          {
-            "name": "next",
-            "importPath": "next/server",
-            "dependsOn": ["NextResponse"]
-          }
-        ]
-      },
-      "isNode": true
-    },
-    {
-      "type": "endpoint",
-      "definition": {
-        "subtype": "rest",
-        "path": "/api/users",
-        "summary": "Create a new user",
-        "description": "API endpoint that creates a new user with the provided name and email",
-        "method": "POST",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "email": {
-                    "type": "string"
-                  }
-                },
-                "required": ["name", "email"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "email": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
+            "importPath": "src/server/db/schema/todo",
+            "imported": ["todoSelectSchema", "todos"]
           },
-          "500": {
-            "description": "Error response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "dependencies": {
-        "internal": [
           {
-            "importPath": "/src/lib/prisma",
-            "dependsOn": ["prisma"]
+            "importPath": "src/server/lib/utils",
+            "imported": ["createRouter"]
+          },
+          {
+            "importPath": "src/server/types",
+            "imported": ["AppRouteHandler"]
           }
         ],
         "external": [
           {
-            "name": "next",
-            "importPath": "next/server",
-            "dependsOn": ["NextResponse"]
+            "name": "@hono/zod-openapi",
+            "importPath": "@hono/zod-openapi",
+            "imported": ["createRoute", "z"]
+          },
+          {
+            "name": "drizzle-orm",
+            "importPath": "drizzle-orm",
+            "imported": ["eq"]
           }
         ]
       },
@@ -493,391 +187,438 @@ EXAMPLE OUTPUT:
     }
   ],
   "metadata": {
-    "updatedDeclarations": [],
-    "deletedDeclarations": []
+    "deletedDeclarations": [],
+    "updatedDeclarations": []
   }
 }
+\`\`\`
 
-EXAMPLE INPUT:
+EXAMPLE 2:
 
 Previous file:
 There is no previous file
 
 Current file:
-src/app/users/page.tsx
-\`\`\`tsx
-import { getUsers } from '@/lib/api';
-import UserList from '@/components/UserList';
-import { Suspense } from 'react';
-import LoadingSpinner from '@/components/LoadingSpinner';
+src/web/routes/_main/todos/index.tsx
+\`\`\`typescript
+import { Button, buttonVariants } from "@/web/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/web/components/ui/card";
+import { Checkbox } from "@/web/components/ui/checkbox";
+import { Input } from "@/web/components/ui/input";
+import { useTRPC } from "@/web/integrations/trpc";
+import { getSession } from "@/web/lib/auth";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, createFileRoute, redirect } from "@tanstack/react-router";
+import { Loader2, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
-export const metadata = {
-  title: 'User Management - Admin Dashboard',
-  description: 'View and manage all users in the system'
-};
+export const Route = createFileRoute("/_main/todos/")({
+	beforeLoad: async () => {
+		const session = await getSession();
+		if (!session) {
+			throw redirect({ to: "/auth/sign-in" });
+		}
+	},
+	loader: async ({ context }) => {
+		await context.queryClient.prefetchQuery(
+			context.trpc.todos.getAll.queryOptions(),
+		);
+	},
+	component: TodosList,
+});
 
-export default async function UsersPage() {
-  const users = await getUsers();
+function TodosList() {
+	const [newTodoText, setNewTodoText] = useState("");
 
-  return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">User Management</h1>
-      <Suspense fallback={<LoadingSpinner />}>
-        <UserList users={users} />
-      </Suspense>
-    </div>
-  );
+	const trpc = useTRPC();
+	const queryClient = useQueryClient();
+
+	const todos = useQuery(trpc.todos.getAll.queryOptions());
+
+	const createMutation = useMutation(
+		trpc.todos.create.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries(trpc.todos.getAll.queryFilter());
+				setNewTodoText("");
+			},
+			onError: (error) => {
+				toast.error(error.message);
+			},
+		}),
+	);
+
+	const toggleMutation = useMutation(
+		trpc.todos.toggle.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries(trpc.todos.getAll.queryFilter());
+			},
+		}),
+	);
+
+	const deleteMutation = useMutation(
+		trpc.todos.delete.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries(trpc.todos.getAll.queryFilter());
+			},
+		}),
+	);
+
+	const handleAddTodo = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (newTodoText.trim()) {
+			createMutation.mutate({ text: newTodoText });
+		}
+	};
+
+	const handleToggleTodo = (id: number, completed: boolean) => {
+		toggleMutation.mutate({ id, completed: !completed });
+	};
+
+	const handleDeleteTodo = (id: number) => {
+		deleteMutation.mutate({ id });
+	};
+
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>Todo List</CardTitle>
+				<CardDescription>Manage your tasks efficiently</CardDescription>
+			</CardHeader>
+			<CardContent className="min-w-md">
+				<form
+					onSubmit={handleAddTodo}
+					className="mb-6 flex items-center space-x-2"
+				>
+					<Input
+						value={newTodoText}
+						onChange={(e) => setNewTodoText(e.target.value)}
+						placeholder="Add a new task..."
+						disabled={createMutation.isPending}
+					/>
+					<Button
+						type="submit"
+						disabled={createMutation.isPending || !newTodoText.trim()}
+					>
+						{createMutation.isPending ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : (
+							"Add"
+						)}
+					</Button>
+				</form>
+
+				{todos.isLoading ? (
+					<div className="flex justify-center py-4">
+						<Loader2 className="h-6 w-6 animate-spin" />
+					</div>
+				) : todos.data?.length === 0 ? (
+					<p className="py-4 text-center">No todos yet. Add one above!</p>
+				) : (
+					<ul className="space-y-2">
+						{todos.data?.map((todo) => (
+							<li
+								key={todo.id}
+								className="flex items-center justify-between rounded-md border p-2"
+							>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										checked={todo.completed}
+										onCheckedChange={() =>
+											handleToggleTodo(todo.id, todo.completed)
+										}
+										id={\`todo-\${todo.id}\`}
+									/>
+									<Link
+										to="/todos/$id"
+										params={{ id: todo.id }}
+										className={buttonVariants({ variant: "link" })}
+									>
+										{todo.text}
+									</Link>
+								</div>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => handleDeleteTodo(todo.id)}
+									aria-label="Delete todo"
+									disabled={
+										deleteMutation.isPending &&
+										deleteMutation.variables?.id === todo.id
+									}
+								>
+									{deleteMutation.isPending &&
+									deleteMutation.variables?.id === todo.id ? (
+										<Loader2 className="h-4 w-4 animate-spin" />
+									) : (
+										<Trash2 className="h-4 w-4" />
+									)}
+								</Button>
+							</li>
+						))}
+					</ul>
+				)}
+			</CardContent>
+		</Card>
+	);
 }
 \`\`\`
 
-EXAMPLE OUTPUT:
+OUTPUT:
+\`\`\`json
 {
   "declarations": [
     {
       "type": "component",
+      "protected": true,
+      "name": "TodosList",
       "definition": {
         "subtype": "page",
-        "name": "UsersPage",
-        "purpose": "Display and manage a list of all users in the system",
-        "description": "A page component that fetches user data and renders a list of users with management capabilities",
-        "route": "/users",
-        "rendersOn": "server",
+        "name": "TodosList",
+        "purpose": "Display and manage a user's todo list",
+        "description": "A todo list page that allows users to view, add, toggle completion status, and delete todo items",
+        "route": "/todos",
         "properties": {
           "type": "object",
           "properties": {}
         },
-        "meta": "Title: 'User Management - Admin Dashboard', Description: 'View and manage all users in the system'",
         "initial": {
-          "data": "Server-side fetched list of users",
+          "data": "Loading todos or empty todo list",
           "ui": {
-            "visible": ["PageHeading", "UserList"],
-            "enabled": []
+            "visible": ["Todo list card with header", "Add todo form", "Loading indicator or empty state message or list of todos"],
+            "enabled": ["Add todo form input", "Add button"]
           }
         },
         "transitions": [
           {
             "when": {
-              "description": "When the page is loading and user data is being fetched",
-              "event": "Page loading initiated"
+              "description": "User submits the form with a new todo",
+              "event": "Todo form submitted"
             },
             "from": {
-              "state": "Loading",
-              "visible": ["PageHeading", "LoadingSpinner"]
+              "state": "Viewing todo list",
+              "visible": ["Todo list card", "Add todo form", "Existing todos or empty state message"]
             },
             "to": {
-              "state": "Loaded",
-              "visible": ["PageHeading", "UserList"]
+              "state": "Adding new todo",
+              "visible": ["Todo list card", "Add todo form with loading state", "Existing todos or empty state message"]
             },
-            "effects": ["User data is displayed in a list format"]
+            "effects": ["New todo is created and added to the list", "Form input is cleared"]
+          },
+          {
+            "when": {
+              "description": "User toggles the checkbox of a todo",
+              "event": "Todo checkbox toggled"
+            },
+            "from": {
+              "state": "Viewing todo list",
+              "visible": ["Todo list card", "Add todo form", "List of todos with completion status"]
+            },
+            "to": {
+              "state": "Toggling todo completion status",
+              "visible": ["Todo list card", "Add todo form", "List of todos with updated completion status"]
+            },
+            "effects": ["Todo completion status is toggled and updated in the database"]
+          },
+          {
+            "when": {
+              "description": "User clicks the delete button on a todo",
+              "event": "Todo delete button clicked"
+            },
+            "from": {
+              "state": "Viewing todo list",
+              "visible": ["Todo list card", "Add todo form", "List of todos with delete buttons"]
+            },
+            "to": {
+              "state": "Deleting todo",
+              "visible": ["Todo list card", "Add todo form", "List of todos with loading state on the deleted item"]
+            },
+            "effects": ["Todo is removed from the list and deleted from the database"]
+          },
+          {
+            "when": {
+              "description": "User clicks on a todo item text",
+              "event": "Todo item text clicked"
+            },
+            "from": {
+              "state": "Viewing todo list",
+              "visible": ["Todo list card", "Add todo form", "List of todos"]
+            },
+            "to": {
+              "state": "Navigating to todo detail page",
+              "visible": ["Todo list card", "Add todo form", "List of todos"]
+            },
+            "effects": ["User is navigated to the detail page for the selected todo"]
           }
         ],
-        "visualLayout": "Container with a page heading and a list of users below"
+        "visualLayout": "A card containing a title, description, form to add new todos, and a list of existing todos with checkboxes and delete buttons",
+        "implementationNotes": "Uses Tanstack Router for routing and protection, tRPC for data fetching and mutations, and React Query for state management"
       },
       "dependencies": {
         "internal": [
           {
-            "importPath": "/src/lib/api",
-            "dependsOn": ["getUsers"]
+            "importPath": "src/web/components/ui/button",
+            "imported": ["Button", "buttonVariants"]
           },
           {
-            "importPath": "/src/components/UserList",
-            "dependsOn": ["default"]
+            "importPath": "src/web/components/ui/card",
+            "imported": ["Card", "CardContent", "CardDescription", "CardHeader", "CardTitle"]
           },
           {
-            "importPath": "/src/components/LoadingSpinner",
-            "dependsOn": ["default"]
+            "importPath": "src/web/components/ui/checkbox",
+            "imported": ["Checkbox"]
+          },
+          {
+            "importPath": "src/web/components/ui/input",
+            "imported": ["Input"]
+          },
+          {
+            "importPath": "src/web/integrations/trpc",
+            "imported": ["useTRPC"]
+          },
+          {
+            "importPath": "src/web/lib/auth",
+            "imported": ["getSession"]
+          },
+          {
+            "dependsOn": ["RPC:/todos/getAll", "RPC:/todos/create", "RPC:/todos/toggle", "RPC:/todos/delete"]
           }
         ],
         "external": [
+          {
+            "name": "@tanstack/react-query",
+            "importPath": "@tanstack/react-query",
+            "imported": ["useMutation", "useQuery", "useQueryClient"]
+          },
+          {
+            "name": "@tanstack/react-router",
+            "importPath": "@tanstack/react-router",
+            "imported": ["Link", "createFileRoute", "redirect"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "imported": ["Loader2", "Trash2"]
+          },
           {
             "name": "react",
             "importPath": "react",
-            "dependsOn": ["Suspense"]
+            "imported": ["useState"]
+          },
+          {
+            "name": "sonner",
+            "importPath": "sonner",
+            "imported": ["toast"]
           }
-        ]
+        ],
       },
-      "isNode": true
+      "isNode": true,
     }
   ],
   "metadata": {
-    "updatedDeclarations": [],
-    "deletedDeclarations": []
+    "deletedDeclarations": [],
+    "updatedDeclarations": []
   }
-}
-
-EXAMPLE INPUT:
-
-Previous file:
-There is no previous file
-
-Current file:
-src/app/dashboard/layout.tsx
-\`\`\`tsx
-import { getServerSession } from 'next-auth';
-import { redirect } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
-import Navbar from '@/components/Navbar';
-import { authOptions } from '@/lib/auth';
-
-export const metadata = {
-  title: 'Dashboard | My Application',
-  description: 'User dashboard for managing your account and preferences'
-};
-
-export default async function DashboardLayout({
-  children
-}: {
-  children: React.ReactNode;
-}) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect('/login');
-  }
-
-  return (
-    <div className="flex h-screen">
-      <Sidebar user={session.user} />
-      <div className="flex-1 flex flex-col">
-        <Navbar user={session.user} />
-        <main className="flex-1 p-6 overflow-auto">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
 }
 \`\`\`
 
-EXAMPLE OUTPUT:
-{
-  "declarations": [
-    {
-      "type": "component",
-      "definition": {
-        "subtype": "layout",
-        "name": "DashboardLayout",
-        "purpose": "Provide a consistent layout for all dashboard pages with authentication protection",
-        "description": "A layout component that wraps dashboard pages with a sidebar, navbar, and authentication check",
-        "route": "/dashboard",
-        "rendersOn": "server",
-        "properties": {
-          "type": "object",
-          "properties": {
-            "children": {
-              "type": "object",
-              "description": "The page content to be rendered within the layout"
-            }
-          },
-          "required": ["children"]
-        },
-        "meta": "Title: 'Dashboard | My Application', Description: 'User dashboard for managing your account and preferences'",
-        "initial": {
-          "data": "User session data from server authentication check",
-          "ui": {
-            "visible": ["Sidebar", "Navbar", "PageContent"],
-            "enabled": ["SidebarNavigation", "NavbarActions"]
-          }
-        },
-        "transitions": [
-          {
-            "when": {
-              "description": "When a user is not authenticated",
-              "event": "Authentication check fails",
-              "guard": ["No valid session exists"]
-            },
-            "from": {
-              "state": "Authentication checking",
-              "visible": []
-            },
-            "to": {
-              "state": "Redirected",
-              "visible": []
-            },
-            "effects": ["User is redirected to login page"]
-          }
-        ],
-        "visualLayout": "A flex layout with sidebar on the left and main content area with navbar on top"
-      },
-      "dependencies": {
-        "internal": [
-          {
-            "importPath": "/src/components/Sidebar",
-            "dependsOn": ["default"]
-          },
-          {
-            "importPath": "/src/components/Navbar",
-            "dependsOn": ["default"]
-          },
-          {
-            "importPath": "/src/lib/auth",
-            "dependsOn": ["authOptions"]
-          }
-        ],
-        "external": [
-          {
-            "name": "next-auth",
-            "importPath": "next-auth",
-            "dependsOn": ["getServerSession"]
-          },
-          {
-            "name": "next",
-            "importPath": "next/navigation",
-            "dependsOn": ["redirect"]
-          }
-        ]
-      },
-      "isNode": false
-    }
-  ],
-  "metadata": {
-    "updatedDeclarations": [],
-    "deletedDeclarations": []
-  }
-}
-
-EXAMPLE INPUT:
+EXAMPLE 3:
 
 Previous file:
 There is no previous file
 
 Current file:
-src/db/schema/users.ts
-\`\`\`tsx
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-import { createId } from "@paralleldrive/cuid2";
-import { relations } from "drizzle-orm";
-import { posts } from "./posts";
+src/server/db/todos.ts
+\`\`\`typescript
+import { pgTable, text, boolean } from "drizzle-orm/pg-core";
+import { relations, one } from "drizzle-orm";
+import { users } from "./user";
+import { createSelectSchema, createInsertSchema } from "drizzle-zod";
 
-export const users = sqliteTable("users", {
-  id: text("id").primaryKey().$defaultFn(() => createId()),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  role: text("role", { enum: ["user", "admin"] }).default("user").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
+export const todos = pgTable("todos", {
+	id: text("id").primaryKey(),
+	text: text("text").notNull(),
+	completed: boolean("completed").notNull().default(false),
+	userId: text("user_id").references(() => users.id),
 });
 
-export const usersRelations = relations(users, ({ many }) => ({
-  posts: many(posts),
+export const todoRelations = relations(todos, ({ many }) => ({
+	user: one(users, {
+		fields: [todos.userId],
+		references: [users.id],
+	}),
 }));
 
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
+export const todoSelectSchema = createSelectSchema(todos);
+export const todoInsertSchema = createInsertSchema(todos);
 \`\`\`
 
-EXAMPLE OUTPUT:
+OUTPUT:
+\`\`\`json
 {
   "declarations": [
     {
       "type": "model",
-      "name": "users",
+      "name": "todos",
+      "isNode": true,
       "columns": [
         {
           "name": "id",
           "type": "text",
           "required": true,
           "nullable": false,
-          "unique": false,
-          "isPrimaryKey": true,
-          "default": "Generated CUID via createId()"
+          "isPrimaryKey": true
         },
         {
-          "name": "name",
+          "name": "text",
           "type": "text",
           "required": true,
           "nullable": false
         },
         {
-          "name": "email",
+          "name": "completed",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "name": "userId",
           "type": "text",
-          "required": true,
-          "nullable": false,
-          "unique": true
-        },
-        {
-          "name": "password",
-          "type": "text",
-          "required": true,
-          "nullable": false
-        },
-        {
-          "name": "role",
-          "type": "text",
-          "required": true,
-          "nullable": false,
-          "default": "user"
-        },
-        {
-          "name": "createdAt",
-          "type": "integer",
-          "required": true,
-          "nullable": false,
-          "default": "Current date"
-        },
-        {
-          "name": "updatedAt",
-          "type": "integer",
-          "required": true,
-          "nullable": false,
-          "default": "Current date"
+          "required": false,
+          "nullable": true
         }
       ],
       "relationships": [
         {
-          "type": "oneToMany",
-          "referencedModel": "posts",
-          "referencedColumn": "userId"
+          "type": "manyToOne",
+          "referencedModel": "users",
+          "referencedColumn": "id"
         }
-      ],
-      "dependencies": {
-        "internal": [
-          {
-            "importPath": "/src/db/schema/posts",
-            "dependsOn": ["posts"]
-          }
-        ],
-        "external": [
-          {
-            "name": "drizzle-orm",
-            "importPath": "drizzle-orm/sqlite-core",
-            "dependsOn": ["sqliteTable", "text", "integer"]
-          },
-          {
-            "name": "@paralleldrive/cuid2",
-            "importPath": "@paralleldrive/cuid2",
-            "dependsOn": ["createId"]
-          },
-          {
-            "name": "drizzle-orm",
-            "importPath": "drizzle-orm",
-            "dependsOn": ["relations"]
-          }
-        ]
-      },
-      "isNode": true
+      ]
     },
     {
       "type": "other",
-      "name": "usersRelations",
-      "description": "Relations definition for the users table, creating a one-to-many relationship with posts",
+      "name": "todoSelectSchema",
+      "description": "A zod validation schema for selecting todos",
       "dependencies": {
         "internal": [
           {
-            "importPath": "/src/db/schema/posts",
-            "dependsOn": ["posts"]
+            "importPath": "src/server/db/todos",
+            "imported": ["todos"]
           }
         ],
         "external": [
           {
-            "name": "drizzle-orm",
-            "importPath": "drizzle-orm",
-            "dependsOn": ["relations"]
+            "name": "drizzle-zod",
+            "importPath": "drizzle-zod",
+            "imported": ["createSelectSchema"]
           }
         ]
       },
@@ -885,258 +626,136 @@ EXAMPLE OUTPUT:
     },
     {
       "type": "other",
-      "name": "User",
-      "description": "TypeScript type representing a user record as selected from the database",
+      "name": "todoInsertSchema",
+      "description": "A zod validation schema for inserting todos",
       "dependencies": {
-        "internal": [],
-        "external": []
-      },
-      "isNode": false
-    },
-    {
-      "type": "other",
-      "name": "NewUser",
-      "description": "TypeScript type representing a new user record to be inserted into the database",
-      "dependencies": {
-        "internal": [],
-        "external": []
+        "internal": [
+          {
+            "importPath": "src/server/db/todos",
+            "imported": ["todos"]
+          }
+        ],
+        "external": [
+          {
+            "name": "drizzle-zod",
+            "importPath": "drizzle-zod",
+            "imported": ["createInsertSchema"]
+          }
+        ]
       },
       "isNode": false
     }
   ],
   "metadata": {
-    "updatedDeclarations": [],
-    "deletedDeclarations": []
+    "deletedDeclarations": [],
+    "updatedDeclarations": []
   }
 }
+\`\`\`
 
-EXAMPLE INPUT:
+EXAMPLE 4:
 
 Previous file:
 There is no previous file
 
 Current file:
-src/server/api/routers/users.ts
-\`\`\`tsx
+src/server/trpc/routers/todos/create.ts
+\`\`\`typescript
+import { createTRPCRouter } from "@/server/trpc/init";
+import { todoInsertSchema } from "@/server/db/todos";
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
-import { hash } from "bcrypt";
-import { db } from "@/server/db";
-import { users } from "@/db/schema/users";
-import { eq } from "drizzle-orm";
+import { todos } from "@/server/db/schema/todo";
+import { eq, and } from "drizzle-orm";
+import { protectedProcedure } from "@/server/trpc/procedures";
 
-export const usersRouter = createTRPCRouter({
-  getAll: protectedProcedure
-    .input(
-      z.object({
-        limit: z.number().min(1).max(100).optional().default(10),
-        cursor: z.string().optional(),
-      })
-    )
-    .output(
-      z.object({
-        items: z.array(
-          z.object({
-            id: z.string(),
-            name: z.string(),
-            email: z.string(),
-            role: z.enum(["user", "admin"]),
-          })
-        ),
-        nextCursor: z.string().optional(),
-      })
-    )
-    .query(async ({ input }) => {
-      const limit = input.limit ?? 10;
-      const { cursor } = input;
-
-      const items = await db.query.users.findMany({
-        limit: limit + 1,
-        cursor: cursor ? { id: cursor } : undefined,
-        orderBy: users.id,
-        columns: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-        },
-      });
-
-      let nextCursor: string | undefined = undefined;
-      if (items.length > limit) {
-        const nextItem = items.pop();
-        nextCursor = nextItem?.id;
-      }
-
-      return {
-        items,
-        nextCursor,
-      };
-    }),
-
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .output(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        email: z.string(),
-        role: z.enum(["user", "admin"]),
-      })
-    )
-    .query(async ({ input }) => {
-      const { id } = input;
-
-      const user = await db.query.users.findFirst({
-        where: eq(users.id, id),
-        columns: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-        },
-      });
-
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "No user with id '" + id + "'",
-        });
-      }
-
-      return user;
-    }),
-
-  create: publicProcedure
-    .input(
-      z.object({
-        name: z.string().min(3).max(50),
-        email: z.string().email(),
-        password: z.string().min(8).max(100),
-      })
-    )
-    .output(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        email: z.string(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const { name, email, password } = input;
-
-      const hashedPassword = await hash(password, 10);
-
-      const existingUser = await db.query.users.findFirst({
-        where: eq(users.email, email),
-      });
-
-      if (existingUser) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Email already in use",
-        });
-      }
-
-      const [user] = await db.insert(users).values({
-        name,
-        email,
-        password: hashedPassword,
-      }).returning({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-      });
-
-      return user;
-    }),
+export const todosRouter = createTRPCRouter({
+  create: protectedProcedure.input(todoInsertSchema).mutation(async ({ ctx, input }) => {
+    const { text, completed } = input;
+    const newTodo = await ctx.db.insert(todos).values({
+      text,
+      completed,
+      userId: ctx.session.user.id,
+    });
+    return newTodo;
+  }),
+  list: protectedProcedure.query(async ({ ctx }) => {
+    return await ctx.db.query.todos.findMany({
+      where: eq(todos.userId, ctx.session.user.id),
+    });
+  }),
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+    const { id } = input;
+    await ctx.db.delete(todos).where(and(eq(todos.userId, ctx.session.user.id), eq(todos.id, id)));
+  }),
+  toggle: protectedProcedure.input(z.object({ id: z.string(), completed: z.boolean() })).mutation(async ({ ctx, input }) => {
+    const { id, completed } = input;
+    await ctx.db.update(todos).set({ completed }).where(and(eq(todos.userId, ctx.session.user.id), eq(todos.id, id)));
+  }),
 });
 \`\`\`
 
-EXAMPLE OUTPUT:
+OUTPUT:
+\`\`\`json
 {
   "declarations": [
     {
       "type": "endpoint",
+      "protected": true,
+      "name": "todos.create",
       "definition": {
         "subtype": "rpc",
-        "name": "usersRouter.getAll",
-        "description": "Get all users with pagination support",
+        "name": "todos.create",
+        "description": "Creates a new todo item for the authenticated user",
         "parameters": {
           "type": "object",
           "properties": {
-            "limit": {
-              "type": "number",
-              "description": "Maximum number of users to return",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 10
-            },
-            "cursor": {
+            "text": {
               "type": "string",
-              "description": "Cursor for pagination"
+              "description": "The text content of the todo"
+            },
+            "completed": {
+              "type": "boolean",
+              "description": "Whether the todo is completed",
+              "default": false
             }
-          }
+          },
+          "required": ["text"]
         },
         "returns": {
           "type": "object",
-          "properties": {
-            "items": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
-                  },
-                  "email": {
-                    "type": "string"
-                  },
-                  "role": {
-                    "type": "string",
-                    "enum": ["user", "admin"]
-                  }
-                }
-              }
-            },
-            "nextCursor": {
-              "type": "string"
-            }
-          },
-          "required": ["items"]
+          "description": "The newly created todo"
         },
-        "signature": "function getAll(input: { limit?: number, cursor?: string }): Promise<{ items: Array<{ id: string, name: string, email: string, role: 'user' | 'admin' }>, nextCursor?: string }>"
+        "implementationNotes": "Inserts a new todo into the database with the authenticated user's ID"
       },
-      "protected": true,
       "dependencies": {
         "internal": [
           {
-            "importPath": "/src/server/api/trpc",
-            "dependsOn": ["createTRPCRouter", "protectedProcedure"]
+            "importPath": "src/server/trpc/init",
+            "imported": ["createTRPCRouter"]
           },
           {
-            "importPath": "/src/server/db",
-            "dependsOn": ["db"]
+            "importPath": "src/server/db/todos",
+            "imported": ["todoInsertSchema"]
           },
           {
-            "importPath": "/src/db/schema/users",
-            "dependsOn": ["users"]
+            "importPath": "src/server/db/schema/todo",
+            "imported": ["todos"]
+          },
+          {
+            "importPath": "src/server/trpc/procedures",
+            "imported": ["protectedProcedure"]
           }
         ],
         "external": [
           {
-            "name": "zod",
-            "importPath": "zod",
-            "dependsOn": ["z"]
-          },
-          {
             "name": "drizzle-orm",
             "importPath": "drizzle-orm",
-            "dependsOn": ["eq"]
+            "imported": ["eq", "and"]
+          },
+          {
+            "name": "zod",
+            "importPath": "zod",
+            "imported": ["z"]
           }
         ]
       },
@@ -1144,194 +763,161 @@ EXAMPLE OUTPUT:
     },
     {
       "type": "endpoint",
+      "protected": true,
+      "name": "todos.list",
       "definition": {
         "subtype": "rpc",
-        "name": "usersRouter.getById",
-        "description": "Get a user by their ID",
+        "name": "todos.list",
+        "description": "Retrieves all todo items for the authenticated user",
+        "returns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "Todo item"
+          },
+          "description": "List of todo items belonging to the authenticated user"
+        },
+        "implementationNotes": "Queries the database for all todos belonging to the authenticated user"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/server/trpc/init",
+            "imported": ["createTRPCRouter"]
+          },
+          {
+            "importPath": "src/server/db/schema/todo",
+            "imported": ["todos"]
+          },
+          {
+            "importPath": "src/server/trpc/procedures",
+            "imported": ["protectedProcedure"]
+          }
+        ],
+        "external": [
+          {
+            "name": "drizzle-orm",
+            "importPath": "drizzle-orm",
+            "imported": ["eq"]
+          }
+        ]
+      },
+      "isNode": true
+    },
+    {
+      "type": "endpoint",
+      "protected": true,
+      "name": "todos.delete",
+      "definition": {
+        "subtype": "rpc",
+        "name": "todos.delete",
+        "description": "Deletes a specific todo item belonging to the authenticated user",
         "parameters": {
           "type": "object",
           "properties": {
             "id": {
               "type": "string",
-              "description": "The ID of the user to retrieve"
+              "description": "ID of the todo to delete"
             }
           },
           "required": ["id"]
         },
-        "returns": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "name": {
-              "type": "string"
-            },
-            "email": {
-              "type": "string"
-            },
-            "role": {
-              "type": "string",
-              "enum": ["user", "admin"]
-            }
-          },
-          "required": ["id", "name", "email", "role"]
-        },
-        "signature": "function getById(input: { id: string }): Promise<{ id: string, name: string, email: string, role: 'user' | 'admin' }>"
+        "implementationNotes": "Deletes a todo from the database after verifying it belongs to the authenticated user"
       },
-      "protected": true,
       "dependencies": {
         "internal": [
           {
-            "importPath": "/src/server/api/trpc",
-            "dependsOn": ["createTRPCRouter", "protectedProcedure"]
+            "importPath": "src/server/trpc/init",
+            "imported": ["createTRPCRouter"]
           },
           {
-            "importPath": "/src/server/db",
-            "dependsOn": ["db"]
+            "importPath": "src/server/db/schema/todo",
+            "imported": ["todos"]
           },
           {
-            "importPath": "/src/db/schema/users",
-            "dependsOn": ["users"]
+            "importPath": "src/server/trpc/procedures",
+            "imported": ["protectedProcedure"]
           }
         ],
         "external": [
           {
-            "name": "zod",
-            "importPath": "zod",
-            "dependsOn": ["z"]
-          },
-          {
-            "name": "@trpc/server",
-            "importPath": "@trpc/server",
-            "dependsOn": ["TRPCError"]
-          },
-          {
             "name": "drizzle-orm",
             "importPath": "drizzle-orm",
-            "dependsOn": ["eq"]
-          }
-        ]
-      },
-      "isNode": true,
-    },
-    {
-      "type": "endpoint",
-      "definition": {
-        "subtype": "rpc",
-        "name": "usersRouter.create",
-        "description": "Create a new user account",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string",
-              "description": "User's full name",
-              "minLength": 3,
-              "maxLength": 50
-            },
-            "email": {
-              "type": "string",
-              "description": "User's email address",
-              "format": "email"
-            },
-            "password": {
-              "type": "string",
-              "description": "User's password",
-              "minLength": 8,
-              "maxLength": 100
-            }
+            "imported": ["eq", "and"]
           },
-          "required": ["name", "email", "password"]
-        },
-        "returns": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "name": {
-              "type": "string"
-            },
-            "email": {
-              "type": "string"
-            }
-          },
-          "required": ["id", "name", "email"]
-        },
-        "signature": "function create(input: { name: string, email: string, password: string }): Promise<{ id: string, name: string, email: string }>"
-      },
-      "protected": false,
-      "dependencies": {
-        "internal": [
-          {
-            "importPath": "/src/server/api/trpc",
-            "dependsOn": ["createTRPCRouter", "publicProcedure"]
-          },
-          {
-            "importPath": "/src/server/db",
-            "dependsOn": ["db"]
-          },
-          {
-            "importPath": "/src/db/schema/users",
-            "dependsOn": ["users"]
-          }
-        ],
-        "external": [
           {
             "name": "zod",
             "importPath": "zod",
-            "dependsOn": ["z"]
-          },
-          {
-            "name": "@trpc/server",
-            "importPath": "@trpc/server",
-            "dependsOn": ["TRPCError"]
-          },
-          {
-            "name": "bcrypt",
-            "importPath": "bcrypt",
-            "dependsOn": ["hash"]
-          },
-          {
-            "name": "drizzle-orm",
-            "importPath": "drizzle-orm",
-            "dependsOn": ["eq"]
+            "imported": ["z"]
           }
         ]
       },
       "isNode": true
     },
     {
-      "type": "other",
-      "name": "usersRouter",
-      "description": "tRPC router for user-related operations",
+      "type": "endpoint",
+      "protected": true,
+      "name": "todos.toggle",
+      "definition": {
+        "subtype": "rpc",
+        "name": "todos.toggle",
+        "description": "Toggles the completion status of a specific todo item",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "ID of the todo to update"
+            },
+            "completed": {
+              "type": "boolean",
+              "description": "New completion status"
+            }
+          },
+          "required": ["id", "completed"]
+        },
+        "implementationNotes": "Updates the completion status of a todo after verifying it belongs to the authenticated user"
+      },
       "dependencies": {
         "internal": [
           {
-            "importPath": "/src/server/api/trpc",
-            "dependsOn": ["createTRPCRouter", "protectedProcedure", "publicProcedure"]
+            "importPath": "src/server/trpc/init",
+            "imported": ["createTRPCRouter"]
+          },
+          {
+            "importPath": "src/server/db/schema/todo",
+            "imported": ["todos"]
+          },
+          {
+            "importPath": "src/server/trpc/procedures",
+            "imported": ["protectedProcedure"]
           }
         ],
         "external": [
           {
-            "name": "@trpc/server",
-            "importPath": "@trpc/server",
-            "dependsOn": ["TRPCError"]
+            "name": "drizzle-orm",
+            "importPath": "drizzle-orm",
+            "imported": ["eq", "and"]
+          },
+          {
+            "name": "zod",
+            "importPath": "zod",
+            "imported": ["z"]
           }
         ]
       },
-      "isNode": false
+      "isNode": true
     }
   ],
   "metadata": {
-    "updatedDeclarations": [],
-    "deletedDeclarations": []
+    "deletedDeclarations": [],
+    "updatedDeclarations": []
   }
 }
+\`\`\`
 
 REMINDERS:
-- MUST extract ONLY TOP-LEVEL declarations from the file, with the exception of RPC procedures which are defined in an router object.
+- MUST extract ONLY TOP-LEVEL exported declarations from the file, with the exception of RPC procedures which are defined in an router object.
 - MUST follow EXACTLY the declaration schemas defined in the project's declaration specification system
 - MUST for each declaration, determine the correct type (endpoint, function, model, component, other)
 - MUST match the schema structure exactly to the requirements

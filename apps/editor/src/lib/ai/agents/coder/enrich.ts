@@ -394,7 +394,10 @@ export async function enrich({
 
               return (
                 dependency.dependsOn.includes(declaration.declaration.name) &&
-                declarationNormalizedFilePath === dependencyNormalizedFilePath
+                (declarationNormalizedFilePath ===
+                  dependencyNormalizedFilePath ||
+                  declarationNormalizedFilePath ===
+                    `${dependencyNormalizedFilePath}/index`)
               );
             },
           );

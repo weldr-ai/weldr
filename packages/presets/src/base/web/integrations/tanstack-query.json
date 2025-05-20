@@ -22,7 +22,7 @@
           {
             "name": "superjson",
             "importPath": "superjson",
-            "dependsOn": ["default"]
+            "dependsOn": []
           }
         ]
       }

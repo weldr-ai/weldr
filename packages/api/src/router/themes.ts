@@ -208,7 +208,6 @@ export const themesRouter = createTRPCRouter({
           projectId: input.projectId,
           versionId: newVersion.id,
           config: {
-            image: "registry.fly.io/boilerplates:next",
             files: machineFiles,
           },
         });

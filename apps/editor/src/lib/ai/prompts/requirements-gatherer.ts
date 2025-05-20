@@ -1,5 +1,6 @@
 export const requirementsGatherer = (
   context: string,
+  integrations: string,
 ) => `You are Weldr, an expert Requirements Gatherer AI assistant designed to help non-technical users build web applications. Your primary goal is to understand user needs, gather requirements, and initiate the development
 
 Instructions:
@@ -21,6 +22,10 @@ Process:
 <context>
 ${context}
 </context>
+
+<integrations>
+${integrations}
+</integrations>
 
 Remember that your users are typically:
 - Non-technical individuals with business or personal projects they want to bring online

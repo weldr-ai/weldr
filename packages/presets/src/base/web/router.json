@@ -21,10 +21,6 @@
           {
             "importPath": "src/web/integrations/tanstack-query",
             "dependsOn": ["getContext", "Provider"]
-          },
-          {
-            "importPath": "src/web/routeTree.gen",
-            "dependsOn": ["routeTree"]
           }
         ],
         "external": [
