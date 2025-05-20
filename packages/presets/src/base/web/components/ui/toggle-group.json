@@ -1,0 +1,183 @@
+{
+  "path": "/src/web/components/ui/toggle-group.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "ToggleGroup",
+        "purpose": "Group multiple toggle buttons together with shared styling and context",
+        "description": "A flexible and accessible group component for toggle buttons, supporting variant and size context propagation. It wraps Radix UI's ToggleGroupPrimitive.Root and provides context for child toggle items.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the group"
+            },
+            "variant": {
+              "type": "string",
+              "description": "Visual style variant for the toggle group and its items"
+            },
+            "size": {
+              "type": "string",
+              "description": "Size of the toggle group and its items"
+            },
+            "children": {
+              "type": "any",
+              "description": "ToggleGroupItem components or other React nodes"
+            }
+          }
+        },
+        "initial": {
+          "data": "No toggles selected by default",
+          "ui": {
+            "visible": ["A horizontal group of toggle buttons"],
+            "enabled": ["All toggle buttons are interactive unless disabled"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "A user clicks a toggle button in the group",
+              "event": "Toggle button clicked"
+            },
+            "from": {
+              "state": "Some toggles selected or none selected",
+              "visible": [
+                "Toggle group with one or more toggles in selected state"
+              ]
+            },
+            "to": {
+              "state": "Toggle selection updated",
+              "visible": ["Toggle group with updated selection state"]
+            },
+            "effects": ["The selected state of the clicked toggle is updated"]
+          }
+        ],
+        "visualLayout": "A flex row of toggle buttons with rounded corners and optional outline or shadow, styled according to the chosen variant and size.",
+        "implementationNotes": "Uses Radix UI ToggleGroupPrimitive.Root for accessibility and state management. Context is provided for variant and size to child items.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/toggle",
+            "dependsOn": ["toggleVariants"]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-toggle-group",
+            "importPath": "@radix-ui/react-toggle-group",
+            "dependsOn": ["*"]
+          },
+          {
+            "name": "class-variance-authority",
+            "importPath": "class-variance-authority",
+            "dependsOn": ["VariantProps"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["createContext", "useContext"]
+          }
+        ]
+      },
+      "name": "ToggleGroup"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "ToggleGroupItem",
+        "purpose": "A toggle button that is a child of a ToggleGroup, inheriting styling and context",
+        "description": "A toggle button component to be used within a ToggleGroup. It consumes context for variant and size, and applies appropriate styles. Wraps Radix UI's ToggleGroupPrimitive.Item.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the item"
+            },
+            "variant": {
+              "type": "string",
+              "description": "Visual style variant for the toggle item (overrides group context if provided)"
+            },
+            "size": {
+              "type": "string",
+              "description": "Size of the toggle item (overrides group context if provided)"
+            },
+            "children": {
+              "type": "any",
+              "description": "Content of the toggle button"
+            }
+          }
+        },
+        "initial": {
+          "data": "Unselected toggle button",
+          "ui": {
+            "visible": [
+              "A single toggle button styled according to group context or its own props"
+            ],
+            "enabled": ["Button is interactive unless disabled"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User clicks the toggle button",
+              "event": "Toggle button clicked"
+            },
+            "from": {
+              "state": "Unselected or selected",
+              "visible": ["Toggle button in current state"]
+            },
+            "to": {
+              "state": "Selection toggled",
+              "visible": ["Toggle button in new state (selected/unselected)"]
+            },
+            "effects": ["The button's selected state is toggled"]
+          }
+        ],
+        "visualLayout": "A flex item styled as a button, with rounded corners and context-driven styles.",
+        "implementationNotes": "Uses Radix UI ToggleGroupPrimitive.Item for accessibility and state. Consumes context from ToggleGroup for consistent styling.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/toggle",
+            "dependsOn": ["toggleVariants"]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-toggle-group",
+            "importPath": "@radix-ui/react-toggle-group",
+            "dependsOn": ["*"]
+          },
+          {
+            "name": "class-variance-authority",
+            "importPath": "class-variance-authority",
+            "dependsOn": ["VariantProps"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["useContext"]
+          }
+        ]
+      },
+      "name": "ToggleGroupItem"
+    }
+  ]
+}

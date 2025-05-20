@@ -1,0 +1,443 @@
+{
+  "path": "/src/web/components/ui/form.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Form",
+        "purpose": "Provides form context to all child components using React Hook Form.",
+        "description": "A context provider component that wraps its children with React Hook Form's FormProvider, enabling form state and methods to be accessed throughout the form tree.",
+        "properties": {
+          "type": "object",
+          "required": ["children"],
+          "properties": {
+            "children": {
+              "type": "any",
+              "description": "The form elements to be wrapped by the form context."
+            }
+          }
+        },
+        "initial": {
+          "data": "No form state is available until the provider is mounted.",
+          "ui": {
+            "visible": ["Form children"],
+            "enabled": ["All form fields and controls"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "The form is mounted with children.",
+              "event": "Form is rendered"
+            },
+            "from": {
+              "state": "No form context",
+              "visible": ["Children without form context"]
+            },
+            "to": {
+              "state": "Form context available",
+              "visible": ["Children with form context"]
+            },
+            "effects": [
+              "Form state and methods become available to all descendants"
+            ]
+          }
+        ],
+        "visualLayout": "Wraps children in a context provider; no visual output itself.",
+        "implementationNotes": "This is a re-export of FormProvider from react-hook-form.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "react-hook-form",
+            "importPath": "react-hook-form",
+            "dependsOn": ["FormProvider"]
+          }
+        ]
+      },
+      "name": "Form"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "FormField",
+        "purpose": "Wraps a form field and provides its name to context for use by child components.",
+        "description": "A component that wraps a react-hook-form Controller and provides the field name to context, allowing child components to access the field's name and state.",
+        "properties": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of the field in the form."
+            }
+          }
+        },
+        "initial": {
+          "data": "Field context is not available until the component is mounted.",
+          "ui": {
+            "visible": ["Controller and its children"],
+            "enabled": ["All child components"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "The FormField is rendered with a field name.",
+              "event": "FormField is mounted"
+            },
+            "from": {
+              "state": "No field context",
+              "visible": ["Children without field context"]
+            },
+            "to": {
+              "state": "Field context available",
+              "visible": ["Children with field context"]
+            },
+            "effects": [
+              "Field name is available to all descendants via context"
+            ]
+          }
+        ],
+        "visualLayout": "Wraps children in a context provider; no visual output itself.",
+        "implementationNotes": "Uses react-hook-form's Controller and a React context to provide the field name.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "react-hook-form",
+            "importPath": "react-hook-form",
+            "dependsOn": ["Controller"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["createContext"]
+          }
+        ]
+      },
+      "name": "FormField"
+    },
+    {
+      "type": "function",
+      "name": "useFormField",
+      "description": "A custom hook that provides access to the current form field's context, including its name, id, and validation state.",
+      "parameters": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "returns": {
+        "type": "object",
+        "description": "An object containing the field's id, name, form item id, description id, message id, and validation state."
+      },
+      "signature": "useFormField(): { id: string, name: string, formItemId: string, formDescriptionId: string, formMessageId: string, ...fieldState }",
+      "implementationNotes": "Combines context from FormField and FormItem, and uses react-hook-form's useFormContext and useFormState to provide field state and metadata.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["useContext"]
+          },
+          {
+            "name": "react-hook-form",
+            "importPath": "react-hook-form",
+            "dependsOn": ["useFormContext", "useFormState"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "FormItem",
+        "purpose": "Provides a unique id context for a form item and renders a styled div.",
+        "description": "A component that generates a unique id for a form item and provides it to descendants via context, rendering a div with form item styling.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the form item container."
+            }
+          }
+        },
+        "initial": {
+          "data": "A div with form item styling and a unique id context.",
+          "ui": {
+            "visible": ["Form item container and its children"],
+            "enabled": ["All child components"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "FormItem is rendered.",
+              "event": "FormItem is mounted"
+            },
+            "from": {
+              "state": "No item context",
+              "visible": ["Children without item context"]
+            },
+            "to": {
+              "state": "Item context available",
+              "visible": ["Children with item context"]
+            },
+            "effects": ["Unique id is available to all descendants via context"]
+          }
+        ],
+        "visualLayout": "A div with grid gap-2 styling, wrapping its children.",
+        "implementationNotes": "Uses React context and useId to generate and provide a unique id.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["useId", "createContext"]
+          }
+        ]
+      },
+      "name": "FormItem"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "FormLabel",
+        "purpose": "Renders a label for a form field, styled based on error state.",
+        "description": "A component that renders a label for a form field, using the field's context to set htmlFor and error styling.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the label."
+            }
+          }
+        },
+        "initial": {
+          "data": "A label element with error styling if the field has an error.",
+          "ui": {
+            "visible": ["Label element"],
+            "enabled": ["All label props"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "FormLabel is rendered.",
+              "event": "FormLabel is mounted"
+            },
+            "from": {
+              "state": "No label rendered",
+              "visible": []
+            },
+            "to": {
+              "state": "Label rendered",
+              "visible": ["Label element"]
+            },
+            "effects": [
+              "Label is associated with the form field and styled based on error state"
+            ]
+          }
+        ],
+        "visualLayout": "A label element styled with error state if applicable.",
+        "implementationNotes": "Uses the Label component and field context for error and htmlFor.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/label",
+            "dependsOn": ["Label"]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-label",
+            "importPath": "@radix-ui/react-label",
+            "dependsOn": ["Root"]
+          }
+        ]
+      },
+      "name": "FormLabel"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "FormControl",
+        "purpose": "Renders a form control slot with ARIA attributes and error state.",
+        "description": "A component that renders a Slot for a form control, setting ARIA attributes and ids based on the field's context and error state.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "A Slot element with ARIA attributes for accessibility.",
+          "ui": {
+            "visible": ["Form control slot"],
+            "enabled": ["All slot props"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "FormControl is rendered.",
+              "event": "FormControl is mounted"
+            },
+            "from": {
+              "state": "No control rendered",
+              "visible": []
+            },
+            "to": {
+              "state": "Control rendered",
+              "visible": ["Slot element"]
+            },
+            "effects": [
+              "Slot is rendered with ARIA attributes for accessibility and error state"
+            ]
+          }
+        ],
+        "visualLayout": "A Slot element for form controls.",
+        "implementationNotes": "Uses the Slot component from @radix-ui/react-slot and field context for ARIA attributes.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-slot",
+            "importPath": "@radix-ui/react-slot",
+            "dependsOn": ["Slot"]
+          }
+        ]
+      },
+      "name": "FormControl"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "FormDescription",
+        "purpose": "Renders a description for a form field.",
+        "description": "A component that renders a paragraph element as a description for a form field, using the field's context for id and styling.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the description."
+            }
+          }
+        },
+        "initial": {
+          "data": "A paragraph element with muted styling.",
+          "ui": {
+            "visible": ["Description paragraph"],
+            "enabled": ["All paragraph props"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "FormDescription is rendered.",
+              "event": "FormDescription is mounted"
+            },
+            "from": {
+              "state": "No description rendered",
+              "visible": []
+            },
+            "to": {
+              "state": "Description rendered",
+              "visible": ["Description paragraph"]
+            },
+            "effects": ["Description is rendered with correct id and styling"]
+          }
+        ],
+        "visualLayout": "A paragraph element styled as muted text.",
+        "implementationNotes": "Uses field context for id and cn utility for styling.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": []
+      },
+      "name": "FormDescription"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "FormMessage",
+        "purpose": "Renders a message for a form field, typically for validation errors.",
+        "description": "A component that renders a paragraph element as a message for a form field, showing validation errors if present, using the field's context for id and styling.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the message."
+            }
+          }
+        },
+        "initial": {
+          "data": "A paragraph element with error message or children.",
+          "ui": {
+            "visible": ["Message paragraph if error or children exist"],
+            "enabled": ["All paragraph props"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "FormMessage is rendered and there is an error or children.",
+              "event": "FormMessage is mounted"
+            },
+            "from": {
+              "state": "No message rendered",
+              "visible": []
+            },
+            "to": {
+              "state": "Message rendered",
+              "visible": ["Message paragraph"]
+            },
+            "effects": ["Message is rendered with correct id and styling"]
+          }
+        ],
+        "visualLayout": "A paragraph element styled as error text.",
+        "implementationNotes": "Uses field context for error and id, and cn utility for styling.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": []
+      },
+      "name": "FormMessage"
+    }
+  ]
+}

@@ -129,7 +129,7 @@ function ProjectsContent({
 }: {
   projects: RouterOutputs["projects"]["list"];
 }) {
-  const { setCommandCenterView } = useUIStore();
+  const { setCommandCenterView, setCommandCenterOpen } = useUIStore();
   const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<
     RouterOutputs["projects"]["list"][number] | null
@@ -209,6 +209,9 @@ function ProjectsContent({
           <div className="flex h-full flex-col gap-2">
             <Link
               href={`/projects/${selectedProject.id}`}
+              onClick={() => {
+                setCommandCenterOpen(false);
+              }}
               className="block overflow-hidden rounded-lg border"
             >
               {selectedProject.thumbnail ? (
@@ -233,6 +236,9 @@ function ProjectsContent({
                 </h2>
                 <Link
                   href={`/projects/${selectedProject.id}`}
+                  onClick={() => {
+                    setCommandCenterOpen(false);
+                  }}
                   className={cn(
                     buttonVariants({
                       variant: "ghost",

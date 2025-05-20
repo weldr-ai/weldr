@@ -262,9 +262,6 @@ importers:
         specifier: ^3.24.3
         version: 3.24.3
     devDependencies:
-      '@types/diff':
-        specifier: ^7.0.2
-        version: 7.0.2
       '@weldr/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
@@ -422,9 +419,6 @@ importers:
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
-      lucide-react:
-        specifier: ^0.460.0
-        version: 0.460.0(react@18.3.1)
       ofetch:
         specifier: ^1.4.1
         version: 1.4.1
@@ -3713,9 +3707,6 @@ packages:
   '@types/diff-match-patch@1.0.36':
     resolution: {integrity: sha512-xFdR6tkm0MWvBfO8xXCSsinYxHcqkQUlcHeSpMC2ukzOb6lwQAfDmW+Qt0AvlGd8HpsS28qKsB+oPeJn9I39jg==}
 
-  '@types/diff@7.0.2':
-    resolution: {integrity: sha512-JSWRMozjFKsGlEjiiKajUjIJVKuKdE3oVy2DNtK+fUo8q82nhFZ2CPQwicAIkXrofahDXrWJ7mjelvZphMS98Q==}
-
   '@types/estree-jsx@1.0.5':
     resolution: {integrity: sha512-52CcUVNFyfb1A2ALocQw/Dd1BQFNmSdkuC3BkZ6iqhdMfQz7JWOFRuJFloOzjk+6WijU56m9oKXFAXc7o3Towg==}
 
@@ -5576,11 +5567,6 @@ packages:
   lru-cache@7.18.3:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
-
-  lucide-react@0.460.0:
-    resolution: {integrity: sha512-BVtq/DykVeIvRTJvRAgCsOwaGL8Un3Bxh8MbDxMhEWlZay3T4IpEKDEpwt5KZ0KJMHzgm6jrltxlT5eXOWXDHg==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc
 
   lucide-react@0.503.0:
     resolution: {integrity: sha512-HGGkdlPWQ0vTF8jJ5TdIqhQXZi6uh3LnNgfZ8MHiuxFfX3RZeA79r2MW2tHAZKlAVfoNE8esm3p+O6VkIvpj6w==}
@@ -10675,8 +10661,6 @@ snapshots:
 
   '@types/diff-match-patch@1.0.36': {}
 
-  '@types/diff@7.0.2': {}
-
   '@types/estree-jsx@1.0.5':
     dependencies:
       '@types/estree': 1.0.7
@@ -12668,10 +12652,6 @@ snapshots:
       yallist: 3.1.1
 
   lru-cache@7.18.3: {}
-
-  lucide-react@0.460.0(react@18.3.1):
-    dependencies:
-      react: 18.3.1
 
   lucide-react@0.503.0(react@18.3.1):
     dependencies:

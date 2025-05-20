@@ -1,0 +1,68 @@
+{
+  "path": "/src/web/components/ui/skeleton.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Skeleton",
+        "purpose": "Display a placeholder UI while content is loading",
+        "description": "A reusable skeleton component that renders a pulsing, rounded rectangle to indicate loading state. It accepts all standard div props and allows custom styling via the className prop.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the skeleton"
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "No content, just a pulsing placeholder",
+          "ui": {
+            "visible": [
+              "A rounded rectangle with a pulsing animation and accent background"
+            ],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "The parent component is loading data",
+              "event": "Loading state triggered"
+            },
+            "from": {
+              "state": "No content available",
+              "visible": ["Skeleton placeholder"]
+            },
+            "to": {
+              "state": "Content is loaded",
+              "visible": ["Actual content replaces the skeleton"]
+            },
+            "effects": ["Skeleton is replaced by the loaded content"]
+          }
+        ],
+        "visualLayout": "A div styled with rounded corners, accent background, and a pulsing animation. The size and shape are determined by the parent or passed props.",
+        "implementationNotes": "Uses a utility function 'cn' to combine class names. Accepts all div props for flexibility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "Skeleton"
+    }
+  ]
+}

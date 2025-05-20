@@ -1,0 +1,1142 @@
+{
+  "path": "/src/web/components/ui/sidebar.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Sidebar",
+        "purpose": "Provides a responsive, collapsible sidebar navigation UI for applications.",
+        "description": "A flexible sidebar component supporting desktop and mobile layouts, with support for offcanvas, icon, and static variants. Handles its own open/collapse state, keyboard shortcuts, and adapts to mobile via a sheet dialog.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "side": {
+              "type": "string",
+              "enum": ["left", "right"],
+              "default": "left",
+              "description": "Which side of the screen the sidebar appears on."
+            },
+            "variant": {
+              "type": "string",
+              "enum": ["sidebar", "floating", "inset"],
+              "default": "sidebar",
+              "description": "Visual style of the sidebar."
+            },
+            "collapsible": {
+              "type": "string",
+              "enum": ["offcanvas", "icon", "none"],
+              "default": "offcanvas",
+              "description": "How the sidebar can be collapsed or hidden."
+            },
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for the sidebar."
+            },
+            "children": {
+              "type": "any",
+              "description": "Sidebar content."
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar is visible or hidden depending on device and state.",
+          "ui": {
+            "visible": [
+              "Sidebar navigation panel",
+              "Sidebar content and children"
+            ],
+            "enabled": ["Sidebar toggle (if collapsible)", "Sidebar navigation"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User toggles the sidebar (button or keyboard shortcut).",
+              "event": "Sidebar toggled"
+            },
+            "from": {
+              "state": "Sidebar open or closed"
+            },
+            "to": {
+              "state": "Sidebar open or closed (toggled)"
+            },
+            "effects": [
+              "Sidebar visibility changes",
+              "Sidebar state is saved in a cookie"
+            ]
+          },
+          {
+            "when": {
+              "description": "Screen size changes to mobile.",
+              "event": "Responsive layout change"
+            },
+            "from": {
+              "state": "Desktop sidebar"
+            },
+            "to": {
+              "state": "Mobile sidebar (sheet dialog)"
+            },
+            "effects": ["Sidebar switches to sheet dialog for mobile"]
+          }
+        ],
+        "visualLayout": "Sidebar panel on left or right, with collapsible and responsive behavior.",
+        "implementationNotes": "Uses context for state, supports keyboard shortcut (Cmd/Ctrl+B), and adapts to mobile using a sheet dialog.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/button",
+            "dependsOn": ["Button"]
+          },
+          {
+            "importPath": "src/web/components/ui/input",
+            "dependsOn": ["Input"]
+          },
+          {
+            "importPath": "src/web/components/ui/separator",
+            "dependsOn": ["Separator"]
+          },
+          {
+            "importPath": "src/web/components/ui/sheet",
+            "dependsOn": [
+              "Sheet",
+              "SheetContent",
+              "SheetDescription",
+              "SheetHeader",
+              "SheetTitle"
+            ]
+          },
+          {
+            "importPath": "src/web/components/ui/skeleton",
+            "dependsOn": ["Skeleton"]
+          },
+          {
+            "importPath": "src/web/components/ui/tooltip",
+            "dependsOn": [
+              "Tooltip",
+              "TooltipContent",
+              "TooltipProvider",
+              "TooltipTrigger"
+            ]
+          },
+          {
+            "importPath": "src/web/hooks/use-mobile",
+            "dependsOn": ["useIsMobile"]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-slot",
+            "importPath": "@radix-ui/react-slot",
+            "dependsOn": ["Slot"]
+          },
+          {
+            "name": "class-variance-authority",
+            "importPath": "class-variance-authority",
+            "dependsOn": ["cva", "VariantProps"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["PanelLeftIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": [
+              "useContext",
+              "useState",
+              "useCallback",
+              "useEffect",
+              "useMemo",
+              "createContext"
+            ]
+          }
+        ]
+      },
+      "name": "Sidebar"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarProvider",
+        "purpose": "Provides sidebar state and context to descendant components.",
+        "description": "A context provider that manages sidebar open/collapse state, mobile adaptation, and exposes state and actions to child components. Handles keyboard shortcut and cookie persistence.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "defaultOpen": {
+              "type": "boolean",
+              "description": "Whether the sidebar is open by default."
+            },
+            "open": {
+              "type": "boolean",
+              "description": "Controlled open state."
+            },
+            "onOpenChange": {
+              "type": "function",
+              "description": "Callback when open state changes."
+            },
+            "className": {
+              "type": "string"
+            },
+            "style": {
+              "type": "object"
+            },
+            "children": {
+              "type": "any"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar open or closed depending on defaultOpen or controlled prop.",
+          "ui": {
+            "visible": ["Sidebar context provider", "Sidebar wrapper div"],
+            "enabled": ["Sidebar state management"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Sidebar open state changes (user toggles or controlled prop).",
+              "event": "Sidebar open/close"
+            },
+            "from": {
+              "state": "Sidebar open or closed"
+            },
+            "to": {
+              "state": "Sidebar open or closed (updated)"
+            },
+            "effects": ["Sidebar state is updated and persisted in cookie"]
+          }
+        ],
+        "visualLayout": "Context provider wrapping sidebar UI.",
+        "implementationNotes": "Should wrap all sidebar-related components to provide context.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/hooks/use-mobile",
+            "dependsOn": ["useIsMobile"]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          },
+          {
+            "importPath": "src/web/components/ui/tooltip",
+            "dependsOn": ["TooltipProvider"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": [
+              "useState",
+              "useCallback",
+              "useEffect",
+              "useMemo",
+              "createContext",
+              "useContext"
+            ]
+          }
+        ]
+      },
+      "name": "SidebarProvider"
+    },
+    {
+      "type": "function",
+      "name": "useSidebar",
+      "description": "A custom React hook to access the sidebar context, providing state and actions for sidebar control. Throws if used outside SidebarProvider.",
+      "parameters": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "returns": {
+        "type": "object",
+        "description": "Sidebar context value with state, open, setOpen, openMobile, setOpenMobile, isMobile, and toggleSidebar."
+      },
+      "signature": "function useSidebar(): SidebarContextProps",
+      "implementationNotes": "Must be used within a SidebarProvider. Throws an error otherwise.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["useContext"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarTrigger",
+        "purpose": "Button to toggle the sidebar open/collapsed state.",
+        "description": "A button component that toggles the sidebar when clicked. Uses the sidebar context to perform the toggle action.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            },
+            "onClick": {
+              "type": "function"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar trigger button is visible.",
+          "ui": {
+            "visible": ["Sidebar trigger button"],
+            "enabled": ["Click to toggle sidebar"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User clicks the trigger button.",
+              "event": "Button clicked"
+            },
+            "from": {
+              "state": "Sidebar open or closed"
+            },
+            "to": {
+              "state": "Sidebar toggled"
+            },
+            "effects": ["Sidebar open/collapsed state changes"]
+          }
+        ],
+        "visualLayout": "Icon button with optional label.",
+        "implementationNotes": "Should be used inside a SidebarProvider.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/button",
+            "dependsOn": ["Button"]
+          }
+        ],
+        "external": [
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["PanelLeftIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "SidebarTrigger"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarRail",
+        "purpose": "Provides a draggable or clickable rail for toggling the sidebar.",
+        "description": "A button styled as a rail on the edge of the sidebar, allowing users to toggle the sidebar by clicking or dragging.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar rail is visible on desktop.",
+          "ui": {
+            "visible": ["Sidebar rail"],
+            "enabled": ["Click to toggle sidebar"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User clicks the rail.",
+              "event": "Rail clicked"
+            },
+            "from": {
+              "state": "Sidebar open or closed"
+            },
+            "to": {
+              "state": "Sidebar toggled"
+            },
+            "effects": ["Sidebar open/collapsed state changes"]
+          }
+        ],
+        "visualLayout": "Thin vertical button on the sidebar edge.",
+        "implementationNotes": "Should be used inside a SidebarProvider.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarRail"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarInset",
+        "purpose": "Main content area that adapts to the sidebar's inset variant.",
+        "description": "A wrapper for the main content area that adjusts its layout when the sidebar is in 'inset' mode.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Main content area is visible.",
+          "ui": {
+            "visible": ["Main content area"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Main content area with responsive margin and shadow.",
+        "implementationNotes": "Should be used alongside Sidebar with 'inset' variant.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarInset"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarInput",
+        "purpose": "Input field styled for use in the sidebar.",
+        "description": "A styled input component for use in sidebar search or filter areas.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Input field is visible.",
+          "ui": {
+            "visible": ["Sidebar input field"],
+            "enabled": ["User can type in input"]
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Input field styled to match sidebar.",
+        "implementationNotes": "Wraps the Input component with sidebar-specific styles.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/input",
+            "dependsOn": ["Input"]
+          }
+        ],
+        "external": []
+      },
+      "name": "SidebarInput"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarHeader",
+        "purpose": "Header area for the sidebar.",
+        "description": "A styled div for placing header content in the sidebar.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Header area is visible.",
+          "ui": {
+            "visible": ["Sidebar header area"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Header area with padding and gap.",
+        "implementationNotes": "For use at the top of the sidebar.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarHeader"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarFooter",
+        "purpose": "Footer area for the sidebar.",
+        "description": "A styled div for placing footer content in the sidebar.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Footer area is visible.",
+          "ui": {
+            "visible": ["Sidebar footer area"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Footer area with padding and gap.",
+        "implementationNotes": "For use at the bottom of the sidebar.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarFooter"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarSeparator",
+        "purpose": "Visual separator for sidebar sections.",
+        "description": "A styled separator component for dividing sidebar content.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Separator is visible.",
+          "ui": {
+            "visible": ["Sidebar separator"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Horizontal line styled for sidebar.",
+        "implementationNotes": "Wraps the Separator component with sidebar-specific styles.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/separator",
+            "dependsOn": ["Separator"]
+          }
+        ],
+        "external": []
+      },
+      "name": "SidebarSeparator"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarContent",
+        "purpose": "Main content area inside the sidebar.",
+        "description": "A scrollable container for the main content of the sidebar.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar content area is visible.",
+          "ui": {
+            "visible": ["Sidebar content area"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Scrollable flex column.",
+        "implementationNotes": "For wrapping sidebar navigation or content.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarContent"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarGroup",
+        "purpose": "Groups related sidebar items together.",
+        "description": "A container for grouping related sidebar items, with padding and layout.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar group is visible.",
+          "ui": {
+            "visible": ["Sidebar group container"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Vertical group with padding.",
+        "implementationNotes": "For grouping sidebar items.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarGroup"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarGroupLabel",
+        "purpose": "Label for a sidebar group.",
+        "description": "A styled label for sidebar groups, optionally rendered as a child component.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            },
+            "asChild": {
+              "type": "boolean"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar group label is visible.",
+          "ui": {
+            "visible": ["Sidebar group label"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Label with reduced opacity and padding.",
+        "implementationNotes": "Can be rendered as a Slot or div.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-slot",
+            "importPath": "@radix-ui/react-slot",
+            "dependsOn": ["Slot"]
+          }
+        ]
+      },
+      "name": "SidebarGroupLabel"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarGroupAction",
+        "purpose": "Action button for a sidebar group.",
+        "description": "A button for actions related to a sidebar group, optionally rendered as a child component.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            },
+            "asChild": {
+              "type": "boolean"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar group action button is visible.",
+          "ui": {
+            "visible": ["Sidebar group action button"],
+            "enabled": ["Click to perform group action"]
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Small button in group header.",
+        "implementationNotes": "Can be rendered as a Slot or button.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-slot",
+            "importPath": "@radix-ui/react-slot",
+            "dependsOn": ["Slot"]
+          }
+        ]
+      },
+      "name": "SidebarGroupAction"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarGroupContent",
+        "purpose": "Content area for a sidebar group.",
+        "description": "A container for the main content of a sidebar group.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar group content is visible.",
+          "ui": {
+            "visible": ["Sidebar group content area"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Content area with padding.",
+        "implementationNotes": "For placing group content.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarGroupContent"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarMenu",
+        "purpose": "Container for sidebar menu items.",
+        "description": "A styled unordered list for sidebar menu items.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar menu is visible.",
+          "ui": {
+            "visible": ["Sidebar menu list"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Vertical list of menu items.",
+        "implementationNotes": "For wrapping SidebarMenuItem components.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarMenu"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarMenuItem",
+        "purpose": "Individual item in the sidebar menu.",
+        "description": "A styled list item for sidebar menu entries.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar menu item is visible.",
+          "ui": {
+            "visible": ["Sidebar menu item"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Menu item with group styling.",
+        "implementationNotes": "For use inside SidebarMenu.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarMenuItem"
+    },
+    {
+      "type": "function",
+      "name": "sidebarMenuButtonVariants",
+      "description": "A cva (class-variance-authority) variant generator for sidebar menu buttons, supporting different visual variants and sizes.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "variant": {
+            "type": "string",
+            "enum": ["default", "outline"]
+          },
+          "size": {
+            "type": "string",
+            "enum": ["default", "sm", "lg"]
+          }
+        }
+      },
+      "returns": {
+        "type": "string",
+        "description": "A string of class names for the sidebar menu button."
+      },
+      "signature": "sidebarMenuButtonVariants({ variant, size }): string",
+      "implementationNotes": "Uses class-variance-authority to generate class names for different button states.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "class-variance-authority",
+            "importPath": "class-variance-authority",
+            "dependsOn": ["cva"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarMenuButton",
+        "purpose": "Button for sidebar menu items, with support for active state and tooltips.",
+        "description": "A button component for sidebar menu entries, supporting variants, sizes, active state, and optional tooltip display.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "asChild": {
+              "type": "boolean"
+            },
+            "isActive": {
+              "type": "boolean"
+            },
+            "variant": {
+              "type": "string",
+              "enum": ["default", "outline"]
+            },
+            "size": {
+              "type": "string",
+              "enum": ["default", "sm", "lg"]
+            },
+            "tooltip": {
+              "type": ["string", "object"]
+            },
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar menu button is visible.",
+          "ui": {
+            "visible": ["Sidebar menu button"],
+            "enabled": ["Click to activate menu item"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User hovers or focuses the button.",
+              "event": "Hover/focus"
+            },
+            "from": {
+              "state": "Button idle"
+            },
+            "to": {
+              "state": "Tooltip shown (if collapsed or mobile)"
+            },
+            "effects": ["Tooltip appears if provided"]
+          }
+        ],
+        "visualLayout": "Button with icon, label, and optional tooltip.",
+        "implementationNotes": "Uses sidebarMenuButtonVariants for styling and Tooltip for collapsed state.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-slot",
+            "importPath": "@radix-ui/react-slot",
+            "dependsOn": ["Slot"]
+          }
+        ]
+      },
+      "name": "SidebarMenuButton"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarMenuAction",
+        "purpose": "Action button for sidebar menu items.",
+        "description": "A button for actions (e.g., delete, edit) associated with a sidebar menu item, optionally shown only on hover.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            },
+            "asChild": {
+              "type": "boolean"
+            },
+            "showOnHover": {
+              "type": "boolean"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar menu action button is visible.",
+          "ui": {
+            "visible": ["Sidebar menu action button"],
+            "enabled": ["Click to perform menu action"]
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Small button in menu item.",
+        "implementationNotes": "Can be rendered as a Slot or button.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-slot",
+            "importPath": "@radix-ui/react-slot",
+            "dependsOn": ["Slot"]
+          }
+        ]
+      },
+      "name": "SidebarMenuAction"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarMenuBadge",
+        "purpose": "Badge for sidebar menu items (e.g., notification count).",
+        "description": "A styled badge for displaying counts or status on sidebar menu items.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar menu badge is visible.",
+          "ui": {
+            "visible": ["Sidebar menu badge"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Small badge on menu item.",
+        "implementationNotes": "For use with SidebarMenuItem.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarMenuBadge"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarMenuSkeleton",
+        "purpose": "Skeleton placeholder for loading sidebar menu items.",
+        "description": "A skeleton UI component for sidebar menu items, optionally showing an icon placeholder.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            },
+            "showIcon": {
+              "type": "boolean"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar menu skeleton is visible.",
+          "ui": {
+            "visible": ["Sidebar menu skeleton"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Skeleton row with optional icon.",
+        "implementationNotes": "Uses Skeleton component for loading state.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/skeleton",
+            "dependsOn": ["Skeleton"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["useMemo"]
+          }
+        ]
+      },
+      "name": "SidebarMenuSkeleton"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarMenuSub",
+        "purpose": "Container for submenu items in the sidebar.",
+        "description": "A styled unordered list for sidebar submenu items.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar submenu is visible.",
+          "ui": {
+            "visible": ["Sidebar submenu list"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Indented list for submenu items.",
+        "implementationNotes": "For use inside SidebarMenuItem.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarMenuSub"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarMenuSubItem",
+        "purpose": "Individual item in a sidebar submenu.",
+        "description": "A styled list item for sidebar submenu entries.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar submenu item is visible.",
+          "ui": {
+            "visible": ["Sidebar submenu item"],
+            "enabled": []
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Menu subitem with group styling.",
+        "implementationNotes": "For use inside SidebarMenuSub.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": []
+      },
+      "name": "SidebarMenuSubItem"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "SidebarMenuSubButton",
+        "purpose": "Button for sidebar submenu items.",
+        "description": "A button or link for sidebar submenu entries, supporting active state and size.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "asChild": {
+              "type": "boolean"
+            },
+            "size": {
+              "type": "string",
+              "enum": ["sm", "md"]
+            },
+            "isActive": {
+              "type": "boolean"
+            },
+            "className": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Sidebar submenu button is visible.",
+          "ui": {
+            "visible": ["Sidebar submenu button"],
+            "enabled": ["Click to activate submenu item"]
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Button or link styled for submenu.",
+        "implementationNotes": "Can be rendered as a Slot or anchor.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-slot",
+            "importPath": "@radix-ui/react-slot",
+            "dependsOn": ["Slot"]
+          }
+        ]
+      },
+      "name": "SidebarMenuSubButton"
+    }
+  ]
+}

@@ -1,0 +1,474 @@
+{
+  "path": "/src/web/components/ui/pagination.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Pagination",
+        "purpose": "Provides a navigation container for pagination controls.",
+        "description": "A navigation component that wraps pagination controls, setting appropriate ARIA roles and classes for accessibility and layout.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the navigation element."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "No pagination controls rendered by default; only the navigation container.",
+          "ui": {
+            "visible": ["Empty navigation container with pagination role"],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Pagination controls are added as children.",
+              "event": "Children are rendered inside the navigation container"
+            },
+            "from": {
+              "state": "Empty navigation",
+              "visible": ["Navigation container"]
+            },
+            "to": {
+              "state": "Navigation with controls",
+              "visible": ["Navigation container with pagination controls"]
+            },
+            "effects": [
+              "Pagination controls become accessible via navigation landmarks"
+            ]
+          }
+        ],
+        "visualLayout": "A flex container centered horizontally, intended to contain pagination controls.",
+        "implementationNotes": "Uses React.ComponentProps<'nav'> for props and merges className with utility function.",
+        "subtype": "reusable",
+        "examples": [
+          "<Pagination><PaginationContent>...</PaginationContent></Pagination>"
+        ]
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "Pagination"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "PaginationContent",
+        "purpose": "Wraps pagination items in a list for layout and accessibility.",
+        "description": "A component that renders a <ul> element for pagination items, applying layout and accessibility attributes.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the list element."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Empty list for pagination items.",
+          "ui": {
+            "visible": ["Empty unordered list for pagination"],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Pagination items are added as children.",
+              "event": "Children are rendered inside the list"
+            },
+            "from": {
+              "state": "Empty list",
+              "visible": ["Unordered list"]
+            },
+            "to": {
+              "state": "List with items",
+              "visible": ["Unordered list with pagination items"]
+            },
+            "effects": ["Pagination items are displayed in a row"]
+          }
+        ],
+        "visualLayout": "A flex row list for pagination items.",
+        "implementationNotes": "Uses React.ComponentProps<'ul'> for props and merges className with utility function.",
+        "subtype": "reusable",
+        "examples": [
+          "<PaginationContent><PaginationItem>...</PaginationItem></PaginationContent>"
+        ]
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "PaginationContent"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "PaginationItem",
+        "purpose": "Represents a single pagination item within the pagination list.",
+        "description": "A component that renders a <li> element for a pagination item, applying a data attribute for slot targeting.",
+        "properties": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Empty list item.",
+          "ui": {
+            "visible": ["Empty list item"],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Pagination link or control is rendered as a child.",
+              "event": "Child is rendered inside the list item"
+            },
+            "from": {
+              "state": "Empty list item",
+              "visible": ["List item"]
+            },
+            "to": {
+              "state": "List item with control",
+              "visible": ["List item with pagination control"]
+            },
+            "effects": ["Pagination control is grouped in the list"]
+          }
+        ],
+        "visualLayout": "A list item for pagination controls.",
+        "implementationNotes": "Uses React.ComponentProps<'li'> for props.",
+        "subtype": "reusable",
+        "examples": [
+          "<PaginationItem><PaginationLink>1</PaginationLink></PaginationItem>"
+        ]
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "PaginationItem"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "PaginationLink",
+        "purpose": "Renders a pagination link styled as a button, with active state support.",
+        "description": "A component that renders an anchor tag styled as a button for pagination, supporting active state and size props.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "isActive": {
+              "type": "boolean",
+              "description": "Whether the link represents the current page."
+            },
+            "size": {
+              "type": "string",
+              "description": "The size of the button (default: 'icon')."
+            },
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the anchor element."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Inactive pagination link.",
+          "ui": {
+            "visible": ["Anchor element styled as a button"],
+            "enabled": ["Anchor element"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Link is set as active.",
+              "event": "isActive prop is true"
+            },
+            "from": {
+              "state": "Inactive link",
+              "visible": ["Anchor element"]
+            },
+            "to": {
+              "state": "Active link",
+              "visible": ["Anchor element with active styling"]
+            },
+            "effects": ["ARIA current attribute is set to 'page'"]
+          }
+        ],
+        "visualLayout": "An anchor styled as a button, with optional active state.",
+        "implementationNotes": "Uses buttonVariants for styling and cn for class merging. Accepts all anchor props.",
+        "subtype": "reusable",
+        "examples": ["<PaginationLink isActive>1</PaginationLink>"]
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/button",
+            "dependsOn": ["Button", "buttonVariants"]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "PaginationLink"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "PaginationPrevious",
+        "purpose": "Renders a pagination link for navigating to the previous page.",
+        "description": "A component that renders a styled pagination link with a left chevron icon and 'Previous' label, intended for navigating to the previous page.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the link."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Pagination link for previous page.",
+          "ui": {
+            "visible": [
+              "Pagination link with left chevron and 'Previous' label"
+            ],
+            "enabled": ["Pagination link"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User clicks the previous link.",
+              "event": "Click event on the link"
+            },
+            "from": {
+              "state": "Pagination displayed",
+              "visible": ["Pagination link"]
+            },
+            "to": {
+              "state": "Navigate to previous page",
+              "visible": ["Pagination link"]
+            },
+            "effects": ["Triggers navigation to the previous page"]
+          }
+        ],
+        "visualLayout": "A button-like link with a left chevron and 'Previous' label.",
+        "implementationNotes": "Composes PaginationLink and injects icon and label. Uses cn for class merging.",
+        "subtype": "reusable",
+        "examples": ["<PaginationPrevious />"]
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/pagination",
+            "dependsOn": ["PaginationLink"]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["ChevronLeftIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "PaginationPrevious"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "PaginationNext",
+        "purpose": "Renders a pagination link for navigating to the next page.",
+        "description": "A component that renders a styled pagination link with a right chevron icon and 'Next' label, intended for navigating to the next page.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the link."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Pagination link for next page.",
+          "ui": {
+            "visible": ["Pagination link with right chevron and 'Next' label"],
+            "enabled": ["Pagination link"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User clicks the next link.",
+              "event": "Click event on the link"
+            },
+            "from": {
+              "state": "Pagination displayed",
+              "visible": ["Pagination link"]
+            },
+            "to": {
+              "state": "Navigate to next page",
+              "visible": ["Pagination link"]
+            },
+            "effects": ["Triggers navigation to the next page"]
+          }
+        ],
+        "visualLayout": "A button-like link with a right chevron and 'Next' label.",
+        "implementationNotes": "Composes PaginationLink and injects icon and label. Uses cn for class merging.",
+        "subtype": "reusable",
+        "examples": ["<PaginationNext />"]
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/pagination",
+            "dependsOn": ["PaginationLink"]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["ChevronRightIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "PaginationNext"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "PaginationEllipsis",
+        "purpose": "Renders an ellipsis indicator for skipped pagination pages.",
+        "description": "A component that renders a span with an ellipsis icon, used to indicate skipped pages in pagination controls.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the span."
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Ellipsis indicator for pagination.",
+          "ui": {
+            "visible": ["Span with ellipsis icon and screen-reader text"],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Pagination has skipped pages.",
+              "event": "Ellipsis is rendered in pagination"
+            },
+            "from": {
+              "state": "Pagination without ellipsis",
+              "visible": ["Pagination controls"]
+            },
+            "to": {
+              "state": "Pagination with ellipsis",
+              "visible": ["Pagination controls with ellipsis indicator"]
+            },
+            "effects": ["Indicates that some pages are not shown"]
+          }
+        ],
+        "visualLayout": "A span with a centered ellipsis icon.",
+        "implementationNotes": "Uses MoreHorizontalIcon and screen-reader text for accessibility.",
+        "subtype": "reusable",
+        "examples": ["<PaginationEllipsis />"]
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["MoreHorizontalIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "PaginationEllipsis"
+    }
+  ]
+}

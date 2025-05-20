@@ -16,6 +16,7 @@ export const rpcEndpointSchema = functionSchema
 
 export const endpointSchema = z.object({
   type: z.literal("endpoint"),
+  name: z.string().describe("The name of the endpoint."),
   protected: z
     .boolean()
     .optional()

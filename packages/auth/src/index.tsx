@@ -17,6 +17,9 @@ const resend = new Resend(process.env.RESEND_API_KEY ?? "");
 
 export const auth = betterAuth({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL,
+  advanced: {
+    cookiePrefix: "weldr",
+  },
   trustedOrigins: ["https://weldr.ai", "http://localhost:3000"],
   database: drizzleAdapter(db, {
     provider: "pg",

@@ -134,8 +134,7 @@ export function getFilesContext({
         case "component": {
           const def = specs.data.definition;
           let info = `  • ${def.subtype === "page" ? "Page" : def.subtype === "layout" ? "Layout" : "Component"}: ${def.name}
-      Description: ${def.description}
-      Renders on: ${def.rendersOn || "both"}`;
+      Description: ${def.description}`;
 
           if (def.subtype === "page" || def.subtype === "layout") {
             info += def.route ? `\n  Route: ${def.route}` : "";

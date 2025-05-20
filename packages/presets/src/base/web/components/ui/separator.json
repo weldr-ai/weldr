@@ -1,0 +1,97 @@
+{
+  "path": "/src/web/components/ui/separator.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Separator",
+        "purpose": "Visually separates content in the UI, either horizontally or vertically.",
+        "description": "A reusable UI component that renders a visual separator using Radix UI's SeparatorPrimitive. Supports horizontal and vertical orientations, and can be styled via className. Used to divide content sections in layouts or components.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the separator."
+            },
+            "orientation": {
+              "type": "string",
+              "enum": ["horizontal", "vertical"],
+              "default": "horizontal",
+              "description": "The orientation of the separator."
+            },
+            "decorative": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether the separator is decorative (not announced by screen readers)."
+            }
+          }
+        },
+        "initial": {
+          "data": "A thin line separator, horizontal by default, with optional custom classes.",
+          "ui": {
+            "visible": ["A line (horizontal or vertical) separating content"],
+            "enabled": ["Can change orientation and add custom classes"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "The orientation prop is changed by the user or parent component.",
+              "event": "Orientation prop changed"
+            },
+            "from": {
+              "state": "Separator is rendered with current orientation"
+            },
+            "to": {
+              "state": "Separator is rendered with new orientation"
+            },
+            "effects": [
+              "Separator visually changes between horizontal and vertical"
+            ]
+          },
+          {
+            "when": {
+              "description": "The className prop is changed or provided.",
+              "event": "className prop changed"
+            },
+            "from": {
+              "state": "Separator is rendered with default or previous classes"
+            },
+            "to": {
+              "state": "Separator is rendered with new classes"
+            },
+            "effects": [
+              "Separator receives new styling as per the provided className"
+            ]
+          }
+        ],
+        "visualLayout": "A single line (horizontal or vertical) styled with border color and size, stretching to fit its container.",
+        "implementationNotes": "Wraps Radix UI SeparatorPrimitive.Root. Uses a utility function 'cn' for className merging. Accepts all props supported by SeparatorPrimitive.Root.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-separator",
+            "importPath": "@radix-ui/react-separator",
+            "dependsOn": ["SeparatorPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["React"]
+          }
+        ]
+      },
+      "name": "Separator"
+    }
+  ]
+}

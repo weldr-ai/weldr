@@ -1,7 +1,7 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
 import type { ProjectConfig } from "@weldr/shared/types";
 import Handlebars from "handlebars";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 // Register Handlebars helpers
 Handlebars.registerHelper("or", (...args) => {
@@ -104,10 +104,10 @@ export function generate(config: ProjectConfig): GeneratedFile[] {
   const fileConditions: {
     [filename: string]: (cfg: ProjectConfig) => boolean;
   } = {
-    "server/db/index.ts.hbs": (cfg) => cfg.database || cfg.auth,
+    "src/server/db/index.ts.hbs": (cfg) => cfg.database || cfg.auth,
     "drizzle.config.ts.hbs": (cfg) => cfg.database || cfg.auth,
-    "server/trpc/init.ts.hbs": (cfg) => cfg.web,
-    "web/routes/__root.tsx.hbs": (cfg) => cfg.web,
+    "src/server/trpc/init.ts.hbs": (cfg) => cfg.web,
+    "src/web/routes/__root.tsx.hbs": (cfg) => cfg.web,
   };
 
   const templatesDir = path.join(__dirname, "templates");

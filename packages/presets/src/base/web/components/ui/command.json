@@ -1,0 +1,566 @@
+{
+  "path": "/src/web/components/ui/command.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Command",
+        "purpose": "Provides a styled command palette container using the cmdk library.",
+        "description": "A wrapper component around cmdk's CommandPrimitive that applies custom styles and layout for use as a command palette or command menu. Accepts all props of CommandPrimitive.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Empty command palette container",
+          "ui": {
+            "visible": ["Empty command palette area"],
+            "enabled": ["All container props"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Props or className are changed",
+              "event": "Props updated"
+            },
+            "from": {
+              "state": "Initial or previous state"
+            },
+            "to": {
+              "state": "Updated state"
+            },
+            "effects": ["Container re-renders with new props or styles"]
+          }
+        ],
+        "visualLayout": "A flex column container with rounded corners and background styling for command palette UIs.",
+        "implementationNotes": "Wraps cmdk's CommandPrimitive and applies custom className via cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/dialog",
+            "dependsOn": []
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "cmdk",
+            "importPath": "cmdk",
+            "dependsOn": ["Command as CommandPrimitive"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": []
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "Command"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CommandDialog",
+        "purpose": "Displays a modal dialog containing a command palette.",
+        "description": "A dialog component that wraps the Command component, providing a modal interface for command palette interactions. Includes a header with title and description, and renders children inside the command palette.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        },
+        "initial": {
+          "data": "Dialog closed or empty",
+          "ui": {
+            "visible": ["Nothing or dialog overlay"],
+            "enabled": ["Dialog open/close"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Dialog is opened",
+              "event": "Dialog opened"
+            },
+            "from": {
+              "state": "Closed"
+            },
+            "to": {
+              "state": "Open"
+            },
+            "effects": ["Command palette is shown in a modal dialog"]
+          },
+          {
+            "when": {
+              "description": "Dialog is closed",
+              "event": "Dialog closed"
+            },
+            "from": {
+              "state": "Open"
+            },
+            "to": {
+              "state": "Closed"
+            },
+            "effects": ["Command palette is hidden"]
+          }
+        ],
+        "visualLayout": "A modal dialog with a header and a command palette as content.",
+        "implementationNotes": "Composes Dialog, DialogHeader, DialogTitle, DialogDescription, and Command. Passes children to Command.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/dialog",
+            "dependsOn": [
+              "Dialog",
+              "DialogContent",
+              "DialogDescription",
+              "DialogHeader",
+              "DialogTitle"
+            ]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "cmdk",
+            "importPath": "cmdk",
+            "dependsOn": []
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": []
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "CommandDialog"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CommandInput",
+        "purpose": "Provides a styled input field for the command palette with a search icon.",
+        "description": "A component that renders a search input for the command palette, including a search icon and custom styles. Wraps cmdk's CommandPrimitive.Input.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Empty input field",
+          "ui": {
+            "visible": ["Input field with search icon"],
+            "enabled": ["Input field"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User types in the input field",
+              "event": "Input changed"
+            },
+            "from": {
+              "state": "Input field with previous value"
+            },
+            "to": {
+              "state": "Input field with new value"
+            },
+            "effects": ["Input value updates and triggers command filtering"]
+          }
+        ],
+        "visualLayout": "A flex row with a search icon and input field, styled for command palette use.",
+        "implementationNotes": "Uses CommandPrimitive.Input and SearchIcon from lucide-react. Applies custom className via cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "cmdk",
+            "importPath": "cmdk",
+            "dependsOn": ["Command as CommandPrimitive"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["SearchIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "CommandInput"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CommandList",
+        "purpose": "Displays a scrollable list of command items within the command palette.",
+        "description": "A styled wrapper around cmdk's CommandPrimitive.List for displaying command items. Handles overflow and scrolling for long lists.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Empty or populated command list",
+          "ui": {
+            "visible": ["Scrollable list area"],
+            "enabled": ["List area"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Command items are added or removed",
+              "event": "List updated"
+            },
+            "from": {
+              "state": "Previous list"
+            },
+            "to": {
+              "state": "Updated list"
+            },
+            "effects": ["List re-renders with new items"]
+          }
+        ],
+        "visualLayout": "A scrollable vertical list with custom max height and overflow styles.",
+        "implementationNotes": "Wraps CommandPrimitive.List and applies custom className via cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "cmdk",
+            "importPath": "cmdk",
+            "dependsOn": ["Command as CommandPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "CommandList"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CommandEmpty",
+        "purpose": "Displays a message when there are no command results to show.",
+        "description": "A styled wrapper around cmdk's CommandPrimitive.Empty for showing an empty state message in the command palette.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "No results message",
+          "ui": {
+            "visible": ["Empty state message"],
+            "enabled": ["None"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "No command results are available",
+              "event": "No results"
+            },
+            "from": {
+              "state": "List with items"
+            },
+            "to": {
+              "state": "Empty state"
+            },
+            "effects": ["Empty message is shown"]
+          }
+        ],
+        "visualLayout": "A centered text message styled for empty state.",
+        "implementationNotes": "Wraps CommandPrimitive.Empty and applies custom className.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "cmdk",
+            "importPath": "cmdk",
+            "dependsOn": ["Command as CommandPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "CommandEmpty"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CommandGroup",
+        "purpose": "Groups related command items together with a heading.",
+        "description": "A styled wrapper around cmdk's CommandPrimitive.Group for grouping command items and optionally displaying a heading.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Empty or grouped command items",
+          "ui": {
+            "visible": ["Group heading and items"],
+            "enabled": ["Group area"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Group heading or items change",
+              "event": "Group updated"
+            },
+            "from": {
+              "state": "Previous group"
+            },
+            "to": {
+              "state": "Updated group"
+            },
+            "effects": ["Group re-renders with new heading or items"]
+          }
+        ],
+        "visualLayout": "A section with a heading and grouped command items, styled for separation.",
+        "implementationNotes": "Wraps CommandPrimitive.Group and applies custom className via cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "cmdk",
+            "importPath": "cmdk",
+            "dependsOn": ["Command as CommandPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "CommandGroup"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CommandSeparator",
+        "purpose": "Visually separates groups or items in the command palette.",
+        "description": "A styled wrapper around cmdk's CommandPrimitive.Separator for rendering a horizontal separator line between command groups or items.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Separator line",
+          "ui": {
+            "visible": ["Horizontal line"],
+            "enabled": ["None"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Separator is rendered between groups/items",
+              "event": "Separator rendered"
+            },
+            "from": {
+              "state": "No separator"
+            },
+            "to": {
+              "state": "Separator present"
+            },
+            "effects": ["Visual separation between groups/items"]
+          }
+        ],
+        "visualLayout": "A thin horizontal line with custom margin and color.",
+        "implementationNotes": "Wraps CommandPrimitive.Separator and applies custom className via cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "cmdk",
+            "importPath": "cmdk",
+            "dependsOn": ["Command as CommandPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "CommandSeparator"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CommandItem",
+        "purpose": "Represents an actionable item in the command palette.",
+        "description": "A styled wrapper around cmdk's CommandPrimitive.Item for displaying a selectable command item with custom styles and states.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Command item with label and optional icon",
+          "ui": {
+            "visible": ["Command item row"],
+            "enabled": ["Selectable/clickable item"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Item is selected or disabled",
+              "event": "Item state changed"
+            },
+            "from": {
+              "state": "Normal"
+            },
+            "to": {
+              "state": "Selected or disabled"
+            },
+            "effects": ["Item style updates to reflect state"]
+          }
+        ],
+        "visualLayout": "A flex row with label, optional icon, and state-based styles.",
+        "implementationNotes": "Wraps CommandPrimitive.Item and applies custom className via cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "cmdk",
+            "importPath": "cmdk",
+            "dependsOn": ["Command as CommandPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "CommandItem"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CommandShortcut",
+        "purpose": "Displays a keyboard shortcut hint for a command item.",
+        "description": "A span element styled to show keyboard shortcut text, typically aligned to the right of a command item.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Shortcut text",
+          "ui": {
+            "visible": ["Shortcut text span"],
+            "enabled": ["None"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Shortcut text changes",
+              "event": "Shortcut updated"
+            },
+            "from": {
+              "state": "Previous shortcut"
+            },
+            "to": {
+              "state": "Updated shortcut"
+            },
+            "effects": ["Shortcut text updates"]
+          }
+        ],
+        "visualLayout": "A right-aligned, small, muted text span for keyboard shortcuts.",
+        "implementationNotes": "Renders a span with custom className via cn utility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "CommandShortcut"
+    }
+  ]
+}

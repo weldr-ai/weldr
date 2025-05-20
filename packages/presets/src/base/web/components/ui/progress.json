@@ -1,0 +1,83 @@
+{
+  "path": "/src/web/components/ui/progress.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Progress",
+        "purpose": "Display a visual progress bar indicating completion percentage",
+        "description": "A reusable progress bar component built on top of Radix UI's ProgressPrimitive. It visually represents a value as a horizontal bar, with customizable styling and support for partial completion.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the root element."
+            },
+            "value": {
+              "type": "number",
+              "description": "The current progress value (0-100)."
+            }
+          }
+        },
+        "initial": {
+          "data": "Progress bar at 0% or the provided value",
+          "ui": {
+            "visible": [
+              "A horizontal bar with a background and a colored indicator showing the progress"
+            ],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "The value prop changes",
+              "event": "Progress value updated"
+            },
+            "from": {
+              "state": "Progress bar at previous value",
+              "visible": ["Progress indicator at previous width"]
+            },
+            "to": {
+              "state": "Progress bar at new value",
+              "visible": ["Progress indicator at new width"]
+            },
+            "effects": [
+              "The width of the progress indicator animates to reflect the new value"
+            ]
+          }
+        ],
+        "visualLayout": "A rounded, horizontal bar with a background and a colored indicator that fills the bar according to the value prop.",
+        "implementationNotes": "Uses Radix UI's ProgressPrimitive for accessibility and structure. The indicator's width is controlled via a CSS transform based on the value prop. The cn utility is used for class name composition.",
+        "subtype": "reusable",
+        "examples": [
+          "<Progress value={50} />",
+          "<Progress className=\"my-4\" value={75} />"
+        ]
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-progress",
+            "importPath": "@radix-ui/react-progress",
+            "dependsOn": ["ProgressPrimitive"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "Progress"
+    }
+  ]
+}

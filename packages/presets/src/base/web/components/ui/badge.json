@@ -1,0 +1,143 @@
+{
+  "path": "/src/web/components/ui/badge.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Badge",
+        "purpose": "Display a styled badge element with variant-based appearance",
+        "description": "A reusable UI component for rendering a badge with different visual variants (default, secondary, destructive, outline). Supports custom class names, asChild rendering, and all span props. Used to highlight or label content in the interface.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the badge"
+            },
+            "variant": {
+              "type": "string",
+              "description": "Visual style of the badge. One of: default, secondary, destructive, outline"
+            },
+            "asChild": {
+              "type": "boolean",
+              "description": "If true, renders the badge as a child component using Slot"
+            }
+          }
+        },
+        "initial": {
+          "data": "Badge with default or specified variant and content",
+          "ui": {
+            "visible": ["A styled badge element with text or children"],
+            "enabled": ["All span props, variant selection, asChild rendering"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "The variant prop changes",
+              "event": "Variant prop updated"
+            },
+            "from": {
+              "state": "Badge rendered with previous variant",
+              "visible": ["Badge with previous styling"]
+            },
+            "to": {
+              "state": "Badge rendered with new variant",
+              "visible": ["Badge with updated styling"]
+            },
+            "effects": ["Badge appearance updates to match the new variant"]
+          },
+          {
+            "when": {
+              "description": "The asChild prop is set to true",
+              "event": "asChild prop enabled"
+            },
+            "from": {
+              "state": "Badge rendered as span",
+              "visible": ["Badge as a span element"]
+            },
+            "to": {
+              "state": "Badge rendered as Slot child",
+              "visible": ["Badge as a Slot-wrapped element"]
+            },
+            "effects": [
+              "Badge is rendered as a child of another component using Slot"
+            ]
+          }
+        ],
+        "visualLayout": "Inline-flex badge with rounded corners, border, and variant-based background and text color. Can contain icons or text.",
+        "implementationNotes": "Uses class-variance-authority for variant styling, supports forwarding all span props, and can render as a Slot for advanced composition.",
+        "subtype": "reusable",
+        "examples": [
+          "<Badge>Default</Badge>",
+          "<Badge variant=\"secondary\">Secondary</Badge>",
+          "<Badge variant=\"destructive\">Delete</Badge>",
+          "<Badge variant=\"outline\">Outline</Badge>",
+          "<Badge asChild><a href=\"#\">Link Badge</a></Badge>"
+        ]
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-slot",
+            "importPath": "@radix-ui/react-slot",
+            "dependsOn": ["Slot"]
+          },
+          {
+            "name": "class-variance-authority",
+            "importPath": "class-variance-authority",
+            "dependsOn": ["cva", "VariantProps"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "Badge"
+    },
+    {
+      "type": "function",
+      "name": "badgeVariants",
+      "description": "A utility function created with class-variance-authority (cva) to generate class names for the Badge component based on the selected variant. Supports 'default', 'secondary', 'destructive', and 'outline' variants, with 'default' as the default.",
+      "parameters": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "variant": {
+            "type": "string",
+            "description": "The visual variant of the badge. One of: default, secondary, destructive, outline."
+          }
+        }
+      },
+      "returns": {
+        "type": "string",
+        "description": "A string of CSS class names for the badge element."
+      },
+      "signature": "badgeVariants({ variant }): string",
+      "examples": [
+        "badgeVariants({ variant: 'secondary' })",
+        "badgeVariants({ variant: 'destructive' })"
+      ],
+      "implementationNotes": "Uses cva from class-variance-authority to manage conditional class names for the Badge component.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "class-variance-authority",
+            "importPath": "class-variance-authority",
+            "dependsOn": ["cva"]
+          }
+        ]
+      }
+    }
+  ]
+}

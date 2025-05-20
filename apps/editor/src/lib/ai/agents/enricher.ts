@@ -15,8 +15,9 @@ export const declarationSpecsWithDependenciesSchema =
             .object({
               importPath: z
                 .string()
+                .optional()
                 .describe(
-                  "The absolute path to the file containing the declaration. Alias @/ imports are resolved to /src/**/*",
+                  "The absolute path to the file containing the declaration. Alias @/web and @/server imports are resolved to /src/web and /src/server respectively",
                 ),
               dependsOn: z
                 .array(z.string())
@@ -24,15 +25,7 @@ export const declarationSpecsWithDependenciesSchema =
             })
             .array()
             .describe(
-              `A list of internal files that this declaration depends on
-      Some dependencies are not imported from a file like REST API routes. YOU MUST INCLUDE THEM.
-      For example, if a component uses a REST API route, you must include the REST API route in the internal dependencies
-      With importPath: "src/app/api/PATH_TO_THE_ROUTE" and dependsOn: ["HTTP_METHOD:[OPEN_API_PATH]"]
-      For example:
-      {
-        importPath: "src/app/api/users/[id]/route.ts",
-        dependsOn: ["GET:/users/{id}"],
-      }`,
+              "A list of internal files that this declaration depends on",
             ),
           external: z
             .object({

@@ -1,0 +1,84 @@
+{
+  "path": "/src/web/components/ui/sonner.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Toaster",
+        "purpose": "Display toast notifications with theme support",
+        "description": "A reusable toaster component that wraps the Sonner Toaster and applies the current theme from next-themes, along with custom CSS variables for background, text, and border colors.",
+        "properties": {
+          "type": "object",
+          "description": "All props supported by the Sonner Toaster component (ToasterProps).",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "No toasts are visible by default.",
+          "ui": {
+            "visible": ["Nothing, unless a toast is triggered."],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "A toast is triggered in the application.",
+              "event": "Toast triggered"
+            },
+            "from": {
+              "state": "No toast visible",
+              "visible": ["Nothing"]
+            },
+            "to": {
+              "state": "Toast visible",
+              "visible": ["Toast notification with theme and custom styles"]
+            },
+            "effects": [
+              "A toast notification appears with the correct theme and custom styles."
+            ]
+          },
+          {
+            "when": {
+              "description": "The user dismisses a toast or it auto-closes.",
+              "event": "Toast dismissed"
+            },
+            "from": {
+              "state": "Toast visible",
+              "visible": ["Toast notification"]
+            },
+            "to": {
+              "state": "No toast visible",
+              "visible": ["Nothing"]
+            },
+            "effects": ["The toast notification disappears."]
+          }
+        ],
+        "visualLayout": "Toast notifications appear as overlays, styled according to the current theme and custom CSS variables.",
+        "implementationNotes": "Uses next-themes to detect the current theme and passes it to the Sonner Toaster. Customizes styles using CSS variables.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "next-themes",
+            "importPath": "next-themes",
+            "dependsOn": ["useTheme"]
+          },
+          {
+            "name": "sonner",
+            "importPath": "sonner",
+            "dependsOn": ["Toaster", "ToasterProps"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "Toaster"
+    }
+  ]
+}

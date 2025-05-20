@@ -1,0 +1,262 @@
+{
+  "path": "/src/web/components/ui/popover.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Popover",
+        "purpose": "Provides a wrapper for displaying popover content anchored to a trigger element.",
+        "description": "A reusable popover component built on top of Radix UI's PopoverPrimitive.Root. It renders a popover container that can be controlled and composed with trigger and content components. Used to display floating content anchored to another element.",
+        "properties": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Popover is closed and not visible.",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User interacts with the trigger element (e.g., clicks or focuses).",
+              "event": "Popover trigger activated"
+            },
+            "from": {
+              "state": "Popover closed"
+            },
+            "to": {
+              "state": "Popover open"
+            },
+            "effects": [
+              "Popover content is displayed anchored to the trigger element."
+            ]
+          },
+          {
+            "when": {
+              "description": "User clicks outside the popover or presses Escape.",
+              "event": "Popover dismissed"
+            },
+            "from": {
+              "state": "Popover open"
+            },
+            "to": {
+              "state": "Popover closed"
+            },
+            "effects": ["Popover content is hidden."]
+          }
+        ],
+        "visualLayout": "No visual output by itself; acts as a container for popover content and trigger.",
+        "implementationNotes": "Wraps Radix UI PopoverPrimitive.Root. Should be used with PopoverTrigger and PopoverContent for full functionality.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-popover",
+            "importPath": "@radix-ui/react-popover",
+            "dependsOn": ["Root"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "Popover"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "PopoverTrigger",
+        "purpose": "Acts as the interactive element that toggles the popover's visibility.",
+        "description": "A reusable trigger component for the popover, built on top of Radix UI's PopoverPrimitive.Trigger. It should be used as a child of Popover to control the display of PopoverContent.",
+        "properties": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Popover is closed.",
+          "ui": {
+            "visible": ["Trigger element"],
+            "enabled": ["Trigger element"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User interacts with the trigger (e.g., click, focus).",
+              "event": "Trigger activated"
+            },
+            "from": {
+              "state": "Popover closed"
+            },
+            "to": {
+              "state": "Popover open"
+            },
+            "effects": ["Popover content is shown."]
+          }
+        ],
+        "visualLayout": "Renders the trigger element for the popover.",
+        "implementationNotes": "Wraps Radix UI PopoverPrimitive.Trigger. Should be used inside Popover.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-popover",
+            "importPath": "@radix-ui/react-popover",
+            "dependsOn": ["Trigger"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "PopoverTrigger"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "PopoverContent",
+        "purpose": "Displays the floating content of the popover anchored to the trigger.",
+        "description": "A reusable content component for the popover, built on top of Radix UI's PopoverPrimitive.Content and PopoverPrimitive.Portal. It displays the floating panel with custom styling and positioning, and can be customized via props.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes for custom styling."
+            },
+            "align": {
+              "type": "string",
+              "description": "Alignment of the popover content relative to the trigger.",
+              "default": "center"
+            },
+            "sideOffset": {
+              "type": "number",
+              "description": "Offset distance from the trigger.",
+              "default": 4
+            }
+          },
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Popover content is hidden.",
+          "ui": {
+            "visible": [],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Popover is opened via trigger.",
+              "event": "Popover open"
+            },
+            "from": {
+              "state": "Popover closed"
+            },
+            "to": {
+              "state": "Popover open"
+            },
+            "effects": [
+              "Popover content is rendered in a portal and displayed with animation."
+            ]
+          },
+          {
+            "when": {
+              "description": "Popover is closed.",
+              "event": "Popover close"
+            },
+            "from": {
+              "state": "Popover open"
+            },
+            "to": {
+              "state": "Popover closed"
+            },
+            "effects": ["Popover content is removed from the DOM."]
+          }
+        ],
+        "visualLayout": "Renders a styled floating panel anchored to the trigger element.",
+        "implementationNotes": "Wraps Radix UI PopoverPrimitive.Content and PopoverPrimitive.Portal. Accepts custom className, align, and sideOffset props.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-popover",
+            "importPath": "@radix-ui/react-popover",
+            "dependsOn": ["Content", "Portal"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "PopoverContent"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "PopoverAnchor",
+        "purpose": "Provides an anchor point for the popover content.",
+        "description": "A reusable anchor component for the popover, built on top of Radix UI's PopoverPrimitive.Anchor. It is used to specify a custom anchor element for the popover content positioning.",
+        "properties": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        },
+        "initial": {
+          "data": "Popover anchor is rendered.",
+          "ui": {
+            "visible": ["Anchor element"],
+            "enabled": ["Anchor element"]
+          }
+        },
+        "transitions": [],
+        "visualLayout": "Renders an anchor element for popover positioning.",
+        "implementationNotes": "Wraps Radix UI PopoverPrimitive.Anchor. Used for advanced positioning scenarios.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "@radix-ui/react-popover",
+            "importPath": "@radix-ui/react-popover",
+            "dependsOn": ["Anchor"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "PopoverAnchor"
+    }
+  ]
+}

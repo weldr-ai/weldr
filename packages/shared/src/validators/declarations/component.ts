@@ -38,13 +38,13 @@ export const uiTransitionSchema = z.object({
       .array(z.string())
       .optional()
       .describe(
-        "A list of interface elements the user can see in this state (e.g., ['SubmitButton', 'ErrorMessage', 'LoadingSpinner'])",
+        "A list of descriptions of what the user can see in this state (e.g., ['A form with input fields', 'A warning message', 'A progress indicator'])",
       ),
     enabled: z
       .array(z.string())
       .optional()
       .describe(
-        "A list of interface elements the user can interact with in this state (e.g., ['EmailInput', 'SubmitButton', 'CancelLink'])",
+        "A list of descriptions of what the user can interact with in this state (e.g., ['The email input field', 'The submit button', 'The cancel link'])",
       ),
   }),
 
@@ -64,13 +64,13 @@ export const uiTransitionSchema = z.object({
       .array(z.string())
       .optional()
       .describe(
-        "A list of interface elements the user can see after the change (e.g., ['LoadingSpinner', 'SuccessMessage', 'RetryButton'])",
+        "A list of descriptions of what the user can see after the change (e.g., ['A loading indicator', 'A success message', 'A retry option'])",
       ),
     enabled: z
       .array(z.string())
       .optional()
       .describe(
-        "A list of interface elements the user can interact with after the change (e.g., ['RetryButton', 'CloseButton'])",
+        "A list of descriptions of what the user can interact with after the change (e.g., ['The retry option', 'The close button'])",
       ),
   }),
 
@@ -95,11 +95,6 @@ export const baseComponentSchema = z.object({
   properties: jsonSchema
     .optional()
     .describe("What information this interface piece needs to work."),
-  rendersOn: z
-    .enum(["server", "client", "both"])
-    .optional()
-    .describe("Where this interface piece is displayed."),
-
   initial: z
     .object({
       data: z
@@ -111,10 +106,14 @@ export const baseComponentSchema = z.object({
         .object({
           visible: z
             .array(z.string())
-            .describe("What users see when this first appears."),
+            .describe(
+              "Descriptions of what users can see when this first appears.",
+            ),
           enabled: z
             .array(z.string())
-            .describe("What users can do when this first appears."),
+            .describe(
+              "Descriptions of what users can interact with when this first appears.",
+            ),
         })
         .describe("How this looks and works when it first appears."),
     })
@@ -164,7 +163,6 @@ export const layoutSchema = baseComponentSchema.extend({
     .describe(
       "The route of the layout in openapi format. Like /users/{id} or /users/new",
     ),
-  rendersOn: z.literal("server"),
   meta: z
     .string()
     .optional()
@@ -190,6 +188,7 @@ export const componentSchema = z.object({
     .boolean()
     .optional()
     .describe("Whether users need to be logged in to see this."),
+  name: z.string().describe("The name of the component."),
   definition: z.discriminatedUnion("subtype", [
     pageSchema,
     layoutSchema,

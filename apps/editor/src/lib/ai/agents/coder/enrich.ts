@@ -354,6 +354,34 @@ export async function enrich({
           // Get the dependencies that match the dependency name and file path
           const tempDependencies = versionNewDeclarations.filter(
             (declaration) => {
+              if (!dependency.importPath) {
+                // TODO: Check if this is correct and actually works
+                // Handle RPC and REST API cases
+                if (
+                  declaration.declaration.type === "endpoint" &&
+                  declaration.declaration.specs
+                ) {
+                  const endpointSpecs = declaration.declaration.specs.data as {
+                    definition: {
+                      subtype: "rpc" | "rest";
+                      name?: string;
+                      method?: string;
+                      path?: string;
+                    };
+                  };
+                  if (endpointSpecs.definition.subtype === "rpc") {
+                    // For RPC, match by name
+                    return dependency.dependsOn.includes(
+                      endpointSpecs.definition.name ?? "",
+                    );
+                  }
+                  // For REST, match by HTTP method and path
+                  const restName = `${endpointSpecs.definition.method?.toUpperCase()}:${endpointSpecs.definition.path}`;
+                  return dependency.dependsOn.includes(restName);
+                }
+                return false;
+              }
+
               const declarationNormalizedFilePath =
                 declaration.declaration.file.path.startsWith("/")
                   ? declaration.declaration.file.path.replace(/\.[^/.]+$/, "")

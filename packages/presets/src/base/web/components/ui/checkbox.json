@@ -1,0 +1,95 @@
+{
+  "path": "/src/web/components/ui/checkbox.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Checkbox",
+        "purpose": "Allow users to select or deselect a boolean option in forms or lists",
+        "description": "A styled checkbox component built on top of Radix UI's CheckboxPrimitive. It supports all standard checkbox props and is visually enhanced for consistent UI. The component displays a check icon when checked and handles disabled and invalid states with appropriate styles.",
+        "properties": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Additional CSS classes to apply to the checkbox root element"
+            }
+          }
+        },
+        "initial": {
+          "data": "Unchecked checkbox",
+          "ui": {
+            "visible": ["A square checkbox box"],
+            "enabled": ["Checkbox can be toggled unless disabled"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User clicks the checkbox",
+              "event": "Checkbox toggled"
+            },
+            "from": {
+              "state": "Unchecked or checked",
+              "visible": ["Checkbox box (checked or unchecked)"]
+            },
+            "to": {
+              "state": "Checked or unchecked (toggled)",
+              "visible": ["Checkbox box with or without check icon"]
+            },
+            "effects": [
+              "Checkbox state is toggled and onChange handler is called if provided"
+            ]
+          },
+          {
+            "when": {
+              "description": "Checkbox is disabled",
+              "event": "Checkbox disabled"
+            },
+            "from": {
+              "state": "Enabled",
+              "visible": ["Checkbox box"]
+            },
+            "to": {
+              "state": "Disabled",
+              "visible": [
+                "Checkbox box with reduced opacity and not interactive"
+              ]
+            },
+            "effects": ["Checkbox cannot be toggled"]
+          }
+        ],
+        "visualLayout": "A small square box with rounded corners, border, and a check icon when checked. Styled for accessibility and visual consistency.",
+        "implementationNotes": "Wraps Radix UI CheckboxPrimitive. Uses a utility function for className merging and Lucide React for the check icon.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@radix-ui/react-checkbox",
+            "importPath": "@radix-ui/react-checkbox",
+            "dependsOn": ["CheckboxPrimitive"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["CheckIcon"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["ComponentProps"]
+          }
+        ]
+      },
+      "name": "Checkbox"
+    }
+  ]
+}

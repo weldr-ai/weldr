@@ -1,0 +1,84 @@
+{
+  "path": "/src/web/routes/__root.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "protected": false,
+      "definition": {
+        "name": "RootDocument",
+        "purpose": "Provides the root HTML document structure and layout for the app",
+        "description": "A layout component that wraps the application in a standard HTML document structure, including <html>, <head>, and <body> tags. It injects Tanstack Router's HeadContent and Scripts, and renders the current route's content via Outlet.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "No route content rendered yet",
+          "ui": {
+            "visible": [
+              "HTML document structure with <head> and <body>",
+              "HeadContent for meta/links",
+              "Scripts for client-side routing",
+              "Outlet for nested routes"
+            ],
+            "enabled": []
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "A nested route is matched",
+              "event": "Nested route rendered in Outlet"
+            },
+            "from": {
+              "state": "Empty document",
+              "visible": ["HTML structure with empty body"]
+            },
+            "to": {
+              "state": "Document with route content",
+              "visible": ["HTML structure with route content in body"]
+            },
+            "effects": [
+              "The current route's component tree is rendered inside the document body via Outlet"
+            ]
+          }
+        ],
+        "visualLayout": "Standard HTML document with head and body. HeadContent injects meta tags and links. Body contains the Outlet and Scripts.",
+        "implementationNotes": "Used as the root layout for all routes. Integrates Tanstack Router's HeadContent, Scripts, and Outlet for SSR/CSR. Uses createRootRouteWithContext for context injection.",
+        "subtype": "layout",
+        "route": "/",
+        "meta": "Weldr App root layout"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/routes/__root.tsx",
+            "dependsOn": ["HeadContent", "Scripts", "Outlet"]
+          },
+          {
+            "importPath": "src/web/styles.css?url",
+            "dependsOn": ["default"]
+          }
+        ],
+        "external": [
+          {
+            "name": "@tanstack/react-router",
+            "importPath": "@tanstack/react-router",
+            "dependsOn": [
+              "HeadContent",
+              "Outlet",
+              "Scripts",
+              "createRootRouteWithContext"
+            ]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": []
+          }
+        ]
+      },
+      "name": "RootDocument"
+    }
+  ]
+}

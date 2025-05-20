@@ -1,0 +1,462 @@
+{
+  "path": "/src/web/components/ui/carousel.tsx",
+  "declarations": [
+    {
+      "type": "component",
+      "definition": {
+        "name": "Carousel",
+        "purpose": "Provides a flexible, accessible, and customizable carousel UI component for displaying a set of items with horizontal or vertical scrolling.",
+        "description": "A reusable carousel component that allows users to scroll through a set of items either horizontally or vertically. It supports keyboard navigation, custom plugins, and exposes imperative API access. The component manages scroll state, provides context for child components, and is accessible with ARIA roles.",
+        "properties": {
+          "type": "object",
+          "properties": {
+            "opts": {
+              "type": "object",
+              "description": "Carousel options passed to embla-carousel"
+            },
+            "plugins": {
+              "type": "array",
+              "description": "Plugins for embla-carousel"
+            },
+            "orientation": {
+              "type": "string",
+              "enum": ["horizontal", "vertical"],
+              "default": "horizontal",
+              "description": "The orientation of the carousel"
+            },
+            "setApi": {
+              "type": "function",
+              "description": "Callback to receive the carousel API instance"
+            }
+          }
+        },
+        "initial": {
+          "data": "Carousel with no items selected, ready for user interaction.",
+          "ui": {
+            "visible": [
+              "Carousel region with navigation buttons and content area"
+            ],
+            "enabled": [
+              "Navigation buttons (if scrollable)",
+              "Keyboard navigation"
+            ]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User clicks the next or previous button, or uses keyboard arrows.",
+              "event": "Navigation button clicked or arrow key pressed"
+            },
+            "from": {
+              "state": "Idle, viewing current slide"
+            },
+            "to": {
+              "state": "Carousel scrolls to next or previous slide"
+            },
+            "effects": [
+              "Carousel content scrolls to the next or previous item. Navigation button states update."
+            ]
+          },
+          {
+            "when": {
+              "description": "Carousel is initialized or re-initialized (e.g., on mount or options change).",
+              "event": "Carousel initialized"
+            },
+            "from": {
+              "state": "Uninitialized"
+            },
+            "to": {
+              "state": "Initialized, ready for interaction"
+            },
+            "effects": [
+              "Carousel API is set. Navigation button states are determined."
+            ]
+          }
+        ],
+        "visualLayout": "A region containing a scrollable area for items, with absolute-positioned navigation buttons for previous and next. Layout adapts to horizontal or vertical orientation.",
+        "implementationNotes": "Uses embla-carousel-react for core carousel logic. Provides context for child components. Handles keyboard navigation and ARIA roles for accessibility.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/button",
+            "dependsOn": ["Button"]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "embla-carousel-react",
+            "importPath": "embla-carousel-react",
+            "dependsOn": ["useEmblaCarousel"]
+          },
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["ArrowLeft", "ArrowRight"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": [
+              "useState",
+              "useCallback",
+              "useEffect",
+              "useContext",
+              "createContext"
+            ]
+          }
+        ]
+      },
+      "name": "Carousel"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CarouselContent",
+        "purpose": "Wraps and arranges carousel items within the scrollable area of the carousel.",
+        "description": "A child component of Carousel that provides the scrollable container for carousel items. It arranges items in a flex row or column depending on orientation and attaches the carousel ref for embla-carousel.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Empty scrollable area for carousel items.",
+          "ui": {
+            "visible": ["Scrollable container for carousel items"],
+            "enabled": ["Drop carousel items as children"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "Carousel is rendered with items as children.",
+              "event": "CarouselContent mounted"
+            },
+            "from": {
+              "state": "Empty"
+            },
+            "to": {
+              "state": "Items are displayed in scrollable area"
+            },
+            "effects": ["Carousel items are visible and can be scrolled."]
+          }
+        ],
+        "visualLayout": "A div with overflow-hidden containing a flex container for items, with negative margin for spacing.",
+        "implementationNotes": "Uses carouselRef from context. Arranges children in a flex row or column based on orientation.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["useContext"]
+          }
+        ]
+      },
+      "name": "CarouselContent"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CarouselItem",
+        "purpose": "Represents a single slide/item within the carousel.",
+        "description": "A child component of CarouselContent that represents an individual carousel slide. It adapts its padding and layout based on carousel orientation and provides ARIA roles for accessibility.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "A single carousel item, ready to be displayed as a slide.",
+          "ui": {
+            "visible": ["A slide within the carousel"],
+            "enabled": ["Interact with slide content"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "CarouselItem is rendered as a child of CarouselContent.",
+              "event": "CarouselItem mounted"
+            },
+            "from": {
+              "state": "Not visible"
+            },
+            "to": {
+              "state": "Visible as a slide"
+            },
+            "effects": ["Slide is displayed in the carousel."]
+          }
+        ],
+        "visualLayout": "A div with role='group' and ARIA description, styled for horizontal or vertical orientation.",
+        "implementationNotes": "Uses orientation from context. Applies appropriate padding and ARIA attributes.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["useContext"]
+          }
+        ]
+      },
+      "name": "CarouselItem"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CarouselPrevious",
+        "purpose": "Provides a button to scroll to the previous slide in the carousel.",
+        "description": "A navigation button for the carousel that scrolls to the previous slide when clicked. It is disabled if there is no previous slide. The button adapts its position and rotation based on carousel orientation and uses an icon for visual indication.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Button enabled or disabled depending on scroll state.",
+          "ui": {
+            "visible": ["Previous button with left arrow icon"],
+            "enabled": ["Button is enabled if can scroll previous"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User clicks the previous button.",
+              "event": "Previous button clicked"
+            },
+            "from": {
+              "state": "Button enabled"
+            },
+            "to": {
+              "state": "Carousel scrolls to previous slide"
+            },
+            "effects": [
+              "Carousel moves to previous slide. Button may become disabled if at start."
+            ]
+          }
+        ],
+        "visualLayout": "An absolute-positioned circular button with a left arrow icon, placed to the left or top of the carousel depending on orientation.",
+        "implementationNotes": "Uses Button component and context for scrollPrev and canScrollPrev. Handles orientation for styling.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/button",
+            "dependsOn": ["Button"]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["ArrowLeft"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["useContext"]
+          }
+        ]
+      },
+      "name": "CarouselPrevious"
+    },
+    {
+      "type": "component",
+      "definition": {
+        "name": "CarouselNext",
+        "purpose": "Provides a button to scroll to the next slide in the carousel.",
+        "description": "A navigation button for the carousel that scrolls to the next slide when clicked. It is disabled if there is no next slide. The button adapts its position and rotation based on carousel orientation and uses an icon for visual indication.",
+        "properties": {
+          "type": "object",
+          "properties": {}
+        },
+        "initial": {
+          "data": "Button enabled or disabled depending on scroll state.",
+          "ui": {
+            "visible": ["Next button with right arrow icon"],
+            "enabled": ["Button is enabled if can scroll next"]
+          }
+        },
+        "transitions": [
+          {
+            "when": {
+              "description": "User clicks the next button.",
+              "event": "Next button clicked"
+            },
+            "from": {
+              "state": "Button enabled"
+            },
+            "to": {
+              "state": "Carousel scrolls to next slide"
+            },
+            "effects": [
+              "Carousel moves to next slide. Button may become disabled if at end."
+            ]
+          }
+        ],
+        "visualLayout": "An absolute-positioned circular button with a right arrow icon, placed to the right or bottom of the carousel depending on orientation.",
+        "implementationNotes": "Uses Button component and context for scrollNext and canScrollNext. Handles orientation for styling.",
+        "subtype": "reusable"
+      },
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/button",
+            "dependsOn": ["Button"]
+          },
+          {
+            "importPath": "src/web/lib/utils",
+            "dependsOn": ["cn"]
+          }
+        ],
+        "external": [
+          {
+            "name": "lucide-react",
+            "importPath": "lucide-react",
+            "dependsOn": ["ArrowRight"]
+          },
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["useContext"]
+          }
+        ]
+      },
+      "name": "CarouselNext"
+    },
+    {
+      "type": "function",
+      "name": "useCarousel",
+      "description": "A custom React hook that provides access to the carousel context, including API, scroll functions, and state. Throws an error if used outside of a Carousel provider.",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returns": {
+        "type": "object",
+        "description": "The carousel context, including API, scroll functions, and state."
+      },
+      "signature": "function useCarousel(): CarouselContextProps",
+      "implementationNotes": "Uses React.useContext to access CarouselContext. Throws if context is null.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "react",
+            "importPath": "react",
+            "dependsOn": ["useContext"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "other",
+      "declType": "type",
+      "name": "CarouselApi",
+      "description": "Type alias for the Embla Carousel API instance, used for imperative carousel control.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "embla-carousel-react",
+            "importPath": "embla-carousel-react",
+            "dependsOn": ["UseEmblaCarouselType"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "other",
+      "declType": "type",
+      "name": "CarouselOptions",
+      "description": "Type alias for the options object passed to embla-carousel, used to configure carousel behavior.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "embla-carousel-react",
+            "importPath": "embla-carousel-react",
+            "dependsOn": ["useEmblaCarousel"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "other",
+      "declType": "type",
+      "name": "CarouselPlugin",
+      "description": "Type alias for plugins array passed to embla-carousel, used to extend carousel functionality.",
+      "dependencies": {
+        "internal": [],
+        "external": [
+          {
+            "name": "embla-carousel-react",
+            "importPath": "embla-carousel-react",
+            "dependsOn": ["useEmblaCarousel"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "other",
+      "declType": "type",
+      "name": "CarouselProps",
+      "description": "Type definition for the props accepted by the Carousel component, including options, plugins, orientation, and API callback.",
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/carousel",
+            "dependsOn": ["CarouselOptions", "CarouselPlugin", "CarouselApi"]
+          }
+        ],
+        "external": []
+      }
+    },
+    {
+      "type": "other",
+      "declType": "type",
+      "name": "CarouselContextProps",
+      "description": "Type definition for the context value provided by Carousel, including refs, API, scroll functions, state, and props.",
+      "dependencies": {
+        "internal": [
+          {
+            "importPath": "src/web/components/ui/carousel",
+            "dependsOn": ["CarouselApi", "CarouselProps"]
+          }
+        ],
+        "external": [
+          {
+            "name": "embla-carousel-react",
+            "importPath": "embla-carousel-react",
+            "dependsOn": ["useEmblaCarousel"]
+          }
+        ]
+      }
+    }
+  ]
+}

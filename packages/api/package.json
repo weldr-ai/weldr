@@ -21,7 +21,6 @@
     "zod": "^3.24.3"
   },
   "devDependencies": {
-    "@types/diff": "^7.0.2",
     "@weldr/tsconfig": "workspace:*",
     "typescript": "^5.8.3"
   }
