@@ -159,7 +159,7 @@ export const Fly = {
             Authorization: `Bearer ${flyApiKey}`,
           },
           body: {
-            name: `preview-machine-${projectId}-${versionId}`,
+            name: `preview-machine-${projectId}-${versionId}-${Date.now()}`,
             region: "iad",
             config: {
               image: "registry.fly.io/weldr-runtime:base",

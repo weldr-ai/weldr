@@ -488,6 +488,8 @@ ${fileContext}`,
         .map((f) => `Failed to edit ${f.edit.path}:\n${f.error}`)
         .join("\n\n");
 
+      console.log(`[coder:${projectId}] Failure details: ${failureDetails}`);
+
       currentMessages.push({
         role: "assistant",
         content: response,

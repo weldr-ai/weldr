@@ -22,16 +22,12 @@
           {
             "name": "@hono/zod-openapi",
             "importPath": "@hono/zod-openapi",
-            "dependsOn": [
-              "OpenAPIHono"
-            ]
+            "dependsOn": ["OpenAPIHono"]
           },
           {
             "name": "hono",
             "importPath": "hono",
-            "dependsOn": [
-              "Schema"
-            ]
+            "dependsOn": ["Schema"]
           }
         ]
       }
@@ -47,10 +43,7 @@
           {
             "name": "@hono/zod-openapi",
             "importPath": "@hono/zod-openapi",
-            "dependsOn": [
-              "RouteHandler",
-              "RouteConfig"
-            ]
+            "dependsOn": ["RouteHandler", "RouteConfig"]
           }
         ]
       }
