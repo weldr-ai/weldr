@@ -13,7 +13,7 @@ import {
 } from "@weldr/shared/validators/integrations";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../init";
 
 export const integrationsRouter = createTRPCRouter({
   create: protectedProcedure

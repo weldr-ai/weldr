@@ -2,7 +2,7 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { eq } from "@weldr/db";
 import { declarations } from "node_modules/@weldr/db/src/schema/declarations";
 import { z } from "zod";
-import { protectedProcedure } from "../trpc";
+import { protectedProcedure } from "../init";
 
 export const dependenciesRouter = {
   available: protectedProcedure

@@ -10,7 +10,7 @@ import { addMessagesInputSchema } from "@weldr/shared/validators/chats";
 import type { rawContentSchema } from "@weldr/shared/validators/common";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { protectedProcedure } from "../trpc";
+import { protectedProcedure } from "../init";
 
 export const chatsRouter = {
   messages: protectedProcedure

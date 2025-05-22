@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "@weldr/db";
 import { canvasNodes } from "@weldr/db/schema";
 import { z } from "zod";
-import { protectedProcedure } from "../trpc";
+import { protectedProcedure } from "../init";
 
 export const canvasNodeRouter = {
   byId: protectedProcedure

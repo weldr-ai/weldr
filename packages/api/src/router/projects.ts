@@ -16,7 +16,7 @@ import {
   updateProjectSchema,
 } from "@weldr/shared/validators/projects";
 import { z } from "zod";
-import { protectedProcedure } from "../trpc";
+import { protectedProcedure } from "../init";
 
 export const projectsRouter = {
   create: protectedProcedure

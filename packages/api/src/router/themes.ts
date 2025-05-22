@@ -13,8 +13,8 @@ import { Fly } from "@weldr/shared/fly";
 import { S3 } from "@weldr/shared/s3";
 import { themeSchema } from "@weldr/shared/validators/themes";
 import { z } from "zod";
+import { createTRPCRouter, protectedProcedure } from "../init";
 import { takeScreenshot } from "../take-screenshot";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const themesRouter = createTRPCRouter({
   create: protectedProcedure
