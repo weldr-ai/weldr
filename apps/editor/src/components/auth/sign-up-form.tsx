@@ -120,7 +120,7 @@ export function SignUpForm({
                 control={form.control}
                 name="firstName"
                 render={({ field }) => (
-                  <FormItem className="w-full">
+                  <FormItem className="size-full">
                     <FormLabel>First name</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Your first name" />
@@ -134,7 +134,7 @@ export function SignUpForm({
                 control={form.control}
                 name="lastName"
                 render={({ field }) => (
-                  <FormItem className="w-full">
+                  <FormItem className="size-full">
                     <FormLabel>Last name</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Your last name" />
