@@ -1,5 +1,3 @@
-import "server-only";
-
 import type { FileCache } from "./file-cache";
 import type { Edit, FailedEdit } from "./types";
 
@@ -13,66 +11,68 @@ export function getEdits({
   content: string;
 }): Edit[] {
   const lines = content.split("\n");
+  const results: Edit[] = [];
+  let currentFilename: string | null = null;
+  let i = 0;
 
-  return lines.reduce<{
-    results: Edit[];
-    currentIndex: number;
-    currentFilename: string | null;
-  }>(
-    ({ results, currentFilename }, line, i) => {
-      if (!SEARCH.test(line.trim())) {
-        return { results, currentIndex: i + 1, currentFilename };
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line || !SEARCH.test(line.trim())) {
+      i++;
+      continue;
+    }
+
+    try {
+      // Find filename from previous lines
+      const prevLines = lines.slice(Math.max(0, i - 3), i);
+      const filename: string | null =
+        findFilename({
+          lines: prevLines,
+        }) || currentFilename;
+
+      if (!filename) {
+        throw new Error("Missing filename before edit block");
       }
 
-      try {
-        // Find filename from previous lines
-        const prevLines = lines.slice(Math.max(0, i - 3), i);
-        const filename =
-          findFilename({
-            lines: prevLines,
-          }) || currentFilename;
+      // Get original text
+      const remainingLines = lines.slice(i + 1);
+      const { lines: originalLines, newIndex: afterOriginal } =
+        collectUntilPattern(remainingLines, DIVIDER);
 
-        if (!filename) {
-          throw new Error("Missing filename before edit block");
-        }
-
-        // Get original text
-        const remainingLines = lines.slice(i + 1);
-        const { lines: originalLines, newIndex: afterOriginal } =
-          collectUntilPattern(remainingLines, DIVIDER);
-
-        if (afterOriginal >= remainingLines.length) {
-          throw new Error("Expected =======");
-        }
-
-        // Get updated text
-        const { lines: updatedLines, newIndex: afterUpdated } =
-          collectUntilPattern(remainingLines.slice(afterOriginal + 1), REPLACE);
-
-        if (afterUpdated >= remainingLines.length) {
-          throw new Error("Expected >>>>>>> REPLACE");
-        }
-
-        const newEdit: Edit = {
-          path: filename,
-          original: originalLines.join("\n"),
-          updated: updatedLines.join("\n"),
-        };
-
-        return {
-          results: [...results, newEdit],
-          currentIndex: i + afterOriginal + afterUpdated + 2,
-          currentFilename: filename,
-        };
-      } catch (error) {
-        if (error instanceof Error) {
-          throw new Error(`Error parsing edit block: ${error.message}`);
-        }
-        throw error;
+      if (afterOriginal >= remainingLines.length) {
+        throw new Error("Expected =======");
       }
-    },
-    { results: [], currentIndex: 0, currentFilename: null },
-  ).results;
+
+      // Get updated text
+      const { lines: updatedLines, newIndex: afterUpdated } =
+        collectUntilPattern(remainingLines.slice(afterOriginal + 1), REPLACE);
+
+      if (afterUpdated >= remainingLines.length - afterOriginal - 1) {
+        throw new Error("Expected >>>>>>> REPLACE");
+      }
+
+      const newEdit: Edit = {
+        path: filename,
+        original: originalLines.join("\n"),
+        updated: updatedLines.join("\n"),
+      };
+
+      results.push(newEdit);
+      currentFilename = filename;
+
+      // Skip past the entire SEARCH/REPLACE block
+      i = i + 1 + afterOriginal + 1 + afterUpdated + 1;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Error parsing edit block at line ${i + 1}: ${error.message}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  return results;
 }
 
 export async function applyEdits({
@@ -113,6 +113,7 @@ export async function applyEdits({
     if (fileEdits.length === 0) continue;
 
     let currentContent: string | null = null;
+    let originalFileContent: string | null = null; // Store original file content
     // We know this exists since we checked length above
     const firstEdit = fileEdits[0] as Edit;
 
@@ -141,6 +142,7 @@ export async function applyEdits({
       }
 
       currentContent = fileContent;
+      originalFileContent = fileContent; // Store the original content
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -200,10 +202,14 @@ export async function applyEdits({
     }
 
     // If all edits succeeded, add a single passed result with the final content
-    if (!hasFailure && currentContent !== null) {
+    if (
+      !hasFailure &&
+      currentContent !== null &&
+      originalFileContent !== null
+    ) {
       passed.push({
         path: filePath,
-        original: firstEdit.original,
+        original: originalFileContent, // Use full original file content
         updated: currentContent,
       });
     }
@@ -229,41 +235,26 @@ export function findFilename({
 }: {
   lines: string[];
 }): string | null {
+  // Look for the pattern: filename followed by SEARCH/REPLACE block (search backwards)
   for (let i = lines.length - 1; i >= 0; i--) {
     const potentialFilename = lines[i]?.trim();
 
-    // Skip any lines that are SEARCH/REPLACE markers, empty, HTML tags, or special characters
+    // Skip SEARCH/REPLACE/DIVIDER markers and empty lines
     if (
       !potentialFilename ||
       SEARCH.test(potentialFilename) ||
       REPLACE.test(potentialFilename) ||
-      DIVIDER.test(potentialFilename) ||
-      potentialFilename.includes(">>>>>") ||
-      potentialFilename.includes("<<<<<") ||
-      potentialFilename.startsWith("```") ||
-      potentialFilename.startsWith("<") || // Skip HTML tags
-      potentialFilename.endsWith(">") || // Skip HTML tags
-      potentialFilename.includes("**") || // Skip markdown formatting
-      /[<>:"|?*]/.test(potentialFilename) // Skip invalid filename characters
+      DIVIDER.test(potentialFilename)
     ) {
       continue;
     }
 
-    // Only accept filenames that look like valid paths (common file extensions or proper path format)
-    const isValidPath =
-      // Must contain a common file extension
-      /\.(js|jsx|ts|tsx|css|scss|html|json|md|py|rb|go|rs|java|php|c|cpp|h|swift)$/i.test(
-        potentialFilename,
-      ) ||
-      // Or must be a proper directory/file path (contains / and at least one . in the filename part)
-      (potentialFilename.includes("/") &&
-        potentialFilename
-          .substring(potentialFilename.lastIndexOf("/"))
-          .includes("."));
-
-    if (isValidPath) {
-      return potentialFilename;
+    // Check if it looks like a valid file path using regex (allow absolute paths)
+    if (!/^\/?\w[\w.\/-]*\/[\w.\/-]+$/.test(potentialFilename)) {
+      continue;
     }
+
+    return potentialFilename;
   }
 
   return null;
@@ -319,19 +310,19 @@ function replaceWithFlexibleWhitespace({
   replaceLines: string[];
 }): string[] | null {
   // Try matching ignoring leading whitespace
-  const strippedPartLines = partLines.map((line) => line.trimLeft());
+  const strippedPartLines = partLines.map((line) => line.trimStart());
   const partLen = partLines.length;
 
   for (let i = 0; i <= wholeLines.length - partLen; i++) {
     const chunk = wholeLines.slice(i, i + partLen);
-    const strippedChunk = chunk.map((line) => line.trimLeft());
+    const strippedChunk = chunk.map((line) => line.trimStart());
 
     if (arraysEqual(strippedChunk, strippedPartLines)) {
       // Preserve the original leading whitespace
       const leadingSpaceMatch = chunk[0]?.match(/^\s*/);
       const leadingSpace = leadingSpaceMatch ? leadingSpaceMatch[0] : "";
       const adjustedReplace = replaceLines.map(
-        (line) => leadingSpace + line.trimLeft(),
+        (line) => leadingSpace + line.trimStart(),
       );
       return [
         ...wholeLines.slice(0, i),
