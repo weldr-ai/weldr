@@ -50,9 +50,7 @@ export const declarations = pgTable(
       .notNull(),
     canvasNodeId: text("canvas_node_id").references(() => canvasNodes.id),
   },
-  (table) => ({
-    createdAtIdx: index("declaration_created_at_idx").on(table.createdAt),
-  }),
+  (table) => [index("declaration_created_at_idx").on(table.createdAt)],
 );
 
 export const declarationsRelations = relations(
@@ -99,9 +97,7 @@ export const declarationPackages = pgTable(
     importPath: text("import_path").notNull(),
     declarations: text("declarations").array(),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.declarationId, table.packageId] }),
-  }),
+  (table) => [primaryKey({ columns: [table.declarationId, table.packageId] })],
 );
 
 export const declarationPackagesRelations = relations(
@@ -128,9 +124,9 @@ export const declarationIntegrations = pgTable(
       .references(() => integrations.id, { onDelete: "cascade" })
       .notNull(),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.declarationId, table.integrationId] }),
-  }),
+  (table) => [
+    primaryKey({ columns: [table.declarationId, table.integrationId] }),
+  ],
 );
 
 export const declarationIntegrationsRelations = relations(

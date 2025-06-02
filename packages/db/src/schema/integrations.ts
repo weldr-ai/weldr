@@ -31,9 +31,7 @@ export const integrations = pgTable(
       .references(() => integrationTemplates.id, { onDelete: "cascade" })
       .notNull(),
   },
-  (t) => ({
-    createdAtIdx: index("integrations_created_at_idx").on(t.createdAt),
-  }),
+  (t) => [index("integrations_created_at_idx").on(t.createdAt)],
 );
 
 export const integrationsRelations = relations(
@@ -67,11 +65,11 @@ export const integrationEnvironmentVariables = pgTable(
       .references(() => environmentVariables.id, { onDelete: "cascade" })
       .notNull(),
   },
-  (t) => ({
-    pk: primaryKey({
+  (t) => [
+    primaryKey({
       columns: [t.integrationId, t.environmentVariableId, t.mapTo],
     }),
-  }),
+  ],
 );
 
 export const integrationEnvironmentVariablesRelations = relations(

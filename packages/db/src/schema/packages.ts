@@ -19,9 +19,7 @@ export const packages = pgTable(
       .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
   },
-  (t) => ({
-    unique: unique().on(t.projectId, t.name),
-  }),
+  (t) => [unique().on(t.projectId, t.name)],
 );
 
 export const packageRelations = relations(packages, ({ one, many }) => ({

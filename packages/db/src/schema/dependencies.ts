@@ -23,12 +23,12 @@ export const dependencies = pgTable(
       .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (t) => ({
-    pk: primaryKey({
+  (t) => [
+    primaryKey({
       columns: [t.dependentId, t.dependencyId],
     }),
-    createdAtIdx: index("dependencies_created_at_idx").on(t.createdAt),
-    noSelfDep: check("no_self_dep", sql`dependent_id != dependency_id`),
+    index("dependencies_created_at_idx").on(t.createdAt),
+    check("no_self_dep", sql`dependent_id != dependency_id`),
     // validDep: check(
     //   "valid_dep_types",
     //   sql`
@@ -46,7 +46,7 @@ export const dependencies = pgTable(
     //     dependency_type = 'component' AND dependent_type = 'component'
     //   `,
     // ),
-  }),
+  ],
 );
 
 export const dependenciesRelations = relations(dependencies, ({ one }) => ({

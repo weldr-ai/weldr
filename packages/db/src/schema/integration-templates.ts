@@ -21,7 +21,5 @@ export const integrationTemplates = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (t) => ({
-    createdAtIdx: index("integration_templates_created_at_idx").on(t.createdAt),
-  }),
+  (t) => [index("integration_templates_created_at_idx").on(t.createdAt)],
 );

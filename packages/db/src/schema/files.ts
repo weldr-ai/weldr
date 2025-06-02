@@ -26,10 +26,10 @@ export const files = pgTable(
       .references(() => users.id)
       .notNull(),
   },
-  (table) => ({
-    createdAtIndex: index("files_created_at_idx").on(table.createdAt),
-    uniquePath: uniqueIndex("unique_path").on(table.projectId, table.path),
-  }),
+  (table) => [
+    index("files_created_at_idx").on(table.createdAt),
+    uniqueIndex("unique_path").on(table.projectId, table.path),
+  ],
 );
 
 export const filesRelations = relations(files, ({ one, many }) => ({

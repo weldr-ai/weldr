@@ -28,9 +28,7 @@ export const environmentVariables = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
   },
-  (t) => ({
-    uniqueKey: unique("unique_key").on(t.projectId, t.key),
-  }),
+  (t) => [unique("unique_key").on(t.projectId, t.key)],
 );
 
 export const environmentVariablesRelations = relations(

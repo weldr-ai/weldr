@@ -41,9 +41,7 @@ export const projects = pgTable(
       },
     ),
   },
-  (t) => ({
-    createdAtIdx: index("projects_created_at_idx").on(t.createdAt),
-  }),
+  (t) => [index("projects_created_at_idx").on(t.createdAt)],
 );
 
 export const projectRelations = relations(projects, ({ many, one }) => ({

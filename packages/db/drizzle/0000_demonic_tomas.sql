@@ -133,8 +133,7 @@ CREATE TABLE "chat_messages" (
 CREATE TABLE "chats" (
 	"id" text PRIMARY KEY NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"project_id" text,
-	"canvas_node_id" text,
+	"project_id" text NOT NULL,
 	"user_id" text NOT NULL
 );
 --> statement-breakpoint
@@ -351,7 +350,6 @@ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_message_id_chat_messages_i
 ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chats" ADD CONSTRAINT "chats_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "chats" ADD CONSTRAINT "chats_canvas_node_id_canvas_nodes_id_fk" FOREIGN KEY ("canvas_node_id") REFERENCES "public"."canvas_nodes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_declaration_id_declarations_id_fk" FOREIGN KEY ("declaration_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

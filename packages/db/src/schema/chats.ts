@@ -16,7 +16,6 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { canvasNodes } from "./canvas-nodes";
 import { projects } from "./projects";
 
 export const messageRoles = pgEnum("message_roles", [
@@ -33,19 +32,14 @@ export const chats = pgTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    projectId: text("project_id").references(() => projects.id, {
-      onDelete: "cascade",
-    }),
-    canvasNodeId: text("canvas_node_id").references(() => canvasNodes.id, {
-      onDelete: "cascade",
-    }),
+    projectId: text("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
   },
-  (t) => ({
-    createdAtIdx: index("chats_created_at_idx").on(t.createdAt),
-  }),
+  (t) => [index("chats_created_at_idx").on(t.createdAt)],
 );
 
 export const chatRelations = relations(chats, ({ one, many }) => ({
@@ -57,10 +51,6 @@ export const chatRelations = relations(chats, ({ one, many }) => ({
   project: one(projects, {
     fields: [chats.projectId],
     references: [projects.id],
-  }),
-  canvasNode: one(canvasNodes, {
-    fields: [chats.canvasNodeId],
-    references: [canvasNodes.id],
   }),
 }));
 
@@ -86,9 +76,7 @@ export const chatMessages = pgTable(
       .notNull(),
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
   },
-  (t) => ({
-    createdAtIdx: index("chat_messages_created_at_idx").on(t.createdAt),
-  }),
+  (t) => [index("chat_messages_created_at_idx").on(t.createdAt)],
 );
 
 export const chatMessageRelations = relations(
@@ -124,9 +112,7 @@ export const attachments = pgTable(
       .references(() => chatMessages.id, { onDelete: "cascade" })
       .notNull(),
   },
-  (t) => ({
-    createdAtIdx: index("attachments_created_at_idx").on(t.createdAt),
-  }),
+  (t) => [index("attachments_created_at_idx").on(t.createdAt)],
 );
 
 export const attachmentsRelations = relations(attachments, ({ one }) => ({

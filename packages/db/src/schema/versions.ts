@@ -63,17 +63,14 @@ export const versions = pgTable(
       .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
   },
-  (table) => ({
-    currentVersionIdx: uniqueIndex("current_version_idx")
+  (table) => [
+    uniqueIndex("current_version_idx")
       .on(table.projectId, table.isCurrent)
       .where(sql`(is_current = true)`),
-    versionNumberUniqueIdx: uniqueIndex("version_number_unique_idx").on(
-      table.projectId,
-      table.number,
-    ),
-    createdAtIdx: index("versions_created_at_idx").on(table.createdAt),
-    machineIdIdx: index("versions_machine_id_idx").on(table.machineId),
-  }),
+    uniqueIndex("version_number_unique_idx").on(table.projectId, table.number),
+    index("versions_created_at_idx").on(table.createdAt),
+    index("versions_machine_id_idx").on(table.machineId),
+  ],
 );
 
 export const versionsRelations = relations(versions, ({ one, many }) => ({
@@ -113,11 +110,11 @@ export const versionFiles = pgTable(
       .notNull(),
     s3VersionId: text("s3_version_id").notNull(),
   },
-  (table) => ({
-    pk: primaryKey({
+  (table) => [
+    primaryKey({
       columns: [table.versionId, table.fileId],
     }),
-  }),
+  ],
 );
 
 export const versionFilesRelations = relations(versionFiles, ({ one }) => ({
@@ -141,9 +138,7 @@ export const versionDeclarations = pgTable(
       .references(() => declarations.id, { onDelete: "cascade" })
       .notNull(),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.versionId, table.declarationId] }),
-  }),
+  (table) => [primaryKey({ columns: [table.versionId, table.declarationId] })],
 );
 
 export const versionDeclarationsRelations = relations(
@@ -170,9 +165,7 @@ export const versionPackages = pgTable(
       .references(() => packages.id, { onDelete: "cascade" })
       .notNull(),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.versionId, table.packageId] }),
-  }),
+  (table) => [primaryKey({ columns: [table.versionId, table.packageId] })],
 );
 
 export const versionPackagesRelations = relations(

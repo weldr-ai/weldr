@@ -1,5 +1,5 @@
 {
-  "id": "7876f12c-c999-47d7-a669-bcbec1fcc475",
+  "id": "e8b7d60f-aa0b-4e7c-99ce-b86b1aab2af8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -896,13 +896,7 @@
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
-        },
-        "canvas_node_id": {
-          "name": "canvas_node_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "user_id": {
           "name": "user_id",
@@ -934,15 +928,6 @@
           "tableFrom": "chats",
           "tableTo": "projects",
           "columnsFrom": ["project_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "chats_canvas_node_id_canvas_nodes_id_fk": {
-          "name": "chats_canvas_node_id_canvas_nodes_id_fk",
-          "tableFrom": "chats",
-          "tableTo": "canvas_nodes",
-          "columnsFrom": ["canvas_node_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"

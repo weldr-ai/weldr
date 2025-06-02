@@ -32,9 +32,5 @@ export const secrets = vault.table(
       .defaultNow()
       .notNull(),
   },
-  (table) => {
-    return {
-      nameIdx: uniqueIndex("secrets_name_idx").on(table.name),
-    };
-  },
+  (table) => [uniqueIndex("secrets_name_idx").on(table.name)],
 );

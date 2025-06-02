@@ -34,9 +34,7 @@ export const canvasNodes = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
   },
-  (t) => ({
-    createdAtIdx: index("canvas_nodes_created_at_idx").on(t.createdAt),
-  }),
+  (t) => [index("canvas_nodes_created_at_idx").on(t.createdAt)],
 );
 
 export const canvasNodeRelations = relations(canvasNodes, ({ many }) => ({

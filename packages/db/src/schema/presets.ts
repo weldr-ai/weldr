@@ -71,9 +71,7 @@ export const presetDeclarations = pgTable(
       .notNull()
       .references(() => presets.id),
   },
-  (t) => ({
-    unique: unique("unique_preset_declaration").on(t.name, t.file, t.presetId),
-  }),
+  (t) => [unique("unique_preset_declaration").on(t.name, t.file, t.presetId)],
 );
 
 export const presetDeclarationsRelations = relations(
@@ -99,9 +97,7 @@ export const presetPackages = pgTable(
       .references(() => presets.id)
       .notNull(),
   },
-  (t) => ({
-    unique: unique("unique_preset_package").on(t.name, t.presetId),
-  }),
+  (t) => [unique("unique_preset_package").on(t.name, t.presetId)],
 );
 
 export const presetPackagesRelations = relations(presetPackages, ({ one }) => ({
@@ -122,9 +118,7 @@ export const presetFiles = pgTable(
       .references(() => presets.id)
       .notNull(),
   },
-  (t) => ({
-    unique: unique("unique_preset_file").on(t.path, t.presetId),
-  }),
+  (t) => [unique("unique_preset_file").on(t.path, t.presetId)],
 );
 
 export const presetFilesRelations = relations(presetFiles, ({ one }) => ({
