@@ -126,109 +126,111 @@ export const Fly = {
       config?: paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"];
       region?: "eu" | "us";
     }) => {
-      // const euRegions = ["ams", "arn", "mad", "lhr", "cdg", "fra"];
-      // const usRegions = ["iad", "ewr", "yul", "yyz", "sjc", "lax"];
-      // const allRegions = [
-      //   "iad",
-      //   "ewr",
-      //   "ams",
-      //   "arn",
-      //   "mad",
-      //   "yul",
-      //   "yyz",
-      //   "lhr",
-      //   "cdg",
-      //   "fra",
-      //   "sjc",
-      //   "lax",
-      // ];
+      const euRegions = ["ams", "arn", "mad", "lhr", "cdg", "fra"];
+      const usRegions = ["iad", "ewr", "yul", "yyz", "sjc", "lax"];
+      const allRegions = [
+        "iad",
+        "ewr",
+        "ams",
+        "arn",
+        "mad",
+        "yul",
+        "yyz",
+        "lhr",
+        "cdg",
+        "fra",
+        "sjc",
+        "lax",
+      ];
 
-      // const availableRegions =
-      //   region === "eu" ? euRegions : region === "us" ? usRegions : allRegions;
+      const availableRegions =
+        region === "eu" ? euRegions : region === "us" ? usRegions : allRegions;
 
       let lastError: Error | null = null;
 
-      // for (const region of availableRegions) {
-      try {
-        const response = await ofetch<
-          paths["/apps/{app_name}/machines"]["post"]["responses"][200]["content"]["application/json"]
-        >(`${flyApiHostname}/v1/apps/preview-app-${projectId}/machines`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${flyApiKey}`,
-          },
-          body: {
-            name: `preview-machine-${projectId}-${versionId}-${Date.now()}`,
-            region: "iad",
-            config: {
-              image: "registry.fly.io/weldr-runtime:base",
-              guest: {
-                cpu_kind: "shared",
-                cpus: 1,
-                memory_mb: 1024,
-              },
-              services: [
-                {
-                  protocol: "tcp",
-                  internal_port: 3000,
-                  autostop: "stop",
-                  autostart: true,
-                  ports: [
-                    {
-                      port: 443,
-                      handlers: ["tls", "http"],
-                    },
-                    {
-                      port: 80,
-                      handlers: ["http"],
-                    },
-                  ],
-                },
-              ],
-              ...config,
+      for (const region of availableRegions) {
+        try {
+          const response = await ofetch<
+            paths["/apps/{app_name}/machines"]["post"]["responses"][200]["content"]["application/json"]
+          >(`${flyApiHostname}/v1/apps/preview-app-${projectId}/machines`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${flyApiKey}`,
             },
-          } satisfies components["schemas"]["CreateMachineRequest"],
-          retry: 3,
-          retryDelay: 500,
-          async onRequestError({ request, options, error }) {
-            console.error("[fetch request error]", {
-              url: request,
-              error: error.message,
-              stack: error.stack,
-            });
-            throw error;
-          },
-          async onResponseError({ request, options, response }) {
-            console.error("[fetch response error]", {
-              url: request,
-              status: response.status,
-              statusText: response.statusText,
-            });
-            throw new Error(`Failed to create machine: ${response.statusText}`);
-          },
-        });
+            body: {
+              name: `preview-machine-${projectId}-${versionId}-${Date.now()}`,
+              region,
+              config: {
+                image: "registry.fly.io/weldr-runtime:base",
+                guest: {
+                  cpu_kind: "shared",
+                  cpus: 1,
+                  memory_mb: 1024,
+                },
+                services: [
+                  {
+                    protocol: "tcp",
+                    internal_port: 3000,
+                    autostop: "stop",
+                    autostart: true,
+                    ports: [
+                      {
+                        port: 443,
+                        handlers: ["tls", "http"],
+                      },
+                      {
+                        port: 80,
+                        handlers: ["http"],
+                      },
+                    ],
+                  },
+                ],
+                ...config,
+              },
+            } satisfies components["schemas"]["CreateMachineRequest"],
+            retry: 3,
+            retryDelay: 500,
+            async onRequestError({ request, options, error }) {
+              console.error("[fetch request error]", {
+                url: request,
+                error: error.message,
+                stack: error.stack,
+              });
+              throw error;
+            },
+            async onResponseError({ request, options, response }) {
+              console.error("[fetch response error]", {
+                url: request,
+                status: response.status,
+                statusText: response.statusText,
+              });
+              throw new Error(
+                `Failed to create machine: ${response.statusText}`,
+              );
+            },
+          });
 
-        if (!response.id) {
-          throw new Error("Failed to create machine");
+          if (!response.id) {
+            throw new Error("Failed to create machine");
+          }
+
+          await Fly.machine.waitFor({
+            projectId,
+            machineId: response.id,
+            state: "started",
+          });
+
+          return response.id;
+        } catch (error) {
+          console.error("Error creating machine:", {
+            error: error instanceof Error ? error.message : String(error),
+            projectId,
+            versionId,
+          });
+          lastError = error instanceof Error ? error : new Error(String(error));
         }
-
-        await Fly.machine.waitFor({
-          projectId,
-          machineId: response.id,
-          state: "started",
-        });
-
-        return response.id;
-      } catch (error) {
-        console.error("Error creating machine:", {
-          error: error instanceof Error ? error.message : String(error),
-          projectId,
-          versionId,
-        });
-        lastError = error instanceof Error ? error : new Error(String(error));
       }
-      // }
 
       throw (
         lastError || new Error("Failed to create machine: All regions failed")
