@@ -21,6 +21,7 @@ import { ReferenceNode } from "./plugins/reference/node";
 interface EditorProps {
   id: string;
   placeholder?: string;
+  placeholderClassName?: string;
   onChange?: (editorState: EditorState) => void;
   className?: string;
   editorRef?: { current: null | LexicalEditor };
@@ -28,6 +29,7 @@ interface EditorProps {
   typeaheadPosition?: "bottom" | "top";
   onSubmit?: () => void;
   disabled?: boolean;
+  onFocus?: () => void;
 }
 
 export function Editor({ ...props }: EditorProps) {
@@ -42,7 +44,7 @@ export function Editor({ ...props }: EditorProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && props.onSubmit) {
+      if (e.key === "Enter" && props.onSubmit) {
         e.preventDefault();
         props.onSubmit();
       }
@@ -63,14 +65,17 @@ export function Editor({ ...props }: EditorProps) {
           contentEditable={
             <ContentEditable
               className={cn(
-                "size-full h-full min-h-[100px] cursor-text flex-col overflow-y-auto rounded-lg border bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                "flex size-full min-h-9 cursor-text flex-col justify-center overflow-y-auto bg-background px-3 py-1 text-sm focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                !props.className &&
+                  "rounded-lg border focus-visible:ring-1 focus-visible:ring-ring",
                 props.className,
               )}
               disabled={props.disabled}
+              onFocus={props.onFocus}
             />
           }
           placeholder={
-            <div className="pointer-events-none absolute px-2.5 py-2 text-muted-foreground text-sm">
+            <div className="pointer-events-none absolute px-3 py-2 text-muted-foreground text-sm">
               {props.placeholder ?? "Start typing..."}
             </div>
           }

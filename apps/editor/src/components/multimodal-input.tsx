@@ -48,6 +48,8 @@ type BaseMultimodalInputProps = {
   formClassName?: string;
   attachmentsClassName?: string;
   textareaClassName?: string;
+  onFocus?: () => void;
+  isVisible?: boolean;
 };
 
 type EditorMultimodalInputProps = BaseMultimodalInputProps & {
@@ -81,6 +83,8 @@ function PureMultimodalInput({
   formClassName,
   attachmentsClassName,
   textareaClassName,
+  onFocus,
+  isVisible,
 }: MultimodalInputProps) {
   const [currentPlaceholder, setCurrentPlaceholder] = useState(
     placeholder ?? "Send a message...",
@@ -305,145 +309,134 @@ function PureMultimodalInput({
   }
 
   return (
-    <div className="flex w-full flex-col items-center justify-center">
-      {pendingMessage && (
-        <div className="flex w-[calc(100%-30px)] items-center gap-1 rounded-t-md border-x border-t bg-background p-1 text-xs">
-          <LogoIcon className="size-4" />
-          <span className="inline-flex w-fit animate-shine bg-[length:200%_100%] bg-[linear-gradient(90deg,var(--color-muted-foreground)_0%,var(--color-muted-foreground)_40%,var(--color-foreground)_50%,var(--color-muted-foreground)_60%,var(--color-muted-foreground)_100%)] bg-clip-text text-transparent">
+    <>
+      {pendingMessage ? (
+        <div className="flex h-9 items-center gap-2 px-3 text-xs">
+          <LogoIcon className="size-5" />
+          <span className="inline-flex w-fit animate-shine bg-[length:200%_100%] bg-[linear-gradient(90deg,var(--color-muted-foreground)_0%,var(--color-muted-foreground)_40%,var(--color-foreground)_50%,var(--color-muted-foreground)_60%,var(--color-muted-foreground)_100%)] bg-clip-text text-sm text-transparent">
             {pendingMessage.charAt(0).toUpperCase() + pendingMessage.slice(1)}
             ...
           </span>
         </div>
-      )}
-      <form
-        className={cn(
-          "relative flex w-full flex-col rounded-xl border",
-          formClassName,
-        )}
-      >
-        <input
-          type="file"
-          className="hidden"
-          ref={fileInputRef}
-          multiple
-          onChange={handleFileChange}
-          tabIndex={-1}
-        />
-
-        {(attachments.length > 0 || uploadQueue.length > 0) && (
-          <div
-            className={cn(
-              "scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex flex-row items-start gap-2 overflow-x-auto rounded-t-xl border-b p-2 dark:bg-muted",
-              attachmentsClassName,
-              {
-                "pb-0": attachments.length > 2,
-              },
-            )}
-          >
-            {attachments.map((attachment) => (
-              <PreviewAttachment
-                key={attachment.id}
-                attachment={attachment}
-                onDelete={() => {
-                  if (!attachment.name) return;
-                  fetch("/api/attachments", {
-                    method: "DELETE",
-                    body: JSON.stringify({ filename: attachment.name }),
-                  });
-                  setAttachments((currentAttachments) =>
-                    currentAttachments.filter(
-                      (a) => a.name !== attachment.name,
-                    ),
-                  );
-                }}
-              />
-            ))}
-
-            {uploadQueue.map((filename) => (
-              <PreviewAttachment
-                key={filename}
-                attachment={{
-                  id: "",
-                  key: "",
-                  size: 0,
-                  url: "",
-                  name: filename,
-                  contentType: "",
-                }}
-                isUploading={true}
-              />
-            ))}
-          </div>
-        )}
-
-        {type === "editor" && (
-          <Editor
-            id="general-chat-input"
-            placeholder={currentPlaceholder}
-            onChange={onChange}
-            className={cn(
-              "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 focus-visible:ring-0 dark:bg-background",
-              {
-                "rounded-t-none border-t-0": attachments.length > 0,
-              },
-              textareaClassName,
-            )}
-            editorRef={editorRef}
-            disabled={!!pendingMessage}
-            onSubmit={handleSubmit}
-            references={references}
-            typeaheadPosition={"bottom"}
+      ) : (
+        <form className={cn("relative flex w-full flex-col", formClassName)}>
+          <input
+            type="file"
+            className="hidden"
+            ref={fileInputRef}
+            multiple
+            onChange={handleFileChange}
+            tabIndex={-1}
           />
-        )}
 
-        {type === "textarea" && (
-          <Textarea
-            ref={textareaRef}
-            placeholder={currentPlaceholder}
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            className={cn(
-              "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 focus-visible:ring-0 dark:bg-background",
-              {
-                "rounded-t-none border-t-0": attachments.length > 0,
-              },
-              textareaClassName,
-            )}
-            rows={2}
-            autoFocus
-            disabled={!!pendingMessage}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-                event.preventDefault();
-                if (pendingMessage) {
-                  toast({
-                    description:
-                      "Please wait for the model to finish its response!",
-                  });
-                } else {
-                  submitForm();
+          {(attachments.length > 0 || uploadQueue.length > 0) && (
+            <div
+              className={cn(
+                "scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex min-h-[48px] flex-row items-center gap-1 overflow-x-auto px-1",
+                {
+                  "rounded-t-xl": !isVisible,
+                },
+                attachmentsClassName,
+              )}
+            >
+              {attachments.map((attachment) => (
+                <PreviewAttachment
+                  key={attachment.id}
+                  attachment={attachment}
+                  onDelete={() => {
+                    if (!attachment.name) return;
+                    fetch("/api/attachments", {
+                      method: "DELETE",
+                      body: JSON.stringify({ filename: attachment.name }),
+                    });
+                    setAttachments((currentAttachments) =>
+                      currentAttachments.filter(
+                        (a) => a.name !== attachment.name,
+                      ),
+                    );
+                  }}
+                />
+              ))}
+
+              {uploadQueue.map((filename) => (
+                <PreviewAttachment
+                  key={filename}
+                  attachment={{
+                    id: "",
+                    key: "",
+                    size: 0,
+                    url: "",
+                    name: filename,
+                    contentType: "",
+                  }}
+                  isUploading={true}
+                />
+              ))}
+            </div>
+          )}
+
+          {type === "editor" && (
+            <Editor
+              id="general-chat-input"
+              placeholder={currentPlaceholder}
+              placeholderClassName="text-sms"
+              onChange={onChange}
+              className={cn(
+                "max-h-20 resize-none overflow-y-auto bg-transparent px-3 focus-visible:ring-0",
+                {
+                  "border-t": attachments.length > 0,
+                },
+                textareaClassName,
+              )}
+              editorRef={editorRef}
+              onSubmit={handleSubmit}
+              references={references}
+              typeaheadPosition={"bottom"}
+              onFocus={onFocus}
+            />
+          )}
+
+          {type === "textarea" && (
+            <Textarea
+              ref={textareaRef}
+              placeholder={currentPlaceholder}
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              className={cn(
+                "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 focus-visible:ring-0 dark:bg-background",
+                textareaClassName,
+              )}
+              rows={2}
+              autoFocus
+              disabled={!!pendingMessage}
+              onFocus={onFocus}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                  event.preventDefault();
+                  if (pendingMessage) {
+                    toast({
+                      description:
+                        "Please wait for the model to finish its response!",
+                    });
+                  } else {
+                    submitForm();
+                  }
                 }
-              }
-            }}
-          />
-        )}
+              }}
+            />
+          )}
 
-        <div className="absolute bottom-2 left-2 flex w-fit flex-row justify-start">
-          <AttachmentsButton
-            fileInputRef={fileInputRef}
-            pendingMessage={pendingMessage}
-          />
-        </div>
-
-        <div className="absolute right-2 bottom-2 flex w-fit flex-row justify-end">
-          <SendButton
-            message={message}
-            submitForm={submitForm}
-            uploadQueue={uploadQueue}
-          />
-        </div>
-      </form>
-    </div>
+          <div className="absolute right-[3px] bottom-[3px] flex w-fit flex-row justify-end gap-1">
+            <AttachmentsButton fileInputRef={fileInputRef} />
+            <SendButton
+              message={message}
+              submitForm={submitForm}
+              uploadQueue={uploadQueue}
+            />
+          </div>
+        </form>
+      )}
+    </>
   );
 }
 
@@ -453,16 +446,15 @@ export const MultimodalInput = memo(
     if (!equal(prevProps.message, nextProps.message)) return false;
     if (prevProps.pendingMessage !== nextProps.pendingMessage) return false;
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;
+    if (prevProps.isVisible !== nextProps.isVisible) return false;
     return true;
   },
 );
 
 function PureAttachmentsButton({
   fileInputRef,
-  pendingMessage,
 }: {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
-  pendingMessage: TPendingMessage;
 }) {
   const { data: session } = authClient.useSession();
   const { setAuthDialogOpen } = useUIStore();
@@ -470,7 +462,7 @@ function PureAttachmentsButton({
   return (
     <Button
       variant="outline"
-      className="size-7 rounded-full"
+      className="size-[30px] rounded-lg"
       onClick={(event) => {
         event.preventDefault();
 
@@ -481,11 +473,6 @@ function PureAttachmentsButton({
 
         fileInputRef.current?.click();
       }}
-      disabled={
-        pendingMessage === "thinking" ||
-        pendingMessage === "waiting" ||
-        pendingMessage === "building"
-      }
     >
       <PaperclipIcon className="size-3" />
     </Button>
@@ -506,7 +493,7 @@ function PureSendButton({ submitForm, message, uploadQueue }: SendButtonProps) {
 
   return (
     <Button
-      className="size-7 rounded-full"
+      className="size-[30px] rounded-lg"
       onClick={(event) => {
         event.preventDefault();
 

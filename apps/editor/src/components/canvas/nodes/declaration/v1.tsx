@@ -74,14 +74,14 @@ export const DeclarationV1Node = memo(
               positionAbsoluteY={positionAbsoluteY}
             />
           </ExpandableCardTrigger>
-          <ExpandableCardContent className="nowheel -left-[172px] flex h-[500px] w-[600px] flex-col">
+          <ExpandableCardContent className="nowheel -left-[172px] flex h-[500px] w-[600px] flex-col bg-background dark:bg-muted">
             <DeclarationExpandableCardHeader declaration={declaration} />
             <DeclarationExpandableCardContent declaration={declaration} />
           </ExpandableCardContent>
         </ExpandableCard>
         <Handle
           className={cn(
-            "rounded-full border bg-background p-1",
+            "rounded-full border-[2px] bg-background p-1",
             showCanvasEdges ? "" : "opacity-0",
           )}
           type="target"
@@ -90,7 +90,7 @@ export const DeclarationV1Node = memo(
         />
         <Handle
           className={cn(
-            "rounded-full border bg-background p-1",
+            "rounded-full border-[2px] fill-primary p-1 dark:bg-primary",
             showCanvasEdges ? "" : "opacity-0",
           )}
           type="source"

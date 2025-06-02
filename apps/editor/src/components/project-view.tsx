@@ -2,31 +2,16 @@
 
 import type { CanvasNode } from "@/types";
 import type { RouterOutputs } from "@weldr/api";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@weldr/ui/components/resizable";
 
 import { Canvas } from "@/components/canvas";
 import { useUIStore } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@weldr/ui/components/select";
 import type { Edge } from "@xyflow/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect } from "react";
-import { Preview } from "./canvas/nodes/preview";
-import { Chat } from "./chat";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 import { ProjectSettings } from "./project-settings";
-import { Versions } from "./versions";
 
 export function ProjectView({
   project: _project,
@@ -119,72 +104,28 @@ export function ProjectView({
   );
 
   return (
-    <ResizablePanelGroup direction="horizontal">
-      <ResizablePanel
-        defaultSize={25}
-        minSize={25}
-        order={1}
-        className="size-full"
-      >
-        <div className="flex h-12 items-center justify-between border-b px-2">
-          <div className="flex items-center gap-2">
-            <MainDropdownMenu />
-            <span className="font-medium text-sm">
-              {project.name ?? "Untitled Project"}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Select
-              value={projectView}
-              onValueChange={(value) =>
-                setProjectView(value as "preview" | "canvas" | "versions")
-              }
-            >
-              <SelectTrigger className="max-h-8 w-28 text-xs dark:bg-muted">
-                <SelectValue placeholder="Select a view" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem className="text-xs" value="preview">
-                  Preview
-                </SelectItem>
-                <SelectItem className="text-xs" value="canvas">
-                  Canvas
-                </SelectItem>
-                <SelectItem className="text-xs" value="versions">
-                  Versions
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <ProjectSettings
-              project={project}
-              integrationTemplates={integrationTemplates}
-            />
-          </div>
+    <div className="flex size-full flex-col">
+      <div className="flex h-10 items-center justify-between border-b px-1">
+        <MainDropdownMenu />
+        <span className="font-medium text-sm">
+          {project.name ?? "Untitled Project"}
+        </span>
+        <div className="flex items-center gap-1">
+          <ProjectSettings
+            project={project}
+            integrationTemplates={integrationTemplates}
+          />
         </div>
-        <Chat
-          chatId={project.chat.id}
-          initialMessages={messages}
-          integrationTemplates={integrationTemplates}
+      </div>
+      <div className="flex size-full">
+        <Canvas
+          initialNodes={initialNodes}
+          initialEdges={initialEdges}
           project={project}
+          integrationTemplates={integrationTemplates}
+          messages={messages}
         />
-      </ResizablePanel>
-      <ResizableHandle className="w-0" withHandle />
-      <ResizablePanel
-        className="h-full py-2 pr-2"
-        defaultSize={75}
-        minSize={25}
-        order={2}
-      >
-        <div className="flex size-full rounded-xl">
-          {projectView === "canvas" && (
-            <Canvas initialNodes={initialNodes} initialEdges={initialEdges} />
-          )}
-          {projectView === "preview" && <Preview projectId={project.id} />}
-          {projectView === "versions" && (
-            <Versions versions={project.versions} />
-          )}
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+      </div>
+    </div>
   );
 }

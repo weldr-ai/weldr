@@ -13,12 +13,15 @@ import type {
   UserMessageRawContent,
 } from "@weldr/shared/types";
 import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
+import { Button } from "@weldr/ui/components/button";
 import { cn } from "@weldr/ui/lib/utils";
 import { useReactFlow } from "@xyflow/react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
+
 interface ChatProps {
   initialMessages: ChatMessage[];
   chatId: string;
@@ -39,6 +42,7 @@ export function Chat({
   const generationTriggered = useRef(false);
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const currentVersionProgress = project.currentVersion?.progress;
 
@@ -51,6 +55,8 @@ export function Chat({
           ? "enriching"
           : null,
   );
+
+  const [isChatVisible, setIsChatVisible] = useState(false);
 
   const editorReferences = project.declarations?.reduce(
     (acc, declaration) => {
@@ -400,48 +406,119 @@ export function Chat({
     await triggerGeneration();
   };
 
+  const handleInputFocus = useCallback(() => {
+    setIsChatVisible(true);
+  }, []);
+
+  // Handle clicks outside the chat container
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Don't hide if there's a pending message (generation in progress)
+      if (pendingMessage) {
+        return;
+      }
+
+      if (
+        chatContainerRef.current &&
+        !chatContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsChatVisible(false);
+      }
+    };
+
+    // Use capture phase to ensure we catch the event before it's stopped
+    document.addEventListener("mousedown", handleClickOutside, true);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside, true);
+    };
+  }, [pendingMessage]);
+
   return (
-    <div className="flex size-full flex-col">
+    <div
+      ref={chatContainerRef}
+      className={cn(
+        "flex size-full max-h-[400px] flex-col justify-end rounded-lg border bg-background dark:bg-muted",
+        {
+          "transition-all delay-300 ease-in-out":
+            !isChatVisible &&
+            pendingMessage !== "thinking" &&
+            pendingMessage !== "generating",
+          "transition-none":
+            attachments.length > 0 ||
+            isChatVisible ||
+            pendingMessage === "thinking" ||
+            pendingMessage === "generating",
+        },
+      )}
+    >
       <div
-        ref={messagesContainerRef}
         className={cn(
-          "scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-full max-h-[calc(100vh-186px)] min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-2",
-          pendingMessage && "max-h-[calc(100vh-212px)]",
-          attachments.length > 0 && "max-h-[calc(100vh-243px)]",
-          attachments.length > 2 && "max-h-[calc(100vh-246px)]",
-          pendingMessage &&
-            attachments.length > 0 &&
-            "max-h-[calc(100vh-268px)]",
+          "overflow-hidden transition-all duration-300 ease-in-out",
+          {
+            "h-0":
+              !isChatVisible &&
+              pendingMessage !== "thinking" &&
+              pendingMessage !== "generating",
+            "h-[300px]":
+              isChatVisible ||
+              pendingMessage === "thinking" ||
+              pendingMessage === "generating",
+          },
         )}
       >
-        <Messages
-          messages={messages}
-          setMessages={setMessages}
-          integrationTemplates={integrationTemplates}
-          pendingMessage={pendingMessage}
-          setPendingMessage={setPendingMessage}
-        />
-        <div ref={messagesEndRef} />
+        <div className="flex items-center justify-between border-b p-1">
+          <span className="font-medium text-xs">Chat Title</span>
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="outline"
+              className="size-5 rounded-sm shadow-none"
+              size="icon"
+            >
+              <ChevronLeftIcon className="size-3" />
+            </Button>
+            <Button
+              variant="outline"
+              className="size-5 rounded-sm shadow-none"
+              size="icon"
+            >
+              <ChevronRightIcon className="size-3" />
+            </Button>
+          </div>
+        </div>
+        <div
+          ref={messagesContainerRef}
+          className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-[calc(100%-29px)] flex-col gap-2 overflow-y-auto border-b p-2"
+        >
+          <Messages
+            messages={messages}
+            setMessages={setMessages}
+            integrationTemplates={integrationTemplates}
+            pendingMessage={pendingMessage}
+            setPendingMessage={setPendingMessage}
+          />
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
-      <div className="relative px-2">
-        <div className="absolute right-0 bottom-full left-0 h-4 bg-gradient-to-t from-background to-transparent dark:from-muted" />
-        <MultimodalInput
-          type="editor"
-          chatId={chatId}
-          message={userMessageRawContent}
-          setMessage={setUserMessageRawContent}
-          attachments={attachments}
-          setAttachments={setAttachments}
-          pendingMessage={pendingMessage}
-          handleSubmit={handleSubmit}
-          placeholder="Build with Weldr..."
-          references={editorReferences}
-        />
-      </div>
+      <MultimodalInput
+        type="editor"
+        chatId={chatId}
+        message={userMessageRawContent}
+        setMessage={setUserMessageRawContent}
+        attachments={attachments}
+        setAttachments={setAttachments}
+        pendingMessage={pendingMessage}
+        handleSubmit={handleSubmit}
+        placeholder="Build with Weldr..."
+        references={editorReferences}
+        onFocus={handleInputFocus}
+        isVisible={isChatVisible}
+      />
     </div>
   );
 }
+
 async function readStream(response: Response) {
   const reader = response.body?.getReader();
 

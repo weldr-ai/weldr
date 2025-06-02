@@ -29,7 +29,9 @@ import "@xyflow/react/dist/base.css";
 import { useTheme } from "next-themes";
 
 import { useUIStore } from "@/lib/store";
+import type { RouterOutputs } from "@weldr/api";
 import "@weldr/ui/styles/flow-builder.css";
+import { Chat } from "../chat";
 
 const nodeTypes = {
   "declaration-v1": DeclarationV1Node,
@@ -38,9 +40,15 @@ const nodeTypes = {
 export function Canvas({
   initialNodes,
   initialEdges,
+  project,
+  integrationTemplates,
+  messages,
 }: {
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
+  project: RouterOutputs["projects"]["byId"];
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  messages: RouterOutputs["projects"]["byId"]["chat"]["messages"];
 }) {
   const { showCanvasEdges, toggleCanvasEdges } = useUIStore();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
@@ -89,7 +97,7 @@ export function Canvas({
 
   return (
     <ReactFlow
-      className="scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent rounded-xl border bg-background dark:bg-muted"
+      className="scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent bg-background dark:bg-muted"
       nodes={nodes}
       onNodesChange={onNodesChange}
       edges={showCanvasEdges ? edges : []}
@@ -119,19 +127,19 @@ export function Canvas({
         }
       />
 
-      <Panel position="bottom-right" className="flex flex-col items-end gap-2">
+      <Panel position="top-right">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="size-8 rounded-md bg-background dark:bg-background"
+              className="bg-background dark:bg-background"
               variant="outline"
               size="icon"
               onClick={toggleCanvasEdges}
             >
               {showCanvasEdges ? (
-                <EyeIcon className="size-4" />
+                <EyeIcon className="size-3.5" />
               ) : (
-                <EyeOffIcon className="size-4" />
+                <EyeOffIcon className="size-3.5" />
               )}
             </Button>
           </TooltipTrigger>
@@ -142,40 +150,52 @@ export function Canvas({
             <p>Show Dependencies</p>
           </TooltipContent>
         </Tooltip>
+      </Panel>
 
-        <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
-          <Button
-            className="size-8 rounded-md"
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              zoomOut();
-            }}
-          >
-            <MinusIcon className="size-4" />
-          </Button>
-          <Button
-            className="h-8 rounded-md px-2 text-xs"
-            variant="ghost"
-            onClick={() => {
-              fitView({
-                maxZoom: 1,
-              });
-            }}
-          >
-            {`${Math.floor(viewPort.zoom * 100)}%`}
-          </Button>
-          <Button
-            className="size-8 rounded-md"
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              zoomIn();
-            }}
-          >
-            <PlusIcon className="size-4" />
-          </Button>
-        </div>
+      <Panel position="bottom-center" className="max-h-[400px] w-[500px]">
+        <Chat
+          chatId={project.chat.id}
+          initialMessages={messages}
+          project={project}
+          integrationTemplates={integrationTemplates}
+        />
+      </Panel>
+
+      <Panel
+        position="bottom-right"
+        className="flex items-center rounded-lg border bg-background"
+      >
+        <Button
+          className="size-9 rounded-r-none rounded-l-lg"
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            zoomOut();
+          }}
+        >
+          <MinusIcon className="size-3.5" />
+        </Button>
+        <Button
+          className="h-9 rounded-none px-2 text-xs"
+          variant="ghost"
+          onClick={() => {
+            fitView({
+              maxZoom: 1,
+            });
+          }}
+        >
+          {`${Math.floor(viewPort.zoom * 100)}%`}
+        </Button>
+        <Button
+          className="size-9 rounded-r-lg rounded-l-none"
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            zoomIn();
+          }}
+        >
+          <PlusIcon className="size-3.5" />
+        </Button>
       </Panel>
     </ReactFlow>
   );
