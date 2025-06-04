@@ -1,6 +1,6 @@
 "use client";
 
-import { useProjectData } from "@/lib/store";
+import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/components/button";
 import {
   DropdownMenu,
@@ -25,26 +25,33 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function Preview({ projectId }: { projectId: string }) {
+export function Preview({
+  projectId,
+  version,
+}: {
+  projectId: string;
+  version: RouterOutputs["projects"]["byId"]["versions"][number];
+}) {
   const [iframeKey, setIframeKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { machineId } = useProjectData();
 
   const [controlsPosition, setControlsPosition] = useState<
     "top-right" | "bottom-right" | "top-left" | "bottom-left"
   >("top-right");
 
-  const previewUrl = machineId
-    ? `https://${machineId}-${projectId}.preview.weldr.app`
-    : "";
+  // FIXME: I don't know how the url will look like yet, so I'm using the version id for now
+  const previewUrl =
+    version.progress === "succeeded"
+      ? `https://${version.id}.preview.weldr.app`
+      : "";
 
   useEffect(() => {
-    if (machineId) {
+    if (version.progress === "succeeded") {
       setIframeKey((prev) => prev + 1);
       setIsLoading(true);
     }
-  }, [machineId]);
+  }, [version.progress]);
 
   const handleRefresh = () => {
     setIframeKey((prev) => prev + 1);
@@ -95,7 +102,7 @@ export function Preview({ projectId }: { projectId: string }) {
               Refresh
             </DropdownMenuItem>
             <a
-              href={machineId ? previewUrl : undefined}
+              href={version.progress === "succeeded" ? previewUrl : undefined}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -138,7 +145,7 @@ export function Preview({ projectId }: { projectId: string }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {machineId ? (
+        {version.progress === "succeeded" ? (
           <>
             <iframe
               key={iframeKey}

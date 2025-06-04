@@ -2,7 +2,6 @@ import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { ProjectView } from "@/components/project-view";
-import { ProjectDataProvider } from "@/lib/store";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
 import type { Edge } from "@xyflow/react";
@@ -30,14 +29,14 @@ export default async function ProjectPage({
     const integrationTemplates = await api.integrationTemplates.list();
 
     const initialNodes: CanvasNode[] =
-      project.declarations?.reduce<CanvasNode[]>((acc, declaration) => {
-        if (!declaration.specs) return acc;
+      project.activeVersion?.declarations?.reduce<CanvasNode[]>((acc, e) => {
+        if (!e.declaration.specs) return acc;
 
         acc.push({
-          id: declaration.canvasNodeId ?? "",
-          type: `declaration-${declaration.specs.version}`,
-          data: declaration,
-          position: declaration.canvasNode?.position ?? {
+          id: e.declaration.canvasNodeId ?? "",
+          type: `declaration-${e.declaration.specs.version}`,
+          data: e.declaration,
+          position: e.declaration.canvasNode?.position ?? {
             x: 0,
             y: 0,
           },
@@ -47,23 +46,19 @@ export default async function ProjectPage({
       }, []) ?? [];
 
     const initialEdges: Edge[] =
-      project.edges?.map((edge) => ({
+      project.activeVersion?.edges?.map((edge) => ({
         id: `${edge.dependencyId}-${edge.dependentId}`,
         source: edge.dependencyId,
         target: edge.dependentId,
       })) ?? [];
 
     return (
-      <ProjectDataProvider
-        initialMachineId={project.currentVersion?.machineId ?? null}
-      >
-        <ProjectView
-          project={project}
-          initialNodes={initialNodes}
-          initialEdges={initialEdges}
-          integrationTemplates={integrationTemplates}
-        />
-      </ProjectDataProvider>
+      <ProjectView
+        project={project}
+        initialNodes={initialNodes}
+        initialEdges={initialEdges}
+        integrationTemplates={integrationTemplates}
+      />
     );
   } catch (error) {
     console.error(error);

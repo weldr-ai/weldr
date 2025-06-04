@@ -1,5 +1,4 @@
 import { applyEdits, findFilename, getEdits } from "./editor";
-import type { FileCache } from "./file-cache";
 
 // Mock FileCache implementation for testing
 class MockFileCache {
@@ -554,7 +553,7 @@ async function testApplyEdits() {
       existingFiles,
       edits,
       projectId,
-      fileCache: fileCache as unknown as FileCache,
+      machineId: "test-machine",
     });
 
     console.log("Apply edits result:");

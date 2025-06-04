@@ -11,7 +11,7 @@ import {
   versionPackages,
   versions,
 } from "@weldr/db/schema";
-import { S3 } from "@weldr/shared/s3";
+import { Fly } from "@weldr/shared/fly";
 import type { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import { type CoreMessage, streamText } from "ai";
 import type { z } from "zod";
@@ -26,7 +26,6 @@ import {
 } from "../../tools";
 import { getFilesContext, getFolderStructure } from "./context";
 import { applyEdits, findFilename, getEdits } from "./editor";
-import { FileCache } from "./file-cache";
 import type { EditResults } from "./types";
 
 export async function coder({
@@ -35,6 +34,7 @@ export async function coder({
   projectId,
   chatId,
   version,
+  machineId,
   promptMessages,
 }: {
   streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
@@ -42,13 +42,13 @@ export async function coder({
   projectId: string;
   chatId: string;
   version: typeof versions.$inferSelect;
+  machineId: string;
   promptMessages: CoreMessage[];
 }) {
   return await db.transaction(async (tx) => {
     console.log(`[coder:${projectId}] Starting coder agent`);
 
     const currentMessages: CoreMessage[] = [...promptMessages];
-    const fileCache = new FileCache();
 
     const installedPackages = await tx.query.packages.findMany({
       where: eq(packages.projectId, projectId),
@@ -71,7 +71,6 @@ export async function coder({
       columns: {
         fileId: false,
         versionId: false,
-        s3VersionId: false,
       },
       with: {
         file: {
@@ -165,9 +164,9 @@ export async function coder({
       id: versionMessageId,
       type: "version",
       versionId: version.id,
-      versionMessage: version.message,
+      versionMessage: version.message as string,
+      versionDescription: version.description as string,
       versionNumber: version.number,
-      versionDescription: version.description,
       changedFiles: [],
     };
 
@@ -187,10 +186,11 @@ export async function coder({
           }),
           readFiles: readFilesTool({
             projectId,
-            fileCache,
+            machineId,
           }),
           deleteFiles: deleteFilesTool({
             projectId,
+            machineId,
           }),
         },
         onFinish: async ({
@@ -461,7 +461,7 @@ ${fileContext}`,
         existingFiles: filePaths,
         edits,
         projectId,
-        fileCache,
+        machineId,
       });
 
       if (results.passed) {
@@ -538,9 +538,9 @@ ${fileContext}`,
             role: "version",
             rawContent: {
               versionId: version.id,
-              versionMessage: version.message,
+              versionMessage: version.message as string,
+              versionDescription: version.description as string,
               versionNumber: version.number,
-              versionDescription: version.description,
               changedFiles:
                 finalResult.passed?.map((f) => ({
                   status: "success" as const,
@@ -609,17 +609,12 @@ ${fileContext}`,
         resultFile = newFile;
       }
 
-      const s3VersionId = await S3.writeFile({
+      await Fly.machine.writeFile({
         projectId,
+        machineId,
         path: resultFile.path,
         content: file.updated,
       });
-
-      if (!s3VersionId) {
-        throw new Error(
-          `[processFile:${projectId}] Failed to write file ${file.path}`,
-        );
-      }
 
       // Add the file to the version
       await tx
@@ -627,14 +622,8 @@ ${fileContext}`,
         .values({
           versionId: version.id,
           fileId: resultFile.id,
-          s3VersionId,
         })
-        .onConflictDoUpdate({
-          target: [versionFiles.versionId, versionFiles.fileId],
-          set: {
-            s3VersionId,
-          },
-        });
+        .onConflictDoNothing();
     }
 
     await tx

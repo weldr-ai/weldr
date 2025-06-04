@@ -52,7 +52,7 @@ import "@weldr/ui/styles/flow-builder.css";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 
-type VersionNode = Node<RouterOutputs["projects"]["byId"]["versions"][number]>;
+type VersionNode = Node<RouterOutputs["versions"]["list"][number]>;
 
 type VersionEdge = Edge & {
   source: string;
@@ -61,15 +61,15 @@ type VersionEdge = Edge & {
 
 interface HierarchyNode {
   id: string;
-  version: RouterOutputs["projects"]["byId"]["versions"][number];
+  version: RouterOutputs["versions"]["list"][number];
   children?: HierarchyNode[];
 }
 
 const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
   const [imageError, setImageError] = useState(false);
-  const isCurrent = data.isCurrent;
-  const previewUrl = data.machineId
-    ? `https://${data.machineId}-${data.projectId}.preview.weldr.app`
+  const activeVersion = data.activatedAt !== null;
+  const previewUrl = data.thumbnail
+    ? `https://${data.id}.preview.weldr.app`
     : null;
 
   const { getEdges, setNodes } = useReactFlow();
@@ -143,7 +143,7 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
             </Tooltip>
           </div>
           <div className="flex items-center gap-1">
-            {!data.isCurrent && (
+            {!data.activatedAt && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -191,14 +191,14 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
           {!imageError ? (
             <>
               <Image
-                src={data.thumbnail}
+                src={data.thumbnail ?? ""}
                 alt={`Version ${data.number}`}
                 width={350}
                 height={200}
                 className={cn(
                   "flex h-[200px] w-[350px] flex-col gap-2 rounded-b-lg bg-muted",
                   {
-                    "border-primary": isCurrent,
+                    "border-primary": activeVersion,
                   },
                 )}
                 onError={() => setImageError(true)}
@@ -212,7 +212,7 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
               className={cn(
                 "flex h-[200px] w-[348px] items-center justify-center rounded-b-lg bg-muted",
                 {
-                  "border-primary": isCurrent,
+                  "border-primary": activeVersion,
                 },
               )}
             >
@@ -244,14 +244,14 @@ const nodeTypes = {
 export function Versions({
   versions,
 }: {
-  versions: RouterOutputs["projects"]["byId"]["versions"];
+  versions: RouterOutputs["versions"]["list"];
 }) {
   const { resolvedTheme } = useTheme();
 
   const rootVersions = versions.filter((v) => !v.parentVersionId);
 
   const buildHierarchy = (
-    version: RouterOutputs["projects"]["byId"]["versions"][number],
+    version: RouterOutputs["versions"]["list"][number],
   ): HierarchyNode => {
     const children = versions
       .filter((v) => v.parentVersionId === version.id)

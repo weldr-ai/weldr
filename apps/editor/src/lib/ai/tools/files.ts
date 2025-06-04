@@ -1,13 +1,13 @@
+import { Fly } from "@weldr/shared/fly";
 import { tool } from "ai";
 import { z } from "zod";
-import type { FileCache } from "../agents/coder/file-cache";
 
 export const readFilesTool = ({
   projectId,
-  fileCache,
+  machineId,
 }: {
   projectId: string;
-  fileCache: FileCache;
+  machineId: string;
 }) =>
   tool({
     description: "Use to read files",
@@ -23,16 +23,19 @@ export const readFilesTool = ({
       const fileContents: Record<string, string> = {};
 
       for (const file of files) {
-        const fileContent = await fileCache.getFile({
+        const fileContent = await Fly.machine.readFile({
           projectId,
+          machineId,
           path: file,
         });
 
-        if (!fileContent) {
-          throw new Error("File not found");
+        if (fileContent.error || !fileContent.content) {
+          return {
+            error: fileContent.error,
+          };
         }
 
-        fileContents[file] = fileContent;
+        fileContents[file] = fileContent.content;
       }
 
       return fileContents;
@@ -41,8 +44,10 @@ export const readFilesTool = ({
 
 export const deleteFilesTool = ({
   projectId,
+  machineId,
 }: {
   projectId: string;
+  machineId: string;
 }) =>
   tool({
     description: "Use to delete files",
@@ -54,6 +59,19 @@ export const deleteFilesTool = ({
         `[deleteFilesTool:${projectId}] Deleting files`,
         files.join(", "),
       );
+
+      const result = await Fly.machine.deleteFile({
+        projectId,
+        machineId,
+        path: files.join(" "),
+      });
+
+      if (result.error || !result.success) {
+        return {
+          error: result.error,
+        };
+      }
+
       return files;
     },
   });

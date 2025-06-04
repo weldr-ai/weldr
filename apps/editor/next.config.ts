@@ -9,10 +9,7 @@ const config = {
   images: {
     remotePatterns: [
       {
-        hostname: "weldr-general.s3.*.amazonaws.com",
-      },
-      {
-        hostname: "weldr-controlled-general.s3.*.amazonaws.com",
+        hostname: "*.amazonaws.com",
       },
     ],
   },

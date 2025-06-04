@@ -1,9 +1,8 @@
 "use server";
 
 import { auth } from "@weldr/auth";
-import { and, db, eq } from "@weldr/db";
-import { versionFiles, versions } from "@weldr/db/schema";
-import { S3 } from "@weldr/shared/s3";
+import { and, db, eq, isNotNull } from "@weldr/db";
+import { versions } from "@weldr/db/schema";
 import { headers } from "next/headers";
 
 export async function getProjectDownloadUrl({
@@ -21,7 +20,7 @@ export async function getProjectDownloadUrl({
     where: and(
       eq(versions.projectId, projectId),
       eq(versions.userId, session.user.id),
-      eq(versions.isCurrent, true),
+      isNotNull(versions.activatedAt),
     ),
     with: {
       project: {
@@ -36,21 +35,22 @@ export async function getProjectDownloadUrl({
     throw new Error("Current version not found");
   }
 
-  const filesList = await db.query.versionFiles.findMany({
-    where: eq(versionFiles.versionId, currentVersion.id),
-    with: {
-      file: true,
-    },
-  });
-
-  const url = await S3.downloadProject({
-    projectId,
-    projectName: currentVersion.project.name ?? "weldr-app",
-    files: filesList.map((file) => ({
-      path: file.file.path,
-      versionId: file.s3VersionId,
-    })),
-  });
-
-  return url;
+  // const filesList = await db.query.versionFiles.findMany({
+  //   where: eq(versionFiles.versionId, currentVersion.id),
+  //   with: {
+  //     file: true,
+  //   },
+  // });
+  //
+  // FIXME: prepare the repo on the dev-node and create a zip file
+  // const url = await S3.downloadProject({
+  //   projectId,
+  //   projectName: currentVersion.project.name ?? "weldr-app",
+  //   files: filesList.map((file) => ({
+  //     path: file.file.path,
+  //     versionId: file.s3VersionId,
+  //   })),
+  // });
+  // return url;
+  return "";
 }

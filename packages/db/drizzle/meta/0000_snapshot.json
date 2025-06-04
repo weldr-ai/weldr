@@ -1,5 +1,5 @@
 {
-  "id": "e8b7d60f-aa0b-4e7c-99ce-b86b1aab2af8",
+  "id": "7a05af7a-c940-4e7a-8ac4-7ab00118ed69",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2121,12 +2121,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "initiated_at": {
-          "name": "initiated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -2146,12 +2140,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "main_database_id": {
-          "name": "main_database_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -2177,15 +2165,6 @@
           "tableFrom": "projects",
           "tableTo": "users",
           "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "projects_main_database_id_integrations_id_fk": {
-          "name": "projects_main_database_id_integrations_id_fk",
-          "tableFrom": "projects",
-          "tableTo": "integrations",
-          "columnsFrom": ["main_database_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -2337,12 +2316,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "s3_version_id": {
-          "name": "s3_version_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
         }
       },
       "indexes": {},
@@ -2440,25 +2413,39 @@
           "name": "number",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": 1
         },
         "message": {
           "name": "message",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "description": {
           "name": "description",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
-        "machine_id": {
-          "name": "machine_id",
+        "commit_hash": {
+          "name": "commit_hash",
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "chat_id": {
+          "name": "chat_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "changed_files": {
+          "name": "changed_files",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
         },
         "progress": {
           "name": "progress",
@@ -2468,19 +2455,12 @@
           "notNull": true,
           "default": "'initiated'"
         },
-        "changed_files": {
-          "name": "changed_files",
-          "type": "jsonb",
+        "activated_at": {
+          "name": "activated_at",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "is_current": {
-          "name": "is_current",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
+          "notNull": false,
+          "default": "now()"
         },
         "parent_version_id": {
           "name": "parent_version_id",
@@ -2494,12 +2474,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "theme_id": {
-          "name": "theme_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
         },
         "user_id": {
           "name": "user_id",
@@ -2515,8 +2489,8 @@
         }
       },
       "indexes": {
-        "current_version_idx": {
-          "name": "current_version_idx",
+        "active_version_idx": {
+          "name": "active_version_idx",
           "columns": [
             {
               "expression": "project_id",
@@ -2525,14 +2499,14 @@
               "nulls": "last"
             },
             {
-              "expression": "is_current",
+              "expression": "activated_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": true,
-          "where": "(is_current = true)",
+          "where": "(activated_at IS NOT NULL)",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2573,11 +2547,11 @@
           "method": "btree",
           "with": {}
         },
-        "versions_machine_id_idx": {
-          "name": "versions_machine_id_idx",
+        "versions_chat_id_idx": {
+          "name": "versions_chat_id_idx",
           "columns": [
             {
-              "expression": "machine_id",
+              "expression": "chat_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2590,20 +2564,20 @@
         }
       },
       "foreignKeys": {
+        "versions_chat_id_chats_id_fk": {
+          "name": "versions_chat_id_chats_id_fk",
+          "tableFrom": "versions",
+          "tableTo": "chats",
+          "columnsFrom": ["chat_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "versions_parent_version_id_versions_id_fk": {
           "name": "versions_parent_version_id_versions_id_fk",
           "tableFrom": "versions",
           "tableTo": "versions",
           "columnsFrom": ["parent_version_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "versions_theme_id_themes_id_fk": {
-          "name": "versions_theme_id_themes_id_fk",
-          "tableFrom": "versions",
-          "tableTo": "themes",
-          "columnsFrom": ["theme_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"

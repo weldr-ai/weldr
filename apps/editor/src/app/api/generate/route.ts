@@ -11,8 +11,9 @@ import { coderTool, executeCoderTool } from "@/lib/ai/tools/coder";
 import { convertMessagesToCoreMessages } from "@/lib/ai/utils";
 import type { TStreamableValue } from "@/types";
 import { auth } from "@weldr/auth";
-import { and, db, eq } from "@weldr/db";
+import { and, db, eq, isNotNull } from "@weldr/db";
 import { chats, integrations, projects, versions } from "@weldr/db/schema";
+import { Fly } from "@weldr/shared/fly";
 import { streamText } from "ai";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -35,6 +36,10 @@ export async function POST(request: Request) {
   if (!project) {
     throw new Error("Project not found");
   }
+
+  const devNodeId = await Fly.machine.getDevNodeId({
+    projectId,
+  });
 
   const integrationsList = await db.query.integrations.findMany({
     where: eq(integrations.projectId, projectId),
@@ -74,31 +79,35 @@ export async function POST(request: Request) {
 
   const streamWriter = stream.writable.getWriter();
 
-  const currentVersion = await db.query.versions.findFirst({
-    where: and(eq(versions.projectId, projectId), eq(versions.isCurrent, true)),
+  const activeVersion = await db.query.versions.findFirst({
+    where: and(
+      eq(versions.projectId, projectId),
+      isNotNull(versions.activatedAt),
+    ),
   });
 
   (async () => {
     try {
-      if (currentVersion && currentVersion.progress !== "succeeded") {
+      if (activeVersion && activeVersion.progress !== "succeeded") {
         await executeCoderTool({
           chatId,
           userId: session.user.id,
           projectId,
+          machineId: devNodeId,
           promptMessages,
           streamWriter,
           toolArgs: {
             name: project.name,
-            requirements: currentVersion.description,
-            commitMessage: currentVersion.message,
+            requirements: activeVersion.description as string,
+            commitMessage: activeVersion.message as string,
           },
         });
       } else {
         const result = streamText({
           model: registry.languageModel("openai:gpt-4.1"),
           system: prompts.requirementsGatherer(
-            project.initiatedAt
-              ? `You are working on a project called ${project.name} that was initiated at ${project.initiatedAt.toISOString()}
+            activeVersion
+              ? `You are working on a project called ${project.name} that was initiated at ${activeVersion.createdAt.toISOString()}
 
 This project has the following integrations setup:
 ${integrationsList
@@ -167,6 +176,7 @@ Description: ${integrationTemplate.description}`,
                       chatId,
                       userId: session.user.id,
                       projectId,
+                      machineId: devNodeId,
                       promptMessages,
                       streamWriter,
                       toolArgs: toolCall.args,

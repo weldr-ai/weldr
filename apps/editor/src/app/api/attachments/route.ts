@@ -10,6 +10,8 @@ import { auth } from "@weldr/auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+const BUCKET_NAME = process.env.ATTACHMENTS_BUCKET;
+
 const attachmentSchema = z.object({
   chatId: z.string().min(1, { message: "Chat ID is required" }),
   file: z
@@ -25,8 +27,6 @@ const attachmentSchema = z.object({
       },
     ),
 });
-
-const BUCKET_NAME = "weldr-general";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,

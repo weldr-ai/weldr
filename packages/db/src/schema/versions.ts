@@ -2,7 +2,6 @@ import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
-  boolean,
   index,
   integer,
   jsonb,
@@ -14,11 +13,11 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
+import { chats } from "./chats";
 import { declarations } from "./declarations";
 import { files } from "./files";
 import { packages } from "./packages";
 import { projects } from "./projects";
-import { themes } from "./themes";
 
 export const versionProgress = pgEnum("version_progress", [
   "initiated",
@@ -36,26 +35,24 @@ export const versions = pgTable(
       .$default(() => createId())
       .primaryKey()
       .notNull(),
-    number: integer("number").notNull(),
-    message: text("message").notNull(),
-    description: text("description").notNull(),
-    machineId: text("machine_id"),
-    progress: versionProgress("progress").default("initiated").notNull(),
+    number: integer("number").notNull().default(1),
+    message: text("message"),
+    description: text("description"),
+    commitHash: text("commit_hash"),
+    chatId: text("chat_id")
+      .references(() => chats.id, { onDelete: "cascade" })
+      .notNull(),
     changedFiles: jsonb("changed_files")
       .$type<string[]>()
       .default([])
       .notNull(),
-    isCurrent: boolean("is_current").default(false).notNull(),
+    progress: versionProgress("progress").default("initiated").notNull(),
+    activatedAt: timestamp("activated_at").defaultNow(),
     parentVersionId: text("parent_version_id").references(
       (): AnyPgColumn => versions.id,
       { onDelete: "cascade" },
     ),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    themeId: text("theme_id")
-      .references(() => themes.id, {
-        onDelete: "cascade",
-      })
-      .notNull(),
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),
@@ -64,12 +61,12 @@ export const versions = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("current_version_idx")
-      .on(table.projectId, table.isCurrent)
-      .where(sql`(is_current = true)`),
+    uniqueIndex("active_version_idx")
+      .on(table.projectId, table.activatedAt)
+      .where(sql`(activated_at IS NOT NULL)`),
     uniqueIndex("version_number_unique_idx").on(table.projectId, table.number),
     index("versions_created_at_idx").on(table.createdAt),
-    index("versions_machine_id_idx").on(table.machineId),
+    index("versions_chat_id_idx").on(table.chatId),
   ],
 );
 
@@ -82,6 +79,10 @@ export const versionsRelations = relations(versions, ({ one, many }) => ({
   children: many(versions, {
     relationName: "version_children",
   }),
+  chat: one(chats, {
+    fields: [versions.chatId],
+    references: [chats.id],
+  }),
   project: one(projects, {
     fields: [versions.projectId],
     references: [projects.id],
@@ -93,10 +94,6 @@ export const versionsRelations = relations(versions, ({ one, many }) => ({
   declarations: many(versionDeclarations),
   packages: many(versionPackages),
   files: many(versionFiles),
-  theme: one(themes, {
-    fields: [versions.themeId],
-    references: [themes.id],
-  }),
 }));
 
 export const versionFiles = pgTable(
@@ -108,7 +105,6 @@ export const versionFiles = pgTable(
     fileId: text("file_id")
       .references(() => files.id, { onDelete: "cascade" })
       .notNull(),
-    s3VersionId: text("s3_version_id").notNull(),
   },
   (table) => [
     primaryKey({

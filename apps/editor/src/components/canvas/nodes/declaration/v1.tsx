@@ -117,9 +117,7 @@ const DeclarationExpandableCardHeader = memo(
 
       switch (data.type) {
         case "endpoint":
-          return data.definition.subtype === "rest"
-            ? data.definition.summary
-            : data.definition.name;
+          return data.definition.summary;
         case "function":
         case "model":
           return data.name;
@@ -136,9 +134,7 @@ const DeclarationExpandableCardHeader = memo(
           <div className="flex flex-col items-start justify-start gap-2 border-b p-4">
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 text-xs">
-                <span className="font-semibold text-primary text-xs">
-                  {data.definition.subtype.toUpperCase()}
-                </span>
+                <span className="font-semibold text-primary text-xs">REST</span>
                 <span className="text-muted-foreground">
                   {data.type.charAt(0).toUpperCase() + data.type.slice(1)}
                 </span>
@@ -210,36 +206,24 @@ const DeclarationExpandableCardContent = memo(
     return (
       <ScrollArea className="max-h-[calc(100svh-578px)] p-4">
         {data.type === "endpoint" ? (
-          data.definition.subtype === "rest" ? (
-            <OpenApiEndpointDocs
-              spec={
-                data.definition
-                  ? ({
-                      openapi: "3.0.0",
-                      info: {
-                        title: "Sample API",
-                        version: "1.0.0",
+          <OpenApiEndpointDocs
+            spec={
+              data.definition
+                ? ({
+                    openapi: "3.0.0",
+                    info: {
+                      title: "Sample API",
+                      version: "1.0.0",
+                    },
+                    paths: {
+                      [data.definition.path]: {
+                        [data.definition.method]: data.definition,
                       },
-                      paths: {
-                        [data.definition.path]: {
-                          [data.definition.method]: data.definition,
-                        },
-                      },
-                    } as OpenAPIV3.Document)
-                  : null
-              }
-            />
-          ) : (
-            <FunctionDetails
-              declaration={{
-                type: "function",
-                name: data.definition.name,
-                description: data.definition.description,
-                parameters: data.definition.parameters,
-                returns: data.definition.returns,
-              }}
-            />
-          )
+                    },
+                  } as OpenAPIV3.Document)
+                : null
+            }
+          />
         ) : data.type === "function" ? (
           <FunctionDetails declaration={data} />
         ) : data.type === "component" ? (
@@ -364,9 +348,7 @@ const DeclarationNodeCard = memo(
 
       switch (specs.type) {
         case "endpoint":
-          return specs.definition.subtype === "rest"
-            ? specs.definition.summary
-            : specs.definition.name;
+          return specs.definition.summary;
         case "function":
           return specs.name;
         case "component":
@@ -380,35 +362,28 @@ const DeclarationNodeCard = memo(
       return (
         <div className="flex items-center gap-2 text-xs">
           {specs.type === "endpoint" ? (
-            specs.definition.subtype === "rest" ? (
-              <>
-                <span
-                  className={cn(
-                    "rounded-sm px-1.5 py-0.5 font-bold text-xs uppercase",
-                    {
-                      "bg-primary/30 text-primary":
-                        specs.definition.method === "get",
-                      "bg-success/30 text-success":
-                        specs.definition.method === "post",
-                      "bg-warning/30 text-warning":
-                        specs.definition.method === "put",
-                      "bg-destructive/30 text-destructive":
-                        specs.definition.method === "delete",
-                      "p-0 font-semibold text-primary text-xs":
-                        !specs.definition.method,
-                    },
-                  )}
-                >
-                  {specs.definition.method.toUpperCase()}
-                </span>
-                <span className="text-muted-foreground">REST</span>
-              </>
-            ) : (
-              <>
-                <FunctionSquareIcon className="size-4 text-primary" />
-                <span className="text-muted-foreground">RPC</span>
-              </>
-            )
+            <>
+              <span
+                className={cn(
+                  "rounded-sm px-1.5 py-0.5 font-bold text-xs uppercase",
+                  {
+                    "bg-primary/30 text-primary":
+                      specs.definition.method === "get",
+                    "bg-success/30 text-success":
+                      specs.definition.method === "post",
+                    "bg-warning/30 text-warning":
+                      specs.definition.method === "put",
+                    "bg-destructive/30 text-destructive":
+                      specs.definition.method === "delete",
+                    "p-0 font-semibold text-primary text-xs":
+                      !specs.definition.method,
+                  },
+                )}
+              >
+                {specs.definition.method.toUpperCase()}
+              </span>
+              <span className="text-muted-foreground">REST</span>
+            </>
           ) : specs.type === "function" ? (
             <>
               <FunctionSquareIcon className="size-4 text-primary" />

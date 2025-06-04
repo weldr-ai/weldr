@@ -35,7 +35,6 @@ export const rawContentReferenceElementSchema = z.discriminatedUnion(
     }),
     baseRawContentReferenceElementSchema.extend({
       referenceType: z.literal("endpoint"),
-      subtype: z.enum(["rest", "rpc"]),
     }),
   ],
 );

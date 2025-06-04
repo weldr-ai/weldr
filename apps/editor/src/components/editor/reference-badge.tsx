@@ -36,15 +36,7 @@ export function ReferenceBadge({ reference, className }: ReferenceBadgeProps) {
           )}
         </>
       ) : reference.referenceType === "endpoint" ? (
-        <>
-          {reference.subtype === "rest" ? (
-            <span className="mr-1 text-primary text-xs">REST</span>
-          ) : reference.subtype === "rpc" ? (
-            <FunctionSquareIcon className="mr-1 size-3 text-primary" />
-          ) : (
-            <></>
-          )}
-        </>
+        <span className="mr-1 text-primary text-xs">REST</span>
       ) : (
         <></>
       )}

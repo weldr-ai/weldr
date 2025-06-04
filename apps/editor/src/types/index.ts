@@ -39,7 +39,6 @@ export type CoderStreamableValue =
       id?: string;
       type: "coder";
       status: "deployed";
-      machineId: string;
     };
 
 export type VersionStreamableValue = {

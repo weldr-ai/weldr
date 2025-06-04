@@ -94,12 +94,7 @@ export function ReferencesPlugin({
             new ReferenceOption({
               reference,
               options: {
-                keywords: [
-                  reference.name,
-                  reference.subtype,
-                  "endpoint",
-                  "api",
-                ],
+                keywords: [reference.name, "endpoint", "api"],
               },
             }),
           );
