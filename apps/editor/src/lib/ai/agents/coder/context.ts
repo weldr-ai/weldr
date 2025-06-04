@@ -32,9 +32,7 @@ export function getFilesContext({
   ) => {
     switch (declarationSpecs.data.type) {
       case "endpoint":
-        return declarationSpecs.data.definition.subtype === "rest"
-          ? `${declarationSpecs.data.definition.method.toUpperCase()} ${declarationSpecs.data.definition.path}`
-          : `RPC ${declarationSpecs.data.definition.name}`;
+        return `${declarationSpecs.data.definition.method.toUpperCase()} ${declarationSpecs.data.definition.path}`;
       case "component":
         return declarationSpecs.data.definition.name;
       case "function":
@@ -100,25 +98,9 @@ export function getFilesContext({
       switch (specs.data.type) {
         case "endpoint": {
           const def = specs.data.definition;
-          if (def.subtype === "rest") {
-            let info = `  • REST Endpoint: ${def.method.toUpperCase()} ${def.path}
+          let info = `  • REST Endpoint: ${def.method.toUpperCase()} ${def.path}
   Summary: ${def.summary || "No summary"}
   ${def.description ? `  Description: ${def.description}` : ""}`;
-
-            if (declaration.dependencies.length > 0) {
-              info += `\n  Depends on: ${groupedDependencies(declaration.dependencies)}`;
-            }
-
-            if (declaration.dependents.length > 0) {
-              info += `\n  Used by: ${groupedDependents(declaration.dependents)}`;
-            }
-
-            return info;
-          }
-          let info = `  • RPC: ${def.name}
-  Description: ${def.description}
-  Parameters: ${def.parameters ? JSON.stringify(def.parameters) : "None"}
-  Returns: ${def.returns ? JSON.stringify(def.returns) : "void"}`;
 
           if (declaration.dependencies.length > 0) {
             info += `\n  Depends on: ${groupedDependencies(declaration.dependencies)}`;

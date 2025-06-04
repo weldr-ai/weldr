@@ -6,7 +6,6 @@ import {
   integrationTemplates,
   integrations,
 } from "@weldr/db/schema";
-import { S3 } from "@weldr/shared/s3";
 import {
   createIntegrationSchema,
   updateIntegrationSchema,
@@ -115,11 +114,8 @@ export const integrationsRouter = createTRPCRouter({
 
         switch (integrationTemplate.type) {
           case "postgresql": {
-            S3.writeFile({
-              projectId,
-              path: `integrations/${integration.id}/config.json`,
-              content: JSON.stringify(integrationTemplate.config, null, 2),
-            });
+            // TODO: Implement
+            // Write integration boilerplate to the machine
             break;
           }
           default: {

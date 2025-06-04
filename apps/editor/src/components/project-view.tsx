@@ -92,17 +92,6 @@ export function ProjectView({
     ),
   );
 
-  const { data: messages } = useQuery(
-    trpc.chats.messages.queryOptions(
-      {
-        chatId: project.chat.id,
-      },
-      {
-        initialData: project.chat.messages,
-      },
-    ),
-  );
-
   return (
     <div className="flex size-full flex-col">
       <div className="flex h-10 items-center justify-between border-b px-1">
@@ -123,7 +112,6 @@ export function ProjectView({
           initialEdges={initialEdges}
           project={project}
           integrationTemplates={integrationTemplates}
-          messages={messages}
         />
       </div>
     </div>

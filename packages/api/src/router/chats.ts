@@ -48,7 +48,11 @@ export const chatsRouter = {
           const attachments = [];
 
           for (const attachment of message.attachments) {
-            const url = await S3.getSignedUrl("weldr-general", attachment.key);
+            const url = await S3.getSignedUrl(
+              // biome-ignore lint/style/noNonNullAssertion: <explanation>
+              process.env.ATTACHMENTS_BUCKET!,
+              attachment.key,
+            );
 
             attachments.push({
               name: attachment.name,

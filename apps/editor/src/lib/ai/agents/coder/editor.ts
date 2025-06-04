@@ -1,4 +1,4 @@
-import type { FileCache } from "./file-cache";
+import { Fly } from "@weldr/shared/fly";
 import type { Edit, FailedEdit } from "./types";
 
 export const SEARCH = /^<{5,9} SEARCH\s*$/;
@@ -79,12 +79,12 @@ export async function applyEdits({
   existingFiles,
   edits,
   projectId,
-  fileCache,
+  machineId,
 }: {
   existingFiles: string[];
   edits: Edit[];
   projectId: string;
-  fileCache: FileCache;
+  machineId: string;
 }): Promise<{
   passed: Edit[];
   failed: FailedEdit[];
@@ -132,17 +132,18 @@ export async function applyEdits({
 
     // Get initial file content
     try {
-      const fileContent = await fileCache.getFile({
+      const file = await Fly.machine.readFile({
         projectId,
+        machineId,
         path: filePath,
       });
 
-      if (!fileContent) {
+      if (file.error || !file.content) {
         throw new Error(`File not found: ${filePath}`);
       }
 
-      currentContent = fileContent;
-      originalFileContent = fileContent; // Store the original content
+      currentContent = file.content;
+      originalFileContent = file.content; // Store the original content
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);

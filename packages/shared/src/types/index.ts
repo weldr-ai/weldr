@@ -27,11 +27,7 @@ import type {
   pageSchema,
   reusableComponentSchema,
 } from "../validators/declarations/component";
-import type {
-  endpointSchema,
-  restEndpointSchema,
-  rpcEndpointSchema,
-} from "../validators/declarations/endpoint";
+import type { endpointSchema } from "../validators/declarations/endpoint";
 import type { functionSchema } from "../validators/declarations/function";
 import type { modelSchema } from "../validators/declarations/model";
 import type { environmentVariableSchema } from "../validators/environment-variables";
@@ -79,8 +75,6 @@ export type DeclarationType = z.infer<typeof declarationTypeSchema>;
 export type DeclarationSpecs = z.infer<typeof declarationSpecsSchema>;
 export type DeclarationSpecsV1 = z.infer<typeof declarationSpecsV1Schema>;
 export type EndpointDeclarationSpecs = z.infer<typeof endpointSchema>;
-export type RestEndpointDeclarationSpecs = z.infer<typeof restEndpointSchema>;
-export type RpcEndpointDeclarationSpecs = z.infer<typeof rpcEndpointSchema>;
 export type FunctionDeclarationSpecs = z.infer<typeof functionSchema>;
 export type ModelDeclarationSpecs = z.infer<typeof modelSchema>;
 export type ComponentDeclarationSpecs = z.infer<typeof componentSchema>;

@@ -67,7 +67,6 @@ export const messageRoleSchema = z.enum([
   "assistant",
   "tool",
   "version",
-  "files",
 ]);
 
 export const userMessageSchema = baseMessageSchema.extend({

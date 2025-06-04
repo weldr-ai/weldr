@@ -1,10 +1,37 @@
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq } from "@weldr/db";
-import { versions } from "@weldr/db/schema";
+import { and, desc, eq, isNotNull } from "@weldr/db";
+import { chats, versions } from "@weldr/db/schema";
+import { S3 } from "@weldr/shared/s3";
 import { z } from "zod";
 import { protectedProcedure } from "../init";
 
 export const versionRouter = {
+  create: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [chat] = await ctx.db
+        .insert(chats)
+        .values({
+          userId: ctx.session.user.id,
+          projectId: input.projectId,
+        })
+        .returning();
+
+      if (!chat) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create version",
+        });
+      }
+
+      const version = await ctx.db.insert(versions).values({
+        projectId: input.projectId,
+        userId: ctx.session.user.id,
+        chatId: chat.id,
+      });
+
+      return version;
+    }),
   current: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -12,7 +39,7 @@ export const versionRouter = {
         where: and(
           eq(versions.projectId, input.projectId),
           eq(versions.userId, ctx.session.user.id),
-          eq(versions.isCurrent, true),
+          isNotNull(versions.activatedAt),
         ),
         with: {
           declarations: {
@@ -48,8 +75,7 @@ export const versionRouter = {
         userId: version.userId,
         projectId: version.projectId,
         message: version.message,
-        machineId: version.machineId,
-        isCurrent: version.isCurrent,
+        activatedAt: version.activatedAt,
         parentVersionId: version.parentVersionId,
         declarations,
       };
@@ -60,8 +86,58 @@ export const versionRouter = {
       const versionsList = await ctx.db.query.versions.findMany({
         where: eq(versions.projectId, input.projectId),
         orderBy: desc(versions.createdAt),
+        with: {
+          chat: {
+            with: {
+              messages: {
+                columns: {
+                  content: false,
+                },
+                orderBy: (messages, { asc }) => [asc(messages.createdAt)],
+                with: {
+                  attachments: {
+                    columns: {
+                      name: true,
+                      key: true,
+                    },
+                  },
+                  user: {
+                    columns: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          declarations: {
+            with: {
+              declaration: {
+                with: {
+                  canvasNode: true,
+                  dependencies: true,
+                },
+              },
+            },
+          },
+        },
       });
-      return versionsList;
+
+      const versionsWithThumbnail = await Promise.all(
+        versionsList.map(async (version) => ({
+          ...version,
+          thumbnail:
+            version.progress === "succeeded"
+              ? await S3.getSignedUrl(
+                  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+                  process.env.GENERAL_BUCKET!,
+                  `thumbnails/${version.projectId}/${version.id}.jpeg`,
+                )
+              : null,
+        })),
+      );
+
+      return versionsWithThumbnail;
     }),
   setCurrent: protectedProcedure
     .input(z.object({ versionId: z.string() }))
@@ -70,7 +146,7 @@ export const versionRouter = {
         const previousCurrentVersion = await tx.query.versions.findFirst({
           where: and(
             eq(versions.userId, ctx.session.user.id),
-            eq(versions.isCurrent, true),
+            isNotNull(versions.activatedAt),
           ),
           columns: {
             id: true,
@@ -86,7 +162,7 @@ export const versionRouter = {
 
         const [previousCurrentVersionUpdate] = await tx
           .update(versions)
-          .set({ isCurrent: false })
+          .set({ activatedAt: null })
           .where(eq(versions.id, previousCurrentVersion.id))
           .returning();
 
@@ -99,7 +175,7 @@ export const versionRouter = {
 
         const [newCurrentVersion] = await tx
           .update(versions)
-          .set({ isCurrent: true })
+          .set({ activatedAt: new Date() })
           .where(eq(versions.id, input.versionId))
           .returning();
 

@@ -17,6 +17,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { projects } from "./projects";
+import { versions } from "./versions";
 
 export const messageRoles = pgEnum("message_roles", [
   "user",
@@ -44,6 +45,7 @@ export const chats = pgTable(
 
 export const chatRelations = relations(chats, ({ one, many }) => ({
   messages: many(chatMessages),
+  version: one(versions),
   user: one(users, {
     fields: [chats.userId],
     references: [users.id],

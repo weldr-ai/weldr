@@ -130,36 +130,3 @@ export function UIStoreProvider({
     </UIStoreContext.Provider>
   );
 }
-
-interface ProjectDataContextType {
-  machineId: string | null;
-  setMachineId: (machineId: string | null) => void;
-}
-
-const ProjectDataContext = createContext<ProjectDataContextType | undefined>(
-  undefined,
-);
-
-export function useProjectData() {
-  const context = useContext(ProjectDataContext);
-  if (context === undefined) {
-    throw new Error("useProjectData must be used within a ProjectDataProvider");
-  }
-  return context;
-}
-
-export function ProjectDataProvider({
-  initialMachineId,
-  children,
-}: {
-  initialMachineId: string | null;
-  children: ReactNode;
-}) {
-  const [machineId, setMachineId] = useState<string | null>(initialMachineId);
-
-  return (
-    <ProjectDataContext.Provider value={{ machineId, setMachineId }}>
-      {children}
-    </ProjectDataContext.Provider>
-  );
-}

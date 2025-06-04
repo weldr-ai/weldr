@@ -1,6 +1,6 @@
 import { takeScreenshot } from "@/lib/take-screenshot";
 import type { TStreamableValue } from "@/types";
-import { and, db, eq, not } from "@weldr/db";
+import { and, db, eq, isNotNull, not } from "@weldr/db";
 import {
   declarationPackages,
   declarations,
@@ -15,7 +15,6 @@ import {
   versionPackages,
   versions,
 } from "@weldr/db/schema";
-import { S3 } from "@weldr/shared/s3";
 import { type CoreMessage, tool } from "ai";
 import { z } from "zod";
 import { coder } from "../agents/coder";
@@ -57,10 +56,12 @@ export const executeCoderTool = async ({
   promptMessages,
   streamWriter,
   toolArgs,
+  machineId,
 }: {
   chatId: string;
   userId: string;
   projectId: string;
+  machineId: string;
   promptMessages: CoreMessage[];
   streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
   toolArgs: z.infer<typeof coderTool.parameters>;
@@ -68,7 +69,7 @@ export const executeCoderTool = async ({
   let version = await db.query.versions.findFirst({
     where: and(
       eq(versions.projectId, projectId),
-      eq(versions.isCurrent, true),
+      isNotNull(versions.activatedAt),
       not(eq(versions.progress, "succeeded")),
     ),
   });
@@ -77,6 +78,7 @@ export const executeCoderTool = async ({
     version = await initializeVersion({
       projectId,
       userId,
+      chatId,
       toolArgs,
     });
   }
@@ -99,6 +101,7 @@ export const executeCoderTool = async ({
       projectId,
       version,
       userId,
+      machineId,
       promptMessages: [
         ...promptMessages,
         {
@@ -118,7 +121,7 @@ export const executeCoderTool = async ({
 
   if (versionStatus === "coded") {
     console.log(`[coderTool:${projectId}] Invoking deploy`);
-    const machineId = await deploy({
+    await deploy({
       projectId,
       versionId: version.id,
     });
@@ -127,7 +130,6 @@ export const executeCoderTool = async ({
     await streamWriter.write({
       type: "coder",
       status: "deployed",
-      machineId,
     });
   }
 
@@ -136,6 +138,7 @@ export const executeCoderTool = async ({
     await enrich({
       projectId,
       versionId: version.id,
+      machineId,
       streamWriter,
       userId,
     });
@@ -169,10 +172,12 @@ export const executeCoderTool = async ({
 const initializeVersion = async ({
   projectId,
   userId,
+  chatId,
   toolArgs,
 }: {
   projectId: string;
   userId: string;
+  chatId: string;
   toolArgs: z.infer<typeof coderTool.parameters>;
 }): Promise<typeof versions.$inferSelect> => {
   return db.transaction(async (tx) => {
@@ -184,30 +189,24 @@ const initializeVersion = async ({
       throw new Error("Project not found");
     }
 
-    if (project.initiatedAt) {
-      console.log(`[coderTool:${projectId}] Getting previous version...`);
-      const previousVersion = await tx.query.versions.findFirst({
-        where: and(
-          eq(versions.projectId, projectId),
-          eq(versions.userId, userId),
-          eq(versions.isCurrent, true),
-        ),
-        columns: {
-          id: true,
-          number: true,
-          themeId: true,
-        },
-        with: {
-          files: true,
-          packages: true,
-          declarations: true,
-        },
-      });
+    const [activeVersion] = await tx.query.versions.findMany({
+      where: and(
+        eq(versions.projectId, projectId),
+        eq(versions.userId, userId),
+        isNotNull(versions.activatedAt),
+      ),
+      columns: {
+        id: true,
+        number: true,
+      },
+      with: {
+        files: true,
+        packages: true,
+        declarations: true,
+      },
+    });
 
-      if (!previousVersion) {
-        throw new Error("Version not found");
-      }
-
+    if (activeVersion) {
       console.log(`[coderTool:${projectId}] Getting latest version number...`);
       const latestNumber = await tx.query.versions.findFirst({
         where: eq(versions.projectId, projectId),
@@ -225,7 +224,7 @@ const initializeVersion = async ({
       await tx
         .update(versions)
         .set({
-          isCurrent: false,
+          activatedAt: null,
         })
         .where(
           and(eq(versions.projectId, projectId), eq(versions.userId, userId)),
@@ -238,11 +237,10 @@ const initializeVersion = async ({
           projectId,
           userId,
           number: latestNumber.number + 1,
-          isCurrent: true,
-          parentVersionId: previousVersion.id,
+          parentVersionId: activeVersion.id,
           message: toolArgs.commitMessage,
           description: toolArgs.requirements,
-          themeId: previousVersion.themeId,
+          chatId,
         })
         .returning();
 
@@ -251,31 +249,30 @@ const initializeVersion = async ({
       }
 
       console.log(
-        `[coderTool:${projectId}] Copying ${previousVersion.files.length} files...`,
+        `[coderTool:${projectId}] Copying ${activeVersion.files.length} files...`,
       );
       await tx.insert(versionFiles).values(
-        previousVersion.files.map((file) => ({
+        activeVersion.files.map((file) => ({
           versionId: version.id,
           fileId: file.fileId,
-          s3VersionId: file.s3VersionId,
         })),
       );
 
       console.log(
-        `[coderTool:${projectId}] Copying ${previousVersion.packages.length} packages...`,
+        `[coderTool:${projectId}] Copying ${activeVersion.packages.length} packages...`,
       );
       await tx.insert(versionPackages).values(
-        previousVersion.packages.map((pkg) => ({
+        activeVersion.packages.map((pkg) => ({
           versionId: version.id,
           packageId: pkg.packageId,
         })),
       );
 
       console.log(
-        `[coderTool:${projectId}] Copying ${previousVersion.declarations.length} declarations...`,
+        `[coderTool:${projectId}] Copying ${activeVersion.declarations.length} declarations...`,
       );
       await tx.insert(versionDeclarations).values(
-        previousVersion.declarations.map((declaration) => ({
+        activeVersion.declarations.map((declaration) => ({
           versionId: version.id,
           declarationId: declaration.declarationId,
         })),
@@ -303,7 +300,6 @@ const initializeVersion = async ({
       .update(projects)
       .set({
         name: toolArgs.name,
-        initiatedAt: new Date(),
       })
       .where(and(eq(projects.id, projectId), eq(projects.userId, userId)));
 
@@ -337,22 +333,15 @@ const initializeVersion = async ({
         projectId,
         userId,
         number: 1,
-        isCurrent: true,
         message: toolArgs.commitMessage,
         description: toolArgs.requirements,
-        themeId: projectTheme.id,
+        chatId,
       })
       .returning();
 
     if (!version) {
       throw new Error("Version not found");
     }
-
-    console.log(`[coderTool:${projectId}] Copying boilerplate files`);
-    const fileVersions = await S3.copyBoilerplate({
-      boilerplate: preset.type,
-      destinationPath: `${projectId}`,
-    });
 
     console.log(`[coderTool:${projectId}] Inserting files`);
     const insertedFiles = await tx
@@ -374,20 +363,9 @@ const initializeVersion = async ({
           `${projectId}${file.path.startsWith("/") ? file.path : `/${file.path}`}`,
         );
 
-        const s3VersionId =
-          fileVersions[
-            `${projectId}${file.path.startsWith("/") ? file.path : `/${file.path}`}`
-          ];
-        if (!s3VersionId) {
-          throw new Error(
-            `[coderTool:${projectId}] S3 version ID not found for file ${file.path}`,
-          );
-        }
-
         return {
           versionId: version.id,
           fileId: file.id,
-          s3VersionId,
         };
       }),
     );

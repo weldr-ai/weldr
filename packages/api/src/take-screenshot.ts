@@ -9,7 +9,7 @@ import { versions } from "@weldr/db/schema";
 import { headers } from "next/headers";
 import { chromium } from "playwright";
 
-const BUCKET_NAME = "weldr-controlled-general";
+const BUCKET_NAME = process.env.GENERAL_BUCKET;
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
@@ -68,12 +68,10 @@ export async function takeScreenshot({
     // Set a timeout for the page load
     page.setDefaultTimeout(30000);
 
-    await page.goto(
-      `https://${version.machineId}-${projectId}.preview.weldr.app`,
-      {
-        waitUntil: "networkidle",
-      },
-    );
+    // FIXME: I don't know how the url will look like yet, so I'm using the version id for now
+    await page.goto(`https://${version.id}.preview.weldr.app`, {
+      waitUntil: "networkidle",
+    });
 
     // Wait for any lazy-loaded content
     await page.waitForLoadState("networkidle");

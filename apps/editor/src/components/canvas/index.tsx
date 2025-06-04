@@ -42,13 +42,11 @@ export function Canvas({
   initialEdges,
   project,
   integrationTemplates,
-  messages,
 }: {
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
   project: RouterOutputs["projects"]["byId"];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
-  messages: RouterOutputs["projects"]["byId"]["chat"]["messages"];
 }) {
   const { showCanvasEdges, toggleCanvasEdges } = useUIStore();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
@@ -154,10 +152,9 @@ export function Canvas({
 
       <Panel position="bottom-center" className="max-h-[400px] w-[500px]">
         <Chat
-          chatId={project.chat.id}
-          initialMessages={messages}
           project={project}
           integrationTemplates={integrationTemplates}
+          version={project.activeVersion}
         />
       </Panel>
 

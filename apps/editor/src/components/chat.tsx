@@ -1,5 +1,5 @@
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
-import { useProjectData, useUIStore } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
@@ -23,20 +23,13 @@ import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
 
 interface ChatProps {
-  initialMessages: ChatMessage[];
-  chatId: string;
+  version: RouterOutputs["projects"]["byId"]["activeVersion"];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   project: RouterOutputs["projects"]["byId"];
 }
 
-export function Chat({
-  initialMessages,
-  chatId,
-  integrationTemplates,
-  project,
-}: ChatProps) {
+export function Chat({ version, integrationTemplates, project }: ChatProps) {
   const { setProjectView } = useUIStore();
-  const { setMachineId } = useProjectData();
 
   const { data: session } = authClient.useSession();
   const generationTriggered = useRef(false);
@@ -44,7 +37,9 @@ export function Chat({
     useScrollToBottom<HTMLDivElement>();
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const currentVersionProgress = project.currentVersion?.progress;
+  // Get the latest generation's progress (assuming the last generation is current)
+  const currentVersionProgress =
+    project.versions[project.versions.length - 1]?.progress;
 
   const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(
     currentVersionProgress === "initiated"
@@ -58,61 +53,69 @@ export function Chat({
 
   const [isChatVisible, setIsChatVisible] = useState(false);
 
-  const editorReferences = project.declarations?.reduce(
-    (acc, declaration) => {
-      switch (declaration.specs?.data.type) {
-        case "function": {
-          acc.push({
-            type: "reference",
-            id: declaration.id,
-            name: declaration.name,
-            referenceType: "function",
-          });
-          break;
-        }
-        case "model": {
-          acc.push({
-            type: "reference",
-            id: declaration.id,
-            name: declaration.name,
-            referenceType: "model",
-          });
-          break;
-        }
-        case "component": {
-          const subtype = declaration.specs?.data.definition.subtype;
-          if (subtype === "page" || subtype === "reusable") {
+  // Get declarations from the latest generation
+  const latestVersion = project.versions[project.versions.length - 1];
+  const editorReferences =
+    latestVersion?.declarations?.reduce(
+      (
+        acc: z.infer<typeof rawContentReferenceElementSchema>[],
+        declaration,
+      ) => {
+        switch (declaration.declaration.specs?.data.type) {
+          case "function": {
             acc.push({
               type: "reference",
-              id: declaration.id,
-              name: declaration.name,
-              referenceType: "component",
-              subtype,
+              id: declaration.declaration.id,
+              name: declaration.declaration.name,
+              referenceType: "function",
             });
+            break;
           }
-          break;
+          case "model": {
+            acc.push({
+              type: "reference",
+              id: declaration.declaration.id,
+              name: declaration.declaration.name,
+              referenceType: "model",
+            });
+            break;
+          }
+          case "component": {
+            const subtype =
+              declaration.declaration.specs?.data.definition.subtype;
+            if (subtype === "page" || subtype === "reusable") {
+              acc.push({
+                type: "reference",
+                id: declaration.declaration.id,
+                name: declaration.declaration.name,
+                referenceType: "component",
+                subtype,
+              });
+            }
+            break;
+          }
+          case "endpoint": {
+            acc.push({
+              type: "reference",
+              id: declaration.declaration.id,
+              name: declaration.declaration.name,
+              referenceType: "endpoint",
+            });
+            break;
+          }
+          default: {
+            break;
+          }
         }
-        case "endpoint": {
-          acc.push({
-            type: "reference",
-            id: declaration.id,
-            name: declaration.name,
-            referenceType: "endpoint",
-            subtype: declaration.specs?.data.definition.subtype,
-          });
-          break;
-        }
-        default: {
-          break;
-        }
-      }
 
-      return acc;
-    },
-    [] as z.infer<typeof rawContentReferenceElementSchema>[],
+        return acc;
+      },
+      [] as z.infer<typeof rawContentReferenceElementSchema>[],
+    ) ?? [];
+
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    version.chat.messages,
   );
-
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [userMessageRawContent, setUserMessageRawContent] =
     useState<UserMessageRawContent>([]);
   const [lastMessage, setLastMessage] = useState<ChatMessage | undefined>(
@@ -129,7 +132,7 @@ export function Chat({
     trpc.chats.addMessage.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries(
-          trpc.chats.messages.queryFilter({ chatId }),
+          trpc.chats.messages.queryFilter({ chatId: version.chat.id }),
         );
       },
     }),
@@ -141,7 +144,7 @@ export function Chat({
     const result = await fetch("/api/generate", {
       method: "POST",
       body: JSON.stringify({
-        chatId,
+        chatId: version.chat.id,
         projectId: project.id,
       }),
     });
@@ -199,7 +202,7 @@ export function Chat({
         case "coder": {
           if (chunk.status === "initiated") {
             setPendingMessage("building");
-            setMachineId(null);
+            // setMachineId(null);
           }
 
           if (chunk.status === "coded") {
@@ -209,7 +212,7 @@ export function Chat({
           if (chunk.status === "deployed") {
             setPendingMessage("enriching");
             setProjectView("preview");
-            setMachineId(chunk.machineId);
+            // setMachineId(chunk.machineId);
           }
 
           if (chunk.status === "succeeded") {
@@ -312,7 +315,7 @@ export function Chat({
 
     setPendingMessage(null);
   }, [
-    chatId,
+    version.chat.id,
     getNodes,
     setNodes,
     updateNodeData,
@@ -320,7 +323,7 @@ export function Chat({
     queryClient,
     trpc,
     setProjectView,
-    setMachineId,
+    // setMachineId,
     pendingMessage,
   ]);
 
@@ -374,7 +377,7 @@ export function Chat({
       createdAt: new Date(),
       rawContent: userMessageRawContent,
       attachments,
-      chatId,
+      chatId: version.chat.id,
       userId: session?.user.id,
       user: session?.user
         ? {
@@ -392,7 +395,7 @@ export function Chat({
     ]);
 
     await addMessage.mutateAsync({
-      chatId,
+      chatId: version.chat.id,
       messages: [
         {
           id: newMessageUser.id,
@@ -503,7 +506,7 @@ export function Chat({
 
       <MultimodalInput
         type="editor"
-        chatId={chatId}
+        chatId={version.chat.id}
         message={userMessageRawContent}
         setMessage={setUserMessageRawContent}
         attachments={attachments}

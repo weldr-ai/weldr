@@ -15,7 +15,7 @@ export const declarationTypeSchema = z.enum([
 
 export const declarationSpecsV1Schema = z
   .discriminatedUnion("type", [
-    endpointSchema.describe("A REST/RPC API endpoint"),
+    endpointSchema.describe("An API endpoint defined using OpenAPI"),
     functionSchema,
     modelSchema.describe("A database model"),
     componentSchema.describe("A UI component like a page, layout, etc."),

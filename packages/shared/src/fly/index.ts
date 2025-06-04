@@ -5,14 +5,53 @@ const flyApiHostname = process.env.FLY_API_HOSTNAME;
 const flyApiKey = process.env.FLY_API_KEY;
 const flyOrgSlug = process.env.FLY_ORG_SLUG;
 
+type FlyAppType = "production" | "development";
+
+export const flyConfigPresets = {
+  development: {
+    image: "registry.fly.io/weldr-images:dev-node",
+    guest: {
+      cpu_kind: "shared",
+      cpus: 1,
+      memory_mb: 1024,
+    },
+  } satisfies paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"],
+  preview: {
+    image: "registry.fly.io/weldr-images:preview-runner",
+    guest: {
+      cpu_kind: "shared",
+      cpus: 1,
+      memory_mb: 1024,
+    },
+    services: [
+      {
+        protocol: "tcp",
+        internal_port: 3000,
+        autostop: "stop",
+        autostart: true,
+        ports: [
+          {
+            port: 443,
+            handlers: ["tls", "http"],
+          },
+          {
+            port: 80,
+            handlers: ["http"],
+          },
+        ],
+      },
+    ],
+  } satisfies paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"],
+};
+
 export const Fly = {
   app: {
     create: async ({
-      appName,
-      networkName,
+      type,
+      projectId,
     }: {
-      appName: string;
-      networkName: string;
+      type: FlyAppType;
+      projectId: string;
     }) => {
       try {
         const app = await ofetch<{ id: string }>(`${flyApiHostname}/v1/apps`, {
@@ -22,8 +61,8 @@ export const Fly = {
             Authorization: `Bearer ${flyApiKey}`,
           },
           body: {
-            app_name: appName,
-            network: networkName,
+            app_name: `app-${type}-${projectId}`,
+            network: `net-${type}-${projectId}`,
             org_slug: flyOrgSlug,
           },
         });
@@ -58,7 +97,7 @@ export const Fly = {
             `,
             variables: {
               input: {
-                appId: appName,
+                appId: `app-${type}-${projectId}`,
                 type: "private_v6",
               },
             },
@@ -76,18 +115,20 @@ export const Fly = {
       } catch (error) {
         console.error("Error creating app:", {
           error: error instanceof Error ? error.message : String(error),
-          appName,
-          networkName,
+          projectId,
+          type,
         });
         throw error;
       }
     },
     delete: async ({
-      appName,
+      type,
+      projectId,
     }: {
-      appName: string;
+      type: FlyAppType;
+      projectId: string;
     }) => {
-      await ofetch(`${flyApiHostname}/v1/apps/${appName}`, {
+      await ofetch(`${flyApiHostname}/v1/apps/app-${type}-${projectId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${flyApiKey}`,
@@ -97,14 +138,35 @@ export const Fly = {
   },
   machine: {
     get: async ({
+      type,
       projectId,
       machineId,
     }: {
+      type: "production" | "development";
       projectId: string;
       machineId: string;
     }) => {
       const response = await ofetch<components["schemas"]["Machine"]>(
-        `${flyApiHostname}/v1/apps/preview-app-${projectId}/machines/${machineId}`,
+        `${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines/${machineId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${flyApiKey}`,
+          },
+        },
+      );
+
+      return response;
+    },
+    list: async ({
+      type,
+      projectId,
+    }: {
+      type: FlyAppType;
+      projectId: string;
+    }) => {
+      const response = await ofetch<components["schemas"]["Machine"][]>(
+        `${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines`,
         {
           method: "GET",
           headers: {
@@ -116,14 +178,14 @@ export const Fly = {
       return response;
     },
     create: async ({
+      type,
       projectId,
-      versionId,
       config,
       region = "us",
     }: {
+      type: FlyAppType;
       projectId: string;
-      versionId: string;
-      config?: paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"];
+      config: paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"];
       region?: "eu" | "us";
     }) => {
       const euRegions = ["ams", "arn", "mad", "lhr", "cdg", "fra"];
@@ -152,42 +214,15 @@ export const Fly = {
         try {
           const response = await ofetch<
             paths["/apps/{app_name}/machines"]["post"]["responses"][200]["content"]["application/json"]
-          >(`${flyApiHostname}/v1/apps/preview-app-${projectId}/machines`, {
+          >(`${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${flyApiKey}`,
             },
             body: {
-              name: `preview-machine-${projectId}-${versionId}-${Date.now()}`,
               region,
-              config: {
-                image: "registry.fly.io/weldr-runtime:base",
-                guest: {
-                  cpu_kind: "shared",
-                  cpus: 1,
-                  memory_mb: 1024,
-                },
-                services: [
-                  {
-                    protocol: "tcp",
-                    internal_port: 3000,
-                    autostop: "stop",
-                    autostart: true,
-                    ports: [
-                      {
-                        port: 443,
-                        handlers: ["tls", "http"],
-                      },
-                      {
-                        port: 80,
-                        handlers: ["http"],
-                      },
-                    ],
-                  },
-                ],
-                ...config,
-              },
+              config,
             } satisfies components["schemas"]["CreateMachineRequest"],
             retry: 3,
             retryDelay: 500,
@@ -216,6 +251,7 @@ export const Fly = {
           }
 
           await Fly.machine.waitFor({
+            type,
             projectId,
             machineId: response.id,
             state: "started",
@@ -226,7 +262,7 @@ export const Fly = {
           console.error("Error creating machine:", {
             error: error instanceof Error ? error.message : String(error),
             projectId,
-            versionId,
+            type,
           });
           lastError = error instanceof Error ? error : new Error(String(error));
         }
@@ -236,49 +272,18 @@ export const Fly = {
         lastError || new Error("Failed to create machine: All regions failed")
       );
     },
-    update: async ({
-      projectId,
-      machineId,
-      files,
-    }: {
-      projectId: string;
-      machineId: string;
-      files?: { guest_path: string; raw_value: string }[];
-    }) => {
-      try {
-        await ofetch(
-          `${flyApiHostname}/v1/apps/preview-app-${projectId}/machines/${machineId}`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${flyApiKey}`,
-            },
-            body: {
-              config: {
-                files,
-              },
-            } satisfies components["schemas"]["UpdateMachineRequest"],
-          },
-        );
-      } catch (error) {
-        console.error("Error updating machine:", {
-          error: error instanceof Error ? error.message : String(error),
-          projectId,
-          machineId,
-        });
-        throw error;
-      }
-    },
     destroy: async ({
+      type,
       projectId,
       machineId,
     }: {
+      type: FlyAppType;
       projectId: string;
       machineId: string;
     }) => {
       try {
         await ofetch(
-          `${flyApiHostname}/v1/apps/preview-app-${projectId}/machines/${machineId}?force=true`,
+          `${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines/${machineId}?force=true`,
           {
             method: "DELETE",
             headers: {
@@ -316,16 +321,18 @@ export const Fly = {
       }
     },
     waitFor: async ({
+      type,
       projectId,
       machineId,
       state = "started",
     }: {
+      type: FlyAppType;
       projectId: string;
       machineId: string;
       state?: "started" | "stopped" | "suspended" | "destroyed";
     }) => {
       await ofetch(
-        `${flyApiHostname}/v1/apps/preview-app-${projectId}/machines/${machineId}/wait?state=${state}`,
+        `${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines/${machineId}/wait?state=${state}`,
         {
           method: "GET",
           headers: {
@@ -355,14 +362,16 @@ export const Fly = {
       );
     },
     start: async ({
+      type,
       projectId,
       machineId,
     }: {
+      type: FlyAppType;
       projectId: string;
       machineId: string;
     }) => {
       await ofetch(
-        `${flyApiHostname}/v1/apps/preview-app-${projectId}/machines/${machineId}/start`,
+        `${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines/${machineId}/start`,
         {
           method: "POST",
           headers: {
@@ -372,11 +381,13 @@ export const Fly = {
       );
     },
     executeCommand: async ({
+      type,
       projectId,
       machineId,
       command,
       timeout = 120,
     }: {
+      type: FlyAppType;
       projectId: string;
       machineId: string;
       command: string;
@@ -384,6 +395,7 @@ export const Fly = {
     }) => {
       // Start the machine if it's not already running
       await Fly.machine.start({
+        type,
         projectId,
         machineId,
       });
@@ -391,7 +403,7 @@ export const Fly = {
       const response = await ofetch<
         paths["/apps/{app_name}/machines/{machine_id}/exec"]["post"]["responses"][200]["content"]["application/json"]
       >(
-        `${flyApiHostname}/v1/apps/preview-app-${projectId}/machines/${machineId}/exec`,
+        `${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines/${machineId}/exec`,
         {
           method: "POST",
           headers: {
@@ -407,13 +419,125 @@ export const Fly = {
 
       return response;
     },
+    getDevNodeId: async ({
+      projectId,
+    }: {
+      projectId: string;
+    }) => {
+      const [machine] = await Fly.machine.list({
+        type: "development",
+        projectId,
+      });
+
+      if (!machine || !machine.id) {
+        throw new Error("No development machine found");
+      }
+
+      if (machine.state !== "started") {
+        await Fly.machine.start({
+          type: "development",
+          projectId,
+          machineId: machine.id,
+        });
+      }
+
+      return machine.id;
+    },
+    readFile: async ({
+      projectId,
+      machineId,
+      path,
+    }: {
+      projectId: string;
+      machineId: string;
+      path: string;
+    }): Promise<{ error: string | null; content: string | null }> => {
+      const response = await Fly.machine.executeCommand({
+        type: "development",
+        projectId,
+        machineId,
+        command: `cat ${path}`,
+      });
+
+      if (response.exit_code !== 0 || response.stderr || !response.stdout) {
+        return {
+          error: `Failed to read file ${path} - ${response.stderr}`,
+          content: null,
+        };
+      }
+
+      return {
+        error: null,
+        content: response.stdout as string,
+      };
+    },
+    writeFile: async ({
+      projectId,
+      machineId,
+      path,
+      content,
+    }: {
+      projectId: string;
+      machineId: string;
+      path: string;
+      content: string;
+    }): Promise<{ error: string | null; success: boolean }> => {
+      const response = await Fly.machine.executeCommand({
+        type: "development",
+        projectId,
+        machineId,
+        command: `echo "${Buffer.from(content).toString("base64")}" | base64 -d > ${path}`,
+      });
+
+      if (response.exit_code !== 0 || response.stderr) {
+        return {
+          error: `Failed to write file ${path} - ${response.stderr}`,
+          success: false,
+        };
+      }
+
+      return {
+        error: null,
+        success: true,
+      };
+    },
+    deleteFile: async ({
+      projectId,
+      machineId,
+      path,
+    }: {
+      projectId: string;
+      machineId: string;
+      path: string;
+    }): Promise<{ error: string | null; success: boolean }> => {
+      const response = await Fly.machine.executeCommand({
+        type: "development",
+        projectId,
+        machineId,
+        command: `rm ${path}`,
+      });
+
+      if (response.exit_code !== 0 || response.stderr) {
+        return {
+          error: `Failed to delete file ${path} - ${response.stderr}`,
+          success: false,
+        };
+      }
+
+      return {
+        error: null,
+        success: true,
+      };
+    },
   },
   secrets: {
     create: async ({
+      type,
       projectId,
       key,
       value,
     }: {
+      type: FlyAppType;
       projectId: string;
       key: string;
       value: string;
@@ -443,7 +567,7 @@ export const Fly = {
           `,
           variables: {
             input: {
-              appId: `preview-app-${projectId}`,
+              appId: `app-${type}-${projectId}`,
               secrets: [
                 {
                   key,
@@ -457,9 +581,11 @@ export const Fly = {
       });
     },
     destroy: async ({
+      type,
       projectId,
       secretKeys,
     }: {
+      type: FlyAppType;
       projectId: string;
       secretKeys: string[];
     }) => {
@@ -488,7 +614,7 @@ export const Fly = {
           `,
           variables: {
             input: {
-              appId: `preview-app-${projectId}`,
+              appId: `app-${type}-${projectId}`,
               keys: secretKeys,
             },
           },

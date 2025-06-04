@@ -1,6 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
-import { and, eq } from "@weldr/db";
+import { and, eq, isNotNull } from "@weldr/db";
 import {
   attachments,
   chatMessages,
@@ -8,7 +8,7 @@ import {
   projects,
   versions,
 } from "@weldr/db/schema";
-import { Fly } from "@weldr/shared/fly";
+import { Fly, flyConfigPresets } from "@weldr/shared/fly";
 import { S3 } from "@weldr/shared/s3";
 import type { ChatMessage } from "@weldr/shared/types";
 import {
@@ -26,15 +26,43 @@ export const projectsRouter = {
         return await ctx.db.transaction(async (tx) => {
           const projectId = createId();
 
-          const app = await Fly.app.create({
-            appName: `preview-app-${projectId}`,
-            networkName: `preview-net-${projectId}`,
+          // Create development app
+          const developmentApp = await Fly.app.create({
+            type: "development",
+            projectId,
           });
 
-          if (!app?.id) {
+          if (!developmentApp?.id) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create app",
+              message: "Failed to create project",
+            });
+          }
+
+          // Create production app
+          const productionApp = await Fly.app.create({
+            type: "production",
+            projectId,
+          });
+
+          if (!productionApp?.id) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create project",
+            });
+          }
+
+          // Create development node
+          const developmentNode = await Fly.machine.create({
+            type: "development",
+            projectId,
+            config: flyConfigPresets.development,
+          });
+
+          if (!developmentNode) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create project",
             });
           }
 
@@ -88,7 +116,7 @@ export const projectsRouter = {
           if (!message) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create message",
+              message: "Failed to create project",
             });
           }
 
@@ -104,6 +132,12 @@ export const projectsRouter = {
               })),
             );
           }
+
+          await tx.insert(versions).values({
+            projectId: projectId,
+            userId: ctx.session.user.id,
+            chatId: chat.id,
+          });
 
           return project;
         });
@@ -124,19 +158,31 @@ export const projectsRouter = {
         where: eq(projects.userId, ctx.session.user.id),
         with: {
           versions: {
-            where: eq(versions.isCurrent, true),
+            where: isNotNull(versions.activatedAt),
           },
         },
       });
 
       return Promise.all(
-        result.map(async (project) => ({
-          ...project,
-          thumbnail: await S3.getSignedUrl(
-            "weldr-controlled-general",
-            `thumbnails/${project.id}/${project.versions[0]?.id}.jpeg`,
-          ),
-        })),
+        result.map(async (project) => {
+          const activeVersion = project.versions[0];
+
+          if (!activeVersion) {
+            return {
+              ...project,
+              thumbnail: null,
+            };
+          }
+
+          return {
+            ...project,
+            thumbnail: await S3.getSignedUrl(
+              // biome-ignore lint/style/noNonNullAssertion: <explanation>
+              process.env.GENERAL_BUCKET!,
+              `thumbnails/${project.id}/${activeVersion.id}.jpeg`,
+            ),
+          };
+        }),
       );
     } catch (error) {
       console.error(error);
@@ -179,27 +225,38 @@ export const projectsRouter = {
               },
             },
             versions: {
-              where: eq(versions.progress, "succeeded"),
-            },
-            chats: {
               limit: 1,
-              orderBy: (chats, { asc }) => [asc(chats.createdAt)],
+              where: isNotNull(versions.activatedAt),
               with: {
-                messages: {
-                  columns: {
-                    content: false,
-                  },
-                  orderBy: (messages, { asc }) => [asc(messages.createdAt)],
+                chat: {
                   with: {
-                    attachments: {
+                    messages: {
                       columns: {
-                        name: true,
-                        key: true,
+                        content: false,
+                      },
+                      orderBy: (messages, { asc }) => [asc(messages.createdAt)],
+                      with: {
+                        attachments: {
+                          columns: {
+                            name: true,
+                            key: true,
+                          },
+                        },
+                        user: {
+                          columns: {
+                            name: true,
+                          },
+                        },
                       },
                     },
-                    user: {
-                      columns: {
-                        name: true,
+                  },
+                },
+                declarations: {
+                  with: {
+                    declaration: {
+                      with: {
+                        canvasNode: true,
+                        dependencies: true,
                       },
                     },
                   },
@@ -209,12 +266,6 @@ export const projectsRouter = {
             environmentVariables: {
               columns: {
                 secretId: false,
-              },
-            },
-            mainDatabase: {
-              columns: {
-                id: true,
-                name: true,
               },
             },
           },
@@ -227,57 +278,33 @@ export const projectsRouter = {
           });
         }
 
-        const [chat] = project.chats;
-
-        if (!chat) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Chat not found",
-          });
-        }
-
-        const messagesWithAttachments = await Promise.all(
-          chat.messages.map(async (message) => {
-            const attachmentsWithUrls = await Promise.all(
-              message.attachments.map(async (attachment) => ({
-                name: attachment.name,
-                url: await S3.getSignedUrl("weldr-general", attachment.key),
-              })),
-            );
-            return {
-              ...message,
-              attachments: attachmentsWithUrls,
-            };
-          }),
-        );
-
-        const getCurrentVersionDeclarations = async (
-          currentVersionId: string,
+        const getMessagesWithAttachments = async (
+          version: (typeof project.versions)[number],
         ) => {
-          const currentVersion = await ctx.db.query.versions.findFirst({
-            where: eq(versions.id, currentVersionId),
-            with: {
-              declarations: {
-                with: {
-                  declaration: {
-                    with: {
-                      canvasNode: true,
-                      dependencies: true,
-                    },
-                  },
-                },
-              },
-            },
-          });
+          return await Promise.all(
+            version.chat.messages.map(async (message) => {
+              const attachmentsWithUrls = await Promise.all(
+                message.attachments.map(async (attachment) => ({
+                  name: attachment.name,
+                  url: await S3.getSignedUrl(
+                    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+                    process.env.ATTACHMENTS_BUCKET!,
+                    attachment.key,
+                  ),
+                })),
+              );
+              return {
+                ...message,
+                attachments: attachmentsWithUrls,
+              };
+            }),
+          );
+        };
 
-          if (!currentVersion) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Current version not found",
-            });
-          }
-
-          const declarations = currentVersion.declarations
+        const getVersionDeclarations = (
+          version: (typeof project.versions)[number],
+        ) => {
+          const declarations = version.declarations
             .filter(
               (declaration) =>
                 declaration.declaration.canvasNode &&
@@ -305,33 +332,20 @@ export const projectsRouter = {
           }));
         };
 
-        const currentVersion = await ctx.db.query.versions.findFirst({
-          where: and(
-            eq(versions.projectId, project.id),
-            eq(versions.isCurrent, true),
-          ),
-          with: {
-            theme: true,
-          },
-        });
+        const activeVersion = project.versions[0];
 
-        const versionsWithThumbnails = await Promise.all(
-          project.versions.map(async (version) => ({
-            ...version,
-            thumbnail: await S3.getSignedUrl(
-              "weldr-controlled-general",
-              `thumbnails/${project.id}/${version.id}.jpeg`,
-            ),
-          })),
-        );
+        if (!activeVersion) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Active version not found",
+          });
+        }
 
-        const currentVersionDeclarations = currentVersion
-          ? await getCurrentVersionDeclarations(currentVersion.id)
-          : [];
+        const activeVersionDeclarations = getVersionDeclarations(activeVersion);
 
-        const uniqueEdges = Array.from(
+        const edges = Array.from(
           new Map(
-            currentVersionDeclarations
+            activeVersionDeclarations
               .flatMap((decl) => decl.edges)
               .map((edge) => [
                 `${edge.dependencyId}-${edge.dependentId}`,
@@ -348,18 +362,17 @@ export const projectsRouter = {
 
         const result = {
           ...project,
-          chat: {
-            ...chat,
-            messages: messagesWithAttachments as ChatMessage[],
+          activeVersion: {
+            ...activeVersion,
+            edges,
+            chat: {
+              ...activeVersion.chat,
+              messages: (await getMessagesWithAttachments(
+                activeVersion,
+              )) as ChatMessage[],
+            },
           },
-          currentVersion,
-          versions: versionsWithThumbnails,
-          declarations: currentVersionDeclarations.map(
-            (decl) => decl.declaration,
-          ),
-          edges: uniqueEdges,
         };
-
         return result;
       } catch (error) {
         console.error(error);
@@ -426,7 +439,13 @@ export const projectsRouter = {
         }
 
         await Fly.app.delete({
-          appName: `preview-app-${project.id}`,
+          type: "development",
+          projectId: project.id,
+        });
+
+        await Fly.app.delete({
+          type: "production",
+          projectId: project.id,
         });
 
         await ctx.db

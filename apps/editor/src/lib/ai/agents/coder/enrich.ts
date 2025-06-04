@@ -12,7 +12,7 @@ import {
   versionFiles,
   versions,
 } from "@weldr/db/schema";
-import { S3 } from "@weldr/shared/s3";
+import { Fly } from "@weldr/shared/fly";
 import type { z } from "zod";
 import {
   type declarationSpecsWithDependenciesSchema,
@@ -32,14 +32,7 @@ const getDeclarationName = (
       return enrichedDeclaration.name;
     }
     case "endpoint": {
-      switch (enrichedDeclaration.definition.subtype) {
-        case "rest": {
-          return `${enrichedDeclaration.definition.method.toUpperCase()}:${enrichedDeclaration.definition.path}`;
-        }
-        case "rpc": {
-          return `${enrichedDeclaration.definition.name}`;
-        }
-      }
+      return `${enrichedDeclaration.definition.method.toUpperCase()}:${enrichedDeclaration.definition.path}`;
     }
   }
 };
@@ -48,11 +41,13 @@ export async function enrich({
   streamWriter,
   versionId,
   projectId,
+  machineId,
   userId,
 }: {
   streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
   versionId: string;
   projectId: string;
+  machineId: string;
   userId: string;
 }) {
   await db.transaction(async (tx) => {
@@ -94,13 +89,6 @@ export async function enrich({
       `[enrich:${projectId}] Found ${changedFiles.map((file) => file.path)} changed files`,
     );
 
-    const previousVersion = await tx.query.versions.findFirst({
-      where: and(
-        eq(versions.projectId, projectId),
-        eq(versions.number, version.number - 1),
-      ),
-    });
-
     const insertDeclarations: (typeof declarations.$inferSelect)[] = [];
     const allEnrichedDeclarations: z.infer<
       typeof declarationSpecsWithDependenciesSchema
@@ -108,33 +96,15 @@ export async function enrich({
 
     for (const file of changedFiles) {
       console.log(`[enrich:${projectId}] Processing file ${file.path}`);
-      let previousContent: string | undefined;
-
-      // If the previous version exists, read the previous content from the S3 version
-      if (previousVersion) {
-        const fileS3Version = await tx.query.versionFiles.findFirst({
-          where: and(
-            eq(versionFiles.versionId, previousVersion.id),
-            eq(versionFiles.fileId, file.id),
-          ),
-        });
-
-        if (fileS3Version) {
-          previousContent = await S3.readFile({
-            projectId,
-            path: file.path,
-            versionId: fileS3Version.s3VersionId,
-          });
-        }
-      }
 
       // Read the current content from the S3 file
-      const content = await S3.readFile({
+      const content = await Fly.machine.readFile({
         projectId,
+        machineId,
         path: file.path,
       });
 
-      if (!content) {
+      if (content.error || !content.content) {
         throw new Error("File not found");
       }
 
@@ -146,8 +116,7 @@ export async function enrich({
       } = await enricher({
         projectId: version.projectId,
         path: file.path,
-        currentContent: content,
-        previousContent,
+        currentContent: content.content,
       });
 
       allEnrichedDeclarations.push(...enrichedDeclarations);
@@ -363,18 +332,11 @@ export async function enrich({
                 ) {
                   const endpointSpecs = declaration.declaration.specs.data as {
                     definition: {
-                      subtype: "rpc" | "rest";
                       name?: string;
                       method?: string;
                       path?: string;
                     };
                   };
-                  if (endpointSpecs.definition.subtype === "rpc") {
-                    // For RPC, match by name
-                    return dependency.dependsOn.includes(
-                      endpointSpecs.definition.name ?? "",
-                    );
-                  }
                   // For REST, match by HTTP method and path
                   const restName = `${endpointSpecs.definition.method?.toUpperCase()}:${endpointSpecs.definition.path}`;
                   return dependency.dependsOn.includes(restName);

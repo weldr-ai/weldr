@@ -1,8 +1,6 @@
 "use client";
 
-import { useTRPC } from "@/lib/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { isValidHex, isValidHsl } from "@weldr/shared/color-utils";
 import type { Theme, ThemeData, ThemeMode } from "@weldr/shared/types";
@@ -44,8 +42,6 @@ import {
   SelectValue,
 } from "@weldr/ui/components/select";
 import { Slider } from "@weldr/ui/components/slider";
-import { toast } from "@weldr/ui/hooks/use-toast";
-import fastDeepEqual from "fast-deep-equal";
 import {
   LoaderIcon,
   MoonIcon,
@@ -71,44 +67,46 @@ export function ThemeCustomization({
     "cards" | "dashboard" | "mail" | "music" | "tasks"
   >("cards");
 
+  // FIXME: This need to be updated, once I figure out how to handle themes
+
   const form = useForm<Theme>({
     mode: "onChange",
     resolver: zodResolver(themeSchema),
     defaultValues: {
-      ...project.currentVersion?.theme?.data,
+      // ...project.currentVersion?.theme?.data,
     },
   });
 
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
+  // const trpc = useTRPC();
+  // const queryClient = useQueryClient();
 
-  const createTheme = useMutation(
-    trpc.themes.create.mutationOptions({
-      onSuccess: async () => {
-        toast({
-          title: "Theme created",
-          description: "Your theme has been created",
-        });
-        await queryClient.invalidateQueries(
-          trpc.projects.byId.queryFilter({ id: project.id }),
-        );
-        form.reset();
-      },
-      onError: () => {
-        toast({
-          variant: "destructive",
-          title: "Error creating theme",
-          description: "Please try again",
-        });
-      },
-    }),
-  );
+  // const createTheme = useMutation(
+  //   trpc.themes.create.mutationOptions({
+  //     onSuccess: async () => {
+  //       toast({
+  //         title: "Theme created",
+  //         description: "Your theme has been created",
+  //       });
+  //       await queryClient.invalidateQueries(
+  //         trpc.projects.byId.queryFilter({ id: project.id }),
+  //       );
+  //       form.reset();
+  //     },
+  //     onError: () => {
+  //       toast({
+  //         variant: "destructive",
+  //         title: "Error creating theme",
+  //         description: "Please try again",
+  //       });
+  //     },
+  //   }),
+  // );
 
   const handleSaveTheme = async (data: z.infer<typeof themeSchema>) => {
-    await createTheme.mutateAsync({
-      projectId: project.id,
-      data,
-    });
+    // await createTheme.mutateAsync({
+    //   projectId: project.id,
+    //   data,
+    // });
   };
 
   return (
@@ -136,21 +134,24 @@ export function ThemeCustomization({
                 variant="outline"
                 size="sm"
                 type="submit"
-                disabled={
-                  createTheme.isPending ||
-                  form.formState.isSubmitting ||
-                  !form.formState.isValid ||
-                  fastDeepEqual(
-                    form.getValues(),
-                    project.currentVersion?.theme?.data,
+                // disabled={
+                //   createTheme.isPending ||
+                //   form.formState.isSubmitting ||
+                //   !form.formState.isValid ||
+                //   fastDeepEqual(
+                //     form.getValues(),
+                //     project.currentVersion?.theme?.data,
+                //   )
+                // }
+              >
+                {
+                  // createTheme.isPending ||
+                  form.formState.isSubmitting ? (
+                    <LoaderIcon className="mr-1 size-3.5 animate-spin" />
+                  ) : (
+                    <SaveIcon className="mr-1 size-3.5" />
                   )
                 }
-              >
-                {createTheme.isPending || form.formState.isSubmitting ? (
-                  <LoaderIcon className="mr-1 size-3.5 animate-spin" />
-                ) : (
-                  <SaveIcon className="mr-1 size-3.5" />
-                )}
                 Save Theme
               </Button>
               <div className="flex items-center justify-between">
