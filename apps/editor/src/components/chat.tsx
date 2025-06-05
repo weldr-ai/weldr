@@ -3,7 +3,7 @@ import { useUIStore } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
 import { createId } from "@paralleldrive/cuid2";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import type {
@@ -51,7 +51,9 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
           : null,
   );
 
-  const [isChatVisible, setIsChatVisible] = useState(false);
+  const [isChatVisible, setIsChatVisible] = useState(
+    project.activeVersion.progress === "succeeded",
+  );
 
   // Get declarations from the latest generation
   const latestVersion = project.versions[project.versions.length - 1];
@@ -114,7 +116,7 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
     ) ?? [];
 
   const [messages, setMessages] = useState<ChatMessage[]>(
-    version.chat.messages,
+    version.progress === "succeeded" ? [] : version.chat.messages,
   );
   const [userMessageRawContent, setUserMessageRawContent] =
     useState<UserMessageRawContent>([]);
@@ -128,24 +130,20 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const addMessage = useMutation(
-    trpc.chats.addMessage.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(
-          trpc.chats.messages.queryFilter({ chatId: version.chat.id }),
-        );
-      },
-    }),
-  );
-
   const triggerGeneration = useCallback(async () => {
     setPendingMessage(pendingMessage ?? "thinking");
 
     const result = await fetch("/api/generate", {
       method: "POST",
       body: JSON.stringify({
-        chatId: version.chat.id,
         projectId: project.id,
+        message:
+          userMessageRawContent.length > 0
+            ? {
+                content: userMessageRawContent,
+                attachments,
+              }
+            : undefined,
       }),
     });
 
@@ -315,7 +313,7 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
 
     setPendingMessage(null);
   }, [
-    version.chat.id,
+    userMessageRawContent,
     getNodes,
     setNodes,
     updateNodeData,
@@ -325,6 +323,7 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
     setProjectView,
     // setMachineId,
     pendingMessage,
+    attachments,
   ]);
 
   useEffect(() => {
@@ -393,18 +392,6 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
       ...prevMessages,
       newMessageUser as ChatMessage,
     ]);
-
-    await addMessage.mutateAsync({
-      chatId: version.chat.id,
-      messages: [
-        {
-          id: newMessageUser.id,
-          role: "user",
-          rawContent: userMessageRawContent,
-          attachmentIds: attachments.map((attachment) => attachment.id),
-        },
-      ],
-    });
 
     await triggerGeneration();
   };

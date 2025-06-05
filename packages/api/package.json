@@ -17,6 +17,7 @@
     "@weldr/db": "workspace:*",
     "@weldr/shared": "workspace:*",
     "playwright": "^1.52.0",
+    "redis": "^5.5.5",
     "superjson": "^2.2.2",
     "zod": "^3.24.3"
   },

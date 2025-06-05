@@ -12,14 +12,42 @@ import { convertMessagesToCoreMessages } from "@/lib/ai/utils";
 import type { TStreamableValue } from "@/types";
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull } from "@weldr/db";
-import { chats, integrations, projects, versions } from "@weldr/db/schema";
-import { Fly } from "@weldr/shared/fly";
+import {
+  chats,
+  declarationPackages,
+  declarations,
+  dependencies,
+  files,
+  integrations,
+  packages,
+  presets,
+  projects,
+  themes,
+  versionDeclarations,
+  versionFiles,
+  versionPackages,
+  versions,
+} from "@weldr/db/schema";
+import type { UserMessageRawContent } from "@weldr/shared/types";
+import type { attachmentSchema } from "@weldr/shared/validators/chats";
 import { streamText } from "ai";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import redis from "redis";
+import type { z } from "zod";
+
+const redisClient = redis.createClient({
+  url: process.env.REDIS_URL,
+});
 
 export async function POST(request: Request) {
-  const { chatId, projectId } = await request.json();
+  const { projectId, message } = (await request.json()) as {
+    projectId: string;
+    message?: {
+      content: UserMessageRawContent;
+      attachments: z.infer<typeof attachmentSchema>[];
+    };
+  };
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session) {
@@ -37,9 +65,11 @@ export async function POST(request: Request) {
     throw new Error("Project not found");
   }
 
-  const devNodeId = await Fly.machine.getDevNodeId({
-    projectId,
-  });
+  const devNodeId = await redisClient.get(`${projectId}:dev-node-id`);
+
+  if (!devNodeId) {
+    throw new Error("Development node not found");
+  }
 
   const integrationsList = await db.query.integrations.findMany({
     where: eq(integrations.projectId, projectId),
@@ -51,8 +81,40 @@ export async function POST(request: Request) {
   const allIntegrationTemplates =
     await db.query.integrationTemplates.findMany();
 
+  let activeVersion = await db.query.versions.findFirst({
+    where: and(
+      eq(versions.projectId, projectId),
+      isNotNull(versions.activatedAt),
+    ),
+  });
+
+  if (!activeVersion || activeVersion.progress === "succeeded") {
+    activeVersion = await initializeVersion({
+      projectId,
+      userId: session.user.id,
+    });
+  }
+
+  if (message) {
+    await insertMessages({
+      input: {
+        chatId: activeVersion.chatId,
+        userId: session.user.id,
+        messages: [
+          {
+            role: "user",
+            rawContent: message.content,
+            attachmentIds: message.attachments.map(
+              (attachment) => attachment.id,
+            ),
+          },
+        ],
+      },
+    });
+  }
+
   const chat = await db.query.chats.findFirst({
-    where: eq(chats.id, chatId),
+    where: eq(chats.id, activeVersion.chatId),
     with: {
       messages: {
         orderBy: (chatMessages, { asc }) => [asc(chatMessages.createdAt)],
@@ -79,28 +141,16 @@ export async function POST(request: Request) {
 
   const streamWriter = stream.writable.getWriter();
 
-  const activeVersion = await db.query.versions.findFirst({
-    where: and(
-      eq(versions.projectId, projectId),
-      isNotNull(versions.activatedAt),
-    ),
-  });
-
   (async () => {
     try {
       if (activeVersion && activeVersion.progress !== "succeeded") {
         await executeCoderTool({
-          chatId,
           userId: session.user.id,
           projectId,
           machineId: devNodeId,
           promptMessages,
           streamWriter,
-          toolArgs: {
-            name: project.name,
-            requirements: activeVersion.description as string,
-            commitMessage: activeVersion.message as string,
-          },
+          version: activeVersion,
         });
       } else {
         const result = streamText({
@@ -134,7 +184,7 @@ Description: ${integrationTemplate.description}`,
               console.log(`[api/generate:onFinish:${projectId}] ${text}`);
               await insertMessages({
                 input: {
-                  chatId,
+                  chatId: activeVersion.chatId,
                   userId: session.user.id,
                   messages: [
                     {
@@ -154,7 +204,7 @@ Description: ${integrationTemplate.description}`,
               if (text) {
                 await insertMessages({
                   input: {
-                    chatId,
+                    chatId: activeVersion.chatId,
                     userId: session.user.id,
                     messages: [
                       {
@@ -173,7 +223,7 @@ Description: ${integrationTemplate.description}`,
                       `[api/generate:onFinish:${projectId}] Executing coder tool`,
                     );
                     await executeCoderTool({
-                      chatId,
+                      version: activeVersion,
                       userId: session.user.id,
                       projectId,
                       machineId: devNodeId,
@@ -188,7 +238,7 @@ Description: ${integrationTemplate.description}`,
                       `[api/generate:onFinish:${projectId}] Executing setup integration tool`,
                     );
                     await executeSetupIntegrationTool({
-                      chatId,
+                      chatId: activeVersion.chatId,
                       userId: session.user.id,
                       toolArgs: toolCall.args,
                       streamWriter,
@@ -232,3 +282,354 @@ Description: ${integrationTemplate.description}`,
     },
   });
 }
+
+const initializeVersion = async ({
+  projectId,
+  userId,
+}: {
+  projectId: string;
+  userId: string;
+}): Promise<typeof versions.$inferSelect> => {
+  return db.transaction(async (tx) => {
+    const activeVersion = await tx.query.versions.findFirst({
+      where: and(
+        eq(versions.projectId, projectId),
+        eq(versions.userId, userId),
+        isNotNull(versions.activatedAt),
+      ),
+      columns: {
+        id: true,
+        number: true,
+        message: true,
+        description: true,
+        chatId: true,
+      },
+      with: {
+        files: true,
+        packages: true,
+        declarations: true,
+      },
+    });
+
+    if (activeVersion) {
+      console.log(`[coderTool:${projectId}] Getting latest version number...`);
+      const latestNumber = await tx.query.versions.findFirst({
+        where: eq(versions.projectId, projectId),
+        orderBy: (versions, { desc }) => [desc(versions.number)],
+        columns: {
+          number: true,
+        },
+      });
+
+      if (!latestNumber) {
+        throw new Error("Latest version not found");
+      }
+
+      console.log(`[coderTool:${projectId}] Updating previous versions...`);
+      await tx
+        .update(versions)
+        .set({
+          activatedAt: null,
+        })
+        .where(
+          and(eq(versions.projectId, projectId), eq(versions.userId, userId)),
+        );
+
+      console.log(`[coderTool:${projectId}] Creating version chat...`);
+      const [versionChat] = await tx
+        .insert(chats)
+        .values({
+          projectId,
+          userId,
+        })
+        .returning();
+
+      if (!versionChat) {
+        throw new Error("Version chat not found");
+      }
+
+      console.log(`[coderTool:${projectId}] Creating new version...`);
+      const [version] = await tx
+        .insert(versions)
+        .values({
+          projectId,
+          userId,
+          number: latestNumber.number + 1,
+          parentVersionId: activeVersion.id,
+          chatId: versionChat.id,
+        })
+        .returning();
+
+      if (!version) {
+        throw new Error("Version not found");
+      }
+
+      console.log(
+        `[coderTool:${projectId}] Copying ${activeVersion.files.length} files...`,
+      );
+      await tx.insert(versionFiles).values(
+        activeVersion.files.map((file) => ({
+          versionId: version.id,
+          fileId: file.fileId,
+        })),
+      );
+
+      console.log(
+        `[coderTool:${projectId}] Copying ${activeVersion.packages.length} packages...`,
+      );
+      await tx.insert(versionPackages).values(
+        activeVersion.packages.map((pkg) => ({
+          versionId: version.id,
+          packageId: pkg.packageId,
+        })),
+      );
+
+      console.log(
+        `[coderTool:${projectId}] Copying ${activeVersion.declarations.length} declarations...`,
+      );
+      await tx.insert(versionDeclarations).values(
+        activeVersion.declarations.map((declaration) => ({
+          versionId: version.id,
+          declarationId: declaration.declarationId,
+        })),
+      );
+
+      return version;
+    }
+
+    console.log(`[coderTool:${projectId}] Getting preset`);
+    const preset = await tx.query.presets.findFirst({
+      where: eq(presets.type, "base"),
+      with: {
+        declarations: true,
+        files: true,
+        packages: true,
+      },
+    });
+
+    if (!preset) {
+      throw new Error("Preset not found");
+    }
+
+    const presetThemes = await tx.query.presetThemes.findMany();
+
+    const randomNumber = Math.floor(Math.random() * presetThemes.length);
+
+    const presetTheme = presetThemes[randomNumber];
+
+    if (!presetTheme) {
+      throw new Error("Theme not found");
+    }
+
+    const [projectTheme] = await tx
+      .insert(themes)
+      .values({
+        data: presetTheme.data,
+        userId,
+        projectId,
+      })
+      .returning();
+
+    if (!projectTheme) {
+      throw new Error("Project theme not found");
+    }
+
+    console.log(`[coderTool:${projectId}] Creating version chat...`);
+    const [versionChat] = await tx
+      .insert(chats)
+      .values({
+        projectId,
+        userId,
+      })
+      .returning();
+
+    if (!versionChat) {
+      throw new Error("Version chat not found");
+    }
+
+    console.log(`[coderTool:${projectId}] Creating version`);
+    const [version] = await tx
+      .insert(versions)
+      .values({
+        projectId,
+        userId,
+        number: 1,
+        message: null,
+        description: null,
+        chatId: versionChat.id,
+      })
+      .returning();
+
+    if (!version) {
+      throw new Error("Version not found");
+    }
+
+    console.log(`[coderTool:${projectId}] Inserting files`);
+    const insertedFiles = await tx
+      .insert(files)
+      .values(
+        preset.files.map((file) => ({
+          userId,
+          projectId,
+          path: file.path,
+        })),
+      )
+      .onConflictDoNothing()
+      .returning();
+
+    console.log(`[coderTool:${projectId}] Inserting version files`);
+    await tx.insert(versionFiles).values(
+      insertedFiles.map((file) => {
+        console.log(
+          `${projectId}${file.path.startsWith("/") ? file.path : `/${file.path}`}`,
+        );
+
+        return {
+          versionId: version.id,
+          fileId: file.id,
+        };
+      }),
+    );
+
+    console.log(`[coderTool:${projectId}] Inserting packages`);
+    const insertedPkgs = await tx
+      .insert(packages)
+      .values(
+        preset.packages.map((pkg) => ({
+          name: pkg.name,
+          type: pkg.type,
+          version: pkg.version,
+          projectId,
+        })),
+      )
+      .returning();
+
+    await tx.insert(versionPackages).values(
+      insertedPkgs.map((pkg) => ({
+        versionId: version.id,
+        packageId: pkg.id,
+      })),
+    );
+
+    console.log(`[coderTool:${projectId}] Inserting declarations`);
+    const insertedDeclarations = await tx
+      .insert(declarations)
+      .values(
+        preset.declarations.map((declaration) => {
+          const fileId = insertedFiles.find(
+            (file) => file.path === declaration.file,
+          )?.id;
+          if (!fileId) {
+            throw new Error(
+              `File ID not found for declaration ${declaration.name}`,
+            );
+          }
+          return {
+            name: declaration.name,
+            type: declaration.type,
+            specs: declaration.specs,
+            userId,
+            projectId,
+            fileId,
+          } as typeof declarations.$inferInsert;
+        }),
+      )
+      .returning();
+
+    await tx.insert(versionDeclarations).values(
+      insertedDeclarations.map((declaration) => ({
+        versionId: version.id,
+        declarationId: declaration.id,
+      })),
+    );
+
+    console.log(
+      `[coderTool:${projectId}] Inserting declaration packages and dependencies`,
+    );
+    for (const presetDeclaration of preset.declarations) {
+      const presetDependencies = presetDeclaration.dependencies;
+      if (!presetDependencies) continue;
+
+      const insertedDeclaration = insertedDeclarations.find(
+        (d) =>
+          d.name === presetDeclaration.name &&
+          d.fileId ===
+            insertedFiles.find((file) => file.path === presetDeclaration.file)
+              ?.id,
+      );
+
+      if (!insertedDeclaration) throw new Error("New declaration not found");
+
+      if (
+        presetDependencies.external &&
+        presetDependencies.external.length > 0
+      ) {
+        await tx.insert(declarationPackages).values(
+          presetDependencies.external.map((pkg) => {
+            const insertedPkg = insertedPkgs.find((p) => p.name === pkg.name);
+            console.log("insertedPkg", pkg.name);
+            if (!insertedPkg) throw new Error("Package not found");
+            return {
+              declarationId: insertedDeclaration.id,
+              packageId: insertedPkg.id,
+              importPath: pkg.importPath,
+              declarations: pkg.dependsOn,
+            } as typeof declarationPackages.$inferInsert;
+          }),
+        );
+      }
+
+      console.log(
+        "presetDependencies.internal for",
+        insertedDeclaration.name,
+        presetDependencies.internal,
+      );
+
+      const internalDependencies = presetDependencies.internal?.flatMap(
+        (dependency) =>
+          dependency.dependsOn.map((dep) => {
+            const fileId = insertedFiles.find((file) => {
+              const normalizedFilePath = file.path.replace(/\.[^/.]+$/, "");
+              const normalizedImportPath = dependency.importPath?.startsWith(
+                "/",
+              )
+                ? dependency.importPath?.replace(/\.[^/.]+$/, "")
+                : `/${dependency.importPath?.replace(/\.[^/.]+$/, "")}`;
+
+              return (
+                normalizedFilePath === normalizedImportPath ||
+                normalizedFilePath === `${normalizedImportPath}/index`
+              );
+            })?.id;
+            if (!fileId) throw new Error("File ID not found");
+            return { fileId, name: dep };
+          }),
+      );
+
+      console.log(
+        "internalDependencies for",
+        insertedDeclaration.name,
+        internalDependencies,
+      );
+
+      if (internalDependencies && internalDependencies.length > 0) {
+        await tx.insert(dependencies).values(
+          internalDependencies.map((dep) => {
+            const dependency = insertedDeclarations.find(
+              (d) => d.fileId === dep.fileId && d.name === dep.name,
+            );
+            if (!dependency) throw new Error("Dependency not found");
+            return {
+              dependentId: insertedDeclaration.id,
+              dependentType: insertedDeclaration.type,
+              dependencyId: dependency.id,
+              dependencyType: dependency.type,
+            };
+          }),
+        );
+      }
+    }
+
+    return version;
+  });
+};
