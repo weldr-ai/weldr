@@ -15,8 +15,13 @@ import {
   insertProjectSchema,
   updateProjectSchema,
 } from "@weldr/shared/validators/projects";
+import redis from "redis";
 import { z } from "zod";
 import { protectedProcedure } from "../init";
+
+const redisClient = redis.createClient({
+  url: process.env.REDIS_URL,
+});
 
 export const projectsRouter = {
   create: protectedProcedure
@@ -53,18 +58,20 @@ export const projectsRouter = {
           }
 
           // Create development node
-          const developmentNode = await Fly.machine.create({
+          const developmentNodeId = await Fly.machine.create({
             type: "development",
             projectId,
             config: flyConfigPresets.development,
           });
 
-          if (!developmentNode) {
+          if (!developmentNodeId) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to create project",
             });
           }
+
+          await redisClient.set(`${projectId}:dev-node-id`, developmentNodeId);
 
           const [project] = await tx
             .insert(projects)

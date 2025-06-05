@@ -126,7 +126,6 @@ export const addMessageItemSchema = z.discriminatedUnion("role", [
     createdAt: z.date().optional(),
   }),
   z.object({
-    id: z.string().cuid2(),
     role: z.literal("user"),
     rawContent: userMessageRawContentSchema,
     attachmentIds: z.string().array().optional(),

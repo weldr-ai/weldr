@@ -32,7 +32,6 @@ export async function coder({
   streamWriter,
   userId,
   projectId,
-  chatId,
   version,
   machineId,
   promptMessages,
@@ -40,7 +39,6 @@ export async function coder({
   streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
   userId: string;
   projectId: string;
-  chatId: string;
   version: typeof versions.$inferSelect;
   machineId: string;
   promptMessages: CoreMessage[];
@@ -530,7 +528,7 @@ ${fileContext}`,
     await insertMessages({
       tx,
       input: {
-        chatId,
+        chatId: version.chatId,
         userId,
         messages: [
           {
