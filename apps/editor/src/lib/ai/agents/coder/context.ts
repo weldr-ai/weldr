@@ -151,7 +151,7 @@ export function getFilesContext({
         }
 
         case "model": {
-          let info = `  • Model: ${specs.data.name}
+          let info = `  • DB Model: ${specs.data.name}
   Columns: ${specs.data.columns.map((col) => `${col.name} (${col.type})`).join(", ")}
   ${specs.data.relationships ? `Relations: ${specs.data.relationships.length} defined` : ""}`;
 

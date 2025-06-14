@@ -1,4 +1,4 @@
-import { createId } from "@paralleldrive/cuid2";
+import { nanoid } from "@weldr/shared/nanoid";
 import { relations } from "drizzle-orm";
 import {
   index,
@@ -19,10 +19,7 @@ export const canvasNodeTypes = pgEnum("canvas_node_types", [
 export const canvasNodes = pgTable(
   "canvas_nodes",
   {
-    id: text("id")
-      .$defaultFn(() => createId())
-      .primaryKey()
-      .notNull(),
+    id: text("id").primaryKey().$defaultFn(nanoid),
     type: canvasNodeTypes("type").notNull(),
     position: jsonb("position").$type<{ x: number; y: number }>().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

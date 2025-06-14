@@ -94,7 +94,7 @@ export function ProjectView({
 
   return (
     <div className="flex size-full flex-col">
-      <div className="flex h-10 items-center justify-between border-b px-1">
+      <div className="flex h-10 items-center justify-between border-b p-1.5">
         <MainDropdownMenu />
         <span className="font-medium text-sm">
           {project.name ?? "Untitled Project"}

@@ -426,7 +426,7 @@ function PureMultimodalInput({
             />
           )}
 
-          <div className="absolute right-[3px] bottom-[3px] flex w-fit flex-row justify-end gap-1">
+          <div className="absolute right-[4px] bottom-[4px] flex w-fit flex-row justify-end gap-1">
             <AttachmentsButton fileInputRef={fileInputRef} />
             <SendButton
               message={message}
@@ -462,7 +462,7 @@ function PureAttachmentsButton({
   return (
     <Button
       variant="outline"
-      className="size-[30px] rounded-lg"
+      className="size-7 rounded-lg"
       onClick={(event) => {
         event.preventDefault();
 
@@ -493,7 +493,7 @@ function PureSendButton({ submitForm, message, uploadQueue }: SendButtonProps) {
 
   return (
     <Button
-      className="size-[30px] rounded-lg"
+      className="size-7 rounded-lg"
       onClick={(event) => {
         event.preventDefault();
 

@@ -17,11 +17,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@weldr/ui/components/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@weldr/ui/components/tooltip";
 import { SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EnvSection } from "./env-section";
@@ -67,34 +62,11 @@ export function ProjectSettings({
 
   return (
     <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-8 dark:bg-muted"
-            >
-              <SettingsIcon className="size-4" />
-            </Button>
-          </DialogTrigger>
-        </TooltipTrigger>
-        <TooltipContent
-          side="top"
-          className="rounded-sm border bg-muted text-foreground"
-        >
-          Project Settings
-          <kbd className="pointer-events-none ml-2 inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
-            <span className="text-xs">
-              {typeof window !== "undefined" &&
-              window.navigator?.userAgent.toLowerCase().includes("mac")
-                ? "⌘"
-                : "Ctrl"}
-            </span>
-            ,
-          </kbd>
-        </TooltipContent>
-      </Tooltip>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="icon" className="size-8 dark:bg-muted">
+          <SettingsIcon className="size-4" />
+        </Button>
+      </DialogTrigger>
       <DialogContent className="flex min-h-[calc(100vh-50px)] min-w-[calc(100vw-50px)] flex-col">
         <DialogHeader>
           <DialogTitle>Project Settings</DialogTitle>

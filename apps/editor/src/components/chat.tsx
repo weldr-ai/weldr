@@ -1,11 +1,10 @@
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
-import { useUIStore } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
-import { createId } from "@paralleldrive/cuid2";
 import { useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
+import { nanoid } from "@weldr/shared/nanoid";
 import type {
   AssistantMessageRawContent,
   Attachment,
@@ -14,9 +13,14 @@ import type {
 } from "@weldr/shared/types";
 import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
 import { Button } from "@weldr/ui/components/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
 import { useReactFlow } from "@xyflow/react";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, GitGraphIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 import { Messages } from "./messages";
@@ -29,30 +33,16 @@ interface ChatProps {
 }
 
 export function Chat({ version, integrationTemplates, project }: ChatProps) {
-  const { setProjectView } = useUIStore();
-
   const { data: session } = authClient.useSession();
   const generationTriggered = useRef(false);
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Get the latest generation's progress (assuming the last generation is current)
-  const currentVersionProgress =
-    project.versions[project.versions.length - 1]?.progress;
-
-  const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(
-    currentVersionProgress === "initiated"
-      ? "building"
-      : currentVersionProgress === "coded"
-        ? "deploying"
-        : currentVersionProgress === "deployed"
-          ? "enriching"
-          : null,
-  );
+  const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(null);
 
   const [isChatVisible, setIsChatVisible] = useState(
-    project.activeVersion.progress === "succeeded",
+    project.activeVersion.progress !== "succeeded",
   );
 
   // Get declarations from the latest generation
@@ -167,7 +157,7 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
               return [
                 ...prevMessages,
                 {
-                  id: createId(),
+                  id: nanoid(),
                   role: "assistant",
                   createdAt: new Date(),
                   rawContent: [
@@ -200,7 +190,6 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
         case "coder": {
           if (chunk.status === "initiated") {
             setPendingMessage("building");
-            // setMachineId(null);
           }
 
           if (chunk.status === "coded") {
@@ -209,8 +198,6 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
 
           if (chunk.status === "deployed") {
             setPendingMessage("enriching");
-            setProjectView("preview");
-            // setMachineId(chunk.machineId);
           }
 
           if (chunk.status === "succeeded") {
@@ -320,8 +307,6 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
     project,
     queryClient,
     trpc,
-    setProjectView,
-    // setMachineId,
     pendingMessage,
     attachments,
   ]);
@@ -337,23 +322,7 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
   }, [lastMessage, triggerGeneration]);
 
   useEffect(() => {
-    if (
-      (currentVersionProgress === "initiated" ||
-        currentVersionProgress === "deployed" ||
-        currentVersionProgress === "coded" ||
-        currentVersionProgress === "enriched") &&
-      !generationTriggered.current
-    ) {
-      generationTriggered.current = true;
-      void triggerGeneration().finally(() => {
-        generationTriggered.current = false;
-      });
-    }
-  }, [currentVersionProgress, triggerGeneration]);
-
-  useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-
     if (
       lastMessage?.role === "tool" &&
       lastMessage.rawContent.toolName === "setupIntegrationTool" &&
@@ -371,7 +340,7 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
     }
 
     const newMessageUser = {
-      id: createId(),
+      id: nanoid(),
       role: "user",
       createdAt: new Date(),
       rawContent: userMessageRawContent,
@@ -457,23 +426,53 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
           },
         )}
       >
-        <div className="flex items-center justify-between border-b p-1">
+        <div className="flex items-center justify-between border-b p-1 pl-1.5">
           <span className="font-medium text-xs">Chat Title</span>
           <div className="flex items-center gap-0.5">
-            <Button
-              variant="outline"
-              className="size-5 rounded-sm shadow-none"
-              size="icon"
-            >
-              <ChevronLeftIcon className="size-3" />
-            </Button>
-            <Button
-              variant="outline"
-              className="size-5 rounded-sm shadow-none"
-              size="icon"
-            >
-              <ChevronRightIcon className="size-3" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="size-5 rounded-sm shadow-none"
+                  size="icon"
+                >
+                  <ChevronLeftIcon className="size-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
+                <p>View Previous Versions</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="size-5 rounded-sm shadow-none"
+                  size="icon"
+                >
+                  <ChevronRightIcon className="size-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
+                <p>View Previous Versions</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="size-5 rounded-sm shadow-none"
+                  size="icon"
+                >
+                  <GitGraphIcon className="size-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
+                <p>View Version History</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
         <div

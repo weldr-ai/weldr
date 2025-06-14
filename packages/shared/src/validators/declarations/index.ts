@@ -17,7 +17,7 @@ export const declarationSpecsV1Schema = z
   .discriminatedUnion("type", [
     endpointSchema.describe("An API endpoint defined using OpenAPI"),
     functionSchema,
-    modelSchema.describe("A database model"),
+    modelSchema.describe("A database table"),
     componentSchema.describe("A UI component like a page, layout, etc."),
     otherSchema.describe(
       "Any other declaration like a type, validation schema, etc.",

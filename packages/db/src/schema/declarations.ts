@@ -1,4 +1,4 @@
-import { createId } from "@paralleldrive/cuid2";
+import { nanoid } from "@weldr/shared/nanoid";
 import type { DeclarationSpecs } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
@@ -24,10 +24,7 @@ import { versionDeclarations } from "./versions";
 export const declarations = pgTable(
   "declarations",
   {
-    id: text("id")
-      .$default(() => createId())
-      .primaryKey()
-      .notNull(),
+    id: text("id").primaryKey().$defaultFn(nanoid),
     type: declarationTypes("type").notNull(),
     name: text("name").notNull(),
     specs: jsonb().$type<DeclarationSpecs>(),

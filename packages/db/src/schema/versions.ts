@@ -1,4 +1,4 @@
-import { createId } from "@paralleldrive/cuid2";
+import { nanoid } from "@weldr/shared/nanoid";
 import { relations, sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
@@ -31,10 +31,7 @@ export const versionProgress = pgEnum("version_progress", [
 export const versions = pgTable(
   "versions",
   {
-    id: text("id")
-      .$default(() => createId())
-      .primaryKey()
-      .notNull(),
+    id: text("id").primaryKey().$defaultFn(nanoid),
     number: integer("number").notNull().default(1),
     message: text("message"),
     description: text("description"),

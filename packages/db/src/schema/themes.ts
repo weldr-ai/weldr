@@ -1,4 +1,4 @@
-import { createId } from "@paralleldrive/cuid2";
+import { nanoid } from "@weldr/shared/nanoid";
 import type { Theme } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
@@ -6,9 +6,7 @@ import { users } from "./auth";
 import { projects } from "./projects";
 
 export const themes = pgTable("themes", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => createId()),
+  id: text("id").primaryKey().$defaultFn(nanoid),
   data: jsonb("data").$type<Theme>().notNull(),
   projectId: text("project_id")
     .references(() => projects.id, { onDelete: "cascade" })

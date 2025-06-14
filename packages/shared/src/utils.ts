@@ -9,6 +9,8 @@ export function toKebabCase(str: string): string {
       )
       // Handle snake_case
       .replace(/_/g, "-")
+      // Handle spaces
+      .replace(/\s+/g, "-")
       .toLowerCase()
   );
 }

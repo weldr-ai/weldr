@@ -1,7 +1,5 @@
-import { and, db, eq, inArray } from "@weldr/db";
-
 import type { CanvasNodeData, TStreamableValue } from "@/types";
-import { createId } from "@paralleldrive/cuid2";
+import { and, db, eq, inArray } from "@weldr/db";
 import {
   canvasNodes,
   declarationPackages,
@@ -13,6 +11,7 @@ import {
   versions,
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
+import { nanoid } from "@weldr/shared/nanoid";
 import type { z } from "zod";
 import {
   type declarationSpecsWithDependenciesSchema,
@@ -97,15 +96,20 @@ export async function enrich({
     for (const file of changedFiles) {
       console.log(`[enrich:${projectId}] Processing file ${file.path}`);
 
-      // Read the current content from the S3 file
-      const content = await Fly.machine.readFile({
+      const { stdout, stderr, exitCode, success } = await Fly.machine.command({
+        type: "command",
         projectId,
         machineId,
-        path: file.path,
+        command: `cat /workspace/${file.path}`,
       });
 
-      if (content.error || !content.content) {
-        throw new Error("File not found");
+      if (exitCode !== 0 || !stdout || !success) {
+        console.error(
+          `[enrich:${projectId}] Failed to read file: ${file.path} ${stderr || "Unknown error"}`,
+        );
+        throw new Error(
+          `[enrich:${projectId}] Failed to read file: ${file.path} ${stderr || ""}`,
+        );
       }
 
       console.log(`[enrich:${projectId}] Processing file ${file.path}`);
@@ -116,7 +120,7 @@ export async function enrich({
       } = await enricher({
         projectId: version.projectId,
         path: file.path,
-        currentContent: content.content,
+        currentContent: stdout,
       });
 
       allEnrichedDeclarations.push(...enrichedDeclarations);
@@ -159,7 +163,7 @@ export async function enrich({
 
       // Insert the new enriched declarations
       for (const enrichedDeclaration of enrichedDeclarations) {
-        const declarationId = createId();
+        const declarationId = nanoid();
 
         const declarationName = getDeclarationName(enrichedDeclaration);
 

@@ -1,4 +1,3 @@
-import { createId } from "@paralleldrive/cuid2";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { and, eq, isNotNull } from "@weldr/db";
 import {
@@ -8,70 +7,85 @@ import {
   projects,
   versions,
 } from "@weldr/db/schema";
-import { Fly, flyConfigPresets } from "@weldr/shared/fly";
-import { S3 } from "@weldr/shared/s3";
+import { Fly } from "@weldr/shared/fly";
+import { nanoid } from "@weldr/shared/nanoid";
+import { redisClient } from "@weldr/shared/redis";
+import { Tigris } from "@weldr/shared/tigris";
 import type { ChatMessage } from "@weldr/shared/types";
 import {
   insertProjectSchema,
   updateProjectSchema,
 } from "@weldr/shared/validators/projects";
-import redis from "redis";
 import { z } from "zod";
 import { protectedProcedure } from "../init";
-
-const redisClient = redis.createClient({
-  url: process.env.REDIS_URL,
-});
 
 export const projectsRouter = {
   create: protectedProcedure
     .input(insertProjectSchema)
     .mutation(async ({ ctx, input }) => {
+      let devMachineId: string | null = null;
+      let developmentAppId: string | null = null;
+      let productionAppId: string | null = null;
+      let bucketCredentials: {
+        accessKeyId: string;
+        secretAccessKey: string;
+      } | null = null;
+      const projectId = nanoid();
+
       try {
         return await ctx.db.transaction(async (tx) => {
-          const projectId = createId();
-
           // Create development app
-          const developmentApp = await Fly.app.create({
+          developmentAppId = await Fly.app.create({
             type: "development",
             projectId,
           });
 
-          if (!developmentApp?.id) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create project",
-            });
-          }
-
-          // Create production app
-          const productionApp = await Fly.app.create({
+          productionAppId = await Fly.app.create({
             type: "production",
             projectId,
           });
 
-          if (!productionApp?.id) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create project",
-            });
-          }
+          // Create Tigris bucket
+          bucketCredentials = await Tigris.bucket.create(projectId);
+
+          // Create secrets
+          await Promise.all([
+            Fly.secret.create({
+              type: "development",
+              projectId,
+              key: "AWS_ACCESS_KEY_ID",
+              value: bucketCredentials.accessKeyId,
+            }),
+            Fly.secret.create({
+              type: "development",
+              projectId,
+              key: "AWS_SECRET_ACCESS_KEY",
+              value: bucketCredentials.secretAccessKey,
+            }),
+            Fly.secret.create({
+              type: "development",
+              projectId,
+              key: "FLY_API_TOKEN",
+              // biome-ignore lint/style/noNonNullAssertion: <explanation>
+              value: process.env.FLY_API_TOKEN!,
+            }),
+          ]);
 
           // Create development node
-          const developmentNodeId = await Fly.machine.create({
+          devMachineId = await Fly.machine.create({
             type: "development",
             projectId,
-            config: flyConfigPresets.development,
+            config: Fly.machine.presets.development,
           });
 
-          if (!developmentNodeId) {
+          if (!devMachineId) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Failed to create project",
             });
           }
 
-          await redisClient.set(`${projectId}:dev-node-id`, developmentNodeId);
+          await redisClient.set(`${projectId}:dev-machine-id`, devMachineId);
 
           const [project] = await tx
             .insert(projects)
@@ -153,6 +167,43 @@ export const projectsRouter = {
         if (error instanceof TRPCError) {
           throw error;
         }
+
+        const cleanupPromises = [];
+
+        if (devMachineId) {
+          cleanupPromises.push(
+            Fly.machine.destroy({
+              type: "development",
+              projectId,
+              machineId: devMachineId,
+            }),
+          );
+        }
+
+        if (developmentAppId) {
+          cleanupPromises.push(
+            Fly.app.destroy({
+              type: "development",
+              projectId,
+            }),
+          );
+        }
+
+        if (productionAppId) {
+          cleanupPromises.push(
+            Fly.app.destroy({
+              type: "production",
+              projectId,
+            }),
+          );
+        }
+
+        if (bucketCredentials) {
+          cleanupPromises.push(Tigris.bucket.delete(projectId));
+        }
+
+        await Promise.all(cleanupPromises);
+
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create project",
@@ -183,7 +234,7 @@ export const projectsRouter = {
 
           return {
             ...project,
-            thumbnail: await S3.getSignedUrl(
+            thumbnail: await Tigris.object.getSignedUrl(
               // biome-ignore lint/style/noNonNullAssertion: <explanation>
               process.env.GENERAL_BUCKET!,
               `thumbnails/${project.id}/${activeVersion.id}.jpeg`,
@@ -293,9 +344,9 @@ export const projectsRouter = {
               const attachmentsWithUrls = await Promise.all(
                 message.attachments.map(async (attachment) => ({
                   name: attachment.name,
-                  url: await S3.getSignedUrl(
+                  url: await Tigris.object.getSignedUrl(
                     // biome-ignore lint/style/noNonNullAssertion: <explanation>
-                    process.env.ATTACHMENTS_BUCKET!,
+                    process.env.GENERAL_BUCKET!,
                     attachment.key,
                   ),
                 })),
@@ -445,15 +496,17 @@ export const projectsRouter = {
           });
         }
 
-        await Fly.app.delete({
-          type: "development",
-          projectId: project.id,
-        });
-
-        await Fly.app.delete({
-          type: "production",
-          projectId: project.id,
-        });
+        await Promise.all([
+          Fly.app.destroy({
+            type: "development",
+            projectId: project.id,
+          }),
+          Fly.app.destroy({
+            type: "production",
+            projectId: project.id,
+          }),
+          Tigris.bucket.delete(project.id),
+        ]);
 
         await ctx.db
           .delete(projects)

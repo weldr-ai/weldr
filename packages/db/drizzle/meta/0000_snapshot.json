@@ -1,5 +1,5 @@
 {
-  "id": "7a05af7a-c940-4e7a-8ac4-7ab00118ed69",
+  "id": "ede325c1-5baa-46f7-a45f-cab43d57241d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2118,6 +2118,12 @@
         "config": {
           "name": "config",
           "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "initiated_at": {
+          "name": "initiated_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },

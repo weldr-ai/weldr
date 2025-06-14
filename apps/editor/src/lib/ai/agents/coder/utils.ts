@@ -1,39 +1,121 @@
-export async function getPackageVersion(
-  packageName: string,
-): Promise<string | null> {
-  try {
-    const url = `https://registry.npmjs.org/${packageName}`;
-    const response = await fetch(url);
+import type { User } from "@weldr/auth";
+import { Fly } from "@weldr/shared/fly";
+import { nanoid } from "@weldr/shared/nanoid";
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
+export const writeFile = async ({
+  projectId,
+  machineId,
+  filePath,
+  content,
+}: {
+  projectId: string;
+  machineId: string;
+  filePath: string;
+  content: string;
+}) => {
+  const { exitCode, success, stderr } = await Fly.machine.command({
+    type: "command",
+    projectId,
+    machineId,
+    command: `mkdir -p "$(dirname "${filePath}")" && echo "${Buffer.from(content).toString("base64")}" | base64 -d > /workspace/${filePath.startsWith("/") ? filePath.slice(1) : filePath}`,
+  });
 
-    const data = await response.json();
-    const installedVersion = data["dist-tags"].latest;
-    return installedVersion;
-  } catch (error) {
-    console.error(`Error fetching version for ${packageName}:`, error);
-    return null;
+  if ((exitCode === 0 || !stderr) && success) {
+    return {
+      success: true,
+    };
   }
-}
 
-export const getBasePackageJson = (name: string) => ({
-  name,
-  private: true,
-  scripts: {
-    dev: "vinxi dev",
-    start: "vinxi start",
-    build: "vinxi build",
-    "check-types": "tsc --noEmit",
-    check: "biome check",
-    "check:fix": "biome check . --write",
-    format: "biome format",
-    lint: "biome lint",
-    "db:check": "drizzle-kit check",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
-    "db:pull": "drizzle-kit pull",
-  },
-});
+  return {
+    success: false,
+    error:
+      stderr ||
+      `Failed to write /workspace/${filePath.startsWith("/") ? filePath.slice(1) : filePath}`,
+  };
+};
+
+export const formatAndLint = async ({
+  projectId,
+  machineId,
+}: {
+  projectId: string;
+  machineId: string;
+}) => {
+  const { exitCode, success, stderr } = await Fly.machine.command({
+    type: "command",
+    projectId,
+    machineId,
+    command: "cd /workspace && bun run check:fix",
+  });
+
+  if ((exitCode === 0 || !stderr) && success) {
+    return {
+      success: true,
+    };
+  }
+
+  return {
+    success: false,
+    error: stderr || "Failed to format and lint",
+  };
+};
+
+export const checkTypes = async ({
+  projectId,
+  machineId,
+}: {
+  projectId: string;
+  machineId: string;
+}) => {
+  const { exitCode, success, stderr } = await Fly.machine.command({
+    type: "job",
+    projectId,
+    machineId,
+    jobId: `check-types-${projectId}-${nanoid()}`,
+    command: "cd /workspace && bun run check-types",
+  });
+
+  if ((exitCode === 0 || !stderr) && success) {
+    return {
+      success: true,
+    };
+  }
+
+  return {
+    success: false,
+    error: stderr || "Failed to check types",
+  };
+};
+
+export const commit = async ({
+  projectId,
+  machineId,
+  user,
+  commitMessage,
+}: {
+  projectId: string;
+  machineId: string;
+  user: User;
+  commitMessage: string;
+}) => {
+  const name = user.name || "Weldr";
+  const email = `${user.id}@noreply.weldr.ai`;
+
+  const { exitCode, success, stderr } = await Fly.machine.command({
+    type: "command",
+    projectId,
+    machineId,
+    command: `bash /opt/weldr/scripts/commit.sh '${commitMessage}' '${name}' '${email}'`,
+  });
+
+  if ((exitCode === 0 || !stderr) && success) {
+    return {
+      success: true,
+    };
+  }
+
+  return {
+    success: false,
+    error: stderr || "Failed to commit",
+  };
+};

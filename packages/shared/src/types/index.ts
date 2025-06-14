@@ -33,7 +33,10 @@ import type { modelSchema } from "../validators/declarations/model";
 import type { environmentVariableSchema } from "../validators/environment-variables";
 import type { dataTypeSchema } from "../validators/json-schema";
 import type { openApiEndpointSpecSchema } from "../validators/openapi";
-import type { projectSchema } from "../validators/projects";
+import type {
+  projectConfigSchema,
+  projectSchema,
+} from "../validators/projects";
 import type { themeDataSchema, themeSchema } from "../validators/themes";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
@@ -42,16 +45,7 @@ export type OpenApiEndpointSpec = z.infer<typeof openApiEndpointSpecSchema>;
 export type JsonSchema = JSONSchema7;
 
 export type Project = z.infer<typeof projectSchema>;
-
-type AppOptions = { web: true; server: true } | { web: false; server: true };
-
-type DatabaseOptions =
-  | { database: true; env: { DATABASE_URL: string } }
-  | { database: false };
-
-type AuthOptions = { auth: true; database: true } | { auth: false };
-
-export type ProjectConfig = AppOptions & DatabaseOptions & AuthOptions;
+export type ProjectConfig = z.infer<typeof projectConfigSchema>;
 
 export type UserMessageRawContent = z.infer<typeof userMessageRawContentSchema>;
 export type AssistantMessageRawContent = z.infer<

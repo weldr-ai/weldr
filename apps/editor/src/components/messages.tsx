@@ -1,6 +1,6 @@
 import type { TPendingMessage } from "@/types";
-import { createId } from "@paralleldrive/cuid2";
 import type { RouterOutputs } from "@weldr/api";
+import { nanoid } from "@weldr/shared/nanoid";
 import type { ChatMessage } from "@weldr/shared/types";
 import equal from "fast-deep-equal";
 import { memo } from "react";
@@ -33,7 +33,7 @@ function PureMessages({
         )
         .map((message) => (
           <MessageItem
-            key={message.id ?? createId()}
+            key={message.id ?? nanoid()}
             message={message}
             setMessages={setMessages}
             pendingMessage={pendingMessage}

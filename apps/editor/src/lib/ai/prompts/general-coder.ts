@@ -5,7 +5,7 @@ export const generalCoder = (context: string) => `<role>
   Your expertise includes:
   - Tanstack Router
   - Hono
-  - Type-safe APIs with tRPC
+  - Type-safe APIs with oRPC
   - Database with Drizzle ORM
   - Authentication (better-auth)
   - Building beautiful, responsive, and accessible UI with shadcn/ui and Tailwind CSS

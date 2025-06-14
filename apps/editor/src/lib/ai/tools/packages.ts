@@ -1,97 +1,184 @@
-import type { Tx } from "@weldr/db";
+import { type Tx, and, eq, inArray } from "@weldr/db";
 import { packages, versionPackages } from "@weldr/db/schema";
+import { Fly } from "@weldr/shared/fly";
 import { tool } from "ai";
 import { z } from "zod";
-import { getPackageVersion } from "../agents/coder/utils";
 
-export const installPackagesTool = ({
+export const installPackagesTool = tool({
+  description: "Use to install node packages",
+  parameters: z.object({
+    pkgs: z
+      .object({
+        type: z.enum(["runtime", "development"]),
+        name: z.string(),
+        description: z.string().describe("A description of the package"),
+      })
+      .array(),
+  }),
+});
+
+export const removePackagesTool = tool({
+  description: "Use to remove node packages",
+  parameters: z.object({
+    pkgs: z.string().array(),
+  }),
+});
+
+export const executeInstallPackagesTool = async ({
   projectId,
   versionId,
   tx,
+  machineId,
+  args,
 }: {
   projectId: string;
   versionId: string;
   tx: Tx;
-}) =>
-  tool({
-    description: "Use to install node packages",
-    parameters: z.object({
-      pkgs: z
-        .object({
-          type: z.enum(["runtime", "development"]),
-          name: z.string(),
-          description: z.string().describe("A description of the package"),
-        })
-        .array(),
-    }),
-    execute: async ({ pkgs }) => {
-      console.log(
-        `[installPackagesTool:${projectId}] Installing packages`,
-        pkgs.map((pkg) => pkg.name).join(", "),
-      );
-      const result: {
-        success: boolean;
-        error?: string;
-        package?: typeof packages.$inferSelect;
-      }[] = [];
+  machineId: string;
+  args: z.infer<typeof installPackagesTool.parameters>;
+}) => {
+  console.log(
+    `[installPackagesTool:${projectId}] Installing packages`,
+    args.pkgs.map((pkg) => pkg.name).join(", "),
+  );
+  const result: {
+    success: boolean;
+    error?: string;
+    package?: typeof packages.$inferSelect;
+  }[] = [];
 
-      for (const pkg of pkgs) {
-        const packageVersion = await getPackageVersion(pkg.name);
-
-        if (!packageVersion) {
-          result.push({
-            success: false,
-            error: "Could not find package on npm",
-          });
-        } else {
-          const [insertedPkg] = await tx
-            .insert(packages)
-            .values({
-              projectId,
-              name: pkg.name,
-              type: pkg.type,
-              description: pkg.description,
-              version: packageVersion,
-            })
-            .onConflictDoNothing()
-            .returning();
-
-          if (!insertedPkg) {
-            throw new Error("Failed to insert package");
-          }
-
-          await tx.insert(versionPackages).values({
-            versionId,
-            packageId: insertedPkg.id,
-          });
-
-          result.push({
-            success: true,
-            package: insertedPkg,
-          });
-        }
-      }
-
-      return result;
-    },
+  const { stderr, exitCode, success } = await Fly.machine.command({
+    type: "command",
+    projectId,
+    machineId,
+    command: `cd /workspace && bun add ${args.pkgs.map((pkg) => pkg.name).join(" ")}`,
   });
 
-export const removePackagesTool = ({
+  if (exitCode !== 0 || !success) {
+    return {
+      success: false,
+      error: stderr || "Failed to install packages",
+    };
+  }
+
+  const packageDotJson = await Fly.machine.command({
+    type: "command",
+    projectId,
+    machineId,
+    command: "cat /workspace/package.json",
+  });
+
+  if (
+    packageDotJson.exitCode !== 0 ||
+    !packageDotJson.stdout ||
+    !packageDotJson.success
+  ) {
+    return {
+      success: false,
+      error: packageDotJson.stderr,
+    };
+  }
+
+  const packageDotJsonContent = JSON.parse(packageDotJson.stdout);
+
+  for (const pkg of args.pkgs) {
+    const packageVersion =
+      packageDotJsonContent.dependencies?.[pkg.name] ??
+      packageDotJsonContent.devDependencies?.[pkg.name];
+
+    if (!packageVersion) {
+      result.push({
+        success: false,
+        error: `Could not find package ${pkg.name} in package.json`,
+      });
+
+      continue;
+    }
+
+    const [insertedPkg] = await tx
+      .insert(packages)
+      .values({
+        projectId,
+        name: pkg.name,
+        type: pkg.type,
+        description: pkg.description,
+        version: packageVersion,
+      })
+      .onConflictDoNothing()
+      .returning();
+
+    if (!insertedPkg) {
+      throw new Error("Failed to insert package");
+    }
+
+    await tx.insert(versionPackages).values({
+      versionId,
+      packageId: insertedPkg.id,
+    });
+
+    result.push({
+      success: true,
+      package: insertedPkg,
+    });
+  }
+
+  return result;
+};
+
+export const executeRemovePackagesTool = async ({
   projectId,
+  versionId,
+  installedPackages,
+  tx,
+  machineId,
+  args,
 }: {
   projectId: string;
-}) =>
-  tool({
-    description: "Use to remove node packages",
-    parameters: z.object({
-      pkgs: z.string().array(),
-    }),
-    execute: async ({ pkgs }) => {
-      console.log(
-        `[removePackagesTool:${projectId}] Removing packages`,
-        pkgs.join(", "),
-      );
+  versionId: string;
+  installedPackages: {
+    id: string;
+    name: string;
+    description: string | null;
+    type: "runtime" | "development";
+  }[];
+  tx: Tx;
+  machineId: string;
+  args: z.infer<typeof removePackagesTool.parameters>;
+}) => {
+  console.log(
+    `[removePackagesTool:${projectId}] Removing packages`,
+    args.pkgs.join(", "),
+  );
 
-      return pkgs;
-    },
+  const { stderr, exitCode, success } = await Fly.machine.command({
+    type: "command",
+    projectId,
+    machineId,
+    command: `cd /workspace && bun remove ${args.pkgs.join(" ")}`,
   });
+
+  if (exitCode !== 0 || !success) {
+    return {
+      success: false,
+      error: stderr || "Failed to remove packages",
+    };
+  }
+
+  const deletedPackages = installedPackages
+    .filter((pkg) => args.pkgs.includes(pkg.name))
+    .map((pkg) => pkg.id);
+
+  await tx
+    .delete(versionPackages)
+    .where(
+      and(
+        inArray(versionPackages.packageId, deletedPackages),
+        eq(versionPackages.versionId, versionId),
+      ),
+    );
+
+  return {
+    success: true,
+    packages: installedPackages.filter((pkg) => args.pkgs.includes(pkg.name)),
+  };
+};

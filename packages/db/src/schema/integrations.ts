@@ -1,4 +1,4 @@
-import { createId } from "@paralleldrive/cuid2";
+import { nanoid } from "@weldr/shared/nanoid";
 import { relations } from "drizzle-orm";
 import {
   index,
@@ -16,9 +16,7 @@ import { projects } from "./projects";
 export const integrations = pgTable(
   "integrations",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => createId()),
+    id: text("id").primaryKey().$defaultFn(nanoid),
     name: text("name"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     projectId: text("project_id")

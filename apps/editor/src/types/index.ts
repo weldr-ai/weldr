@@ -3,7 +3,10 @@ import type { CanvasNodeType } from "@weldr/shared/types";
 import type { Edge, Node, NodeProps } from "@xyflow/react";
 
 export type CanvasNodeData = RouterOutputs["declarations"]["byId"];
-export type CanvasNode = Node<CanvasNodeData, CanvasNodeType>;
+export type CanvasNode = Node<
+  CanvasNodeData | { type: "placeholder" },
+  CanvasNodeType
+>;
 export type CanvasEdge = Edge;
 export type CanvasNodeProps = NodeProps<CanvasNode>;
 

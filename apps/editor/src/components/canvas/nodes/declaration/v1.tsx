@@ -42,7 +42,7 @@ export const DeclarationV1Node = memo(
     positionAbsoluteX,
     positionAbsoluteY,
   }: CanvasNodeProps) => {
-    if (_data.specs?.version !== "v1") {
+    if (_data.type === "placeholder" || _data.specs?.version !== "v1") {
       return null;
     }
 

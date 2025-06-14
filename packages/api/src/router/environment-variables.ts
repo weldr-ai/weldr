@@ -62,14 +62,14 @@ export const environmentVariablesRouter = {
         });
       }
 
-      await Fly.secrets.create({
+      await Fly.secret.create({
         type: "development",
         projectId: input.projectId,
         key: input.key,
         value: input.value,
       });
 
-      await Fly.secrets.create({
+      await Fly.secret.create({
         type: "production",
         projectId: input.projectId,
         key: input.key,
@@ -129,13 +129,13 @@ export const environmentVariablesRouter = {
         .delete(environmentVariables)
         .where(eq(environmentVariables.id, input.id));
 
-      await Fly.secrets.destroy({
+      await Fly.secret.destroy({
         type: "development",
         projectId: environmentVariable.projectId,
         secretKeys: [environmentVariable.key],
       });
 
-      await Fly.secrets.destroy({
+      await Fly.secret.destroy({
         type: "production",
         projectId: environmentVariable.projectId,
         secretKeys: [environmentVariable.key],

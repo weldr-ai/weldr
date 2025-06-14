@@ -286,6 +286,7 @@ CREATE TABLE "projects" (
 	"name" text,
 	"subdomain" text NOT NULL,
 	"config" jsonb,
+	"initiated_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"user_id" text NOT NULL,

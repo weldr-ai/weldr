@@ -3,9 +3,7 @@ import { environmentVariableSchema } from "./environment-variables";
 
 export const projectConfigSchema = z.object({
   server: z.boolean(),
-  web: z.boolean(),
-  database: z.boolean(),
-  auth: z.boolean(),
+  client: z.boolean(),
 });
 
 export const projectSchema = z.object({

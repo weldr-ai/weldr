@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, isNotNull } from "@weldr/db";
 import { chats, versions } from "@weldr/db/schema";
-import { S3 } from "@weldr/shared/s3";
+import { Tigris } from "@weldr/shared/tigris";
 import { z } from "zod";
 import { protectedProcedure } from "../init";
 
@@ -128,7 +128,7 @@ export const versionRouter = {
           ...version,
           thumbnail:
             version.progress === "succeeded"
-              ? await S3.getSignedUrl(
+              ? await Tigris.object.getSignedUrl(
                   // biome-ignore lint/style/noNonNullAssertion: <explanation>
                   process.env.GENERAL_BUCKET!,
                   `thumbnails/${version.projectId}/${version.id}.jpeg`,
