@@ -1,5 +1,5 @@
+import { nanoid } from "@weldr/shared/nanoid";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { nanoid } from "nanoid";
 import { useState } from "react";
 
 export const JsonViewer = ({

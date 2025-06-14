@@ -1,52 +1,72 @@
 import "server-only";
 
-import type { TStreamableValue, VersionStreamableValue } from "@/types";
-import { createId } from "@paralleldrive/cuid2";
+import { prompts } from "@/lib/ai/prompts";
+import { registry } from "@/lib/ai/registry";
+import {
+  deleteFilesTool,
+  executeDeleteFilesTool,
+  executeListFilesTool,
+  executeReadFilesTool,
+  listFilesTool,
+  readFilesTool,
+} from "@/lib/ai/tools/files";
+import {
+  executeInstallPackagesTool,
+  executeRemovePackagesTool,
+  installPackagesTool,
+  removePackagesTool,
+} from "@/lib/ai/tools/packages";
+import type { TStreamableValue } from "@/types";
+import type { User } from "@weldr/auth";
 import { and, db, eq, inArray } from "@weldr/db";
 import {
   files,
   packages,
   versionDeclarations,
   versionFiles,
-  versionPackages,
   versions,
 } from "@weldr/db/schema";
-import { Fly } from "@weldr/shared/fly";
 import type { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import { type CoreMessage, streamText } from "ai";
 import type { z } from "zod";
-import { insertMessages } from "../../insert-messages";
-import { prompts } from "../../prompts";
-import { registry } from "../../registry";
-import {
-  deleteFilesTool,
-  installPackagesTool,
-  readFilesTool,
-  removePackagesTool,
-} from "../../tools";
-import { getFilesContext, getFolderStructure } from "./context";
-import { applyEdits, findFilename, getEdits } from "./editor";
+import { applyEdits, getEdits } from "./editor";
 import type { EditResults } from "./types";
+import { checkTypes, commit, formatAndLint } from "./utils";
 
 export async function coder({
   streamWriter,
-  userId,
+  user,
+  projectContext,
   projectId,
   version,
   machineId,
   promptMessages,
+  args,
 }: {
   streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
-  userId: string;
+  user: User;
+  projectContext: string;
   projectId: string;
   version: typeof versions.$inferSelect;
   machineId: string;
   promptMessages: CoreMessage[];
+  args: {
+    commitMessage: string;
+    description: string;
+  };
 }) {
   return await db.transaction(async (tx) => {
     console.log(`[coder:${projectId}] Starting coder agent`);
 
-    const currentMessages: CoreMessage[] = [...promptMessages];
+    const currentMessages: CoreMessage[] = [
+      ...promptMessages,
+      {
+        role: "user",
+        content: `You are working on the following version:
+        Commit message: ${args.commitMessage}
+        Description: ${args.description}`,
+      },
+    ];
 
     const installedPackages = await tx.query.packages.findMany({
       where: eq(packages.projectId, projectId),
@@ -57,9 +77,8 @@ export async function coder({
         type: true,
       },
     });
-    const deletedPackages: string[] = [];
+
     const deletedDeclarations: string[] = [];
-    const deletedFiles: string[] = [];
 
     let response = "";
     const finalResult: EditResults = {};
@@ -152,52 +171,25 @@ export async function coder({
       })),
     }));
 
-    const context = getFolderStructure({
-      files: flatFiles,
-    });
-
-    const versionMessageId = createId();
-
-    const streamValue: VersionStreamableValue = {
-      id: versionMessageId,
-      type: "version",
-      versionId: version.id,
-      versionMessage: version.message as string,
-      versionDescription: version.description as string,
-      versionNumber: version.number,
-      changedFiles: [],
+    const totalUsage = {
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
     };
 
     async function generate() {
-      const { textStream, usage } = streamText({
+      const result = streamText({
         model: registry.languageModel("anthropic:claude-3-5-sonnet-latest"),
-        system: prompts.generalCoder(context),
+        system: prompts.generalCoder(projectContext),
         messages: currentMessages,
         tools: {
-          installPackages: installPackagesTool({
-            projectId,
-            versionId: version.id,
-            tx,
-          }),
-          removePackages: removePackagesTool({
-            projectId,
-          }),
-          readFiles: readFilesTool({
-            projectId,
-            machineId,
-          }),
-          deleteFiles: deleteFilesTool({
-            projectId,
-            machineId,
-          }),
+          listFiles: listFilesTool,
+          readFiles: readFilesTool,
+          deleteFiles: deleteFilesTool,
+          installPackages: installPackagesTool,
+          removePackages: removePackagesTool,
         },
-        onFinish: async ({
-          finishReason,
-          text,
-          toolCalls,
-          toolResults,
-          response,
-        }) => {
+        onFinish: async ({ text, finishReason, toolCalls, usage }) => {
           if (finishReason === "length") {
             console.log(`[coder:${projectId}]: Reached max tokens retrying...`);
             currentMessages.push({
@@ -212,129 +204,199 @@ export async function coder({
                 .join(", ")}`,
             );
 
+            // Add assistant message with tool calls
+            currentMessages.push({
+              role: "assistant",
+              content: text,
+            });
+
+            // Add tool results as user messages
             for (const toolCall of toolCalls) {
               switch (toolCall.toolName) {
-                case "readFiles": {
-                  const toolResult = toolResults.find(
-                    (toolResult) => toolResult.toolName === "readFiles",
+                case "listFiles": {
+                  console.log(
+                    `[coder:${projectId}] executing \`listFiles\` tool`,
                   );
+                  const executeResult = await executeListFilesTool({
+                    projectId,
+                    machineId,
+                  });
 
-                  if (!toolResult) {
-                    throw new Error("readFiles: Tool result not found");
+                  if (executeResult.files) {
+                    currentMessages.push({
+                      role: "user",
+                      content: executeResult.files,
+                    });
                   }
 
-                  const fileContents = toolResult.result;
+                  if (executeResult.error) {
+                    currentMessages.push({
+                      role: "user",
+                      content: `Failed to list files: ${executeResult.error}`,
+                    });
+                  }
 
-                  const files = flatFiles.filter((file) =>
-                    toolResult.args.files.includes(file.path),
+                  console.log(
+                    `[coder:${projectId}] \`listFiles\` tool executed`,
+                  );
+                  break;
+                }
+                case "readFiles": {
+                  console.log(
+                    `[coder:${projectId}] executing \`readFiles\` tool`,
                   );
 
-                  const fileContext = getFilesContext({
-                    files,
+                  // const files = flatFiles.filter((file) =>
+                  //   toolResult.args.files.includes(file.path),
+                  // );
+
+                  // const fileContext = getFilesContext({
+                  //   files,
+                  // });
+
+                  const executeResult = await executeReadFilesTool({
+                    projectId,
+                    machineId,
+                    args: toolCall.args,
                   });
 
-                  currentMessages.push({
-                    role: "user",
-                    content: `### Files Contents
-${Object.entries(fileContents)
-  .map(([path, content]) => `${path}\n\`\`\`\n${content}\`\`\``)
-  .join("\n\n")}
+                  if (executeResult.fileContents) {
+                    currentMessages.push({
+                      role: "user",
+                      content: `${Object.entries(executeResult.fileContents)
+                        .map(
+                          ([path, content]) =>
+                            `${path}\n\`\`\`\n${content}\`\`\``,
+                        )
+                        .join("\n\n")}`,
+                    });
+                  }
 
-## Files context
-${fileContext}`,
-                  });
+                  if (executeResult.error) {
+                    currentMessages.push({
+                      role: "user",
+                      content: `Failed to read files: ${executeResult.error}`,
+                    });
+                  }
 
+                  console.log(
+                    `[coder:${projectId}] \`readFiles\` tool executed`,
+                  );
                   break;
                 }
                 case "deleteFiles": {
-                  const toolCall = toolCalls.find(
-                    (toolCall) => toolCall.toolName === "deleteFiles",
+                  console.log(
+                    `[coder:${projectId}] executing \`deleteFiles\` tool`,
                   );
 
-                  if (!toolCall) {
-                    throw new Error("deleteFiles: Tool call not found");
-                  }
-
-                  for (const file of toolCall.args.files) {
-                    const fileResult = flatFiles.find((f) => f.path === file);
-
-                    if (!fileResult) {
-                      throw new Error(`deleteFiles: File not found: ${file}`);
-                    }
-
-                    deletedDeclarations.push(
-                      ...fileResult.declarations.map((d) => d.id),
-                    );
-
-                    deletedFiles.push(fileResult.id);
-                  }
-
-                  currentMessages.push({
-                    role: "user",
-                    content: `Finished deleting the following files: ${toolCall.args.files.join(
-                      ", ",
-                    )}`,
+                  const executeResult = await executeDeleteFilesTool({
+                    projectId,
+                    versionId: version.id,
+                    existingFiles: flatFiles,
+                    tx,
+                    machineId,
+                    args: toolCall.args,
                   });
 
-                  break;
-                }
-                case "installPackages": {
-                  const toolResult = toolResults.find(
-                    (toolResult) => toolResult.toolName === "installPackages",
-                  );
+                  if (executeResult.filesDeleted) {
+                    for (const file of executeResult.filesDeleted) {
+                      const fileResult = flatFiles.find((f) => f.path === file);
 
-                  if (!toolResult) {
-                    throw new Error("installPackages: Tool result not found");
-                  }
+                      if (!fileResult) {
+                        throw new Error(`deleteFiles: File not found: ${file}`);
+                      }
 
-                  currentMessages.push({
-                    role: "user",
-                    content: `Finished installing the following packages: ${toolResult.result
-                      .map((p) => {
-                        if (p.success) {
-                          return `${p.package?.name}@${p.package?.version}`;
-                        }
-                        return `Failed to install ${p.package?.name}: ${p.error}`;
-                      })
-                      .join(", ")}`,
-                  });
-
-                  break;
-                }
-                case "removePackages": {
-                  const toolCall = toolCalls.find(
-                    (toolCall) => toolCall.toolName === "removePackages",
-                  );
-
-                  if (!toolCall) {
-                    throw new Error("removePackages: Tool call not found");
-                  }
-
-                  const deletedPkgs = installedPackages.filter((p) =>
-                    toolCall.args.pkgs.includes(p.name),
-                  );
-
-                  for (const pkg of deletedPkgs) {
-                    const packageResult = installedPackages.find(
-                      (p) => p.name === pkg.name,
-                    );
-
-                    if (!packageResult) {
-                      throw new Error(
-                        `removePackages: Package not found: ${pkg.name}`,
+                      deletedDeclarations.push(
+                        ...fileResult.declarations.map((d) => d.id),
                       );
                     }
 
-                    deletedPackages.push(packageResult.id);
+                    currentMessages.push({
+                      role: "user",
+                      content: `Finished deleting the following files: ${toolCall.args.files.join(", ")}`,
+                    });
                   }
 
-                  currentMessages.push({
-                    role: "user",
-                    content: `Finished removing the following packages: ${toolCall.args.pkgs.join(
-                      ", ",
-                    )}`,
+                  if (executeResult.error) {
+                    currentMessages.push({
+                      role: "user",
+                      content: `Failed to delete files: ${executeResult.error}`,
+                    });
+                  }
+
+                  console.log(
+                    `[coder:${projectId}] \`deleteFiles\` tool executed`,
+                  );
+                  break;
+                }
+                case "installPackages": {
+                  console.log(
+                    `[coder:${projectId}] executing \`installPackages\` tool`,
+                  );
+
+                  const executeResult = await executeInstallPackagesTool({
+                    projectId,
+                    versionId: version.id,
+                    tx,
+                    machineId,
+                    args: toolCall.args,
                   });
 
+                  if (Array.isArray(executeResult)) {
+                    currentMessages.push({
+                      role: "user",
+                      content: `${executeResult
+                        .map((p) => {
+                          if (p.success) {
+                            return `${p.package?.name}@${p.package?.version}`;
+                          }
+                          return `Failed to install ${p.package?.name}: ${p.error}`;
+                        })
+                        .join(", ")}`,
+                    });
+                  } else {
+                    currentMessages.push({
+                      role: "user",
+                      content: `Failed to install packages: ${executeResult.error}`,
+                    });
+                  }
+
+                  console.log(
+                    `[coder:${projectId}] \`installPackages\` tool executed`,
+                  );
+                  break;
+                }
+                case "removePackages": {
+                  console.log(
+                    `[coder:${projectId}] executing \`removePackages\` tool`,
+                  );
+
+                  const executeResult = await executeRemovePackagesTool({
+                    projectId,
+                    versionId: version.id,
+                    installedPackages,
+                    tx,
+                    machineId,
+                    args: toolCall.args,
+                  });
+
+                  if (executeResult.packages) {
+                    currentMessages.push({
+                      role: "user",
+                      content: `Finished removing the following packages: ${executeResult.packages.map((p) => p.name).join(", ")}`,
+                    });
+                  }
+
+                  if (executeResult.error) {
+                    currentMessages.push({
+                      role: "user",
+                      content: `Failed to remove packages: ${executeResult.error}`,
+                    });
+                  }
+
+                  console.log(
+                    `[coder:${projectId}] \`removePackages\` tool executed`,
+                  );
                   break;
                 }
                 default: {
@@ -355,103 +417,31 @@ ${fileContext}`,
           } else {
             console.log(`[coder:${projectId}] Finished with ${finishReason}`);
           }
+
+          totalUsage.promptTokens += usage.promptTokens;
+          totalUsage.completionTokens += usage.completionTokens;
+          totalUsage.totalTokens += usage.totalTokens;
+        },
+        onError: (error) => {
+          console.log(
+            `[coder:${projectId}] Error: ${JSON.stringify(error, null, 2)}`,
+          );
+          throw error;
         },
       });
 
-      let currentFilePath = "";
-      let currentAccumulatedText = "";
-      let inCodeBlock = false;
-      const previousLines: string[] = [];
-
-      for await (const text of textStream) {
+      for await (const text of result.textStream) {
+        console.log(`[coder:${projectId}] CHUNK: ${text}`);
         response += text;
-        currentAccumulatedText += text;
-
-        // Process the accumulated text line by line
-        while (currentAccumulatedText.includes("\n")) {
-          const lineEndIndex = currentAccumulatedText.indexOf("\n");
-          const line = currentAccumulatedText.substring(0, lineEndIndex);
-          currentAccumulatedText = currentAccumulatedText.substring(
-            lineEndIndex + 1,
-          );
-
-          // Store previous lines for filename detection
-          previousLines.push(line);
-          if (previousLines.length > 5) {
-            // Keep only the last 5 lines for efficiency
-            previousLines.shift();
-          }
-
-          // Detect filename at the start of a code block
-          if (line.trim().startsWith("```") && !inCodeBlock) {
-            const filename = findFilename({ lines: previousLines });
-            if (filename) {
-              console.log(`[coder:${projectId}] Working on ${filename}`);
-              inCodeBlock = true;
-              currentFilePath = filename;
-              const fileIndex = streamValue.changedFiles.findIndex(
-                (f) => f.path === filename,
-              );
-
-              if (fileIndex !== undefined && fileIndex !== -1) {
-                streamValue.changedFiles[fileIndex] = {
-                  path: filename,
-                  status: "pending",
-                };
-              } else {
-                streamValue.changedFiles.push({
-                  path: filename,
-                  status: "pending",
-                });
-              }
-
-              await streamWriter.write(streamValue);
-            }
-
-            continue;
-          }
-
-          // Detect end of code block
-          if (line.trim() === "```" && inCodeBlock) {
-            console.log(
-              `[coder:${projectId}] Finished working on ${currentFilePath}`,
-            );
-            inCodeBlock = false;
-
-            // Update file status to success
-            if (currentFilePath) {
-              const fileIndex = streamValue.changedFiles.findIndex(
-                (f) => f.path === currentFilePath,
-              );
-
-              if (fileIndex !== undefined && fileIndex !== -1) {
-                streamValue.changedFiles[fileIndex] = {
-                  path: currentFilePath,
-                  status: "success",
-                };
-                await streamWriter.write(streamValue);
-              }
-            }
-
-            currentFilePath = "";
-          }
-        }
       }
-
-      const usageData = await usage;
-
-      // Log usage
-      console.log(
-        `[coder:${projectId}] Usage Prompt: ${usageData.promptTokens} Completion: ${usageData.completionTokens} Total: ${usageData.totalTokens}`,
-      );
     }
 
     await generate();
 
     // Process all edits at once
-    const edits = getEdits({
-      content: response,
-    });
+    const edits = getEdits({ content: response });
+
+    console.log(`[coder:${projectId}] Edits: ${JSON.stringify(edits)}`);
 
     // Apply the edits
     if (edits.length > 0) {
@@ -525,30 +515,57 @@ ${fileContext}`,
       finalResult.failed?.map((f) => f.edit.path),
     );
 
-    await insertMessages({
-      tx,
-      input: {
-        chatId: version.chatId,
-        userId,
-        messages: [
-          {
-            id: versionMessageId,
-            role: "version",
-            rawContent: {
-              versionId: version.id,
-              versionMessage: version.message as string,
-              versionDescription: version.description as string,
-              versionNumber: version.number,
-              changedFiles:
-                finalResult.passed?.map((f) => ({
-                  status: "success" as const,
-                  path: f.path,
-                })) || [],
-            },
-          },
-        ],
-      },
+    // Check types
+    const { success: isTypesOk, error: errorTypes } = await checkTypes({
+      projectId,
+      machineId,
     });
+
+    if (!isTypesOk) {
+      console.log(`[coder:${projectId}] Failed to check types: ${errorTypes}`);
+      currentMessages.push({
+        role: "user",
+        content: `Failed to check types: ${errorTypes}`,
+      });
+
+      await generate();
+    }
+
+    // Format and lint
+    const { success: isFormatAndLintOk, error: errorFormatAndLint } =
+      await formatAndLint({
+        projectId,
+        machineId,
+      });
+
+    if (!isFormatAndLintOk) {
+      console.log(
+        `[coder:${projectId}] Failed to format and lint: ${errorFormatAndLint}`,
+      );
+      currentMessages.push({
+        role: "user",
+        content: `Failed to format and lint the project: ${errorFormatAndLint}`,
+      });
+
+      await generate();
+    }
+
+    // Commit
+    const { success: isCommitOk, error: errorCommit } = await commit({
+      projectId,
+      machineId,
+      user,
+      commitMessage: args.commitMessage,
+    });
+
+    if (!isCommitOk) {
+      console.log(`[coder:${projectId}] Failed to commit: ${errorCommit}`);
+      throw new Error(`[coder:${projectId}] Failed to commit: ${errorCommit}`);
+    }
+
+    console.log(
+      `[coder:${projectId}] Usage Prompt: ${totalUsage.promptTokens} Completion: ${totalUsage.completionTokens} Total: ${totalUsage.totalTokens}`,
+    );
 
     await tx
       .delete(versionDeclarations)
@@ -556,24 +573,6 @@ ${fileContext}`,
         and(
           inArray(versionDeclarations.declarationId, deletedDeclarations),
           eq(versionDeclarations.versionId, version.id),
-        ),
-      );
-
-    await tx
-      .delete(versionFiles)
-      .where(
-        and(
-          inArray(versionFiles.fileId, deletedFiles),
-          eq(versionFiles.versionId, version.id),
-        ),
-      );
-
-    await tx
-      .delete(versionPackages)
-      .where(
-        and(
-          inArray(versionPackages.packageId, deletedPackages),
-          eq(versionPackages.versionId, version.id),
         ),
       );
 
@@ -594,7 +593,7 @@ ${fileContext}`,
           .values({
             projectId,
             path: file.path.startsWith("/") ? file.path : `/${file.path}`,
-            userId,
+            userId: user.id,
           })
           .returning();
 
@@ -606,13 +605,6 @@ ${fileContext}`,
 
         resultFile = newFile;
       }
-
-      await Fly.machine.writeFile({
-        projectId,
-        machineId,
-        path: resultFile.path,
-        content: file.updated,
-      });
 
       // Add the file to the version
       await tx

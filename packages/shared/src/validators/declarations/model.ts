@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const modelSchema = z.object({
   type: z.literal("model"),
-  name: z.string().describe("The name of the model"),
+  name: z.string().describe("The name of the table"),
   columns: z
     .object({
       name: z.string().describe("The name of the column"),

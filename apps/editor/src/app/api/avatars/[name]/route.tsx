@@ -1,5 +1,5 @@
 import { generateGradient } from "@/lib/gradient";
-import { createId } from "@paralleldrive/cuid2";
+import { nanoid } from "@weldr/shared/nanoid";
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 
@@ -12,7 +12,7 @@ export async function GET(
   { params }: { params: { name: string } },
 ) {
   const { name } = await params;
-  const maskID = createId();
+  const maskID = nanoid();
   const size = 120;
   const gradient = await generateGradient(name, [
     "#5b1d99",

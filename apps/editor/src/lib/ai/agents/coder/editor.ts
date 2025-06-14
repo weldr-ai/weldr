@@ -1,5 +1,6 @@
 import { Fly } from "@weldr/shared/fly";
 import type { Edit, FailedEdit } from "./types";
+import { writeFile } from "./utils";
 
 export const SEARCH = /^<{5,9} SEARCH\s*$/;
 export const DIVIDER = /^={5,9}\s*$/;
@@ -126,24 +127,46 @@ export async function applyEdits({
         });
         continue;
       }
+
+      const { success } = await writeFile({
+        projectId,
+        machineId,
+        filePath,
+        content: firstEdit.updated,
+      });
+
+      if (!success) {
+        failed.push({
+          edit: firstEdit,
+          error: `Failed to write ${filePath}`,
+        });
+        continue;
+      }
+
       passed.push(firstEdit);
       continue;
     }
 
     // Get initial file content
     try {
-      const file = await Fly.machine.readFile({
+      const { stdout, stderr, exitCode, success } = await Fly.machine.command({
+        type: "command",
         projectId,
         machineId,
-        path: filePath,
+        command: `cat /workspace/${filePath}`,
       });
 
-      if (file.error || !file.content) {
-        throw new Error(`File not found: ${filePath}`);
+      if (exitCode !== 0 || !stdout || !success) {
+        console.error(
+          `[applyEdits:${projectId}] Failed to read file: ${filePath} ${stderr || "Unknown error"}`,
+        );
+        throw new Error(
+          `[applyEdits:${projectId}] Failed to read file: ${filePath} ${stderr || "Unknown error"}`,
+        );
       }
 
-      currentContent = file.content;
-      originalFileContent = file.content; // Store the original content
+      currentContent = stdout;
+      originalFileContent = stdout; // Store the original content
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -208,6 +231,21 @@ export async function applyEdits({
       currentContent !== null &&
       originalFileContent !== null
     ) {
+      const { success } = await writeFile({
+        projectId,
+        machineId,
+        filePath,
+        content: currentContent,
+      });
+
+      if (!success) {
+        failed.push({
+          edit: firstEdit,
+          error: `Failed to write ${filePath}`,
+        });
+        continue;
+      }
+
       passed.push({
         path: filePath,
         original: originalFileContent, // Use full original file content

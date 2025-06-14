@@ -32,6 +32,7 @@ import { useUIStore } from "@/lib/store";
 import type { RouterOutputs } from "@weldr/api";
 import "@weldr/ui/styles/flow-builder.css";
 import { Chat } from "../chat";
+import { Placeholder } from "./placeholder";
 
 const nodeTypes = {
   "declaration-v1": DeclarationV1Node,
@@ -112,6 +113,7 @@ export function Canvas({
       }}
       colorMode={resolvedTheme as ColorMode}
     >
+      {nodes.length === 0 && <Placeholder />}
       <Background
         color={
           resolvedTheme === "dark"
@@ -132,6 +134,7 @@ export function Canvas({
               className="bg-background dark:bg-background"
               variant="outline"
               size="icon"
+              disabled={!nodes.length}
               onClick={toggleCanvasEdges}
             >
               {showCanvasEdges ? (
@@ -166,6 +169,7 @@ export function Canvas({
           className="size-9 rounded-r-none rounded-l-lg"
           variant="ghost"
           size="icon"
+          disabled={!nodes.length}
           onClick={() => {
             zoomOut();
           }}
@@ -175,6 +179,7 @@ export function Canvas({
         <Button
           className="h-9 rounded-none px-2 text-xs"
           variant="ghost"
+          disabled={!nodes.length}
           onClick={() => {
             fitView({
               maxZoom: 1,
@@ -186,6 +191,7 @@ export function Canvas({
         <Button
           className="size-9 rounded-r-lg rounded-l-none"
           variant="ghost"
+          disabled={!nodes.length}
           size="icon"
           onClick={() => {
             zoomIn();

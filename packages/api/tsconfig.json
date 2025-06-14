@@ -8,6 +8,6 @@
     },
     "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../shared/src/redis.ts"],
   "exclude": ["node_modules", "dist"]
 }

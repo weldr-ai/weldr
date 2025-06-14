@@ -104,10 +104,8 @@ export function generate(config: ProjectConfig): GeneratedFile[] {
   const fileConditions: {
     [filename: string]: (cfg: ProjectConfig) => boolean;
   } = {
-    "src/server/db/index.ts.hbs": (cfg) => cfg.database || cfg.auth,
-    "drizzle.config.ts.hbs": (cfg) => cfg.database || cfg.auth,
-    "src/server/trpc/init.ts.hbs": (cfg) => cfg.web,
-    "src/web/routes/__root.tsx.hbs": (cfg) => cfg.web,
+    "src/server/trpc/init.ts.hbs": (cfg) => cfg.client,
+    "src/web/routes/__root.tsx.hbs": (cfg) => cfg.client,
   };
 
   const templatesDir = path.join(__dirname, "templates");
@@ -123,12 +121,7 @@ export function generate(config: ProjectConfig): GeneratedFile[] {
 
 const files = generate({
   server: true,
-  web: true,
-  database: true,
-  auth: true,
-  env: {
-    DATABASE_URL: "DATABASE_URL",
-  },
+  client: true,
 });
 
 writeFilesToTempDir(files);

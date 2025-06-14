@@ -5,12 +5,12 @@ import {
 } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { createId } from "@paralleldrive/cuid2";
 import { auth } from "@weldr/auth";
+import { nanoid } from "@weldr/shared/nanoid";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-const BUCKET_NAME = process.env.ATTACHMENTS_BUCKET;
+const BUCKET_NAME = process.env.GENERAL_BUCKET;
 
 const attachmentSchema = z.object({
   chatId: z.string().min(1, { message: "Chat ID is required" }),
@@ -29,12 +29,14 @@ const attachmentSchema = z.object({
 });
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
+  region: "auto",
+  endpoint: process.env.TIGRIS_ENDPOINT_URL ?? "https://t3.storage.dev",
+  forcePathStyle: false,
   credentials: {
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    accessKeyId: process.env.TIGRIS_ACCESS_KEY_ID!,
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    secretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY!,
   },
 });
 
@@ -77,7 +79,7 @@ export async function POST(request: Request) {
     const fileBuffer = await file.arrayBuffer();
 
     try {
-      const attachmentId = createId();
+      const attachmentId = nanoid();
 
       const key = `attachments/${validatedAttachment.data.chatId}/${attachmentId}.${file.type.split("/")[1]}`;
 

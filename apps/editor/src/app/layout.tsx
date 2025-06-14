@@ -30,7 +30,7 @@ const fontMono = Poppins({
 export const metadata: Metadata = {
   title: "Weldr",
   description:
-    "Build LLM-powered AI agents in minutes for seamless workflow automation!",
+    "Build full-stack apps, LLM agents and workflow automation in minutes!",
 };
 
 export default async function RootLayout({

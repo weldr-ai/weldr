@@ -12,12 +12,14 @@ import { chromium } from "playwright";
 const BUCKET_NAME = process.env.GENERAL_BUCKET;
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
+  region: "auto",
+  endpoint: process.env.TIGRIS_ENDPOINT_URL ?? "https://t3.storage.dev",
+  forcePathStyle: false,
   credentials: {
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    accessKeyId: process.env.TIGRIS_ACCESS_KEY_ID!,
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    secretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY!,
   },
 });
 

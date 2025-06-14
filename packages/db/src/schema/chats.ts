@@ -1,4 +1,4 @@
-import { createId } from "@paralleldrive/cuid2";
+import { nanoid } from "@weldr/shared/nanoid";
 import type {
   AssistantMessageRawContent,
   ToolMessageRawContent,
@@ -31,7 +31,7 @@ export const chats = pgTable(
   {
     id: text("id")
       .primaryKey()
-      .$defaultFn(() => createId()),
+      .$defaultFn(() => nanoid()),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     projectId: text("project_id")
       .references(() => projects.id, { onDelete: "cascade" })
@@ -61,7 +61,7 @@ export const chatMessages = pgTable(
   {
     id: text("id")
       .primaryKey()
-      .$defaultFn(() => createId()),
+      .$defaultFn(() => nanoid()),
     role: messageRoles("role").notNull(),
     content: text("content"),
     rawContent: jsonb("raw_content")
@@ -99,9 +99,7 @@ export const chatMessageRelations = relations(
 export const attachments = pgTable(
   "attachments",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => createId()),
+    id: text("id").primaryKey().$defaultFn(nanoid),
     name: text("name").notNull(),
     key: text("key").notNull(),
     contentType: text("content_type").notNull(),

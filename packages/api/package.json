@@ -11,7 +11,6 @@
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@paralleldrive/cuid2": "^2.2.2",
     "@trpc/server": "11.1.2",
     "@weldr/auth": "workspace:*",
     "@weldr/db": "workspace:*",

@@ -2,12 +2,20 @@
 
 import { useUIStore } from "@/lib/store";
 import { useTRPC } from "@/lib/trpc/react";
-import { createId } from "@paralleldrive/cuid2";
 import { useMutation } from "@tanstack/react-query";
 import type { Session } from "@weldr/auth";
+import { nanoid } from "@weldr/shared/nanoid";
 import type { Attachment } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/components/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@weldr/ui/components/dialog";
 import { toast } from "@weldr/ui/hooks/use-toast";
+import { LoaderIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { MultimodalInput } from "./multimodal-input";
@@ -40,7 +48,8 @@ const quickStartTemplates = [
 export function CreateProjectForm({ session }: { session: Session | null }) {
   const router = useRouter();
   const { setCommandCenterOpen } = useUIStore();
-  const projectChatId = createId();
+  const projectChatId = nanoid();
+  const [loadingDialogOpen, setLoadingDialogOpen] = useState(false);
 
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -56,6 +65,7 @@ export function CreateProjectForm({ session }: { session: Session | null }) {
           duration: 2000,
         });
         setCommandCenterOpen(false);
+        setLoadingDialogOpen(false);
         router.push(`/projects/${data.id}`);
       },
       onError: (error) => {
@@ -65,6 +75,7 @@ export function CreateProjectForm({ session }: { session: Session | null }) {
           variant: "destructive",
           duration: 2000,
         });
+        setLoadingDialogOpen(false);
       },
     }),
   );
@@ -74,6 +85,8 @@ export function CreateProjectForm({ session }: { session: Session | null }) {
       router.push("/auth/sign-in");
       return;
     }
+
+    setLoadingDialogOpen(true);
 
     createProjectMutation.mutate({
       chatId: projectChatId,
@@ -127,6 +140,25 @@ export function CreateProjectForm({ session }: { session: Session | null }) {
           ))}
         </div>
       </div>
+      <Dialog open={loadingDialogOpen} onOpenChange={setLoadingDialogOpen}>
+        <DialogContent
+          className="w-[350px] items-center justify-center gap-4"
+          withCloseButton={false}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <div className="flex flex-col items-center justify-center gap-6">
+            <DialogHeader className="flex flex-col items-center justify-center gap-1">
+              <DialogTitle className="font-medium text-lg">
+                Initializing your project
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground text-xs">
+                This will only take a moment
+              </DialogDescription>
+            </DialogHeader>
+            <LoaderIcon className="size-6 animate-spin text-primary" />
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -1,7 +1,8 @@
 import { takeScreenshot } from "@/lib/take-screenshot";
 import type { TStreamableValue } from "@/types";
-import { and, db, eq } from "@weldr/db";
-import { projects, versions } from "@weldr/db/schema";
+import type { User } from "@weldr/auth";
+import { db, eq } from "@weldr/db";
+import { versions } from "@weldr/db/schema";
 import { type CoreMessage, tool } from "ai";
 import { z } from "zod";
 import { coder } from "../agents/coder";
@@ -9,49 +10,39 @@ import { deploy } from "../agents/coder/deploy";
 import { enrich } from "../agents/coder/enrich";
 
 export const coderTool = tool({
-  description:
-    "Ask the coder agent to implement the request. MUST BE CALLED AFTER THE USER HAS PROVIDED THE REQUIREMENTS.",
+  description: "Ask the coder agent to implement the request.",
   parameters: z.object({
-    name: z
-      .string()
-      .nullable()
-      .optional()
-      .describe("The name of the project if it's a new project."),
     commitMessage: z
       .string()
       .min(1)
       .describe(
-        "A commit message for the changes made to the project. Must be concise and to the point.",
+        "A short commit message for the changes made to the project. Must be concise and to the point. Must follow conventional commit message format. Must be in the present tense. Must be in the first person.",
       ),
     description: z
       .string()
       .min(1)
-      .describe(
-        `Detailed description of the changes to be passed to the coder.
-      Your description of the changes must be as detailed as possible.
-      As the coder will be using your description to generate the code, it's very important that you provide as much details as possible.
-      MUST NOT hallucinate or make assumptions about the changes requested by the user.
-      MUST NOT add anything that is not requested by the user.`,
-      ),
+      .describe("Detailed description of the changes"),
   }),
 });
 
 export const executeCoderTool = async ({
-  userId,
   projectId,
+  projectContext,
   version,
+  user,
+  machineId,
   promptMessages,
   streamWriter,
-  machineId,
-  toolArgs,
+  args,
 }: {
-  userId: string;
   projectId: string;
+  projectContext: string;
   version: typeof versions.$inferSelect;
+  user: User;
   machineId: string;
   promptMessages: CoreMessage[];
   streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
-  toolArgs?: z.infer<typeof coderTool.parameters>;
+  args: z.infer<typeof coderTool.parameters>;
 }) => {
   let versionStatus = version.progress;
 
@@ -61,28 +52,16 @@ export const executeCoderTool = async ({
 
   if (versionStatus === "initiated") {
     console.log(`[coderTool:${projectId}] Invoking coder`);
-    const { name, commitMessage, description } = toolArgs ?? {};
-
     await db.transaction(async (tx) => {
-      if (name) {
-        console.log(`[coderTool:${projectId}] Updating project name`);
-        await tx
-          .update(projects)
-          .set({
-            name,
-          })
-          .where(and(eq(projects.id, projectId), eq(projects.userId, userId)));
-      }
-
       console.log(
         `[coderTool:${projectId}] Updating version message and description`,
       );
-      if (commitMessage || description) {
+      if (args.commitMessage || args.description) {
         await tx
           .update(versions)
           .set({
-            message: commitMessage,
-            description,
+            message: args.commitMessage,
+            description: args.description,
           })
           .where(eq(versions.id, version.id));
       }
@@ -92,14 +71,18 @@ export const executeCoderTool = async ({
       type: "coder",
       status: "initiated",
     });
+
     await coder({
       streamWriter,
       projectId,
+      projectContext,
       version,
-      userId,
+      user,
       machineId,
       promptMessages,
+      args,
     });
+
     versionStatus = "coded";
     console.log(`[coderTool:${projectId}] Coder finished`);
     await streamWriter.write({
@@ -113,6 +96,7 @@ export const executeCoderTool = async ({
     await deploy({
       projectId,
       versionId: version.id,
+      machineId,
     });
     versionStatus = "deployed";
     console.log(`[coderTool:${projectId}] Deploy finished`);
@@ -129,7 +113,7 @@ export const executeCoderTool = async ({
       versionId: version.id,
       machineId,
       streamWriter,
-      userId,
+      userId: user.id,
     });
     versionStatus = "enriched";
     await streamWriter.write({

@@ -14,13 +14,13 @@ export const setupIntegrationTool = tool({
 export const executeSetupIntegrationTool = async ({
   chatId,
   userId,
-  toolArgs,
   streamWriter,
+  args,
 }: {
   chatId: string;
   userId: string;
-  toolArgs: z.infer<typeof setupIntegrationTool.parameters>;
   streamWriter: WritableStreamDefaultWriter<TStreamableValue>;
+  args: z.infer<typeof setupIntegrationTool.parameters>;
 }) => {
   const [messageId] = await insertMessages({
     input: {
@@ -31,7 +31,7 @@ export const executeSetupIntegrationTool = async ({
           role: "tool",
           rawContent: {
             toolName: "setupIntegrationTool",
-            toolArgs,
+            toolArgs: args,
             toolResult: {
               status: "pending",
             },
@@ -49,9 +49,14 @@ export const executeSetupIntegrationTool = async ({
     id: messageId,
     type: "tool",
     toolName: "setupIntegrationTool",
-    toolArgs,
+    toolArgs: args,
     toolResult: {
       status: "pending",
     },
   });
+
+  return {
+    success: true,
+    messageId,
+  };
 };

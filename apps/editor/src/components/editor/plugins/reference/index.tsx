@@ -1,20 +1,18 @@
 "use client";
 
+import { $createReferenceNode } from "@/components/editor/plugins/reference/node";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   LexicalTypeaheadMenuPlugin,
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
-import type { TextNode } from "lexical";
-import { useCallback, useMemo, useState } from "react";
-
+import { nanoid } from "@weldr/shared/nanoid";
+import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import { cn } from "@weldr/ui/lib/utils";
-
-import { $createReferenceNode } from "@/components/editor/plugins/reference/node";
-import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
-import { nanoid } from "nanoid";
+import type { TextNode } from "lexical";
+import { useCallback, useMemo, useState } from "react";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";
 import { ReferenceBadge } from "../../reference-badge";

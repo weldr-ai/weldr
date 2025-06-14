@@ -23,7 +23,6 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@paralleldrive/cuid2": "^2.2.2",
     "@weldr/shared": "workspace:*",
     "drizzle-orm": "^0.38.4",
     "drizzle-zod": "^0.6.1",

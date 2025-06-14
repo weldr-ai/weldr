@@ -1,5 +1,6 @@
 "use client";
 
+import { nanoid } from "@weldr/shared/nanoid";
 import {
   Accordion,
   AccordionContent,
@@ -10,7 +11,6 @@ import { Badge } from "@weldr/ui/components/badge";
 import { Button } from "@weldr/ui/components/button";
 import { cn } from "@weldr/ui/lib/utils";
 import { MinusIcon, PlusIcon } from "lucide-react";
-import { nanoid } from "nanoid";
 import type { OpenAPIV3 } from "openapi-types";
 import { useState } from "react";
 import {

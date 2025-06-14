@@ -1,4 +1,4 @@
-import { createId } from "@paralleldrive/cuid2";
+import { nanoid } from "@weldr/shared/nanoid";
 import type { DeclarationSpecs, Theme } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
@@ -32,9 +32,7 @@ export type DeclarationDependencies = {
 export const presetTypes = pgEnum("preset_type", ["base"]);
 
 export const presets = pgTable("presets", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => createId()),
+  id: text("id").primaryKey().$defaultFn(nanoid),
   type: presetTypes("type").unique().notNull(),
   name: text("name").notNull(),
   description: text("description").notNull(),
@@ -54,9 +52,7 @@ export const presetRelations = relations(presets, ({ many }) => ({
 export const presetDeclarations = pgTable(
   "preset_declarations",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => createId()),
+    id: text("id").primaryKey().$defaultFn(nanoid),
     type: declarationTypes("type").notNull(),
     name: text("name").notNull(),
     file: text("file").notNull(),
@@ -87,9 +83,7 @@ export const presetDeclarationsRelations = relations(
 export const presetPackages = pgTable(
   "preset_packages",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => createId()),
+    id: text("id").primaryKey().$defaultFn(nanoid),
     type: packageType("type").notNull(),
     name: text("name").notNull(),
     version: text("version").notNull(),
@@ -110,9 +104,7 @@ export const presetPackagesRelations = relations(presetPackages, ({ one }) => ({
 export const presetFiles = pgTable(
   "preset_files",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => createId()),
+    id: text("id").primaryKey().$defaultFn(nanoid),
     path: text("path").notNull(),
     presetId: text("preset_id")
       .references(() => presets.id)

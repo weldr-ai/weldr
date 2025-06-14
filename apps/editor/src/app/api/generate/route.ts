@@ -3,11 +3,17 @@
 import { insertMessages } from "@/lib/ai/insert-messages";
 import { prompts } from "@/lib/ai/prompts";
 import { registry } from "@/lib/ai/registry";
+import { coderTool, executeCoderTool } from "@/lib/ai/tools/coder";
 import {
   executeSetupIntegrationTool,
   setupIntegrationTool,
-} from "@/lib/ai/tools";
-import { coderTool, executeCoderTool } from "@/lib/ai/tools/coder";
+} from "@/lib/ai/tools/integrations";
+import {
+  executeInitProjectTool,
+  executeUpgradeToFullStackTool,
+  initProjectTool,
+  upgradeToFullStackTool,
+} from "@/lib/ai/tools/projects";
 import { convertMessagesToCoreMessages } from "@/lib/ai/utils";
 import type { TStreamableValue } from "@/types";
 import { auth } from "@weldr/auth";
@@ -28,19 +34,16 @@ import {
   versionPackages,
   versions,
 } from "@weldr/db/schema";
+import { redisClient } from "@weldr/shared/redis";
 import type { UserMessageRawContent } from "@weldr/shared/types";
 import type { attachmentSchema } from "@weldr/shared/validators/chats";
 import { streamText } from "ai";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import redis from "redis";
 import type { z } from "zod";
 
-const redisClient = redis.createClient({
-  url: process.env.REDIS_URL,
-});
-
 export async function POST(request: Request) {
+  console.log("Invoking generate route");
   const { projectId, message } = (await request.json()) as {
     projectId: string;
     message?: {
@@ -48,6 +51,7 @@ export async function POST(request: Request) {
       attachments: z.infer<typeof attachmentSchema>[];
     };
   };
+
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session) {
@@ -65,9 +69,9 @@ export async function POST(request: Request) {
     throw new Error("Project not found");
   }
 
-  const devNodeId = await redisClient.get(`${projectId}:dev-node-id`);
+  const machineId = await redisClient.get(`${projectId}:dev-machine-id`);
 
-  if (!devNodeId) {
+  if (!machineId) {
     throw new Error("Development node not found");
   }
 
@@ -80,6 +84,15 @@ export async function POST(request: Request) {
 
   const allIntegrationTemplates =
     await db.query.integrationTemplates.findMany();
+
+  const integrationTemplatesList = allIntegrationTemplates
+    .map(
+      (integrationTemplate) =>
+        `- ${integrationTemplate.name} (key: ${integrationTemplate.key}):
+Type: ${integrationTemplate.type}
+Description: ${integrationTemplate.description}`,
+    )
+    .join("\n\n");
 
   let activeVersion = await db.query.versions.findFirst({
     where: and(
@@ -94,6 +107,17 @@ export async function POST(request: Request) {
       userId: session.user.id,
     });
   }
+
+  const versionsList = await db.query.versions.findMany({
+    where: eq(versions.projectId, projectId),
+    orderBy: (versions, { desc }) => [desc(versions.number)],
+    columns: {
+      number: true,
+      message: true,
+      description: true,
+      changedFiles: true,
+    },
+  });
 
   if (message) {
     await insertMessages({
@@ -128,6 +152,7 @@ export async function POST(request: Request) {
   });
 
   if (!chat) {
+    console.log(`[api/generate:${projectId}] Chat not found`);
     throw new Error("Chat not found");
   }
 
@@ -141,47 +166,83 @@ export async function POST(request: Request) {
 
   const streamWriter = stream.writable.getWriter();
 
-  (async () => {
-    try {
-      if (activeVersion && activeVersion.progress !== "succeeded") {
-        await executeCoderTool({
-          userId: session.user.id,
-          projectId,
-          machineId: devNodeId,
-          promptMessages,
-          streamWriter,
-          version: activeVersion,
-        });
-      } else {
-        const result = streamText({
-          model: registry.languageModel("openai:gpt-4.1"),
-          system: prompts.requirementsGatherer(
-            activeVersion
-              ? `You are working on a project called ${project.name} that was initiated at ${activeVersion.createdAt.toISOString()}
-
-This project has the following integrations setup:
+  const projectContext = project.initiatedAt
+    ? `You are working on a ${project.config?.server && project.config?.client ? "full-stack" : project.config?.server ? "server" : "client"} app called ${project.name}${
+        integrationsList.length > 0
+          ? `\nThis project has the following integrations setup:
 ${integrationsList
   .map((integration) => `- ${integration.integrationTemplate.name}`)
   .join(", ")}`
-              : "This is a new project",
-            allIntegrationTemplates
-              .map(
-                (integrationTemplate) =>
-                  `- ${integrationTemplate.name} (key: ${integrationTemplate.key}):
-Type: ${integrationTemplate.type}
-Description: ${integrationTemplate.description}`,
-              )
-              .join("\n\n"),
-          ),
-          messages: promptMessages,
-          tools: {
-            coderTool,
-            setupIntegrationTool,
-          },
-          maxSteps: 3,
-          onFinish: async ({ text, finishReason, toolCalls }) => {
-            if (finishReason === "stop" && text) {
-              console.log(`[api/generate:onFinish:${projectId}] ${text}`);
+          : ""
+      }${
+        versionsList.length > 0
+          ? `\nVersions:
+${versionsList
+  .map(
+    (version) =>
+      `#${version.number} ${version.message}
+${version.description}
+Changed files: ${version.changedFiles.join(", ")}`,
+  )
+  .join("\n")}`
+          : ""
+      }`
+    : "This is a new project";
+
+  async function generate() {
+    if (!project || !activeVersion || !machineId || !session) {
+      throw new Error("Impossible Error");
+    }
+
+    try {
+      const result = streamText({
+        model: registry.languageModel("anthropic:claude-3-5-sonnet-latest"),
+        system: prompts.requirementsGatherer(
+          projectContext,
+          integrationTemplatesList,
+        ),
+        messages: promptMessages,
+        experimental_activeTools: [
+          ...((project.initiatedAt
+            ? ["upgradeToFullStack"]
+            : ["initProject"]) as ("initProject" | "upgradeToFullStack")[]),
+          "coder",
+          "setupIntegration",
+        ],
+        tools: {
+          initProject: initProjectTool,
+          upgradeToFullStack: upgradeToFullStackTool,
+          coder: coderTool,
+          setupIntegration: setupIntegrationTool,
+        },
+        maxSteps: 3,
+        onFinish: async ({ text, finishReason, toolCalls }) => {
+          if (finishReason === "stop" && text) {
+            console.log(`[api/generate:onFinish:${projectId}] ${text}`);
+            await insertMessages({
+              input: {
+                chatId: activeVersion.chatId,
+                userId: session.user.id,
+                messages: [
+                  {
+                    role: "assistant",
+                    rawContent: [{ type: "paragraph", value: text }],
+                  },
+                ],
+              },
+            });
+          }
+
+          if (finishReason === "tool-calls") {
+            console.log(
+              `[api/generate:onFinish:${projectId}] Tool calls: ${JSON.stringify(toolCalls)}`,
+            );
+
+            if (text) {
+              promptMessages.push({
+                role: "assistant",
+                content: text,
+              });
               await insertMessages({
                 input: {
                   chatId: activeVersion.chatId,
@@ -196,84 +257,99 @@ Description: ${integrationTemplate.description}`,
               });
             }
 
-            if (finishReason === "tool-calls") {
-              console.log(
-                `[api/generate:onFinish:${projectId}] Tool calls: ${JSON.stringify(toolCalls)}`,
-              );
-
-              if (text) {
-                await insertMessages({
-                  input: {
-                    chatId: activeVersion.chatId,
-                    userId: session.user.id,
-                    messages: [
+            for (const toolCall of toolCalls) {
+              switch (toolCall.toolName) {
+                case "initProject": {
+                  await executeInitProjectTool({
+                    projectId,
+                    machineId,
+                    args: toolCall.args,
+                  });
+                  promptMessages.push({
+                    role: "tool",
+                    content: [
                       {
-                        role: "assistant",
-                        rawContent: [{ type: "paragraph", value: text }],
+                        type: "tool-result",
+                        toolCallId: toolCall.toolCallId,
+                        toolName: toolCall.toolName,
+                        result: `Initialized the project as a ${toolCall.args.config.server && toolCall.args.config.client ? "full-stack" : toolCall.args.config.server ? "server" : "client"} app`,
                       },
                     ],
-                  },
-                });
-              }
-
-              for (const toolCall of toolCalls) {
-                switch (toolCall.toolName) {
-                  case "coderTool": {
-                    console.log(
-                      `[api/generate:onFinish:${projectId}] Executing coder tool`,
-                    );
-                    await executeCoderTool({
-                      version: activeVersion,
-                      userId: session.user.id,
-                      projectId,
-                      machineId: devNodeId,
-                      promptMessages,
-                      streamWriter,
-                      toolArgs: toolCall.args,
-                    });
-                    break;
-                  }
-                  case "setupIntegrationTool": {
-                    console.log(
-                      `[api/generate:onFinish:${projectId}] Executing setup integration tool`,
-                    );
-                    await executeSetupIntegrationTool({
-                      chatId: activeVersion.chatId,
-                      userId: session.user.id,
-                      toolArgs: toolCall.args,
-                      streamWriter,
-                    });
-                    break;
-                  }
+                  });
+                  generate();
+                  break;
+                }
+                case "upgradeToFullStack": {
+                  await executeUpgradeToFullStackTool({
+                    project,
+                    machineId,
+                  });
+                  promptMessages.push({
+                    role: "tool",
+                    content: [
+                      {
+                        type: "tool-result",
+                        toolCallId: toolCall.toolCallId,
+                        toolName: toolCall.toolName,
+                        result: "Updated the project to full-stack app",
+                      },
+                    ],
+                  });
+                  generate();
+                  break;
+                }
+                case "setupIntegration": {
+                  await executeSetupIntegrationTool({
+                    chatId: activeVersion.chatId,
+                    userId: session.user.id,
+                    streamWriter,
+                    args: toolCall.args,
+                  });
+                  break;
+                }
+                case "coder": {
+                  await executeCoderTool({
+                    projectId,
+                    projectContext,
+                    version: activeVersion,
+                    user: session.user,
+                    machineId,
+                    promptMessages,
+                    streamWriter,
+                    args: toolCall.args,
+                  });
+                  break;
                 }
               }
             }
-          },
-          onError: (error) => {
-            console.error(
-              `[api/generate:onError:${projectId}] ${JSON.stringify(error, null, 2)}`,
-            );
-          },
+          }
+        },
+        onError: (error) => {
+          console.error(
+            `[api/generate:onError:${projectId}] ${JSON.stringify(error, null, 2)}`,
+          );
+        },
+      });
+
+      for await (const chunk of result.textStream) {
+        await streamWriter.write({
+          type: "paragraph",
+          text: chunk,
         });
-
-        for await (const chunk of result.textStream) {
-          await streamWriter.write({
-            type: "paragraph",
-            text: chunk,
-          });
-        }
-
-        const usageData = await result.usage;
-
-        console.log(
-          `[api/generate:${projectId}] Prompt Tokens: ${usageData.promptTokens} + Completion Tokens: ${usageData.completionTokens} = Total Tokens: ${usageData.totalTokens}`,
-        );
       }
+
+      const usageData = await result.usage;
+
+      console.log(
+        `[api/generate:${projectId}] Prompt Tokens: ${usageData.promptTokens} + Completion Tokens: ${usageData.completionTokens} = Total Tokens: ${usageData.totalTokens}`,
+      );
     } finally {
       console.log("Closing stream writer");
       await streamWriter.close();
     }
-  })();
+  }
+
+  generate();
 
   return new Response(stream.readable, {
     headers: {

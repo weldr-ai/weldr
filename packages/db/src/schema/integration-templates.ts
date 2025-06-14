@@ -1,12 +1,10 @@
-import { createId } from "@paralleldrive/cuid2";
+import { nanoid } from "@weldr/shared/nanoid";
 import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const integrationTemplates = pgTable(
   "integration_templates",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => createId()),
+    id: text("id").primaryKey().$defaultFn(nanoid),
     name: text("name").notNull(),
     key: text("key").notNull(),
     type: text("type").notNull(),

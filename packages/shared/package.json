@@ -12,19 +12,22 @@
     "./integrations/*/validators": "./src/integrations/*/validators.ts",
     "./integrations/*/types": "./src/integrations/*/types.ts",
     "./fly": "./src/fly/index.ts",
-    "./s3": "./src/s3.ts",
-    "./color-utils": "./src/color-utils.ts"
+    "./tigris": "./src/tigris.ts",
+    "./color-utils": "./src/color-utils.ts",
+    "./redis": "./src/redis.ts",
+    "./nanoid": "./src/nanoid.ts"
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
     "check-types": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
+    "@aws-sdk/client-iam": "^3.828.0",
     "@aws-sdk/client-s3": "^3.799.0",
     "@aws-sdk/s3-request-presigner": "^3.799.0",
-    "@paralleldrive/cuid2": "^2.2.2",
     "json-schema": "^0.4.0",
     "jszip": "^3.10.1",
+    "nanoid": "^5.1.5",
     "ofetch": "^1.4.1",
     "zod": "^3.24.3"
   },

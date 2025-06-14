@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import type { db } from "@weldr/db";
 import { chatMessages, chats, declarations } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
-import { S3 } from "@weldr/shared/s3";
+import { Tigris } from "@weldr/shared/tigris";
 import type { ChatMessage } from "@weldr/shared/types";
 import { assistantMessageRawContentToText } from "@weldr/shared/utils";
 import { addMessagesInputSchema } from "@weldr/shared/validators/chats";
@@ -48,9 +48,9 @@ export const chatsRouter = {
           const attachments = [];
 
           for (const attachment of message.attachments) {
-            const url = await S3.getSignedUrl(
+            const url = await Tigris.object.getSignedUrl(
               // biome-ignore lint/style/noNonNullAssertion: <explanation>
-              process.env.ATTACHMENTS_BUCKET!,
+              process.env.GENERAL_BUCKET!,
               attachment.key,
             );
 

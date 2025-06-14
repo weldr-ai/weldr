@@ -1,4 +1,4 @@
-import { createId } from "@paralleldrive/cuid2";
+import { nanoid } from "@weldr/shared/nanoid";
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { users } from "./auth";
@@ -9,9 +9,7 @@ import { secrets } from "./vault";
 export const environmentVariables = pgTable(
   "environment_variables",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => createId()),
+    id: text("id").primaryKey().$defaultFn(nanoid),
     key: text("key").notNull(),
     secretId: uuid("secret_id")
       .references(() => secrets.id, { onDelete: "cascade" })
