@@ -1,20 +1,3 @@
-"use server";
-
-import { insertMessages } from "@/lib/ai/insert-messages";
-import { prompts } from "@/lib/ai/prompts";
-import { registry } from "@/lib/ai/registry";
-import { coderTool, executeCoderTool } from "@/lib/ai/tools/coder";
-import {
-  executeSetupIntegrationTool,
-  setupIntegrationTool,
-} from "@/lib/ai/tools/integrations";
-import {
-  executeInitProjectTool,
-  executeUpgradeToFullStackTool,
-  initProjectTool,
-  upgradeToFullStackTool,
-} from "@/lib/ai/tools/projects";
-import { convertMessagesToCoreMessages } from "@/lib/ai/utils";
 import type { TStreamableValue } from "@/types";
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull } from "@weldr/db";
@@ -41,6 +24,21 @@ import { streamText } from "ai";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { z } from "zod";
+import { insertMessages } from "./_internal/insert-messages";
+import { prompt } from "./_internal/prompt";
+import { registry } from "./_internal/registry";
+import { coderTool } from "./_internal/tools/coder";
+import {
+  executeSetupIntegrationTool,
+  setupIntegrationTool,
+} from "./_internal/tools/integrations";
+import {
+  executeInitProjectTool,
+  executeUpgradeToFullStackTool,
+  initProjectTool,
+  upgradeToFullStackTool,
+} from "./_internal/tools/projects";
+import { convertMessagesToCoreMessages } from "./_internal/utils";
 
 export async function POST(request: Request) {
   console.log("Invoking generate route");
@@ -197,10 +195,7 @@ Changed files: ${version.changedFiles.join(", ")}`,
     try {
       const result = streamText({
         model: registry.languageModel("anthropic:claude-3-5-sonnet-latest"),
-        system: prompts.requirementsGatherer(
-          projectContext,
-          integrationTemplatesList,
-        ),
+        system: prompt(projectContext, integrationTemplatesList),
         messages: promptMessages,
         experimental_activeTools: [
           ...((project.initiatedAt
@@ -308,16 +303,7 @@ Changed files: ${version.changedFiles.join(", ")}`,
                   break;
                 }
                 case "coder": {
-                  await executeCoderTool({
-                    projectId,
-                    projectContext,
-                    version: activeVersion,
-                    user: session.user,
-                    machineId,
-                    promptMessages,
-                    streamWriter,
-                    args: toolCall.args,
-                  });
+                  // TODO: Handle the coder here
                   break;
                 }
               }

@@ -1,8 +1,4 @@
-import type {
-  ChatMessage,
-  ToolMessageRawContent,
-  VersionMessageRawContent,
-} from "@weldr/shared/types";
+import type { ChatMessage, ToolMessageRawContent } from "@weldr/shared/types";
 import type { CoreMessage } from "ai";
 
 export function convertMessagesToCoreMessages(
@@ -34,17 +30,6 @@ export function convertMessagesToCoreMessages(
         });
       }
 
-      continue;
-    }
-
-    if (message.role === "version") {
-      const version = message.rawContent as VersionMessageRawContent;
-      result.push({
-        role: "assistant",
-        content: `Created #${version.versionNumber} ${version.versionMessage}
-        Description: ${version.versionDescription}
-        Changed files: ${version.changedFiles.map((file) => `- ${file.path}`).join(", ")}`,
-      });
       continue;
     }
 

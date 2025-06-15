@@ -123,7 +123,7 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
   const triggerGeneration = useCallback(async () => {
     setPendingMessage(pendingMessage ?? "thinking");
 
-    const result = await fetch("/api/generate", {
+    const result = await fetch("/api/planner", {
       method: "POST",
       body: JSON.stringify({
         projectId: project.id,
@@ -138,7 +138,7 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
     });
 
     if (!result.ok || !result.body) {
-      throw new Error("Failed to trigger generation");
+      throw new Error("Failed to trigger planner");
     }
 
     const stream = await readStream(result);
@@ -226,45 +226,6 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
               ];
             });
           }
-
-          break;
-        }
-        case "version": {
-          setMessages((prevMessages) => {
-            const lastMessage = prevMessages[prevMessages.length - 1];
-
-            if (lastMessage?.role !== "version") {
-              return [
-                ...prevMessages,
-                {
-                  id: chunk.id,
-                  role: "version",
-                  createdAt: chunk.createdAt ?? new Date(),
-                  rawContent: {
-                    versionNumber: chunk.versionNumber,
-                    versionId: chunk.versionId,
-                    versionMessage: chunk.versionMessage,
-                    versionDescription: chunk.versionDescription,
-                    changedFiles: chunk.changedFiles,
-                  },
-                },
-              ];
-            }
-
-            const messagesWithoutLast = prevMessages.slice(0, -1);
-
-            return [
-              ...messagesWithoutLast,
-              {
-                ...lastMessage,
-                ...chunk,
-                rawContent: {
-                  ...lastMessage.rawContent,
-                  ...chunk,
-                },
-              },
-            ];
-          });
 
           break;
         }

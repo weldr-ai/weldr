@@ -1,5 +1,5 @@
 CREATE TYPE "public"."canvas_node_types" AS ENUM('preview', 'declaration');--> statement-breakpoint
-CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool', 'version');--> statement-breakpoint
+CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool');--> statement-breakpoint
 CREATE TYPE "public"."package_type" AS ENUM('runtime', 'development');--> statement-breakpoint
 CREATE TYPE "public"."preset_type" AS ENUM('base');--> statement-breakpoint
 CREATE TYPE "public"."declaration_types" AS ENUM('component', 'endpoint', 'function', 'model', 'other');--> statement-breakpoint
