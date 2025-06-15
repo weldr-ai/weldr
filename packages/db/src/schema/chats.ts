@@ -3,7 +3,6 @@ import type {
   AssistantMessageRawContent,
   ToolMessageRawContent,
   UserMessageRawContent,
-  VersionMessageRawContent,
 } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
@@ -23,7 +22,6 @@ export const messageRoles = pgEnum("message_roles", [
   "user",
   "assistant",
   "tool",
-  "version",
 ]);
 
 export const chats = pgTable(
@@ -69,7 +67,6 @@ export const chatMessages = pgTable(
         | UserMessageRawContent
         | AssistantMessageRawContent
         | ToolMessageRawContent
-        | VersionMessageRawContent
       >()
       .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

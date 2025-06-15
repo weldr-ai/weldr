@@ -7,15 +7,9 @@ import type { TPendingMessage } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import type { ChatMessage, ToolMessage } from "@weldr/shared/types";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@weldr/ui/components/tooltip";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
-import { GitCommitIcon } from "lucide-react";
 import { ChatIntegrationDialog } from "./chat-integration-dialog";
 import { CustomMarkdown } from "./custom-markdown";
 
@@ -39,7 +33,7 @@ const PureMessageItem = ({
       )}
       key={message.id}
     >
-      {(message.role === "assistant" || message.role === "version") && (
+      {message.role === "assistant" && (
         <div className="flex items-center gap-1 pb-2">
           <LogoIcon className="size-5" />
           <span className="text-muted-foreground text-xs">Weldr</span>
@@ -70,30 +64,6 @@ const PureMessageItem = ({
               integrationTemplates={integrationTemplates}
             />
           )}
-
-        {message.role === "version" && (
-          <div className="grid grid-cols-[auto_auto_1fr_auto] items-center justify-between gap-1 rounded-t-md border-b bg-muted px-2 py-1 text-muted-foreground">
-            <GitCommitIcon className="size-3.5 text-success" />
-
-            <span className="text-muted-foreground">
-              {`#${message.rawContent.versionNumber}`}
-            </span>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="max-w-64 truncate text-foreground">
-                  {message.rawContent.versionMessage}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent className="space-x-1 rounded-sm border bg-muted text-foreground text-xs">
-                <span className="text-muted-foreground">
-                  {`#${message.rawContent.versionNumber}`}
-                </span>
-                <span>{message.rawContent.versionMessage}</span>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -44,20 +44,6 @@ export type CoderStreamableValue =
       status: "deployed";
     };
 
-export type VersionStreamableValue = {
-  id?: string;
-  createdAt?: Date;
-  type: "version";
-  versionId: string;
-  versionMessage: string;
-  versionNumber: number;
-  versionDescription: string;
-  changedFiles: {
-    path: string;
-    status: "pending" | "success";
-  }[];
-};
-
 export type NodesStreamableValue = {
   type: "nodes";
   node: CanvasNodeData;
@@ -66,6 +52,5 @@ export type NodesStreamableValue = {
 export type TStreamableValue =
   | TextStreamableValue
   | ToolStreamableValue
-  | VersionStreamableValue
   | NodesStreamableValue
   | CoderStreamableValue;
