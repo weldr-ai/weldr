@@ -38,6 +38,7 @@ export default async function ProjectSettingsPage({
           <ProjectSettings
             project={project}
             integrationTemplates={integrationTemplates}
+            environmentVariables={project.environmentVariables}
           />
         </div>
       </div>

@@ -43,7 +43,7 @@ export const versions = pgTable(
       .$type<string[]>()
       .default([])
       .notNull(),
-    progress: versionProgress("progress").default("initiated").notNull(),
+    progress: versionProgress("progress"),
     activatedAt: timestamp("activated_at").defaultNow(),
     parentVersionId: text("parent_version_id").references(
       (): AnyPgColumn => versions.id,

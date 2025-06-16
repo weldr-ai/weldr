@@ -1,7 +1,5 @@
 "use client";
 
-import { useTRPC } from "@/lib/trpc/react";
-import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/components/button";
 import {
@@ -26,23 +24,12 @@ import { IntegrationsSection } from "./integrations-section";
 export function ProjectSettings({
   project,
   integrationTemplates,
+  environmentVariables,
 }: {
   project: RouterOutputs["projects"]["byId"];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) {
-  const trpc = useTRPC();
-
-  const { data: env } = useQuery(
-    trpc.environmentVariables.list.queryOptions(
-      {
-        projectId: project.id,
-      },
-      {
-        initialData: project.environmentVariables,
-      },
-    ),
-  );
-
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
@@ -98,12 +85,12 @@ export function ProjectSettings({
                 projectId={project.id}
                 integrations={project.integrations}
                 integrationTemplates={integrationTemplates}
-                environmentVariables={env}
+                environmentVariables={environmentVariables}
               />
             </TabsContent>
 
             <TabsContent value="env" className="mt-0">
-              <EnvSection env={env} projectId={project.id} />
+              <EnvSection env={environmentVariables} projectId={project.id} />
             </TabsContent>
           </div>
         </Tabs>

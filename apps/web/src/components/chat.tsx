@@ -1,7 +1,7 @@
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import { nanoid } from "@weldr/shared/nanoid";
@@ -29,10 +29,16 @@ import { MultimodalInput } from "./multimodal-input";
 interface ChatProps {
   version: RouterOutputs["projects"]["byId"]["activeVersion"];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
   project: RouterOutputs["projects"]["byId"];
 }
 
-export function Chat({ version, integrationTemplates, project }: ChatProps) {
+export function Chat({
+  version,
+  integrationTemplates,
+  environmentVariables,
+  project,
+}: ChatProps) {
   const { data: session } = authClient.useSession();
   const generationTriggered = useRef(false);
   const [messagesContainerRef, messagesEndRef] =
@@ -120,21 +126,16 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
+  const addMessageMutation = useMutation(
+    trpc.chats.addMessage.mutationOptions(),
+  );
+
   const triggerGeneration = useCallback(async () => {
     setPendingMessage(pendingMessage ?? "thinking");
 
-    const result = await fetch("/api/planner", {
+    const result = await fetch("/api/chat", {
       method: "POST",
-      body: JSON.stringify({
-        projectId: project.id,
-        message:
-          userMessageRawContent.length > 0
-            ? {
-                content: userMessageRawContent,
-                attachments,
-              }
-            : undefined,
-      }),
+      body: JSON.stringify({ projectId: project.id }),
     });
 
     if (!result.ok || !result.body) {
@@ -209,7 +210,7 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
           break;
         }
         case "tool": {
-          if (chunk.toolName === "setupIntegrationTool") {
+          if (chunk.toolName === "setupIntegrationsTool") {
             setPendingMessage("waiting");
             setMessages((prevMessages) => {
               return [
@@ -261,7 +262,6 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
 
     setPendingMessage(null);
   }, [
-    userMessageRawContent,
     getNodes,
     setNodes,
     updateNodeData,
@@ -269,7 +269,6 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
     queryClient,
     trpc,
     pendingMessage,
-    attachments,
   ]);
 
   useEffect(() => {
@@ -286,7 +285,7 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
     const lastMessage = messages[messages.length - 1];
     if (
       lastMessage?.role === "tool" &&
-      lastMessage.rawContent.toolName === "setupIntegrationTool" &&
+      lastMessage.rawContent.toolName === "setupIntegrationsTool" &&
       lastMessage.rawContent.toolResult?.status === "pending"
     ) {
       setPendingMessage("waiting");
@@ -316,12 +315,14 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
             image: session.user.image ?? undefined,
           }
         : undefined,
-    };
+    } as ChatMessage;
 
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      newMessageUser as ChatMessage,
-    ]);
+    setMessages((prevMessages) => [...prevMessages, newMessageUser]);
+
+    await addMessageMutation.mutateAsync({
+      chatId: version.chat.id,
+      messages: [newMessageUser],
+    });
 
     await triggerGeneration();
   };
@@ -444,6 +445,7 @@ export function Chat({ version, integrationTemplates, project }: ChatProps) {
             messages={messages}
             setMessages={setMessages}
             integrationTemplates={integrationTemplates}
+            environmentVariables={environmentVariables}
             pendingMessage={pendingMessage}
             setPendingMessage={setPendingMessage}
           />

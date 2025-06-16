@@ -37,17 +37,11 @@ export const get = async ({
   }
 };
 
-export const getDevMachineId = async ({
-  projectId,
-  machineId,
-}: {
-  projectId: string;
-  machineId: string;
-}) => {
-  const response = await get({ type: "development", projectId, machineId });
+export const getDevMachineId = async ({ projectId }: { projectId: string }) => {
+  let machineId = await redisClient.get(`${projectId}:dev-machine-id`);
 
-  if (!response) {
-    const machineId = await create({
+  if (!machineId) {
+    machineId = await create({
       type: "development",
       projectId,
       config: presets.development,
@@ -58,12 +52,21 @@ export const getDevMachineId = async ({
     return machineId;
   }
 
+  const response = await get({
+    type: "development",
+    projectId,
+    machineId,
+  });
+
+  if (!response) {
+    throw new Error("Machine not found");
+  }
+
   if (response.state !== "started") {
-    await waitUntil({
+    await start({
       type: "development",
       projectId,
       machineId,
-      state: "started",
     });
   }
 

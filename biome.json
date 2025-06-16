@@ -8,7 +8,8 @@
       "**/node_modules/**",
       "**/.nitro/**",
       "**/.turbo/**",
-      "**/temp/**"
+      "**/temp/**",
+      "**/data/**"
     ]
   },
   "formatter": {
@@ -19,7 +20,8 @@
       "**/node_modules/**",
       "**/.nitro/**",
       "**/.turbo/**",
-      "**/temp/**"
+      "**/temp/**",
+      "**/data/**"
     ]
   },
   "linter": {
@@ -42,7 +44,8 @@
       "**/node_modules/**",
       "**/.nitro/**",
       "**/.turbo/**",
-      "**/temp/**"
+      "**/temp/**",
+      "**/data/**"
     ]
   }
 }

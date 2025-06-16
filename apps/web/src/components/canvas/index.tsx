@@ -43,11 +43,13 @@ export function Canvas({
   initialEdges,
   project,
   integrationTemplates,
+  environmentVariables,
 }: {
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
   project: RouterOutputs["projects"]["byId"];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) {
   const { showCanvasEdges, toggleCanvasEdges } = useUIStore();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
@@ -158,6 +160,7 @@ export function Canvas({
           project={project}
           integrationTemplates={integrationTemplates}
           version={project.activeVersion}
+          environmentVariables={environmentVariables}
         />
       </Panel>
 

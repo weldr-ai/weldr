@@ -92,6 +92,17 @@ export function ProjectView({
     ),
   );
 
+  const { data: env } = useQuery(
+    trpc.environmentVariables.list.queryOptions(
+      {
+        projectId: project.id,
+      },
+      {
+        initialData: project.environmentVariables,
+      },
+    ),
+  );
+
   return (
     <div className="flex size-full flex-col">
       <div className="flex h-10 items-center justify-between border-b p-1.5">
@@ -103,6 +114,7 @@ export function ProjectView({
           <ProjectSettings
             project={project}
             integrationTemplates={integrationTemplates}
+            environmentVariables={env}
           />
         </div>
       </div>
@@ -112,6 +124,7 @@ export function ProjectView({
           initialEdges={initialEdges}
           project={project}
           integrationTemplates={integrationTemplates}
+          environmentVariables={env}
         />
       </div>
     </div>

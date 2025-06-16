@@ -63,16 +63,18 @@ export function Editor({ ...props }: EditorProps) {
         />
         <RichTextPlugin
           contentEditable={
-            <ContentEditable
-              className={cn(
-                "flex size-full min-h-9 cursor-text flex-col justify-center overflow-y-auto bg-background px-3 py-1 text-sm focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
-                !props.className &&
-                  "rounded-lg border focus-visible:ring-1 focus-visible:ring-ring",
-                props.className,
-              )}
-              disabled={props.disabled}
-              onFocus={props.onFocus}
-            />
+            <div className="size-full">
+              <ContentEditable
+                className={cn(
+                  "flex size-full min-h-9 cursor-text flex-col justify-center overflow-y-auto bg-background px-3 py-1 text-sm focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                  !props.className &&
+                    "rounded-lg border focus-visible:ring-1 focus-visible:ring-ring",
+                  props.className,
+                )}
+                disabled={props.disabled}
+                onFocus={props.onFocus}
+              />
+            </div>
           }
           placeholder={
             <div className="pointer-events-none absolute px-3 py-2 text-muted-foreground text-sm">
