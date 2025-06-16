@@ -12,6 +12,7 @@ interface MessagesProps {
   messages: ChatMessage[];
   setMessages: (messages: ChatMessage[]) => void;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }
 
 function PureMessages({
@@ -20,6 +21,7 @@ function PureMessages({
   pendingMessage,
   setPendingMessage,
   integrationTemplates,
+  environmentVariables,
 }: MessagesProps) {
   return (
     <>
@@ -28,7 +30,7 @@ function PureMessages({
           (message) =>
             !(
               message.role === "tool" &&
-              message.rawContent.toolName !== "setupIntegrationTool"
+              message.rawContent.toolName !== "setupIntegrationsTool"
             ),
         )
         .map((message) => (
@@ -39,6 +41,7 @@ function PureMessages({
             pendingMessage={pendingMessage}
             setPendingMessage={setPendingMessage}
             integrationTemplates={integrationTemplates}
+            environmentVariables={environmentVariables}
           />
         ))}
     </>

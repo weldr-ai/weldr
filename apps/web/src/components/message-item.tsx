@@ -18,12 +18,14 @@ const PureMessageItem = ({
   setMessages,
   setPendingMessage,
   integrationTemplates,
+  environmentVariables,
 }: {
   message: ChatMessage;
   setMessages: (messages: ChatMessage[]) => void;
   pendingMessage: TPendingMessage;
   setPendingMessage: (pendingMessage: TPendingMessage) => void;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) => {
   return (
     <div
@@ -56,12 +58,13 @@ const PureMessageItem = ({
         )}
 
         {message.role === "tool" &&
-          message.rawContent.toolName === "setupIntegrationTool" && (
+          message.rawContent.toolName === "setupIntegrationsTool" && (
             <SetupIntegration
               setMessages={setMessages}
               setPendingMessage={setPendingMessage}
               message={message}
               integrationTemplates={integrationTemplates}
+              environmentVariables={environmentVariables}
             />
           )}
       </div>
@@ -81,14 +84,16 @@ const PureSetupIntegration = ({
   integrationTemplates,
   setMessages,
   setPendingMessage,
+  environmentVariables,
 }: {
   message: ToolMessage;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
   setMessages: (messages: ChatMessage[]) => void;
   setPendingMessage: (pendingMessage: "thinking" | "waiting" | null) => void;
 }) => {
   const toolInfo = message.rawContent as unknown as {
-    toolArgs: { integration: "postgres" };
+    toolArgs: { integrations: "postgresql"[] };
     toolResult: { status: "pending" | "success" | "error" | "cancelled" };
   };
 
@@ -117,40 +122,43 @@ const PureSetupIntegration = ({
     }),
   );
 
-  switch (toolInfo.toolArgs.integration) {
-    case "postgres": {
-      const postgresIntegrationTemplate = integrationTemplates?.find(
-        (integrationTemplate) => integrationTemplate.type === "postgres",
-      );
+  for (const integration of toolInfo.toolArgs.integrations) {
+    switch (integration) {
+      case "postgresql": {
+        const postgresIntegrationTemplate = integrationTemplates?.find(
+          (integrationTemplate) => integrationTemplate.key === "postgresql",
+        );
 
-      if (!postgresIntegrationTemplate) {
-        return null;
+        if (!postgresIntegrationTemplate) {
+          return null;
+        }
+
+        return (
+          <ChatIntegrationDialog
+            integrationTemplate={postgresIntegrationTemplate}
+            environmentVariables={environmentVariables}
+            status={toolInfo.toolResult.status}
+            onSuccess={() => {
+              updateMessageMutation.mutate({
+                where: { messageId: message.id as string },
+                data: {
+                  type: "tool",
+                  toolResult: { status: "success" },
+                },
+              });
+            }}
+            onCancel={() => {
+              updateMessageMutation.mutate({
+                where: { messageId: message.id as string },
+                data: {
+                  type: "tool",
+                  toolResult: { status: "cancelled" },
+                },
+              });
+            }}
+          />
+        );
       }
-
-      return (
-        <ChatIntegrationDialog
-          integrationTemplate={postgresIntegrationTemplate}
-          status={toolInfo.toolResult.status}
-          onSuccess={() => {
-            updateMessageMutation.mutate({
-              where: { messageId: message.id as string },
-              data: {
-                type: "tool",
-                toolResult: { status: "success" },
-              },
-            });
-          }}
-          onCancel={() => {
-            updateMessageMutation.mutate({
-              where: { messageId: message.id as string },
-              data: {
-                type: "tool",
-                toolResult: { status: "cancelled" },
-              },
-            });
-          }}
-        />
-      );
     }
   }
 };

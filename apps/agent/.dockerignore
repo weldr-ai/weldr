@@ -1,0 +1,109 @@
+# flyctl launch added from .gitignore
+# Dependencies
+**/node_modules
+**/.pnp
+**/.pnp.*
+**/.yarn/*
+!**/.yarn/patches
+!**/.yarn/plugins
+!**/.yarn/releases
+!**/.yarn/versions
+
+# Local env files
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+
+# Testing
+**/coverage
+
+# Turbo
+**/.turbo
+
+# Vercel
+**/.vercel
+
+# Build Outputs
+**/.next
+**/out
+**/build
+**/dist
+**/dist-ssr
+**/.vinxi
+**/.output
+**/.react-router
+**/*.tsbuildinfo
+**/next-env.d.ts
+**/.nitro
+
+# Debug
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/.pnpm-debug.log*
+
+# Misc
+**/.DS_Store
+**/*.pem
+
+# Local temp files
+**/.temp
+
+# flyctl launch added from boilerplate/.gitignore
+# Dependencies
+boilerplate/**/node_modules
+boilerplate/**/.pnp
+boilerplate/**/.pnp.*
+boilerplate/**/.yarn/*
+!boilerplate/**/.yarn/patches
+!boilerplate/**/.yarn/plugins
+!boilerplate/**/.yarn/releases
+!boilerplate/**/.yarn/versions
+
+# Local env files
+boilerplate/**/.env
+boilerplate/**/.env.local
+boilerplate/**/.env.development.local
+boilerplate/**/.env.test.local
+boilerplate/**/.env.production.local
+
+# Testing
+boilerplate/**/coverage
+
+# Turbo
+boilerplate/**/.turbo
+
+# Vercel
+boilerplate/**/.vercel
+
+# Build Outputs
+boilerplate/**/.next
+boilerplate/**/out
+boilerplate/**/build
+boilerplate/**/dist
+boilerplate/**/dist-ssr
+boilerplate/**/.vinxi
+boilerplate/**/.output
+boilerplate/**/.react-router
+boilerplate/**/*.tsbuildinfo
+boilerplate/**/next-env.d.ts
+boilerplate/**/.nitro
+
+# Debug
+boilerplate/**/npm-debug.log*
+boilerplate/**/yarn-debug.log*
+boilerplate/**/yarn-error.log*
+boilerplate/**/.pnpm-debug.log*
+
+# Misc
+boilerplate/**/.DS_Store
+boilerplate/**/*.pem
+
+# Local temp files
+boilerplate/**/.temp
+
+# Generated files
+boilerplate/**/routeTree.gen.ts
+fly.toml

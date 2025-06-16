@@ -1,5 +1,5 @@
 {
-  "id": "b9a189e3-659e-4628-863c-3bb8d19f06fa",
+  "id": "7d689ca7-d453-48cd-aa17-b0afcc443d8c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2458,8 +2458,7 @@
           "type": "version_progress",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'initiated'"
+          "notNull": false
         },
         "activated_at": {
           "name": "activated_at",

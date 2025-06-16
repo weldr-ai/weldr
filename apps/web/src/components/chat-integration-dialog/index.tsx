@@ -17,6 +17,7 @@ import { PostgresForm } from "./postgres-form";
 
 interface ChatIntegrationDialogProps {
   integrationTemplate: RouterOutputs["integrationTemplates"]["byId"];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
   status: "pending" | "success" | "error" | "cancelled";
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -25,6 +26,7 @@ interface ChatIntegrationDialogProps {
 
 export function ChatIntegrationDialog({
   integrationTemplate,
+  environmentVariables,
   status,
   onSuccess,
   onCancel,
@@ -33,10 +35,11 @@ export function ChatIntegrationDialog({
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const renderForm = () => {
-    switch (integrationTemplate.type) {
-      case "postgres": {
+    switch (integrationTemplate.key) {
+      case "postgresql": {
         return (
           <PostgresForm
+            environmentVariables={environmentVariables}
             integrationTemplate={integrationTemplate}
             onSuccess={onSuccess}
             onCancel={onCancel}
@@ -46,6 +49,14 @@ export function ChatIntegrationDialog({
       }
       default: {
         return null;
+      }
+    }
+  };
+
+  const getDescription = () => {
+    switch (integrationTemplate.key) {
+      case "postgresql": {
+        return "Add your database connection details to continue";
       }
     }
   };
@@ -88,9 +99,7 @@ export function ChatIntegrationDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Setup {integrationTemplate.name}</DialogTitle>
-          <DialogDescription>
-            Add your database connection details to continue
-          </DialogDescription>
+          <DialogDescription>{getDescription()}</DialogDescription>
         </DialogHeader>
         {renderForm()}
       </DialogContent>

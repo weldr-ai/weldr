@@ -328,7 +328,7 @@ CREATE TABLE "versions" (
 	"commit_hash" text,
 	"chat_id" text NOT NULL,
 	"changed_files" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"progress" "version_progress" DEFAULT 'initiated' NOT NULL,
+	"progress" "version_progress",
 	"activated_at" timestamp DEFAULT now(),
 	"parent_version_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,

@@ -27,7 +27,7 @@ export type TextStreamableValue = {
 export type ToolStreamableValue = {
   id?: string;
   type: "tool";
-  toolName: "setupIntegrationTool";
+  toolName: "setupIntegrationsTool";
   toolArgs?: Record<string, unknown>;
   toolResult: unknown;
 };
