@@ -49,8 +49,44 @@ export type NodesStreamableValue = {
   node: CanvasNodeData;
 };
 
+export type EndStreamableValue = {
+  type: "end";
+};
+
 export type TStreamableValue =
   | TextStreamableValue
   | ToolStreamableValue
   | NodesStreamableValue
-  | CoderStreamableValue;
+  | CoderStreamableValue
+  | EndStreamableValue;
+
+// SSE-specific event types
+export type SSEConnectionEvent = {
+  type: "connected";
+  clientId: string;
+  streamId: string;
+  workflowRunning?: boolean;
+};
+
+export type SSEWorkflowCompleteEvent = {
+  type: "workflow_complete";
+};
+
+export type SSEErrorEvent = {
+  type: "error";
+  error: string;
+};
+
+export type SSEEvent =
+  | SSEConnectionEvent
+  | SSEWorkflowCompleteEvent
+  | SSEErrorEvent
+  | TStreamableValue;
+
+// Trigger API response type
+export type TriggerWorkflowResponse = {
+  success: boolean;
+  streamId: string;
+  runId: string;
+  message?: string;
+};

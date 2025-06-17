@@ -1,7 +1,12 @@
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
 import { useTRPC } from "@/lib/trpc/react";
-import type { CanvasNode, TPendingMessage, TStreamableValue } from "@/types";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type {
+  CanvasNode,
+  SSEEvent,
+  TPendingMessage,
+  TriggerWorkflowResponse,
+} from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import { nanoid } from "@weldr/shared/nanoid";
@@ -50,6 +55,15 @@ export function Chat({
   const [isChatVisible, setIsChatVisible] = useState(
     project.activeVersion.progress !== "succeeded",
   );
+
+  const [eventSourceRef, setEventSourceRef] = useState<EventSource | null>(
+    null,
+  );
+
+  // Add reconnection tracking
+  const reconnectAttempts = useRef(0);
+  const maxReconnectAttempts = 5;
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get declarations from the latest generation
   const latestVersion = project.versions[project.versions.length - 1];
@@ -126,160 +140,308 @@ export function Chat({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const addMessageMutation = useMutation(
-    trpc.chats.addMessage.mutationOptions(),
+  const triggerWorkflow = useCallback(
+    async (
+      messageContent: UserMessageRawContent,
+      messageAttachments: Attachment[],
+    ) => {
+      try {
+        const triggerResponse = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            projectId: project.id,
+            message: {
+              content: messageContent,
+              attachments: messageAttachments,
+            },
+          }),
+        });
+
+        if (!triggerResponse.ok) {
+          throw new Error("Failed to trigger workflow");
+        }
+
+        const triggerResult: TriggerWorkflowResponse =
+          await triggerResponse.json();
+        console.log("Workflow triggered:", triggerResult);
+        return triggerResult;
+      } catch (error) {
+        console.error("Failed to trigger workflow:", error);
+        throw error;
+      }
+    },
+    [project.id],
   );
 
-  const triggerGeneration = useCallback(async () => {
-    setPendingMessage(pendingMessage ?? "thinking");
-
-    const result = await fetch("/api/chat", {
-      method: "POST",
-      body: JSON.stringify({ projectId: project.id }),
-    });
-
-    if (!result.ok || !result.body) {
-      throw new Error("Failed to trigger planner");
+  const connectToEventStream = useCallback(() => {
+    // Prevent multiple simultaneous connections
+    if (eventSourceRef) {
+      console.log("EventSource already exists, skipping connection");
+      return eventSourceRef;
     }
 
-    const stream = await readStream(result);
+    console.log("Connecting to EventSource for project:", project.id);
+    const eventSource = new EventSource(`/api/chat/${project.id}`);
+    setEventSourceRef(eventSource);
 
-    for await (const chunk of stream) {
-      if (pendingMessage === null || pendingMessage === "thinking") {
-        setPendingMessage("generating");
-      }
+    eventSource.onmessage = (event) => {
+      try {
+        const chunk: SSEEvent = JSON.parse(event.data);
 
-      switch (chunk.type) {
-        case "paragraph": {
-          setMessages((prevMessages) => {
-            const lastMessage = prevMessages[prevMessages.length - 1];
-
-            if (lastMessage?.role !== "assistant") {
-              return [
-                ...prevMessages,
-                {
-                  id: nanoid(),
-                  role: "assistant",
-                  createdAt: new Date(),
-                  rawContent: [
-                    {
-                      type: "paragraph",
-                      value: chunk.text,
-                    },
-                  ],
-                },
-              ];
-            }
-
-            const messagesWithoutLast = prevMessages.slice(0, -1);
-
-            const updatedLastMessage = {
-              ...lastMessage,
-              rawContent: [
-                ...lastMessage.rawContent,
-                {
-                  type: "paragraph",
-                  value: chunk.text,
-                },
-              ] as AssistantMessageRawContent,
-            };
-
-            return [...messagesWithoutLast, updatedLastMessage];
-          });
-          break;
+        if (chunk.type === "connected") {
+          console.log(
+            `Connected to stream ${chunk.streamId} with client ${chunk.clientId}`,
+          );
+          // Reset reconnection attempts on successful connection
+          reconnectAttempts.current = 0;
+          return;
         }
-        case "coder": {
-          if (chunk.status === "initiated") {
-            setPendingMessage("building");
-          }
 
-          if (chunk.status === "coded") {
-            setPendingMessage("deploying");
-          }
-
-          if (chunk.status === "deployed") {
-            setPendingMessage("enriching");
-          }
-
-          if (chunk.status === "succeeded") {
-            await queryClient.invalidateQueries(
-              trpc.projects.byId.queryFilter({ id: project.id }),
-            );
-            setPendingMessage(null);
-          }
-          break;
+        if (chunk.type === "workflow_complete") {
+          setPendingMessage(null);
+          eventSource.close();
+          setEventSourceRef(null);
+          return;
         }
-        case "tool": {
-          if (chunk.toolName === "setupIntegrationsTool") {
-            setPendingMessage("waiting");
+
+        if (chunk.type === "error") {
+          console.error("Workflow error:", chunk.error);
+          setPendingMessage(null);
+          eventSource.close();
+          setEventSourceRef(null);
+          return;
+        }
+
+        if (pendingMessage === null || pendingMessage === "thinking") {
+          setPendingMessage("generating");
+        }
+
+        switch (chunk.type) {
+          case "paragraph": {
             setMessages((prevMessages) => {
-              return [
-                ...prevMessages,
-                {
-                  id: chunk.id,
-                  role: "tool",
-                  createdAt: new Date(),
-                  rawContent: {
-                    toolName: chunk.toolName,
-                    toolArgs: chunk.toolArgs,
+              const lastMessage = prevMessages[prevMessages.length - 1];
+
+              if (lastMessage?.role !== "assistant") {
+                return [
+                  ...prevMessages,
+                  {
+                    id: nanoid(),
+                    role: "assistant",
+                    createdAt: new Date(),
+                    rawContent: [
+                      {
+                        type: "paragraph",
+                        value: chunk.text,
+                      },
+                    ],
                   },
-                },
-              ];
+                ];
+              }
+
+              const messagesWithoutLast = prevMessages.slice(0, -1);
+
+              const updatedLastMessage = {
+                ...lastMessage,
+                rawContent: [
+                  ...lastMessage.rawContent,
+                  {
+                    type: "paragraph",
+                    value: chunk.text,
+                  },
+                ] as AssistantMessageRawContent,
+              };
+
+              return [...messagesWithoutLast, updatedLastMessage];
             });
+            break;
           }
-
-          break;
-        }
-        case "nodes": {
-          const nodes = getNodes();
-          const existingNode = nodes.find((n) => n.id === chunk.node.id);
-
-          if (existingNode) {
-            updateNodeData(existingNode.id, chunk.node);
-          } else {
-            if (!chunk.node.specs) {
-              throw new Error(
-                `[chat:${project.id}] No specs found for node ${chunk.node.id}`,
-              );
+          case "coder": {
+            if (chunk.status === "initiated") {
+              setPendingMessage("building");
             }
 
-            const newNode = {
-              id: chunk.node.id,
-              type: `declaration-${chunk.node.specs?.version}` as const,
-              position: chunk.node.canvasNode?.position ?? {
-                x: 0,
-                y: 0,
-              },
-              data: chunk.node,
-            };
+            if (chunk.status === "coded") {
+              setPendingMessage("deploying");
+            }
 
-            setNodes((prevNodes: CanvasNode[]) => [...prevNodes, newNode]);
+            if (chunk.status === "deployed") {
+              setPendingMessage("enriching");
+            }
+
+            if (chunk.status === "succeeded") {
+              queryClient.invalidateQueries(
+                trpc.projects.byId.queryFilter({ id: project.id }),
+              );
+              setPendingMessage(null);
+            }
+            break;
           }
-          break;
-        }
-      }
-    }
+          case "tool": {
+            if (chunk.toolName === "setupIntegrationsTool") {
+              setPendingMessage("waiting");
+              setMessages((prevMessages) => {
+                return [
+                  ...prevMessages,
+                  {
+                    id: chunk.id,
+                    role: "tool",
+                    createdAt: new Date(),
+                    rawContent: {
+                      toolName: chunk.toolName,
+                      toolArgs: chunk.toolArgs,
+                    },
+                  },
+                ];
+              });
+            }
 
-    setPendingMessage(null);
+            break;
+          }
+          case "nodes": {
+            const nodes = getNodes();
+            const existingNode = nodes.find((n) => n.id === chunk.node.id);
+
+            if (existingNode) {
+              updateNodeData(existingNode.id, chunk.node);
+            } else {
+              if (!chunk.node.specs) {
+                throw new Error(
+                  `[chat:${project.id}] No specs found for node ${chunk.node.id}`,
+                );
+              }
+
+              const newNode = {
+                id: chunk.node.id,
+                type: `declaration-${chunk.node.specs?.version}` as const,
+                position: chunk.node.canvasNode?.position ?? {
+                  x: 0,
+                  y: 0,
+                },
+                data: chunk.node,
+              };
+
+              setNodes((prevNodes: CanvasNode[]) => [
+                ...prevNodes,
+                newNode as CanvasNode,
+              ]);
+            }
+            break;
+          }
+          case "end": {
+            setPendingMessage(null);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing SSE message:", error);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error("SSE connection error:", error);
+      eventSource.close();
+      setEventSourceRef(null);
+
+      // Clear any pending reconnection timeout
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+
+      // Only retry if workflow is still active and we haven't exceeded max attempts
+      if (
+        project.activeVersion.progress !== "succeeded" &&
+        reconnectAttempts.current < maxReconnectAttempts
+      ) {
+        reconnectAttempts.current += 1;
+        const delay = Math.min(1000 * 2 ** reconnectAttempts.current, 10000); // Exponential backoff with max 10s
+
+        console.log(
+          `Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts}) in ${delay}ms`,
+        );
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connectToEventStream();
+        }, delay);
+      } else {
+        console.log("Max reconnection attempts reached or workflow completed");
+      }
+    };
+
+    eventSource.onopen = () => {
+      console.log("SSE connection opened");
+    };
+
+    return eventSource;
   }, [
+    project.id,
+    project.activeVersion.progress,
     getNodes,
     setNodes,
     updateNodeData,
-    project,
     queryClient,
     trpc,
     pendingMessage,
   ]);
 
+  const triggerGeneration = useCallback(async () => {
+    setPendingMessage("thinking");
+
+    try {
+      // First trigger the workflow
+      await triggerWorkflow(userMessageRawContent, attachments);
+
+      // Then connect to event stream
+      connectToEventStream();
+    } catch (error) {
+      console.error("Failed to start generation:", error);
+      setPendingMessage(null);
+    }
+  }, [
+    triggerWorkflow,
+    connectToEventStream,
+    userMessageRawContent,
+    attachments,
+  ]);
+
+  // Auto-connect to SSE when component mounts if workflow is active
   useEffect(() => {
-    if (lastMessage?.role === "user" && !generationTriggered.current) {
+    if (project.activeVersion.progress !== "succeeded" && !eventSourceRef) {
+      connectToEventStream();
+    }
+  }, [project.activeVersion.progress]);
+
+  // Cleanup SSE connection and timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef) {
+        eventSourceRef.close();
+        setEventSourceRef(null);
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      lastMessage?.role === "user" &&
+      !generationTriggered.current &&
+      !pendingMessage && // Don't trigger if there's already a workflow running
+      !eventSourceRef // Don't trigger if SSE is already connected (workflow running)
+    ) {
       generationTriggered.current = true;
       setLastMessage(undefined);
       void triggerGeneration().finally(() => {
         generationTriggered.current = false;
       });
     }
-  }, [lastMessage, triggerGeneration]);
+  }, [lastMessage, triggerGeneration, pendingMessage, eventSourceRef]);
 
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
@@ -293,12 +455,11 @@ export function Chat({
   }, [messages]);
 
   const handleSubmit = async () => {
-    setPendingMessage("thinking");
-
     if (userMessageRawContent.length === 0) {
       return;
     }
 
+    // Create the user message for local state
     const newMessageUser = {
       id: nanoid(),
       role: "user",
@@ -317,13 +478,14 @@ export function Chat({
         : undefined,
     } as ChatMessage;
 
+    // Add to local state immediately for better UX
     setMessages((prevMessages) => [...prevMessages, newMessageUser]);
 
-    await addMessageMutation.mutateAsync({
-      chatId: version.chat.id,
-      messages: [newMessageUser],
-    });
+    // Clear the input
+    setUserMessageRawContent([]);
+    setAttachments([]);
 
+    // Trigger the generation (which will save the message and start workflow)
     await triggerGeneration();
   };
 
@@ -469,30 +631,4 @@ export function Chat({
       />
     </div>
   );
-}
-
-async function readStream(response: Response) {
-  const reader = response.body?.getReader();
-
-  if (!reader) {
-    throw new Error("No reader found");
-  }
-
-  const stream = {
-    async *[Symbol.asyncIterator]() {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const decodedChunk = new TextDecoder().decode(value);
-        const lines = decodedChunk.split("|CHUNK|");
-        for (const line of lines) {
-          if (line.trim() === "") continue;
-          const parsedDelta: TStreamableValue = JSON.parse(line);
-          yield parsedDelta;
-        }
-      }
-    },
-  };
-
-  return stream;
 }

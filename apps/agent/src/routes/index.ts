@@ -1,4 +1,5 @@
+import events from "./events";
 import health from "./health";
-import start from "./start";
+import trigger from "./trigger";
 
-export const routes = [health, start];
+export const routes = [health, trigger, events];

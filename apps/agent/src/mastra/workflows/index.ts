@@ -9,6 +9,11 @@ import { screenshotStep } from "./steps/screenshot";
 
 export const codingWorkflow = createWorkflow({
   id: "coding-workflow",
+  description: "A workflow for coding",
+  retryConfig: {
+    attempts: 3,
+    delay: 1000,
+  },
   inputSchema: z.void(),
   outputSchema: z.void(),
   steps: [planStep, codeStep, enrichStep, deployStep, screenshotStep],
