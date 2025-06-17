@@ -2,40 +2,31 @@ import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
-import type { Attachment, UserMessageRawContent } from "@weldr/shared/types";
 import { type NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { projectId: string } },
+) {
   try {
-    const body = (await request.json()) as {
-      projectId: string;
-      message: {
-        content: UserMessageRawContent;
-        attachments: Attachment[];
-      };
-    };
+    const { projectId } = await params;
 
-    console.log("[API] POST /api/chat/[projectId]/trigger called");
     const session = await auth.api.getSession({
       headers: request.headers,
     });
 
     if (!session) {
-      console.log("[API] No session found, returning 401");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const project = await db.query.projects.findFirst({
       where: and(
-        eq(projects.id, body.projectId),
+        eq(projects.id, projectId),
         eq(projects.userId, session.user.id),
       ),
     });
 
-    console.log("[API] Project found:", !!project);
-
     if (!project) {
-      console.log("[API] Project not found, returning 404");
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
@@ -43,9 +34,9 @@ export async function POST(request: NextRequest) {
 
     if (process.env.NODE_ENV === "production") {
       const devMachineId = await Fly.machine.getDevMachineId({
-        projectId: body.projectId,
+        projectId,
       });
-      url = `http://${devMachineId}.vm.development-app-${body.projectId}.internal:8080`;
+      url = `http://${devMachineId}.vm.development-app-${projectId}.internal:8080`;
     }
 
     // Create headers object, preserving original headers but updating origin-related ones
@@ -63,18 +54,21 @@ export async function POST(request: NextRequest) {
     headers.set("origin", url);
     headers.set("content-type", "application/json");
 
-    const response = await fetch(`${url}/trigger`, {
-      method: "POST",
+    // Make the proxy request to the agent service
+    const response = await fetch(`${url}/events/${projectId}`, {
+      method: "GET",
       headers,
-      body: JSON.stringify(body),
     });
 
+    // Stream the SSE response
     return new NextResponse(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers: {
         "Content-Type":
-          response.headers.get("content-type") || "application/json",
+          response.headers.get("content-type") || "text/event-stream",
+        "Cache-Control": response.headers.get("Cache-Control") || "no-cache",
+        Connection: response.headers.get("Connection") || "keep-alive",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Cache-Control",
       },

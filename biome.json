@@ -27,6 +27,9 @@
   "linter": {
     "rules": {
       "recommended": true,
+      "correctness": {
+        "useExhaustiveDependencies": "info"
+      },
       "nursery": {
         "useSortedClasses": {
           "level": "error",

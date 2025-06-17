@@ -25,8 +25,14 @@ export const planStep = createStep({
   }) => {
     const project = runtimeContext.get("project");
     const version = runtimeContext.get("version");
-    const streamWriter = runtimeContext.get("streamWriter");
     const user = runtimeContext.get("user");
+
+    // Get the SSE stream writer from global connections
+    const streamId = version.chatId;
+    const streamWriter = global.sseConnections?.get(streamId) || {
+      write: async () => {},
+      close: async () => {},
+    };
 
     const chat = await db.query.chats.findFirst({
       where: eq(chats.id, version.chatId),
@@ -174,7 +180,7 @@ export const planStep = createStep({
         );
         throw error;
       } finally {
-        await streamWriter.close();
+        await streamWriter.write({ type: "end" });
       }
     })();
 

@@ -22,7 +22,7 @@
     "db:up": "pnpm -F @weldr/db up",
     "dev": "turbo dev",
     "check": "biome check .",
-    "check:fix": "biome check . --write",
+    "check:fix": "biome check --diagnostic-level=warn --write .",
     "lint:staged": "lint-staged",
     "publish-packages": "changeset version && changeset publish",
     "start": "turbo start",

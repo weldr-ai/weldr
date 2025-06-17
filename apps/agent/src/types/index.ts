@@ -12,6 +12,10 @@ export type TextStreamableValue = {
   text: string;
 };
 
+export type EndStreamableValue = {
+  type: "end";
+};
+
 export type ToolStreamableValue = {
   id?: string;
   type: "tool";
@@ -50,4 +54,5 @@ export type TStreamableValue =
   | TextStreamableValue
   | ToolStreamableValue
   | VersionStreamableValue
-  | CoderStreamableValue;
+  | CoderStreamableValue
+  | EndStreamableValue;
