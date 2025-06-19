@@ -45,7 +45,6 @@ export function Chat({
   project,
 }: ChatProps) {
   const { data: session } = authClient.useSession();
-  const generationTriggered = useRef(false);
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -130,9 +129,6 @@ export function Chat({
   );
   const [userMessageRawContent, setUserMessageRawContent] =
     useState<UserMessageRawContent>([]);
-  const [lastMessage, setLastMessage] = useState<ChatMessage | undefined>(
-    messages[messages.length - 1],
-  );
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   const { getNodes, setNodes, updateNodeData } = useReactFlow<CanvasNode>();
@@ -229,6 +225,7 @@ export function Chat({
                   ...prevMessages,
                   {
                     id: nanoid(),
+                    type: "public",
                     role: "assistant",
                     createdAt: new Date(),
                     rawContent: [
@@ -287,11 +284,14 @@ export function Chat({
                   ...prevMessages,
                   {
                     id: chunk.id,
+                    type: "public",
                     role: "tool",
                     createdAt: new Date(),
                     rawContent: {
                       toolName: chunk.toolName,
                       toolArgs: chunk.toolArgs,
+                      toolResult: chunk.toolResult,
+                      toolCallId: chunk.toolCallId,
                     },
                   },
                 ];
@@ -427,21 +427,6 @@ export function Chat({
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (
-      lastMessage?.role === "user" &&
-      !generationTriggered.current &&
-      !pendingMessage && // Don't trigger if there's already a workflow running
-      !eventSourceRef // Don't trigger if SSE is already connected (workflow running)
-    ) {
-      generationTriggered.current = true;
-      setLastMessage(undefined);
-      void triggerGeneration().finally(() => {
-        generationTriggered.current = false;
-      });
-    }
-  }, [lastMessage, triggerGeneration, pendingMessage, eventSourceRef]);
 
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];

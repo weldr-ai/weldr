@@ -1,12 +1,23 @@
+import type { WorkflowContext } from "@/workflow/context";
 import { OpenAPIHono } from "@hono/zod-openapi";
-import type { RuntimeContext } from "@mastra/core/runtime-context";
 import type { PinoLogger } from "hono-pino";
-import type { AgentRuntimeContext } from "../mastra";
+
+import type { TStreamableValue } from "@/types";
+
+export interface StreamWriter {
+  write(chunk: TStreamableValue): Promise<void>;
+  close(): Promise<void>;
+}
+
+// Global type declarations
+declare global {
+  var sseConnections: Map<string, StreamWriter>;
+}
 
 type HonoContext = {
   Variables: {
     logger: PinoLogger;
-    runtimeContext: RuntimeContext<AgentRuntimeContext>;
+    workflowContext: WorkflowContext;
   };
 };
 

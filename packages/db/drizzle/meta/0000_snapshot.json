@@ -1,5 +1,5 @@
 {
-  "id": "7d689ca7-d453-48cd-aa17-b0afcc443d8c",
+  "id": "349a036f-bb5a-4476-b50e-8db2969849b4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -791,6 +791,13 @@
           "name": "id",
           "type": "text",
           "primaryKey": true,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "message_types",
+          "typeSchema": "public",
+          "primaryKey": false,
           "notNull": true
         },
         "role": {
@@ -2103,8 +2110,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "name": {
-          "name": "name",
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -2623,6 +2630,11 @@
       "name": "message_roles",
       "schema": "public",
       "values": ["user", "assistant", "tool"]
+    },
+    "public.message_types": {
+      "name": "message_types",
+      "schema": "public",
+      "values": ["public", "internal"]
     },
     "public.package_type": {
       "name": "package_type",

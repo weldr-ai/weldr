@@ -94,6 +94,7 @@ export const chatsRouter = {
 
       for (const item of input.messages) {
         messages.push({
+          type: "public",
           content:
             item.role === "user"
               ? await resolveRawContent(ctx, item.rawContent)

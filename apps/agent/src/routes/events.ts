@@ -1,5 +1,5 @@
+import { initVersion } from "@/ai/utils/init-version";
 import { createRouter } from "@/lib/hono-utils";
-import { initVersion } from "@/lib/init-version";
 import type { TStreamableValue } from "@/types";
 import { createRoute, z } from "@hono/zod-openapi";
 import { auth } from "@weldr/auth";

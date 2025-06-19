@@ -2,7 +2,7 @@
   "name": "@weldr/agent",
   "type": "module",
   "scripts": {
-    "dev": "pnpm with-env tsx watch src/index.ts",
+    "dev": "rm -rf .weldr && pnpm with-env tsx watch src/index.ts",
     "build": "esbuild src/index.ts --bundle --minify --platform=node --target=node20 --outfile=dist/index.js",
     "start": "node dist/index.js",
     "check-types": "tsc --noEmit --emitDeclarationOnly false",
@@ -17,19 +17,15 @@
     "@aws-sdk/s3-request-presigner": "^3.799.0",
     "@hono/node-server": "^1.14.4",
     "@hono/zod-openapi": "^0.19.8",
-    "@mastra/core": "^0.10.5",
-    "@mastra/libsql": "^0.10.2",
-    "@mastra/upstash": "^0.10.3",
     "@weldr/auth": "workspace:*",
     "@weldr/db": "workspace:*",
     "@weldr/shared": "workspace:*",
     "ai": "^4.3.16",
     "hono": "^4.7.11",
     "hono-pino": "^0.8.0",
-    "mastra": "^0.10.5",
     "pino": "^9.7.0",
     "playwright": "^1.52.0",
-    "zod": "^3.25.49"
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",

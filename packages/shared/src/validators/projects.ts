@@ -36,7 +36,7 @@ export const updateProjectSchema = z.object({
     id: z.string(),
   }),
   payload: z.object({
-    name: z
+    title: z
       .string()
       .transform((name) => name.replace(/\s+/g, " ").trim())
       .optional(),

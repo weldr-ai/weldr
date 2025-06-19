@@ -32,7 +32,7 @@ export default async function ProjectSettingsPage({
               <ArrowLeftIcon className="mr-1 size-3" />
               Back
             </Link>
-            <h1 className="font-medium text-2xl">{project.name}</h1>
+            <h1 className="font-medium text-2xl">{project.title}</h1>
             <p className="text-muted-foreground">Project Settings</p>
           </div>
           <ProjectSettings

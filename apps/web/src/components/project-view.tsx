@@ -108,7 +108,7 @@ export function ProjectView({
       <div className="flex h-10 items-center justify-between border-b p-1.5">
         <MainDropdownMenu />
         <span className="font-medium text-sm">
-          {project.name ?? "Untitled Project"}
+          {project.title ?? "Untitled Project"}
         </span>
         <div className="flex items-center gap-1">
           <ProjectSettings

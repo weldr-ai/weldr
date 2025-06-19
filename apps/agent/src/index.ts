@@ -1,11 +1,10 @@
 import { serve } from "@hono/node-server";
-import { RuntimeContext } from "@mastra/core/runtime-context";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 import { configureOpenAPI, createRouter } from "./lib/hono-utils";
-import type { AgentRuntimeContext } from "./mastra";
 import { loggerMiddleware } from "./middlewares/logger";
 import { routes } from "./routes";
+import { WorkflowContext } from "./workflow/context";
 
 const app = createRouter();
 
@@ -26,8 +25,8 @@ app
 configureOpenAPI(app);
 
 app.use(async (c, next) => {
-  const runtimeContext = new RuntimeContext<AgentRuntimeContext>();
-  c.set("runtimeContext", runtimeContext);
+  const workflowContext = new WorkflowContext();
+  c.set("workflowContext", workflowContext);
   await next();
 });
 
