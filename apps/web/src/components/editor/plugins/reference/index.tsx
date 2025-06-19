@@ -8,7 +8,7 @@ import {
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
 import { nanoid } from "@weldr/shared/nanoid";
-import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
+import type { referencePartSchema } from "@weldr/shared/validators/chats";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import { cn } from "@weldr/ui/lib/utils";
 import type { TextNode } from "lexical";
@@ -18,7 +18,7 @@ import type { z } from "zod";
 import { ReferenceBadge } from "../../reference-badge";
 
 export class ReferenceOption extends MenuOption {
-  reference: z.infer<typeof rawContentReferenceElementSchema>;
+  reference: z.infer<typeof referencePartSchema>;
   // For extra searching.
   keywords: string[];
 
@@ -26,7 +26,7 @@ export class ReferenceOption extends MenuOption {
     reference,
     options,
   }: {
-    reference: z.infer<typeof rawContentReferenceElementSchema>;
+    reference: z.infer<typeof referencePartSchema>;
     options: {
       keywords?: string[];
     };
@@ -41,7 +41,7 @@ export function ReferencesPlugin({
   references,
   position = "top",
 }: {
-  references: z.infer<typeof rawContentReferenceElementSchema>[];
+  references: z.infer<typeof referencePartSchema>[];
   position?: "bottom" | "top";
 }) {
   const [editor] = useLexicalComposerContext();
@@ -75,8 +75,8 @@ export function ReferencesPlugin({
 
   const inputOptions: ReferenceOption[] = useMemo(() => {
     return references.reduce((acc, reference) => {
-      switch (reference.referenceType) {
-        case "function": {
+      switch (reference.type) {
+        case "reference:function": {
           acc.push(
             new ReferenceOption({
               reference,
@@ -87,7 +87,7 @@ export function ReferencesPlugin({
           );
           break;
         }
-        case "endpoint": {
+        case "reference:endpoint": {
           acc.push(
             new ReferenceOption({
               reference,
@@ -98,7 +98,7 @@ export function ReferencesPlugin({
           );
           break;
         }
-        case "model": {
+        case "reference:model": {
           acc.push(
             new ReferenceOption({
               reference,
@@ -109,7 +109,7 @@ export function ReferencesPlugin({
           );
           break;
         }
-        case "component": {
+        case "reference:component": {
           acc.push(
             new ReferenceOption({
               reference,

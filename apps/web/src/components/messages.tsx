@@ -30,7 +30,11 @@ function PureMessages({
           (message) =>
             !(
               message.role === "tool" &&
-              message.rawContent.toolName !== "setupIntegrationsTool"
+              message.content.some(
+                (content) =>
+                  content.type === "tool-result" &&
+                  content.toolName !== "setupIntegrationsTool",
+              )
             ),
         )
         .map((message) => (

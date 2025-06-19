@@ -2,19 +2,14 @@ import type { JSONSchema7 } from "json-schema";
 import type { z } from "zod";
 import type { canvasNodeTypeSchema } from "../validators/canvas-node";
 import type {
-  assistantMessageRawContentSchema,
   assistantMessageSchema,
   attachmentSchema,
   chatMessageSchema,
   chatSchema,
-  messageRawContentSchema,
   messageRoleSchema,
-  toolMessageRawContentSchema,
   toolMessageSchema,
-  userMessageRawContentSchema,
   userMessageSchema,
 } from "../validators/chats";
-import type { packageSchema, rawContentSchema } from "../validators/common";
 import type {
   declarationSpecsSchema,
   declarationSpecsV1Schema,
@@ -32,6 +27,7 @@ import type { modelSchema } from "../validators/declarations/model";
 import type { environmentVariableSchema } from "../validators/environment-variables";
 import type { dataTypeSchema } from "../validators/json-schema";
 import type { openApiEndpointSpecSchema } from "../validators/openapi";
+import type { packageSchema } from "../validators/packages";
 import type {
   projectConfigSchema,
   projectSchema,
@@ -46,14 +42,9 @@ export type JsonSchema = JSONSchema7;
 export type Project = z.infer<typeof projectSchema>;
 export type ProjectConfig = z.infer<typeof projectConfigSchema>;
 
-export type UserMessageRawContent = z.infer<typeof userMessageRawContentSchema>;
-export type AssistantMessageRawContent = z.infer<
-  typeof assistantMessageRawContentSchema
->;
-export type MessageRawContent = z.infer<typeof messageRawContentSchema>;
-export type ToolMessageRawContent = z.infer<typeof toolMessageRawContentSchema>;
 export type MessageRole = z.infer<typeof messageRoleSchema>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
+export type ChatMessageContent = z.infer<typeof chatMessageSchema>["content"];
 export type UserMessage = z.infer<typeof userMessageSchema>;
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
 export type ToolMessage = z.infer<typeof toolMessageSchema>;
@@ -75,7 +66,6 @@ export type ReusableComponentDeclarationSpecs = z.infer<
 >;
 
 export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;
-export type RawContent = z.infer<typeof rawContentSchema>;
 export type Package = z.infer<typeof packageSchema>;
 
 export type Theme = z.infer<typeof themeSchema>;

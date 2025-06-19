@@ -1,38 +1,112 @@
 import { z } from "zod";
-import {
-  rawContentParagraphElementSchema,
-  rawContentReferenceElementSchema,
-} from "./common";
 
-export const userMessageRawContentElementSchema = z.union([
-  rawContentParagraphElementSchema,
-  rawContentReferenceElementSchema,
-]);
+// ===========================================================================
+// Message Parts
+// ===========================================================================
 
-export const userMessageRawContentSchema =
-  userMessageRawContentElementSchema.array();
-
-export const assistantMessageRawContentReferenceElementSchema =
-  rawContentReferenceElementSchema;
-
-export const assistantMessageRawContentElementSchema =
-  rawContentParagraphElementSchema;
-
-export const assistantMessageRawContentSchema =
-  assistantMessageRawContentElementSchema.array();
-
-export const toolMessageRawContentSchema = z.object({
-  toolCallId: z.string(),
-  toolName: z.string(),
-  toolArgs: z.record(z.any()).optional(),
-  toolResult: z.any().optional(),
+export const textPartSchema = z.object({
+  type: z.literal("text"),
+  text: z.string(),
 });
 
-export const messageRawContentSchema = z.union([
-  userMessageRawContentElementSchema.array(),
-  assistantMessageRawContentElementSchema.array(),
-  toolMessageRawContentSchema,
+export const imagePartSchema = z.object({
+  type: z.literal("image"),
+  image: z
+    .string()
+    .describe("Base64 encoded content, base64 data URL, or http(s) URL"),
+  mimeType: z.string().optional(),
+});
+
+export const filePartSchema = z.object({
+  type: z.literal("file"),
+  data: z
+    .string()
+    .describe("Base64 encoded content, base64 data URL, or http(s) URL"),
+  mimeType: z.string(),
+});
+
+export const functionReferencePartSchema = z.object({
+  type: z.literal("reference:function"),
+  id: z.string().describe("The ID of the function"),
+  name: z.string().describe("The name of the function"),
+});
+
+export const modelReferencePartSchema = z.object({
+  type: z.literal("reference:model"),
+  id: z.string().describe("The ID of the model"),
+  name: z.string().describe("The name of the model"),
+});
+
+export const componentReferencePartSchema = z.object({
+  type: z.literal("reference:component"),
+  id: z.string().describe("The ID of the component"),
+  name: z.string().describe("The name of the component"),
+  subtype: z.enum(["page", "reusable"]),
+});
+
+export const endpointReferencePartSchema = z.object({
+  type: z.literal("reference:endpoint"),
+  id: z.string().describe("The ID of the endpoint"),
+  name: z.string().describe("The name of the endpoint"),
+});
+
+export const referencePartSchema = z.discriminatedUnion("type", [
+  functionReferencePartSchema,
+  modelReferencePartSchema,
+  componentReferencePartSchema,
+  endpointReferencePartSchema,
 ]);
+
+export const reasoningPartSchema = z.object({
+  type: z.literal("reasoning"),
+  text: z.string(),
+  signature: z.string().optional(),
+});
+
+export const redactedReasoningPartSchema = z.object({
+  type: z.literal("redacted-reasoning"),
+  data: z.string(),
+});
+
+export const toolCallPartSchema = z.object({
+  type: z.literal("tool-call"),
+  toolCallId: z.string(),
+  toolName: z.string(),
+  args: z.record(z.unknown()),
+});
+
+export const toolResultPartSchema = z.object({
+  type: z.literal("tool-result"),
+  toolCallId: z.string(),
+  toolName: z.string(),
+  result: z.unknown(),
+  isError: z.boolean().optional(),
+});
+
+// ===========================================================================
+// Message Content Schemas
+// ===========================================================================
+
+export const userMessageContentSchema = z.discriminatedUnion("type", [
+  textPartSchema,
+  imagePartSchema,
+  filePartSchema,
+  functionReferencePartSchema,
+  modelReferencePartSchema,
+  componentReferencePartSchema,
+  endpointReferencePartSchema,
+]);
+
+export const assistantMessageContentSchema = z.discriminatedUnion("type", [
+  textPartSchema,
+  reasoningPartSchema,
+  redactedReasoningPartSchema,
+  toolCallPartSchema,
+]);
+
+// ===========================================================================
+// Core Message Schemas
+// ===========================================================================
 
 export const attachmentSchema = z.object({
   id: z.string(),
@@ -47,7 +121,6 @@ const baseMessageSchema = z.object({
   id: z.string().optional(),
   type: z.enum(["public", "internal"]),
   createdAt: z.date(),
-  content: z.string().nullable().optional(),
   chatId: z.string().optional(),
 });
 
@@ -55,7 +128,7 @@ export const messageRoleSchema = z.enum(["user", "assistant", "tool"]);
 
 export const userMessageSchema = baseMessageSchema.extend({
   role: z.literal("user"),
-  rawContent: userMessageRawContentElementSchema.array(),
+  content: userMessageContentSchema.array(),
   attachments: attachmentSchema.array().optional(),
   userId: z.string().optional(),
   user: z
@@ -70,7 +143,7 @@ export const userMessageSchema = baseMessageSchema.extend({
 
 export const assistantMessageSchema = baseMessageSchema.extend({
   role: z.literal("assistant"),
-  rawContent: assistantMessageRawContentElementSchema.array(),
+  content: assistantMessageContentSchema.array(),
   version: z
     .object({
       id: z.string(),
@@ -82,7 +155,7 @@ export const assistantMessageSchema = baseMessageSchema.extend({
 
 export const toolMessageSchema = baseMessageSchema.extend({
   role: z.literal("tool"),
-  rawContent: toolMessageRawContentSchema,
+  content: toolResultPartSchema.array(),
 });
 
 export const chatMessageSchema = z.discriminatedUnion("role", [
@@ -101,20 +174,20 @@ export const addMessageItemSchema = z.discriminatedUnion("role", [
   z.object({
     type: z.enum(["public", "internal"]),
     role: z.literal("assistant"),
-    rawContent: assistantMessageRawContentSchema,
+    content: assistantMessageContentSchema.array(),
     createdAt: z.date().optional(),
   }),
   z.object({
     type: z.enum(["public", "internal"]),
     role: z.literal("user"),
-    rawContent: userMessageRawContentSchema,
+    content: userMessageContentSchema.array(),
     attachmentIds: z.string().array().optional(),
     createdAt: z.date().optional(),
   }),
   z.object({
     type: z.enum(["public", "internal"]),
     role: z.literal("tool"),
-    rawContent: toolMessageRawContentSchema,
+    content: toolResultPartSchema.array(),
     createdAt: z.date().optional(),
   }),
 ]);

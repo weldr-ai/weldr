@@ -1,9 +1,5 @@
 import { nanoid } from "@weldr/shared/nanoid";
-import type {
-  AssistantMessageRawContent,
-  ToolMessageRawContent,
-  UserMessageRawContent,
-} from "@weldr/shared/types";
+import type { ChatMessageContent } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
   index,
@@ -64,14 +60,7 @@ export const chatMessages = pgTable(
       .$defaultFn(() => nanoid()),
     type: messageTypes("type").notNull(),
     role: messageRoles("role").notNull(),
-    content: text("content"),
-    rawContent: jsonb("raw_content")
-      .$type<
-        | UserMessageRawContent
-        | AssistantMessageRawContent
-        | ToolMessageRawContent
-      >()
-      .notNull(),
+    content: jsonb("content").$type<ChatMessageContent>().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     chatId: text("chat_id")
       .references(() => chats.id, { onDelete: "cascade" })

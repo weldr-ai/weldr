@@ -10,20 +10,17 @@ import { DecoratorNode } from "lexical";
 import type { ReactNode } from "react";
 
 import { ReferenceBadge } from "@/components/editor/reference-badge";
-import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
+import type { referencePartSchema } from "@weldr/shared/validators/chats";
 import type { z } from "zod";
 export type SerializedReferenceNode = Spread<
-  z.infer<typeof rawContentReferenceElementSchema>,
+  z.infer<typeof referencePartSchema>,
   SerializedLexicalNode
 >;
 
 export class ReferenceNode extends DecoratorNode<ReactNode> {
-  __reference: z.infer<typeof rawContentReferenceElementSchema>;
+  __reference: z.infer<typeof referencePartSchema>;
 
-  constructor(
-    reference: z.infer<typeof rawContentReferenceElementSchema>,
-    key?: string,
-  ) {
+  constructor(reference: z.infer<typeof referencePartSchema>, key?: string) {
     super(key);
     this.__reference = reference;
   }
@@ -43,8 +40,9 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
 
   exportJSON(): SerializedReferenceNode {
     return {
-      type: "reference" as const,
-      version: 1,
+      type: this.__reference.type,
+      id: this.__reference.id,
+      name: this.__reference.name,
       ...Object.fromEntries(
         Object.entries(this.__reference).filter(([key]) => key !== "type"),
       ),
@@ -77,7 +75,7 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
 }
 
 export function $createReferenceNode(
-  referenceNode: z.infer<typeof rawContentReferenceElementSchema>,
+  referenceNode: z.infer<typeof referencePartSchema>,
 ): ReferenceNode {
   return new ReferenceNode(referenceNode);
 }

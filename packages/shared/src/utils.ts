@@ -1,5 +1,3 @@
-import type { AssistantMessageRawContent } from "./types";
-
 export function toKebabCase(str: string): string {
   return (
     str
@@ -33,22 +31,4 @@ export function toTitle(str: string): string {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(" ")
   );
-}
-
-export function assistantMessageRawContentToText(
-  rawMessageContent: AssistantMessageRawContent = [],
-): string {
-  return rawMessageContent
-    .map((element) => {
-      switch (element.type) {
-        case "paragraph": {
-          return element.value;
-        }
-      }
-    })
-    .join("");
-}
-
-export function toBase64(str: string): string {
-  return Buffer.from(str).toString("base64");
 }

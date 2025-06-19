@@ -15,8 +15,8 @@ import {
 import { useUIStore } from "@/lib/store";
 import type { TPendingMessage } from "@/types";
 import { authClient } from "@weldr/auth/client";
-import type { Attachment, UserMessageRawContent } from "@weldr/shared/types";
-import { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
+import type { Attachment, UserMessage } from "@weldr/shared/types";
+import { referencePartSchema } from "@weldr/shared/validators/chats";
 import { Button } from "@weldr/ui/components/button";
 import { Textarea } from "@weldr/ui/components/textarea";
 import { toast } from "@weldr/ui/hooks/use-toast";
@@ -44,7 +44,7 @@ type BaseMultimodalInputProps = {
   pendingMessage: TPendingMessage;
   placeholder?: string;
   placeholders?: string[];
-  references?: z.infer<typeof rawContentReferenceElementSchema>[];
+  references?: z.infer<typeof referencePartSchema>[];
   formClassName?: string;
   attachmentsClassName?: string;
   textareaClassName?: string;
@@ -54,8 +54,8 @@ type BaseMultimodalInputProps = {
 
 type EditorMultimodalInputProps = BaseMultimodalInputProps & {
   type: "editor";
-  message: UserMessageRawContent;
-  setMessage: Dispatch<SetStateAction<UserMessageRawContent>>;
+  message: UserMessage["content"];
+  setMessage: Dispatch<SetStateAction<UserMessage["content"]>>;
 };
 
 type TextareaMultimodalInputProps = BaseMultimodalInputProps & {
@@ -286,23 +286,24 @@ function PureMultimodalInput({
       const root = $getRoot();
       const children = (root.getChildren()[0] as ParagraphNode)?.getChildren();
 
-      const message = children?.reduce((acc, child) => {
-        if (child.__type === "text") {
-          acc.push({
-            type: "paragraph",
-            value: child.getTextContent(),
-          });
-        }
+      const message = children?.reduce(
+        (acc, child) => {
+          if (child.__type === "text") {
+            acc.push({
+              type: "text",
+              text: child.getTextContent(),
+            });
+          }
 
-        if (child.__type === "reference") {
-          const referenceNode = child as ReferenceNode;
-          acc.push(
-            rawContentReferenceElementSchema.parse(referenceNode.__reference),
-          );
-        }
+          if (child.__type === "reference") {
+            const referenceNode = child as ReferenceNode;
+            acc.push(referencePartSchema.parse(referenceNode.__reference));
+          }
 
-        return acc;
-      }, [] as UserMessageRawContent);
+          return acc;
+        },
+        [] as UserMessage["content"],
+      );
 
       setMessage(message);
     });
@@ -483,7 +484,7 @@ const AttachmentsButton = memo(PureAttachmentsButton);
 
 type SendButtonProps = {
   submitForm: () => void;
-  message: UserMessageRawContent | string;
+  message: UserMessage["content"] | string;
   uploadQueue: string[];
 };
 

@@ -124,11 +124,10 @@ export const projectsRouter = {
               type: "public",
               chatId: chat.id,
               role: "user",
-              content: input.message,
-              rawContent: [
+              content: [
                 {
-                  type: "paragraph",
-                  value: input.message,
+                  type: "text",
+                  text: input.message,
                 },
               ],
               userId: ctx.session.user.id,

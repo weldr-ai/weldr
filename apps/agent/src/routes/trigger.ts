@@ -8,7 +8,7 @@ import { and, db, eq, isNotNull } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
 import {
   attachmentSchema,
-  userMessageRawContentSchema,
+  userMessageContentSchema,
 } from "@weldr/shared/validators/chats";
 
 const route = createRoute({
@@ -26,12 +26,12 @@ const route = createRoute({
               .string()
               .openapi({ description: "Project ID", example: "123abc" }),
             message: z.object({
-              content: userMessageRawContentSchema.openapi({
+              content: userMessageContentSchema.array().openapi({
                 description: "Message content",
                 example: [
                   {
-                    type: "paragraph",
-                    value: "Hello, Weldr!",
+                    type: "text",
+                    text: "Hello, Weldr!",
                   },
                 ],
               }),
@@ -143,7 +143,7 @@ router.openapi(route, async (c) => {
   const newMessage = {
     type: "public" as const,
     role: "user" as const,
-    rawContent: message.content,
+    content: message.content,
     attachments: message.attachments,
   };
 

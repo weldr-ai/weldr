@@ -11,12 +11,12 @@ import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import { nanoid } from "@weldr/shared/nanoid";
 import type {
-  AssistantMessageRawContent,
+  AssistantMessage,
   Attachment,
   ChatMessage,
-  UserMessageRawContent,
+  UserMessage,
 } from "@weldr/shared/types";
-import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
+import type { referencePartSchema } from "@weldr/shared/validators/chats";
 import { Button } from "@weldr/ui/components/button";
 import {
   Tooltip,
@@ -68,26 +68,21 @@ export function Chat({
   const latestVersion = project.versions[project.versions.length - 1];
   const editorReferences =
     latestVersion?.declarations?.reduce(
-      (
-        acc: z.infer<typeof rawContentReferenceElementSchema>[],
-        declaration,
-      ) => {
+      (acc: z.infer<typeof referencePartSchema>[], declaration) => {
         switch (declaration.declaration.specs?.data.type) {
           case "function": {
             acc.push({
-              type: "reference",
+              type: "reference:function",
               id: declaration.declaration.id,
               name: declaration.declaration.name,
-              referenceType: "function",
             });
             break;
           }
           case "model": {
             acc.push({
-              type: "reference",
+              type: "reference:model",
               id: declaration.declaration.id,
               name: declaration.declaration.name,
-              referenceType: "model",
             });
             break;
           }
@@ -96,10 +91,9 @@ export function Chat({
               declaration.declaration.specs?.data.definition.subtype;
             if (subtype === "page" || subtype === "reusable") {
               acc.push({
-                type: "reference",
+                type: "reference:component",
                 id: declaration.declaration.id,
                 name: declaration.declaration.name,
-                referenceType: "component",
                 subtype,
               });
             }
@@ -107,10 +101,9 @@ export function Chat({
           }
           case "endpoint": {
             acc.push({
-              type: "reference",
+              type: "reference:endpoint",
               id: declaration.declaration.id,
               name: declaration.declaration.name,
-              referenceType: "endpoint",
             });
             break;
           }
@@ -121,14 +114,15 @@ export function Chat({
 
         return acc;
       },
-      [] as z.infer<typeof rawContentReferenceElementSchema>[],
+      [] as z.infer<typeof referencePartSchema>[],
     ) ?? [];
 
   const [messages, setMessages] = useState<ChatMessage[]>(
     version.progress === "succeeded" ? [] : version.chat.messages,
   );
-  const [userMessageRawContent, setUserMessageRawContent] =
-    useState<UserMessageRawContent>([]);
+  const [userMessageContent, setUserMessageContent] = useState<
+    UserMessage["content"]
+  >([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   const { getNodes, setNodes, updateNodeData } = useReactFlow<CanvasNode>();
@@ -138,7 +132,7 @@ export function Chat({
 
   const triggerWorkflow = useCallback(
     async (
-      messageContent: UserMessageRawContent,
+      messageContent: UserMessage["content"],
       messageAttachments: Attachment[],
     ) => {
       try {
@@ -228,10 +222,10 @@ export function Chat({
                     type: "public",
                     role: "assistant",
                     createdAt: new Date(),
-                    rawContent: [
+                    content: [
                       {
-                        type: "paragraph",
-                        value: chunk.text,
+                        type: "text",
+                        text: chunk.text,
                       },
                     ],
                   },
@@ -242,13 +236,13 @@ export function Chat({
 
               const updatedLastMessage = {
                 ...lastMessage,
-                rawContent: [
-                  ...lastMessage.rawContent,
+                content: [
+                  ...lastMessage.content,
                   {
                     type: "paragraph",
                     value: chunk.text,
                   },
-                ] as AssistantMessageRawContent,
+                ] as AssistantMessage["content"],
               };
 
               return [...messagesWithoutLast, updatedLastMessage];
@@ -287,12 +281,14 @@ export function Chat({
                     type: "public",
                     role: "tool",
                     createdAt: new Date(),
-                    rawContent: {
-                      toolName: chunk.toolName,
-                      toolArgs: chunk.toolArgs,
-                      toolResult: chunk.toolResult,
-                      toolCallId: chunk.toolCallId,
-                    },
+                    content: [
+                      {
+                        type: "tool-result",
+                        toolCallId: chunk.toolCallId,
+                        toolName: chunk.toolName,
+                        result: chunk.toolResult,
+                      },
+                    ],
                   },
                 ];
               });
@@ -392,7 +388,7 @@ export function Chat({
 
     try {
       // First trigger the workflow
-      await triggerWorkflow(userMessageRawContent, attachments);
+      await triggerWorkflow(userMessageContent, attachments);
 
       // Then connect to event stream
       connectToEventStream();
@@ -400,12 +396,7 @@ export function Chat({
       console.error("Failed to start generation:", error);
       setPendingMessage(null);
     }
-  }, [
-    triggerWorkflow,
-    connectToEventStream,
-    userMessageRawContent,
-    attachments,
-  ]);
+  }, [triggerWorkflow, connectToEventStream, userMessageContent, attachments]);
 
   // Auto-connect to SSE when component mounts if workflow is active
   useEffect(() => {
@@ -432,15 +423,19 @@ export function Chat({
     const lastMessage = messages[messages.length - 1];
     if (
       lastMessage?.role === "tool" &&
-      lastMessage.rawContent.toolName === "setupIntegrationsTool" &&
-      lastMessage.rawContent.toolResult?.status === "pending"
+      lastMessage.content.find(
+        (content) =>
+          content.type === "tool-result" &&
+          content.toolName === "setupIntegrationsTool" &&
+          (content.result as { status: "pending" }).status === "pending",
+      ) !== undefined
     ) {
       setPendingMessage("waiting");
     }
   }, [messages]);
 
   const handleSubmit = async () => {
-    if (userMessageRawContent.length === 0) {
+    if (userMessageContent.length === 0) {
       return;
     }
 
@@ -449,7 +444,7 @@ export function Chat({
       id: nanoid(),
       role: "user",
       createdAt: new Date(),
-      rawContent: userMessageRawContent,
+      content: userMessageContent,
       attachments,
       chatId: version.chat.id,
       userId: session?.user.id,
@@ -467,7 +462,7 @@ export function Chat({
     setMessages((prevMessages) => [...prevMessages, newMessageUser]);
 
     // Clear the input
-    setUserMessageRawContent([]);
+    setUserMessageContent([]);
     setAttachments([]);
 
     // Trigger the generation (which will save the message and start workflow)
@@ -603,8 +598,8 @@ export function Chat({
       <MultimodalInput
         type="editor"
         chatId={version.chat.id}
-        message={userMessageRawContent}
-        setMessage={setUserMessageRawContent}
+        message={userMessageContent}
+        setMessage={setUserMessageContent}
         attachments={attachments}
         setAttachments={setAttachments}
         pendingMessage={pendingMessage}
