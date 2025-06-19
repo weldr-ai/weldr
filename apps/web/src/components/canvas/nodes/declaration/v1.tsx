@@ -311,8 +311,8 @@ const FunctionDetails = ({
           </span>
           <CustomMarkdown
             content={declaration.throws.map((error) => ({
-              type: "paragraph",
-              value: `- \`${error.type}\`: ${error.description}`,
+              type: "text",
+              text: `- \`${error.type}\`: ${error.description}`,
             }))}
           />
         </div>

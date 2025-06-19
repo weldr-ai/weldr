@@ -2,7 +2,7 @@ import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
-import type { Attachment, UserMessageRawContent } from "@weldr/shared/types";
+import type { Attachment, UserMessage } from "@weldr/shared/types";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as {
       projectId: string;
       message: {
-        content: UserMessageRawContent;
+        content: UserMessage["content"];
         attachments: Attachment[];
       };
     };

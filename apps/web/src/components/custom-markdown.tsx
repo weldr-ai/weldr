@@ -1,6 +1,6 @@
 import { nanoid } from "@weldr/shared/nanoid";
-import type { RawContent } from "@weldr/shared/types";
-import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
+import type { ChatMessageContent } from "@weldr/shared/types";
+import type { referencePartSchema } from "@weldr/shared/validators/chats";
 import { cn } from "@weldr/ui/lib/utils";
 import DOMPurify from "dompurify";
 import { type ReactNode, useMemo } from "react";
@@ -8,13 +8,13 @@ import ReactMarkdown from "react-markdown";
 import type { z } from "zod";
 import { ReferenceBadge } from "./editor/reference-badge";
 
-type ReferenceItem = z.infer<typeof rawContentReferenceElementSchema>;
+type ReferencePart = z.infer<typeof referencePartSchema>;
 
 export function CustomMarkdown({
   content,
   className,
 }: {
-  content: RawContent | string;
+  content: ChatMessageContent | string;
   className?: string;
 }) {
   const { markdownText, references } = useMemo(() => {
@@ -23,12 +23,17 @@ export function CustomMarkdown({
     }
 
     let text = "";
-    const references: Array<Omit<ReferenceItem, "type">> = [];
+    const references: Array<Omit<ReferencePart, "type">> = [];
 
     for (const item of content) {
-      if (item.type === "paragraph") {
-        text += item.value;
-      } else {
+      if (item.type === "text") {
+        text += item.text;
+      } else if (
+        item.type === "reference:component" ||
+        item.type === "reference:function" ||
+        item.type === "reference:model" ||
+        item.type === "reference:endpoint"
+      ) {
         const placeholder = `:::REF${references.length}:::`;
         references.push(item);
         text += placeholder;
@@ -67,7 +72,7 @@ export function CustomMarkdown({
           return (
             <span key={nanoid()} className="inline-flex items-center">
               <ReferenceBadge
-                reference={references[refIndex] as ReferenceItem}
+                reference={references[refIndex] as ReferencePart}
               />
             </span>
           );

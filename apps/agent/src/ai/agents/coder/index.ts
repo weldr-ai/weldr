@@ -7,6 +7,7 @@ import {
 import { installPackagesTool, removePackagesTool } from "@/ai/tools/packages";
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
+import { saveResponseMessages } from "@/ai/utils/save-response-messages";
 import { registry } from "@/lib/registry";
 import type { WorkflowContext } from "@/workflow/context";
 import { and, db, eq, inArray } from "@weldr/db";
@@ -16,7 +17,6 @@ import {
   versionFiles,
   versions,
 } from "@weldr/db/schema";
-import type { ChatMessage } from "@weldr/shared/types";
 import type { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import { streamText } from "ai";
 import type { z } from "zod";
@@ -136,9 +136,8 @@ export async function coderAgent({
       totalTokens: 0,
     };
 
-    // Local function to stream the coder agent
-    const streamCoderAgent = async (): Promise<boolean> => {
-      const newMessages: ChatMessage[] = [];
+    // Local function to execute coder agent and handle tool calls
+    const executeCoderAgent = async (): Promise<boolean> => {
       let shouldRecur = false;
       const promptMessages = await getMessages(version.chatId);
 
@@ -153,286 +152,58 @@ export async function coderAgent({
           installPackages: installPackagesTool(context),
           removePackages: removePackagesTool(context),
         },
-        onStepFinish: async ({ finishReason, text, response, toolResults }) => {
-          if (finishReason === "stop") {
-            console.log(`[codeAgent:${project.id}]: ${finishReason}`);
-            if (text && text.trim().length > 0) {
-              await insertMessages({
-                input: {
-                  chatId: version.chatId,
-                  userId: user.id,
-                  messages: [
-                    {
-                      type: "internal",
-                      role: "assistant",
-                      rawContent: [{ type: "paragraph", value: text }],
-                      createdAt: new Date(),
-                    },
-                  ],
-                },
-              });
-            }
-          }
-
-          if (finishReason === "tool-calls") {
-            console.log(
-              `[codeAgent:${project.id}]: Invoking tools: ${toolResults
-                .map((t) => t.toolName)
-                .join(", ")}`,
-            );
-            if (text && text.trim().length > 0) {
-              // Add assistant message with tool calls
-              newMessages.push({
-                type: "internal",
-                role: "assistant",
-                rawContent: [{ type: "paragraph", value: text }],
-                createdAt: new Date(),
-              });
-            }
-
-            // Add tool results as user messages
-            for (const toolResult of toolResults) {
-              switch (toolResult.toolName) {
-                case "listFiles": {
-                  console.log(
-                    `[codeAgent:listFilesTool:${project.id}] \`listFiles\` tool result: ${JSON.stringify(toolResult, null, 2)}`,
-                  );
-                  if (toolResult.result.success) {
-                    newMessages.push({
-                      type: "internal",
-                      role: "tool",
-                      rawContent: {
-                        toolName: "listFiles",
-                        toolCallId: toolResult.toolCallId,
-                        toolArgs: toolResult.args,
-                        toolResult: toolResult.result.fileTree,
-                      },
-                      createdAt: new Date(),
-                    });
-                  } else {
-                    newMessages.push({
-                      type: "internal",
-                      role: "tool",
-                      rawContent: {
-                        toolName: "listFiles",
-                        toolCallId: toolResult.toolCallId,
-                        toolArgs: toolResult.args,
-                        toolResult: `Failed to list files: ${toolResult.result.error}`,
-                      },
-                      createdAt: new Date(),
-                    });
-                  }
-                  break;
-                }
-                case "readFiles": {
-                  console.log(
-                    `[codeAgent:readFilesTool:${project.id}] \`readFiles\` tool result: ${JSON.stringify(toolResult, null, 2)}`,
-                  );
-                  // const files = flatFiles.filter((file) =>
-                  //   toolResult.args.files.includes(file.path),
-                  // );
-
-                  // const fileContext = getFilesContext({
-                  //   files,
-                  // });
-                  if (toolResult.result.success) {
-                    newMessages.push({
-                      type: "internal",
-                      role: "tool",
-                      rawContent: {
-                        toolName: "readFiles",
-                        toolCallId: toolResult.toolCallId,
-                        toolArgs: toolResult.args,
-                        toolResult: `${Object.entries(
-                          toolResult.result.fileContents,
-                        )
-                          .map(
-                            ([path, content]) =>
-                              `${path}\n\`\`\`\n${content}\`\`\``,
-                          )
-                          .join("\n\n")}`,
-                      },
-                      createdAt: new Date(),
-                    });
-                  } else {
-                    newMessages.push({
-                      type: "internal",
-                      role: "tool",
-                      rawContent: {
-                        toolName: "readFiles",
-                        toolCallId: toolResult.toolCallId,
-                        toolArgs: toolResult.args,
-                        toolResult: `Failed to read files: ${toolResult.result.error}`,
-                      },
-                      createdAt: new Date(),
-                    });
-                  }
-                  break;
-                }
-                case "deleteFiles": {
-                  console.log(
-                    `[codeAgent:deleteFilesTool:${project.id}] \`deleteFiles\` tool result: ${JSON.stringify(toolResult, null, 2)}`,
-                  );
-                  if (toolResult.result.success) {
-                    for (const file of toolResult.result.filesDeleted) {
-                      const fileResult = flatFiles.find((f) => f.path === file);
-
-                      if (!fileResult) {
-                        throw new Error(`deleteFiles: File not found: ${file}`);
+        onFinish: async ({ response, toolResults, finishReason }) => {
+          const messages = response.messages;
+          await saveResponseMessages({
+            type: "internal",
+            chatId: version.chatId,
+            userId: user.id,
+            messages,
+          });
+          switch (finishReason) {
+            case "tool-calls": {
+              console.log(
+                `[codeAgent:${project.id}]: Invoking tools: ${toolResults
+                  .map((t) => t.toolName)
+                  .join(", ")}`,
+              );
+              for (const toolResult of toolResults) {
+                switch (toolResult.toolName) {
+                  case "deleteFiles": {
+                    if (toolResult.result.success) {
+                      for (const file of toolResult.result.filesDeleted) {
+                        const fileResult = flatFiles.find(
+                          (f) => f.path === file,
+                        );
+                        if (fileResult) {
+                          deletedDeclarations.push(
+                            ...fileResult.declarations.map((d) => d.id),
+                          );
+                        }
                       }
-
-                      deletedDeclarations.push(
-                        ...fileResult.declarations.map((d) => d.id),
-                      );
                     }
-                    newMessages.push({
-                      type: "internal",
-                      role: "tool",
-                      rawContent: {
-                        toolName: "deleteFiles",
-                        toolCallId: toolResult.toolCallId,
-                        toolArgs: toolResult.args,
-                        toolResult: `Finished deleting the following files: ${toolResult.result.filesDeleted.join(", ")}`,
-                      },
-                      createdAt: new Date(),
-                    });
-                  } else {
-                    newMessages.push({
-                      type: "internal",
-                      role: "tool",
-                      rawContent: {
-                        toolName: "deleteFiles",
-                        toolCallId: toolResult.toolCallId,
-                        toolArgs: toolResult.args,
-                        toolResult: `Failed to delete files: ${toolResult.result.error}`,
-                      },
-                      createdAt: new Date(),
-                    });
+                    break;
                   }
-                  break;
-                }
-                case "installPackages": {
-                  console.log(
-                    `[codeAgent:installPackagesTool:${project.id}] \`installPackages\` tool result: ${JSON.stringify(toolResult, null, 2)}`,
-                  );
-                  if (toolResult.result.success) {
-                    newMessages.push({
-                      type: "internal",
-                      role: "tool",
-                      rawContent: {
-                        toolName: "installPackages",
-                        toolCallId: toolResult.toolCallId,
-                        toolArgs: toolResult.args,
-                        toolResult: `${toolResult.result.packages
-                          .map((p) => {
-                            if (p.success) {
-                              return `${p.package?.name}@${p.package?.version}`;
-                            }
-                            return `Failed to install ${p.package?.name}: ${p.error}`;
-                          })
-                          .join(", ")}`,
-                      },
-                      createdAt: new Date(),
-                    });
-                  } else {
-                    newMessages.push({
-                      type: "internal",
-                      role: "tool",
-                      rawContent: {
-                        toolName: "installPackages",
-                        toolCallId: toolResult.toolCallId,
-                        toolArgs: toolResult.args,
-                        toolResult: `Failed to install packages: ${toolResult.result.error}`,
-                      },
-                      createdAt: new Date(),
-                    });
-                  }
-                  break;
-                }
-                case "removePackages": {
-                  console.log(
-                    `[codeAgent:removePackagesTool:${project.id}] executing \`removePackages\` tool, result: ${JSON.stringify(toolResult, null, 2)}`,
-                  );
-                  if (toolResult.result.success) {
-                    newMessages.push({
-                      type: "internal",
-                      role: "tool",
-                      rawContent: {
-                        toolName: "removePackages",
-                        toolCallId: toolResult.toolCallId,
-                        toolArgs: toolResult.args,
-                        toolResult: `Finished removing the following packages: ${toolResult.result.packages.map((p: { name: string }) => p.name).join(", ")}`,
-                      },
-                      createdAt: new Date(),
-                    });
-                  } else {
-                    newMessages.push({
-                      type: "internal",
-                      role: "tool",
-                      rawContent: {
-                        toolName: "removePackages",
-                        toolCallId: toolResult.toolCallId,
-                        toolArgs: toolResult.args,
-                        toolResult: `Failed to remove packages: ${toolResult.result.error}`,
-                      },
-                      createdAt: new Date(),
-                    });
-                  }
-                  break;
-                }
-                default: {
-                  console.log(`[codeAgent:${project.id}] Unknown tool call`);
-                  break;
                 }
               }
+              shouldRecur = true;
+              break;
             }
-
-            if (newMessages.length > 0) {
-              await insertMessages({
-                input: {
-                  chatId: version.chatId,
-                  userId: user.id,
-                  messages: newMessages,
-                },
-              });
+            case "length": {
+              console.log(
+                `[codeAgent:onFinish:${project.id}]: Reached max tokens retrying...`,
+              );
+              shouldRecur = true;
+              break;
             }
-
-            shouldRecur = true;
-          }
-
-          if (finishReason === "length") {
-            console.log(
-              `[codeAgent:onFinish:${project.id}]: Reached max tokens retrying...`,
-            );
-            await insertMessages({
-              input: {
-                chatId: version.chatId,
-                userId: user.id,
-                messages: [
-                  {
-                    type: "internal",
-                    role: "assistant",
-                    rawContent: [
-                      {
-                        type: "paragraph",
-                        value: text,
-                      },
-                    ],
-                    createdAt: new Date(),
-                  },
-                ],
-              },
-            });
-            shouldRecur = true;
-          }
-
-          if (finishReason === "error") {
-            console.log(
-              `[codeAgent:${project.id}] Error: ${JSON.stringify(response, null, 2)}`,
-            );
-            throw new Error(
-              `[codeAgent:${project.id}] Error: ${JSON.stringify(response, null, 2)}`,
-            );
+            case "error": {
+              console.log(
+                `[codeAgent:${project.id}] Error: ${JSON.stringify(response, null, 2)}`,
+              );
+              throw new Error(
+                `[codeAgent:${project.id}] Error: ${JSON.stringify(response, null, 2)}`,
+              );
+            }
           }
         },
         onError: (error) => {
@@ -493,7 +264,7 @@ export async function coderAgent({
     // Main execution loop for the coder agent
     let shouldContinue = true;
     while (shouldContinue) {
-      shouldContinue = await streamCoderAgent();
+      shouldContinue = await executeCoderAgent();
       if (shouldContinue) {
         console.log(
           `[codeAgent:${project.id}] Waiting for ${coolDownPeriod}ms before retrying...`,
@@ -529,16 +300,16 @@ export async function coderAgent({
             {
               type: "internal",
               role: "assistant",
-              rawContent: [{ type: "paragraph", value: response }],
+              content: [{ type: "text", text: response }],
               createdAt: new Date(),
             },
             {
               type: "internal",
               role: "user",
-              rawContent: [
+              content: [
                 {
-                  type: "paragraph",
-                  value: `Some edits failed. Please fix the following issues and try again:
+                  type: "text",
+                  text: `Some edits failed. Please fix the following issues and try again:
               ${failureDetails}
 
               Please, returned the fixed files only.
@@ -559,10 +330,10 @@ export async function coderAgent({
       // Retry with the same loop pattern
       let shouldContinue = true;
       while (shouldContinue) {
-        shouldContinue = await streamCoderAgent();
+        shouldContinue = await executeCoderAgent();
         if (shouldContinue) {
           console.log(
-            `[codeAgent:${project.id}] Waiting for ${coolDownPeriod}ms before retrying...`,
+            `[codeAgent:${project.id}] Recurring in ${coolDownPeriod / 1000}s...`,
           );
           await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
         }
@@ -611,10 +382,10 @@ export async function coderAgent({
               {
                 type: "internal",
                 role: "user",
-                rawContent: [
+                content: [
                   {
-                    type: "paragraph",
-                    value: `Failed to check types: ${errorTypes}`,
+                    type: "text",
+                    text: `Failed to check types: ${errorTypes}`,
                   },
                 ],
                 createdAt: new Date(),
@@ -628,10 +399,10 @@ export async function coderAgent({
         // Let agent fix the type errors
         let shouldContinue = true;
         while (shouldContinue) {
-          shouldContinue = await streamCoderAgent();
+          shouldContinue = await executeCoderAgent();
           if (shouldContinue) {
             console.log(
-              `[codeAgent:${project.id}] Waiting for ${coolDownPeriod}ms before retrying...`,
+              `[codeAgent:${project.id}] Recurring in ${coolDownPeriod / 1000}s...`,
             );
             await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
           }
@@ -664,10 +435,10 @@ export async function coderAgent({
               {
                 type: "internal",
                 role: "user",
-                rawContent: [
+                content: [
                   {
-                    type: "paragraph",
-                    value: `Failed to format and lint the project: ${errorFormatAndLint}`,
+                    type: "text",
+                    text: `Failed to format and lint the project: ${errorFormatAndLint}`,
                   },
                 ],
                 createdAt: new Date(),
@@ -681,10 +452,10 @@ export async function coderAgent({
         // Let agent fix the format and lint errors
         let shouldContinue = true;
         while (shouldContinue) {
-          shouldContinue = await streamCoderAgent();
+          shouldContinue = await executeCoderAgent();
           if (shouldContinue) {
             console.log(
-              `[codeAgent:${project.id}] Waiting for ${coolDownPeriod}ms before retrying...`,
+              `[codeAgent:${project.id}] Recurring in ${coolDownPeriod / 1000}s...`,
             );
             await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
           }

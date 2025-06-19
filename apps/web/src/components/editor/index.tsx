@@ -8,12 +8,10 @@ import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import type { referencePartSchema } from "@weldr/shared/validators/chats";
+import { cn } from "@weldr/ui/lib/utils";
 import type { EditorState, LexicalEditor } from "lexical";
 import { useEffect } from "react";
-
-import { cn } from "@weldr/ui/lib/utils";
-
-import type { rawContentReferenceElementSchema } from "@weldr/shared/validators/common";
 import type { z } from "zod";
 import { ReferencesPlugin } from "./plugins/reference";
 import { ReferenceNode } from "./plugins/reference/node";
@@ -25,7 +23,7 @@ interface EditorProps {
   onChange?: (editorState: EditorState) => void;
   className?: string;
   editorRef?: { current: null | LexicalEditor };
-  references?: z.infer<typeof rawContentReferenceElementSchema>[];
+  references?: z.infer<typeof referencePartSchema>[];
   typeaheadPosition?: "bottom" | "top";
   onSubmit?: () => void;
   disabled?: boolean;

@@ -125,8 +125,7 @@ CREATE TABLE "chat_messages" (
 	"id" text PRIMARY KEY NOT NULL,
 	"type" "message_types" NOT NULL,
 	"role" "message_roles" NOT NULL,
-	"content" text,
-	"raw_content" jsonb NOT NULL,
+	"content" jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"chat_id" text NOT NULL,
 	"user_id" text
