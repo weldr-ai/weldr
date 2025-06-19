@@ -24,6 +24,8 @@ export const messageRoles = pgEnum("message_roles", [
   "tool",
 ]);
 
+export const messageTypes = pgEnum("message_types", ["public", "internal"]);
+
 export const chats = pgTable(
   "chats",
   {
@@ -60,6 +62,7 @@ export const chatMessages = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => nanoid()),
+    type: messageTypes("type").notNull(),
     role: messageRoles("role").notNull(),
     content: text("content"),
     rawContent: jsonb("raw_content")

@@ -79,7 +79,7 @@ export function GeneralSection({
         id: project.id,
       },
       payload: {
-        name: project.name ?? "",
+        title: project.title ?? "",
         subdomain: project.subdomain,
       },
     },
@@ -92,7 +92,7 @@ export function GeneralSection({
         id: result.id,
       },
       payload: {
-        name: result.name ?? "",
+        title: result.title ?? "",
         subdomain: result.subdomain,
       },
     });
@@ -119,7 +119,7 @@ export function GeneralSection({
             <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
               <FormField
                 control={form.control}
-                name="payload.name"
+                name="payload.title"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project Name</FormLabel>
@@ -222,7 +222,7 @@ export function GeneralSection({
           <DeleteAlertDialog
             open={deleteDialogOpen}
             setOpen={setDeleteDialogOpen}
-            confirmText={project.name ?? "delete"}
+            confirmText={project.title ?? "delete"}
             isPending={deleteProject.isPending}
             onDelete={() => {
               deleteProject.mutateAsync({ id: project.id });

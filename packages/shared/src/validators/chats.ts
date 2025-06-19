@@ -22,6 +22,7 @@ export const assistantMessageRawContentSchema =
   assistantMessageRawContentElementSchema.array();
 
 export const toolMessageRawContentSchema = z.object({
+  toolCallId: z.string(),
   toolName: z.string(),
   toolArgs: z.record(z.any()).optional(),
   toolResult: z.any().optional(),
@@ -44,7 +45,9 @@ export const attachmentSchema = z.object({
 
 const baseMessageSchema = z.object({
   id: z.string().optional(),
+  type: z.enum(["public", "internal"]),
   createdAt: z.date(),
+  content: z.string().nullable().optional(),
   chatId: z.string().optional(),
 });
 
@@ -96,17 +99,20 @@ export const chatSchema = z.object({
 
 export const addMessageItemSchema = z.discriminatedUnion("role", [
   z.object({
+    type: z.enum(["public", "internal"]),
     role: z.literal("assistant"),
     rawContent: assistantMessageRawContentSchema,
     createdAt: z.date().optional(),
   }),
   z.object({
+    type: z.enum(["public", "internal"]),
     role: z.literal("user"),
     rawContent: userMessageRawContentSchema,
     attachmentIds: z.string().array().optional(),
     createdAt: z.date().optional(),
   }),
   z.object({
+    type: z.enum(["public", "internal"]),
     role: z.literal("tool"),
     rawContent: toolMessageRawContentSchema,
     createdAt: z.date().optional(),

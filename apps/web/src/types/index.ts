@@ -30,6 +30,7 @@ export type ToolStreamableValue = {
   toolName: "setupIntegrationsTool";
   toolArgs?: Record<string, unknown>;
   toolResult: unknown;
+  toolCallId: string;
 };
 
 export type CoderStreamableValue =

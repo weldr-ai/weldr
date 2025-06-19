@@ -25,7 +25,7 @@ export async function getProjectDownloadUrl({
     with: {
       project: {
         columns: {
-          name: true,
+          title: true,
         },
       },
     },

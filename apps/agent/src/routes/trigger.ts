@@ -1,7 +1,7 @@
+import { initVersion } from "@/ai/utils/init-version";
+import { insertMessages } from "@/ai/utils/insert-messages";
 import { createRouter } from "@/lib/hono-utils";
-import { initVersion } from "@/lib/init-version";
-import { insertMessages } from "@/lib/insert-messages";
-import { mastra } from "@/mastra";
+import { workflow } from "@/workflow";
 import { createRoute, z } from "@hono/zod-openapi";
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull } from "@weldr/db";
@@ -124,8 +124,24 @@ router.openapi(route, async (c) => {
 
   console.log("[trigger] activeVersion", activeVersion);
 
+  const run = await workflow.getRun({ runId: streamId });
+
+  console.log("[trigger] run", run);
+
+  // Check if there's already a running workflow for this stream
+  if (run?.status === "running") {
+    console.log("[trigger] Workflow already running, returning 200");
+    return c.json({
+      success: true,
+      streamId,
+      runId: streamId,
+      message: "Workflow already running",
+    });
+  }
+
   // Save the user message to database first
   const newMessage = {
+    type: "public" as const,
     role: "user" as const,
     rawContent: message.content,
     attachments: message.attachments,
@@ -141,86 +157,13 @@ router.openapi(route, async (c) => {
 
   console.log("[trigger] newMessage", newMessage);
 
-  const storage = mastra.getStorage();
-
-  if (!storage) {
-    return c.json({ error: "Storage not found" }, 500);
-  }
-
-  // Check for existing workflow run
-  const workflowSnapshot = await storage.loadWorkflowSnapshot({
-    workflowName: "codingWorkflow",
-    runId: streamId,
-  });
-
-  console.log("workflowSnapshot", workflowSnapshot);
-
-  // Check if there's already a running workflow for this stream
-  if (workflowSnapshot && workflowSnapshot.activePaths.length > 0) {
-    return c.json({
-      success: true,
-      streamId,
-      runId: streamId,
-      message: "Workflow already running",
-    });
-  }
-
-  console.log("[trigger] workflowSnapshot", workflowSnapshot);
-
-  // Start new workflow
-  const run = mastra
-    .getWorkflow("codingWorkflow")
-    .createRun({ runId: streamId });
-
-  console.log("[trigger] run", run);
-
   // Store the context we need for the workflow
-  const runtimeContext = c.get("runtimeContext");
-  runtimeContext.set("project", project);
-  runtimeContext.set("version", activeVersion);
-  runtimeContext.set("user", session.user);
+  const workflowContext = c.get("workflowContext");
+  workflowContext.set("project", project);
+  workflowContext.set("version", activeVersion);
+  workflowContext.set("user", session.user);
 
-  // Start workflow in background
-  run.start({ runtimeContext }).catch(async (error) => {
-    console.error(`Workflow error for ${streamId}:`, error);
-
-    // Close stream on error
-    const streamWriter = global.sseConnections?.get(streamId);
-    if (streamWriter) {
-      streamWriter.close().catch(console.error);
-    }
-  });
-
-  // Watch workflow for completion and cleanup
-  // run.watch((event) => {
-  //   console.log(
-  //     `[workflow-watch:${streamId}] Step:`,
-  //     event.payload?.currentStep?.id,
-  //     "Status:",
-  //     event.payload?.currentStep?.status,
-  //   );
-  //   console.log(
-  //     `[workflow-watch:${streamId}] Workflow status:`,
-  //     event.payload?.workflowState?.status,
-  //   );
-
-  //   // Check if workflow is complete
-  //   const workflowStatus = event.payload?.workflowState?.status;
-  //   if (workflowStatus === "success" || workflowStatus === "failed") {
-  //     console.log(`[workflow-watch:${streamId}] Workflow ${workflowStatus}`);
-
-  //     // Close SSE stream
-  //     const streamWriter = global.sseConnections?.get(streamId);
-  //     if (streamWriter) {
-  //       streamWriter.close().catch((error) => {
-  //         console.error(
-  //           `[workflow-watch:${streamId}] Failed to close stream:`,
-  //           error,
-  //         );
-  //       });
-  //     }
-  //   }
-  // });
+  await workflow.execute({ runId: streamId, context: workflowContext });
 
   return c.json({ success: true });
 });

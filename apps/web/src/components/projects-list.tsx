@@ -31,7 +31,9 @@ export function ProjectsList({
                   : undefined,
               }}
             />
-            <span className="font-medium text-sm">{project.name}</span>
+            <span className="font-medium text-sm">
+              {project.title ?? "Untitled Project"}
+            </span>
           </div>
         ))}
       </div>

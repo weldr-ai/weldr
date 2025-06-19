@@ -121,6 +121,7 @@ export const projectsRouter = {
           const [message] = await tx
             .insert(chatMessages)
             .values({
+              type: "public",
               chatId: chat.id,
               role: "user",
               content: input.message,

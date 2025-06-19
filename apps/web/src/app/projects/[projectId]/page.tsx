@@ -15,7 +15,7 @@ export async function generateMetadata({
   const { projectId } = await params;
   const project = await api.projects.byId({ id: projectId });
 
-  return { title: `${project.name ?? "Untitled Project"} - Weldr` };
+  return { title: `${project.title ?? "Untitled Project"} - Weldr` };
 }
 
 export default async function ProjectPage({

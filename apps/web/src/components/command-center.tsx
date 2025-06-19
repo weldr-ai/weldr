@@ -177,7 +177,7 @@ function ProjectsContent({
             {projects.map((project) => (
               <CommandItem
                 key={project.id}
-                value={project.name ?? "New Project"}
+                value={project.title ?? "Untitled Project"}
                 className={cn("flex items-center gap-3 rounded-none p-2", {
                   "bg-accent": selectedProject?.id === project.id,
                 })}
@@ -188,7 +188,9 @@ function ProjectsContent({
                 <div className="flex size-8 items-center justify-center rounded-md border bg-muted/30">
                   <LogoIcon className="size-6" />
                 </div>
-                <span className="font-medium">{project.name}</span>
+                <span className="font-medium">
+                  {project.title ?? "Untitled Project"}
+                </span>
               </CommandItem>
             ))}
           </CommandGroup>
@@ -232,7 +234,7 @@ function ProjectsContent({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <h2 className="font-semibold text-xl">
-                  {selectedProject.name}
+                  {selectedProject.title ?? "Untitled Project"}
                 </h2>
                 <Link
                   href={`/projects/${selectedProject.id}`}
@@ -264,7 +266,7 @@ function ProjectsContent({
                 onDelete={() => {
                   deleteProject.mutate({ id: selectedProject.id });
                 }}
-                confirmText={selectedProject.name ?? "delete"}
+                confirmText={selectedProject.title ?? "delete"}
                 isPending={deleteProject.isPending}
               />
             </div>

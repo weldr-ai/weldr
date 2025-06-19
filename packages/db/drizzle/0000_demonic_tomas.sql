@@ -1,5 +1,6 @@
 CREATE TYPE "public"."canvas_node_types" AS ENUM('preview', 'declaration');--> statement-breakpoint
 CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool');--> statement-breakpoint
+CREATE TYPE "public"."message_types" AS ENUM('public', 'internal');--> statement-breakpoint
 CREATE TYPE "public"."package_type" AS ENUM('runtime', 'development');--> statement-breakpoint
 CREATE TYPE "public"."preset_type" AS ENUM('base');--> statement-breakpoint
 CREATE TYPE "public"."declaration_types" AS ENUM('component', 'endpoint', 'function', 'model', 'other');--> statement-breakpoint
@@ -122,6 +123,7 @@ CREATE TABLE "attachments" (
 --> statement-breakpoint
 CREATE TABLE "chat_messages" (
 	"id" text PRIMARY KEY NOT NULL,
+	"type" "message_types" NOT NULL,
 	"role" "message_roles" NOT NULL,
 	"content" text,
 	"raw_content" jsonb NOT NULL,
@@ -283,7 +285,7 @@ CREATE TABLE "presets" (
 --> statement-breakpoint
 CREATE TABLE "projects" (
 	"id" text PRIMARY KEY NOT NULL,
-	"name" text,
+	"title" text,
 	"subdomain" text NOT NULL,
 	"config" jsonb,
 	"initiated_at" timestamp,
