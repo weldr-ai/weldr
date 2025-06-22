@@ -3,10 +3,9 @@
 import { memo } from "react";
 
 import { useTRPC } from "@/lib/trpc/react";
-import type { TPendingMessage } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
-import type { ChatMessage } from "@weldr/shared/types";
+import type { ChatMessage, TPendingMessage } from "@weldr/shared/types";
 import type { toolMessageSchema } from "@weldr/shared/validators/chats";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
