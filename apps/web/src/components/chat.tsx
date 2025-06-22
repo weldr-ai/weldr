@@ -1,11 +1,6 @@
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
 import { useTRPC } from "@/lib/trpc/react";
-import type {
-  CanvasNode,
-  SSEEvent,
-  TPendingMessage,
-  TriggerWorkflowResponse,
-} from "@/types";
+import type { CanvasNode } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
@@ -14,6 +9,9 @@ import type {
   AssistantMessage,
   Attachment,
   ChatMessage,
+  SSEEvent,
+  TPendingMessage,
+  TriggerWorkflowResponse,
   UserMessage,
 } from "@weldr/shared/types";
 import type { referencePartSchema } from "@weldr/shared/validators/chats";
@@ -130,6 +128,28 @@ export function Chat({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
+  // Set initial pending message state based on workflow run from database
+  useEffect(() => {
+    const currentWorkflowRun = version.workflowRun;
+    if (currentWorkflowRun && currentWorkflowRun.status === "running") {
+      // Check latest step execution to determine more specific state
+      const latestStep = currentWorkflowRun.stepExecutions
+        ?.filter((step) => step.status === "running")
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )[0];
+
+      if (latestStep) {
+        if (latestStep.stepId.includes("coder")) {
+          setPendingMessage("coding");
+        } else if (latestStep.stepId.includes("deploy")) {
+          setPendingMessage("deploying");
+        }
+      }
+    }
+  }, [version.workflowRun]);
+
   const triggerWorkflow = useCallback(
     async (
       messageContent: UserMessage["content"],
@@ -206,7 +226,7 @@ export function Chat({
         }
 
         if (pendingMessage === null || pendingMessage === "thinking") {
-          setPendingMessage("generating");
+          setPendingMessage("responding");
         }
 
         switch (chunk.type) {
@@ -249,35 +269,44 @@ export function Chat({
             });
             break;
           }
-          case "coder": {
-            if (chunk.status === "initiated") {
-              setPendingMessage("building");
-            }
-
-            if (chunk.status === "coded") {
-              setPendingMessage("deploying");
-            }
-
-            if (chunk.status === "deployed") {
-              setPendingMessage("enriching");
-            }
-
-            if (chunk.status === "succeeded") {
+          case "workflow_run": {
+            // Handle workflow run status updates
+            if (chunk.status === "running") {
+              setPendingMessage("coding");
+            } else if (chunk.status === "completed") {
               queryClient.invalidateQueries(
                 trpc.projects.byId.queryFilter({ id: project.id }),
               );
               setPendingMessage(null);
+            } else if (chunk.status === "failed") {
+              console.error("Workflow failed:", chunk.errorMessage);
+              setPendingMessage(null);
+            }
+            break;
+          }
+          case "workflow_step": {
+            // Handle individual workflow step updates
+            console.log(`Step ${chunk.stepId} status: ${chunk.status}`);
+
+            // Update pending message based on step progress
+            if (chunk.status === "running") {
+              // Map specific steps to user-friendly messages
+              if (chunk.stepId.includes("coder")) {
+                setPendingMessage("coding");
+              } else if (chunk.stepId.includes("deploy")) {
+                setPendingMessage("deploying");
+              }
             }
             break;
           }
           case "tool": {
-            if (chunk.toolName === "setup_integration") {
+            if (chunk.toolName === "setupIntegration") {
               setPendingMessage("waiting");
               setMessages((prevMessages) => {
                 return [
                   ...prevMessages,
                   {
-                    id: chunk.id,
+                    id: nanoid(),
                     visibility: "public",
                     role: "tool",
                     createdAt: new Date(),
@@ -296,36 +325,36 @@ export function Chat({
 
             break;
           }
-          case "nodes": {
-            const nodes = getNodes();
-            const existingNode = nodes.find((n) => n.id === chunk.node.id);
+          // case "nodes": {
+          //   const nodes = getNodes();
+          //   const existingNode = nodes.find((n) => n.id === chunk.node.id);
 
-            if (existingNode) {
-              updateNodeData(existingNode.id, chunk.node);
-            } else {
-              if (!chunk.node.specs) {
-                throw new Error(
-                  `[chat:${project.id}] No specs found for node ${chunk.node.id}`,
-                );
-              }
+          //   if (existingNode) {
+          //     updateNodeData(existingNode.id, chunk.node);
+          //   } else {
+          //     if (!chunk.node.specs) {
+          //       throw new Error(
+          //         `[chat:${project.id}] No specs found for node ${chunk.node.id}`,
+          //       );
+          //     }
 
-              const newNode = {
-                id: chunk.node.id,
-                type: `declaration-${chunk.node.specs?.version}` as const,
-                position: chunk.node.canvasNode?.position ?? {
-                  x: 0,
-                  y: 0,
-                },
-                data: chunk.node,
-              };
+          //     const newNode = {
+          //       id: chunk.node.id,
+          //       type: `declaration-${chunk.node.specs?.version}` as const,
+          //       position: chunk.node.canvasNode?.position ?? {
+          //         x: 0,
+          //         y: 0,
+          //       },
+          //       data: chunk.node,
+          //     };
 
-              setNodes((prevNodes: CanvasNode[]) => [
-                ...prevNodes,
-                newNode as CanvasNode,
-              ]);
-            }
-            break;
-          }
+          //     setNodes((prevNodes: CanvasNode[]) => [
+          //       ...prevNodes,
+          //       newNode as CanvasNode,
+          //     ]);
+          //   }
+          //   break;
+          // }
           case "end": {
             setPendingMessage(null);
             return;
@@ -506,12 +535,12 @@ export function Chat({
           "transition-all delay-300 ease-in-out":
             !isChatVisible &&
             pendingMessage !== "thinking" &&
-            pendingMessage !== "generating",
+            pendingMessage !== "responding",
           "transition-none":
             attachments.length > 0 ||
             isChatVisible ||
             pendingMessage === "thinking" ||
-            pendingMessage === "generating",
+            pendingMessage === "responding",
         },
       )}
     >
@@ -522,11 +551,11 @@ export function Chat({
             "h-0":
               !isChatVisible &&
               pendingMessage !== "thinking" &&
-              pendingMessage !== "generating",
+              pendingMessage !== "responding",
             "h-[300px]":
               isChatVisible ||
               pendingMessage === "thinking" ||
-              pendingMessage === "generating",
+              pendingMessage === "responding",
           },
         )}
       >

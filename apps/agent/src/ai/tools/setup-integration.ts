@@ -33,18 +33,6 @@ export const setupIntegrationTool = createTool({
 
     logger.info(`Setting up integration: ${input.key}`);
 
-    const streamWriter = context.get("streamWriter");
-    await streamWriter.write({
-      type: "tool",
-      toolName: "setupIntegration",
-      toolArgs: input,
-      toolResult: {
-        status: "pending",
-      },
-    });
-
-    logger.info("Integration setup completed");
-
     return {
       success: true,
       key: input.key,

@@ -5,6 +5,7 @@ import { Logger } from "./lib/logger";
 import { configureOpenAPI, createRouter } from "./lib/utils";
 import { loggerMiddleware } from "./middlewares/logger";
 import { routes } from "./routes";
+import { workflow } from "./workflow";
 import { WorkflowContext } from "./workflow/context";
 
 const app = createRouter();
@@ -62,14 +63,54 @@ app.onError((err, c) => {
 
 const port = process.env.PORT ? Number.parseInt(process.env.PORT) : 8080;
 
+// Handle graceful shutdown
+process.on("SIGINT", async () => {
+  Logger.info("Server shutting down gracefully...", { tags: ["shutdown"] });
+
+  if (process.env.PROJECT_ID) {
+    await workflow.markActiveVersionWorkflowAsFailed(process.env.PROJECT_ID);
+    Logger.info("Marked active workflow as failed due to shutdown", {
+      tags: ["shutdown"],
+    });
+  }
+
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  Logger.info("Server shutting down gracefully...", { tags: ["shutdown"] });
+
+  if (process.env.PROJECT_ID) {
+    await workflow.markActiveVersionWorkflowAsFailed(process.env.PROJECT_ID);
+    Logger.info("Marked active workflow as failed due to shutdown", {
+      tags: ["shutdown"],
+    });
+  }
+
+  process.exit(0);
+});
+
+// Recovery on startup
+async function recoverWorkflows() {
+  if (process.env.PROJECT_ID) {
+    await workflow.recoverActiveVersionWorkflow(process.env.PROJECT_ID);
+    Logger.info("Recovered crashed workflows on startup", {
+      tags: ["startup"],
+    });
+  }
+}
+
 serve(
   {
     fetch: app.fetch,
     port,
   },
-  (info) => {
+  async (info) => {
     Logger.info(`Server is running on http://localhost:${info.port}`, {
       tags: ["server"],
     });
+
+    // Recover any crashed workflows
+    await recoverWorkflows();
   },
 );

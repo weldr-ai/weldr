@@ -316,6 +316,13 @@ export const projectsRouter = {
                     },
                   },
                 },
+                workflowRun: {
+                  with: {
+                    stepExecutions: {
+                      orderBy: (table, { asc }) => asc(table.createdAt),
+                    },
+                  },
+                },
               },
             },
             environmentVariables: {

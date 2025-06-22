@@ -19,6 +19,7 @@ export default {
     "./src/schema/shared-enums.ts",
     "./src/schema/themes.ts",
     "./src/schema/versions.ts",
+    "./src/schema/workflows.ts",
   ],
   out: "./drizzle",
   dialect: "postgresql",

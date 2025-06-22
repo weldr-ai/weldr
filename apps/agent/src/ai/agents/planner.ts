@@ -111,6 +111,18 @@ export async function plannerAgent({
           shouldRecur = true;
         }
       } else if (delta.type === "tool-result") {
+        if (delta.toolName === "setupIntegration") {
+          await streamWriter.write({
+            type: "tool",
+            toolName: "setupIntegration",
+            toolCallId: delta.toolCallId,
+            toolArgs: delta.args,
+            toolResult: {
+              status: "pending",
+            },
+          });
+        }
+
         // Handle tool results
         toolResults.push({
           type: "tool-result",
@@ -171,6 +183,8 @@ export async function plannerAgent({
 
   logger.info("Planner agent completed");
 
-  // End the stream
-  await streamWriter.write({ type: "end" });
+  // Signal that planner agent is complete - workflow will take over streaming
+  logger.info(
+    "Planner agent completed, transitioning to workflow progress updates",
+  );
 }
