@@ -26,7 +26,7 @@ export async function insertMessages({
 
   for (const item of input.messages) {
     messages.push({
-      type: item.type,
+      visibility: item.visibility,
       content: item.content,
       role: item.role,
       userId: input.userId,

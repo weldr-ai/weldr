@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/logger";
 import { and, db, eq, isNotNull } from "@weldr/db";
 import {
   chats,
@@ -14,6 +15,14 @@ export const initVersion = async ({
   projectId: string;
   userId: string;
 }): Promise<typeof versions.$inferSelect> => {
+  // Create contextual logger with base tags and extras
+  const logger = Logger.get({
+    tags: ["initVersion"],
+    extra: {
+      projectId,
+    },
+  });
+
   return db.transaction(async (tx) => {
     const activeVersion = await tx.query.versions.findFirst({
       where: and(
@@ -36,9 +45,7 @@ export const initVersion = async ({
     });
 
     if (activeVersion) {
-      console.log(
-        `[initVersion:${projectId}] Getting latest version number...`,
-      );
+      logger.info("Getting latest version number...");
       const latestNumber = await tx.query.versions.findFirst({
         where: eq(versions.projectId, projectId),
         orderBy: (versions, { desc }) => [desc(versions.number)],
@@ -51,7 +58,7 @@ export const initVersion = async ({
         throw new Error("Latest version not found");
       }
 
-      console.log(`[initVersion:${projectId}] Updating previous versions...`);
+      logger.info("Updating previous versions...");
       await tx
         .update(versions)
         .set({
@@ -61,7 +68,7 @@ export const initVersion = async ({
           and(eq(versions.projectId, projectId), eq(versions.userId, userId)),
         );
 
-      console.log(`[initVersion:${projectId}] Creating version chat...`);
+      logger.info("Creating version chat...");
       const [versionChat] = await tx
         .insert(chats)
         .values({
@@ -74,7 +81,7 @@ export const initVersion = async ({
         throw new Error("Version chat not found");
       }
 
-      console.log(`[initVersion:${projectId}] Creating new version...`);
+      logger.info("Creating new version...");
       const [version] = await tx
         .insert(versions)
         .values({
@@ -90,9 +97,7 @@ export const initVersion = async ({
         throw new Error("Version not found");
       }
 
-      console.log(
-        `[initVersion:${projectId}] Copying ${activeVersion.files.length} files...`,
-      );
+      logger.info(`Copying ${activeVersion.files.length} files...`);
       await tx.insert(versionFiles).values(
         activeVersion.files.map((file) => ({
           versionId: version.id,
@@ -100,9 +105,7 @@ export const initVersion = async ({
         })),
       );
 
-      console.log(
-        `[initVersion:${projectId}] Copying ${activeVersion.packages.length} packages...`,
-      );
+      logger.info(`Copying ${activeVersion.packages.length} packages...`);
       await tx.insert(versionPackages).values(
         activeVersion.packages.map((pkg) => ({
           versionId: version.id,
@@ -110,8 +113,8 @@ export const initVersion = async ({
         })),
       );
 
-      console.log(
-        `[initVersion:${projectId}] Copying ${activeVersion.declarations.length} declarations...`,
+      logger.info(
+        `Copying ${activeVersion.declarations.length} declarations...`,
       );
       await tx.insert(versionDeclarations).values(
         activeVersion.declarations.map((declaration) => ({
@@ -123,7 +126,7 @@ export const initVersion = async ({
       return version;
     }
 
-    // console.log(`[initVersion:${projectId}] Getting preset`);
+    // logger.info({ message: "Getting preset" });
     // const preset = await tx.query.presets.findFirst({
     //   where: eq(presets.type, "base"),
     //   with: {
@@ -160,7 +163,7 @@ export const initVersion = async ({
     //   throw new Error("Project theme not found");
     // }
 
-    console.log(`[initVersion:${projectId}] Creating version chat...`);
+    logger.info("Creating version chat...");
     const [versionChat] = await tx
       .insert(chats)
       .values({
@@ -173,7 +176,7 @@ export const initVersion = async ({
       throw new Error("Version chat not found");
     }
 
-    console.log(`[initVersion:${projectId}] Creating version`);
+    logger.info("Creating version");
     const [version] = await tx
       .insert(versions)
       .values({
@@ -190,7 +193,7 @@ export const initVersion = async ({
       throw new Error("Version not found");
     }
 
-    // console.log(`[initVersion:${projectId}] Inserting files`);
+    // logger.info({ message: "Inserting files" });
     // const insertedFiles = await tx
     //   .insert(files)
     //   .values(
@@ -203,12 +206,12 @@ export const initVersion = async ({
     //   .onConflictDoNothing()
     //   .returning();
 
-    // console.log(`[initVersion:${projectId}] Inserting version files`);
+    // logger.info({ message: "Inserting version files" });
     // await tx.insert(versionFiles).values(
     //   insertedFiles.map((file) => {
-    //     console.log(
-    //       `${projectId}${file.path.startsWith("/") ? file.path : `/${file.path}`}`,
-    //     );
+    //     logger.info({
+    //       message: `${projectId}${file.path.startsWith("/") ? file.path : `/${file.path}`}`,
+    //     });
 
     //     return {
     //       versionId: version.id,
@@ -217,7 +220,7 @@ export const initVersion = async ({
     //   }),
     // );
 
-    // console.log(`[initVersion:${projectId}] Inserting packages`);
+    // logger.info({ message: "Inserting packages" });
     // const insertedPkgs = await tx
     //   .insert(packages)
     //   .values(
@@ -237,7 +240,7 @@ export const initVersion = async ({
     //   })),
     // );
 
-    // console.log(`[initVersion:${projectId}] Inserting declarations`);
+    // logger.info({ message: "Inserting declarations" });
     // const insertedDeclarations = await tx
     //   .insert(declarations)
     //   .values(
@@ -269,9 +272,9 @@ export const initVersion = async ({
     //   })),
     // );
 
-    // console.log(
-    //   `[initVersion:${projectId}] Inserting declaration packages and dependencies`,
-    // );
+    // logger.info({
+    //   message: "Inserting declaration packages and dependencies",
+    // });
     // for (const presetDeclaration of preset.declarations) {
     //   const presetDependencies = presetDeclaration.dependencies;
     //   if (!presetDependencies) continue;
@@ -293,7 +296,7 @@ export const initVersion = async ({
     //     await tx.insert(declarationPackages).values(
     //       presetDependencies.external.map((pkg) => {
     //         const insertedPkg = insertedPkgs.find((p) => p.name === pkg.name);
-    //         console.log("insertedPkg", pkg.name);
+    //         logger.info({ message: `insertedPkg: ${pkg.name}` });
     //         if (!insertedPkg) throw new Error("Package not found");
     //         return {
     //           declarationId: insertedDeclaration.id,
@@ -305,11 +308,10 @@ export const initVersion = async ({
     //     );
     //   }
 
-    //   console.log(
-    //     "presetDependencies.internal for",
-    //     insertedDeclaration.name,
-    //     presetDependencies.internal,
-    //   );
+    //   logger.info({
+    //     message: `presetDependencies.internal for ${insertedDeclaration.name}`,
+    //     presetDependencies: presetDependencies.internal,
+    //   });
 
     //   const internalDependencies = presetDependencies.internal?.flatMap(
     //     (dependency) =>
@@ -332,11 +334,10 @@ export const initVersion = async ({
     //       }),
     //   );
 
-    //   console.log(
-    //     "internalDependencies for",
-    //     insertedDeclaration.name,
+    //   logger.info({
+    //     message: `internalDependencies for ${insertedDeclaration.name}`,
     //     internalDependencies,
-    //   );
+    //   });
 
     //   if (internalDependencies && internalDependencies.length > 0) {
     //     await tx.insert(dependencies).values(

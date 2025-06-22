@@ -1,5 +1,6 @@
 import { db, eq } from "@weldr/db";
 import { chats } from "@weldr/db/schema";
+import type { ChatMessage } from "@weldr/shared/types";
 import { convertMessagesToCore } from "./content-to-text";
 
 export async function getMessages(chatId: string) {
@@ -16,7 +17,9 @@ export async function getMessages(chatId: string) {
     throw new Error("Chat not found");
   }
 
-  const promptMessages = await convertMessagesToCore(chat.messages);
+  const promptMessages = await convertMessagesToCore(
+    chat.messages as ChatMessage[],
+  );
 
   return promptMessages;
 }

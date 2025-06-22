@@ -1,5 +1,5 @@
 {
-  "id": "1521a105-277f-4449-9e68-88120fa481af",
+  "id": "bbfea085-b1c3-4a5f-ab7c-3663f7fb25bc",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -793,19 +793,21 @@
           "primaryKey": true,
           "notNull": true
         },
-        "type": {
-          "name": "type",
-          "type": "message_types",
+        "visibility": {
+          "name": "visibility",
+          "type": "message_visibility",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'public'"
         },
         "role": {
           "name": "role",
           "type": "message_roles",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'assistant'"
         },
         "content": {
           "name": "content",
@@ -2625,8 +2627,8 @@
       "schema": "public",
       "values": ["user", "assistant", "tool"]
     },
-    "public.message_types": {
-      "name": "message_types",
+    "public.message_visibility": {
+      "name": "message_visibility",
       "schema": "public",
       "values": ["public", "internal"]
     },

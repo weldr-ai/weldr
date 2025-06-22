@@ -8,7 +8,7 @@ export type TPendingMessage =
   | null;
 
 export type TextStreamableValue = {
-  type: "paragraph";
+  type: "text";
   text: string;
 };
 
@@ -19,7 +19,7 @@ export type EndStreamableValue = {
 export type ToolStreamableValue = {
   id?: string;
   type: "tool";
-  toolName: "setupIntegrationsTool";
+  toolName: "setupIntegration";
   toolArgs?: Record<string, unknown>;
   toolResult: unknown;
 };

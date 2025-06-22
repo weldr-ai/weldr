@@ -1,26 +1,30 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { Logger } from "@/lib/logger";
 import { nanoid } from "@weldr/shared/nanoid";
+import type { WorkflowContext } from "./context";
 
 // --- Configuration ---
 const stateDir = path.join(process.cwd(), ".weldr");
 
 // --- Type Definitions ---
-export type Step<T> = {
+export type Step = {
   id: string;
-  execute: ({ context }: { context: T }) => Promise<unknown> | unknown;
+  execute: ({
+    context,
+  }: { context: WorkflowContext }) => Promise<unknown> | unknown;
 };
 
-type SuspendCondition<T> = ({
+type SuspendCondition = ({
   context,
 }: {
-  context: T;
+  context: WorkflowContext;
 }) => boolean | Promise<boolean>;
 
-type WorkflowOperation<T> =
-  | { type: "sequential"; step: Step<T> }
-  | { type: "parallel"; steps: Step<T>[] }
-  | { type: "suspend"; id: string; condition: SuspendCondition<T> };
+type WorkflowOperation =
+  | { type: "sequential"; step: Step }
+  | { type: "parallel"; steps: Step[] }
+  | { type: "suspend"; id: string; condition: SuspendCondition };
 
 type StepState =
   | { status: "pending" }
@@ -92,18 +96,33 @@ async function deleteState({
   }
 }
 
-async function executeWithRetry<T>({
+async function executeWithRetry({
   step,
   runId,
   retryConfig,
   context,
 }: {
-  step: Step<T>;
+  step: Step;
   runId: string;
   retryConfig: RetryConfig;
-  context: T;
+  context: WorkflowContext;
 }): Promise<unknown> {
+  const project = context.get("project");
+  const version = context.get("version");
+
+  // Create contextual logger with base tags and extras
+  const logger = Logger.get({
+    tags: ["executeWithRetry"],
+    extra: {
+      runId,
+      stepId: step.id,
+      projectId: project.id,
+      versionId: version.id,
+    },
+  });
+
   let lastError: unknown;
+
   for (let i = 0; i < retryConfig.attempts; i++) {
     try {
       const output = await Promise.resolve(step.execute({ context }));
@@ -111,17 +130,27 @@ async function executeWithRetry<T>({
     } catch (error) {
       lastError = error;
       if (i < retryConfig.attempts - 1) {
-        console.log(
-          `[workflow:${runId}] Step ${step.id} failed. Attempt ${
-            i + 1
-          } of ${retryConfig.attempts}. Retrying in ${retryConfig.delay}ms...`,
+        logger.info(
+          `Step ${step.id} failed. Attempt ${i + 1} of ${retryConfig.attempts}. Retrying in ${retryConfig.delay}ms...`,
+          {
+            extra: {
+              attempt: i + 1,
+              maxAttempts: retryConfig.attempts,
+              delay: retryConfig.delay,
+            },
+          },
         );
         await new Promise((resolve) => setTimeout(resolve, retryConfig.delay));
       }
     }
   }
-  console.error(
-    `[workflow:${runId}] Step ${step.id} failed after ${retryConfig.attempts} attempts.`,
+  logger.error(
+    `Step ${step.id} failed after ${retryConfig.attempts} attempts.`,
+    {
+      extra: {
+        maxAttempts: retryConfig.attempts,
+      },
+    },
   );
   throw lastError;
 }
@@ -133,27 +162,29 @@ export function createStep<T>({
   execute,
 }: {
   id: string;
-  execute: ({ context }: { context: T }) => Promise<unknown> | unknown;
-}): Step<T> {
+  execute: ({
+    context,
+  }: { context: WorkflowContext }) => Promise<unknown> | unknown;
+}): Step {
   return { id, execute };
 }
 
-export function createWorkflow<T>(
+export function createWorkflow(
   config: WorkflowConfig = { retryConfig: { attempts: 3, delay: 1000 } },
 ) {
-  const operations: WorkflowOperation<T>[] = [];
+  const operations: WorkflowOperation[] = [];
   const { retryConfig } = config;
 
   const api = {
-    step(step: Step<T>) {
+    step(step: Step) {
       operations.push({ type: "sequential", step });
       return api;
     },
-    parallel(steps: Step<T>[]) {
+    parallel(steps: Step[]) {
       operations.push({ type: "parallel", steps });
       return api;
     },
-    suspend(condition: SuspendCondition<T>) {
+    suspend(condition: SuspendCondition) {
       const id = `suspend-${nanoid()}`;
       operations.push({ type: "suspend", id, condition });
       return api;
@@ -201,8 +232,21 @@ export function createWorkflow<T>(
       context,
     }: {
       runId: string;
-      context: T;
+      context: WorkflowContext;
     }): Promise<void> {
+      const project = context.get("project");
+      const version = context.get("version");
+
+      // Create contextual logger with base tags and extras
+      const logger = Logger.get({
+        tags: ["execute"],
+        extra: {
+          runId,
+          projectId: project.id,
+          versionId: version.id,
+        },
+      });
+
       await fs.mkdir(stateDir, { recursive: true });
       const statePath = path.join(stateDir, `${runId}.json`);
 
@@ -228,7 +272,7 @@ export function createWorkflow<T>(
       }
 
       if (state.status === "completed") {
-        console.log(`[workflow:${runId}] Workflow has already completed.`);
+        logger.info("Workflow has already completed.");
         return;
       }
 
@@ -244,12 +288,14 @@ export function createWorkflow<T>(
           if (op.type === "sequential") {
             const { step } = op;
             if (state.stepStates[step.id]?.status === "completed") {
-              console.log(
-                `[workflow:${runId}] Skipping completed step: ${step.id}`,
-              );
+              logger.info(`Skipping completed step: ${step.id}`, {
+                extra: { stepId: step.id },
+              });
               continue;
             }
-            console.log(`[workflow:${runId}] Executing step: ${step.id}`);
+            logger.info(`Executing step: ${step.id}`, {
+              extra: { stepId: step.id },
+            });
             state.stepStates[step.id] = { status: "running" };
             await writeState({ statePath, state });
             try {
@@ -278,14 +324,12 @@ export function createWorkflow<T>(
             );
 
             if (stepsToRun.length === 0) {
-              console.log(
-                `[workflow:${runId}] Skipping completed parallel group.`,
-              );
+              logger.info("Skipping completed parallel group.");
               continue;
             }
 
-            console.log(
-              `[workflow:${runId}] Executing parallel steps: ${stepsToRun
+            logger.info(
+              `Executing parallel steps: ${stepsToRun
                 .map((s) => s.id)
                 .join(", ")}`,
             );
@@ -345,9 +389,6 @@ export function createWorkflow<T>(
               );
 
               if (shouldSuspend) {
-                console.log(
-                  `[workflow:${runId}] Suspending workflow at: ${id}`,
-                );
                 state.status = "suspended";
                 await writeState({ statePath, state });
                 return;
@@ -358,11 +399,13 @@ export function createWorkflow<T>(
             }
           }
         }
-        console.log(`[workflow:${runId}] Workflow finished.`);
+        logger.info("Workflow finished.");
         state.status = "completed";
         await writeState({ statePath, state });
       } catch (error) {
-        console.error(`[workflow:${runId}] Workflow failed.`, error);
+        logger.error("Workflow failed.", {
+          extra: { error },
+        });
         state.status = "failed";
         if (error instanceof Error) {
           state.error = error.message;

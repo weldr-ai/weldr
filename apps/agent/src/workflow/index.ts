@@ -1,4 +1,3 @@
-import type { WorkflowContext } from "@/workflow/context";
 import { createWorkflow } from "./engine";
 import { codeStep } from "./steps/code";
 import { deployStep } from "./steps/deploy";
@@ -6,7 +5,9 @@ import { enrichStep } from "./steps/enrich";
 import { planStep } from "./steps/plan";
 import { screenshotStep } from "./steps/screenshot";
 
-export const workflow = createWorkflow<WorkflowContext>({
+const isDev = process.env.NODE_ENV === "development";
+
+export const workflow = createWorkflow({
   retryConfig: {
     attempts: 3,
     delay: 1000,
@@ -15,4 +16,4 @@ export const workflow = createWorkflow<WorkflowContext>({
   .step(planStep)
   .suspend(({ context }) => !context.get("version").progress)
   .step(codeStep)
-  .parallel([enrichStep, deployStep, screenshotStep]);
+  .parallel(isDev ? [] : [enrichStep, deployStep, screenshotStep]);

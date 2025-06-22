@@ -17,6 +17,7 @@ export interface CommandOptions {
   timeout?: number;
   shell?: boolean;
   encoding?: BufferEncoding;
+  stdin?: string;
 }
 
 /**
@@ -26,7 +27,7 @@ export interface CommandOptions {
  * @param options Execution options
  * @returns Promise<CommandResult> containing stdout, stderr, exitCode, etc.
  */
-export async function execute(
+export async function runCommand(
   command: string,
   args: string[] = [],
   options: CommandOptions = {},
@@ -52,6 +53,11 @@ export async function execute(
     let stdout = "";
     let stderr = "";
     let timeoutId: NodeJS.Timeout | null = null;
+
+    if (options.stdin) {
+      child.stdin.write(options.stdin);
+      child.stdin.end();
+    }
 
     // Handle timeout
     if (timeout) {
@@ -132,11 +138,11 @@ export async function execute(
  * @param options Execution options
  * @returns Promise<CommandResult>
  */
-export async function executeShell(
+export async function runShellCommand(
   command: string,
   options: Omit<CommandOptions, "shell"> = {},
 ): Promise<CommandResult> {
-  return execute(command, [], { ...options, shell: true });
+  return runCommand(command, [], { ...options, shell: true });
 }
 
 /**
@@ -147,12 +153,12 @@ export async function executeShell(
  * @returns Promise<CommandResult>
  * @throws Error if the command fails
  */
-export async function executeStrict(
+export async function runStrictCommand(
   command: string,
   args: string[] = [],
   options: CommandOptions = {},
 ): Promise<CommandResult> {
-  const result = await execute(command, args, options);
+  const result = await runCommand(command, args, options);
 
   if (!result.success) {
     const errorMessage =

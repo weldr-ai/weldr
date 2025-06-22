@@ -14,7 +14,7 @@ declare global {
   var sseConnections: Map<string, StreamWriter>;
 }
 
-type HonoContext = {
+export type HonoContext = {
   Variables: {
     logger: PinoLogger;
     workflowContext: WorkflowContext;
