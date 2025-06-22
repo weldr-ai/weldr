@@ -1,4 +1,4 @@
-import type { StreamWriter } from "@/lib/hono-utils";
+import type { StreamWriter } from "@/lib/utils";
 import type { User } from "@weldr/auth";
 import type { projects, versions } from "@weldr/db/schema";
 

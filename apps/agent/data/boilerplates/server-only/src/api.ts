@@ -27,7 +27,8 @@ app.use("*", async (c) => {
 
 // Error
 app.onError((err, c) => {
-  c.var.logger.error(err);
+  const logger = c.get("logger");
+  logger.error({ error: err });
   return c.json({ error: "Internal Server Error" }, 500);
 });
 

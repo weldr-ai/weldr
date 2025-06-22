@@ -153,10 +153,7 @@ const PureSetupIntegration = ({
                   content: [
                     {
                       type: "tool-result",
-                      toolName: "setupIntegrationsTool",
-                      toolCallId: message.content.find(
-                        (c) => c.toolName === "setupIntegrationsTool",
-                      )?.toolCallId as string,
+                      toolName: "setup_integration",
                       result: { status: "success" },
                     },
                   ],
@@ -170,10 +167,7 @@ const PureSetupIntegration = ({
                   content: [
                     {
                       type: "tool-result",
-                      toolName: "setupIntegrationsTool",
-                      toolCallId: message.content.find(
-                        (c) => c.toolName === "setupIntegrationsTool",
-                      )?.toolCallId as string,
+                      toolName: "setup_integration",
                       result: { status: "cancelled" },
                     },
                   ],

@@ -1,14 +1,20 @@
 import { prompts } from "@/ai/prompts";
 import {
-  deleteFilesTool,
-  listFilesTool,
-  readFilesTool,
-} from "@/ai/tools/files";
-import { installPackagesTool, removePackagesTool } from "@/ai/tools/packages";
+  deleteFileTool,
+  doneTool,
+  editFileTool,
+  findTool,
+  fzfTool,
+  grepTool,
+  listDirTool,
+  readFileTool,
+  writeFileTool,
+} from "@/ai/tools";
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
-import { saveResponseMessages } from "@/ai/utils/save-response-messages";
-import { registry } from "@/lib/registry";
+import { registry } from "@/ai/utils/registry";
+import { ToolSet } from "@/ai/utils/tools";
+import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { and, db, eq, inArray } from "@weldr/db";
 import {
@@ -17,16 +23,18 @@ import {
   versionFiles,
   versions,
 } from "@weldr/db/schema";
+import type {
+  addMessageItemSchema,
+  assistantMessageContentSchema,
+  toolResultPartSchema,
+} from "@weldr/shared/validators/chats";
 import type { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import { streamText } from "ai";
 import type { z } from "zod";
-import { applyEdits, getEdits } from "./processor";
-import type { EditResults } from "./types";
-import { checkTypes, commit, formatAndLint } from "./utils";
 
 export async function coderAgent({
   context,
-  coolDownPeriod = 5000,
+  coolDownPeriod = 1000,
 }: {
   context: WorkflowContext;
   coolDownPeriod?: number;
@@ -35,12 +43,21 @@ export async function coderAgent({
   const version = context.get("version");
   const user = context.get("user");
 
+  // Create contextual logger with base tags and extras
+  const logger = Logger.get({
+    tags: ["coderAgent"],
+    extra: {
+      projectId: project.id,
+      versionId: version.id,
+    },
+  });
+
   await db.transaction(async (tx) => {
-    console.log(`[codeAgent:${project.id}] Starting coder agent`);
+    logger.info("Starting coder agent");
+
     const deletedDeclarations: string[] = [];
 
-    let response = "";
-    const finalResult: EditResults = {};
+    const updatedFiles = new Set<string>();
 
     const availableFiles = await tx.query.versionFiles.findMany({
       where: eq(versionFiles.versionId, version.id),
@@ -101,10 +118,6 @@ export async function coderAgent({
       },
     });
 
-    const filePaths = availableFiles.map(
-      (versionFile) => versionFile.file.path,
-    );
-
     const flatFiles = availableFiles.map((v) => ({
       id: v.file.id,
       path: v.file.path,
@@ -141,121 +154,200 @@ export async function coderAgent({
       let shouldRecur = false;
       const promptMessages = await getMessages(version.chatId);
 
+      const toolSet = new ToolSet(context, [
+        listDirTool,
+        readFileTool,
+        editFileTool,
+        deleteFileTool,
+        fzfTool,
+        grepTool,
+        findTool,
+        writeFileTool,
+        doneTool,
+      ]);
+
+      // Reset streaming state for new generation
+      toolSet.resetStreamingState();
+
       const result = await streamText({
-        system: await prompts.generalCoder(project, "diff-fenced"),
         model: registry.languageModel("google:gemini-2.5-pro"),
+        system: await prompts.generalCoder(project, toolSet.getSpecsMarkdown()),
         messages: promptMessages,
-        tools: {
-          listFiles: listFilesTool(context),
-          readFiles: readFilesTool(context),
-          deleteFiles: deleteFilesTool(context),
-          installPackages: installPackagesTool(context),
-          removePackages: removePackagesTool(context),
-        },
-        onFinish: async ({ response, toolResults, finishReason }) => {
-          const messages = response.messages;
-          await saveResponseMessages({
-            type: "internal",
-            chatId: version.chatId,
-            userId: user.id,
-            messages,
-          });
-          switch (finishReason) {
-            case "tool-calls": {
-              console.log(
-                `[codeAgent:${project.id}]: Invoking tools: ${toolResults
-                  .map((t) => t.toolName)
-                  .join(", ")}`,
-              );
-              for (const toolResult of toolResults) {
-                switch (toolResult.toolName) {
-                  case "deleteFiles": {
-                    if (toolResult.result.success) {
-                      for (const file of toolResult.result.filesDeleted) {
-                        const fileResult = flatFiles.find(
-                          (f) => f.path === file,
-                        );
-                        if (fileResult) {
-                          deletedDeclarations.push(
-                            ...fileResult.declarations.map((d) => d.id),
-                          );
-                        }
-                      }
-                    }
-                    break;
-                  }
-                }
-              }
-              shouldRecur = true;
-              break;
-            }
-            case "length": {
-              console.log(
-                `[codeAgent:onFinish:${project.id}]: Reached max tokens retrying...`,
-              );
-              shouldRecur = true;
-              break;
-            }
-            case "error": {
-              console.log(
-                `[codeAgent:${project.id}] Error: ${JSON.stringify(response, null, 2)}`,
-              );
-              throw new Error(
-                `[codeAgent:${project.id}] Error: ${JSON.stringify(response, null, 2)}`,
-              );
-            }
-          }
-        },
         onError: (error) => {
-          console.log(
-            `[codeAgent:${project.id}] Error: ${JSON.stringify(error, null, 2)}`,
-          );
-          throw error;
+          logger.error("Error in coder agent", {
+            extra: { error },
+          });
         },
       });
 
-      try {
-        for await (const chunk of result.textStream) {
-          console.log(`[codeAgent:${project.id}] Chunk: ${chunk}`);
-          response += chunk;
+      let responseText = "";
+      let wasInterrupted = false;
+      const allSuccesses: Awaited<ReturnType<typeof toolSet.run>>["successes"] =
+        [];
+      const allErrors: Awaited<ReturnType<typeof toolSet.run>>["errors"] = [];
+
+      // Process streaming chunks and execute tools incrementally
+      for await (const chunk of result.textStream) {
+        responseText += chunk;
+
+        // Process this chunk for tool calls
+        const { newSuccesses, newErrors, hasToolCalls } =
+          await toolSet.processStreamingChunk(chunk);
+
+        // Add new results to our collections
+        allSuccesses.push(...newSuccesses);
+        allErrors.push(...newErrors);
+
+        // Handle new tool executions
+        if (newSuccesses.length > 0) {
+          logger.info(
+            `Executing tools during streaming: ${newSuccesses
+              .map((t) => t.name)
+              .join(", ")}`,
+          );
+
+          for (const success of newSuccesses) {
+            if (success.name === "edit_file") {
+              updatedFiles.add(success.parameters.targetFile);
+            } else if (success.name === "delete_file") {
+              const fileResult = flatFiles.find(
+                (f) => f.path === success.parameters.filePath,
+              );
+              if (fileResult) {
+                deletedDeclarations.push(
+                  ...fileResult.declarations.map((d) => d.id),
+                );
+              }
+            }
+          }
         }
-      } catch (error) {
-        console.error(
-          `[codeAgent:error:${project.id}] ${JSON.stringify(error, null, 2)}`,
-        );
-        throw error;
+
+        // Handle errors immediately
+        if (newErrors.length > 0) {
+          logger.info(`Tool errors detected: ${newErrors.length}`);
+          await toolSet.handleToolErrors({
+            errors: newErrors,
+            chatId: version.chatId,
+            userId: user.id,
+          });
+        }
+
+        // Interrupt generation if tool calls were detected
+        if (hasToolCalls) {
+          logger.info("Tool calls detected, interrupting stream", {
+            extra: {
+              successCount: newSuccesses.length,
+              errorCount: newErrors.length,
+            },
+          });
+          wasInterrupted = true;
+          break;
+        }
       }
 
-      // Process all edits at once only if we're not recurring
-      if (!shouldRecur) {
-        const edits = getEdits({ content: response });
+      // Prepare the assistant message content with proper structure
+      const assistantContent: z.infer<typeof assistantMessageContentSchema>[] =
+        [];
 
-        console.log(
-          `[codeAgent:${project.id}] Edits: ${JSON.stringify(edits)}`,
+      // Add text content if any
+      if (responseText.trim()) {
+        assistantContent.push({
+          type: "text",
+          text: responseText,
+        });
+      }
+
+      // Add tool calls to the message content
+      for (const success of allSuccesses) {
+        assistantContent.push({
+          type: "tool-call",
+          toolName: success.name,
+          args: success.parameters as Record<string, unknown>,
+        });
+      }
+
+      // Save messages using the proper schema structure
+      const messagesToSave: z.infer<typeof addMessageItemSchema>[] = [];
+
+      // Add assistant message if there's content
+      if (assistantContent.length > 0) {
+        messagesToSave.push({
+          visibility: "internal",
+          role: "assistant",
+          content: assistantContent,
+        });
+      }
+
+      // Add tool results as separate tool messages
+      if (allSuccesses.length > 0 || allErrors.length > 0) {
+        const toolResults: z.infer<typeof toolResultPartSchema>[] = [
+          ...allSuccesses.map((success) => ({
+            type: "tool-result" as const,
+            toolName: success.name,
+            result: success.result,
+            isError: false,
+          })),
+          ...allErrors.map((error) => ({
+            type: "tool-result" as const,
+            toolName: error.name,
+            result: error.error,
+            isError: true,
+          })),
+        ];
+
+        // Determine if the task is done
+        const hasDone = toolResults.some(
+          (result) => result.toolName === "done",
         );
 
-        // Apply the edits
-        if (edits.length > 0) {
-          const results = await applyEdits({
-            existingFiles: filePaths,
-            edits,
-            projectId: project.id,
-          });
-
-          if (results.passed) {
-            finalResult.passed = [
-              ...(finalResult.passed || []),
-              ...results.passed,
-            ];
-          }
-
-          if (results.failed) {
-            finalResult.failed = [
-              ...(finalResult.failed || []),
-              ...results.failed,
-            ];
-          }
+        if (hasDone) {
+          return false;
         }
+
+        messagesToSave.push({
+          visibility: "internal",
+          role: "tool",
+          content: toolResults,
+        });
+      }
+
+      // Save all messages
+      if (messagesToSave.length > 0) {
+        await insertMessages({
+          input: {
+            chatId: version.chatId,
+            userId: user.id,
+            messages: messagesToSave,
+          },
+        });
+      }
+
+      const finishReason = await result.finishReason;
+
+      // Log debugging information
+      logger.info("Checking recursion conditions", {
+        extra: {
+          wasInterrupted,
+          finishReason,
+          successCount: allSuccesses.length,
+          errorCount: allErrors.length,
+        },
+      });
+
+      console.log("=== FINISH REASON ===");
+      console.log(finishReason);
+      console.log("=== END ===");
+
+      // Continue if generation was interrupted by tools or hit length limit
+      if (wasInterrupted || finishReason === "length") {
+        logger.info("Continuing due to interruption or length limit");
+        shouldRecur = true;
+      }
+
+      // Continue if we had any tool executions or errors
+      if (allSuccesses.length > 0 || allErrors.length > 0) {
+        logger.info("Continuing due to tool executions");
+        shouldRecur = true;
       }
 
       return shouldRecur;
@@ -263,223 +355,29 @@ export async function coderAgent({
 
     // Main execution loop for the coder agent
     let shouldContinue = true;
+    let iterationCount = 0;
     while (shouldContinue) {
+      iterationCount++;
+      logger.info(`Starting coder agent iteration ${iterationCount}`);
+
       shouldContinue = await executeCoderAgent();
+
+      logger.info(`Coder agent iteration ${iterationCount} completed`, {
+        extra: { shouldContinue },
+      });
+
       if (shouldContinue) {
-        console.log(
-          `[codeAgent:${project.id}] Waiting for ${coolDownPeriod}ms before retrying...`,
-        );
+        logger.info(`Recurring in ${coolDownPeriod}ms...`);
         await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
       }
     }
 
-    let retryCount = 0;
-    let currentFailedEdits = finalResult.failed || [];
+    logger.info("Coder agent completed");
 
-    while (currentFailedEdits.length > 0 && retryCount < 10) {
-      retryCount++;
+    logger.info("Final updated files");
 
-      console.log(
-        `[codeAgent:${project.id}] Retry attempt ${retryCount} for failed edits Passed: ${finalResult.passed?.length} Failed: ${currentFailedEdits.length}`,
-      );
-
-      // Add failed edits info to messages
-      const failureDetails = currentFailedEdits
-        .map((f) => `Failed to edit ${f.edit.path}:\n${f.error}`)
-        .join("\n\n");
-
-      console.log(
-        `[codeAgent:${project.id}] Failure details: ${failureDetails}`,
-      );
-
-      await insertMessages({
-        input: {
-          chatId: version.chatId,
-          userId: user.id,
-          messages: [
-            {
-              type: "internal",
-              role: "assistant",
-              content: [{ type: "text", text: response }],
-              createdAt: new Date(),
-            },
-            {
-              type: "internal",
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: `Some edits failed. Please fix the following issues and try again:
-              ${failureDetails}
-
-              Please, returned the fixed files only.
-              Important: You MUST NOT rewrite the files that passed.`,
-                },
-              ],
-              createdAt: new Date(),
-            },
-          ],
-        },
-      });
-
-      response = "";
-
-      // Generate new response
-      await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
-
-      // Retry with the same loop pattern
-      let shouldContinue = true;
-      while (shouldContinue) {
-        shouldContinue = await executeCoderAgent();
-        if (shouldContinue) {
-          console.log(
-            `[codeAgent:${project.id}] Recurring in ${coolDownPeriod / 1000}s...`,
-          );
-          await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
-        }
-      }
-
-      // Update our failed edits for next iteration
-      currentFailedEdits = finalResult.failed || [];
-    }
-
-    console.log(
-      `[codeAgent:${project.id}] Coder agent completed Passed: ${finalResult.passed?.length} Failed: ${finalResult.failed?.length}`,
-    );
-
-    console.log(
-      `[codeAgent:${project.id}] Final passed edits`,
-      finalResult.passed?.map((f) => f.path),
-    );
-
-    console.log(
-      `[codeAgent:${project.id}] Final failed edits`,
-      finalResult.failed?.map((f) => f.edit.path),
-    );
-
-    // Check types with retry loop
-    let typesRetryCount = 0;
-    let isTypesOk = false;
-
-    while (!isTypesOk && typesRetryCount < 5) {
-      const { success, error: errorTypes } = await checkTypes({
-        projectId: project.id,
-      });
-
-      isTypesOk = success;
-
-      if (!isTypesOk) {
-        typesRetryCount++;
-        console.log(
-          `[codeAgent:${project.id}] Failed to check types (attempt ${typesRetryCount}): ${errorTypes}`,
-        );
-
-        await insertMessages({
-          input: {
-            chatId: version.chatId,
-            userId: user.id,
-            messages: [
-              {
-                type: "internal",
-                role: "user",
-                content: [
-                  {
-                    type: "text",
-                    text: `Failed to check types: ${errorTypes}`,
-                  },
-                ],
-                createdAt: new Date(),
-              },
-            ],
-          },
-        });
-
-        await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
-
-        // Let agent fix the type errors
-        let shouldContinue = true;
-        while (shouldContinue) {
-          shouldContinue = await executeCoderAgent();
-          if (shouldContinue) {
-            console.log(
-              `[codeAgent:${project.id}] Recurring in ${coolDownPeriod / 1000}s...`,
-            );
-            await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
-          }
-        }
-      }
-    }
-
-    // Format and lint with retry loop
-    let formatLintRetryCount = 0;
-    let isFormatAndLintOk = false;
-
-    while (!isFormatAndLintOk && formatLintRetryCount < 5) {
-      const { success, error: errorFormatAndLint } = await formatAndLint({
-        projectId: project.id,
-      });
-
-      isFormatAndLintOk = success;
-
-      if (!isFormatAndLintOk) {
-        formatLintRetryCount++;
-        console.log(
-          `[codeAgent:${project.id}] Failed to format and lint (attempt ${formatLintRetryCount}): ${errorFormatAndLint}`,
-        );
-
-        await insertMessages({
-          input: {
-            chatId: version.chatId,
-            userId: user.id,
-            messages: [
-              {
-                type: "internal",
-                role: "user",
-                content: [
-                  {
-                    type: "text",
-                    text: `Failed to format and lint the project: ${errorFormatAndLint}`,
-                  },
-                ],
-                createdAt: new Date(),
-              },
-            ],
-          },
-        });
-
-        await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
-
-        // Let agent fix the format and lint errors
-        let shouldContinue = true;
-        while (shouldContinue) {
-          shouldContinue = await executeCoderAgent();
-          if (shouldContinue) {
-            console.log(
-              `[codeAgent:${project.id}] Recurring in ${coolDownPeriod / 1000}s...`,
-            );
-            await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
-          }
-        }
-      }
-    }
-
-    // Commit
-    const { success: isCommitOk, error: errorCommit } = await commit({
-      projectId: project.id,
-      name: user.name,
-      email: user.email,
-      commitMessage: version.message as string,
-    });
-
-    if (!isCommitOk) {
-      console.log(`[codeAgent:${project.id}] Failed to commit: ${errorCommit}`);
-      throw new Error(
-        `[codeAgent:${project.id}] Failed to commit: ${errorCommit}`,
-      );
-    }
-
-    console.log(
-      `[codeAgent:${project.id}] Usage Prompt: ${totalUsage.promptTokens} Completion: ${totalUsage.completionTokens} Total: ${totalUsage.totalTokens}`,
+    logger.info(
+      `Usage Prompt: ${totalUsage.promptTokens} Completion: ${totalUsage.completionTokens} Total: ${totalUsage.totalTokens}`,
     );
 
     await tx
@@ -491,13 +389,10 @@ export async function coderAgent({
         ),
       );
 
-    for (const file of finalResult.passed || []) {
+    for (const file of updatedFiles) {
       let resultFile = await tx.query.files.findFirst({
         where: and(
-          eq(
-            files.path,
-            file.path.startsWith("/") ? file.path : `/${file.path}`,
-          ),
+          eq(files.path, file.startsWith("/") ? file : `/${file}`),
           eq(files.projectId, project.id),
         ),
       });
@@ -507,14 +402,14 @@ export async function coderAgent({
           .insert(files)
           .values({
             projectId: project.id,
-            path: file.path.startsWith("/") ? file.path : `/${file.path}`,
+            path: file.startsWith("/") ? file : `/${file}`,
             userId: user.id,
           })
           .returning();
 
         if (!newFile) {
           throw new Error(
-            `[processFile:${project.id}] Failed to insert file ${file.path}`,
+            `[processFile:${project.id}] Failed to insert file ${file}`,
           );
         }
 
@@ -535,7 +430,7 @@ export async function coderAgent({
       .update(versions)
       .set({
         progress: "coded",
-        changedFiles: finalResult.passed?.map((f) => f.path) || [],
+        changedFiles: Array.from(updatedFiles),
       })
       .where(eq(versions.id, version.id));
   });

@@ -20,14 +20,14 @@ export type TPendingMessage =
   | null;
 
 export type TextStreamableValue = {
-  type: "paragraph";
+  type: "text";
   text: string;
 };
 
 export type ToolStreamableValue = {
   id?: string;
   type: "tool";
-  toolName: "setupIntegrationsTool";
+  toolName: "setup_integration";
   toolArgs?: Record<string, unknown>;
   toolResult: unknown;
   toolCallId: string;

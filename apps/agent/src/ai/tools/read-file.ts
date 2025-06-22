@@ -1,0 +1,165 @@
+import { runCommand } from "@/ai/utils/commands";
+import { defineTool } from "@/ai/utils/tools";
+import { WORKSPACE_DIR } from "@/lib/constants";
+import { Logger } from "@/lib/logger";
+import path from "node:path";
+import { z } from "zod";
+
+export const readFileTool = defineTool({
+  name: "read_file",
+  description: "Use to read a single file with pagination and size safeguards",
+  whenToUse:
+    "When you need to inspect the contents of a file. You can specify a line range to read.",
+  example: `<read_file>
+  <file_path>src/server/index.ts</file_path>
+  <start_line>10</start_line>
+  <end_line>30</end_line>
+</read_file>`,
+
+  inputSchema: z.object({
+    filePath: z
+      .string()
+      .describe("The relative path to the file from the project root."),
+    startLine: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .default(1)
+      .describe(
+        "The starting line number (inclusive). Defaults to the beginning of the file.",
+      ),
+    endLine: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe(
+        "The ending line number (inclusive). Defaults to the end of the file.",
+      ),
+    maxLines: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .default(1500)
+      .describe("The maximum number of lines to read. Defaults to 1500."),
+  }),
+
+  execute: async ({ input, context }) => {
+    const { filePath, endLine, startLine = 1, maxLines = 1000 } = input;
+    const project = context.get("project");
+    const version = context.get("version");
+
+    // Create contextual logger with base tags and extras
+    const logger = Logger.get({
+      tags: ["readFileTool"],
+      extra: {
+        projectId: project.id,
+        versionId: version.id,
+        input,
+      },
+    });
+
+    logger.info(`Reading file: ${filePath}`);
+
+    // First check if file exists and get line count
+    const {
+      stdout: wcOutput,
+      stderr: wcStderr,
+      exitCode: wcExitCode,
+    } = await runCommand("wc", ["-l", filePath], {
+      cwd: WORKSPACE_DIR,
+    });
+
+    if (wcExitCode !== 0) {
+      logger.error("Failed to access file", {
+        extra: {
+          exitCode: wcExitCode,
+          stderr: wcStderr,
+        },
+      });
+      if (wcStderr?.includes("No such file or directory")) {
+        const dir = path.dirname(filePath);
+        const base = path.basename(filePath);
+
+        // List directory to provide suggestions
+        const { stdout: lsOutput } = await runCommand("ls", [dir], {
+          cwd: WORKSPACE_DIR,
+        });
+
+        const dirEntries = lsOutput.split("\n").filter(Boolean);
+
+        const suggestions = dirEntries
+          .filter(
+            (entry) =>
+              entry.toLowerCase().includes(base.toLowerCase()) ||
+              base.toLowerCase().includes(entry.toLowerCase()),
+          )
+          .map((entry) => path.join(dir, entry));
+
+        if (suggestions.length > 0) {
+          return {
+            success: false,
+            error: `File not found: ${filePath}\n\nDid you mean one of these?\n${suggestions.join(
+              "\n",
+            )}`,
+          };
+        }
+      }
+
+      return {
+        success: false,
+        error: wcStderr || `Failed to access file ${filePath}`,
+      };
+    }
+
+    const totalLines = Number.parseInt(wcOutput?.trim().split(" ")[0] || "0");
+
+    // Calculate actual range to read
+    const actualStartLine = Math.max(1, startLine);
+    const actualEndLine = endLine
+      ? Math.min(endLine, totalLines)
+      : Math.min(actualStartLine + maxLines - 1, totalLines);
+
+    const linesToRead = actualEndLine - actualStartLine + 1;
+    const truncated = endLine
+      ? false
+      : linesToRead >= maxLines || actualEndLine < totalLines;
+
+    // Use sed to read specific line range
+    const sedCommand = `sed -n '${actualStartLine},${actualEndLine}p' "${filePath}"`;
+
+    const { stdout, stderr, exitCode, success } = await runCommand(
+      "bash",
+      ["-c", sedCommand],
+      {
+        cwd: WORKSPACE_DIR,
+      },
+    );
+
+    if (exitCode !== 0 || !success) {
+      logger.error("Failed to read file content", {
+        extra: {
+          exitCode,
+          stderr,
+        },
+      });
+      return {
+        success: false,
+        error: stderr || `Failed to read file ${filePath}`,
+      };
+    }
+
+    logger.info("File read successfully");
+
+    return {
+      success: true,
+      content: stdout || "",
+      totalLines,
+      startLine: actualStartLine,
+      endLine: actualEndLine,
+      truncated,
+    };
+  },
+});

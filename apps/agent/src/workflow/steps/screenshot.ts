@@ -1,8 +1,9 @@
-import type { ChildProcess } from "node:child_process";
+import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import type { ChildProcess } from "node:child_process";
 import { chromium } from "playwright";
 import { createStep } from "../engine";
 
@@ -26,12 +27,21 @@ export const screenshotStep = createStep<WorkflowContext>({
     const project = context.get("project");
     const version = context.get("version");
 
+    // Create contextual logger with base tags and extras
+    const logger = Logger.get({
+      tags: ["screenshot"],
+      extra: {
+        projectId: project.id,
+        versionId: version.id,
+      },
+    });
+
     let port = isDev ? 4000 : 3000;
     let child: ChildProcess | null = null;
 
     try {
       // Start the vite dev server on port 3000 to avoid conflicts with port 3000
-      console.log(
+      logger.info(
         `Starting vite dev server on port ${isDev ? "4000" : "3000"}...`,
       );
 
@@ -61,7 +71,7 @@ export const screenshotStep = createStep<WorkflowContext>({
         child?.stdout?.on("data", (data: Buffer) => {
           const output = data.toString();
           serverOutput += output;
-          console.log("Vite output:", output);
+          logger.info(`Vite output: ${output}`);
 
           // Look for port information in vite output
           const portMatch = output.match(/Local:\s+http:\/\/localhost:(\d+)/);
@@ -85,7 +95,7 @@ export const screenshotStep = createStep<WorkflowContext>({
 
         child?.stderr?.on("data", (data: Buffer) => {
           const output = data.toString();
-          console.error("Vite error:", output);
+          logger.error(`Vite error: ${output}`);
           serverOutput += output;
 
           // Check for port conflict and retry with different port
@@ -94,7 +104,7 @@ export const screenshotStep = createStep<WorkflowContext>({
             (output.includes("port") && output.includes("already in use"))
           ) {
             // Let vite handle port selection automatically
-            console.log(
+            logger.info(
               "Port conflict detected, vite will select available port",
             );
           }
@@ -108,7 +118,7 @@ export const screenshotStep = createStep<WorkflowContext>({
 
       // Wait for server to be ready
       port = await serverStartPromise;
-      console.log(`Vite server ready on port ${port}`);
+      logger.info(`Vite server ready on port ${port}`);
 
       // Give the server a moment to fully initialize
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -153,7 +163,7 @@ export const screenshotStep = createStep<WorkflowContext>({
 
       // Stop the vite server
       if (child && !child.killed) {
-        console.log("Stopping vite server...");
+        logger.info("Stopping vite server...");
         child.kill("SIGTERM");
 
         // Force kill after 5 seconds if SIGTERM doesn't work
@@ -177,7 +187,7 @@ export const screenshotStep = createStep<WorkflowContext>({
       });
 
       upload.on("httpUploadProgress", (progress) => {
-        console.log(progress);
+        logger.info(`Upload progress: ${progress}`);
       });
 
       await upload.done();
@@ -191,11 +201,13 @@ export const screenshotStep = createStep<WorkflowContext>({
         { expiresIn: 3600 },
       );
     } catch (error) {
-      console.error("Error generating screenshot:", error);
+      logger.error("Error generating screenshot:", {
+        extra: { error },
+      });
 
       // Make sure to clean up the vite process if it's still running
       if (child && !child.killed) {
-        console.log("Cleaning up vite server...");
+        logger.info("Cleaning up vite server...");
         child.kill("SIGTERM");
         setTimeout(() => {
           if (child && !child.killed) {

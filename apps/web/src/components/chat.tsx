@@ -210,7 +210,7 @@ export function Chat({
         }
 
         switch (chunk.type) {
-          case "paragraph": {
+          case "text": {
             setMessages((prevMessages) => {
               const lastMessage = prevMessages[prevMessages.length - 1];
 
@@ -219,7 +219,7 @@ export function Chat({
                   ...prevMessages,
                   {
                     id: nanoid(),
-                    type: "public",
+                    visibility: "public",
                     role: "assistant",
                     createdAt: new Date(),
                     content: [
@@ -239,8 +239,8 @@ export function Chat({
                 content: [
                   ...lastMessage.content,
                   {
-                    type: "paragraph",
-                    value: chunk.text,
+                    type: "text",
+                    text: chunk.text,
                   },
                 ] as AssistantMessage["content"],
               };
@@ -271,20 +271,19 @@ export function Chat({
             break;
           }
           case "tool": {
-            if (chunk.toolName === "setupIntegrationsTool") {
+            if (chunk.toolName === "setup_integration") {
               setPendingMessage("waiting");
               setMessages((prevMessages) => {
                 return [
                   ...prevMessages,
                   {
                     id: chunk.id,
-                    type: "public",
+                    visibility: "public",
                     role: "tool",
                     createdAt: new Date(),
                     content: [
                       {
                         type: "tool-result",
-                        toolCallId: chunk.toolCallId,
                         toolName: chunk.toolName,
                         result: chunk.toolResult,
                       },

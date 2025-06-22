@@ -1,5 +1,5 @@
+import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
-import { execute } from "@/lib/exec";
 import { DIVIDER, FENCE, REPLACE, SEARCH } from "./constants";
 import type { Edit, FailedEdit } from "./types";
 import { writeFile } from "./utils";
@@ -252,7 +252,7 @@ export async function applyEdits({
 
     // Get initial file content
     try {
-      const { stdout, stderr, exitCode, success } = await execute("cat", [
+      const { stdout, stderr, exitCode, success } = await runCommand("cat", [
         `${WORKSPACE_DIR}/${filePath}`,
       ]);
 

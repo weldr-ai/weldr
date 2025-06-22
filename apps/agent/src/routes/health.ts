@@ -1,4 +1,4 @@
-import { createRouter } from "@/lib/hono-utils";
+import { createRouter } from "@/lib/utils";
 import { createRoute } from "@hono/zod-openapi";
 
 const route = createRoute({

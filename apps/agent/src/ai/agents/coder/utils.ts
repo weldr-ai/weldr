@@ -1,5 +1,6 @@
+import { runCommand, runShellCommand } from "@/ai/utils/commands";
 import { SCRIPTS_DIR, WORKSPACE_DIR } from "@/lib/constants";
-import { execute, executeShell } from "@/lib/exec";
+import { Logger } from "@/lib/logger";
 
 export const writeFile = async ({
   projectId,
@@ -10,28 +11,48 @@ export const writeFile = async ({
   filePath: string;
   content: string;
 }) => {
-  console.log(`[writeFile:${projectId}] Writing file`, filePath);
+  const logger = Logger.get({
+    tags: ["writeFile"],
+    extra: {
+      projectId,
+      filePath,
+    },
+  });
+
+  logger.info(`Writing file: ${filePath}`, {
+    extra: {
+      contentLength: content.length,
+    },
+  });
 
   const normalizedPath = filePath.startsWith("/")
     ? filePath.slice(1)
     : filePath;
   const command = `mkdir -p "$(dirname "${filePath}")" && echo "${Buffer.from(content).toString("base64")}" | base64 -d > ${WORKSPACE_DIR}/${normalizedPath}`;
 
-  const { exitCode, success, stderr } = await executeShell(command);
+  const { exitCode, success, stderr } = await runShellCommand(command);
 
   if ((exitCode === 0 || !stderr) && success) {
+    logger.info(`Successfully wrote file: ${filePath}`, {
+      extra: {
+        normalizedPath,
+        contentLength: content.length,
+      },
+    });
     return {
       success: true,
     };
   }
 
-  console.log(
-    `[writeFile:${projectId}] Failed to write file`,
-    filePath,
-    exitCode,
-    success,
-    stderr,
-  );
+  logger.error(`Failed to write file: ${filePath}`, {
+    extra: {
+      normalizedPath,
+      exitCode,
+      success,
+      stderr,
+      contentLength: content.length,
+    },
+  });
 
   return {
     success: false,
@@ -44,26 +65,45 @@ export const formatAndLint = async ({
 }: {
   projectId: string;
 }) => {
-  console.log(`[formatAndLint:${projectId}] Formatting and linting`);
+  const logger = Logger.get({
+    tags: ["formatAndLint"],
+    extra: {
+      projectId,
+    },
+  });
 
-  const { exitCode, success, stderr } = await execute(
+  logger.info("Starting format and lint process", {
+    extra: {
+      command: "bun run check:fix",
+      workingDirectory: WORKSPACE_DIR,
+    },
+  });
+
+  const { exitCode, success, stderr } = await runCommand(
     "bun",
     ["run", "check:fix"],
     { cwd: WORKSPACE_DIR },
   );
 
   if ((exitCode === 0 || !stderr) && success) {
+    logger.info("Successfully completed format and lint process", {
+      extra: {
+        exitCode,
+      },
+    });
     return {
       success: true,
     };
   }
 
-  console.log(
-    `[formatAndLint:${projectId}] Failed to format and lint`,
-    exitCode,
-    success,
-    stderr,
-  );
+  logger.error("Format and lint process failed", {
+    extra: {
+      exitCode,
+      success,
+      stderr,
+      command: "bun run check:fix",
+    },
+  });
 
   return {
     success: false,
@@ -76,26 +116,47 @@ export const checkTypes = async ({
 }: {
   projectId: string;
 }) => {
-  console.log(`[checkTypes:${projectId}] Checking types`);
+  const logger = Logger.get({
+    tags: ["checkTypes"],
+    extra: {
+      projectId,
+    },
+  });
 
-  const { exitCode, success, stderr } = await execute(
+  logger.info("Starting type checking process", {
+    extra: {
+      command: "bun run check-types",
+      workingDirectory: WORKSPACE_DIR,
+      timeout: "60 seconds",
+    },
+  });
+
+  const { exitCode, success, stderr } = await runCommand(
     "bun",
     ["run", "check-types"],
     { cwd: WORKSPACE_DIR, timeout: 1000 * 60 },
   );
 
   if ((exitCode === 0 || !stderr) && success) {
+    logger.info("Type checking completed successfully", {
+      extra: {
+        exitCode,
+      },
+    });
     return {
       success: true,
     };
   }
 
-  console.log(
-    `[checkTypes:${projectId}] Failed to check types`,
-    exitCode,
-    success,
-    stderr,
-  );
+  logger.error("Type checking failed", {
+    extra: {
+      exitCode,
+      success,
+      stderr,
+      command: "bun run check-types",
+      timeout: "60 seconds",
+    },
+  });
 
   return {
     success: false,
@@ -114,9 +175,23 @@ export const commit = async ({
   email?: string;
   commitMessage: string;
 }) => {
-  console.log(`[commit:${projectId}] Committing`, commitMessage);
+  const logger = Logger.get({
+    tags: ["commit"],
+    extra: {
+      projectId,
+    },
+  });
 
-  const { exitCode, success, stderr } = await execute("bash", [
+  logger.info("Starting git commit process", {
+    extra: {
+      commitMessage,
+      authorName: name,
+      authorEmail: email,
+      script: `${SCRIPTS_DIR}/commit.sh`,
+    },
+  });
+
+  const { exitCode, success, stderr } = await runCommand("bash", [
     `${SCRIPTS_DIR}/commit.sh`,
     commitMessage,
     name,
@@ -124,17 +199,30 @@ export const commit = async ({
   ]);
 
   if ((exitCode === 0 || !stderr) && success) {
+    logger.info("Git commit completed successfully", {
+      extra: {
+        commitMessage,
+        authorName: name,
+        authorEmail: email,
+        exitCode,
+      },
+    });
     return {
       success: true,
     };
   }
 
-  console.log(
-    `[commit:${projectId}] Failed to commit`,
-    exitCode,
-    success,
-    stderr,
-  );
+  logger.error("Git commit failed", {
+    extra: {
+      commitMessage,
+      authorName: name,
+      authorEmail: email,
+      exitCode,
+      success,
+      stderr,
+      script: `${SCRIPTS_DIR}/commit.sh`,
+    },
+  });
 
   return {
     success: false,

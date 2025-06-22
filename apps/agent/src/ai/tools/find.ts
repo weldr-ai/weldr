@@ -1,0 +1,134 @@
+import { runShellCommand } from "@/ai/utils/commands";
+import { defineTool } from "@/ai/utils/tools";
+import { WORKSPACE_DIR } from "@/lib/constants";
+import { Logger } from "@/lib/logger";
+import { z } from "zod";
+
+export const findTool = defineTool({
+  name: "find_search",
+  description: "Finds files based on a search query.",
+  whenToUse: "When you need to locate files using a specific query.",
+  example: `<find_search>
+  <query>route</query>
+  <max_results>10</max_results>
+</find_search>`,
+
+  inputSchema: z.object({
+    query: z.string().describe("The substring of the path to search for."),
+    includeDirectories: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe("Whether to include directories in the search results."),
+    includeFiles: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe("Whether to include files in the search results."),
+    maxResults: z
+      .number()
+      .optional()
+      .default(20)
+      .describe("The maximum number of results to return."),
+  }),
+
+  execute: async ({ input, context }) => {
+    const { query, includeDirectories, includeFiles, maxResults } = input;
+    const project = context.get("project");
+    const version = context.get("version");
+
+    // Create contextual logger with base tags and extras
+    const logger = Logger.get({
+      tags: ["findTool"],
+      extra: {
+        projectId: project.id,
+        versionId: version.id,
+        input,
+      },
+    });
+
+    logger.info(`Finding files with query: ${query}`);
+
+    // Build find command
+    let findCmd = `find "${WORKSPACE_DIR}"`;
+
+    // Exclude common unwanted directories
+    findCmd +=
+      " \\( -name node_modules -o -name .git -o -name .next -o -name dist -o -name build -o -name .turbo \\) -prune -o";
+
+    // Add path filter
+    findCmd += ` -path "*${query}*"`;
+
+    // Add type filter
+    if (includeDirectories && !includeFiles) {
+      findCmd += " -type d";
+    } else if (includeFiles && !includeDirectories) {
+      findCmd += " -type f";
+    }
+
+    findCmd += " -print";
+
+    const command = findCmd;
+    const { stdout, stderr, exitCode } = await runShellCommand(command);
+
+    if (exitCode !== 0) {
+      logger.error(`Failed to execute find search: ${stderr}`, {
+        extra: {
+          command,
+          exitCode,
+          stderr,
+        },
+      });
+      return {
+        success: false,
+        error: stderr || "Failed to execute find search",
+      };
+    }
+
+    if (!stdout) {
+      logger.info("No results found", {
+        extra: {
+          command,
+          exitCode,
+          stderr,
+        },
+      });
+      return {
+        success: true,
+        results: [] as string[],
+        summary: {
+          totalResults: 0,
+          truncated: false,
+        },
+      };
+    }
+
+    // Process results
+    const allResults = stdout
+      .trim()
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((path) => path.replace(`${WORKSPACE_DIR}/`, ""))
+      .filter((path) => path && path !== ".");
+
+    const results = allResults.slice(0, maxResults);
+    const truncated = allResults.length > maxResults;
+
+    logger.info(`Found ${results.length} results`, {
+      extra: {
+        command,
+        exitCode,
+        stderr,
+      },
+    });
+
+    return {
+      success: true,
+      results,
+      summary: {
+        totalResults: allResults.length,
+        truncated,
+      },
+    };
+  },
+});

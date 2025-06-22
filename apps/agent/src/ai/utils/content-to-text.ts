@@ -1,24 +1,44 @@
 import { db, eq } from "@weldr/db";
-import type { chatMessages } from "@weldr/db/schema";
 import { declarations } from "@weldr/db/schema";
-import type { CoreMessage } from "ai";
+import type { ChatMessage } from "@weldr/shared/types";
+import type { CoreAssistantMessage, CoreUserMessage } from "ai";
 
-export async function convertMessagesToCore(
-  messages: (typeof chatMessages.$inferSelect)[],
-) {
-  const result: CoreMessage[] = [];
+export async function convertMessagesToCore(messages: ChatMessage[]) {
+  const result: (CoreUserMessage | CoreAssistantMessage)[] = [];
 
   for (const message of messages) {
+    // Skip tool messages as they are converted by default
+    if (message.role === "tool") {
+      result.push({
+        role: "assistant",
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(message),
+          },
+        ],
+      });
+      continue;
+    }
+
     const content = message.content ?? [];
 
-    const coreMessages: CoreMessage[] = [];
+    // Process content in order, accumulating text content
+    let currentTextContent = "";
+
+    const flushTextContent = () => {
+      if (currentTextContent.trim()) {
+        result.push({
+          role: message.role as "user" | "assistant",
+          content: [{ type: "text", text: currentTextContent }],
+        });
+        currentTextContent = "";
+      }
+    };
 
     for (const item of content) {
       if (item.type === "text") {
-        coreMessages.push({
-          role: message.role as "user" | "assistant",
-          content: [{ type: "text", text: item.text }],
-        });
+        currentTextContent += item.text;
       }
 
       if (
@@ -98,12 +118,7 @@ export async function convertMessagesToCore(
         }
 
         if (reference) {
-          coreMessages.push({
-            role: message.role as "user" | "assistant",
-            content: [
-              {
-                type: "text",
-                text: `${reference.name}
+          currentTextContent += `${reference.name}
 Type: ${reference.type}
 File: ${reference.file.path}
 ${
@@ -125,22 +140,25 @@ ${
         .join(", ")}`
     : ""
 }
-${reference.declarationPackages.length > 0 ? `External Packages: ${reference.declarationPackages.map((d) => `Depends on these declarations: [${d.declarations?.join(", ")}] from package: ${d.package.name}`).join(", ")}` : ""}`,
-              },
-            ],
-          });
+${reference.declarationPackages.length > 0 ? `External Packages: ${reference.declarationPackages.map((d) => `Depends on these declarations: [${d.declarations?.join(", ")}] from package: ${d.package.name}`).join(", ")}` : ""}`;
         }
       }
 
       if (item.type === "file") {
-        coreMessages.push({
+        // Flush any accumulated text content before adding the file
+        flushTextContent();
+
+        result.push({
           role: message.role as "user",
           content: [{ type: "file", data: item.data, mimeType: item.mimeType }],
         });
       }
 
       if (item.type === "image") {
-        coreMessages.push({
+        // Flush any accumulated text content before adding the image
+        flushTextContent();
+
+        result.push({
           role: message.role as "user",
           content: [
             { type: "image", image: item.image, mimeType: item.mimeType },
@@ -149,35 +167,17 @@ ${reference.declarationPackages.length > 0 ? `External Packages: ${reference.dec
       }
 
       if (item.type === "tool-call") {
-        coreMessages.push({
-          role: message.role as "assistant",
-          content: [
-            {
-              type: "tool-call",
-              toolName: item.toolName,
-              args: item.args,
-              toolCallId: item.toolCallId,
-            },
-          ],
-        });
-      }
+        // Convert tool call to XML format and append to text content
+        const argsXml = Object.entries(item.args)
+          .map(([key, value]) => `  <${key}>${value}</${key}>`)
+          .join("\n");
 
-      if (item.type === "tool-result") {
-        coreMessages.push({
-          role: message.role as "tool",
-          content: [
-            {
-              type: "tool-result",
-              toolName: item.toolName,
-              toolCallId: item.toolCallId,
-              result: item.result,
-            },
-          ],
-        });
+        currentTextContent += `\n<${item.toolName}>\n${argsXml}\n</${item.toolName}>`;
       }
     }
 
-    result.push(...coreMessages);
+    // Flush any remaining text content
+    flushTextContent();
   }
 
   return result;

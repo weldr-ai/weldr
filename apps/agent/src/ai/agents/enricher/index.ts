@@ -1,11 +1,8 @@
 import { prompts } from "@/ai/prompts";
+import { runCommand } from "@/ai/utils/commands";
+import { registry } from "@/ai/utils/registry";
 import { WORKSPACE_DIR } from "@/lib/constants";
-import { execute } from "@/lib/exec";
-import { registry } from "@/lib/registry";
-import {
-  type declarationSpecsWithDependenciesSchema,
-  enricherAgentOutputSchema,
-} from "@/lib/schemas";
+import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { and, db, eq, inArray } from "@weldr/db";
 import {
@@ -21,10 +18,14 @@ import {
 import { nanoid } from "@weldr/shared/nanoid";
 import { streamObject } from "ai";
 import type { z } from "zod";
+import {
+  type declarationSpecsWithDependenciesSchema,
+  enricherAgentOutputSchema,
+} from "./schemas";
 
 export async function enrichAgent({
   context,
-  coolDownPeriod = 5000,
+  coolDownPeriod = 1000,
 }: {
   context: WorkflowContext;
   coolDownPeriod?: number;
@@ -32,6 +33,15 @@ export async function enrichAgent({
   const project = context.get("project");
   const contextVersion = context.get("version");
   const user = context.get("user");
+
+  // Create contextual logger with base tags and extras
+  const logger = Logger.get({
+    tags: ["enricherAgent"],
+    extra: {
+      projectId: project.id,
+      versionId: contextVersion.id,
+    },
+  });
 
   await db.transaction(async (tx) => {
     const version = await tx.query.versions.findFirst({
@@ -68,9 +78,7 @@ export async function enrichAgent({
       return normalizedPaths.some((path) => file.path === path);
     });
 
-    console.log(
-      `[enrich:${project.id}] Found ${changedFiles.map((file) => file.path)} changed files`,
-    );
+    logger.info(`Found ${changedFiles.map((file) => file.path)} changed files`);
 
     const insertDeclarations: (typeof declarations.$inferSelect)[] = [];
     const allEnrichedDeclarations: z.infer<
@@ -78,22 +86,22 @@ export async function enrichAgent({
     >[] = [];
 
     for (const file of changedFiles) {
-      console.log(`[enrich:${project.id}] Processing file ${file.path}`);
+      logger.info(`Processing file ${file.path}`);
 
-      const { stdout, stderr, exitCode, success } = await execute("cat", [
+      const { stdout, stderr, exitCode, success } = await runCommand("cat", [
         `${WORKSPACE_DIR}/${file.path}`,
       ]);
 
       if (exitCode !== 0 || !stdout || !success) {
-        console.error(
-          `[enrich:${project.id}] Failed to read file: ${file.path} ${stderr || "Unknown error"}`,
+        logger.error(
+          `Failed to read file: ${file.path} ${stderr || "Unknown error"}`,
         );
         throw new Error(
           `[enrich:${project.id}] Failed to read file: ${file.path} ${stderr || ""}`,
         );
       }
 
-      console.log(`[enrich:${project.id}] Processing file ${file.path}`);
+      logger.info(`Processing file ${file.path}`);
 
       // TODO: Figure out how to add previous content
       // ${
@@ -166,9 +174,7 @@ export async function enrichAgent({
         }
       }
 
-      console.log(
-        `[enrich:${project.id}] Found ${enrichedDeclarations.length} enriched declarations`,
-      );
+      logger.info(`Found ${enrichedDeclarations.length} enriched declarations`);
 
       // Insert the new enriched declarations
       for (const enrichedDeclaration of enrichedDeclarations) {

@@ -90,9 +90,6 @@ export const versionRouter = {
           chat: {
             with: {
               messages: {
-                columns: {
-                  content: false,
-                },
                 orderBy: (messages, { asc }) => [asc(messages.createdAt)],
                 with: {
                   attachments: {
