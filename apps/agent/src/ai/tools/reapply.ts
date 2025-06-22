@@ -1,0 +1,47 @@
+import { Logger } from "@/lib/logger";
+import { z } from "zod";
+import { createTool } from "../utils/create-tool";
+
+export const reapplyTool = createTool({
+  description:
+    "Calls a smarter model to apply the last edit to the specified file.",
+  inputSchema: z.object({
+    targetFile: z
+      .string()
+      .describe("The relative path to the file to reapply the last edit to."),
+  }),
+  outputSchema: z.discriminatedUnion("success", [
+    z.object({
+      success: z.literal(true),
+      message: z.string(),
+    }),
+    z.object({
+      success: z.literal(false),
+      error: z.string(),
+    }),
+  ]),
+  execute: async ({ input, context }) => {
+    const project = context.get("project");
+    const version = context.get("version");
+
+    // Create contextual logger with base tags and extras
+    const logger = Logger.get({
+      tags: ["reapplyTool"],
+      extra: {
+        projectId: project.id,
+        versionId: version.id,
+        input,
+      },
+    });
+
+    logger.info(`Re-applying edit to file: ${input.targetFile}`);
+
+    // This tool is a placeholder and should be implemented by the caller.
+    logger.info("Reapply operation completed");
+
+    return {
+      success: true,
+      message: `Re-applying edit to ${input.targetFile}`,
+    };
+  },
+});

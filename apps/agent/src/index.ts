@@ -1,7 +1,8 @@
 import { serve } from "@hono/node-server";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
-import { configureOpenAPI, createRouter } from "./lib/hono-utils";
+import { Logger } from "./lib/logger";
+import { configureOpenAPI, createRouter } from "./lib/utils";
 import { loggerMiddleware } from "./middlewares/logger";
 import { routes } from "./routes";
 import { WorkflowContext } from "./workflow/context";
@@ -67,6 +68,8 @@ serve(
     port,
   },
   (info) => {
-    console.log(`Server is running on http://localhost:${info.port}`);
+    Logger.info(`Server is running on http://localhost:${info.port}`, {
+      tags: ["server"],
+    });
   },
 );

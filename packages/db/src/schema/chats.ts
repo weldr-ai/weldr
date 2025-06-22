@@ -20,7 +20,10 @@ export const messageRoles = pgEnum("message_roles", [
   "tool",
 ]);
 
-export const messageTypes = pgEnum("message_types", ["public", "internal"]);
+export const messageVisibility = pgEnum("message_visibility", [
+  "public",
+  "internal",
+]);
 
 export const chats = pgTable(
   "chats",
@@ -58,8 +61,8 @@ export const chatMessages = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => nanoid()),
-    type: messageTypes("type").notNull(),
-    role: messageRoles("role").notNull(),
+    visibility: messageVisibility("visibility").notNull().default("public"),
+    role: messageRoles("role").notNull().default("assistant"),
     content: jsonb("content").$type<ChatMessageContent>().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     chatId: text("chat_id")

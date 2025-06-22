@@ -1,10 +1,8 @@
-import { pinoLogger as logger } from "hono-pino";
-import pino from "pino";
+import { Logger } from "@/lib/logger";
+import { pinoLogger } from "hono-pino";
 
 export function loggerMiddleware() {
-  return logger({
-    pino: pino({
-      level: process.env.LOG_LEVEL || "info",
-    }),
+  return pinoLogger({
+    pino: Logger.get().raw,
   });
 }

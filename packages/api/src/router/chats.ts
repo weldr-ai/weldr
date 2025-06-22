@@ -22,9 +22,6 @@ export const chatsRouter = {
           eq(chatMessages.userId, ctx.session.user.id),
         ),
         orderBy: (chatMessages, { asc }) => [asc(chatMessages.createdAt)],
-        columns: {
-          content: false,
-        },
         with: {
           attachments: {
             columns: {
@@ -94,7 +91,7 @@ export const chatsRouter = {
 
       for (const item of input.messages) {
         messages.push({
-          type: "public",
+          visibility: "public",
           content: item.content,
           role: item.role,
           userId: ctx.session.user.id,

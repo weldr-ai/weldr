@@ -33,7 +33,7 @@ function PureMessages({
               message.content.some(
                 (content) =>
                   content.type === "tool-result" &&
-                  content.toolName !== "setupIntegrationsTool",
+                  content.toolName !== "setupIntegration",
               )
             ),
         )

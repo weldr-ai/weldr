@@ -119,7 +119,7 @@ export const attachmentSchema = z.object({
 
 const baseMessageSchema = z.object({
   id: z.string().optional(),
-  type: z.enum(["public", "internal"]),
+  visibility: z.enum(["public", "internal"]),
   createdAt: z.date(),
   chatId: z.string().optional(),
 });
@@ -172,20 +172,20 @@ export const chatSchema = z.object({
 
 export const addMessageItemSchema = z.discriminatedUnion("role", [
   z.object({
-    type: z.enum(["public", "internal"]),
+    visibility: z.enum(["public", "internal"]),
     role: z.literal("assistant"),
     content: assistantMessageContentSchema.array(),
     createdAt: z.date().optional(),
   }),
   z.object({
-    type: z.enum(["public", "internal"]),
+    visibility: z.enum(["public", "internal"]),
     role: z.literal("user"),
     content: userMessageContentSchema.array(),
     attachmentIds: z.string().array().optional(),
     createdAt: z.date().optional(),
   }),
   z.object({
-    type: z.enum(["public", "internal"]),
+    visibility: z.enum(["public", "internal"]),
     role: z.literal("tool"),
     content: toolResultPartSchema.array(),
     createdAt: z.date().optional(),

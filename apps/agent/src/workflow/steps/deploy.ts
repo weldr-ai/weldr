@@ -1,5 +1,6 @@
+import { runCommand } from "@/ai/utils/commands";
 import { SCRIPTS_DIR } from "@/lib/constants";
-import { execute } from "@/lib/exec";
+import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { Fly } from "@weldr/shared/fly";
 import { redisClient } from "@weldr/shared/redis";
@@ -13,13 +14,22 @@ export const deployStep = createStep<WorkflowContext>({
     const project = context.get("project");
     const version = context.get("version");
 
+    // Create contextual logger with base tags and extras
+    const logger = Logger.get({
+      tags: ["deploy"],
+      extra: {
+        projectId: project.id,
+        versionId: version.id,
+      },
+    });
+
     if (isDev) {
       return;
     }
 
     try {
       // Start the build process asynchronously
-      const { stderr, exitCode, success } = await execute(
+      const { stderr, exitCode, success } = await runCommand(
         "bash",
         [
           `${SCRIPTS_DIR}/build.sh`,
@@ -45,7 +55,7 @@ export const deployStep = createStep<WorkflowContext>({
         );
       }
 
-      console.log(`[deploy:${project.id}] Build completed successfully`);
+      logger.info("Build completed successfully");
 
       // Create a machine and register it in the redis store
       const previewMachineId = await Fly.machine.create({
@@ -68,7 +78,7 @@ export const deployStep = createStep<WorkflowContext>({
         `${previewMachineId}:app-production-${project.id}`,
       );
 
-      console.log(`[deploy:${project.id}] Deployment completed successfully`);
+      logger.info("Deployment completed successfully");
     } catch (error) {
       console.error(
         `[deploy:${project.id}] Failed to deploy: ${
