@@ -16,16 +16,10 @@ import { registry } from "@/ai/utils/registry";
 import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { and, db, eq, inArray } from "@weldr/db";
-import {
-  files,
-  versionDeclarations,
-  versionFiles,
-  versions,
-} from "@weldr/db/schema";
+import { files, versionDeclarations, versionFiles } from "@weldr/db/schema";
 import type {
   addMessageItemSchema,
   assistantMessageContentSchema,
-  toolResultPartSchema,
 } from "@weldr/shared/validators/chats";
 import type { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import { streamText } from "ai";
@@ -182,8 +176,6 @@ export async function coderAgent({
         },
       });
 
-      // Tool results
-      const toolResults: z.infer<typeof toolResultPartSchema>[] = [];
       // Assistant message content
       const assistantContent: z.infer<typeof assistantMessageContentSchema>[] =
         [];
@@ -228,21 +220,36 @@ export async function coderAgent({
             shouldRecur = true;
           }
         } else if (delta.type === "tool-result") {
-          // Handle tool results
-          toolResults.push({
-            type: "tool-result",
+          // Handle tool results - persist immediately for durability
+          const toolResult = {
+            type: "tool-result" as const,
             toolCallId: delta.toolCallId,
             toolName: delta.toolName,
             result: delta.result,
+          };
+
+          // Save tool result immediately to database
+          await insertMessages({
+            input: {
+              chatId: version.chatId,
+              userId: user.id,
+              messages: [
+                {
+                  visibility: "internal",
+                  role: "tool",
+                  content: [toolResult],
+                },
+              ],
+            },
           });
 
           // Handle tool results
           switch (delta.toolName) {
             case "deleteFile": {
-              const toolResult = delta.result;
-              if (toolResult.success) {
+              const result = delta.result;
+              if (result.success) {
                 const fileResult = flatFiles.find(
-                  (f) => f.path === toolResult.filePath,
+                  (f) => f.path === result.filePath,
                 );
                 if (fileResult) {
                   deletedDeclarations.push(
@@ -270,16 +277,7 @@ export async function coderAgent({
         });
       }
 
-      // Add tool results as separate tool messages - all internal
-      if (toolResults.length > 0) {
-        messagesToSave.push({
-          visibility: "internal",
-          role: "tool",
-          content: toolResults,
-        });
-      }
-
-      // Store messages if any
+      // Store messages if any (tool results are already saved immediately)
       if (messagesToSave.length > 0) {
         await insertMessages({
           input: {
@@ -365,14 +363,6 @@ export async function coderAgent({
         })
         .onConflictDoNothing();
     }
-
-    await tx
-      .update(versions)
-      .set({
-        progress: "coded",
-        changedFiles: Array.from(updatedFiles),
-      })
-      .where(eq(versions.id, version.id));
   });
 
   // End the stream

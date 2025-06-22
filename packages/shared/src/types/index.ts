@@ -71,3 +71,114 @@ export type Package = z.infer<typeof packageSchema>;
 export type Theme = z.infer<typeof themeSchema>;
 export type ThemeData = z.infer<typeof themeDataSchema>;
 export type ThemeMode = keyof Theme;
+
+export type TPendingMessage =
+  // Conversation phase - planner acting as interface
+  | "thinking" // Processing user request
+  | "responding" // Generating response to user
+  | "waiting" // Setting up integrations/configurations
+  // Workflow execution phase - actual work happening
+  | "coding" // Writing/generating code (includes building)
+  | "deploying" // Deploying to runtime (includes enriching in parallel)
+  | "completing" // Finishing up
+  | null;
+
+export type TextStreamableValue = {
+  type: "text";
+  text: string;
+};
+
+export type EndStreamableValue = {
+  type: "end";
+};
+
+export type ToolStreamableValue = {
+  type: "tool";
+  toolName: "setupIntegration";
+  toolCallId: string;
+  toolArgs?: Record<string, unknown>;
+  toolResult: unknown;
+};
+
+// Workflow streaming types matching database schema
+export type WorkflowRunStreamableValue = {
+  type: "workflow_run";
+  runId: string;
+  status: "running" | "completed" | "failed" | "suspended";
+  errorMessage?: string;
+};
+
+export type WorkflowStepStreamableValue = {
+  type: "workflow_step";
+  runId: string;
+  stepId: string;
+  status: "pending" | "running" | "completed" | "failed" | "skipped";
+  output?: unknown;
+  errorMessage?: string;
+};
+
+// Legacy coder type (deprecated, will be replaced by workflow types)
+export type CoderStreamableValue =
+  | {
+      id?: string;
+      type: "coder";
+      status: "initiated" | "coded" | "enriched" | "succeeded" | "failed";
+    }
+  | {
+      id?: string;
+      type: "coder";
+      status: "deployed";
+    };
+
+export type VersionStreamableValue = {
+  id?: string;
+  createdAt?: Date;
+  type: "version";
+  versionId: string;
+  versionMessage: string;
+  versionNumber: number;
+  versionDescription: string;
+  changedFiles: {
+    path: string;
+    status: "pending" | "success";
+  }[];
+};
+
+export type TStreamableValue =
+  | TextStreamableValue
+  | ToolStreamableValue
+  | WorkflowRunStreamableValue
+  | WorkflowStepStreamableValue
+  | CoderStreamableValue // Legacy - will be removed
+  | EndStreamableValue;
+
+// SSE-specific event types
+export type SSEConnectionEvent = {
+  type: "connected";
+  clientId: string;
+  streamId: string;
+  workflowRunning?: boolean;
+};
+
+export type SSEWorkflowCompleteEvent = {
+  type: "workflow_complete";
+};
+
+export type SSEErrorEvent = {
+  type: "error";
+  error: string;
+};
+
+export type SSEEvent =
+  | SSEConnectionEvent
+  | SSEWorkflowCompleteEvent
+  | SSEErrorEvent
+  | TStreamableValue;
+
+// Trigger API response type
+export type TriggerWorkflowResponse = {
+  success: boolean;
+  streamId: string;
+  runId: string;
+  message?: string;
+};

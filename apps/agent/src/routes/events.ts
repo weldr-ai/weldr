@@ -1,11 +1,11 @@
 import { initVersion } from "@/ai/utils/init-version";
 import { Logger } from "@/lib/logger";
 import { createRouter } from "@/lib/utils";
-import type { TStreamableValue } from "@/types";
 import { createRoute, z } from "@hono/zod-openapi";
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
+import type { TStreamableValue } from "@weldr/shared/types";
 
 const route = createRoute({
   method: "get",

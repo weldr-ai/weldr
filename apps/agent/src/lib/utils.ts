@@ -1,8 +1,7 @@
 import type { WorkflowContext } from "@/workflow/context";
 import { OpenAPIHono } from "@hono/zod-openapi";
+import type { TStreamableValue } from "@weldr/shared/types";
 import type { PinoLogger } from "hono-pino";
-
-import type { TStreamableValue } from "@/types";
 
 export interface StreamWriter {
   write(chunk: TStreamableValue): Promise<void>;

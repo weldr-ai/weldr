@@ -372,13 +372,6 @@ export async function enrichAgent({
         }
       }
     }
-
-    await tx
-      .update(versions)
-      .set({
-        progress: "enriched",
-      })
-      .where(eq(versions.id, contextVersion.id));
   });
 }
 

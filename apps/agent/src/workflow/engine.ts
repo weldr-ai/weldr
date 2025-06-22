@@ -1,11 +1,12 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { Logger } from "@/lib/logger";
+import { and, db, eq, isNotNull } from "@weldr/db";
+import {
+  versions,
+  workflowRuns,
+  workflowStepExecutions,
+} from "@weldr/db/schema";
 import { nanoid } from "@weldr/shared/nanoid";
 import type { WorkflowContext } from "./context";
-
-// --- Configuration ---
-const stateDir = path.join(process.cwd(), ".weldr");
 
 // --- Type Definitions ---
 export type Step = {
@@ -30,10 +31,12 @@ type StepState =
   | { status: "pending" }
   | { status: "running" }
   | { status: "completed"; output: unknown }
-  | { status: "failed"; error: string };
+  | { status: "failed"; error: string }
+  | { status: "skipped" };
 
 type WorkflowState = {
   runId: string;
+  versionId: string;
   stepStates: Record<string, StepState>;
   status: "running" | "completed" | "failed" | "suspended";
   error?: string;
@@ -50,50 +53,131 @@ export type WorkflowConfig = {
 
 // --- Private Helper Functions ---
 
-async function readState({
-  statePath,
-}: {
-  statePath: string;
-}): Promise<WorkflowState> {
-  try {
-    const data = await fs.readFile(statePath, "utf-8");
-    return JSON.parse(data) as WorkflowState;
-  } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      return {
-        runId: path.basename(statePath, ".json"),
-        stepStates: {},
-        status: "running",
-      };
+function findResumeIndex(
+  operations: WorkflowOperation[],
+  stepStates: Record<string, StepState>,
+): number {
+  for (let i = 0; i < operations.length; i++) {
+    const op = operations[i];
+    if (!op) continue;
+
+    if (op.type === "sequential") {
+      if (stepStates[op.step.id]?.status !== "completed") {
+        return i;
+      }
+    } else if (op.type === "parallel") {
+      const hasIncompleteStep = op.steps.some(
+        (step) => stepStates[step.id]?.status !== "completed",
+      );
+      if (hasIncompleteStep) {
+        return i;
+      }
+    } else if (op.type === "suspend") {
+      if (stepStates[op.id]?.status !== "completed") {
+        return i;
+      }
     }
-    throw error;
   }
+  return operations.length;
+}
+
+async function readState({
+  runId,
+}: {
+  runId: string;
+}): Promise<WorkflowState | null> {
+  const run = await db.query.workflowRuns.findFirst({
+    where: eq(workflowRuns.id, runId),
+    with: {
+      stepExecutions: true,
+    },
+  });
+
+  if (!run) {
+    return null;
+  }
+
+  const stepStates: Record<string, StepState> = {};
+  for (const step of run.stepExecutions) {
+    if (step.status === "completed") {
+      stepStates[step.stepId] = {
+        status: "completed",
+        output: step.output,
+      };
+    } else if (step.status === "failed") {
+      stepStates[step.stepId] = {
+        status: "failed",
+        error: step.errorMessage || "Unknown error",
+      };
+    } else {
+      stepStates[step.stepId] = { status: step.status };
+    }
+  }
+
+  return {
+    runId: run.id,
+    versionId: run.versionId,
+    stepStates,
+    status: run.status,
+    error: run.errorMessage || undefined,
+  };
 }
 
 async function writeState({
-  statePath,
   state,
 }: {
-  statePath: string;
   state: WorkflowState;
 }): Promise<void> {
-  const tempPath = `${statePath}.${Date.now()}.tmp`;
-  await fs.writeFile(tempPath, JSON.stringify(state, null, 2), "utf-8");
-  await fs.rename(tempPath, statePath);
+  await db.transaction(async (tx) => {
+    // Update workflow run
+    await tx
+      .update(workflowRuns)
+      .set({
+        status: state.status,
+        errorMessage: state.error,
+        completedAt: state.status === "completed" ? new Date() : null,
+      })
+      .where(eq(workflowRuns.id, state.runId));
+
+    // Update step executions
+    for (const [stepId, stepState] of Object.entries(state.stepStates)) {
+      const existingStep = await tx.query.workflowStepExecutions.findFirst({
+        where: and(
+          eq(workflowStepExecutions.workflowRunId, state.runId),
+          eq(workflowStepExecutions.stepId, stepId),
+        ),
+      });
+
+      const stepData = {
+        status: stepState.status,
+        output: stepState.status === "completed" ? stepState.output : null,
+        errorMessage: stepState.status === "failed" ? stepState.error : null,
+        startedAt: stepState.status === "running" ? new Date() : undefined,
+        completedAt: ["completed", "failed", "skipped"].includes(
+          stepState.status,
+        )
+          ? new Date()
+          : null,
+      };
+
+      if (existingStep) {
+        await tx
+          .update(workflowStepExecutions)
+          .set(stepData)
+          .where(eq(workflowStepExecutions.id, existingStep.id));
+      } else {
+        await tx.insert(workflowStepExecutions).values({
+          workflowRunId: state.runId,
+          stepId,
+          ...stepData,
+        });
+      }
+    }
+  });
 }
 
-async function deleteState({
-  statePath,
-}: { statePath: string }): Promise<void> {
-  try {
-    await fs.unlink(statePath);
-  } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      // File already deleted, which is fine.
-      return;
-    }
-    throw error;
-  }
+async function deleteState({ runId }: { runId: string }): Promise<void> {
+  await db.delete(workflowRuns).where(eq(workflowRuns.id, runId));
 }
 
 async function executeWithRetry({
@@ -190,42 +274,94 @@ export function createWorkflow(
       return api;
     },
     async getRun({ runId }: { runId: string }): Promise<WorkflowState | null> {
-      const statePath = path.join(stateDir, `${runId}.json`);
-      try {
-        const data = await fs.readFile(statePath, "utf-8");
-        return JSON.parse(data) as WorkflowState;
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          "code" in error &&
-          error.code === "ENOENT"
-        ) {
-          return null;
-        }
-        throw error;
-      }
+      return await readState({ runId });
     },
     async listRuns(): Promise<string[]> {
-      try {
-        await fs.mkdir(stateDir, { recursive: true });
-        const files = await fs.readdir(stateDir);
-        return files
-          .filter((file) => file.endsWith(".json"))
-          .map((file) => path.basename(file, ".json"));
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          "code" in error &&
-          error.code === "ENOENT"
-        ) {
-          return [];
-        }
-        throw error;
-      }
+      const runs = await db.query.workflowRuns.findMany({
+        columns: { id: true },
+        orderBy: (workflowRuns, { desc }) => [desc(workflowRuns.startedAt)],
+      });
+      return runs.map((run) => run.id);
     },
     async deleteRun({ runId }: { runId: string }): Promise<void> {
-      const statePath = path.join(stateDir, `${runId}.json`);
-      await deleteState({ statePath });
+      await deleteState({ runId });
+    },
+    async markActiveVersionWorkflowAsFailed(projectId: string): Promise<void> {
+      const activeVersion = await db.query.versions.findFirst({
+        where: and(
+          eq(versions.projectId, projectId),
+          isNotNull(versions.activatedAt),
+        ),
+      });
+
+      if (!activeVersion) return;
+
+      const runningWorkflow = await db.query.workflowRuns.findFirst({
+        where: and(
+          eq(workflowRuns.versionId, activeVersion.id),
+          eq(workflowRuns.status, "running"),
+        ),
+      });
+
+      if (runningWorkflow) {
+        await db
+          .update(workflowRuns)
+          .set({
+            status: "failed",
+            errorMessage: "Server restart detected - workflow interrupted",
+            completedAt: new Date(),
+          })
+          .where(eq(workflowRuns.id, runningWorkflow.id));
+      }
+    },
+    async recoverActiveVersionWorkflow(projectId: string): Promise<void> {
+      const activeVersion = await db.query.versions.findFirst({
+        where: and(
+          eq(versions.projectId, projectId),
+          isNotNull(versions.activatedAt),
+        ),
+      });
+
+      if (!activeVersion) return;
+
+      const crashedWorkflow = await db.query.workflowRuns.findFirst({
+        where: and(
+          eq(workflowRuns.versionId, activeVersion.id),
+          eq(workflowRuns.status, "failed"),
+          eq(
+            workflowRuns.errorMessage,
+            "Server restart detected - workflow interrupted",
+          ),
+        ),
+        with: {
+          stepExecutions: true,
+        },
+      });
+
+      if (crashedWorkflow) {
+        // Reset workflow and any running steps back to pending
+        await db
+          .update(workflowRuns)
+          .set({
+            status: "running",
+            errorMessage: null,
+            completedAt: null,
+          })
+          .where(eq(workflowRuns.id, crashedWorkflow.id));
+
+        // Reset any running steps to pending
+        for (const step of crashedWorkflow.stepExecutions) {
+          if (step.status === "running") {
+            await db
+              .update(workflowStepExecutions)
+              .set({
+                status: "pending",
+                startedAt: null,
+              })
+              .where(eq(workflowStepExecutions.id, step.id));
+          }
+        }
+      }
     },
     async execute({
       runId,
@@ -247,11 +383,21 @@ export function createWorkflow(
         },
       });
 
-      await fs.mkdir(stateDir, { recursive: true });
-      const statePath = path.join(stateDir, `${runId}.json`);
-
-      await deleteState({ statePath });
-      const state = await readState({ statePath });
+      // Create or get existing workflow run
+      let state = await readState({ runId });
+      if (!state) {
+        await db.insert(workflowRuns).values({
+          id: runId,
+          versionId: version.id,
+          status: "running",
+        });
+        state = {
+          runId,
+          versionId: version.id,
+          stepStates: {},
+          status: "running",
+        };
+      }
 
       for (const op of operations) {
         if (op.type === "sequential") {
@@ -277,10 +423,23 @@ export function createWorkflow(
       }
 
       state.status = "running";
-      await writeState({ statePath, state });
+      await writeState({ state });
+
+      // Get the SSE stream writer to emit workflow progress
+      const streamWriter = global.sseConnections?.get(
+        context.get("version").chatId,
+      );
+      if (streamWriter) {
+        await streamWriter.write({
+          type: "workflow_run",
+          runId,
+          status: "running",
+        });
+      }
 
       try {
-        const startIndex = 0;
+        // Find the starting point based on completed operations
+        const startIndex = findResumeIndex(operations, state.stepStates);
 
         for (let i = startIndex; i < operations.length; i++) {
           const op = operations[i];
@@ -297,7 +456,17 @@ export function createWorkflow(
               extra: { stepId: step.id },
             });
             state.stepStates[step.id] = { status: "running" };
-            await writeState({ statePath, state });
+            await writeState({ state });
+
+            // Emit step progress
+            if (streamWriter) {
+              await streamWriter.write({
+                type: "workflow_step",
+                runId,
+                stepId: step.id,
+                status: "running",
+              });
+            }
             try {
               const output = await executeWithRetry({
                 step,
@@ -306,13 +475,36 @@ export function createWorkflow(
                 context,
               });
               state.stepStates[step.id] = { status: "completed", output };
-              await writeState({ statePath, state });
+              await writeState({ state });
+
+              // Emit step completion
+              if (streamWriter) {
+                await streamWriter.write({
+                  type: "workflow_step",
+                  runId,
+                  stepId: step.id,
+                  status: "completed",
+                  output,
+                });
+              }
             } catch (error) {
               state.stepStates[step.id] = {
                 status: "failed",
                 error: error instanceof Error ? error.message : String(error),
               };
-              await writeState({ statePath, state });
+              await writeState({ state });
+
+              // Emit step failure
+              if (streamWriter) {
+                await streamWriter.write({
+                  type: "workflow_step",
+                  runId,
+                  stepId: step.id,
+                  status: "failed",
+                  errorMessage:
+                    error instanceof Error ? error.message : String(error),
+                });
+              }
               throw error;
             }
           }
@@ -337,7 +529,7 @@ export function createWorkflow(
             for (const step of stepsToRun) {
               state.stepStates[step.id] = { status: "running" };
             }
-            await writeState({ statePath, state });
+            await writeState({ state });
 
             const promises = stepsToRun.map((step) =>
               executeWithRetry({
@@ -374,7 +566,7 @@ export function createWorkflow(
               }
             });
 
-            await writeState({ statePath, state });
+            await writeState({ state });
 
             if (workflowError) {
               throw workflowError;
@@ -390,18 +582,27 @@ export function createWorkflow(
 
               if (shouldSuspend) {
                 state.status = "suspended";
-                await writeState({ statePath, state });
+                await writeState({ state });
                 return;
               }
               // Mark as completed so we don't re-evaluate on retry
               state.stepStates[id] = { status: "completed", output: undefined };
-              await writeState({ statePath, state });
+              await writeState({ state });
             }
           }
         }
         logger.info("Workflow finished.");
         state.status = "completed";
-        await writeState({ statePath, state });
+        await writeState({ state });
+
+        // Emit workflow completion
+        if (streamWriter) {
+          await streamWriter.write({
+            type: "workflow_run",
+            runId,
+            status: "completed",
+          });
+        }
       } catch (error) {
         logger.error("Workflow failed.", {
           extra: { error },
@@ -412,7 +613,17 @@ export function createWorkflow(
         } else {
           state.error = "An unknown error occurred.";
         }
-        await writeState({ statePath, state });
+        await writeState({ state });
+
+        // Emit workflow failure
+        if (streamWriter) {
+          await streamWriter.write({
+            type: "workflow_run",
+            runId,
+            status: "failed",
+            errorMessage: state.error,
+          });
+        }
         throw error;
       }
     },

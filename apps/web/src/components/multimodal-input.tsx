@@ -13,9 +13,12 @@ import {
 } from "react";
 
 import { useUIStore } from "@/lib/store";
-import type { TPendingMessage } from "@/types";
 import { authClient } from "@weldr/auth/client";
-import type { Attachment, UserMessage } from "@weldr/shared/types";
+import type {
+  Attachment,
+  TPendingMessage,
+  UserMessage,
+} from "@weldr/shared/types";
 import { referencePartSchema } from "@weldr/shared/validators/chats";
 import { Button } from "@weldr/ui/components/button";
 import { Textarea } from "@weldr/ui/components/textarea";
