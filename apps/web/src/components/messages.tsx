@@ -1,7 +1,6 @@
-import type { TPendingMessage } from "@/types";
 import type { RouterOutputs } from "@weldr/api";
 import { nanoid } from "@weldr/shared/nanoid";
-import type { ChatMessage } from "@weldr/shared/types";
+import type { ChatMessage, TPendingMessage } from "@weldr/shared/types";
 import equal from "fast-deep-equal";
 import { memo } from "react";
 import { MessageItem } from "./message-item";
