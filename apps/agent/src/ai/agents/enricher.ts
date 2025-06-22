@@ -21,7 +21,7 @@ import type { z } from "zod";
 import {
   type declarationSpecsWithDependenciesSchema,
   enricherAgentOutputSchema,
-} from "./schemas";
+} from "../schemas/declarations";
 
 export async function enrichAgent({
   context,
