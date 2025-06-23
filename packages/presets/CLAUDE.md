@@ -1,83 +1,177 @@
-# @weldr/presets - Project & Code Generation
+# @weldr/presets - Cursor Rules
 
-## Overview
-The Presets package is a powerful code generation engine for the Weldr platform. It provides project templates and scaffolding utilities to rapidly generate new full-stack applications, server backends, or web frontends with predefined configurations and best practices.
+## Package Overview
+The Presets package provides project templates and code generation functionality for the Weldr platform. It includes base configurations, project scaffolding, and template generation using Handlebars.
 
-## Architecture & Technology Stack
+## Technology Stack
+- **Handlebars**: Template engine for code generation
+- **TypeScript**: Type-safe template development
+- **JSON Schemas**: Configuration and component definitions
+- **File System Operations**: Template copying and generation
 
-### Core Technologies
-- **Templating Engine**: Handlebars for dynamic file generation from templates
-- **Configuration**: JSON files for defining project structures and component metadata
-- **File System**: Node.js `fs` module for file and directory manipulation
-- **Type Safety**: TypeScript for the generator logic
+## Architecture Patterns
 
-### Key Features
-- **Project Scaffolding**: Generate entire project structures from a single command.
-- **Code Generation**: Create individual files or components from templates.
-- **Multiple Project Types**: Supports `full-stack`, `server-only`, and `web-only` presets.
-- **Customizable**: Templates use Handlebars variables for customization.
-- **Declarative Definitions**: Project structures and components are defined in easy-to-read JSON files.
+### Template Organization
+- Base templates in `src/base/` directory
+- Generated templates in `src/generator/templates/`
+- Use consistent directory structure across templates
+- Implement proper template inheritance and composition
 
-## Project Structure
+### Configuration Management
+- Use JSON files for component and configuration definitions
+- Implement proper schema validation
+- Support template variables and customization
+- Use consistent naming conventions
+
+### Generation Strategy
+- Use Handlebars for dynamic content generation
+- Implement proper file copying and template processing
+- Support multiple project types (server-only, web-only, full-stack)
+- Handle dependency management and configuration
+
+## Code Organization
 
 ### Base Templates (`src/base/`)
-This directory contains the declarative JSON definitions for project structures.
-- `packages.json`: Defines dependencies for different project types.
-- `server/`: Contains JSON files defining the structure of a server application (routes, middleware, etc.).
-- `web/`: Contains JSON files defining the structure of a web application (components, routes, hooks, etc.).
+- `packages.json` - Package configuration templates
+- `server/` - Server-side template configurations
+- `web/` - Web frontend template configurations
 
-### Generator Logic (`src/generator/`)
-- `index.ts`: The main entry point for the code generation logic. It reads the JSON definitions and Handlebars templates to create the final project files.
-- `templates/`: This directory contains the Handlebars (`.hbs`) template files. These are the blueprints for the code that will be generated.
+### Generator (`src/generator/`)
+- `index.ts` - Main generator logic
+- `templates/` - Handlebars template files
 
-**Example Handlebars Template (`server/index.ts.hbs`)**
+### Template Structure
 ```typescript
-import express from 'express';
+// Template interface pattern
+interface TemplateConfig {
+  // Define template configuration
+}
 
-const app = express();
-const port = {{port}};
-
-app.get('/', (req, res) => {
-  res.send('Hello, {{projectName}}!');
-});
-
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
-});
+interface ComponentDefinition {
+  // Define component structure
+}
 ```
-
-## Available Commands
-
-```bash
-pnpm check-types  # Run TypeScript type checking
-pnpm clean        # Clean build artifacts
-```
-
-## How It Works
-
-1.  **Initiation**: The code generation process is typically triggered by the `@weldr/agent` or a CLI tool.
-2.  **Configuration Loading**: The generator reads the JSON definition files from `src/base/` to understand the required file structure, dependencies, and metadata.
-3.  **Template Processing**: It then processes the corresponding Handlebars templates from `src/generator/templates/`.
-4.  **Variable Injection**: Custom variables (like `projectName`, `port`, etc.) are injected into the Handlebars templates.
-5.  **File Creation**: The generator creates the directory structure and writes the processed templates as new files in the target project directory.
-6.  **Dependency Installation**: Finally, it can run `pnpm install` to set up the new project's dependencies.
 
 ## Development Guidelines
 
-### Creating a New Preset
-1.  **Define Structure**: Add or modify JSON files in `src/base/` to define the file structure of the new preset.
-2.  **Create Templates**: Add the necessary Handlebars (`.hbs`) files to `src/generator/templates/`. Use Handlebars variables for parts of the code that need to be dynamic.
-3.  **Update Generator Logic**: Modify the `src/generator/index.ts` file to handle the new preset type if necessary.
+### Template Development
+- Create minimal but functional templates
+- Include proper TypeScript configurations
+- Implement consistent project structure
+- Provide clear setup instructions
 
-### Best Practices for Templates
-- **Keep them minimal**: Templates should provide a solid foundation but not be overly opinionated.
-- **Use variables**: Abstract any project-specific names or configurations into Handlebars variables.
-- **Include comments**: Add comments to the templates to explain the generated code.
-- **Follow best practices**: Ensure the generated code adheres to the overall architectural principles of the Weldr platform (e.g., TypeScript, Biome formatting).
+### Component Definitions
+- Use detailed JSON schemas for components
+- Include proper type definitions and properties
+- Implement component dependencies and relationships
+- Document component usage and patterns
 
-## Integration with Other Packages
+### Code Generation
+- Use Handlebars helpers for common patterns
+- Implement proper variable substitution
+- Handle edge cases in generation logic
+- Validate generated code for correctness
 
-- **`@weldr/agent`**: The AI agent is the primary consumer of this package. It uses the presets to scaffold new projects based on user requirements.
-- **`@weldr/shared`**: The generator may use utilities from the shared package for tasks like ID generation or validation.
+### Project Types
+- **Server-only**: Backend API and services
+- **Web-only**: Frontend applications
+- **Full-stack**: Combined backend and frontend
 
-This package is a core component of Weldr's autonomous development capabilities, enabling the rapid creation of new, high-quality projects.
+## Template Guidelines
+
+### Base Configurations
+- Include proper package.json configurations
+- Set up development and build scripts
+- Configure TypeScript and linting tools
+- Include essential dependencies
+
+### Component Library
+- Define reusable UI components
+- Include proper styling and theming
+- Implement accessibility features
+- Provide usage examples and documentation
+
+### Integration Templates
+- Database setup and configuration
+- Authentication integration
+- API endpoint templates
+- Frontend routing and state management
+
+## Quality Guidelines
+
+### Template Quality
+- Ensure templates compile and run without errors
+- Include proper error handling
+- Implement best practices for each technology
+- Provide comprehensive documentation
+
+### Code Standards
+- Follow consistent coding conventions
+- Use proper TypeScript types throughout
+- Implement proper error handling
+- Include meaningful comments and documentation
+
+### Testing Strategy
+- Test template generation with various configurations
+- Validate generated project functionality
+- Test dependency resolution and installation
+- Verify build and deployment processes
+
+## Integration Guidelines
+
+### Database Integration
+- Include database schema templates
+- Set up migration and seeding scripts
+- Configure database connections
+- Implement proper ORM integration
+
+### Authentication Setup
+- Include auth configuration templates
+- Set up user management flows
+- Configure session handling
+- Implement security best practices
+
+### API Development
+- Include API endpoint templates
+- Set up routing and middleware
+- Configure validation and error handling
+- Implement proper documentation
+
+### Frontend Development
+- Include component library setup
+- Configure routing and state management
+- Set up styling and theming
+- Implement responsive design patterns
+
+## Customization Guidelines
+
+### Template Variables
+- Use clear and descriptive variable names
+- Provide sensible defaults for all variables
+- Implement proper validation for user inputs
+- Document all available customization options
+
+### Conditional Generation
+- Support optional features and integrations
+- Use proper conditional logic in templates
+- Handle missing dependencies gracefully
+- Provide clear feedback for configuration choices
+
+### Extension Points
+- Design templates for easy customization
+- Provide hooks for additional functionality
+- Support plugin architecture where appropriate
+- Document extension patterns
+
+## AI Assistant Guidelines
+When working on the presets package:
+- Create minimal but complete project templates
+- Use Handlebars for dynamic content generation
+- Implement proper TypeScript configurations
+- Follow consistent project structure patterns
+- Include essential dependencies and scripts
+- Test generated projects thoroughly
+- Document template variables and customization options
+- Use proper JSON schemas for component definitions
+- Handle edge cases in generation logic
+- Provide clear setup and usage instructions
