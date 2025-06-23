@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (!session) {
-      console.log("[API] No session found, returning 401");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -32,10 +31,7 @@ export async function POST(request: NextRequest) {
       ),
     });
 
-    console.log("[API] Project found:", !!project);
-
     if (!project) {
-      console.log("[API] Project not found, returning 404");
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
