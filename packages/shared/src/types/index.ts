@@ -94,9 +94,9 @@ export type EndStreamableValue = {
 
 export type ToolStreamableValue = {
   type: "tool";
-  toolName: "setupIntegration";
+  toolName: string;
   toolCallId: string;
-  toolArgs?: Record<string, unknown>;
+  toolArgs?: unknown;
   toolResult: unknown;
 };
 

@@ -1,12 +1,19 @@
-import { runShellCommand } from "@/ai/utils/commands";
+import { runShell } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { z } from "zod";
-import { createTool } from "../utils/create-tool";
+import { createTool } from "../utils/tools";
 
 export const fzfTool = createTool({
+  name: "fzf",
   description:
     "Performs a fuzzy search for files or directories in the project.",
+  whenToUse:
+    "When you need to find files or directories using a fuzzy search on their path.",
+  example: `<fzf>
+  <query>user component</query>
+  <max_results>5</max_results>
+</fzf>`,
   inputSchema: z.object({
     query: z.string().describe("The fuzzy query to search for."),
     includeDirectories: z
@@ -101,7 +108,7 @@ export const fzfTool = createTool({
       },
     });
 
-    const { stdout, stderr, exitCode } = await runShellCommand(command, {
+    const { stdout, stderr, exitCode } = await runShell(command, {
       cwd: WORKSPACE_DIR,
     });
 

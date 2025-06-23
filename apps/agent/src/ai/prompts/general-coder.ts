@@ -1,8 +1,11 @@
+import { codingGuidelines } from "@/ai/prompts/coding-guidelines";
+import { getProjectContext } from "@/ai/utils/get-project-context";
 import type { projects } from "@weldr/db/schema";
-import { getProjectContext } from "../utils/get-project-context";
-import { codingGuidelines } from "./coding-guidelines";
 
-export const generalCoder = async (project: typeof projects.$inferSelect) => {
+export const generalCoder = async (
+  project: typeof projects.$inferSelect,
+  toolSetMarkdown?: string,
+) => {
   const projectContext = await getProjectContext(project);
 
   return `<role>
@@ -24,6 +27,13 @@ export const generalCoder = async (project: typeof projects.$inferSelect) => {
 
 <tools>
   You have access to a suite of powerful tools to assist you. Use them when necessary.
+${
+  toolSetMarkdown &&
+  `To use a tool, you must respond with an XML block like this:
+  <tool_name>
+    <parameter_name>parameter_value</parameter_name>
+  </tool_name>`
+}
   **CRITICAL TOOL CALLING RULES - MANDATORY ENFORCEMENT:**
   - **PROVIDE REASONING FIRST**: Before making any tool call, always provide a brief 1-2 sentence explanation of why you're calling this specific tool and what you expect to achieve
   - **YOU MUST MAKE TOOL CALLS**: When the user asks you to code, modify files, install packages, or perform any development task, you MUST use the appropriate tools - never just describe what should be done
@@ -43,6 +53,11 @@ export const generalCoder = async (project: typeof projects.$inferSelect) => {
     - Handle any errors that occurred during tool execution
     - Complete the task if all necessary tools have been executed successfully
   - **DO NOT MENTION WAITING**: Never tell the user you are "waiting for results" - this is internal behavior
+${
+  toolSetMarkdown &&
+  `Here are the available tools:
+  ${toolSetMarkdown}`
+}
 </tools>
 
 <coding_guidelines>

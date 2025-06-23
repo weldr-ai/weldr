@@ -1,13 +1,20 @@
-import { SCRIPTS_DIR, WORKSPACE_DIR } from "@/lib/constants";
+import { SCRIPTS_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
 import { z } from "zod";
 import { runCommand } from "../utils/commands";
-import { createTool } from "../utils/create-tool";
+import { createTool } from "../utils/tools";
 
 export const initProjectTool = createTool({
+  name: "init_project",
   description: "Initializes a new project.",
+  whenToUse:
+    "When you need to initialize a new project. You can specify the project title and type.",
+  example: `<init_project>
+  <title>My Project</title>
+  <type>full-stack</type>
+</init_project>`,
   inputSchema: z.object({
     title: z.string().describe("The project title."),
     type: z
@@ -40,13 +47,10 @@ export const initProjectTool = createTool({
 
     logger.info(`Initializing project: ${input.title}`);
 
-    const { exitCode, stderr, success } = await runCommand(
-      "bash",
-      [`${SCRIPTS_DIR}/init-project.sh`, input.type],
-      {
-        cwd: WORKSPACE_DIR,
-      },
-    );
+    const { exitCode, stderr, success } = await runCommand("bash", [
+      `${SCRIPTS_DIR}/init-project.sh`,
+      input.type,
+    ]);
 
     if (exitCode !== 0 || !success) {
       const error = `Failed to initialize project: ${stderr || "Unknown error"}`;

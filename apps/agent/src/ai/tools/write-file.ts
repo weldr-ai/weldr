@@ -3,11 +3,22 @@ import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { z } from "zod";
-import { createTool } from "../utils/create-tool";
+import { createTool } from "../utils/tools";
 
 export const writeFileTool = createTool({
+  name: "write_file",
   description:
     "Create a new file or overwrite an existing file with the specified content.",
+  whenToUse:
+    "When you need to create a new file or completely replace the content of an existing file.",
+  example: `<write_file>
+  <file_path>src/components/Button.tsx</file_path>
+  <content>import React from 'react';
+
+export const Button = () => {
+  return <button>Click me</button>;
+};</content>
+</write_file>`,
   inputSchema: z.object({
     filePath: z
       .string()

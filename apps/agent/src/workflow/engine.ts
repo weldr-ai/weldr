@@ -5,7 +5,6 @@ import {
   workflowRuns,
   workflowStepExecutions,
 } from "@weldr/db/schema";
-import { nanoid } from "@weldr/shared/nanoid";
 import type { WorkflowContext } from "./context";
 
 // --- Type Definitions ---
@@ -269,7 +268,7 @@ export function createWorkflow(
       return api;
     },
     suspend(condition: SuspendCondition) {
-      const id = `suspend-${nanoid()}`;
+      const id = `suspend-${operations.length}`;
       operations.push({ type: "suspend", id, condition });
       return api;
     },
@@ -583,6 +582,15 @@ export function createWorkflow(
               if (shouldSuspend) {
                 state.status = "suspended";
                 await writeState({ state });
+
+                // Emit workflow suspension
+                if (streamWriter) {
+                  await streamWriter.write({
+                    type: "workflow_run",
+                    runId,
+                    status: "suspended",
+                  });
+                }
                 return;
               }
               // Mark as completed so we don't re-evaluate on retry

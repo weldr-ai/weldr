@@ -28,7 +28,6 @@ export namespace Logger {
         isDevelopment
           ? pretty({
               colorize: true,
-              hideObject: true,
             })
           : undefined,
       );

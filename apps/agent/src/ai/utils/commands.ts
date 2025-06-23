@@ -133,12 +133,12 @@ export async function runCommand(
 }
 
 /**
- * Execute a shell command (shorthand for executeCommand with shell: true)
- * @param command The shell command to execute
+ * Execute a shell command string (simpler API for shell commands)
+ * @param command The shell command string to execute
  * @param options Execution options
  * @returns Promise<CommandResult>
  */
-export async function runShellCommand(
+export async function runShell(
   command: string,
   options: Omit<CommandOptions, "shell"> = {},
 ): Promise<CommandResult> {

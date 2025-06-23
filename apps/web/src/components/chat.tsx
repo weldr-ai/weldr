@@ -281,6 +281,8 @@ export function Chat({
             } else if (chunk.status === "failed") {
               console.error("Workflow failed:", chunk.errorMessage);
               setPendingMessage(null);
+            } else if (chunk.status === "suspended") {
+              setPendingMessage(null);
             }
             break;
           }
@@ -300,7 +302,7 @@ export function Chat({
             break;
           }
           case "tool": {
-            if (chunk.toolName === "setupIntegration") {
+            if (chunk.toolName === "request_integration_configuration") {
               setPendingMessage("waiting");
               setMessages((prevMessages) => {
                 return [
@@ -455,7 +457,7 @@ export function Chat({
       lastMessage.content.find(
         (content) =>
           content.type === "tool-result" &&
-          content.toolName === "setupIntegration" &&
+          content.toolName === "request_integration_configuration" &&
           (content.result as { status: "pending" }).status === "pending",
       ) !== undefined
     ) {

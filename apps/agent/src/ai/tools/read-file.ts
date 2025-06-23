@@ -1,12 +1,20 @@
 import path from "node:path";
-import { runCommand, runShellCommand } from "@/ai/utils/commands";
+import { runCommand, runShell } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { z } from "zod";
-import { createTool } from "../utils/create-tool";
+import { createTool } from "../utils/tools";
 
 export const readFileTool = createTool({
+  name: "read_file",
   description: "Use to read a single file with pagination and size safeguards",
+  whenToUse:
+    "When you need to inspect the contents of a file. You can specify a line range to read.",
+  example: `<read_file>
+  <file_path>src/server/index.ts</file_path>
+  <start_line>10</start_line>
+  <end_line>30</end_line>
+</read_file>`,
   inputSchema: z.object({
     filePath: z
       .string()
@@ -134,12 +142,9 @@ export const readFileTool = createTool({
     // Use sed to read specific line range
     const sedCommand = `sed -n '${actualStartLine},${actualEndLine}p' "${filePath}"`;
 
-    const { stdout, stderr, exitCode, success } = await runShellCommand(
-      sedCommand,
-      {
-        cwd: WORKSPACE_DIR,
-      },
-    );
+    const { stdout, stderr, exitCode, success } = await runShell(sedCommand, {
+      cwd: WORKSPACE_DIR,
+    });
 
     if (exitCode !== 0 || !success) {
       logger.error("Failed to read file content", {
