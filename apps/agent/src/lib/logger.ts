@@ -28,6 +28,7 @@ export namespace Logger {
         isDevelopment
           ? pretty({
               colorize: true,
+              singleLine: true,
             })
           : undefined,
       );

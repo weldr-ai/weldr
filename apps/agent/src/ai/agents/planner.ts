@@ -64,6 +64,10 @@ export async function plannerAgent({
     let shouldRecur = false;
     const promptMessages = await getMessages(version.chatId);
 
+    logger.info("promptMessages", {
+      extra: { promptMessages },
+    });
+
     const result = isXML
       ? xmlProvider.streamText({
           model: registry.languageModel("google:gemini-2.5-pro"),
@@ -95,6 +99,7 @@ export async function plannerAgent({
 
     // Prepare messages to store
     const messagesToSave: z.infer<typeof addMessageItemSchema>[] = [];
+    const toolResultMessages: z.infer<typeof addMessageItemSchema>[] = [];
     const assistantContent: z.infer<typeof assistantMessageContentSchema>[] =
       [];
 
@@ -143,7 +148,7 @@ export async function plannerAgent({
             toolResult: delta.result,
           });
         }
-        messagesToSave.push({
+        toolResultMessages.push({
           visibility:
             delta.toolName === "request_integration_configuration"
               ? "public"
@@ -169,6 +174,8 @@ export async function plannerAgent({
         content: assistantContent,
       });
     }
+
+    messagesToSave.push(...toolResultMessages);
 
     // Store messages if any
     if (messagesToSave.length > 0) {

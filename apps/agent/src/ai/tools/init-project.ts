@@ -1,4 +1,4 @@
-import { SCRIPTS_DIR } from "@/lib/constants";
+import { SCRIPTS_DIR, WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
@@ -46,6 +46,9 @@ export const initProjectTool = createTool({
     });
 
     logger.info(`Initializing project: ${input.title}`);
+
+    logger.info(`Wiping workspace directory: ${WORKSPACE_DIR}`);
+    await runCommand("rm", ["-rf", WORKSPACE_DIR]);
 
     const { exitCode, stderr, success } = await runCommand("bash", [
       `${SCRIPTS_DIR}/init-project.sh`,

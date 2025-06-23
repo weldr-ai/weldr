@@ -365,9 +365,11 @@ export function createWorkflow(
     async execute({
       runId,
       context,
+      resetOn,
     }: {
       runId: string;
       context: WorkflowContext;
+      resetOn?: ("suspended" | "failed")[];
     }): Promise<void> {
       const project = context.get("project");
       const version = context.get("version");
@@ -384,6 +386,17 @@ export function createWorkflow(
 
       // Create or get existing workflow run
       let state = await readState({ runId });
+
+      if (state && resetOn?.includes(state.status as "suspended" | "failed")) {
+        logger.info(`Resetting workflow from status: ${state.status}`);
+        for (const stepId of Object.keys(state.stepStates)) {
+          state.stepStates[stepId] = { status: "pending" };
+        }
+        state.status = "running";
+        state.error = undefined;
+      }
+
+      Logger.info(`State: ${JSON.stringify(state)}`);
       if (!state) {
         await db.insert(workflowRuns).values({
           id: runId,
@@ -416,10 +429,14 @@ export function createWorkflow(
         }
       }
 
+      Logger.info(`State: ${JSON.stringify(state)}`);
+
       if (state.status === "completed") {
         logger.info("Workflow has already completed.");
         return;
       }
+
+      Logger.info(`State: ${JSON.stringify(state)}`);
 
       state.status = "running";
       await writeState({ state });

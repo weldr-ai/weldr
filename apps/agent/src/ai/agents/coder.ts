@@ -211,6 +211,7 @@ export async function coderAgent({
         [];
       // Messages to save
       const messagesToSave: z.infer<typeof addMessageItemSchema>[] = [];
+      const toolResultMessages: z.infer<typeof addMessageItemSchema>[] = [];
 
       // Process the stream and handle tool calls
       for await (const delta of result.fullStream) {
@@ -257,7 +258,7 @@ export async function coderAgent({
               }
             }
           }
-          messagesToSave.push({
+          toolResultMessages.push({
             visibility: "internal",
             role: "tool",
             content: [
@@ -285,6 +286,8 @@ export async function coderAgent({
           content: assistantContent,
         });
       }
+
+      messagesToSave.push(...toolResultMessages);
 
       // Store messages if any (tool results are already saved immediately)
       if (messagesToSave.length > 0) {

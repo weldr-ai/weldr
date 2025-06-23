@@ -145,6 +145,7 @@ router.openapi(route, async (c) => {
   await workflow.execute({
     runId: activeVersion.chatId,
     context: workflowContext,
+    resetOn: ["suspended"],
   });
 
   return c.json({ success: true });
