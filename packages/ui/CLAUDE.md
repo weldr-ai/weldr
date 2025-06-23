@@ -1,147 +1,219 @@
-# @weldr/ui - UI Component Library
+# @weldr/ui - Cursor Rules
 
-## Overview
-The UI package is the official component library for the Weldr platform. It's built following the `shadcn/ui` methodology, which emphasizes composition over configuration. It provides a set of reusable, accessible, and themeable React components.
+## Package Overview
+The UI package provides a comprehensive component library built on shadcn/ui, Radix primitives, and Tailwind CSS. It includes reusable components, hooks, icons, and styling for the Weldr platform.
 
-## Architecture & Technology Stack
+## Technology Stack
+- **shadcn/ui**: Base component system
+- **Radix UI**: Accessible primitive components
+- **Tailwind CSS**: Utility-first styling framework
+- **Lucide React**: Icon library
+- **React Hook Form**: Form handling
+- **Recharts**: Data visualization components
+- **Class Variance Authority**: Component variant system
 
-### Core Technologies
-- **Component Primitives**: Radix UI for accessible, unstyled component primitives
-- **Styling**: Tailwind CSS for utility-first styling
-- **Component Variants**: Class Variance Authority (CVA) for managing component styles and variants
-- **Icons**: Lucide React for a comprehensive and consistent icon set
-- **Type Safety**: TypeScript for fully typed component props
+## Architecture Patterns
 
-### Key Features
-- **Composition-based**: Components are designed to be composed together to build complex UIs. You copy and paste the code into your project, giving you full control.
-- **Accessible**: Built on top of Radix UI, all components are designed with accessibility (a11y) in mind.
-- **Themeable**: Easily themeable using CSS variables for colors, fonts, borders, etc. Supports light and dark modes out of the box.
-- **Responsive**: Components are designed to be responsive and work across all screen sizes.
-- **Developer Experience**: Comes with a CLI (`add-component`) to easily add new components to your project.
+### Component Design
+- Build on top of Radix UI primitives
+- Use shadcn/ui patterns and conventions
+- Implement proper accessibility (ARIA) support
+- Follow compound component patterns where appropriate
 
-## Project Structure
+### Styling Strategy
+- Use Tailwind CSS for all styling
+- Implement consistent design tokens
+- Support light and dark themes
+- Use CSS variables for theme customization
 
-### Components (`src/components/`)
-- This directory contains the source code for all the UI components (e.g., `button.tsx`, `card.tsx`, `dialog.tsx`).
-- Components are self-contained and can be copied directly into other applications.
+### Component Variants
+- Use Class Variance Authority (CVA) for component variants
+- Implement consistent size and color schemes
+- Support disabled and loading states
+- Provide proper default variants
 
-### Hooks (`src/hooks/`)
-- Contains custom React hooks that are used by the components or can be used independently.
-- `use-toast.ts`: Hook for triggering toast notifications.
-- `use-mobile.ts`: Hook for detecting mobile viewports.
+## Code Organization
 
-### Icons (`src/icons/`)
-- Contains custom icon components and re-exports from Lucide React.
-- `index.ts` serves as a central export point for all icons.
+### Component Structure (`src/components/`)
+- One component per file with clear naming
+- Export component and its types
+- Include proper TypeScript interfaces
+- Implement proper ref forwarding when needed
 
-### Styles (`src/styles/`)
-- `globals.css`: Contains the global styles, including all the CSS variables for theming.
-- `flow-builder.css`: Specialized styles for the visual workflow builder.
-
-### Utilities (`src/lib/`)
-- `utils.tsx`: Contains utility functions, most notably the `cn` function for merging Tailwind CSS classes.
-
-## Available Commands
-
-```bash
-pnpm add-component  # CLI to add a new shadcn/ui component to the library
-pnpm check-types    # Run TypeScript type checking
-pnpm clean          # Clean build artifacts
-```
-
-## How to Use Components
-
-### Adding a Component
-To add a new component from the official `shadcn/ui` library to this package, you run:
-```bash
-pnpm add-component <component-name>
-```
-This will add the component's source code to `src/components/`, making it available for use within the Weldr platform.
-
-### Using a Component
-Other packages, primarily `@weldr/web`, consume these components.
-
+### Component Pattern
 ```typescript
-// Example: Using the Button and Card components in the web app
-import { Button } from '@weldr/ui/components/button';
-import { Card, CardHeader, CardContent } from '@weldr/ui/components/card';
-
-function MyComponent() {
-  return (
-    <Card>
-      <CardHeader>Welcome!</CardHeader>
-      <CardContent>
-        <p>This is a card component from our UI library.</p>
-        <Button>Click me</Button>
-      </CardContent>
-    </Card>
-  );
+// Component pattern
+interface ComponentProps extends React.ComponentProps<'element'> {
+  variant?: 'default' | 'secondary' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
 }
-```
 
-## Theming
-- Theming is controlled by CSS variables defined in `src/styles/globals.css`.
-- The web application uses `next-themes` to switch between `light` and `dark` class names on the `<html>` element, which in turn applies the correct set of CSS variables.
-- To customize the theme, you can modify the color values in the `globals.css` file.
-
-## Development Guidelines
-
-### Creating a New Custom Component
-1.  **Follow the Pattern**: Create a new file in `src/components/`. Follow the existing `shadcn/ui` pattern:
-    - Use Radix UI primitives for the underlying structure and accessibility.
-    - Style it with Tailwind CSS.
-    - Use CVA to define variants (size, color, etc.).
-    - Export a fully typed React component.
-2.  **Accessibility First**: Ensure the component is fully accessible via keyboard and screen readers.
-3.  **Forward Refs**: Use `React.forwardRef` to allow parent components to get a ref to the underlying DOM element.
-4.  **Use `cn`**: Use the `cn` utility to merge default, variant, and user-provided class names.
-
-**Component Skeleton**
-```typescript
-import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils'; // Assuming utils is in lib
-
-const myComponentVariants = cva(
-  'base-styles',
-  {
-    variants: {
-      variant: {
-        default: 'default-variant-styles',
-        destructive: 'destructive-variant-styles',
-      },
-      size: {
-        default: 'h-10 px-4',
-        sm: 'h-9 px-3',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-    },
-  }
-);
-
-export interface MyComponentProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof myComponentVariants> {}
-
-const MyComponent = React.forwardRef<HTMLDivElement, MyComponentProps>(
-  ({ className, variant, size, ...props }, ref) => {
+const Component = React.forwardRef<HTMLElement, ComponentProps>(
+  ({ className, variant = 'default', size = 'md', ...props }, ref) => {
     return (
-      <div
-        className={cn(myComponentVariants({ variant, size, className }))}
+      <element
         ref={ref}
+        className={cn(componentVariants({ variant, size }), className)}
         {...props}
       />
     );
   }
 );
-MyComponent.displayName = 'MyComponent';
-
-export { MyComponent, myComponentVariants };
 ```
 
-### Integration
-- When components from this package are used in `@weldr/web`, the Tailwind CSS configuration from the UI package must be imported into the web app's `tailwind.config.js` to ensure styles are applied correctly.
-- The `globals.css` file must also be imported into the web app's main layout file.
+### Styling Organization
+- `src/styles/globals.css` - Global styles and CSS variables
+- `src/styles/flow-builder.css` - Specialized component styles
+- Use Tailwind classes primarily
+- Custom CSS only when necessary
+
+## Development Guidelines
+
+### Component Development
+- Use React.forwardRef for components that need ref access
+- Implement proper TypeScript types for all props
+- Support className prop for additional styling
+- Use consistent prop naming conventions
+
+### Accessibility
+- Include proper ARIA attributes
+- Support keyboard navigation
+- Implement proper focus management
+- Test with screen readers
+- Use semantic HTML elements
+
+### Theme Support
+- Support both light and dark themes
+- Use CSS variables for theme-dependent values
+- Test components in both theme modes
+- Implement proper theme transition handling
+
+### Responsive Design
+- Use Tailwind responsive prefixes
+- Design mobile-first components
+- Test across different viewport sizes
+- Consider touch interactions for mobile
+
+## Component Guidelines
+
+### Form Components
+- Use React Hook Form integration where appropriate
+- Implement proper validation error display
+- Support controlled and uncontrolled modes
+- Include helpful placeholder and label text
+
+### Data Display
+- Use Recharts for data visualization
+- Implement proper loading and empty states
+- Support data formatting and customization
+- Include proper legends and tooltips
+
+### Navigation Components
+- Use proper semantic markup
+- Support active state indicators
+- Implement breadcrumb navigation patterns
+- Handle route transitions smoothly
+
+### Layout Components
+- Use CSS Grid and Flexbox appropriately
+- Implement responsive layout patterns
+- Support content overflow handling
+- Provide proper spacing utilities
+
+## Hook Development (`src/hooks/`)
+
+### Custom Hooks
+- Follow React hooks conventions
+- Use proper TypeScript types
+- Handle cleanup and side effects properly
+- Include helpful return value destructuring
+
+### Common Patterns
+```typescript
+// Hook pattern
+export const useHookName = (config: HookConfig) => {
+  // Hook implementation
+  return {
+    // Return useful values and functions
+  };
+};
+```
+
+## Icon System (`src/icons/`)
+
+### Icon Guidelines
+- Use Lucide React as the primary icon library
+- Create custom icons when needed
+- Export icons with consistent naming
+- Support proper sizing and coloring
+- Include accessibility attributes
+
+### Icon Usage
+- Use semantic icon names
+- Support theme-appropriate colors
+- Implement proper sizing scales
+- Consider icon loading performance
+
+## Testing Guidelines
+
+### Component Testing
+- Test component rendering with different props
+- Test accessibility features
+- Test responsive behavior
+- Test theme switching
+- Test user interactions
+
+### Visual Testing
+- Test components in Storybook or similar
+- Verify design system consistency
+- Test across different browsers
+- Validate responsive breakpoints
+
+## Integration Guidelines
+
+### Package Exports
+- Export components from package root
+- Include proper TypeScript types
+- Support tree-shaking
+- Document component APIs
+
+### Styling Integration
+- Export Tailwind configuration
+- Include PostCSS configuration
+- Support CSS variable customization
+- Provide theme configuration options
+
+### Framework Integration
+- Support Next.js and other React frameworks
+- Handle SSR and hydration properly
+- Support code splitting and lazy loading
+- Provide proper build configurations
+
+## Performance Guidelines
+
+### Bundle Optimization
+- Use proper tree-shaking for icons and components
+- Minimize CSS bundle size
+- Optimize component re-renders
+- Use proper React.memo when beneficial
+
+### Runtime Performance
+- Optimize animation performance
+- Use efficient event handlers
+- Implement proper virtualization for long lists
+- Monitor component render performance
+
+## AI Assistant Guidelines
+When working on the UI package:
+- Follow shadcn/ui patterns and conventions
+- Use Radix UI primitives for complex components
+- Implement proper accessibility features
+- Use Tailwind CSS for all styling
+- Support both light and dark themes
+- Use React.forwardRef for ref forwarding components
+- Implement proper TypeScript interfaces
+- Use Class Variance Authority for component variants
+- Test components across different devices and themes
+- Follow consistent naming conventions
+- Export components with clean interfaces
+- Document component APIs and usage patterns

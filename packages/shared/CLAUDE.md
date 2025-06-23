@@ -1,96 +1,185 @@
-# @weldr/shared - Shared Utilities & Types
+# @weldr/shared - Cursor Rules
 
-## Overview
-The Shared package is the foundational layer of the Weldr monorepo. It contains common utilities, TypeScript types, Zod validators, and configurations that are used across multiple packages and applications. Its purpose is to promote code reuse, consistency, and type safety.
+## Package Overview
+The Shared package provides common utilities, types, validators, and configurations used across the Weldr monorepo. It serves as the foundation for type safety and consistency across all packages and applications.
 
-## Architecture & Technology Stack
+## Technology Stack
+- **TypeScript**: Full type safety and utility types
+- **Zod**: Runtime validation and schema definition
+- **Fly.io**: Deployment configuration utilities
+- **Nanoid**: ID generation utilities
+- **Color utilities**: Color manipulation functions
 
-### Core Technologies
-- **Type Safety**: TypeScript for all type definitions
-- **Validation**: Zod for runtime data validation and schema definition
-- **ID Generation**: Nanoid for generating unique, URL-friendly IDs
-- **Deployment**: Utilities for configuring and deploying to Fly.io
-- **Utilities**: General-purpose helper functions (e.g., color manipulation)
+## Architecture Patterns
 
-### Key Features
-- **Centralized Types**: A single source of truth for shared data structures.
-- **Reusable Validators**: Zod schemas that can be used for API validation, form handling, and database schema generation.
-- **Branded Types**: Enhanced type safety for primitive types like IDs.
-- **Consistent Utilities**: A common library for functions used throughout the platform.
-- **Deployment Configurations**: Centralized logic for Fly.io deployments.
+### Type Organization
+- Export types from `src/types/index.ts`
+- Use branded types for IDs and special values
+- Implement proper type guards and utilities
+- Create utility types for common patterns
 
-## Project Structure
+### Validation Strategy
+- Use Zod for all runtime validation
+- Export schemas and inferred types together
+- Implement proper error messages
+- Create reusable validation utilities
 
-### Validators (`src/validators/`)
-- This is one of the most critical parts of the shared package.
-- Zod schemas are organized by domain (e.g., `auth.ts`, `projects.ts`).
-- Each file exports both the Zod schema and the inferred TypeScript type.
+### Utility Functions
+- Keep utilities pure and side-effect free
+- Implement proper TypeScript types
+- Use consistent error handling patterns
+- Document complex utility functions
 
-**Example Validator (`auth.ts`)**
-```typescript
-import { z } from 'zod';
+## Code Organization
 
-// Zod schema for login credentials
-export const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-});
+### Directory Structure
+- `src/types/` - TypeScript type definitions
+- `src/validators/` - Zod schemas and validation
+- `src/fly/` - Fly.io deployment utilities
+- `src/` - Root level utilities (nanoid, color-utils, etc.)
 
-// Inferred TypeScript type
-export type LoginInput = z.infer<typeof loginSchema>;
-```
-This pattern allows the schema to be used for validation in the API layer while the type is used for props in the frontend.
+### Validator Organization (`src/validators/`)
+- Organize by domain (auth, chats, canvas-node, etc.)
+- Export both schemas and inferred types
+- Use consistent naming conventions
+- Implement proper validation error messages
 
-### Types (`src/types/`)
-- Contains shared TypeScript interfaces and types that are not derived from Zod schemas.
-- Includes `Branded` types for creating distinct types from primitives.
-
-**Example Branded Type**
-```typescript
-export type ProjectId = string & { readonly __brand: 'ProjectId' };
-export type UserId = string & { readonly __brand: 'UserId' };
-
-// This prevents accidentally using a UserId where a ProjectId is expected.
-```
-
-### Fly.io Utilities (`src/fly/`)
-- Contains helpers and configurations for deploying applications to Fly.io.
-- `app.ts`, `config.ts`, etc., help generate `fly.toml` files programmatically.
-
-### Root Utilities (`src/`)
-- `nanoid.ts`: Utility for generating unique IDs.
-- `color-utils.ts`: Functions for color manipulation.
-- `ofetch-config.ts`: Configuration for the `ofetch` HTTP client.
-
-## Available Commands
-
-```bash
-pnpm check-types  # Run TypeScript type checking
-pnpm clean        # Clean build artifacts
-```
-
-## How It's Used
-
-This package is a dependency for almost every other package in the monorepo.
-
-- **`@weldr/api`**: Imports Zod schemas from `src/validators/` to validate API inputs.
-- **`@weldr/web`**: Imports TypeScript types from `src/validators/` and `src/types/` for component props and state. It also uses Zod schemas for client-side form validation.
-- **`@weldr/db`**: The database schemas in `@weldr/db` are often designed to be compatible with the Zod schemas defined here. `drizzle-zod` can be used to bridge this gap.
-- **`@weldr/agent`**: Uses deployment utilities from `src/fly/` to configure and deploy generated applications.
+### Type Definitions (`src/types/`)
+- Define shared interfaces and types
+- Use utility types for transformations
+- Implement branded types for type safety
+- Export proper type guards
 
 ## Development Guidelines
 
-### Adding New Shared Code
-- **Is it truly shared?**: Before adding code here, ensure it's needed by at least two other packages.
-- **Where does it go?**:
-  - If it's a data structure with validation rules, add it to `src/validators/`.
-  - If it's just a type definition, add it to `src/types/`.
-  - If it's a reusable function, add it to the root or a new utility file.
-- **Keep it generic**: Utilities in this package should be application-agnostic.
-- **No external dependencies if possible**: Avoid adding new dependencies to this package unless absolutely necessary to keep it lightweight.
+### Type Safety
+- Use strict TypeScript configuration
+- Implement proper type guards
+- Use branded types for IDs and special values
+- Avoid `any` types completely
 
-### Best Practices
-- **Export types and schemas**: Always export both the Zod schema and its inferred type.
-- **Use branded types**: For IDs and other specific string/number values, use branded types to improve type safety.
-- **Document everything**: Use JSDoc to explain the purpose of types, schemas, and utility functions.
-- **Keep it clean**: This package is the foundation. It should be the most stable and well-maintained part of the monorepo.
+### Validation Patterns
+```typescript
+// Schema definition pattern
+export const userSchema = z.object({
+  id: z.string().min(1),
+  email: z.string().email(),
+  name: z.string().optional(),
+});
+
+export type User = z.infer<typeof userSchema>;
+```
+
+### Utility Development
+- Keep functions pure and predictable
+- Implement proper error handling
+- Use meaningful function and parameter names
+- Add JSDoc documentation for public APIs
+
+### Error Handling
+- Use Result types or proper Error classes
+- Avoid throwing errors in utility functions
+- Provide meaningful error messages
+- Implement proper error types
+
+## Validator Guidelines
+
+### Schema Design
+- Use descriptive schema names
+- Implement proper validation rules
+- Add custom error messages where needed
+- Consider performance implications
+
+### Domain Validation
+- Group related schemas by domain
+- Export schemas and types together
+- Use consistent validation patterns
+- Implement proper composition and reuse
+
+### Runtime Validation
+- Validate data at API boundaries
+- Use proper error handling for validation failures
+- Implement helpful error messages
+- Consider validation performance
+
+## Utility Guidelines
+
+### Color Utilities
+- Provide consistent color manipulation functions
+- Support multiple color formats
+- Implement proper type safety
+- Handle edge cases gracefully
+
+### ID Generation
+- Use consistent ID generation patterns
+- Provide typed ID functions
+- Support different ID formats when needed
+- Implement proper uniqueness guarantees
+
+### Configuration Utilities
+- Provide typed configuration helpers
+- Support environment-specific configurations
+- Implement proper validation for configs
+- Handle missing or invalid configurations
+
+## Integration Guidelines
+
+### Cross-Package Usage
+- Keep dependencies minimal
+- Export clean interfaces
+- Use proper TypeScript types
+- Document breaking changes
+
+### API Integration
+- Provide validators for API contracts
+- Export types for request/response objects
+- Implement proper error handling
+- Support API versioning when needed
+
+### Database Integration
+- Provide schemas for database validation
+- Export types for database operations
+- Implement proper transformation utilities
+- Support migration helpers when needed
+
+## Deployment Guidelines
+
+### Fly.io Integration
+- Provide deployment configuration utilities
+- Support environment-specific configurations
+- Implement proper secret management
+- Handle deployment automation
+
+### Configuration Management
+- Use proper environment variable handling
+- Implement configuration validation
+- Support multiple environments
+- Provide clear configuration documentation
+
+## Performance Guidelines
+
+### Bundle Size
+- Keep the package lean and focused
+- Avoid heavy dependencies
+- Use tree-shaking friendly exports
+- Monitor bundle impact on consuming packages
+
+### Runtime Performance
+- Optimize validation performance for hot paths
+- Use efficient utility implementations
+- Consider caching for expensive operations
+- Profile and optimize when necessary
+
+## AI Assistant Guidelines
+When working on the shared package:
+- Use strict TypeScript types throughout
+- Create reusable Zod schemas with proper validation
+- Keep utilities pure and side-effect free
+- Export clean interfaces for cross-package usage
+- Implement proper error handling patterns
+- Use branded types for type safety
+- Document public APIs with JSDoc
+- Consider performance implications of utilities
+- Test utility functions thoroughly
+- Maintain backward compatibility when possible
+- Use consistent naming conventions across utilities
