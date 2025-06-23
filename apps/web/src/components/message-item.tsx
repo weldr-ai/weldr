@@ -61,7 +61,7 @@ const PureMessageItem = ({
         {message.role === "tool" &&
           message.content.some((content) => {
             if (content.type === "tool-result") {
-              return content.toolName === "setupIntegration";
+              return content.toolName === "request_integration_configuration";
             }
             return false;
           }) && (
@@ -152,10 +152,8 @@ const PureSetupIntegration = ({
                   content: [
                     {
                       type: "tool-result",
-                      toolName: "setupIntegration",
-                      toolCallId: message.content.find(
-                        (c) => c.toolName === "setupIntegration",
-                      )?.toolCallId as string,
+                      toolName: message.content[0]?.toolName as string,
+                      toolCallId: message.content[0]?.toolCallId as string,
                       result: { status: "success" },
                     },
                   ],
@@ -169,10 +167,8 @@ const PureSetupIntegration = ({
                   content: [
                     {
                       type: "tool-result",
-                      toolName: "setupIntegration",
-                      toolCallId: message.content.find(
-                        (c) => c.toolName === "setupIntegration",
-                      )?.toolCallId as string,
+                      toolName: message.content[0]?.toolName as string,
+                      toolCallId: message.content[0]?.toolCallId as string,
                       result: { status: "cancelled" },
                     },
                   ],

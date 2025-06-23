@@ -11,6 +11,6 @@ export * from "./list-dir";
 export * from "./read-file";
 export * from "./reapply";
 export * from "./remove-packages";
-export * from "./setup-integration";
+export * from "./request-integration-configuration";
 export * from "./upgrade-project";
 export * from "./write-file";

@@ -2,10 +2,15 @@ import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { z } from "zod";
-import { createTool } from "../utils/create-tool";
+import { createTool } from "../utils/tools";
 
 export const deleteFileTool = createTool({
+  name: "delete_file",
   description: "Deletes a file at a specified path.",
+  whenToUse: "When you need to delete a file from the project.",
+  example: `<delete_file>
+  <file_path>src/server/index.ts</file_path>
+</delete_file>`,
   inputSchema: z.object({
     filePath: z.string().describe("The path of the file to delete."),
   }),

@@ -140,6 +140,7 @@ router.openapi(route, async (c) => {
   workflowContext.set("project", project);
   workflowContext.set("version", activeVersion);
   workflowContext.set("user", session.user);
+  workflowContext.set("isXML", false);
 
   await workflow.execute({
     runId: activeVersion.chatId,

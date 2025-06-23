@@ -2,12 +2,20 @@ import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { z } from "zod";
-import { createTool } from "../utils/create-tool";
+import { createTool } from "../utils/tools";
 
 export const removePackagesTool = createTool({
+  name: "remove_packages",
   description: "Use to remove node packages",
+  whenToUse: "When you need to remove node packages.",
+  example: `<remove_packages>
+  <packages>
+    <package>react</package>
+    <package>react-dom</package>
+  </packages>
+</remove_packages>`,
   inputSchema: z.object({
-    pkgs: z.string().array(),
+    package: z.string().array(),
   }),
   outputSchema: z.discriminatedUnion("success", [
     z.object({
@@ -33,11 +41,11 @@ export const removePackagesTool = createTool({
       },
     });
 
-    logger.info(`Removing packages: ${input.pkgs.join(", ")}`);
+    logger.info(`Removing packages: ${input.package.join(", ")}`);
 
     const { stderr, exitCode, success } = await runCommand(
       "bun",
-      ["remove", ...input.pkgs],
+      ["remove", ...input.package],
       {
         cwd: WORKSPACE_DIR,
       },
@@ -61,7 +69,7 @@ export const removePackagesTool = createTool({
     // The caller of this tool is responsible for updating the database after removing packages.
     return {
       success: true,
-      packages: input.pkgs,
+      packages: input.package,
     };
   },
 });

@@ -2,7 +2,7 @@ import { prompts } from "@/ai/prompts";
 import {
   callCoderTool,
   initProjectTool,
-  setupIntegrationTool,
+  requestIntegrationConfigurationTool,
   upgradeProjectTool,
 } from "@/ai/tools";
 import { getMessages } from "@/ai/utils/get-messages";
@@ -13,10 +13,10 @@ import type { WorkflowContext } from "@/workflow/context";
 import type {
   addMessageItemSchema,
   assistantMessageContentSchema,
-  toolResultPartSchema,
 } from "@weldr/shared/validators/chats";
 import { streamText } from "ai";
 import type { z } from "zod";
+import { XMLProvider } from "../utils/xml-provider";
 
 export async function plannerAgent({
   context,
@@ -28,6 +28,12 @@ export async function plannerAgent({
   const project = context.get("project");
   const user = context.get("user");
   const version = context.get("version");
+  const isXML = context.get("isXML");
+
+  const streamWriter = global.sseConnections?.get(version.chatId);
+  if (!streamWriter) {
+    throw new Error("Stream writer not found");
+  }
 
   // Create contextual logger with base tags and extras
   const logger = Logger.get({
@@ -35,45 +41,63 @@ export async function plannerAgent({
     extra: {
       projectId: project.id,
       versionId: version.id,
+      mode: isXML ? "xml" : "ai-sdk",
     },
   });
 
-  // Get the SSE stream writer from global connections
-  const streamWriter = global.sseConnections?.get(version.chatId);
+  const xmlProvider = new XMLProvider(
+    [
+      initProjectTool.getXML(),
+      upgradeProjectTool.getXML(),
+      requestIntegrationConfigurationTool.getXML(),
+      callCoderTool.getXML(),
+    ],
+    context,
+  );
 
-  if (!streamWriter) {
-    throw new Error("Stream writer not found");
-  }
+  const system = isXML
+    ? await prompts.planner(project, xmlProvider.getSpecsMarkdown())
+    : await prompts.planner(project);
 
   // Local function to execute planner agent and handle tool calls
   const executePlannerAgent = async (): Promise<boolean> => {
     let shouldRecur = false;
     const promptMessages = await getMessages(version.chatId);
 
-    const result = await streamText({
-      model: registry.languageModel("google:gemini-2.5-pro"),
-      system: await prompts.planner(project),
-      tools: {
-        initProject: initProjectTool(context),
-        upgradeProject: upgradeProjectTool(context),
-        setupIntegration: setupIntegrationTool(context),
-        callCoder: callCoderTool(context),
-      },
-      messages: promptMessages,
-      onError: (error) => {
-        logger.error("Error in planner agent", {
-          extra: { error },
+    const result = isXML
+      ? xmlProvider.streamText({
+          model: registry.languageModel("google:gemini-2.5-pro"),
+          system,
+          messages: promptMessages,
+          onError: (error) => {
+            logger.error("Error in planner agent", {
+              extra: { error },
+            });
+          },
+        })
+      : streamText({
+          model: registry.languageModel("google:gemini-2.5-pro"),
+          system,
+          messages: promptMessages,
+          tools: {
+            init_project: initProjectTool(context),
+            upgrade_project: upgradeProjectTool(context),
+            request_integration_configuration:
+              requestIntegrationConfigurationTool(context),
+            call_coder: callCoderTool(context),
+          },
+          onError: (error) => {
+            logger.error("Error in planner agent", {
+              extra: { error },
+            });
+          },
         });
-      },
-    });
 
-    const toolResults: z.infer<typeof toolResultPartSchema>[] = [];
-
-    // Create assistant message content to maintain proper order
+    // Prepare messages to store
+    const messagesToSave: z.infer<typeof addMessageItemSchema>[] = [];
     const assistantContent: z.infer<typeof assistantMessageContentSchema>[] =
       [];
 
-    // Process the stream and handle tool calls
     for await (const delta of result.fullStream) {
       if (delta.type === "text-delta") {
         // Stream text content to SSE
@@ -102,39 +126,40 @@ export async function plannerAgent({
           toolName: delta.toolName,
           args: delta.args,
         });
-
         // Check if initProject or upgradeProject tools were called
         if (
-          delta.toolName === "initProject" ||
-          delta.toolName === "upgradeProject"
+          delta.toolName === "init_project" ||
+          delta.toolName === "upgrade_project"
         ) {
           shouldRecur = true;
         }
       } else if (delta.type === "tool-result") {
-        if (delta.toolName === "setupIntegration") {
+        if (delta.toolName === "request_integration_configuration") {
           await streamWriter.write({
             type: "tool",
-            toolName: "setupIntegration",
+            toolName: delta.toolName,
             toolCallId: delta.toolCallId,
             toolArgs: delta.args,
-            toolResult: {
-              status: "pending",
-            },
+            toolResult: delta.result,
           });
         }
-
-        // Handle tool results
-        toolResults.push({
-          type: "tool-result",
-          toolCallId: delta.toolCallId,
-          toolName: delta.toolName,
-          result: delta.result,
+        messagesToSave.push({
+          visibility:
+            delta.toolName === "request_integration_configuration"
+              ? "public"
+              : "internal",
+          role: "tool",
+          content: [
+            {
+              type: "tool-result",
+              toolCallId: delta.toolCallId,
+              toolName: delta.toolName,
+              result: delta.result,
+            },
+          ],
         });
       }
     }
-
-    // Prepare messages to store
-    const messagesToSave: z.infer<typeof addMessageItemSchema>[] = [];
 
     // Add assistant message
     if (assistantContent.length > 0) {
@@ -142,15 +167,6 @@ export async function plannerAgent({
         visibility: "public",
         role: "assistant",
         content: assistantContent,
-      });
-    }
-
-    // Add tool results
-    if (toolResults.length > 0) {
-      messagesToSave.push({
-        visibility: "internal",
-        role: "tool",
-        content: toolResults,
       });
     }
 
@@ -182,9 +198,4 @@ export async function plannerAgent({
   }
 
   logger.info("Planner agent completed");
-
-  // Signal that planner agent is complete - workflow will take over streaming
-  logger.info(
-    "Planner agent completed, transitioning to workflow progress updates",
-  );
 }

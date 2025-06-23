@@ -1,11 +1,19 @@
-import { runShellCommand } from "@/ai/utils/commands";
+import { runShell } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { z } from "zod";
-import { createTool } from "../utils/create-tool";
+import { createTool } from "../utils/tools";
 
 export const findTool = createTool({
+  name: "find",
   description: "Finds files based on a search query.",
+  whenToUse: "When you need to find files in the project.",
+  example: `<find>
+  <query>src/server</query>
+  <include_directories>true</include_directories>
+  <include_files>true</include_files>
+  <max_results>20</max_results>
+</find>`,
   inputSchema: z.object({
     query: z.string().describe("The substring of the path to search for."),
     includeDirectories: z
@@ -75,7 +83,7 @@ export const findTool = createTool({
     findCmd += " -print";
 
     const command = findCmd;
-    const { stdout, stderr, exitCode } = await runShellCommand(command, {
+    const { stdout, stderr, exitCode } = await runShell(command, {
       cwd: WORKSPACE_DIR,
     });
 

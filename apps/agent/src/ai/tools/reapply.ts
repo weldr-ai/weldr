@@ -1,10 +1,16 @@
 import { Logger } from "@/lib/logger";
 import { z } from "zod";
-import { createTool } from "../utils/create-tool";
+import { createTool } from "../utils/tools";
 
 export const reapplyTool = createTool({
+  name: "reapply",
   description:
     "Calls a smarter model to apply the last edit to the specified file.",
+  whenToUse:
+    "Use this tool immediately after the result of an edit_file tool call ONLY IF the diff is not what you expected, indicating the model applying the changes was not smart enough to follow your instructions.",
+  example: `<reapply>
+  <target_file>src/components/ui/button.tsx</target_file>
+</reapply>`,
   inputSchema: z.object({
     targetFile: z
       .string()

@@ -1,12 +1,11 @@
-import type { StreamWriter } from "@/lib/utils";
 import type { User } from "@weldr/auth";
 import type { projects, versions } from "@weldr/db/schema";
 
 type WorkflowContextStore = {
   project: typeof projects.$inferSelect;
   version: typeof versions.$inferSelect;
+  isXML: boolean;
   user: User;
-  streamWriter: StreamWriter;
 };
 
 export class WorkflowContext {
@@ -17,7 +16,7 @@ export class WorkflowContext {
   ): WorkflowContextStore[K] {
     const value = this.store[key];
     if (value === undefined) {
-      throw new Error(`Value for key "${key}" not found in AgentContext.`);
+      throw new Error(`Value for key "${key}" not found in WorkflowContext.`);
     }
     return value as WorkflowContextStore[K];
   }

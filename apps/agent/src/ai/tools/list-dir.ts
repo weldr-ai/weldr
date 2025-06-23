@@ -2,10 +2,17 @@ import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { z } from "zod";
-import { createTool } from "../utils/create-tool";
+import { createTool } from "../utils/tools";
 
 export const listDirTool = createTool({
+  name: "list_dir",
   description: "Displays a list of files and directories in a specified path.",
+  whenToUse:
+    "When you need to explore the file system and understand the directory structure.",
+  example: `<list_dir>
+  <path>src</path>
+  <level>3</level>
+</list_dir>`,
   inputSchema: z.object({
     path: z
       .string()

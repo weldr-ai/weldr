@@ -4,10 +4,16 @@ import { Logger } from "@/lib/logger";
 import { db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
 import { z } from "zod";
-import { createTool } from "../utils/create-tool";
+import { createTool } from "../utils/tools";
 
 export const upgradeProjectTool = createTool({
+  name: "upgrade_project",
   description: "Upgrades a project to full-stack.",
+  whenToUse: "When you need to upgrade a project to full-stack.",
+  example: `<upgrade_project>
+  <server>true</server>
+  <client>true</client>
+</upgrade_project>`,
   inputSchema: z.object({}),
   outputSchema: z.discriminatedUnion("success", [
     z.object({

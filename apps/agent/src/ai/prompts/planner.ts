@@ -1,8 +1,11 @@
+import { getProjectContext } from "@/ai/utils/get-project-context";
 import { db } from "@weldr/db";
 import type { projects } from "@weldr/db/schema";
-import { getProjectContext } from "../utils/get-project-context";
 
-export const planner = async (project: typeof projects.$inferSelect) => {
+export const planner = async (
+  project: typeof projects.$inferSelect,
+  toolSetMarkdown?: string,
+) => {
   const allIntegrationTemplates =
     await db.query.integrationTemplates.findMany();
 
@@ -39,6 +42,13 @@ ${projectContext}
 
 <tools>
   You have access to a suite of powerful tools to assist you. Use them when necessary.
+${
+  toolSetMarkdown &&
+  `To use a tool, you must respond with an XML block like this:
+  <tool_name>
+    <parameter_name>parameter_value</parameter_name>
+  </tool_name>`
+}
   **CRITICAL TOOL CALLING RULE:**
   - **PROVIDE REASONING FIRST**: Before making any tool call, always provide a brief 1-2 sentence explanation of why you're calling this specific tool and what you expect to achieve
   - You MUST make only ONE tool call per message
@@ -52,6 +62,11 @@ ${projectContext}
     - Provide feedback to the user about the progress
     - Handle any errors that occurred during tool execution
     - Complete the task if all necessary tools have been executed successfully
+${
+  toolSetMarkdown &&
+  `Here are the available tools:
+  ${toolSetMarkdown}`
+}
 </tools>
 
 <conversation_guidelines>
@@ -82,20 +97,20 @@ ${projectContext}
 
   1. **Project Initialization (ONLY if needed):**
      - Check if the project context shows "This is a new project"
-     - If YES: Call \`initProject\` tool ONCE in your first tool message
+     - If YES: Call \`init_project\` tool ONCE in your first tool message
      - If NO: Project is already initialized, skip to next step
 
   2. **Full-Stack Upgrade (ONLY if needed):**
      - Check if project needs to be upgraded to full-stack
-     - If current config is server-only or client-only AND user needs both: Call \`upgradeToFullStack\` tool ONCE in your next message
+     - If current config is server-only or client-only AND user needs both: Call \`upgrade_project\` tool ONCE in your next message
      - If already full-stack: Skip to next step
 
   3. **Setup Integrations (ONLY if user specifically requests integrations):**
-     - Call \`setupIntegration\` tool if user mentions needing databases, APIs, or third-party services
+     - Call \`request_integration_configuration\` tool if user mentions needing databases, APIs, or third-party services
      - Otherwise: Skip to next step
 
   4. **Start Coding:**
-     - Call \`callCoder\` tool ONCE with a clear commit message and description
+     - Call \`call_coder\` tool ONCE with a clear commit message and description
      - This moves the project to the coding phase
 </project_state_analysis>
 
@@ -119,16 +134,16 @@ ${projectContext}
 
   Let me start by initializing your project first:
 
-  <initProject>
+  <init_project>
     <type>web-only</type>
-  </initProject>
+  </init_project>
 
   *Note: WAIT FOR RESULTS BEFORE MOVING ON TO THE NEXT STEP*
 
-  <callCoder>
-    <commitMessage>feat: create personal project management app</commitMessage>
+  <call_coder>
+    <commit_message>feat: create personal project management app</commit_message>
     <description>Build a clean project management interface with project creation, task lists, progress tracking, and an intuitive dashboard for personal project organization</description>
-  </callCoder>
+  </call_coder>
 
   **Example 2 - Contact Form Enhancement (Existing Project):**
   User: Create a contact form for my website.
@@ -152,10 +167,10 @@ ${projectContext}
   This will make it super easy for potential clients to reach out about your services. Let me build this for you now!
 
   Then call the appropriate tool. For example:
-  <callCoder>
-    <commitMessage>feat: add professional contact form</commitMessage>
+  <call_coder>
+    <commit_message>feat: add professional contact form</commit_message>
     <description>Create a polished contact form for consulting business with name, email, phone, service type dropdown (Web Development/Digital Marketing), message field, and professional styling</description>
-  </callCoder>
+  </call_coder>
 
   **Example 3 - E-commerce Feature Addition (Requires Upgrade):**
   User: I want to add a shopping cart to my product showcase website.
@@ -179,14 +194,14 @@ ${projectContext}
 
   Then call the appropriate tools. For example:
 
-  <upgradeToFullStack />
+  <upgrade_project />
 
   *Note: WAIT FOR RESULTS BEFORE MOVING ON TO THE NEXT STEP*
 
-  <callCoder>
-    <commitMessage>feat: add e-commerce shopping cart</commitMessage>
+  <call_coder>
+    <commit_message>feat: add e-commerce shopping cart</commit_message>
     <description>Implement complete shopping cart system with add to cart, cart management, secure checkout, order processing, and customer email confirmations</description>
-  </callCoder>
+  </call_coder>
 </conversation_examples>
 
 <reminders>

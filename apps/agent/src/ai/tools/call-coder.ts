@@ -2,10 +2,17 @@ import { Logger } from "@/lib/logger";
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { z } from "zod";
-import { createTool } from "../utils/create-tool";
+import { createTool } from "../utils/tools";
 
 export const callCoderTool = createTool({
+  name: "call_coder",
   description: "Hands off the project to the coder agent to start development.",
+  whenToUse:
+    "After all setup is complete and the user has confirmed the plan. This should be the final action.",
+  example: `<call_coder>
+<commit_message>feat: Create personal project management app</commit_message>
+<description>Build a clean project management interface with project creation, task lists, progress tracking, and an intuitive dashboard for personal project organization.</description>
+</call_coder>`,
   inputSchema: z.object({
     commitMessage: z
       .string()

@@ -1,4 +1,3 @@
-import { prompts } from "@/ai/prompts";
 import {
   deleteFileTool,
   doneTool,
@@ -16,7 +15,7 @@ import { registry } from "@/ai/utils/registry";
 import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { and, db, eq, inArray } from "@weldr/db";
-import { files, versionDeclarations, versionFiles } from "@weldr/db/schema";
+import { versionDeclarations, versionFiles } from "@weldr/db/schema";
 import type {
   addMessageItemSchema,
   assistantMessageContentSchema,
@@ -24,6 +23,8 @@ import type {
 import type { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import { streamText } from "ai";
 import type { z } from "zod";
+import { prompts } from "../prompts";
+import { XMLProvider } from "../utils/xml-provider";
 
 export async function coderAgent({
   context,
@@ -35,6 +36,7 @@ export async function coderAgent({
   const project = context.get("project");
   const version = context.get("version");
   const user = context.get("user");
+  const isXML = context.get("isXML");
 
   // Create contextual logger with base tags and extras
   const logger = Logger.get({
@@ -45,9 +47,9 @@ export async function coderAgent({
     },
   });
 
-  // Get the SSE stream writer from global connections
-  const streamWriter = global.sseConnections?.get(version.chatId);
-
+  const streamWriter = global.sseConnections?.get(
+    context.get("version").chatId,
+  );
   if (!streamWriter) {
     throw new Error("Stream writer not found");
   }
@@ -56,8 +58,6 @@ export async function coderAgent({
     logger.info("Starting coder agent");
 
     const deletedDeclarations: string[] = [];
-
-    const updatedFiles = new Set<string>();
 
     const availableFiles = await tx.query.versionFiles.findMany({
       where: eq(versionFiles.versionId, version.id),
@@ -149,32 +149,62 @@ export async function coderAgent({
       totalTokens: 0,
     };
 
+    const xmlProvider = new XMLProvider(
+      [
+        listDirTool.getXML(),
+        readFileTool.getXML(),
+        writeFileTool.getXML(),
+        deleteFileTool.getXML(),
+        editFileTool.getXML(),
+        fzfTool.getXML(),
+        grepTool.getXML(),
+        findTool.getXML(),
+        doneTool.getXML(),
+      ],
+      context,
+    );
+
+    const system = isXML
+      ? await prompts.generalCoder(project, xmlProvider.getSpecsMarkdown())
+      : await prompts.generalCoder(project);
+
     // Local function to execute coder agent and handle tool calls
     const executeCoderAgent = async (): Promise<boolean> => {
       let shouldRecur = false;
       const promptMessages = await getMessages(version.chatId);
 
-      const result = await streamText({
-        model: registry.languageModel("google:gemini-2.5-pro"),
-        system: await prompts.generalCoder(project),
-        messages: promptMessages,
-        tools: {
-          listDir: listDirTool(context),
-          readFile: readFileTool(context),
-          editFile: editFileTool(context),
-          deleteFile: deleteFileTool(context),
-          fzf: fzfTool(context),
-          grep: grepTool(context),
-          find: findTool(context),
-          writeFile: writeFileTool(context),
-          done: doneTool(context),
-        },
-        onError: (error) => {
-          logger.error("Error in coder agent", {
-            extra: { error },
+      const result = isXML
+        ? xmlProvider.streamText({
+            model: registry.languageModel("google:gemini-2.5-pro"),
+            system,
+            messages: promptMessages,
+            onError: (error) => {
+              logger.error("Error in coder agent", {
+                extra: { error },
+              });
+            },
+          })
+        : streamText({
+            model: registry.languageModel("google:gemini-2.5-pro"),
+            system,
+            tools: {
+              list_dir: listDirTool(context),
+              read_file: readFileTool(context),
+              edit_file: editFileTool(context),
+              write_file: writeFileTool(context),
+              delete_file: deleteFileTool(context),
+              fzf: fzfTool(context),
+              grep: grepTool(context),
+              find: findTool(context),
+              done: doneTool(context),
+            },
+            messages: promptMessages,
+            onError: (error) => {
+              logger.error("Error in coder agent", {
+                extra: { error },
+              });
+            },
           });
-        },
-      });
 
       // Assistant message content
       const assistantContent: z.infer<typeof assistantMessageContentSchema>[] =
@@ -185,12 +215,6 @@ export async function coderAgent({
       // Process the stream and handle tool calls
       for await (const delta of result.fullStream) {
         if (delta.type === "text-delta") {
-          // Stream text content to SSE
-          await streamWriter.write({
-            type: "text",
-            text: delta.textDelta,
-          });
-
           // Add text content immediately to maintain proper order
           const lastItem = assistantContent[assistantContent.length - 1];
           if (lastItem && lastItem.type === "text") {
@@ -220,46 +244,31 @@ export async function coderAgent({
             shouldRecur = true;
           }
         } else if (delta.type === "tool-result") {
-          // Handle tool results - persist immediately for durability
-          const toolResult = {
-            type: "tool-result" as const,
-            toolCallId: delta.toolCallId,
-            toolName: delta.toolName,
-            result: delta.result,
-          };
-
-          // Save tool result immediately to database
-          await insertMessages({
-            input: {
-              chatId: version.chatId,
-              userId: user.id,
-              messages: [
-                {
-                  visibility: "internal",
-                  role: "tool",
-                  content: [toolResult],
-                },
-              ],
-            },
-          });
-
-          // Handle tool results
-          switch (delta.toolName) {
-            case "deleteFile": {
-              const result = delta.result;
-              if (result.success) {
-                const fileResult = flatFiles.find(
-                  (f) => f.path === result.filePath,
+          if (delta.toolName === "delete_file") {
+            const result = delta.result;
+            if (result.success) {
+              const fileResult = flatFiles.find(
+                (f) => f.path === result.filePath,
+              );
+              if (fileResult) {
+                deletedDeclarations.push(
+                  ...fileResult.declarations.map((d) => d.id),
                 );
-                if (fileResult) {
-                  deletedDeclarations.push(
-                    ...fileResult.declarations.map((d) => d.id),
-                  );
-                }
               }
-              break;
             }
           }
+          messagesToSave.push({
+            visibility: "internal",
+            role: "tool",
+            content: [
+              {
+                type: "tool-result",
+                toolCallId: delta.toolCallId,
+                toolName: delta.toolName,
+                result: delta.result,
+              },
+            ],
+          });
         }
       }
 
@@ -312,8 +321,6 @@ export async function coderAgent({
 
     logger.info("Coder agent completed");
 
-    logger.info("Final updated files");
-
     logger.info(
       `Usage Prompt: ${totalUsage.promptTokens} Completion: ${totalUsage.completionTokens} Total: ${totalUsage.totalTokens}`,
     );
@@ -326,43 +333,6 @@ export async function coderAgent({
           eq(versionDeclarations.versionId, version.id),
         ),
       );
-
-    for (const file of updatedFiles) {
-      let resultFile = await tx.query.files.findFirst({
-        where: and(
-          eq(files.path, file.startsWith("/") ? file : `/${file}`),
-          eq(files.projectId, project.id),
-        ),
-      });
-
-      if (!resultFile) {
-        const [newFile] = await tx
-          .insert(files)
-          .values({
-            projectId: project.id,
-            path: file.startsWith("/") ? file : `/${file}`,
-            userId: user.id,
-          })
-          .returning();
-
-        if (!newFile) {
-          throw new Error(
-            `[processFile:${project.id}] Failed to insert file ${file}`,
-          );
-        }
-
-        resultFile = newFile;
-      }
-
-      // Add the file to the version
-      await tx
-        .insert(versionFiles)
-        .values({
-          versionId: version.id,
-          fileId: resultFile.id,
-        })
-        .onConflictDoNothing();
-    }
   });
 
   // End the stream

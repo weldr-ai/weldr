@@ -117,11 +117,8 @@ router.openapi(route, async (c) => {
         const sseStreamWriter = {
           write: async (chunk: TStreamableValue) => {
             const message = JSON.stringify(chunk);
-            logger.info(`Writing chunk: ${message.slice(0, 100)}`);
-            // Send to current client
             try {
               controller.enqueue(encoder.encode(`data: ${message}\n\n`));
-              logger.info("Chunk enqueued successfully");
             } catch (error) {
               logger.error(`Client ${clientId} disconnected`, {
                 extra: { error },
