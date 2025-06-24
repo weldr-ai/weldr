@@ -1,4 +1,5 @@
 import { nanoid } from "@weldr/shared/nanoid";
+import type { Task } from "@weldr/shared/types";
 import { relations, sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
@@ -15,13 +16,12 @@ import {
 import { users } from "./auth";
 import { chats } from "./chats";
 import { declarations } from "./declarations";
-import { files } from "./files";
-import { packages } from "./packages";
 import { projects } from "./projects";
 import { workflowRuns } from "./workflows";
 
 export const versionProgress = pgEnum("version_progress", [
-  "initiated",
+  "pending",
+  "in_progress",
   "succeeded",
   "failed",
 ]);
@@ -34,6 +34,7 @@ export const versions = pgTable(
     message: text("message"),
     description: text("description"),
     commitHash: text("commit_hash"),
+    tasks: jsonb("tasks").$type<Task[]>().default([]).notNull(),
     chatId: text("chat_id")
       .references(() => chats.id, { onDelete: "cascade" })
       .notNull(),
@@ -91,36 +92,6 @@ export const versionsRelations = relations(versions, ({ one, many }) => ({
     references: [workflowRuns.versionId],
   }),
   declarations: many(versionDeclarations),
-  packages: many(versionPackages),
-  files: many(versionFiles),
-}));
-
-export const versionFiles = pgTable(
-  "version_files",
-  {
-    versionId: text("version_id")
-      .references(() => versions.id, { onDelete: "cascade" })
-      .notNull(),
-    fileId: text("file_id")
-      .references(() => files.id, { onDelete: "cascade" })
-      .notNull(),
-  },
-  (table) => [
-    primaryKey({
-      columns: [table.versionId, table.fileId],
-    }),
-  ],
-);
-
-export const versionFilesRelations = relations(versionFiles, ({ one }) => ({
-  file: one(files, {
-    fields: [versionFiles.fileId],
-    references: [files.id],
-  }),
-  version: one(versions, {
-    fields: [versionFiles.versionId],
-    references: [versions.id],
-  }),
 }));
 
 export const versionDeclarations = pgTable(
@@ -145,33 +116,6 @@ export const versionDeclarationsRelations = relations(
     }),
     version: one(versions, {
       fields: [versionDeclarations.versionId],
-      references: [versions.id],
-    }),
-  }),
-);
-
-export const versionPackages = pgTable(
-  "version_packages",
-  {
-    versionId: text("version_id")
-      .references(() => versions.id, { onDelete: "cascade" })
-      .notNull(),
-    packageId: text("package_id")
-      .references(() => packages.id, { onDelete: "cascade" })
-      .notNull(),
-  },
-  (table) => [primaryKey({ columns: [table.versionId, table.packageId] })],
-);
-
-export const versionPackagesRelations = relations(
-  versionPackages,
-  ({ one }) => ({
-    package: one(packages, {
-      fields: [versionPackages.packageId],
-      references: [packages.id],
-    }),
-    version: one(versions, {
-      fields: [versionPackages.versionId],
       references: [versions.id],
     }),
   }),

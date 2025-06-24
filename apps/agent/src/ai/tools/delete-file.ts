@@ -1,6 +1,8 @@
 import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
+import { and, db, eq, inArray } from "@weldr/db";
+import { locations, versionDeclarations } from "@weldr/db/schema";
 import { z } from "zod";
 import { createTool } from "../utils/tools";
 
@@ -56,6 +58,27 @@ export const deleteFileTool = createTool({
         success: false,
         error: stderr || `Failed to delete file ${filePath}`,
       };
+    }
+
+    const location = await db.query.locations.findMany({
+      where: eq(locations.path, filePath),
+      with: {
+        declaration: true,
+      },
+    });
+
+    const declarationIds = location.map((l) => l.declaration.id);
+
+    if (declarationIds.length > 0) {
+      await db
+        .delete(versionDeclarations)
+        .where(
+          and(
+            inArray(versionDeclarations.declarationId, declarationIds),
+            eq(versionDeclarations.versionId, version.id),
+          ),
+        );
+      logger.info(`Deleted ${declarationIds.length} declarations`);
     }
 
     logger.info(`File deleted successfully: ${filePath}`);

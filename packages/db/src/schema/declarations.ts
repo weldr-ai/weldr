@@ -4,6 +4,7 @@ import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
   index,
+  integer,
   jsonb,
   pgTable,
   primaryKey,
@@ -14,9 +15,7 @@ import { users } from "./auth";
 import { canvasNodes } from "./canvas-nodes";
 import { chats } from "./chats";
 import { dependencies } from "./dependencies";
-import { files } from "./files";
 import { integrations } from "./integrations";
-import { packages } from "./packages";
 import { projects } from "./projects";
 import { declarationTypes } from "./shared-enums";
 import { versionDeclarations } from "./versions";
@@ -42,9 +41,8 @@ export const declarations = pgTable(
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),
-    fileId: text("file_id")
-      .references(() => files.id)
-      .notNull(),
+    locationId: text("location_id").references(() => locations.id),
+    packages: jsonb("packages").$type<string[]>().default([]).notNull(),
     canvasNodeId: text("canvas_node_id").references(() => canvasNodes.id),
   },
   (table) => [index("declaration_created_at_idx").on(table.createdAt)],
@@ -72,44 +70,33 @@ export const declarationsRelations = relations(
     dependents: many(dependencies, {
       relationName: "dependent_declaration",
     }),
-    file: one(files, {
-      fields: [declarations.fileId],
-      references: [files.id],
+    location: one(locations, {
+      fields: [declarations.locationId],
+      references: [locations.id],
     }),
-    declarationPackages: many(declarationPackages),
     versions: many(versionDeclarations),
     chats: many(chats),
   }),
 );
 
-export const declarationPackages = pgTable(
-  "declaration_packages",
+export const locations = pgTable(
+  "locations",
   {
-    declarationId: text("declaration_id")
-      .references(() => declarations.id, { onDelete: "cascade" })
-      .notNull(),
-    packageId: text("package_id")
-      .references(() => packages.id, { onDelete: "cascade" })
-      .notNull(),
-    importPath: text("import_path").notNull(),
-    declarations: text("declarations").array(),
+    id: text("id").primaryKey().$defaultFn(nanoid),
+    startLine: integer("start_line").notNull(),
+    endLine: integer("end_line").notNull(),
+    path: text("path").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [primaryKey({ columns: [table.declarationId, table.packageId] })],
+  (table) => [index("locations_created_at_idx").on(table.createdAt)],
 );
 
-export const declarationPackagesRelations = relations(
-  declarationPackages,
-  ({ one }) => ({
-    package: one(packages, {
-      fields: [declarationPackages.packageId],
-      references: [packages.id],
-    }),
-    declaration: one(declarations, {
-      fields: [declarationPackages.declarationId],
-      references: [declarations.id],
-    }),
+export const locationRelations = relations(locations, ({ one }) => ({
+  declaration: one(declarations, {
+    fields: [locations.id],
+    references: [declarations.locationId],
   }),
-);
+}));
 
 export const declarationIntegrations = pgTable(
   "declaration_integrations",

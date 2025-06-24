@@ -1,5 +1,5 @@
 {
-  "id": "eee52e73-70fa-4e61-91ab-94bb08b796f7",
+  "id": "badddf60-4426-4703-aeec-b191cfa06d69",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1000,67 +1000,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.declaration_packages": {
-      "name": "declaration_packages",
-      "schema": "",
-      "columns": {
-        "declaration_id": {
-          "name": "declaration_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "package_id": {
-          "name": "package_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "import_path": {
-          "name": "import_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "declarations": {
-          "name": "declarations",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "declaration_packages_declaration_id_declarations_id_fk": {
-          "name": "declaration_packages_declaration_id_declarations_id_fk",
-          "tableFrom": "declaration_packages",
-          "tableTo": "declarations",
-          "columnsFrom": ["declaration_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "declaration_packages_package_id_packages_id_fk": {
-          "name": "declaration_packages_package_id_packages_id_fk",
-          "tableFrom": "declaration_packages",
-          "tableTo": "packages",
-          "columnsFrom": ["package_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "declaration_packages_declaration_id_package_id_pk": {
-          "name": "declaration_packages_declaration_id_package_id_pk",
-          "columns": ["declaration_id", "package_id"]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.declarations": {
       "name": "declarations",
       "schema": "",
@@ -1122,11 +1061,18 @@
           "primaryKey": false,
           "notNull": true
         },
-        "file_id": {
-          "name": "file_id",
+        "location_id": {
+          "name": "location_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "packages": {
+          "name": "packages",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
         },
         "canvas_node_id": {
           "name": "canvas_node_id",
@@ -1180,11 +1126,11 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "declarations_file_id_files_id_fk": {
-          "name": "declarations_file_id_files_id_fk",
+        "declarations_location_id_locations_id_fk": {
+          "name": "declarations_location_id_locations_id_fk",
           "tableFrom": "declarations",
-          "tableTo": "files",
-          "columnsFrom": ["file_id"],
+          "tableTo": "locations",
+          "columnsFrom": ["location_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -1199,6 +1145,66 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.locations": {
+      "name": "locations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "start_line": {
+          "name": "start_line",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_line": {
+          "name": "end_line",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "locations_created_at_idx": {
+          "name": "locations_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1384,106 +1390,6 @@
           "columns": ["project_id", "key"]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.files": {
-      "name": "files",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "path": {
-          "name": "path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "files_created_at_idx": {
-          "name": "files_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "unique_path": {
-          "name": "unique_path",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "path",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "files_project_id_projects_id_fk": {
-          "name": "files_project_id_projects_id_fk",
-          "tableFrom": "files",
-          "tableTo": "projects",
-          "columnsFrom": ["project_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "files_user_id_users_id_fk": {
-          "name": "files_user_id_users_id_fk",
-          "tableFrom": "files",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1734,72 +1640,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.packages": {
-      "name": "packages",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "type": {
-          "name": "type",
-          "type": "package_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "version": {
-          "name": "version",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "packages_project_id_projects_id_fk": {
-          "name": "packages_project_id_projects_id_fk",
-          "tableFrom": "packages",
-          "tableTo": "projects",
-          "columnsFrom": ["project_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "packages_project_id_name_unique": {
-          "name": "packages_project_id_name_unique",
-          "nullsNotDistinct": false,
-          "columns": ["project_id", "name"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.preset_declarations": {
       "name": "preset_declarations",
       "schema": "",
@@ -1880,113 +1720,6 @@
           "name": "unique_preset_declaration",
           "nullsNotDistinct": false,
           "columns": ["name", "file", "preset_id"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.preset_files": {
-      "name": "preset_files",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "path": {
-          "name": "path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "preset_id": {
-          "name": "preset_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "preset_files_preset_id_presets_id_fk": {
-          "name": "preset_files_preset_id_presets_id_fk",
-          "tableFrom": "preset_files",
-          "tableTo": "presets",
-          "columnsFrom": ["preset_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "unique_preset_file": {
-          "name": "unique_preset_file",
-          "nullsNotDistinct": false,
-          "columns": ["path", "preset_id"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.preset_packages": {
-      "name": "preset_packages",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "type": {
-          "name": "type",
-          "type": "package_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "version": {
-          "name": "version",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "preset_id": {
-          "name": "preset_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "preset_packages_preset_id_presets_id_fk": {
-          "name": "preset_packages_preset_id_presets_id_fk",
-          "tableFrom": "preset_packages",
-          "tableTo": "presets",
-          "columnsFrom": ["preset_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "unique_preset_package": {
-          "name": "unique_preset_package",
-          "nullsNotDistinct": false,
-          "columns": ["name", "preset_id"]
         }
       },
       "policies": {},
@@ -2310,104 +2043,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.version_files": {
-      "name": "version_files",
-      "schema": "",
-      "columns": {
-        "version_id": {
-          "name": "version_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "file_id": {
-          "name": "file_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "version_files_version_id_versions_id_fk": {
-          "name": "version_files_version_id_versions_id_fk",
-          "tableFrom": "version_files",
-          "tableTo": "versions",
-          "columnsFrom": ["version_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "version_files_file_id_files_id_fk": {
-          "name": "version_files_file_id_files_id_fk",
-          "tableFrom": "version_files",
-          "tableTo": "files",
-          "columnsFrom": ["file_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "version_files_version_id_file_id_pk": {
-          "name": "version_files_version_id_file_id_pk",
-          "columns": ["version_id", "file_id"]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.version_packages": {
-      "name": "version_packages",
-      "schema": "",
-      "columns": {
-        "version_id": {
-          "name": "version_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "package_id": {
-          "name": "package_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "version_packages_version_id_versions_id_fk": {
-          "name": "version_packages_version_id_versions_id_fk",
-          "tableFrom": "version_packages",
-          "tableTo": "versions",
-          "columnsFrom": ["version_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "version_packages_package_id_packages_id_fk": {
-          "name": "version_packages_package_id_packages_id_fk",
-          "tableFrom": "version_packages",
-          "tableTo": "packages",
-          "columnsFrom": ["package_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "version_packages_version_id_package_id_pk": {
-          "name": "version_packages_version_id_package_id_pk",
-          "columns": ["version_id", "package_id"]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.versions": {
       "name": "versions",
       "schema": "",
@@ -2442,6 +2077,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "tasks": {
+          "name": "tasks",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
         },
         "chat_id": {
           "name": "chat_id",
@@ -2885,11 +2527,6 @@
       "schema": "public",
       "values": ["public", "internal"]
     },
-    "public.package_type": {
-      "name": "package_type",
-      "schema": "public",
-      "values": ["runtime", "development"]
-    },
     "public.preset_type": {
       "name": "preset_type",
       "schema": "public",
@@ -2903,7 +2540,7 @@
     "public.version_progress": {
       "name": "version_progress",
       "schema": "public",
-      "values": ["initiated", "succeeded", "failed"]
+      "values": ["pending", "in_progress", "succeeded", "failed"]
     },
     "public.workflow_status": {
       "name": "workflow_status",
