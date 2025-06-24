@@ -10,7 +10,6 @@ import {
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
-import { packageType } from "./packages";
 import { declarationTypes } from "./shared-enums";
 
 interface InternalDependency {
@@ -45,8 +44,6 @@ export const presets = pgTable("presets", {
 
 export const presetRelations = relations(presets, ({ many }) => ({
   declarations: many(presetDeclarations),
-  files: many(presetFiles),
-  packages: many(presetPackages),
 }));
 
 export const presetDeclarations = pgTable(
@@ -79,46 +76,6 @@ export const presetDeclarationsRelations = relations(
     }),
   }),
 );
-
-export const presetPackages = pgTable(
-  "preset_packages",
-  {
-    id: text("id").primaryKey().$defaultFn(nanoid),
-    type: packageType("type").notNull(),
-    name: text("name").notNull(),
-    version: text("version").notNull(),
-    presetId: text("preset_id")
-      .references(() => presets.id)
-      .notNull(),
-  },
-  (t) => [unique("unique_preset_package").on(t.name, t.presetId)],
-);
-
-export const presetPackagesRelations = relations(presetPackages, ({ one }) => ({
-  preset: one(presets, {
-    fields: [presetPackages.presetId],
-    references: [presets.id],
-  }),
-}));
-
-export const presetFiles = pgTable(
-  "preset_files",
-  {
-    id: text("id").primaryKey().$defaultFn(nanoid),
-    path: text("path").notNull(),
-    presetId: text("preset_id")
-      .references(() => presets.id)
-      .notNull(),
-  },
-  (t) => [unique("unique_preset_file").on(t.path, t.presetId)],
-);
-
-export const presetFilesRelations = relations(presetFiles, ({ one }) => ({
-  preset: one(presets, {
-    fields: [presetFiles.presetId],
-    references: [presets.id],
-  }),
-}));
 
 export const presetThemes = pgTable("preset_themes", {
   id: serial("id").primaryKey(),

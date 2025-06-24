@@ -1,10 +1,9 @@
 CREATE TYPE "public"."canvas_node_types" AS ENUM('preview', 'declaration');--> statement-breakpoint
 CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool');--> statement-breakpoint
 CREATE TYPE "public"."message_visibility" AS ENUM('public', 'internal');--> statement-breakpoint
-CREATE TYPE "public"."package_type" AS ENUM('runtime', 'development');--> statement-breakpoint
 CREATE TYPE "public"."preset_type" AS ENUM('base');--> statement-breakpoint
 CREATE TYPE "public"."declaration_types" AS ENUM('component', 'endpoint', 'function', 'model', 'other');--> statement-breakpoint
-CREATE TYPE "public"."version_progress" AS ENUM('initiated', 'succeeded', 'failed');--> statement-breakpoint
+CREATE TYPE "public"."version_progress" AS ENUM('pending', 'in_progress', 'succeeded', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."workflow_status" AS ENUM('running', 'completed', 'failed', 'suspended');--> statement-breakpoint
 CREATE TYPE "public"."workflow_step_status" AS ENUM('pending', 'running', 'completed', 'failed', 'skipped');--> statement-breakpoint
 CREATE TABLE "accounts" (
@@ -146,14 +145,6 @@ CREATE TABLE "declaration_integrations" (
 	CONSTRAINT "declaration_integrations_declaration_id_integration_id_pk" PRIMARY KEY("declaration_id","integration_id")
 );
 --> statement-breakpoint
-CREATE TABLE "declaration_packages" (
-	"declaration_id" text NOT NULL,
-	"package_id" text NOT NULL,
-	"import_path" text NOT NULL,
-	"declarations" text[],
-	CONSTRAINT "declaration_packages_declaration_id_package_id_pk" PRIMARY KEY("declaration_id","package_id")
-);
---> statement-breakpoint
 CREATE TABLE "declarations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"type" "declaration_types" NOT NULL,
@@ -164,8 +155,17 @@ CREATE TABLE "declarations" (
 	"previous_id" text,
 	"project_id" text NOT NULL,
 	"user_id" text NOT NULL,
-	"file_id" text NOT NULL,
+	"location_id" text,
+	"packages" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"canvas_node_id" text
+);
+--> statement-breakpoint
+CREATE TABLE "locations" (
+	"id" text PRIMARY KEY NOT NULL,
+	"start_line" integer NOT NULL,
+	"end_line" integer NOT NULL,
+	"path" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "dependencies" (
@@ -187,14 +187,6 @@ CREATE TABLE "environment_variables" (
 	"project_id" text NOT NULL,
 	"user_id" text NOT NULL,
 	CONSTRAINT "unique_key" UNIQUE("project_id","key")
-);
---> statement-breakpoint
-CREATE TABLE "files" (
-	"id" text PRIMARY KEY NOT NULL,
-	"path" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"project_id" text NOT NULL,
-	"user_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "integration_templates" (
@@ -227,16 +219,6 @@ CREATE TABLE "integrations" (
 	"integration_template_id" text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "packages" (
-	"id" text PRIMARY KEY NOT NULL,
-	"type" "package_type" NOT NULL,
-	"name" text NOT NULL,
-	"description" text,
-	"version" text NOT NULL,
-	"project_id" text NOT NULL,
-	CONSTRAINT "packages_project_id_name_unique" UNIQUE("project_id","name")
-);
---> statement-breakpoint
 CREATE TABLE "preset_declarations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"type" "declaration_types" NOT NULL,
@@ -248,22 +230,6 @@ CREATE TABLE "preset_declarations" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"preset_id" text NOT NULL,
 	CONSTRAINT "unique_preset_declaration" UNIQUE("name","file","preset_id")
-);
---> statement-breakpoint
-CREATE TABLE "preset_files" (
-	"id" text PRIMARY KEY NOT NULL,
-	"path" text NOT NULL,
-	"preset_id" text NOT NULL,
-	CONSTRAINT "unique_preset_file" UNIQUE("path","preset_id")
-);
---> statement-breakpoint
-CREATE TABLE "preset_packages" (
-	"id" text PRIMARY KEY NOT NULL,
-	"type" "package_type" NOT NULL,
-	"name" text NOT NULL,
-	"version" text NOT NULL,
-	"preset_id" text NOT NULL,
-	CONSTRAINT "unique_preset_package" UNIQUE("name","preset_id")
 );
 --> statement-breakpoint
 CREATE TABLE "preset_themes" (
@@ -311,24 +277,13 @@ CREATE TABLE "version_declarations" (
 	CONSTRAINT "version_declarations_version_id_declaration_id_pk" PRIMARY KEY("version_id","declaration_id")
 );
 --> statement-breakpoint
-CREATE TABLE "version_files" (
-	"version_id" text NOT NULL,
-	"file_id" text NOT NULL,
-	CONSTRAINT "version_files_version_id_file_id_pk" PRIMARY KEY("version_id","file_id")
-);
---> statement-breakpoint
-CREATE TABLE "version_packages" (
-	"version_id" text NOT NULL,
-	"package_id" text NOT NULL,
-	CONSTRAINT "version_packages_version_id_package_id_pk" PRIMARY KEY("version_id","package_id")
-);
---> statement-breakpoint
 CREATE TABLE "versions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"number" integer DEFAULT 1 NOT NULL,
 	"message" text,
 	"description" text,
 	"commit_hash" text,
+	"tasks" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"chat_id" text NOT NULL,
 	"changed_files" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"progress" "version_progress",
@@ -377,38 +332,27 @@ ALTER TABLE "chats" ADD CONSTRAINT "chats_project_id_projects_id_fk" FOREIGN KEY
 ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_declaration_id_declarations_id_fk" FOREIGN KEY ("declaration_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "declaration_packages" ADD CONSTRAINT "declaration_packages_declaration_id_declarations_id_fk" FOREIGN KEY ("declaration_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "declaration_packages" ADD CONSTRAINT "declaration_packages_package_id_packages_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."packages"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_previous_id_declarations_id_fk" FOREIGN KEY ("previous_id") REFERENCES "public"."declarations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "declarations" ADD CONSTRAINT "declarations_file_id_files_id_fk" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "declarations" ADD CONSTRAINT "declarations_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_canvas_node_id_canvas_nodes_id_fk" FOREIGN KEY ("canvas_node_id") REFERENCES "public"."canvas_nodes"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_dependent_id_declarations_id_fk" FOREIGN KEY ("dependent_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_dependency_id_declarations_id_fk" FOREIGN KEY ("dependency_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_secret_id_secrets_id_fk" FOREIGN KEY ("secret_id") REFERENCES "vault"."secrets"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "files" ADD CONSTRAINT "files_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "files" ADD CONSTRAINT "files_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integration_environment_variables" ADD CONSTRAINT "integration_environment_variables_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integration_environment_variables" ADD CONSTRAINT "integration_environment_variables_environment_variable_id_environment_variables_id_fk" FOREIGN KEY ("environment_variable_id") REFERENCES "public"."environment_variables"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integrations" ADD CONSTRAINT "integrations_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integrations" ADD CONSTRAINT "integrations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integrations" ADD CONSTRAINT "integrations_integration_template_id_integration_templates_id_fk" FOREIGN KEY ("integration_template_id") REFERENCES "public"."integration_templates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "packages" ADD CONSTRAINT "packages_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "preset_declarations" ADD CONSTRAINT "preset_declarations_preset_id_presets_id_fk" FOREIGN KEY ("preset_id") REFERENCES "public"."presets"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "preset_files" ADD CONSTRAINT "preset_files_preset_id_presets_id_fk" FOREIGN KEY ("preset_id") REFERENCES "public"."presets"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "preset_packages" ADD CONSTRAINT "preset_packages_preset_id_presets_id_fk" FOREIGN KEY ("preset_id") REFERENCES "public"."presets"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "themes" ADD CONSTRAINT "themes_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "themes" ADD CONSTRAINT "themes_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "version_declarations" ADD CONSTRAINT "version_declarations_version_id_versions_id_fk" FOREIGN KEY ("version_id") REFERENCES "public"."versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "version_declarations" ADD CONSTRAINT "version_declarations_declaration_id_declarations_id_fk" FOREIGN KEY ("declaration_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "version_files" ADD CONSTRAINT "version_files_version_id_versions_id_fk" FOREIGN KEY ("version_id") REFERENCES "public"."versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "version_files" ADD CONSTRAINT "version_files_file_id_files_id_fk" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "version_packages" ADD CONSTRAINT "version_packages_version_id_versions_id_fk" FOREIGN KEY ("version_id") REFERENCES "public"."versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "version_packages" ADD CONSTRAINT "version_packages_package_id_packages_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."packages"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_parent_version_id_versions_id_fk" FOREIGN KEY ("parent_version_id") REFERENCES "public"."versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -420,9 +364,8 @@ CREATE INDEX "attachments_created_at_idx" ON "attachments" USING btree ("created
 CREATE INDEX "chat_messages_created_at_idx" ON "chat_messages" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "chats_created_at_idx" ON "chats" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "declaration_created_at_idx" ON "declarations" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "locations_created_at_idx" ON "locations" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "dependencies_created_at_idx" ON "dependencies" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX "files_created_at_idx" ON "files" USING btree ("created_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "unique_path" ON "files" USING btree ("project_id","path");--> statement-breakpoint
 CREATE INDEX "integration_templates_created_at_idx" ON "integration_templates" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "integrations_created_at_idx" ON "integrations" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "projects_created_at_idx" ON "projects" USING btree ("created_at");--> statement-breakpoint

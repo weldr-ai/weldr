@@ -54,17 +54,12 @@ export async function convertMessagesToCore(messages: ChatMessage[]) {
         const reference = await db.query.declarations.findFirst({
           where: eq(declarations.id, item.id),
           with: {
-            file: true,
-            declarationPackages: {
-              with: {
-                package: true,
-              },
-            },
+            location: true,
             dependents: {
               with: {
                 dependent: {
                   with: {
-                    file: true,
+                    location: true,
                   },
                 },
               },
@@ -73,7 +68,7 @@ export async function convertMessagesToCore(messages: ChatMessage[]) {
               with: {
                 dependency: {
                   with: {
-                    file: true,
+                    location: true,
                   },
                 },
               },
@@ -83,10 +78,10 @@ export async function convertMessagesToCore(messages: ChatMessage[]) {
 
         const groupedDependencies = reference?.dependencies.reduce(
           (acc, d) => {
-            const accFile = acc[d.dependency.file.path];
+            const accFile = acc[d.dependency?.location?.path ?? ""];
 
             if (!accFile) {
-              acc[d.dependency.file.path] = [];
+              acc[d.dependency?.location?.path ?? ""] = [];
             }
 
             accFile?.push(d.dependency);
@@ -101,10 +96,10 @@ export async function convertMessagesToCore(messages: ChatMessage[]) {
 
         const groupedDependents = reference?.dependents.reduce(
           (acc, d) => {
-            const accFile = acc[d.dependent.file.path];
+            const accFile = acc[d.dependent?.location?.path ?? ""];
 
             if (!accFile) {
-              acc[d.dependent.file.path] = [];
+              acc[d.dependent?.location?.path ?? ""] = [];
             }
 
             accFile?.push(d.dependent);
@@ -124,7 +119,7 @@ export async function convertMessagesToCore(messages: ChatMessage[]) {
         if (reference) {
           currentTextContent += `${reference.name}
 Type: ${reference.type}
-File: ${reference.file.path}
+File: ${reference.location?.path}
 ${
   groupedDependencies && Object.keys(groupedDependencies).length > 0
     ? `Dependencies: ${Object.entries(groupedDependencies)
@@ -144,7 +139,7 @@ ${
         .join(", ")}`
     : ""
 }
-${reference.declarationPackages.length > 0 ? `External Packages: ${reference.declarationPackages.map((d) => `Depends on these declarations: [${d.declarations?.join(", ")}] from package: ${d.package.name}`).join(", ")}` : ""}`;
+${reference.packages.length > 0 ? `External Packages: ${reference.packages.join(", ")}` : ""}`;
         }
       }
 

@@ -1,12 +1,6 @@
 import { Logger } from "@/lib/logger";
 import { and, db, eq, isNotNull } from "@weldr/db";
-import {
-  chats,
-  versionDeclarations,
-  versionFiles,
-  versionPackages,
-  versions,
-} from "@weldr/db/schema";
+import { chats, versionDeclarations, versions } from "@weldr/db/schema";
 
 export const initVersion = async ({
   projectId,
@@ -38,8 +32,6 @@ export const initVersion = async ({
         chatId: true,
       },
       with: {
-        files: true,
-        packages: true,
         declarations: true,
       },
     });
@@ -97,22 +89,6 @@ export const initVersion = async ({
         throw new Error("Version not found");
       }
 
-      logger.info(`Copying ${activeVersion.files.length} files...`);
-      await tx.insert(versionFiles).values(
-        activeVersion.files.map((file) => ({
-          versionId: version.id,
-          fileId: file.fileId,
-        })),
-      );
-
-      logger.info(`Copying ${activeVersion.packages.length} packages...`);
-      await tx.insert(versionPackages).values(
-        activeVersion.packages.map((pkg) => ({
-          versionId: version.id,
-          packageId: pkg.packageId,
-        })),
-      );
-
       logger.info(
         `Copying ${activeVersion.declarations.length} declarations...`,
       );
@@ -125,43 +101,6 @@ export const initVersion = async ({
 
       return version;
     }
-
-    // logger.info({ message: "Getting preset" });
-    // const preset = await tx.query.presets.findFirst({
-    //   where: eq(presets.type, "base"),
-    //   with: {
-    //     declarations: true,
-    //     files: true,
-    //     packages: true,
-    //   },
-    // });
-
-    // if (!preset) {
-    //   throw new Error("Preset not found");
-    // }
-
-    // const presetThemes = await tx.query.presetThemes.findMany();
-
-    // const randomNumber = Math.floor(Math.random() * presetThemes.length);
-
-    // const presetTheme = presetThemes[randomNumber];
-
-    // if (!presetTheme) {
-    //   throw new Error("Theme not found");
-    // }
-
-    // const [projectTheme] = await tx
-    //   .insert(themes)
-    //   .values({
-    //     data: presetTheme.data,
-    //     userId,
-    //     projectId,
-    //   })
-    //   .returning();
-
-    // if (!projectTheme) {
-    //   throw new Error("Project theme not found");
-    // }
 
     logger.info("Creating version chat...");
     const [versionChat] = await tx
@@ -193,52 +132,21 @@ export const initVersion = async ({
       throw new Error("Version not found");
     }
 
-    // logger.info({ message: "Inserting files" });
-    // const insertedFiles = await tx
-    //   .insert(files)
-    //   .values(
-    //     preset.files.map((file) => ({
-    //       userId,
-    //       projectId,
-    //       path: file.path,
-    //     })),
-    //   )
-    //   .onConflictDoNothing()
-    //   .returning();
+    // TODO: REQUIRES RE-IMPLEMENTATION
 
-    // logger.info({ message: "Inserting version files" });
-    // await tx.insert(versionFiles).values(
-    //   insertedFiles.map((file) => {
-    //     logger.info({
-    //       message: `${projectId}${file.path.startsWith("/") ? file.path : `/${file.path}`}`,
-    //     });
+    // logger.info({ message: "Getting preset" });
+    // const preset = await tx.query.presets.findFirst({
+    //   where: eq(presets.type, "base"),
+    //   with: {
+    //     declarations: true,
+    //     files: true,
+    //     packages: true,
+    //   },
+    // });
 
-    //     return {
-    //       versionId: version.id,
-    //       fileId: file.id,
-    //     };
-    //   }),
-    // );
-
-    // logger.info({ message: "Inserting packages" });
-    // const insertedPkgs = await tx
-    //   .insert(packages)
-    //   .values(
-    //     preset.packages.map((pkg) => ({
-    //       name: pkg.name,
-    //       type: pkg.type,
-    //       version: pkg.version,
-    //       projectId,
-    //     })),
-    //   )
-    //   .returning();
-
-    // await tx.insert(versionPackages).values(
-    //   insertedPkgs.map((pkg) => ({
-    //     versionId: version.id,
-    //     packageId: pkg.id,
-    //   })),
-    // );
+    // if (!preset) {
+    //   throw new Error("Preset not found");
+    // }
 
     // logger.info({ message: "Inserting declarations" });
     // const insertedDeclarations = await tx
