@@ -63,7 +63,7 @@ const Component = React.forwardRef<HTMLElement, ComponentProps>(
 
 ### Styling Organization
 - `src/styles/globals.css` - Global styles and CSS variables
-- `src/styles/flow-builder.css` - Specialized component styles
+- `src/styles/canvas.css` - Specialized component styles
 - Use Tailwind classes primarily
 - Custom CSS only when necessary
 

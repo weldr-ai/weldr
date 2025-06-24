@@ -30,7 +30,7 @@ import { useTheme } from "next-themes";
 
 import { useUIStore } from "@/lib/store";
 import type { RouterOutputs } from "@weldr/api";
-import "@weldr/ui/styles/flow-builder.css";
+import "@weldr/ui/styles/canvas.css";
 import { Chat } from "../chat";
 import { Placeholder } from "./placeholder";
 

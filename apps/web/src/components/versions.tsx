@@ -48,7 +48,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
-import "@weldr/ui/styles/flow-builder.css";
+import "@weldr/ui/styles/canvas.css";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 
