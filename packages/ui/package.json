@@ -5,7 +5,7 @@
   "type": "module",
   "exports": {
     "./styles/globals.css": "./src/styles/globals.css",
-    "./styles/flow-builder.css": "./src/styles/flow-builder.css",
+    "./styles/canvas.css": "./src/styles/canvas.css",
     "./postcss.config": "./postcss.config.mjs",
     "./lib/*": "./src/lib/*.tsx",
     "./components/*": "./src/components/*.tsx",
