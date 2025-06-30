@@ -1,33 +1,6 @@
 import { z } from "zod";
-import { componentSchema } from "./component";
-import { endpointSchema } from "./endpoint";
-import { functionSchema } from "./function";
-import { modelSchema } from "./model";
-import { otherSchema } from "./other";
-
-export const declarationTypeSchema = z.enum([
-  "endpoint",
-  "function",
-  "model",
-  "component",
-  "other",
-]);
-
-export const declarationSpecsV1Schema = z
-  .discriminatedUnion("type", [
-    endpointSchema.describe("An API endpoint defined using OpenAPI"),
-    functionSchema,
-    modelSchema.describe("A database table"),
-    componentSchema.describe("A UI component like a page, layout, etc."),
-    otherSchema.describe(
-      "Any other declaration like a type, validation schema, etc.",
-    ),
-  ])
-  .describe("The data of the declaration");
+import { declarationSpecsV1Schema } from "./v1";
 
 export const declarationSpecsSchema = z.discriminatedUnion("version", [
-  z.object({
-    version: z.literal("v1").describe("MUST always be v1"),
-    data: declarationSpecsV1Schema,
-  }),
+  declarationSpecsV1Schema,
 ]);

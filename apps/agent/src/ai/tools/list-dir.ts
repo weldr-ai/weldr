@@ -9,10 +9,6 @@ export const listDirTool = createTool({
   description: "Displays a list of files and directories in a specified path.",
   whenToUse:
     "When you need to explore the file system and understand the directory structure.",
-  example: `<list_dir>
-  <path>src</path>
-  <level>3</level>
-</list_dir>`,
   inputSchema: z.object({
     path: z
       .string()

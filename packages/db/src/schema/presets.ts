@@ -1,5 +1,6 @@
 import { nanoid } from "@weldr/shared/nanoid";
-import type { DeclarationSpecs, Theme } from "@weldr/shared/types";
+import type { Theme } from "@weldr/shared/types";
+import type { DeclarationData } from "@weldr/shared/types/declarations";
 import { relations } from "drizzle-orm";
 import {
   jsonb,
@@ -10,7 +11,6 @@ import {
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
-import { declarationTypes } from "./shared-enums";
 
 interface InternalDependency {
   importPath?: string;
@@ -50,10 +50,9 @@ export const presetDeclarations = pgTable(
   "preset_declarations",
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
-    type: declarationTypes("type").notNull(),
     name: text("name").notNull(),
     file: text("file").notNull(),
-    specs: jsonb().$type<DeclarationSpecs>(),
+    data: jsonb().$type<DeclarationData>(),
     dependencies: jsonb().$type<DeclarationDependencies>(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")

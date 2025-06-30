@@ -12,5 +12,6 @@ export * from "./read-file";
 export * from "./reapply";
 export * from "./remove-packages";
 export * from "./request-integration-configuration";
+export * from "./search-codebase";
 export * from "./upgrade-project";
 export * from "./write-file";

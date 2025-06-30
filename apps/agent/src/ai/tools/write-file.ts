@@ -11,14 +11,6 @@ export const writeFileTool = createTool({
     "Create a new file or overwrite an existing file with the specified content.",
   whenToUse:
     "When you need to create a new file or completely replace the content of an existing file.",
-  example: `<write_file>
-  <file_path>src/components/Button.tsx</file_path>
-  <content>import React from 'react';
-
-export const Button = () => {
-  return <button>Click me</button>;
-};</content>
-</write_file>`,
   inputSchema: z.object({
     filePath: z
       .string()

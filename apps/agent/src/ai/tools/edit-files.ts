@@ -16,26 +16,6 @@ export const editFileTool = createTool({
     "Use this tool to propose an edit to an existing file.\n\nThis will be read by a less intelligent model, which will quickly apply the edit. You should make it clear what the edit is, while also minimizing the unchanged code you write.\nWhen writing the edit, you should specify each edit in sequence, with the special comment // ... existing code ... to represent unchanged code in between edited lines.\n\nYou should bias towards repeating as few lines of the original file as possible to convey the change.\nNEVER show unmodified code in the edit, unless sufficient context of unchanged lines around the code you're editing is needed to resolve ambiguity.\nIf you plan on deleting a section, you must provide surrounding context to indicate the deletion.\nDO NOT omit spans of pre-existing code without using the // ... existing code ... comment to indicate its absence.\n\nYou should specify the following arguments before the others: [target_file]",
   whenToUse:
     "When you need to modify the contents of an existing file by making specific edits.",
-  example: `<edit_file>
-  <target_file>src/components/Button.tsx</target_file>
-  <edit>
-const Button = ({ children, onClick }) => {
-  // ... existing code ...
-
-  const handleClick = (e) => {
-    e.preventDefault();
-    onClick?.(e);
-  };
-
-  return (
-    <button onClick={handleClick}>
-      {children}
-    </button>
-  );
-  // ... existing code ...
-};
-  </edit>
-</edit_file>`,
   inputSchema: z.object({
     targetFile: z
       .string()

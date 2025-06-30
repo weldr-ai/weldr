@@ -1,8 +1,12 @@
 import { z } from "zod";
 
-export const modelSchema = z.object({
-  type: z.literal("model"),
-  name: z.string().describe("The name of the table"),
+export const dbModelDeclarationSpecsSchema = z.object({
+  type: z.literal("db-model"),
+  name: z
+    .string()
+    .describe(
+      "The name of the table in the database. Must be lowercase, snake_case, and plural (e.g. users, posts)",
+    ),
   columns: z
     .object({
       name: z.string().describe("The name of the column"),

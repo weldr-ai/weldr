@@ -1,5 +1,6 @@
 import type { WorkflowContext } from "@/workflow/context";
 import type { z } from "zod";
+import { ZodXml } from "./zod-xml";
 
 export type ToolConfig<
   TName extends string,
@@ -9,7 +10,6 @@ export type ToolConfig<
   name: TName;
   description: string;
   whenToUse: string;
-  example: string;
   inputSchema: TArgs;
   outputSchema?: z.ZodSchema;
   execute: (params: {
@@ -39,8 +39,7 @@ export function createTool<
     name: config.name,
     description: config.description,
     whenToUse: config.whenToUse,
-    example: config.example,
-    parameters: config.inputSchema,
+    parameters: new ZodXml(config.inputSchema),
     outputSchema: config.outputSchema,
     execute: config.execute,
   });

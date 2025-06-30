@@ -290,6 +290,7 @@ export const projectsRouter = {
                   with: {
                     messages: {
                       orderBy: (messages, { asc }) => [asc(messages.createdAt)],
+                      where: eq(chatMessages.visibility, "public"),
                       with: {
                         attachments: {
                           columns: {
@@ -309,8 +310,14 @@ export const projectsRouter = {
                 declarations: {
                   with: {
                     declaration: {
+                      columns: {
+                        id: true,
+                        specs: true,
+                        nodeId: true,
+                        progress: true,
+                      },
                       with: {
-                        canvasNode: true,
+                        node: true,
                         dependencies: true,
                       },
                     },
@@ -367,17 +374,13 @@ export const projectsRouter = {
           version: (typeof project.versions)[number],
         ) => {
           const declarations = version.declarations
-            .filter(
-              (declaration) =>
-                declaration.declaration.canvasNode &&
-                declaration.declaration.type !== "other",
-            )
+            .filter((declaration) => declaration.declaration.node)
             .map((declaration) => declaration.declaration);
 
           const declarationToCanvasNodeMap = new Map(
             declarations.map((declaration) => [
               declaration.id,
-              declaration.canvasNode?.id,
+              declaration.node?.id,
             ]),
           );
 

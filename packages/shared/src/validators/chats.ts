@@ -25,36 +25,29 @@ export const filePartSchema = z.object({
   mimeType: z.string(),
 });
 
-export const functionReferencePartSchema = z.object({
-  type: z.literal("reference:function"),
-  id: z.string().describe("The ID of the function"),
-  name: z.string().describe("The name of the function"),
+export const dbModelReferencePartSchema = z.object({
+  type: z.literal("reference:db-model"),
+  id: z.string().describe("The ID of the db model"),
+  name: z.string().describe("The name of the db model"),
 });
 
-export const modelReferencePartSchema = z.object({
-  type: z.literal("reference:model"),
-  id: z.string().describe("The ID of the model"),
-  name: z.string().describe("The name of the model"),
-});
-
-export const componentReferencePartSchema = z.object({
-  type: z.literal("reference:component"),
-  id: z.string().describe("The ID of the component"),
-  name: z.string().describe("The name of the component"),
-  subtype: z.enum(["page", "reusable"]),
+export const pageReferencePartSchema = z.object({
+  type: z.literal("reference:page"),
+  id: z.string().describe("The ID of the page"),
+  name: z.string().describe("The name of the page"),
 });
 
 export const endpointReferencePartSchema = z.object({
   type: z.literal("reference:endpoint"),
   id: z.string().describe("The ID of the endpoint"),
-  name: z.string().describe("The name of the endpoint"),
+  method: z.string().describe("The method of the endpoint"),
+  path: z.string().describe("The path of the endpoint"),
 });
 
 export const referencePartSchema = z.discriminatedUnion("type", [
-  functionReferencePartSchema,
-  modelReferencePartSchema,
-  componentReferencePartSchema,
   endpointReferencePartSchema,
+  dbModelReferencePartSchema,
+  pageReferencePartSchema,
 ]);
 
 export const reasoningPartSchema = z.object({
@@ -91,9 +84,8 @@ export const userMessageContentSchema = z.discriminatedUnion("type", [
   textPartSchema,
   imagePartSchema,
   filePartSchema,
-  functionReferencePartSchema,
-  modelReferencePartSchema,
-  componentReferencePartSchema,
+  dbModelReferencePartSchema,
+  pageReferencePartSchema,
   endpointReferencePartSchema,
 ]);
 
@@ -102,6 +94,46 @@ export const assistantMessageContentSchema = z.discriminatedUnion("type", [
   reasoningPartSchema,
   redactedReasoningPartSchema,
   toolCallPartSchema,
+]);
+
+// ===========================================================================
+// AI Metadata Schemas
+// ===========================================================================
+
+export const baseAiMetadataSchema = z.object({
+  inputTokens: z.number(),
+  outputTokens: z.number(),
+  totalTokens: z.number(),
+  inputCost: z.number(),
+  outputCost: z.number(),
+  totalCost: z.number(),
+  inputTokensPrice: z.number(),
+  outputTokensPrice: z.number(),
+  inputImagesPrice: z.number().nullable(),
+  finishReason: z.enum([
+    "stop",
+    "length",
+    "content-filter",
+    "tool-calls",
+    "error",
+    "other",
+    "unknown",
+  ]),
+});
+
+export const aiMetadataSchema = z.discriminatedUnion("provider", [
+  baseAiMetadataSchema.extend({
+    provider: z.literal("google"),
+    model: z.enum(["gemini-2.5-pro", "gemini-2.5-flash"]),
+  }),
+  baseAiMetadataSchema.extend({
+    provider: z.literal("openai"),
+    model: z.enum(["gpt-4.1", "gpt-image-1"]),
+  }),
+  baseAiMetadataSchema.extend({
+    provider: z.literal("anthropic"),
+    model: z.enum(["claude-sonnet-4", "claude-opus-4"]),
+  }),
 ]);
 
 // ===========================================================================
@@ -144,6 +176,7 @@ export const userMessageSchema = baseMessageSchema.extend({
 export const assistantMessageSchema = baseMessageSchema.extend({
   role: z.literal("assistant"),
   content: assistantMessageContentSchema.array(),
+  metadata: aiMetadataSchema.optional(),
   version: z
     .object({
       id: z.string(),
@@ -175,6 +208,7 @@ export const addMessageItemSchema = z.discriminatedUnion("role", [
     visibility: z.enum(["public", "internal"]),
     role: z.literal("assistant"),
     content: assistantMessageContentSchema.array(),
+    metadata: aiMetadataSchema,
     createdAt: z.date().optional(),
   }),
   z.object({

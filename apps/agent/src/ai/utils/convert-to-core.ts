@@ -2,6 +2,7 @@ import { db, eq } from "@weldr/db";
 import { declarations } from "@weldr/db/schema";
 import type { ChatMessage } from "@weldr/shared/types";
 import type { CoreMessage, ToolContent } from "ai";
+import { formatDeclarationSpecs } from "./formetters";
 
 export async function convertMessagesToCore(messages: ChatMessage[]) {
   const result: CoreMessage[] = [];
@@ -46,100 +47,20 @@ export async function convertMessagesToCore(messages: ChatMessage[]) {
       }
 
       if (
-        item.type === "reference:function" ||
-        item.type === "reference:model" ||
-        item.type === "reference:component" ||
+        item.type === "reference:db-model" ||
+        item.type === "reference:page" ||
         item.type === "reference:endpoint"
       ) {
         const reference = await db.query.declarations.findFirst({
           where: eq(declarations.id, item.id),
-          with: {
-            location: true,
-            dependents: {
-              with: {
-                dependent: {
-                  with: {
-                    location: true,
-                  },
-                },
-              },
-            },
-            dependencies: {
-              with: {
-                dependency: {
-                  with: {
-                    location: true,
-                  },
-                },
-              },
-            },
-          },
         });
-
-        const groupedDependencies = reference?.dependencies.reduce(
-          (acc, d) => {
-            const accFile = acc[d.dependency?.location?.path ?? ""];
-
-            if (!accFile) {
-              acc[d.dependency?.location?.path ?? ""] = [];
-            }
-
-            accFile?.push(d.dependency);
-
-            return acc;
-          },
-          {} as Record<
-            string,
-            (typeof reference.dependencies)[number]["dependency"][]
-          >,
-        );
-
-        const groupedDependents = reference?.dependents.reduce(
-          (acc, d) => {
-            const accFile = acc[d.dependent?.location?.path ?? ""];
-
-            if (!accFile) {
-              acc[d.dependent?.location?.path ?? ""] = [];
-            }
-
-            accFile?.push(d.dependent);
-
-            return acc;
-          },
-          {} as Record<
-            string,
-            (typeof reference.dependents)[number]["dependent"][]
-          >,
-        );
 
         if (!reference) {
           continue;
         }
 
         if (reference) {
-          currentTextContent += `${reference.name}
-Type: ${reference.type}
-File: ${reference.location?.path}
-${
-  groupedDependencies && Object.keys(groupedDependencies).length > 0
-    ? `Dependencies: ${Object.entries(groupedDependencies)
-        .map(
-          ([f, ds]) =>
-            `From file: ${f} => ${ds?.map((d) => d.name).join(", ")}`,
-        )
-        .join(", ")}`
-    : ""
-}
-${
-  groupedDependents && Object.keys(groupedDependents).length > 0
-    ? `Dependents: ${Object.entries(groupedDependents)
-        .map(
-          ([f, ds]) => `To file: ${f} => ${ds?.map((d) => d.name).join(", ")}`,
-        )
-        .join(", ")}`
-    : ""
-}
-${reference.packages.length > 0 ? `External Packages: ${reference.packages.join(", ")}` : ""}`;
+          currentTextContent += formatDeclarationSpecs(reference);
         }
       }
 

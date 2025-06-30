@@ -4,6 +4,7 @@ import type { projects } from "@weldr/db/schema";
 
 export const generalCoder = async (
   project: typeof projects.$inferSelect,
+  versionContext: string,
   toolSetMarkdown?: string,
 ) => {
   const projectContext = await getProjectContext(project);
@@ -64,9 +65,13 @@ ${
   ${codingGuidelines}
 </coding_guidelines>
 
-<context>
+<project_context>
   ${projectContext}
-</context>
+</project_context>
+
+<version_context>
+  ${versionContext}
+</version_context>
 
 <mandatory_tool_usage_conditions>
   **YOU MUST USE TOOLS FOR ALL DEVELOPMENT WORK:**

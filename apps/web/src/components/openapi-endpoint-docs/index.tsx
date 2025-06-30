@@ -51,12 +51,12 @@ function SchemaField({
     (schema.type === "array" && schema.items);
 
   return (
-    <div className="flex items-baseline border-b py-2 last:border-0">
+    <div className="flex items-baseline border-b py-1 last:border-0">
       <div className="flex-1">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           <div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs">{name}</span>
+            <div className="flex items-baseline gap-1">
+              <span className="font-medium text-xs">{name}</span>
               <span className="text-muted-foreground text-xs">
                 {renderType()}
               </span>
@@ -71,25 +71,26 @@ function SchemaField({
             )}
           </div>
           {hasChildren && (
-            <div className="flex items-center justify-start gap-2 text-xs">
+            <div className="flex items-center justify-start gap-1 text-xs">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="rounded-full text-muted-foreground hover:text-foreground"
+                className="h-6 rounded-full px-2 text-muted-foreground text-xs hover:text-foreground"
               >
                 {isExpanded ? (
                   <MinusIcon className="mr-1 size-3" />
                 ) : (
                   <PlusIcon className="mr-1 size-3" />
                 )}
-                {isExpanded ? "Hide" : "Show"} Child Attributes
+                {isExpanded ? "Hide" : "Show"}
               </Button>
             </div>
           )}
         </div>
 
         {(schema.type === "object" || schema.type === "array") && (
-          <div className="mt-2 space-y-2">
+          <div className="mt-1 space-y-1">
             {isExpanded &&
               schema.type === "object" &&
               schema.properties &&
@@ -123,7 +124,7 @@ export default function OpenApiEndpointDocs({
 }: OpenApiEndpointDocsProps) {
   if (!spec) {
     return (
-      <div className="flex h-[calc(100dvh-432px)] items-center justify-center text-center text-muted-foreground text-xs">
+      <div className="flex h-32 items-center justify-center text-center text-muted-foreground text-xs">
         Chat with Weldr to generate the endpoint
       </div>
     );
@@ -172,12 +173,12 @@ export default function OpenApiEndpointDocs({
   return (
     <div className="w-full space-y-2">
       {/* Header */}
-      <div className="flex flex-col items-start gap-2">
+      <div className="flex flex-col items-start gap-1">
         {/* Method and Path */}
         <div className="flex w-full items-center justify-between">
           <div className="flex items-center space-x-2">
             <Badge
-              className={cn("px-1.5 py-0.5 font-semibold text-xs uppercase", {
+              className={cn("font-bold uppercase", {
                 "bg-primary/30 text-primary hover:bg-primary/30":
                   method === "get",
                 "bg-success/30 text-success hover:bg-success/30":
@@ -190,7 +191,7 @@ export default function OpenApiEndpointDocs({
             >
               {method}
             </Badge>
-            <span className="text-xs">{path}</span>
+            <span className="font-mono text-xs">{path}</span>
           </div>
         </div>
         {operation.description && (
@@ -201,41 +202,42 @@ export default function OpenApiEndpointDocs({
         {operation.tags && operation.tags.length > 0 && (
           <div className="flex gap-1">
             {operation.tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex h-full items-center justify-center rounded-md border px-1.5 py-0.5 font-semibold text-[10px]"
-              >
+              <Badge key={tag} variant="outline">
                 {tag}
-              </span>
+              </Badge>
             ))}
           </div>
         )}
       </div>
 
       {hasContent ? (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {/* Parameters */}
           {hasParameters && (
             <div>
-              <span className="font-semibold">Parameters</span>
+              <span className="font-semibold text-xs">Parameters</span>
               <Accordion type="multiple" className="w-full">
                 {Object.entries(groupedParameters || {}).map(
                   ([location, params]) => (
-                    <AccordionItem key={location} value={location}>
-                      <AccordionTrigger className="py-2 text-xs hover:no-underline">
+                    <AccordionItem
+                      key={location}
+                      value={location}
+                      className="border-b-0"
+                    >
+                      <AccordionTrigger className="py-1 text-xs hover:no-underline">
                         {location.charAt(0).toUpperCase() + location.slice(1)}{" "}
                         Parameters
                       </AccordionTrigger>
-                      <AccordionContent className="p-0">
-                        <div className="space-y-2">
+                      <AccordionContent className="p-0 pb-1">
+                        <div className="space-y-1">
                           {params.map((parameter) => (
                             <div
                               key={parameter.name}
-                              className="flex items-baseline border-b py-2 last:border-0"
+                              className="flex items-baseline border-b py-1 last:border-0"
                             >
                               <div className="flex-1">
-                                <div className="flex items-baseline gap-2">
-                                  <span className="text-xs">
+                                <div className="flex items-baseline gap-1">
+                                  <span className="font-medium text-xs">
                                     {parameter.name}
                                   </span>
                                   <span className="text-muted-foreground text-xs">
@@ -272,8 +274,8 @@ export default function OpenApiEndpointDocs({
           {parsedRequestBody && (
             <div>
               <div className="flex items-center justify-between">
-                <span className="font-semibold">Body</span>
-                <span className="items-center justify-center rounded-full border px-1.5 py-0.5 text-[10px]">
+                <span className="font-semibold text-xs">Body</span>
+                <span className="items-center justify-center rounded-full border px-1 py-0.5 text-xs">
                   application/json
                 </span>
               </div>
@@ -290,9 +292,9 @@ export default function OpenApiEndpointDocs({
                 ),
               )}
               {requestBodyExample && (
-                <div className="mt-2">
-                  <span className="font-semibold text-sm">Example:</span>
-                  <pre className="mt-2 rounded-lg bg-muted p-4 text-xs">
+                <div className="mt-1">
+                  <span className="font-semibold text-xs">Example:</span>
+                  <pre className="mt-1 rounded-lg bg-muted p-2 text-xs">
                     {JSON.stringify(requestBodyExample, null, 2)}
                   </pre>
                 </div>
@@ -303,7 +305,7 @@ export default function OpenApiEndpointDocs({
           {/* Responses */}
           {hasResponses && (
             <div>
-              <span className="font-semibold">Responses</span>
+              <span className="font-semibold text-xs">Responses</span>
               <Accordion type="multiple">
                 {Object.entries(operation.responses).map(([code, response]) => {
                   const responseSchema = getResponseSchema(operation, code);
@@ -318,15 +320,15 @@ export default function OpenApiEndpointDocs({
                     <AccordionItem
                       key={code}
                       value={code}
-                      className="last:border-0"
+                      className="border-b-0 last:border-0"
                     >
-                      <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                      <AccordionTrigger className="py-1 text-xs hover:no-underline">
                         <div className="flex items-center space-x-2 text-xs">
-                          <span>{code}</span>
+                          <span className="font-medium">{code}</span>
                           <span>{responseObj.description}</span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="p-0">
+                      <AccordionContent className="p-0 pb-1">
                         <p className="text-muted-foreground text-xs">
                           {responseObj.description}
                         </p>
@@ -348,10 +350,10 @@ export default function OpenApiEndpointDocs({
                         </div>
                         {example && (
                           <div>
-                            <span className="font-semibold text-sm">
+                            <span className="font-semibold text-xs">
                               Example:
                             </span>
-                            <pre className="mt-2 rounded-lg bg-muted p-4 text-xs">
+                            <pre className="mt-1 rounded-lg bg-muted p-2 text-xs">
                               {JSON.stringify(example, null, 2)}
                             </pre>
                           </div>
@@ -367,19 +369,17 @@ export default function OpenApiEndpointDocs({
           {/* Security */}
           {hasSecurity && (
             <div>
-              <span className="font-semibold">Security</span>
-              <div className="mt-2 flex flex-col gap-2">
+              <span className="font-semibold text-xs">Security</span>
+              <div className="mt-1 flex flex-col gap-1">
                 {operation.security?.map((security) => (
                   <div
                     key={nanoid()}
-                    className="flex flex-col gap-2 rounded-lg border bg-muted/50 p-3"
+                    className="flex flex-col gap-1 rounded-lg border bg-muted/50 p-2"
                   >
                     {Object.entries(security).map(([scheme, scopes]) => (
                       <div key={scheme} className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            {scheme}
-                          </Badge>
+                        <div className="flex items-center gap-1">
+                          <Badge variant="outline">{scheme}</Badge>
                           <span className="text-muted-foreground text-xs">
                             {scheme === "bearerAuth"
                               ? "Bearer Token Authentication"
@@ -404,7 +404,7 @@ export default function OpenApiEndpointDocs({
           )}
         </div>
       ) : (
-        <div className="py-8 text-center text-muted-foreground">
+        <div className="py-4 text-center text-muted-foreground text-xs">
           This endpoint has not been fully defined yet
         </div>
       )}

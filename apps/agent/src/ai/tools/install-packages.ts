@@ -8,14 +8,8 @@ export const installPackagesTool = createTool({
   name: "install_packages",
   description: "Use to install node packages",
   whenToUse: "When you need to install node packages.",
-  example: `<install_packages>
-  <packages>
-    <package>react</package>
-    <package>react-dom</package>
-  </packages>
-</install_packages>`,
   inputSchema: z.object({
-    package: z
+    packages: z
       .object({
         type: z.enum(["runtime", "development"]),
         name: z.string(),
@@ -54,13 +48,13 @@ export const installPackagesTool = createTool({
 
     logger.info("Installing packages", {
       extra: {
-        packages: input.package.map((pkg) => pkg.name).join(", "),
+        packages: input.packages.map((pkg) => pkg.name).join(", "),
       },
     });
 
     const { stderr, exitCode, success } = await runCommand(
       "bun",
-      ["add", ...input.package.map((pkg) => pkg.name)],
+      ["add", ...input.packages.map((pkg) => pkg.name)],
       {
         cwd: WORKSPACE_DIR,
       },
@@ -83,7 +77,7 @@ export const installPackagesTool = createTool({
     // The caller of this tool is responsible for updating the database with the installed packages.
     return {
       success: true,
-      packages: input.package,
+      packages: input.packages,
     };
   },
 });

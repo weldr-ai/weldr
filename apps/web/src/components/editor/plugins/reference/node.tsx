@@ -39,13 +39,25 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   }
 
   exportJSON(): SerializedReferenceNode {
-    return {
-      type: this.__reference.type,
+    const base = {
       id: this.__reference.id,
-      name: this.__reference.name,
+      type: this.__reference.type,
       ...Object.fromEntries(
         Object.entries(this.__reference).filter(([key]) => key !== "type"),
       ),
+    };
+
+    if (this.__reference.type === "reference:endpoint") {
+      return {
+        ...base,
+        method: this.__reference.method,
+        path: this.__reference.path,
+      } as SerializedReferenceNode;
+    }
+
+    return {
+      ...base,
+      name: this.__reference.name,
     } as SerializedReferenceNode;
   }
 
@@ -56,6 +68,10 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   }
 
   getTextContent(): string {
+    if (this.__reference.type === "reference:endpoint") {
+      return `${this.__reference.method.toUpperCase()} ${this.__reference.path}`;
+    }
+
     return this.__reference.name;
   }
 

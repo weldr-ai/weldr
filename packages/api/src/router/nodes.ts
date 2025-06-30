@@ -1,15 +1,15 @@
 import { TRPCError } from "@trpc/server";
 import { eq } from "@weldr/db";
-import { canvasNodes } from "@weldr/db/schema";
+import { nodes } from "@weldr/db/schema";
 import { z } from "zod";
 import { protectedProcedure } from "../init";
 
-export const canvasNodeRouter = {
+export const nodesRouter = {
   byId: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const canvasNode = await ctx.db.query.canvasNodes.findFirst({
-        where: eq(canvasNodes.id, input.id),
+      const canvasNode = await ctx.db.query.nodes.findFirst({
+        where: eq(nodes.id, input.id),
       });
 
       if (!canvasNode) {
@@ -34,11 +34,11 @@ export const canvasNodeRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const canvasNode = await ctx.db
-        .update(canvasNodes)
+        .update(nodes)
         .set({
           position: input.payload.position,
         })
-        .where(eq(canvasNodes.id, input.where.id));
+        .where(eq(nodes.id, input.where.id));
 
       if (!canvasNode) {
         throw new TRPCError({

@@ -50,7 +50,7 @@ export function Chat({
   const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(null);
 
   const [isChatVisible, setIsChatVisible] = useState(
-    project.activeVersion.progress !== "succeeded",
+    project.activeVersion.status !== "completed",
   );
 
   const [eventSourceRef, setEventSourceRef] = useState<EventSource | null>(
@@ -68,40 +68,28 @@ export function Chat({
     latestVersion?.declarations?.reduce(
       (acc: z.infer<typeof referencePartSchema>[], declaration) => {
         switch (declaration.declaration.specs?.data.type) {
-          case "function": {
-            acc.push({
-              type: "reference:function",
-              id: declaration.declaration.id,
-              name: declaration.declaration.name,
-            });
-            break;
-          }
-          case "model": {
-            acc.push({
-              type: "reference:model",
-              id: declaration.declaration.id,
-              name: declaration.declaration.name,
-            });
-            break;
-          }
-          case "component": {
-            const subtype =
-              declaration.declaration.specs?.data.definition.subtype;
-            if (subtype === "page" || subtype === "reusable") {
-              acc.push({
-                type: "reference:component",
-                id: declaration.declaration.id,
-                name: declaration.declaration.name,
-                subtype,
-              });
-            }
-            break;
-          }
           case "endpoint": {
             acc.push({
               type: "reference:endpoint",
               id: declaration.declaration.id,
-              name: declaration.declaration.name,
+              method: declaration.declaration.specs.data.method,
+              path: declaration.declaration.specs.data.path,
+            });
+            break;
+          }
+          case "db-model": {
+            acc.push({
+              type: "reference:db-model",
+              id: declaration.declaration.id,
+              name: declaration.declaration.specs.data.name,
+            });
+            break;
+          }
+          case "page": {
+            acc.push({
+              type: "reference:page",
+              id: declaration.declaration.id,
+              name: declaration.declaration.specs.data.name,
             });
             break;
           }
@@ -116,7 +104,7 @@ export function Chat({
     ) ?? [];
 
   const [messages, setMessages] = useState<ChatMessage[]>(
-    version.progress === "succeeded" ? [] : version.chat.messages,
+    version.status === "completed" ? [] : version.chat.messages,
   );
   const [userMessageContent, setUserMessageContent] = useState<
     UserMessage["content"]
@@ -380,7 +368,7 @@ export function Chat({
 
       // Only retry if workflow is still active and we haven't exceeded max attempts
       if (
-        project.activeVersion.progress !== "succeeded" &&
+        project.activeVersion.status !== "completed" &&
         reconnectAttempts.current < maxReconnectAttempts
       ) {
         reconnectAttempts.current += 1;
@@ -405,7 +393,7 @@ export function Chat({
     return eventSource;
   }, [
     project.id,
-    project.activeVersion.progress,
+    project.activeVersion.status,
     getNodes,
     setNodes,
     updateNodeData,
@@ -431,10 +419,10 @@ export function Chat({
 
   // Auto-connect to SSE when component mounts if workflow is active
   useEffect(() => {
-    if (project.activeVersion.progress !== "succeeded" && !eventSourceRef) {
+    if (project.activeVersion.status !== "completed" && !eventSourceRef) {
       connectToEventStream();
     }
-  }, [project.activeVersion.progress]);
+  }, [project.activeVersion.status]);
 
   // Cleanup SSE connection and timeouts on unmount
   useEffect(() => {

@@ -1,8 +1,8 @@
-import { declarationSpecsV1Schema } from "@weldr/shared/validators/declarations/index";
+import { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import { z } from "zod";
 
 export const declarationSpecsWithDependenciesSchema =
-  declarationSpecsV1Schema.and(
+  declarationSpecsSchema.and(
     z.object({
       dependencies: z
         .object({
@@ -38,21 +38,6 @@ export const declarationSpecsWithDependenciesSchema =
         .describe(
           "A list of dependencies for the declaration. Internal dependencies are files in the project, and external dependencies are npm packages.",
         ),
-      isNode: z.boolean().describe(
-        `Whether the declaration is a node.
-
-  What are the nodes?
-  - All endpoints and pages are nodes by default.
-  - UI components that are visual are nodes.
-  - All models are nodes by default.
-  - Functions that are DIRECTLY part of the business logic are nodes.
-
-  What are NOT nodes?
-  - Other declarations are not nodes.
-  - Layouts ARE NOT nodes.
-  - Components that are not visual are not nodes.
-  - Functions that are not part of the business logic are not nodes.`,
-      ),
     }),
   );
 

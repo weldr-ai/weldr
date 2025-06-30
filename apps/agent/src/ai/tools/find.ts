@@ -8,12 +8,6 @@ export const findTool = createTool({
   name: "find",
   description: "Finds files based on a search query.",
   whenToUse: "When you need to find files in the project.",
-  example: `<find>
-  <query>src/server</query>
-  <include_directories>true</include_directories>
-  <include_files>true</include_files>
-  <max_results>20</max_results>
-</find>`,
   inputSchema: z.object({
     query: z.string().describe("The substring of the path to search for."),
     includeDirectories: z

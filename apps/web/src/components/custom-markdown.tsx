@@ -23,15 +23,14 @@ export function CustomMarkdown({
     }
 
     let text = "";
-    const references: Array<Omit<ReferencePart, "type">> = [];
+    const references: Array<ReferencePart> = [];
 
     for (const item of content) {
       if (item.type === "text") {
         text += item.text;
       } else if (
-        item.type === "reference:component" ||
-        item.type === "reference:function" ||
-        item.type === "reference:model" ||
+        item.type === "reference:db-model" ||
+        item.type === "reference:page" ||
         item.type === "reference:endpoint"
       ) {
         const placeholder = `:::REF${references.length}:::`;
@@ -48,7 +47,11 @@ export function CustomMarkdown({
     references.forEach((ref, index) => {
       const placeholder = `:::REF${index}:::`;
       // Sanitize the reference name to prevent XSS
-      const sanitizedName = DOMPurify.sanitize(ref.name);
+      const sanitizedName = DOMPurify.sanitize(
+        ref.type === "reference:endpoint"
+          ? `${ref.method.toUpperCase()} ${ref.path}`
+          : ref.name,
+      );
       processedContent = processedContent
         .split(placeholder)
         .join(`[REF${sanitizedName}]`);
@@ -65,7 +68,12 @@ export function CustomMarkdown({
         if (refMatch) {
           const refName = refMatch[1];
           const refIndex = references.findIndex(
-            (ref) => DOMPurify.sanitize(ref.name) === refName,
+            (ref) =>
+              DOMPurify.sanitize(
+                ref.type === "reference:endpoint"
+                  ? `${ref.method.toUpperCase()} ${ref.path}`
+                  : ref.name,
+              ) === refName,
           );
           if (refIndex === -1) return part;
 
