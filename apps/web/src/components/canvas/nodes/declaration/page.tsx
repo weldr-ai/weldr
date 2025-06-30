@@ -1,3 +1,4 @@
+import { SitePreviewDialog } from "@/components/site-preview-dialog";
 import { useActiveVersion } from "@/lib/context/active-version";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
@@ -19,7 +20,6 @@ import {
   ShieldXIcon,
 } from "lucide-react";
 import { memo, useMemo, useState } from "react";
-import { BrowserPreviewDialog } from "../components/browser-preview-dialog";
 import { ProtectedBadge } from "../components/protected-badge";
 
 interface PageNodeHeaderProps {
@@ -67,7 +67,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
     Record<string, string>
   >({});
   const [showPreview, setShowPreview] = useState(false);
-  const [browserDialogOpen, setBrowserDialogOpen] = useState(false);
+  const [sitePreviewDialogOpen, setSitePreviewDialogOpen] = useState(false);
 
   if (!declaration.specs || declaration.specs.data.type !== "page") {
     return null;
@@ -183,7 +183,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
               variant="ghost"
               size="icon"
               className="size-6"
-              onClick={() => setBrowserDialogOpen(true)}
+              onClick={() => setSitePreviewDialogOpen(true)}
             >
               <ExpandIcon className="size-3" />
             </Button>
@@ -321,11 +321,12 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
       />
 
       {isPreviewReady && (
-        <BrowserPreviewDialog
-          open={browserDialogOpen}
-          onOpenChange={setBrowserDialogOpen}
+        <SitePreviewDialog
+          open={sitePreviewDialogOpen}
+          onOpenChange={setSitePreviewDialogOpen}
           title={pageData.name}
           url={previewUrl}
+          browserHeader={false}
           isProtected={pageData.protected ?? false}
         />
       )}

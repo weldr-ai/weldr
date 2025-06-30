@@ -50,8 +50,8 @@ export function ProjectSettings({
   return (
     <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" className="size-8 dark:bg-muted">
-          <SettingsIcon className="size-4" />
+        <Button variant="outline" size="icon" className="size-7 dark:bg-muted">
+          <SettingsIcon className="size-3.5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="flex min-h-[calc(100vh-50px)] min-w-[calc(100vw-50px)] flex-col">

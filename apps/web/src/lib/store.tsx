@@ -27,10 +27,6 @@ interface UIStoreContextType {
   commandCenterView: CommandCenterView;
   setCommandCenterView: (view: CommandCenterView) => void;
 
-  // Project View
-  projectView: "preview" | "canvas" | "versions";
-  setProjectView: (view: "preview" | "canvas" | "versions") => void;
-
   // Canvas
   showCanvasEdges: boolean;
   toggleCanvasEdges: () => void;
@@ -72,9 +68,6 @@ export function UIStoreProvider({
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
   const [commandCenterView, setCommandCenterView] =
     useState<CommandCenterView>("create");
-  const [projectView, setProjectView] = useState<
-    "preview" | "canvas" | "versions"
-  >("canvas");
   const [showCanvasEdges, setShowCanvasEdges] = useState(true);
   const [isCanvasInitialized, setIsCanvasInitialized] = useState(false);
 
@@ -116,10 +109,6 @@ export function UIStoreProvider({
         setCommandCenterOpen,
         commandCenterView,
         setCommandCenterView,
-
-        // Project View
-        projectView,
-        setProjectView,
 
         // Canvas
         showCanvasEdges,

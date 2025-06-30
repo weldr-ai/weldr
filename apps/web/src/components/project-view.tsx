@@ -4,14 +4,16 @@ import type { CanvasNode } from "@/types";
 import type { RouterOutputs } from "@weldr/api";
 
 import { Canvas } from "@/components/canvas";
-import { useUIStore } from "@/lib/store";
+import { useActiveVersion } from "@/lib/context/active-version";
 import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@weldr/ui/components/button";
 import type { Edge } from "@xyflow/react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect } from "react";
+import { EyeIcon } from "lucide-react";
+import { useState } from "react";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 import { ProjectSettings } from "./project-settings";
+import { SitePreviewDialog } from "./site-preview-dialog";
 
 export function ProjectView({
   project: _project,
@@ -24,62 +26,9 @@ export function ProjectView({
   initialEdges: Edge[];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { projectView, setProjectView } = useUIStore();
-
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (value === "preview") {
-        params.delete(name);
-      } else {
-        params.set(name, value);
-      }
-      return params.toString();
-    },
-    [searchParams],
-  );
-
-  useEffect(() => {
-    const initialView =
-      (searchParams.get("view") as "preview" | "canvas" | "versions") ??
-      "preview";
-    setProjectView(initialView);
-  }, [searchParams, setProjectView]);
-
-  useEffect(() => {
-    router.push(`${pathname}?${createQueryString("view", projectView)}`, {
-      scroll: false,
-    });
-  }, [projectView, router, pathname, createQueryString]);
-
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey) {
-        switch (e.key) {
-          case "1":
-            e.preventDefault();
-            setProjectView("preview");
-            break;
-          case "2":
-            e.preventDefault();
-            setProjectView("canvas");
-            break;
-          case "3":
-            e.preventDefault();
-            setProjectView("versions");
-            break;
-        }
-      }
-    };
-
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, [setProjectView]);
-
   const trpc = useTRPC();
+  const [sitePreviewDialogOpen, setSitePreviewDialogOpen] = useState(false);
+  const { activeVersion } = useActiveVersion();
 
   const { data: project } = useQuery(
     trpc.projects.byId.queryOptions(
@@ -104,29 +53,45 @@ export function ProjectView({
   );
 
   return (
-    <div className="flex size-full flex-col">
-      <div className="flex h-10 items-center justify-between border-b p-1.5">
-        <MainDropdownMenu />
-        <span className="font-medium text-sm">
-          {project.title ?? "Untitled Project"}
-        </span>
-        <div className="flex items-center gap-1">
-          <ProjectSettings
+    <>
+      <div className="flex size-full flex-col">
+        <div className="flex h-10 items-center justify-between border-b p-1.5">
+          <MainDropdownMenu />
+          <span className="font-medium text-sm">
+            {project.title ?? "Untitled Project"}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-7 dark:bg-muted"
+              disabled={activeVersion?.status !== "completed"}
+              onClick={() => setSitePreviewDialogOpen(true)}
+            >
+              <EyeIcon className="size-3.5" />
+            </Button>
+            <ProjectSettings
+              project={project}
+              integrationTemplates={integrationTemplates}
+              environmentVariables={env}
+            />
+          </div>
+        </div>
+        <div className="flex size-full">
+          <Canvas
+            initialNodes={initialNodes}
+            initialEdges={initialEdges}
             project={project}
             integrationTemplates={integrationTemplates}
             environmentVariables={env}
           />
         </div>
       </div>
-      <div className="flex size-full">
-        <Canvas
-          initialNodes={initialNodes}
-          initialEdges={initialEdges}
-          project={project}
-          integrationTemplates={integrationTemplates}
-          environmentVariables={env}
-        />
-      </div>
-    </div>
+      <SitePreviewDialog
+        open={sitePreviewDialogOpen}
+        onOpenChange={setSitePreviewDialogOpen}
+        title={project.title ?? "Untitled Project"}
+      />
+    </>
   );
 }
