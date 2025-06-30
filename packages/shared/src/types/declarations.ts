@@ -158,6 +158,7 @@ export interface DeclarationData {
   semanticInfo?: DeclarationSemanticInfo;
 }
 
+export type DeclarationProgress = "pending" | "in_progress" | "completed";
 export type DeclarationSpecs = z.infer<typeof declarationSpecsSchema>;
 export type DeclarationSpecsV1 = z.infer<typeof declarationSpecsV1Schema>;
 export type EndpointDeclarationSpecs = z.infer<

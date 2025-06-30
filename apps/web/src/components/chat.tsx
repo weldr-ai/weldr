@@ -315,36 +315,43 @@ export function Chat({
 
             break;
           }
-          // case "nodes": {
-          //   const nodes = getNodes();
-          //   const existingNode = nodes.find((n) => n.id === chunk.node.id);
+          case "node": {
+            const nodes = getNodes();
+            const existingNode = nodes.find((n) => n.id === chunk.nodeId);
 
-          //   if (existingNode) {
-          //     updateNodeData(existingNode.id, chunk.node);
-          //   } else {
-          //     if (!chunk.node.specs) {
-          //       throw new Error(
-          //         `[chat:${project.id}] No specs found for node ${chunk.node.id}`,
-          //       );
-          //     }
+            if (existingNode) {
+              updateNodeData(existingNode.id, {
+                ...existingNode.data,
+                specs: chunk.specs,
+                progress: chunk.progress,
+              });
+            } else {
+              if (!chunk.specs) {
+                throw new Error(
+                  `[chat:${project.id}] No specs found for node ${chunk.nodeId}`,
+                );
+              }
 
-          //     const newNode = {
-          //       id: chunk.node.id,
-          //       type: `declaration-${chunk.node.specs?.version}` as const,
-          //       position: chunk.node.canvasNode?.position ?? {
-          //         x: 0,
-          //         y: 0,
-          //       },
-          //       data: chunk.node,
-          //     };
+              const newNode = {
+                id: chunk.nodeId,
+                type: chunk.specs.data.type,
+                position: chunk.position,
+                data: {
+                  id: chunk.nodeId,
+                  specs: chunk.specs,
+                  progress: chunk.progress,
+                  nodeId: chunk.nodeId,
+                  node: chunk.node,
+                },
+              } satisfies CanvasNode;
 
-          //     setNodes((prevNodes: CanvasNode[]) => [
-          //       ...prevNodes,
-          //       newNode as CanvasNode,
-          //     ]);
-          //   }
-          //   break;
-          // }
+              setNodes((prevNodes: CanvasNode[]) => [
+                ...prevNodes,
+                newNode as CanvasNode,
+              ]);
+            }
+            break;
+          }
           case "end": {
             setPendingMessage(null);
             return;

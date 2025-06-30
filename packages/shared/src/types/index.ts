@@ -11,7 +11,7 @@ import type {
 } from "../validators/chats";
 import type { environmentVariableSchema } from "../validators/environment-variables";
 import type { dataTypeSchema } from "../validators/json-schema";
-import type { nodeTypeSchema } from "../validators/nodes";
+import type { nodeSchema, nodeTypeSchema } from "../validators/nodes";
 import type { openApiEndpointSpecSchema } from "../validators/openapi";
 import type { packageSchema } from "../validators/packages";
 import type {
@@ -20,6 +20,7 @@ import type {
 } from "../validators/projects";
 import type { taskDeclarationSchema, taskSchema } from "../validators/tasks";
 import type { themeDataSchema, themeSchema } from "../validators/themes";
+import type { DeclarationProgress, DeclarationSpecs } from "./declarations";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
 
@@ -42,6 +43,7 @@ export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;
 export type Package = z.infer<typeof packageSchema>;
 
 export type NodeType = z.infer<typeof nodeTypeSchema>;
+export type Node = z.infer<typeof nodeSchema>;
 
 export type Theme = z.infer<typeof themeSchema>;
 export type ThemeData = z.infer<typeof themeDataSchema>;
@@ -70,6 +72,15 @@ export type EndStreamableValue = {
   type: "end";
 };
 
+export type NodeStreamableValue = {
+  type: "node";
+  nodeId: string;
+  position: { x: number; y: number };
+  specs: DeclarationSpecs;
+  progress: DeclarationProgress;
+  node: Node;
+};
+
 export type ToolStreamableValue = {
   type: "tool";
   toolName: string;
@@ -95,19 +106,6 @@ export type WorkflowStepStreamableValue = {
   errorMessage?: string;
 };
 
-// Legacy coder type (deprecated, will be replaced by workflow types)
-export type CoderStreamableValue =
-  | {
-      id?: string;
-      type: "coder";
-      status: "initiated" | "coded" | "enriched" | "succeeded" | "failed";
-    }
-  | {
-      id?: string;
-      type: "coder";
-      status: "deployed";
-    };
-
 export type VersionStreamableValue = {
   id?: string;
   createdAt?: Date;
@@ -127,7 +125,7 @@ export type TStreamableValue =
   | ToolStreamableValue
   | WorkflowRunStreamableValue
   | WorkflowStepStreamableValue
-  | CoderStreamableValue // Legacy - will be removed
+  | NodeStreamableValue
   | EndStreamableValue;
 
 // SSE-specific event types

@@ -95,6 +95,25 @@ export const createDeclarations = async ({
         );
       }
 
+      // Stream node creation to client
+      try {
+        const streamWriter = global.sseConnections?.get(version.chatId);
+        if (streamWriter && createdDeclaration.specs) {
+          await streamWriter.write({
+            type: "node",
+            nodeId: canvasNode.id,
+            position: canvasNode.position,
+            specs: createdDeclaration.specs,
+            progress: createdDeclaration.progress,
+            node: canvasNode,
+          });
+        }
+      } catch (error) {
+        logger.warn("Failed to stream node creation", {
+          extra: { error, nodeId: canvasNode.id },
+        });
+      }
+
       declarationIds.set(declaration.id, createdDeclaration);
 
       for (const declarationIntegration of declaration.integrations ?? []) {
