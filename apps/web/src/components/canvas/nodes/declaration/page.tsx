@@ -18,24 +18,38 @@ import {
   SettingsIcon,
   ShieldCheckIcon,
   ShieldXIcon,
+  ZoomInIcon,
 } from "lucide-react";
 import { memo, useMemo, useState } from "react";
+import { SimpleExpandedCanvas } from "../../simple-expanded-canvas";
 import { ProtectedBadge } from "../components/protected-badge";
 
 interface PageNodeHeaderProps {
   name: string;
   protected: boolean;
   children?: React.ReactNode;
+  onExpand?: () => void;
 }
 
 const PageNodeHeader = memo(
-  ({ name, protected: isProtected, children }: PageNodeHeaderProps) => (
+  ({ name, protected: isProtected, children, onExpand }: PageNodeHeaderProps) => (
     <div className="-top-10 absolute right-0 left-0 z-20 flex h-8 items-center justify-between gap-2 rounded-md border bg-muted px-2 py-1 opacity-0 transition-all duration-200 group-hover:opacity-100">
       <div className="flex items-center gap-2">
         <span className="font-semibold text-primary text-xs">PAGE</span>
         <span className="font-medium text-sm">{name}</span>
       </div>
       <div className="flex items-center gap-1">
+        {onExpand && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6"
+            onClick={onExpand}
+            title="View dependencies"
+          >
+            <ZoomInIcon className="size-3" />
+          </Button>
+        )}
         {children}
         <ProtectedBadge protected={isProtected} />
       </div>
@@ -52,6 +66,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   const trpc = useTRPC();
   const { project } = useProject();
   const currentVersion = project?.currentVersion;
+  const [expandedCanvasOpen, setExpandedCanvasOpen] = useState(false);
 
   const { data: declaration } = useQuery(
     trpc.declarations.byId.queryOptions(
@@ -178,6 +193,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
         <PageNodeHeader
           name={pageData.name}
           protected={pageData.protected ?? false}
+          onExpand={() => setExpandedCanvasOpen(true)}
         >
           {isPreviewReady && (
             <Button
@@ -331,6 +347,12 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
           isProtected={pageData.protected ?? false}
         />
       )}
+
+      <SimpleExpandedCanvas
+        open={expandedCanvasOpen}
+        onOpenChange={setExpandedCanvasOpen}
+        declarationName={pageData.name}
+      />
     </>
   );
 });

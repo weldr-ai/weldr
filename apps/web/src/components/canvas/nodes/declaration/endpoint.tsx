@@ -3,12 +3,15 @@ import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@weldr/ui/components/badge";
+import { Button } from "@weldr/ui/components/button";
 import { Card } from "@weldr/ui/components/card";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import { cn } from "@weldr/ui/lib/utils";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
+import { ZoomInIcon } from "lucide-react";
 import type { OpenAPIV3 } from "openapi-types";
 import { memo, useEffect, useRef, useState } from "react";
+import { SimpleExpandedCanvas } from "../../simple-expanded-canvas";
 import { ProtectedBadge } from "../components/protected-badge";
 import { Status } from "../components/status";
 
@@ -40,6 +43,7 @@ export const EndpointNode = memo(
     const { fitBounds } = useReactFlow();
 
     const [isExpanded, setIsExpanded] = useState(false);
+    const [expandedCanvasOpen, setExpandedCanvasOpen] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
 
     // Handle click outside to collapse
@@ -219,7 +223,21 @@ export const EndpointNode = memo(
                     </span>
                     <span className="text-muted-foreground">Endpoint</span>
                   </div>
-                  <ProtectedBadge protected={endpointData.protected ?? false} />
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedCanvasOpen(true);
+                      }}
+                      title="View dependencies"
+                    >
+                      <ZoomInIcon className="size-3" />
+                    </Button>
+                    <ProtectedBadge protected={endpointData.protected ?? false} />
+                  </div>
                 </div>
                 <h3 className="text-sm">
                   {endpointData.summary || endpointData.path || "API Endpoint"}
@@ -262,6 +280,12 @@ export const EndpointNode = memo(
           type="source"
           position={Position.Right}
           isConnectable={false}
+        />
+
+        <SimpleExpandedCanvas
+          open={expandedCanvasOpen}
+          onOpenChange={setExpandedCanvasOpen}
+          declarationName={endpointData.summary || endpointData.path || "API Endpoint"}
         />
       </>
     );

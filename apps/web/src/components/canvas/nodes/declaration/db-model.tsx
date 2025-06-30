@@ -2,6 +2,7 @@ import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@weldr/ui/components/badge";
+import { Button } from "@weldr/ui/components/button";
 import { Card } from "@weldr/ui/components/card";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import {
@@ -20,8 +21,10 @@ import {
   KeyIcon,
   Link2Icon,
   Table2Icon,
+  ZoomInIcon,
 } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
+import { SimpleExpandedCanvas } from "../../simple-expanded-canvas";
 import { Status } from "../components/status";
 
 export const DbModelNode = memo(
@@ -52,6 +55,7 @@ export const DbModelNode = memo(
     const { fitBounds } = useReactFlow();
 
     const [isExpanded, setIsExpanded] = useState(false);
+    const [expandedCanvasOpen, setExpandedCanvasOpen] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
 
     // Handle click outside to collapse
@@ -240,21 +244,35 @@ export const DbModelNode = memo(
                       {modelData.name}
                     </span>
                   </div>
-                  <div className="flex gap-1">
-                    <Badge variant="secondary">
-                      {modelData.columns.length} cols
-                    </Badge>
-                    {modelData.relationships &&
-                      modelData.relationships.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedCanvasOpen(true);
+                      }}
+                      title="View dependencies"
+                    >
+                      <ZoomInIcon className="size-3" />
+                    </Button>
+                    <div className="flex gap-1">
+                      <Badge variant="secondary">
+                        {modelData.columns.length} cols
+                      </Badge>
+                      {modelData.relationships &&
+                        modelData.relationships.length > 0 && (
+                          <Badge variant="outline">
+                            {modelData.relationships.length} rels
+                          </Badge>
+                        )}
+                      {modelData.indexes && modelData.indexes.length > 0 && (
                         <Badge variant="outline">
-                          {modelData.relationships.length} rels
+                          {modelData.indexes.length} idx
                         </Badge>
                       )}
-                    {modelData.indexes && modelData.indexes.length > 0 && (
-                      <Badge variant="outline">
-                        {modelData.indexes.length} idx
-                      </Badge>
-                    )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -417,6 +435,12 @@ export const DbModelNode = memo(
           type="source"
           position={Position.Right}
           isConnectable={false}
+        />
+
+        <SimpleExpandedCanvas
+          open={expandedCanvasOpen}
+          onOpenChange={setExpandedCanvasOpen}
+          declarationName={modelData.name}
         />
       </>
     );
