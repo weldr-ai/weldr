@@ -10,10 +10,8 @@ import {
   searchCodebaseTool,
   writeFileTool,
 } from "@/ai/tools";
-import {
-  type Declaration,
-  getExecutionPlan,
-} from "@/ai/utils/get-execution-plan";
+import type { Declaration } from "@/ai/utils/declarations";
+import { getExecutionPlan } from "@/ai/utils/declarations";
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
@@ -313,7 +311,10 @@ export async function coderAgent({
 
   logger.info("Starting coder agent");
 
-  const executionPlan = await getExecutionPlan({ projectId: project.id });
+  const executionPlan = await getExecutionPlan({
+    projectId: project.id,
+    versionId: version.id,
+  });
 
   logger.info(
     `Execution plan retrieved with ${executionPlan.length} declarations.`,

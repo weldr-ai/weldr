@@ -3,6 +3,7 @@ import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { z } from "zod";
+import { extractAndSaveDeclarations } from "../utils/declarations";
 import { createTool } from "../utils/tools";
 
 export const writeFileTool = createTool({
@@ -87,7 +88,13 @@ export const writeFileTool = createTool({
       };
     }
 
-    logger.info("File written successfully");
+    logger.info("File written successfully, extracting declarations...");
+
+    await extractAndSaveDeclarations({
+      context,
+      filePath,
+      sourceCode: content,
+    });
 
     return {
       success: true,

@@ -15,14 +15,12 @@ export interface ExternalDependency {
   packageName: string;
   importPath: string;
   dependsOn: string[];
-  reason?: string;
 }
 
 export interface InternalDependency {
   type: "internal";
   filePath: string;
   dependsOn: string[];
-  reason?: string;
 }
 
 export type Dependency = ExternalDependency | InternalDependency;

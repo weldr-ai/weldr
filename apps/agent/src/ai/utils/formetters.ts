@@ -1,4 +1,4 @@
-import type { Declaration } from "@/ai/utils/get-execution-plan";
+import type { Declaration } from "@/ai/utils/declarations";
 import type { declarations } from "@weldr/db/schema";
 import type {
   ClassMemberInfo,

@@ -3,6 +3,7 @@ import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { OpenAI } from "openai";
 import { z } from "zod";
+import { extractAndSaveDeclarations } from "../utils/declarations";
 import { createTool } from "../utils/tools";
 
 const morphClient = new OpenAI({
@@ -34,6 +35,10 @@ export const editFileTool = createTool({
       message: z.string(),
       changes_applied: z.string(),
     }),
+    z.object({
+      success: z.literal(false),
+      error: z.string(),
+    }),
   ]),
   execute: async ({ input, context }) => {
     const project = context.get("project");
@@ -57,8 +62,9 @@ export const editFileTool = createTool({
     });
 
     if (!readResult.success) {
-      logger.error(`Failed to read file: ${readResult.stderr}`);
-      throw new Error(`Failed to read file: ${readResult.stderr}`);
+      const errorMsg = `Failed to read file: ${readResult.stderr}`;
+      logger.error(errorMsg);
+      return { success: false, error: errorMsg };
     }
 
     const originalCode = readResult.stdout;
@@ -78,8 +84,9 @@ export const editFileTool = createTool({
     const updatedCode = response.choices[0]?.message.content;
 
     if (!updatedCode) {
-      logger.error("Failed to get updated code from the edit operation.");
-      throw new Error("Failed to get updated code from the edit operation.");
+      const errorMsg = "Failed to get updated code from the edit operation.";
+      logger.error(errorMsg);
+      return { success: false, error: errorMsg };
     }
 
     // Write the updated content back to the file
@@ -89,15 +96,25 @@ export const editFileTool = createTool({
     });
 
     if (!writeResult.success) {
-      logger.error(`Failed to write file: ${writeResult.stderr}`);
-      throw new Error(`Failed to write file: ${writeResult.stderr}`);
+      const errorMsg = `Failed to write file: ${writeResult.stderr}`;
+      logger.error(errorMsg);
+      return { success: false, error: errorMsg };
     }
 
-    logger.info(`File edited successfully: ${input.targetFile}`);
+    logger.info(
+      `File edited successfully: ${input.targetFile}, extracting declarations...`,
+    );
+
+    await extractAndSaveDeclarations({
+      context,
+      filePath: input.targetFile,
+      sourceCode: updatedCode,
+    });
 
     return {
       success: true,
-      updatedCode,
+      message: `Successfully edited ${input.targetFile}`,
+      changes_applied: updatedCode,
     };
   },
 });

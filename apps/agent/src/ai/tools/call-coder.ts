@@ -3,7 +3,7 @@ import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { taskSchema } from "@weldr/shared/validators/tasks";
 import { z } from "zod";
-import { createDeclarations } from "../utils/create-declarations";
+import { createDeclarations } from "../utils/declarations";
 import { createTool } from "../utils/tools";
 
 export const callCoderTool = createTool({
