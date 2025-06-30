@@ -14,7 +14,7 @@ import {
   useReactFlow,
   useViewport,
 } from "@xyflow/react";
-import { MinusIcon, PlusIcon } from "lucide-react";
+import { ArrowUpDownIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { DbModelNode } from "./nodes/declaration/db-model";
 import { EndpointNode } from "./nodes/declaration/endpoint";
@@ -52,7 +52,7 @@ export function Canvas({
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const viewPort = useViewport();
   const { resolvedTheme } = useTheme();
-  const [nodes, _setNodes, onNodesChange] =
+  const [nodes, setNodes, onNodesChange] =
     useNodesState<CanvasNode>(initialNodes);
   const [edges, _setEdges, onEdgesChange] = useEdgesState<Edge>(initialEdges);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
@@ -71,6 +71,133 @@ export function Canvas({
       },
     }),
   );
+
+  // Arrange nodes function
+  const arrangeNodes = useCallback(() => {
+    if (nodes.length === 0) return;
+
+    // Group nodes by type
+    const pageNodes = nodes.filter((node) => node.type === "page");
+    const endpointNodes = nodes.filter((node) => node.type === "endpoint");
+    const dbModelNodes = nodes.filter((node) => node.type === "db-model");
+
+    // Node dimensions and spacing configuration
+    const nodeConfig = {
+      page: {
+        width: 400,
+        height: 300,
+        hSpacing: 480, // node width + padding
+        vSpacing: 380, // node height + padding
+      },
+      endpoint: {
+        width: 256,
+        height: 400,
+        hSpacing: 336, // node width + padding
+        vSpacing: 480, // node height + padding
+      },
+      "db-model": {
+        width: 300,
+        height: 280,
+        hSpacing: 380, // node width + padding
+        vSpacing: 360, // node height + padding
+      },
+    };
+
+    const groupGap = 200; // Gap between groups
+    const startX = 100;
+    const startY = 100;
+    const maxColumns = { page: 3, endpoint: 4, "db-model": 3 };
+
+    const calculateGrid = (nodeCount: number, maxCols: number) => {
+      if (nodeCount === 0) return { columns: 0, rows: 0 };
+      const columns = Math.min(nodeCount, maxCols);
+      const rows = Math.ceil(nodeCount / columns);
+      return { columns, rows };
+    };
+
+    const arrangedNodes: CanvasNode[] = [];
+    let currentGroupX = startX;
+
+    // Arrange Pages
+    if (pageNodes.length > 0) {
+      const grid = calculateGrid(pageNodes.length, maxColumns.page);
+      for (let i = 0; i < pageNodes.length; i++) {
+        const node = pageNodes[i];
+        const row = Math.floor(i / grid.columns);
+        const col = i % grid.columns;
+        if (node) {
+          arrangedNodes.push({
+            ...node,
+            position: {
+              x: currentGroupX + col * nodeConfig.page.hSpacing,
+              y: startY + row * nodeConfig.page.vSpacing,
+            },
+          });
+        }
+      }
+      const groupWidth =
+        grid.columns > 0
+          ? (grid.columns - 1) * nodeConfig.page.hSpacing +
+            nodeConfig.page.width
+          : 0;
+      currentGroupX += groupWidth + groupGap;
+    }
+
+    // Arrange Endpoints
+    if (endpointNodes.length > 0) {
+      const grid = calculateGrid(endpointNodes.length, maxColumns.endpoint);
+      for (let i = 0; i < endpointNodes.length; i++) {
+        const node = endpointNodes[i];
+        const row = Math.floor(i / grid.columns);
+        const col = i % grid.columns;
+        if (node) {
+          arrangedNodes.push({
+            ...node,
+            position: {
+              x: currentGroupX + col * nodeConfig.endpoint.hSpacing,
+              y: startY + row * nodeConfig.endpoint.vSpacing,
+            },
+          });
+        }
+      }
+      const groupWidth =
+        grid.columns > 0
+          ? (grid.columns - 1) * nodeConfig.endpoint.hSpacing +
+            nodeConfig.endpoint.width
+          : 0;
+      currentGroupX += groupWidth + groupGap;
+    }
+
+    // Arrange DB Models
+    if (dbModelNodes.length > 0) {
+      const grid = calculateGrid(dbModelNodes.length, maxColumns["db-model"]);
+      for (let i = 0; i < dbModelNodes.length; i++) {
+        const node = dbModelNodes[i];
+        const row = Math.floor(i / grid.columns);
+        const col = i % grid.columns;
+        if (node) {
+          arrangedNodes.push({
+            ...node,
+            position: {
+              x: currentGroupX + col * nodeConfig["db-model"].hSpacing,
+              y: startY + row * nodeConfig["db-model"].vSpacing,
+            },
+          });
+        }
+      }
+    }
+
+    // Add back any other nodes not part of the main groups
+    const arrangedNodeIds = new Set(arrangedNodes.map((n) => n.id));
+    const otherNodes = nodes.filter((n) => !arrangedNodeIds.has(n.id));
+
+    setNodes([...arrangedNodes, ...otherNodes]);
+
+    // Auto-fit view to show all arranged nodes
+    setTimeout(() => {
+      fitView({ maxZoom: 1, duration: 800 });
+    }, 100);
+  }, [nodes, setNodes, fitView]);
 
   // Create edges with conditional opacity based on hovered node and expanded state
   const styledEdges = useMemo(() => {
@@ -199,7 +326,17 @@ export function Canvas({
         className="flex items-center rounded-lg border bg-background"
       >
         <Button
-          className="size-9 rounded-r-none rounded-l-lg"
+          className="size-9 rounded-r-none"
+          variant="ghost"
+          size="icon"
+          disabled={!nodes.length}
+          onClick={arrangeNodes}
+          title="Arrange nodes (Pages → Endpoints → DB Models)"
+        >
+          <ArrowUpDownIcon className="size-3.5" />
+        </Button>
+        <Button
+          className="size-9 rounded-none"
           variant="ghost"
           size="icon"
           disabled={!nodes.length}
