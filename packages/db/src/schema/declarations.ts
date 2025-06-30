@@ -1,7 +1,6 @@
 import { nanoid } from "@weldr/shared/nanoid";
 import type {
   DeclarationData,
-  DeclarationSpecsV1,
 } from "@weldr/shared/types/declarations";
 import { relations } from "drizzle-orm";
 import {
@@ -37,14 +36,6 @@ export const declarations = pgTable(
     path: text("path"),
     progress: declarationProgress("progress").notNull(),
     data: jsonb("data").$type<DeclarationData>(),
-    specs: jsonb("specs").$type<DeclarationSpecsV1>(),
-    implementationDetails: jsonb("implementation_details").$type<{
-      summary: string;
-      description: string;
-      implementationNotes?: string[];
-      acceptanceCriteria: string[];
-      subTasks: string[];
-    }>(),
     embedding: vector("embedding", { dimensions: 1536 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     previousId: text("previous_id").references(

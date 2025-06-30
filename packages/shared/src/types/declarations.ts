@@ -121,7 +121,7 @@ export interface DeclarationData {
     | "namespace";
   isExported: boolean;
   isDefault?: boolean;
-  position: DeclarationPosition;
+  position?: DeclarationPosition; // Optional since spec-initiated declarations won't have this initially
   dependencies: Dependency[];
   uri: string;
 
@@ -154,6 +154,24 @@ export interface DeclarationData {
 
   // Semantic information
   semanticInfo?: DeclarationSemanticInfo;
+
+  // Specs information (for spec-initiated declarations)
+  specs?: DeclarationSpecsV1;
+  
+  // Implementation details (for spec-initiated declarations)
+  implementationDetails?: {
+    summary: string;
+    description: string;
+    implementationNotes?: string[];
+    acceptanceCriteria: string[];
+    subTasks: string[];
+  };
+
+  // Indicates if this declaration was initiated from specs
+  isSpecInitiated?: boolean;
+  
+  // Indicates if this declaration has been implemented (has actual code)
+  isImplemented?: boolean;
 }
 
 export type DeclarationProgress = "pending" | "in_progress" | "completed";

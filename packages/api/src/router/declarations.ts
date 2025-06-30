@@ -16,7 +16,7 @@ export const declarationsRouter = {
         columns: {
           id: true,
           nodeId: true,
-          specs: true,
+          data: true,
           progress: true,
         },
         with: {
@@ -31,6 +31,9 @@ export const declarationsRouter = {
         });
       }
 
-      return declaration;
+      return {
+        ...declaration,
+        specs: declaration.data?.specs, // Extract specs from data for backward compatibility
+      };
     }),
 };

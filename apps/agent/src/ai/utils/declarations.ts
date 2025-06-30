@@ -14,12 +14,12 @@ import {
 } from "@weldr/db/schema";
 import { nanoid } from "@weldr/shared/nanoid";
 import type { TaskDeclaration } from "@weldr/shared/types";
-import type { DeclarationSpecs } from "@weldr/shared/types/declarations";
+import type { DeclarationData, DeclarationSpecsV1 } from "@weldr/shared/types/declarations";
 import { inArray } from "drizzle-orm";
 import { extractDeclarations } from "./extract-declarations";
 
 export type Declaration = typeof declarations.$inferSelect & {
-  specs: DeclarationSpecs;
+  data: DeclarationData;
   integrations: {
     integration: typeof integrations.$inferSelect & {
       integrationTemplate: typeof integrationTemplates.$inferSelect;
@@ -158,17 +158,40 @@ export const createDeclarations = async ({
         );
       }
 
+      const specData = declaration.data;
+      let declarationName: string;
+      
+      // Extract name based on spec type
+      if (specData.type === 'page') {
+        declarationName = (specData as any).name;
+      } else if (specData.type === 'endpoint') {
+        declarationName = (specData as any).path || (specData as any).summary;
+      } else if (specData.type === 'db-model') {
+        declarationName = (specData as any).name;
+      } else {
+        declarationName = 'Unknown';
+      }
+
       const [createdDeclaration] = await tx
         .insert(declarations)
         .values({
           progress: "pending",
-          specs: declaration.data as unknown as DeclarationSpecs,
-          implementationDetails: {
-            summary: declaration.summary,
-            acceptanceCriteria: declaration.acceptanceCriteria,
-            description: declaration.description,
-            implementationNotes: declaration.implementationNotes,
-            subTasks: declaration.subTasks,
+          data: {
+            name: declarationName,
+            type: 'const' as const,
+            isExported: true,
+            dependencies: [],
+            uri: `${project.id}:${declarationName}`,
+            specs: { version: 'v1' as const, data: declaration.data as any },
+            implementationDetails: {
+              summary: declaration.summary,
+              acceptanceCriteria: declaration.acceptanceCriteria,
+              description: declaration.description,
+              implementationNotes: declaration.implementationNotes,
+              subTasks: declaration.subTasks,
+            },
+            isSpecInitiated: true,
+            isImplemented: false,
           },
           projectId: project.id,
           userId: user.id,
@@ -262,6 +285,120 @@ export const createDeclarations = async ({
   });
 };
 
+/**
+ * Find spec-initiated declarations that match extracted declarations and update them
+ */
+async function findAndUpdateMatchingDeclarations({
+  context,
+  extracted,
+  filePath,
+}: {
+  context: WorkflowContext;
+  extracted: DeclarationData[];
+  filePath: string;
+}) {
+  const project = context.get("project");
+  const version = context.get("version");
+  
+  const logger = Logger.get({
+    tags: ["findAndUpdateMatchingDeclarations"],
+    extra: {
+      projectId: project.id,
+      versionId: version.id,
+    },
+  });
+
+  // Get all spec-initiated declarations for this version that haven't been implemented yet
+  const specInitiatedDeclarations = await db.query.versionDeclarations.findMany({
+    where: eq(versionDeclarations.versionId, version.id),
+    with: {
+      declaration: true,
+    },
+  });
+
+  const matchingUpdates: Array<{
+    declarationId: string;
+    extractedData: DeclarationData;
+  }> = [];
+
+  // Try to match extracted declarations with spec-initiated ones
+  for (const extractedDecl of extracted) {
+    for (const versionDecl of specInitiatedDeclarations) {
+      const specDecl = versionDecl.declaration;
+      if (!specDecl?.data?.specs || specDecl.progress !== "pending") continue;
+
+      const specs = specDecl.data.specs;
+      let isMatch = false;
+
+      // Match based on spec type and name
+      if (specs.data.type === 'page') {
+        const pageSpec = specs.data as { name: string; route?: string };
+        // Match page by name or route
+        isMatch = extractedDecl.name === pageSpec.name || 
+                 extractedDecl.uri.includes(pageSpec.name) ||
+                 (pageSpec.route && extractedDecl.uri.includes(pageSpec.route.replace(/[{}]/g, '')));
+      } else if (specs.data.type === 'endpoint') {
+        const endpointSpec = specs.data as { path?: string; method?: string };
+        // Match endpoint by path or name
+        isMatch = (endpointSpec.path && extractedDecl.name === endpointSpec.path) ||
+                 (endpointSpec.path && extractedDecl.uri.includes(endpointSpec.path)) ||
+                 (endpointSpec.method && extractedDecl.name.includes(endpointSpec.method.toUpperCase()));
+      } else if (specs.data.type === 'db-model') {
+        const dbSpec = specs.data as { name: string };
+        // Match db model by name
+        isMatch = extractedDecl.name === dbSpec.name ||
+                 extractedDecl.name.toLowerCase() === dbSpec.name.toLowerCase() ||
+                 extractedDecl.uri.includes(dbSpec.name);
+      }
+
+      if (isMatch) {
+        matchingUpdates.push({
+          declarationId: specDecl.id,
+          extractedData: extractedDecl,
+        });
+        logger.info(`Found match: ${specDecl.id} matches ${extractedDecl.name}`);
+        break; // One-to-one matching
+      }
+    }
+  }
+
+  // Update matching declarations
+  if (matchingUpdates.length > 0) {
+    await db.transaction(async (tx) => {
+      for (const { declarationId, extractedData } of matchingUpdates) {
+        const existingDecl = await tx.query.declarations.findFirst({
+          where: eq(declarations.id, declarationId),
+        });
+
+        if (existingDecl?.data) {
+          // Merge the extracted data with existing spec data
+          const updatedData = {
+            ...extractedData,
+            specs: existingDecl.data.specs,
+            implementationDetails: existingDecl.data.implementationDetails,
+            isSpecInitiated: true,
+            isImplemented: true,
+          };
+
+          await tx
+            .update(declarations)
+            .set({
+              data: updatedData,
+              progress: "completed",
+              path: filePath,
+              uri: extractedData.uri,
+            })
+            .where(eq(declarations.id, declarationId));
+
+          logger.info(`Updated declaration ${declarationId} with extracted data`);
+        }
+      }
+    });
+  }
+
+  return matchingUpdates.map(u => u.extractedData);
+}
+
 export async function extractAndSaveDeclarations({
   context,
   filePath,
@@ -301,102 +438,124 @@ export async function extractAndSaveDeclarations({
     logger.info(`Extracted ${extracted.length} declarations.`);
 
     if (extracted.length > 0) {
-      await db.transaction(async (tx) => {
-        const activeVersionDeclarations =
-          await tx.query.versionDeclarations.findMany({
-            where: and(eq(versionDeclarations.versionId, version.id)),
-            with: {
-              declaration: {
-                columns: {
-                  id: true,
-                  path: true,
-                  uri: true,
+      // First, try to find and update matching spec-initiated declarations
+      const matchedDeclarations = await findAndUpdateMatchingDeclarations({
+        context,
+        extracted,
+        filePath,
+      });
+
+      // Filter out matched declarations to avoid duplicates
+      const matchedUris = new Set(matchedDeclarations.map(d => d.uri));
+      const newDeclarations = extracted.filter(d => !matchedUris.has(d.uri));
+
+      if (newDeclarations.length > 0) {
+        await db.transaction(async (tx) => {
+          const activeVersionDeclarations =
+            await tx.query.versionDeclarations.findMany({
+              where: and(eq(versionDeclarations.versionId, version.id)),
+              with: {
+                declaration: {
+                  columns: {
+                    id: true,
+                    path: true,
+                    uri: true,
+                  },
                 },
               },
-            },
-          });
+            });
 
-        const existingDeclarations = activeVersionDeclarations
-          .filter((d) => d.declaration?.path?.includes(filePath))
-          .map((d) => d.declaration);
+          const existingDeclarations = activeVersionDeclarations
+            .filter((d) => d.declaration?.path?.includes(filePath))
+            .map((d) => d.declaration);
 
-        // Delete existing declarations for this file to create new ones
-        if (existingDeclarations.length > 0) {
-          const idsToDelete = existingDeclarations.map((d) => d.id);
-          await tx
-            .delete(versionDeclarations)
-            .where(
-              and(
-                inArray(versionDeclarations.declarationId, idsToDelete),
-                eq(versionDeclarations.versionId, version.id),
-              ),
-            );
-        }
+          // Delete existing declarations for this file to create new ones
+          if (existingDeclarations.length > 0) {
+            const idsToDelete = existingDeclarations.map((d) => d.id);
+            await tx
+              .delete(versionDeclarations)
+              .where(
+                and(
+                  inArray(versionDeclarations.declarationId, idsToDelete),
+                  eq(versionDeclarations.versionId, version.id),
+                ),
+              );
+          }
 
-        // Map declaration URIs to declaration IDs
-        const newDeclarationUriToId = new Map<string, string>();
+          // Map declaration URIs to declaration IDs
+          const newDeclarationUriToId = new Map<string, string>();
 
-        for (const data of extracted) {
-          const declarationId = nanoid();
-          newDeclarationUriToId.set(data.uri, declarationId);
+          for (const data of newDeclarations) {
+            const declarationId = nanoid();
+            newDeclarationUriToId.set(data.uri, declarationId);
 
-          await tx.insert(declarations).values({
-            id: declarationId,
-            uri: data.uri,
-            path: filePath,
-            progress: "completed",
-            data,
-            projectId: project.id,
-            userId: project.userId,
-          });
+            await tx.insert(declarations).values({
+              id: declarationId,
+              uri: data.uri,
+              path: filePath,
+              progress: "completed",
+              data: {
+                ...data,
+                isSpecInitiated: false,
+                isImplemented: true,
+              },
+              projectId: project.id,
+              userId: project.userId,
+            });
 
-          await tx.insert(versionDeclarations).values({
-            versionId: version.id,
-            declarationId,
-          });
-        }
+            await tx.insert(versionDeclarations).values({
+              versionId: version.id,
+              declarationId,
+            });
+          }
 
-        for (const data of extracted) {
-          const dependentUri = data.uri;
-          const dependentId = newDeclarationUriToId.get(dependentUri);
-          if (!dependentId) continue;
+          // Handle dependencies for new declarations
+          for (const data of newDeclarations) {
+            const dependentUri = data.uri;
+            const dependentId = newDeclarationUriToId.get(dependentUri);
+            if (!dependentId) continue;
 
-          for (const dep of data.dependencies) {
-            if (dep.type === "internal") {
-              for (const depName of dep.dependsOn) {
-                const dependencyUri = `${project.id}:${dep.filePath}:${depName}`;
+            for (const dep of data.dependencies) {
+              if (dep.type === "internal") {
+                for (const depName of dep.dependsOn) {
+                  const dependencyUri = `${project.id}:${dep.filePath}:${depName}`;
 
-                // Select from new declarations
-                let dependencyId = newDeclarationUriToId.get(dependencyUri);
+                  // Select from new declarations
+                  let dependencyId = newDeclarationUriToId.get(dependencyUri);
 
-                // Select from active version declarations if not found in new declarations
-                if (!dependencyId) {
-                  dependencyId = activeVersionDeclarations.find(
-                    (d) => d.declaration?.uri === dependencyUri,
-                  )?.declaration?.id;
-                }
+                  // Select from active version declarations if not found in new declarations
+                  if (!dependencyId) {
+                    dependencyId = activeVersionDeclarations.find(
+                      (d) => d.declaration?.uri === dependencyUri,
+                    )?.declaration?.id;
+                  }
 
-                if (dependencyId) {
-                  await tx
-                    .insert(dependencies)
-                    .values({
-                      dependentId,
-                      dependencyId,
-                    })
-                    .onConflictDoNothing();
-                } else {
-                  logger.warn(
-                    `Could not find dependency for URI: ${dependencyUri}`,
-                    { extra: { dependentUri } },
-                  );
+                  if (dependencyId) {
+                    await tx
+                      .insert(dependencies)
+                      .values({
+                        dependentId,
+                        dependencyId,
+                      })
+                      .onConflictDoNothing();
+                  } else {
+                    logger.warn(
+                      `Could not find dependency for URI: ${dependencyUri}`,
+                      { extra: { dependentUri } },
+                    );
+                  }
                 }
               }
             }
           }
-        }
-      });
+        });
+        logger.info(
+          `Successfully inserted ${newDeclarations.length} new declarations and linked to version.`,
+        );
+      }
+
       logger.info(
-        `Successfully inserted ${extracted.length} declarations and linked to version.`,
+        `Successfully processed ${extracted.length} declarations (${matchedDeclarations.length} matched, ${newDeclarations.length} new).`,
       );
     }
   } catch (error) {
