@@ -343,6 +343,8 @@ export async function coderAgent({
       .set({ progress: "in_progress" })
       .where(eq(declarations.id, declaration.id));
 
+    await updateCanvasNode({ context, declaration });
+
     const taskContext = `Your current task is to implement the following declaration:
     ---
     ${formatTaskDeclarationToMarkdown(declaration)}
@@ -385,6 +387,8 @@ export async function coderAgent({
       summary: declaration.implementationDetails?.summary ?? "",
       progress: "completed",
     });
+
+    await updateCanvasNode({ context, declaration });
   }
 
   logger.info(
@@ -399,4 +403,58 @@ export async function coderAgent({
 
   // End the stream
   await streamWriter.write({ type: "end" });
+}
+
+async function updateCanvasNode({
+  context,
+  declaration,
+}: {
+  context: WorkflowContext;
+  declaration: Declaration;
+}) {
+  const project = context.get("project");
+  const version = context.get("version");
+
+  const streamWriter = global.sseConnections?.get(
+    context.get("version").chatId,
+  );
+
+  if (!streamWriter) {
+    throw new Error("Stream writer not found");
+  }
+
+  const logger = Logger.get({
+    tags: ["updateCanvasNode"],
+    extra: {
+      projectId: project.id,
+      versionId: version.id,
+      declarationId: declaration.id,
+    },
+  });
+
+  try {
+    const updatedDeclaration = await db.query.declarations.findFirst({
+      where: eq(declarations.id, declaration.id),
+      with: { node: true },
+    });
+
+    if (!updatedDeclaration) {
+      throw new Error("Declaration not found");
+    }
+
+    if (updatedDeclaration.node && updatedDeclaration.specs) {
+      await streamWriter.write({
+        type: "node",
+        nodeId: updatedDeclaration.node.id,
+        position: updatedDeclaration.node.position,
+        specs: updatedDeclaration.specs,
+        progress: updatedDeclaration.progress,
+        node: updatedDeclaration.node,
+      });
+    }
+  } catch (error) {
+    logger.warn("Failed to stream declaration progress start", {
+      extra: { error, declarationId: declaration.id },
+    });
+  }
 }

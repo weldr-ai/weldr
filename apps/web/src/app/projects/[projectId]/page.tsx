@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { ProjectView } from "@/components/project-view";
+import { ActiveVersionProvider } from "@/lib/context/active-version";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
 import type { NodeType } from "@weldr/shared/types";
@@ -254,7 +255,7 @@ export default async function ProjectPage({
       data: {
         id: "sample-page-1",
         nodeId: "sample-page-1",
-        progress: "pending",
+        progress: "completed",
         specs: {
           version: "v1",
           data: {
@@ -284,7 +285,7 @@ export default async function ProjectPage({
       data: {
         id: "sample-page-2",
         nodeId: "sample-page-2",
-        progress: "pending",
+        progress: "in_progress",
         specs: {
           version: "v1",
           data: {
@@ -325,7 +326,7 @@ export default async function ProjectPage({
       data: {
         id: "sample-page-3",
         nodeId: "sample-page-3",
-        progress: "in_progress",
+        progress: "completed",
         specs: {
           version: "v1",
           data: {
@@ -369,12 +370,14 @@ export default async function ProjectPage({
     });
 
     return (
-      <ProjectView
-        project={project}
-        initialNodes={initialNodes}
-        initialEdges={initialEdges}
-        integrationTemplates={integrationTemplates}
-      />
+      <ActiveVersionProvider activeVersion={project.activeVersion}>
+        <ProjectView
+          project={project}
+          initialNodes={initialNodes}
+          initialEdges={initialEdges}
+          integrationTemplates={integrationTemplates}
+        />
+      </ActiveVersionProvider>
     );
   } catch (error) {
     console.error(error);
