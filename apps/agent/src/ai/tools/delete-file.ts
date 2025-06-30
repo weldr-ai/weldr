@@ -2,7 +2,8 @@ import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { and, db, eq, inArray } from "@weldr/db";
-import { declarations, versionDeclarations } from "@weldr/db/schema";
+import { declarations, versionDeclarations, versions } from "@weldr/db/schema";
+import { mergeJson } from "@weldr/db/utils";
 import { z } from "zod";
 import { createTool } from "../utils/tools";
 
@@ -76,6 +77,12 @@ export const deleteFileTool = createTool({
       );
       logger.info(`Deleted ${declarationsList.length} declarations`);
     }
+
+    await db.update(versions).set({
+      changedFiles: mergeJson(versions.changedFiles, [
+        { path: filePath, type: "deleted" },
+      ]),
+    });
 
     logger.info(`File deleted successfully: ${filePath}`);
 

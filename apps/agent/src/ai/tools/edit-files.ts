@@ -1,6 +1,9 @@
 import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
+import { db } from "@weldr/db";
+import { versions } from "@weldr/db/schema";
+import { mergeJson } from "@weldr/db/utils";
 import { OpenAI } from "openai";
 import { z } from "zod";
 import { extractAndSaveDeclarations } from "../utils/declarations";
@@ -109,6 +112,15 @@ export const editFileTool = createTool({
       context,
       filePath: input.targetFile,
       sourceCode: updatedCode,
+    });
+
+    await db.update(versions).set({
+      changedFiles: mergeJson(versions.changedFiles, [
+        {
+          path: input.targetFile,
+          type: "modified",
+        },
+      ]),
     });
 
     return {

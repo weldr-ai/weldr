@@ -2,6 +2,9 @@ import { dirname } from "node:path";
 import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
+import { db } from "@weldr/db";
+import { versions } from "@weldr/db/schema";
+import { mergeJson } from "@weldr/db/utils";
 import { z } from "zod";
 import { extractAndSaveDeclarations } from "../utils/declarations";
 import { createTool } from "../utils/tools";
@@ -94,6 +97,12 @@ export const writeFileTool = createTool({
       context,
       filePath,
       sourceCode: content,
+    });
+
+    await db.update(versions).set({
+      changedFiles: mergeJson(versions.changedFiles, [
+        { path: filePath, type: "added" },
+      ]),
     });
 
     return {

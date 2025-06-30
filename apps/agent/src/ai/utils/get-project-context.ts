@@ -12,6 +12,7 @@ export async function getProjectContext(project: typeof projects.$inferSelect) {
   const projectVersionsList = await db.query.versions.findMany({
     where: eq(versions.projectId, project.id),
     orderBy: (versions, { desc }) => [desc(versions.number)],
+    limit: 5,
     columns: {
       number: true,
       message: true,
@@ -30,13 +31,13 @@ ${projectIntegrationsList
           : ""
       }${
         projectVersionsList.length > 0
-          ? `\nVersions:
+          ? `\nLast 5 versions:
 ${projectVersionsList
   .map(
     (version) =>
       `#${version.number} ${version.message}
 ${version.description}
-Changed files: ${version.changedFiles.join(", ")}`,
+Changed files: ${version.changedFiles.map((file) => `- ${file.path} (${file.type})`).join("\n")}`,
   )
   .join("\n")}`
           : ""

@@ -39,7 +39,12 @@ export const versions = pgTable(
       .references(() => chats.id, { onDelete: "cascade" })
       .notNull(),
     changedFiles: jsonb("changed_files")
-      .$type<string[]>()
+      .$type<
+        {
+          path: string;
+          type: "added" | "modified" | "deleted";
+        }[]
+      >()
       .default([])
       .notNull(),
     activatedAt: timestamp("activated_at").defaultNow(),
