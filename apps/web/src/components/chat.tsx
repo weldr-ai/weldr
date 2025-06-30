@@ -1,5 +1,6 @@
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
 import { useTRPC } from "@/lib/trpc/react";
+import { parseConventionalCommit } from "@/lib/utils";
 import type { CanvasNode } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
@@ -23,14 +24,16 @@ import {
 } from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
 import { useReactFlow } from "@xyflow/react";
-import { ChevronLeftIcon, ChevronRightIcon, GitGraphIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { z } from "zod";
+import { CommitTypeBadge } from "./commit-type-badge";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
 
 interface ChatProps {
-  version: RouterOutputs["projects"]["byId"]["activeVersion"];
+  version: RouterOutputs["projects"]["byId"]["currentVersion"];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
   project: RouterOutputs["projects"]["byId"];
@@ -42,6 +45,8 @@ export function Chat({
   environmentVariables,
   project,
 }: ChatProps) {
+  const router = useRouter();
+
   const { data: session } = authClient.useSession();
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
@@ -50,7 +55,7 @@ export function Chat({
   const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(null);
 
   const [isChatVisible, setIsChatVisible] = useState(
-    project.activeVersion.status !== "completed",
+    project.currentVersion.status !== "completed",
   );
 
   const [eventSourceRef, setEventSourceRef] = useState<EventSource | null>(
@@ -375,7 +380,7 @@ export function Chat({
 
       // Only retry if workflow is still active and we haven't exceeded max attempts
       if (
-        project.activeVersion.status !== "completed" &&
+        project.currentVersion.status !== "completed" &&
         reconnectAttempts.current < maxReconnectAttempts
       ) {
         reconnectAttempts.current += 1;
@@ -400,7 +405,7 @@ export function Chat({
     return eventSource;
   }, [
     project.id,
-    project.activeVersion.status,
+    project.currentVersion.status,
     getNodes,
     setNodes,
     updateNodeData,
@@ -426,10 +431,10 @@ export function Chat({
 
   // Auto-connect to SSE when component mounts if workflow is active
   useEffect(() => {
-    if (project.activeVersion.status !== "completed" && !eventSourceRef) {
+    if (project.currentVersion.status !== "completed" && !eventSourceRef) {
       connectToEventStream();
     }
-  }, [project.activeVersion.status]);
+  }, [project.currentVersion.status]);
 
   // Cleanup SSE connection and timeouts on unmount
   useEffect(() => {
@@ -523,6 +528,8 @@ export function Chat({
     };
   }, [pendingMessage]);
 
+  const conventionalCommit = parseConventionalCommit(version.message);
+
   return (
     <div
       ref={chatContainerRef}
@@ -556,8 +563,18 @@ export function Chat({
           },
         )}
       >
-        <div className="flex items-center justify-between border-b p-1 pl-1.5">
-          <span className="font-medium text-xs">Chat Title</span>
+        <div className="flex items-center justify-between gap-1 border-b p-1">
+          <span className="flex items-center gap-1 truncate font-medium text-xs">
+            <span className="text-muted-foreground">{`#${version.number}`}</span>
+            <span className="flex items-center gap-1 truncate">
+              {conventionalCommit.type && (
+                <CommitTypeBadge type={conventionalCommit.type} />
+              )}
+              <span className="truncate">
+                {conventionalCommit.message ?? "Chat Title"}
+              </span>
+            </span>
+          </span>
           <div className="flex items-center gap-0.5">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -565,49 +582,49 @@ export function Chat({
                   variant="outline"
                   className="size-5 rounded-sm shadow-none"
                   size="icon"
+                  disabled={!version.previousVersionId}
+                  onClick={() => {
+                    if (version.previousVersionId) {
+                      router.push(
+                        `/projects/${project.id}?versionId=${version.previousVersionId}`,
+                      );
+                    }
+                  }}
                 >
-                  <ChevronLeftIcon className="size-3" />
+                  <ChevronLeftIcon className="size-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
-                <p>View Previous Versions</p>
+                <p>View Previous Version</p>
               </TooltipContent>
             </Tooltip>
-
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
                   className="size-5 rounded-sm shadow-none"
                   size="icon"
+                  disabled={!version.nextVersionId}
+                  onClick={() => {
+                    if (version.nextVersionId) {
+                      router.push(
+                        `/projects/${project.id}?versionId=${version.nextVersionId}`,
+                      );
+                    }
+                  }}
                 >
-                  <ChevronRightIcon className="size-3" />
+                  <ChevronRightIcon className="size-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
-                <p>View Previous Versions</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="size-5 rounded-sm shadow-none"
-                  size="icon"
-                >
-                  <GitGraphIcon className="size-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
-                <p>View Version History</p>
+                <p>View Next Version</p>
               </TooltipContent>
             </Tooltip>
           </div>
         </div>
         <div
           ref={messagesContainerRef}
-          className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-[calc(100%-29px)] flex-col gap-2 overflow-y-auto border-b p-2"
+          className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-[calc(100%-33px)] flex-col gap-2 overflow-y-auto border-b p-2"
         >
           <Messages
             messages={messages}

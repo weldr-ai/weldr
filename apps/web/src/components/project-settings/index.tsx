@@ -15,6 +15,11 @@ import {
   TabsList,
   TabsTrigger,
 } from "@weldr/ui/components/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@weldr/ui/components/tooltip";
 import { SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EnvSection } from "./env-section";
@@ -49,11 +54,22 @@ export function ProjectSettings({
 
   return (
     <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="icon" className="size-7 dark:bg-muted">
-          <SettingsIcon className="size-3.5" />
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-7 dark:bg-muted"
+            >
+              <SettingsIcon className="size-3.5" />
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent className="border bg-background dark:bg-muted">
+          <p>Project Settings</p>
+        </TooltipContent>
+      </Tooltip>
       <DialogContent className="flex min-h-[calc(100vh-50px)] min-w-[calc(100vw-50px)] flex-col">
         <DialogHeader>
           <DialogTitle>Project Settings</DialogTitle>

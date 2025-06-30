@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { ProjectView } from "@/components/project-view";
-import { ActiveVersionProvider } from "@/lib/context/active-version";
+import { CurrentVersionProvider } from "@/lib/context/current-version";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
 import type { NodeType } from "@weldr/shared/types";
@@ -22,16 +22,19 @@ export async function generateMetadata({
 
 export default async function ProjectPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ versionId: string }>;
 }): Promise<JSX.Element | undefined> {
   try {
     const { projectId } = await params;
-    const project = await api.projects.byId({ id: projectId });
+    const { versionId } = await searchParams;
+    const project = await api.projects.byId({ id: projectId, versionId });
     const integrationTemplates = await api.integrationTemplates.list();
 
     const initialNodes: CanvasNode[] =
-      project.activeVersion?.declarations?.reduce<CanvasNode[]>((acc, e) => {
+      project.currentVersion?.declarations?.reduce<CanvasNode[]>((acc, e) => {
         if (!e.declaration.specs) return acc;
 
         acc.push({
@@ -48,7 +51,7 @@ export default async function ProjectPage({
       }, []) ?? [];
 
     const initialEdges: Edge[] =
-      project.activeVersion?.edges?.map((edge) => ({
+      project.currentVersion?.edges?.map((edge) => ({
         id: `${edge.dependencyId}-${edge.dependentId}`,
         source: edge.dependencyId,
         target: edge.dependentId,
@@ -370,14 +373,14 @@ export default async function ProjectPage({
     });
 
     return (
-      <ActiveVersionProvider activeVersion={project.activeVersion}>
+      <CurrentVersionProvider currentVersion={project.currentVersion}>
         <ProjectView
           project={project}
           initialNodes={initialNodes}
           initialEdges={initialEdges}
           integrationTemplates={integrationTemplates}
         />
-      </ActiveVersionProvider>
+      </CurrentVersionProvider>
     );
   } catch (error) {
     console.error(error);

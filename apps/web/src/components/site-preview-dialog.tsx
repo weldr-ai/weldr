@@ -1,6 +1,6 @@
 "use client";
 
-import { useActiveVersion } from "@/lib/context/active-version";
+import { useCurrentVersion } from "@/lib/context/current-version";
 import { Badge } from "@weldr/ui/components/badge";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
 import {
@@ -47,13 +47,13 @@ export function SitePreviewDialog({
   const [iframeKey, setIframeKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { activeVersion } = useActiveVersion();
+  const { currentVersion } = useCurrentVersion();
   const [currentPath, setCurrentPath] = useState("");
 
   const baseUrl = url
     ? url
-    : activeVersion?.id
-      ? `https://${activeVersion.id}.preview.weldr.app`
+    : currentVersion?.id
+      ? `https://${currentVersion.id}.preview.weldr.app`
       : "";
 
   useEffect(() => {

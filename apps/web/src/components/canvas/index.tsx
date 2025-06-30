@@ -189,7 +189,7 @@ export function Canvas({
         <Chat
           project={project}
           integrationTemplates={integrationTemplates}
-          version={project.activeVersion}
+          version={project.currentVersion}
           environmentVariables={environmentVariables}
         />
       </Panel>

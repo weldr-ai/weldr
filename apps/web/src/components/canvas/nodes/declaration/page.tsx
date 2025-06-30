@@ -1,5 +1,5 @@
 import { SitePreviewDialog } from "@/components/site-preview-dialog";
-import { useActiveVersion } from "@/lib/context/active-version";
+import { useCurrentVersion } from "@/lib/context/current-version";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
 import { useQuery } from "@tanstack/react-query";
@@ -50,7 +50,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   }
 
   const trpc = useTRPC();
-  const { activeVersion } = useActiveVersion();
+  const { currentVersion } = useCurrentVersion();
 
   const { data: declaration } = useQuery(
     trpc.declarations.byId.queryOptions(
@@ -88,7 +88,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
 
   // Build preview URL with parameters
   const previewUrl = useMemo(() => {
-    const baseUrl = `https://${activeVersion?.id}.preview.weldr.app`;
+    const baseUrl = `https://${currentVersion?.id}.preview.weldr.app`;
     let route = pageData.route.replace(/^\//, "");
 
     if (!hasParameters) {
@@ -103,7 +103,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
 
     return `${baseUrl}/${route}`;
   }, [
-    activeVersion?.id,
+    currentVersion?.id,
     hasParameters,
     pageData.route,
     routeParameters,
@@ -157,7 +157,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   }, [pageData.route]);
 
   // Determine the current state
-  const isVersionCompleted = activeVersion?.status === "completed";
+  const isVersionCompleted = currentVersion?.status === "completed";
   const isDeclarationCompleted = declaration.progress === "completed";
   const needsParameters = hasParameters && (!showPreview || !canShowPreview);
   const isPreviewReady =

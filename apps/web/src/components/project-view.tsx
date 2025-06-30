@@ -4,12 +4,20 @@ import type { CanvasNode } from "@/types";
 import type { RouterOutputs } from "@weldr/api";
 
 import { Canvas } from "@/components/canvas";
-import { useActiveVersion } from "@/lib/context/active-version";
+import { useCurrentVersion } from "@/lib/context/current-version";
 import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@weldr/ui/components/button";
+import { Button, buttonVariants } from "@weldr/ui/components/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@weldr/ui/components/tooltip";
+import { cn } from "@weldr/ui/lib/utils";
 import type { Edge } from "@xyflow/react";
-import { EyeIcon } from "lucide-react";
+import { Badge, EyeIcon, GitGraphIcon } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 import { ProjectSettings } from "./project-settings";
@@ -26,9 +34,12 @@ export function ProjectView({
   initialEdges: Edge[];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const trpc = useTRPC();
   const [sitePreviewDialogOpen, setSitePreviewDialogOpen] = useState(false);
-  const { activeVersion } = useActiveVersion();
+  const { currentVersion } = useCurrentVersion();
 
   const { data: project } = useQuery(
     trpc.projects.byId.queryOptions(
@@ -61,15 +72,55 @@ export function ProjectView({
             {project.title ?? "Untitled Project"}
           </span>
           <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-7 dark:bg-muted"
-              disabled={activeVersion?.status !== "completed"}
-              onClick={() => setSitePreviewDialogOpen(true)}
-            >
-              <EyeIcon className="size-3.5" />
-            </Button>
+            {!currentVersion?.activatedAt && (
+              <>
+                <Badge>Not Active</Badge>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    router.push(pathname);
+                  }}
+                >
+                  View Active
+                </Button>
+              </>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-7 dark:bg-muted"
+                  disabled={currentVersion?.status !== "completed"}
+                  onClick={() => setSitePreviewDialogOpen(true)}
+                >
+                  <EyeIcon className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="border bg-background dark:bg-muted">
+                <p>View Site</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href={`/projects/${project.id}/versions`}
+                  className={cn(
+                    buttonVariants({
+                      variant: "outline",
+                      size: "icon",
+                    }),
+                    "size-7 dark:bg-muted",
+                  )}
+                >
+                  <GitGraphIcon className="size-3.5" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent className="border bg-background dark:bg-muted">
+                <p>View Version History</p>
+              </TooltipContent>
+            </Tooltip>
             <ProjectSettings
               project={project}
               integrationTemplates={integrationTemplates}

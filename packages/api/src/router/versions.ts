@@ -85,37 +85,16 @@ export const versionRouter = {
       const versionsList = await ctx.db.query.versions.findMany({
         where: eq(versions.projectId, input.projectId),
         orderBy: desc(versions.createdAt),
-        with: {
-          chat: {
-            with: {
-              messages: {
-                orderBy: (messages, { asc }) => [asc(messages.createdAt)],
-                with: {
-                  attachments: {
-                    columns: {
-                      name: true,
-                      key: true,
-                    },
-                  },
-                  user: {
-                    columns: {
-                      name: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          declarations: {
-            with: {
-              declaration: {
-                with: {
-                  node: true,
-                  dependencies: true,
-                },
-              },
-            },
-          },
+        columns: {
+          id: true,
+          message: true,
+          createdAt: true,
+          parentVersionId: true,
+          number: true,
+          status: true,
+          description: true,
+          activatedAt: true,
+          projectId: true,
         },
       });
 

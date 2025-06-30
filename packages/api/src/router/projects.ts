@@ -231,7 +231,7 @@ export const projectsRouter = {
     }
   }),
   byId: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string(), versionId: z.string().optional() }))
     .query(async ({ ctx, input }) => {
       try {
         const project = await ctx.db.query.projects.findFirst({
@@ -264,7 +264,20 @@ export const projectsRouter = {
             },
             versions: {
               limit: 1,
-              where: isNotNull(versions.activatedAt),
+              where: input.versionId
+                ? eq(versions.id, input.versionId)
+                : isNotNull(versions.activatedAt),
+              columns: {
+                id: true,
+                message: true,
+                createdAt: true,
+                parentVersionId: true,
+                number: true,
+                status: true,
+                description: true,
+                activatedAt: true,
+                projectId: true,
+              },
               with: {
                 chat: {
                   with: {
@@ -377,20 +390,21 @@ export const projectsRouter = {
           }));
         };
 
-        const activeVersion = project.versions[0];
+        const currentVersion = project.versions[0];
 
-        if (!activeVersion) {
+        if (!currentVersion) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Active version not found",
+            message: "Version not found",
           });
         }
 
-        const activeVersionDeclarations = getVersionDeclarations(activeVersion);
+        const currentVersionDeclarations =
+          getVersionDeclarations(currentVersion);
 
         const edges = Array.from(
           new Map(
-            activeVersionDeclarations
+            currentVersionDeclarations
               .flatMap((decl) => decl.edges)
               .map((edge) => [
                 `${edge.dependencyId}-${edge.dependentId}`,
@@ -405,15 +419,37 @@ export const projectsRouter = {
           dependentId: string;
         }[];
 
+        const previousVersion = await ctx.db.query.versions.findFirst({
+          where: and(
+            eq(versions.projectId, input.id),
+            eq(versions.number, currentVersion.number - 1),
+          ),
+          columns: {
+            id: true,
+          },
+        });
+
+        const nextVersion = await ctx.db.query.versions.findFirst({
+          where: and(
+            eq(versions.projectId, input.id),
+            eq(versions.number, currentVersion.number + 1),
+          ),
+          columns: {
+            id: true,
+          },
+        });
+
         const result = {
           ...project,
-          activeVersion: {
-            ...activeVersion,
+          currentVersion: {
+            ...currentVersion,
+            previousVersionId: previousVersion?.id,
+            nextVersionId: nextVersion?.id,
             edges,
             chat: {
-              ...activeVersion.chat,
+              ...currentVersion.chat,
               messages: (await getMessagesWithAttachments(
-                activeVersion,
+                currentVersion,
               )) as ChatMessage[],
             },
           },
