@@ -174,6 +174,7 @@ CREATE TABLE "integration_templates" (
 	"name" text NOT NULL,
 	"key" text NOT NULL,
 	"type" text NOT NULL,
+	"allow_multiple" boolean DEFAULT true NOT NULL,
 	"version" text NOT NULL,
 	"description" text NOT NULL,
 	"llm_txt" text,

@@ -1,5 +1,12 @@
 import { nanoid } from "@weldr/shared/nanoid";
-import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 export const integrationTemplates = pgTable(
   "integration_templates",
@@ -8,6 +15,7 @@ export const integrationTemplates = pgTable(
     name: text("name").notNull(),
     key: text("key").notNull(),
     type: text("type").notNull(),
+    allowMultiple: boolean("allow_multiple").notNull().default(true),
     version: text("version").notNull(),
     description: text("description").notNull(),
     llmTxt: text("llm_txt"),
