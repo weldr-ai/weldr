@@ -1,5 +1,5 @@
 import { SitePreviewDialog } from "@/components/site-preview-dialog";
-import { useCurrentVersion } from "@/lib/context/current-version";
+import { useProject } from "@/lib/context/project";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
 import { useQuery } from "@tanstack/react-query";
@@ -50,7 +50,8 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   }
 
   const trpc = useTRPC();
-  const { currentVersion } = useCurrentVersion();
+  const { project } = useProject();
+  const currentVersion = project?.currentVersion;
 
   const { data: declaration } = useQuery(
     trpc.declarations.byId.queryOptions(

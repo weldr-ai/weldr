@@ -8,7 +8,7 @@ export const projectConfigSchema = z.object({
 
 export const projectSchema = z.object({
   id: z.string(),
-  name: z.string(),
+  title: z.string(),
   subdomain: z.string(),
   config: projectConfigSchema,
   initiatedAt: z.date().nullable(),

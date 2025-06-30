@@ -26,10 +26,6 @@ interface UIStoreContextType {
   setCommandCenterOpen: (open: boolean) => void;
   commandCenterView: CommandCenterView;
   setCommandCenterView: (view: CommandCenterView) => void;
-
-  // Canvas
-  showCanvasEdges: boolean;
-  toggleCanvasEdges: () => void;
 }
 
 const UIStoreContext = createContext<UIStoreContextType | undefined>(undefined);
@@ -68,28 +64,6 @@ export function UIStoreProvider({
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
   const [commandCenterView, setCommandCenterView] =
     useState<CommandCenterView>("create");
-  const [showCanvasEdges, setShowCanvasEdges] = useState(true);
-  const [isCanvasInitialized, setIsCanvasInitialized] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("flowBuilder.showEdges");
-    if (stored !== null) {
-      setShowCanvasEdges(stored === "true");
-    }
-    setIsCanvasInitialized(true);
-  }, []);
-
-  const toggleCanvasEdges = () => {
-    setShowCanvasEdges((prev) => {
-      const newValue = !prev;
-      localStorage.setItem("flowBuilder.showEdges", String(newValue));
-      return newValue;
-    });
-  };
-
-  if (!isCanvasInitialized) {
-    return null;
-  }
 
   return (
     <UIStoreContext.Provider
@@ -109,10 +83,6 @@ export function UIStoreProvider({
         setCommandCenterOpen,
         commandCenterView,
         setCommandCenterView,
-
-        // Canvas
-        showCanvasEdges,
-        toggleCanvasEdges,
       }}
     >
       {children}

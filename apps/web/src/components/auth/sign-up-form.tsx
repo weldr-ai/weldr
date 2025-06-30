@@ -15,7 +15,7 @@ import {
 } from "@weldr/ui/components/card";
 import { Input } from "@weldr/ui/components/input";
 
-import { useUIStore } from "@/lib/store";
+import { useUIStore } from "@/lib/context/ui-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { authClient } from "@weldr/auth/client";
 import { signUpSchema } from "@weldr/shared/validators/auth";

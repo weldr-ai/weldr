@@ -1,6 +1,6 @@
 "use client";
 
-import { useUIStore } from "@/lib/store";
+import { useUIStore } from "@/lib/context/ui-store";
 import { useTRPC } from "@/lib/trpc/react";
 import { useMutation } from "@tanstack/react-query";
 import type { Session } from "@weldr/auth";

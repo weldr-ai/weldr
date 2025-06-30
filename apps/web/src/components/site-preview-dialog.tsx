@@ -1,6 +1,6 @@
 "use client";
 
-import { useCurrentVersion } from "@/lib/context/current-version";
+import { useProject } from "@/lib/context/project";
 import { Badge } from "@weldr/ui/components/badge";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
 import {
@@ -47,7 +47,8 @@ export function SitePreviewDialog({
   const [iframeKey, setIframeKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { currentVersion } = useCurrentVersion();
+  const { project } = useProject();
+  const currentVersion = project?.currentVersion;
   const [currentPath, setCurrentPath] = useState("");
 
   const baseUrl = url

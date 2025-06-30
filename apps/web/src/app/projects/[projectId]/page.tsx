@@ -2,23 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { notFound, redirect } from "next/navigation";
 
 import { ProjectView } from "@/components/project-view";
-import { CurrentVersionProvider } from "@/lib/context/current-version";
+import { ProjectProvider } from "@/lib/context/project";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
 import type { NodeType } from "@weldr/shared/types";
 import type { Edge } from "@xyflow/react";
-import type { Metadata } from "next";
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ projectId: string }>;
-}): Promise<Metadata> {
-  const { projectId } = await params;
-  const project = await api.projects.byId({ id: projectId });
-
-  return { title: `${project.title ?? "Untitled Project"} - Weldr` };
-}
 
 export default async function ProjectPage({
   params,
@@ -373,14 +361,14 @@ export default async function ProjectPage({
     });
 
     return (
-      <CurrentVersionProvider currentVersion={project.currentVersion}>
+      <ProjectProvider project={project}>
         <ProjectView
           project={project}
           initialNodes={initialNodes}
           initialEdges={initialEdges}
           integrationTemplates={integrationTemplates}
         />
-      </CurrentVersionProvider>
+      </ProjectProvider>
     );
   } catch (error) {
     console.error(error);

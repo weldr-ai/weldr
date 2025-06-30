@@ -4,7 +4,7 @@ import type { CanvasNode } from "@/types";
 import type { RouterOutputs } from "@weldr/api";
 
 import { Canvas } from "@/components/canvas";
-import { useCurrentVersion } from "@/lib/context/current-version";
+import { useProject } from "@/lib/context/project";
 import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
@@ -39,7 +39,8 @@ export function ProjectView({
 
   const trpc = useTRPC();
   const [sitePreviewDialogOpen, setSitePreviewDialogOpen] = useState(false);
-  const { currentVersion } = useCurrentVersion();
+  const { project: contextProject } = useProject();
+  const currentVersion = contextProject?.currentVersion;
 
   const { data: project } = useQuery(
     trpc.projects.byId.queryOptions(

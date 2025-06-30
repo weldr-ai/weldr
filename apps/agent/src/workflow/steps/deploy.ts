@@ -1,14 +1,13 @@
 import { runCommand } from "@/ai/utils/commands";
 import { SCRIPTS_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
-import type { WorkflowContext } from "@/workflow/context";
 import { Fly } from "@weldr/shared/fly";
 import { redisClient } from "@weldr/shared/redis";
 import { createStep } from "../engine";
 
 const isDev = process.env.NODE_ENV === "development";
 
-export const deployStep = createStep<WorkflowContext>({
+export const deployStep = createStep({
   id: "deploy",
   execute: async ({ context }) => {
     const project = context.get("project");

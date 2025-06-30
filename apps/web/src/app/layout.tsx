@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 
 import { QueryProvider } from "@/components/query-client-provider";
-import { UIStoreProvider } from "@/lib/store";
+import { UIStoreProvider } from "@/lib/context/ui-store";
 import { TRPCReactProvider } from "@/lib/trpc/react";
 import { HydrateClient } from "@/lib/trpc/server";
 import { Toaster } from "@weldr/ui/components/toaster";

@@ -40,6 +40,7 @@ export const callCoderTool = createTool({
     const [updatedVersion] = await db
       .update(versions)
       .set({
+        status: "in_progress",
         message: commitMessage,
         description,
         acceptanceCriteria,
@@ -61,6 +62,23 @@ export const callCoderTool = createTool({
     });
 
     context.set("version", updatedVersion);
+
+    const streamWriter = global.sseConnections?.get(
+      context.get("version").chatId,
+    );
+
+    if (streamWriter) {
+      await streamWriter.write({
+        type: "update_project",
+        data: {
+          currentVersion: {
+            message: updatedVersion.message as string,
+            description: updatedVersion.description as string,
+            status: updatedVersion.status,
+          },
+        },
+      });
+    }
 
     logger.info("Version updated successfully");
 

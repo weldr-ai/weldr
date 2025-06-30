@@ -83,6 +83,20 @@ export const initProjectTool = createTool({
 
     context.set("project", updatedProject);
 
+    const streamWriter = global.sseConnections?.get(
+      context.get("version").chatId,
+    );
+
+    if (streamWriter) {
+      await streamWriter.write({
+        type: "update_project",
+        data: {
+          title: updatedProject.title ?? undefined,
+          initiatedAt: updatedProject.initiatedAt,
+        },
+      });
+    }
+
     logger.info("Project initialized successfully");
 
     return { success: true, config: input.type };

@@ -20,6 +20,7 @@ import type {
 } from "../validators/projects";
 import type { taskDeclarationSchema, taskSchema } from "../validators/tasks";
 import type { themeDataSchema, themeSchema } from "../validators/themes";
+import type { versionSchema } from "../validators/versions";
 import type { DeclarationProgress, DeclarationSpecs } from "./declarations";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
@@ -29,6 +30,8 @@ export type JsonSchema = JSONSchema7;
 
 export type Project = z.infer<typeof projectSchema>;
 export type ProjectConfig = z.infer<typeof projectConfigSchema>;
+
+export type Version = z.infer<typeof versionSchema>;
 
 export type MessageRole = z.infer<typeof messageRoleSchema>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
@@ -89,23 +92,6 @@ export type ToolStreamableValue = {
   toolResult: unknown;
 };
 
-// Workflow streaming types matching database schema
-export type WorkflowRunStreamableValue = {
-  type: "workflow_run";
-  runId: string;
-  status: "running" | "completed" | "failed" | "suspended";
-  errorMessage?: string;
-};
-
-export type WorkflowStepStreamableValue = {
-  type: "workflow_step";
-  runId: string;
-  stepId: string;
-  status: "pending" | "running" | "completed" | "failed" | "skipped";
-  output?: unknown;
-  errorMessage?: string;
-};
-
 export type VersionStreamableValue = {
   id?: string;
   createdAt?: Date;
@@ -120,12 +106,16 @@ export type VersionStreamableValue = {
   }[];
 };
 
+export type ProjectStreamableValue = {
+  type: "update_project";
+  data: Partial<Project & { currentVersion: Partial<Version> }>;
+};
+
 export type TStreamableValue =
   | TextStreamableValue
   | ToolStreamableValue
-  | WorkflowRunStreamableValue
-  | WorkflowStepStreamableValue
   | NodeStreamableValue
+  | ProjectStreamableValue
   | EndStreamableValue;
 
 // SSE-specific event types

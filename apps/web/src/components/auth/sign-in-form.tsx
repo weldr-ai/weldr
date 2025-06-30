@@ -30,7 +30,7 @@ import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 
-import { useUIStore } from "@/lib/store";
+import { useUIStore } from "@/lib/context/ui-store";
 import { cn } from "@weldr/ui/lib/utils";
 import { Socials } from "./socials";
 import { SupportLinks } from "./support-links";

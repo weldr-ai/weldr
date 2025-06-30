@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { useUIStore } from "@/lib/store";
+import { useUIStore } from "@/lib/context/ui-store";
 import { authClient } from "@weldr/auth/client";
 import { Button } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";

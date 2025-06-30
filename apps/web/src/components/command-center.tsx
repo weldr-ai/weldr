@@ -11,7 +11,7 @@ import {
   CommandList,
 } from "@weldr/ui/components/command";
 
-import { type CommandCenterView, useUIStore } from "@/lib/store";
+import { type CommandCenterView, useUIStore } from "@/lib/context/ui-store";
 import { useTRPC } from "@/lib/trpc/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";

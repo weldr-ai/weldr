@@ -1,4 +1,5 @@
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
+import { useProject } from "@/lib/context/project";
 import { useTRPC } from "@/lib/trpc/react";
 import { parseConventionalCommit } from "@/lib/utils";
 import type { CanvasNode } from "@/types";
@@ -48,6 +49,7 @@ export function Chat({
   const router = useRouter();
 
   const { data: session } = authClient.useSession();
+  const { updateProjectData } = useProject();
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -132,7 +134,6 @@ export function Chat({
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         )[0];
-
       if (latestStep) {
         if (latestStep.stepId.includes("coder")) {
           setPendingMessage("coding");
@@ -262,38 +263,6 @@ export function Chat({
             });
             break;
           }
-          case "workflow_run": {
-            // Handle workflow run status updates
-            if (chunk.status === "running") {
-              setPendingMessage("coding");
-            } else if (chunk.status === "completed") {
-              queryClient.invalidateQueries(
-                trpc.projects.byId.queryFilter({ id: project.id }),
-              );
-              setPendingMessage(null);
-            } else if (chunk.status === "failed") {
-              console.error("Workflow failed:", chunk.errorMessage);
-              setPendingMessage(null);
-            } else if (chunk.status === "suspended") {
-              setPendingMessage(null);
-            }
-            break;
-          }
-          case "workflow_step": {
-            // Handle individual workflow step updates
-            console.log(`Step ${chunk.stepId} status: ${chunk.status}`);
-
-            // Update pending message based on step progress
-            if (chunk.status === "running") {
-              // Map specific steps to user-friendly messages
-              if (chunk.stepId.includes("coder")) {
-                setPendingMessage("coding");
-              } else if (chunk.stepId.includes("deploy")) {
-                setPendingMessage("deploying");
-              }
-            }
-            break;
-          }
           case "tool": {
             if (chunk.toolName === "request_integration_configuration") {
               setPendingMessage("waiting");
@@ -318,6 +287,26 @@ export function Chat({
               });
             }
 
+            break;
+          }
+          case "update_project": {
+            // Handle specific project updates
+            if (chunk.data.title !== undefined) {
+              updateProjectData({ title: chunk.data.title });
+            }
+            if (chunk.data.initiatedAt !== undefined) {
+              updateProjectData({ initiatedAt: chunk.data.initiatedAt });
+            }
+            if (chunk.data.currentVersion !== undefined) {
+              updateProjectData({ currentVersion: chunk.data.currentVersion });
+              const status = chunk.data.currentVersion.status;
+
+              if (status === "completed" || status === "failed") {
+                setPendingMessage(null);
+              } else if (status === "in_progress") {
+                setPendingMessage("coding");
+              }
+            }
             break;
           }
           case "node": {
@@ -412,6 +401,7 @@ export function Chat({
     queryClient,
     trpc,
     pendingMessage,
+    updateProjectData,
   ]);
 
   const triggerGeneration = useCallback(async () => {

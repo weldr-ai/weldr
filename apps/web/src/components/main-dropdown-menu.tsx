@@ -17,7 +17,7 @@ import {
   SunIcon,
 } from "lucide-react";
 
-import { useUIStore } from "@/lib/store";
+import { useUIStore } from "@/lib/context/ui-store";
 import { Button } from "@weldr/ui/components/button";
 import {
   DropdownMenu,

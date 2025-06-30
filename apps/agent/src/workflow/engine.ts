@@ -240,7 +240,7 @@ async function executeWithRetry({
 
 // --- Public API ---
 
-export function createStep<T>({
+export function createStep({
   id,
   execute,
 }: {
@@ -441,18 +441,6 @@ export function createWorkflow(
       state.status = "running";
       await writeState({ state });
 
-      // Get the SSE stream writer to emit workflow progress
-      const streamWriter = global.sseConnections?.get(
-        context.get("version").chatId,
-      );
-      if (streamWriter) {
-        await streamWriter.write({
-          type: "workflow_run",
-          runId,
-          status: "running",
-        });
-      }
-
       try {
         // Find the starting point based on completed operations
         const startIndex = findResumeIndex(operations, state.stepStates);
@@ -474,15 +462,6 @@ export function createWorkflow(
             state.stepStates[step.id] = { status: "running" };
             await writeState({ state });
 
-            // Emit step progress
-            if (streamWriter) {
-              await streamWriter.write({
-                type: "workflow_step",
-                runId,
-                stepId: step.id,
-                status: "running",
-              });
-            }
             try {
               const output = await executeWithRetry({
                 step,
@@ -492,35 +471,12 @@ export function createWorkflow(
               });
               state.stepStates[step.id] = { status: "completed", output };
               await writeState({ state });
-
-              // Emit step completion
-              if (streamWriter) {
-                await streamWriter.write({
-                  type: "workflow_step",
-                  runId,
-                  stepId: step.id,
-                  status: "completed",
-                  output,
-                });
-              }
             } catch (error) {
               state.stepStates[step.id] = {
                 status: "failed",
                 error: error instanceof Error ? error.message : String(error),
               };
               await writeState({ state });
-
-              // Emit step failure
-              if (streamWriter) {
-                await streamWriter.write({
-                  type: "workflow_step",
-                  runId,
-                  stepId: step.id,
-                  status: "failed",
-                  errorMessage:
-                    error instanceof Error ? error.message : String(error),
-                });
-              }
               throw error;
             }
           }
@@ -599,15 +555,6 @@ export function createWorkflow(
               if (shouldSuspend) {
                 state.status = "suspended";
                 await writeState({ state });
-
-                // Emit workflow suspension
-                if (streamWriter) {
-                  await streamWriter.write({
-                    type: "workflow_run",
-                    runId,
-                    status: "suspended",
-                  });
-                }
                 return;
               }
               // Mark as completed so we don't re-evaluate on retry
@@ -619,15 +566,6 @@ export function createWorkflow(
         logger.info("Workflow finished.");
         state.status = "completed";
         await writeState({ state });
-
-        // Emit workflow completion
-        if (streamWriter) {
-          await streamWriter.write({
-            type: "workflow_run",
-            runId,
-            status: "completed",
-          });
-        }
       } catch (error) {
         logger.error("Workflow failed.", {
           extra: { error },
@@ -639,16 +577,6 @@ export function createWorkflow(
           state.error = "An unknown error occurred.";
         }
         await writeState({ state });
-
-        // Emit workflow failure
-        if (streamWriter) {
-          await streamWriter.write({
-            type: "workflow_run",
-            runId,
-            status: "failed",
-            errorMessage: state.error,
-          });
-        }
         throw error;
       }
     },
