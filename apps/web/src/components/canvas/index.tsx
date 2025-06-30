@@ -106,11 +106,11 @@ export function Canvas({
     const groupGap = 200; // Gap between groups
     const startX = 100;
     const startY = 100;
-    const maxColumns = { page: 3, endpoint: 4, "db-model": 3 };
 
-    const calculateGrid = (nodeCount: number, maxCols: number) => {
+    const calculateGrid = (nodeCount: number) => {
       if (nodeCount === 0) return { columns: 0, rows: 0 };
-      const columns = Math.min(nodeCount, maxCols);
+      // this logic prefers vertical layouts by having more rows than columns
+      const columns = Math.floor(Math.sqrt(nodeCount));
       const rows = Math.ceil(nodeCount / columns);
       return { columns, rows };
     };
@@ -120,11 +120,11 @@ export function Canvas({
 
     // Arrange Pages
     if (pageNodes.length > 0) {
-      const grid = calculateGrid(pageNodes.length, maxColumns.page);
+      const grid = calculateGrid(pageNodes.length);
       for (let i = 0; i < pageNodes.length; i++) {
         const node = pageNodes[i];
-        const row = Math.floor(i / grid.columns);
-        const col = i % grid.columns;
+        const col = Math.floor(i / grid.rows);
+        const row = i % grid.rows;
         if (node) {
           arrangedNodes.push({
             ...node,
@@ -145,11 +145,11 @@ export function Canvas({
 
     // Arrange Endpoints
     if (endpointNodes.length > 0) {
-      const grid = calculateGrid(endpointNodes.length, maxColumns.endpoint);
+      const grid = calculateGrid(endpointNodes.length);
       for (let i = 0; i < endpointNodes.length; i++) {
         const node = endpointNodes[i];
-        const row = Math.floor(i / grid.columns);
-        const col = i % grid.columns;
+        const col = Math.floor(i / grid.rows);
+        const row = i % grid.rows;
         if (node) {
           arrangedNodes.push({
             ...node,
@@ -170,11 +170,11 @@ export function Canvas({
 
     // Arrange DB Models
     if (dbModelNodes.length > 0) {
-      const grid = calculateGrid(dbModelNodes.length, maxColumns["db-model"]);
+      const grid = calculateGrid(dbModelNodes.length);
       for (let i = 0; i < dbModelNodes.length; i++) {
         const node = dbModelNodes[i];
-        const row = Math.floor(i / grid.columns);
-        const col = i % grid.columns;
+        const col = Math.floor(i / grid.rows);
+        const row = i % grid.rows;
         if (node) {
           arrangedNodes.push({
             ...node,
@@ -191,12 +191,22 @@ export function Canvas({
     const arrangedNodeIds = new Set(arrangedNodes.map((n) => n.id));
     const otherNodes = nodes.filter((n) => !arrangedNodeIds.has(n.id));
 
-    setNodes([...arrangedNodes, ...otherNodes]);
+    const animatedNodes = [...arrangedNodes, ...otherNodes].map((node) => ({
+      ...node,
+      style: {
+        ...node.style,
+        transition: "all 0.8s ease-in-out",
+      },
+    }));
+
+    setNodes(animatedNodes);
 
     // Auto-fit view to show all arranged nodes
     setTimeout(() => {
       fitView({ maxZoom: 1, duration: 800 });
-    }, 100);
+      // remove transition after animation
+      setNodes([...arrangedNodes, ...otherNodes]);
+    }, 800);
   }, [nodes, setNodes, fitView]);
 
   // Create edges with conditional opacity based on hovered node and expanded state
