@@ -16,6 +16,7 @@ import { nanoid } from "@weldr/shared/nanoid";
 import type { TaskDeclaration } from "@weldr/shared/types";
 import type { DeclarationSpecs } from "@weldr/shared/types/declarations";
 import { inArray } from "drizzle-orm";
+import { getEnrichmentManager } from "../services/enrichment-manager";
 import { extractDeclarations } from "./extract-declarations";
 
 export type Declaration = typeof declarations.$inferSelect & {
@@ -398,6 +399,34 @@ export async function extractAndSaveDeclarations({
       logger.info(
         `Successfully inserted ${extracted.length} declarations and linked to version.`,
       );
+
+      // Queue semantic enrichment for the newly created declarations (non-blocking)
+      try {
+        const enrichmentManager = getEnrichmentManager();
+        const declarationsForEnrichment = extracted.map((data) => ({
+          id: newDeclarationUriToId.get(data.uri)!,
+          data,
+        })).filter(d => d.id); // Filter out any undefined IDs
+
+        if (declarationsForEnrichment.length > 0) {
+          await enrichmentManager.queueSemanticEnrichment({
+            declarations: declarationsForEnrichment,
+            context,
+            filePath,
+            sourceCode,
+            priority: 0, // Normal priority for background enrichment
+          });
+        }
+      } catch (enrichmentError) {
+        // Log error but don't fail the main process
+        logger.warn("Failed to queue semantic enrichment", {
+          extra: {
+            error: enrichmentError instanceof Error 
+              ? enrichmentError.message 
+              : enrichmentError,
+          },
+        });
+      }
     }
   } catch (error) {
     logger.error("Failed to extract or save declarations", {

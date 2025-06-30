@@ -45,6 +45,7 @@ export const declarations = pgTable(
       acceptanceCriteria: string[];
       subTasks: string[];
     }>(),
+    semanticData: jsonb("semantic_data").$type<Record<string, unknown>>(),
     embedding: vector("embedding", { dimensions: 1536 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     previousId: text("previous_id").references(
