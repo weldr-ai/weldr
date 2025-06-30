@@ -17,11 +17,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import type { Session } from "@weldr/auth";
 import { authClient } from "@weldr/auth/client";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@weldr/ui/components/avatar";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
@@ -216,19 +211,9 @@ function ProjectsContent({
               }}
               className="block overflow-hidden rounded-lg border"
             >
-              {selectedProject.thumbnail ? (
-                <Avatar className="group h-[300px] w-full rounded-lg bg-muted transition-transform duration-200 hover:scale-[1.3]">
-                  <div className="absolute inset-0 bg-foreground/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                  <AvatarImage src={selectedProject.thumbnail} />
-                  <AvatarFallback>
-                    <LogoIcon className="size-16" />
-                  </AvatarFallback>
-                </Avatar>
-              ) : (
-                <div className="flex aspect-video h-[250px] w-full items-center justify-center rounded-lg bg-muted/30 transition-transform duration-200 hover:scale-[1.1]">
-                  <LogoIcon className="size-24" />
-                </div>
-              )}
+              <div className="flex aspect-video h-[250px] w-full items-center justify-center rounded-lg bg-muted/30 transition-transform duration-200 hover:scale-[1.1]">
+                <LogoIcon className="size-24" />
+              </div>
             </Link>
 
             <div className="flex items-center justify-between">

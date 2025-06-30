@@ -221,27 +221,7 @@ export const projectsRouter = {
         },
       });
 
-      return Promise.all(
-        result.map(async (project) => {
-          const activeVersion = project.versions[0];
-
-          if (!activeVersion) {
-            return {
-              ...project,
-              thumbnail: null,
-            };
-          }
-
-          return {
-            ...project,
-            thumbnail: await Tigris.object.getSignedUrl(
-              // biome-ignore lint/style/noNonNullAssertion: <explanation>
-              process.env.GENERAL_BUCKET!,
-              `thumbnails/${project.id}/${activeVersion.id}.jpeg`,
-            ),
-          };
-        }),
-      );
+      return result;
     } catch (error) {
       console.error(error);
       throw new TRPCError({

@@ -3,7 +3,6 @@
 import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
-import { cn } from "@weldr/ui/lib/utils";
 
 export function ProjectsList({
   projects: _projects,
@@ -23,14 +22,7 @@ export function ProjectsList({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
           <div key={project.id} className="flex flex-col gap-2">
-            <div
-              className={cn("size-54 rounded-lg bg-center bg-cover bg-muted")}
-              style={{
-                backgroundImage: project.thumbnail
-                  ? `url(${project.thumbnail})`
-                  : undefined,
-              }}
-            />
+            <div className="size-54 rounded-lg bg-muted" />
             <span className="font-medium text-sm">
               {project.title ?? "Untitled Project"}
             </span>

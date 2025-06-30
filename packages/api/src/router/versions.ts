@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, isNotNull } from "@weldr/db";
 import { chats, versions } from "@weldr/db/schema";
-import { Tigris } from "@weldr/shared/tigris";
 import { z } from "zod";
 import { protectedProcedure } from "../init";
 
@@ -120,21 +119,7 @@ export const versionRouter = {
         },
       });
 
-      const versionsWithThumbnail = await Promise.all(
-        versionsList.map(async (version) => ({
-          ...version,
-          thumbnail:
-            version.status === "completed"
-              ? await Tigris.object.getSignedUrl(
-                  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-                  process.env.GENERAL_BUCKET!,
-                  `thumbnails/${version.projectId}/${version.id}.jpeg`,
-                )
-              : null,
-        })),
-      );
-
-      return versionsWithThumbnail;
+      return versionsList;
     }),
   setCurrent: protectedProcedure
     .input(z.object({ versionId: z.string() }))

@@ -23,7 +23,7 @@ import {
   PlusIcon,
   Undo2Icon,
 } from "lucide-react";
-import { memo, useState } from "react";
+import { memo } from "react";
 
 import { useTRPC } from "@/lib/trpc/react";
 
@@ -50,7 +50,6 @@ import {
 } from "@weldr/ui/components/tooltip";
 import "@weldr/ui/styles/canvas.css";
 import { useTheme } from "next-themes";
-import Image from "next/image";
 
 type VersionNode = Node<RouterOutputs["versions"]["list"][number]>;
 
@@ -66,11 +65,8 @@ interface HierarchyNode {
 }
 
 const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
-  const [imageError, setImageError] = useState(false);
   const activeVersion = data.activatedAt !== null;
-  const previewUrl = data.thumbnail
-    ? `https://${data.id}.preview.weldr.app`
-    : null;
+  const previewUrl = `https://${data.id}.preview.weldr.app`;
 
   const { getEdges, setNodes } = useReactFlow();
   const edges = getEdges();
@@ -183,47 +179,26 @@ const VersionNode = memo(({ data }: NodeProps<VersionNode>) => {
           </div>
         </div>
         <a
-          href={previewUrl ?? undefined}
+          href={previewUrl}
           target="_blank"
           rel="noreferrer"
           className="group relative"
         >
-          {!imageError ? (
-            <>
-              <Image
-                src={data.thumbnail ?? ""}
-                alt={`Version ${data.number}`}
-                width={350}
-                height={200}
-                className={cn(
-                  "flex h-[200px] w-[350px] flex-col gap-2 rounded-b-lg bg-muted",
-                  {
-                    "border-primary": activeVersion,
-                  },
-                )}
-                onError={() => setImageError(true)}
-              />
-              <div className="absolute inset-0 flex items-center justify-center bg-background/30 opacity-0 transition-all duration-300 ease-in-out group-hover:opacity-100">
-                <p className="font-medium text-sm text-white">Open Preview</p>
-              </div>
-            </>
-          ) : (
-            <div
-              className={cn(
-                "flex h-[200px] w-[348px] items-center justify-center rounded-b-lg bg-muted",
-                {
-                  "border-primary": activeVersion,
-                },
-              )}
-            >
-              <span className="absolute text-muted-foreground transition-opacity duration-300 ease-in-out group-hover:opacity-0">
-                No thumbnail available
-              </span>
-              <span className="absolute text-muted-foreground opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100">
-                Open Preview
-              </span>
-            </div>
-          )}
+          <div
+            className={cn(
+              "flex h-[200px] w-[348px] items-center justify-center rounded-b-lg bg-muted",
+              {
+                "border-primary": activeVersion,
+              },
+            )}
+          >
+            <span className="absolute text-muted-foreground transition-opacity duration-300 ease-in-out group-hover:opacity-0">
+              Version {data.number}
+            </span>
+            <span className="absolute text-muted-foreground opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100">
+              Open Preview
+            </span>
+          </div>
         </a>
       </div>
       {hasOutgoingEdges && (
