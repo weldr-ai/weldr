@@ -7,9 +7,6 @@ export const requestIntegrationConfigurationTool = createTool({
   description:
     "Request the configuration for an integration. You can only request the configuration for one integration at a time. Then wait for the user to respond with the configuration.",
   whenToUse: "When you need to request the configuration for an integration.",
-  example: `<request_integration_configuration>
-  <key>postgres</key>
-</request_integration_configuration>`,
   inputSchema: z.object({
     key: z
       .enum(["postgres"])

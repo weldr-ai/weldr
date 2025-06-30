@@ -26,6 +26,9 @@ This is Weldr, a TypeScript monorepo for building AI-powered development tools a
 - Follow conventional commit format
 - Use descriptive variable and function names
 - Prefer functional programming patterns where appropriate
+- **NEVER use `any` type** - always provide proper TypeScript types
+- **ALWAYS follow Biome linting rules** - fix all linting errors immediately
+- Template literals are preferred over string concatenation
 
 ### Import/Export Patterns
 - Use workspace protocol for internal packages (`workspace:*`)

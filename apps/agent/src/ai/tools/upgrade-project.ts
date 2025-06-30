@@ -10,10 +10,6 @@ export const upgradeProjectTool = createTool({
   name: "upgrade_project",
   description: "Upgrades a project to full-stack.",
   whenToUse: "When you need to upgrade a project to full-stack.",
-  example: `<upgrade_project>
-  <server>true</server>
-  <client>true</client>
-</upgrade_project>`,
   inputSchema: z.object({}),
   outputSchema: z.discriminatedUnion("success", [
     z.object({

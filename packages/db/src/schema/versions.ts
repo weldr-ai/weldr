@@ -1,5 +1,4 @@
 import { nanoid } from "@weldr/shared/nanoid";
-import type { Task } from "@weldr/shared/types";
 import { relations, sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
@@ -19,10 +18,10 @@ import { declarations } from "./declarations";
 import { projects } from "./projects";
 import { workflowRuns } from "./workflows";
 
-export const versionProgress = pgEnum("version_progress", [
+export const versionStatus = pgEnum("version_status", [
   "pending",
   "in_progress",
-  "succeeded",
+  "completed",
   "failed",
 ]);
 
@@ -33,8 +32,9 @@ export const versions = pgTable(
     number: integer("number").notNull().default(1),
     message: text("message"),
     description: text("description"),
+    status: versionStatus("status").default("pending").notNull(),
+    acceptanceCriteria: jsonb("acceptance_criteria").$type<string[]>(),
     commitHash: text("commit_hash"),
-    tasks: jsonb("tasks").$type<Task[]>().default([]).notNull(),
     chatId: text("chat_id")
       .references(() => chats.id, { onDelete: "cascade" })
       .notNull(),
@@ -42,13 +42,15 @@ export const versions = pgTable(
       .$type<string[]>()
       .default([])
       .notNull(),
-    progress: versionProgress("progress"),
     activatedAt: timestamp("activated_at").defaultNow(),
     parentVersionId: text("parent_version_id").references(
       (): AnyPgColumn => versions.id,
       { onDelete: "cascade" },
     ),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date()),
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),

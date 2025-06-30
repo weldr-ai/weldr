@@ -1,8 +1,14 @@
 import { prompts } from "@/ai/prompts";
 import {
   callCoderTool,
+  findTool,
+  fzfTool,
+  grepTool,
   initProjectTool,
+  listDirTool,
+  readFileTool,
   requestIntegrationConfigurationTool,
+  searchCodebaseTool,
   upgradeProjectTool,
 } from "@/ai/tools";
 import { getMessages } from "@/ai/utils/get-messages";
@@ -16,6 +22,8 @@ import type {
 } from "@weldr/shared/validators/chats";
 import { streamText } from "ai";
 import type { z } from "zod";
+import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
+import { calculateModelCost } from "../utils/providers-pricing";
 import { XMLProvider } from "../utils/xml-provider";
 
 export async function plannerAgent({
@@ -51,6 +59,13 @@ export async function plannerAgent({
       upgradeProjectTool.getXML(),
       requestIntegrationConfigurationTool.getXML(),
       callCoderTool.getXML(),
+      listDirTool.getXML(),
+      readFileTool.getXML(),
+      searchCodebaseTool.getXML(),
+      queryRelatedDeclarationsTool.getXML(),
+      fzfTool.getXML(),
+      grepTool.getXML(),
+      findTool.getXML(),
     ],
     context,
   );
@@ -88,7 +103,14 @@ export async function plannerAgent({
             upgrade_project: upgradeProjectTool(context),
             request_integration_configuration:
               requestIntegrationConfigurationTool(context),
+            list_dir: listDirTool(context),
+            read_file: readFileTool(context),
             call_coder: callCoderTool(context),
+            search_codebase: searchCodebaseTool(context),
+            query_related_declarations: queryRelatedDeclarationsTool(context),
+            fzf: fzfTool(context),
+            grep: grepTool(context),
+            find: findTool(context),
           },
           onError: (error) => {
             logger.error("Error in planner agent", {
@@ -131,10 +153,16 @@ export async function plannerAgent({
           toolName: delta.toolName,
           args: delta.args,
         });
-        // Check if initProject or upgradeProject tools were called
         if (
           delta.toolName === "init_project" ||
-          delta.toolName === "upgrade_project"
+          delta.toolName === "upgrade_project" ||
+          delta.toolName === "list_dir" ||
+          delta.toolName === "read_file" ||
+          delta.toolName === "search_codebase" ||
+          delta.toolName === "query_related_declarations" ||
+          delta.toolName === "fzf" ||
+          delta.toolName === "grep" ||
+          delta.toolName === "find"
         ) {
           shouldRecur = true;
         }
@@ -166,12 +194,36 @@ export async function plannerAgent({
       }
     }
 
+    const usage = await result.usage;
+
+    const cost = await calculateModelCost(
+      "google:gemini-2.5-pro",
+      usage.promptTokens,
+      usage.completionTokens,
+    );
+
+    const finishReason = await result.finishReason;
+
     // Add assistant message
     if (assistantContent.length > 0) {
       messagesToSave.push({
         visibility: "public",
         role: "assistant",
         content: assistantContent,
+        metadata: {
+          provider: "google",
+          model: "gemini-2.5-pro",
+          inputTokens: usage.promptTokens,
+          outputTokens: usage.completionTokens,
+          totalTokens: usage.totalTokens,
+          inputCost: cost?.inputCost ?? 0,
+          outputCost: cost?.outputCost ?? 0,
+          totalCost: cost?.totalCost ?? 0,
+          inputTokensPrice: cost?.inputTokensPrice ?? 0,
+          outputTokensPrice: cost?.outputTokensPrice ?? 0,
+          inputImagesPrice: cost?.inputImagesPrice ?? null,
+          finishReason,
+        },
       });
     }
 

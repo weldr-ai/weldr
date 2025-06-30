@@ -1,6 +1,5 @@
 import type { JSONSchema7 } from "json-schema";
 import type { z } from "zod";
-import type { canvasNodeTypeSchema } from "../validators/canvas-node";
 import type {
   assistantMessageSchema,
   attachmentSchema,
@@ -10,28 +9,16 @@ import type {
   toolMessageSchema,
   userMessageSchema,
 } from "../validators/chats";
-import type {
-  declarationSpecsSchema,
-  declarationSpecsV1Schema,
-  declarationTypeSchema,
-} from "../validators/declarations";
-import type {
-  componentSchema,
-  layoutSchema,
-  pageSchema,
-  reusableComponentSchema,
-} from "../validators/declarations/component";
-import type { endpointSchema } from "../validators/declarations/endpoint";
-import type { functionSchema } from "../validators/declarations/function";
-import type { modelSchema } from "../validators/declarations/model";
 import type { environmentVariableSchema } from "../validators/environment-variables";
 import type { dataTypeSchema } from "../validators/json-schema";
+import type { nodeTypeSchema } from "../validators/nodes";
 import type { openApiEndpointSpecSchema } from "../validators/openapi";
 import type { packageSchema } from "../validators/packages";
 import type {
   projectConfigSchema,
   projectSchema,
 } from "../validators/projects";
+import type { taskDeclarationSchema, taskSchema } from "../validators/tasks";
 import type { themeDataSchema, themeSchema } from "../validators/themes";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
@@ -51,26 +38,17 @@ export type ToolMessage = z.infer<typeof toolMessageSchema>;
 export type Chat = z.infer<typeof chatSchema>;
 export type Attachment = z.infer<typeof attachmentSchema>;
 
-export type CanvasNodeType = z.infer<typeof canvasNodeTypeSchema>;
-export type DeclarationType = z.infer<typeof declarationTypeSchema>;
-export type DeclarationSpecs = z.infer<typeof declarationSpecsSchema>;
-export type DeclarationSpecsV1 = z.infer<typeof declarationSpecsV1Schema>;
-export type EndpointDeclarationSpecs = z.infer<typeof endpointSchema>;
-export type FunctionDeclarationSpecs = z.infer<typeof functionSchema>;
-export type ModelDeclarationSpecs = z.infer<typeof modelSchema>;
-export type ComponentDeclarationSpecs = z.infer<typeof componentSchema>;
-export type PageDeclarationSpecs = z.infer<typeof pageSchema>;
-export type LayoutDeclarationSpecs = z.infer<typeof layoutSchema>;
-export type ReusableComponentDeclarationSpecs = z.infer<
-  typeof reusableComponentSchema
->;
-
 export type EnvironmentVariable = z.infer<typeof environmentVariableSchema>;
 export type Package = z.infer<typeof packageSchema>;
+
+export type NodeType = z.infer<typeof nodeTypeSchema>;
 
 export type Theme = z.infer<typeof themeSchema>;
 export type ThemeData = z.infer<typeof themeDataSchema>;
 export type ThemeMode = keyof Theme;
+
+export type Task = z.infer<typeof taskSchema>;
+export type TaskDeclaration = z.infer<typeof taskDeclarationSchema>;
 
 export type TPendingMessage =
   // Conversation phase - planner acting as interface

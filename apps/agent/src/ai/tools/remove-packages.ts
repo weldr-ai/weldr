@@ -8,14 +8,8 @@ export const removePackagesTool = createTool({
   name: "remove_packages",
   description: "Use to remove node packages",
   whenToUse: "When you need to remove node packages.",
-  example: `<remove_packages>
-  <packages>
-    <package>react</package>
-    <package>react-dom</package>
-  </packages>
-</remove_packages>`,
   inputSchema: z.object({
-    package: z.string().array(),
+    packages: z.string().array(),
   }),
   outputSchema: z.discriminatedUnion("success", [
     z.object({
@@ -41,11 +35,11 @@ export const removePackagesTool = createTool({
       },
     });
 
-    logger.info(`Removing packages: ${input.package.join(", ")}`);
+    logger.info(`Removing packages: ${input.packages.join(", ")}`);
 
     const { stderr, exitCode, success } = await runCommand(
       "bun",
-      ["remove", ...input.package],
+      ["remove", ...input.packages],
       {
         cwd: WORKSPACE_DIR,
       },
@@ -69,7 +63,7 @@ export const removePackagesTool = createTool({
     // The caller of this tool is responsible for updating the database after removing packages.
     return {
       success: true,
-      packages: input.package,
+      packages: input.packages,
     };
   },
 });

@@ -7,13 +7,20 @@ import {
   grepTool,
   listDirTool,
   readFileTool,
+  searchCodebaseTool,
   writeFileTool,
 } from "@/ai/tools";
+import {
+  type Declaration,
+  getExecutionPlan,
+} from "@/ai/utils/get-execution-plan";
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
+import { db, eq } from "@weldr/db";
+import { declarations, versions } from "@weldr/db/schema";
 import type {
   addMessageItemSchema,
   assistantMessageContentSchema,
@@ -21,13 +28,26 @@ import type {
 import { streamText } from "ai";
 import type { z } from "zod";
 import { prompts } from "../prompts";
+import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
+import { formatTaskDeclarationToMarkdown } from "../utils/formetters";
+import { calculateModelCost } from "../utils/providers-pricing";
 import { XMLProvider } from "../utils/xml-provider";
 
-export async function coderAgent({
+async function executeDeclarationCoder({
   context,
+  declaration,
+  progress,
   coolDownPeriod = 1000,
 }: {
   context: WorkflowContext;
+  declaration: Declaration;
+  progress: Map<
+    string,
+    {
+      summary: string;
+      progress: "pending" | "in_progress" | "completed";
+    }
+  >;
   coolDownPeriod?: number;
 }) {
   const project = context.get("project");
@@ -37,27 +57,29 @@ export async function coderAgent({
 
   // Create contextual logger with base tags and extras
   const logger = Logger.get({
-    tags: ["coderAgent"],
+    tags: ["executeDeclarationCoder"],
     extra: {
       projectId: project.id,
       versionId: version.id,
+      declarationId: declaration.id,
     },
   });
+
+  const loopChatId = declaration.chatId;
+
+  if (!loopChatId) {
+    throw new Error("Declaration chat ID not found");
+  }
 
   const streamWriter = global.sseConnections?.get(
     context.get("version").chatId,
   );
+
   if (!streamWriter) {
     throw new Error("Stream writer not found");
   }
 
-  logger.info("Starting coder agent");
-
-  const totalUsage = {
-    promptTokens: 0,
-    completionTokens: 0,
-    totalTokens: 0,
-  };
+  logger.info("Starting declaration coder");
 
   const xmlProvider = new XMLProvider(
     [
@@ -66,6 +88,8 @@ export async function coderAgent({
       writeFileTool.getXML(),
       deleteFileTool.getXML(),
       editFileTool.getXML(),
+      searchCodebaseTool.getXML(),
+      queryRelatedDeclarationsTool.getXML(),
       fzfTool.getXML(),
       grepTool.getXML(),
       findTool.getXML(),
@@ -74,14 +98,26 @@ export async function coderAgent({
     context,
   );
 
+  const versionContext = `${version.message}
+  Description: ${version.description}
+  Acceptance Criteria: ${version.acceptanceCriteria}
+  Progress:
+  ${Array.from(progress.entries())
+    .map(([id, { summary, progress }]) => `${id}: ${summary} - ${progress}`)
+    .join("\n")}`;
+
   const system = isXML
-    ? await prompts.generalCoder(project, xmlProvider.getSpecsMarkdown())
-    : await prompts.generalCoder(project);
+    ? await prompts.generalCoder(
+        project,
+        xmlProvider.getSpecsMarkdown(),
+        versionContext,
+      )
+    : await prompts.generalCoder(project, versionContext);
 
   // Local function to execute coder agent and handle tool calls
-  const executeCoderAgent = async (): Promise<boolean> => {
+  const executeCoderLoop = async (): Promise<boolean> => {
     let shouldRecur = false;
-    const promptMessages = await getMessages(version.chatId);
+    const promptMessages = await getMessages(loopChatId);
 
     const result = isXML
       ? xmlProvider.streamText({
@@ -103,6 +139,8 @@ export async function coderAgent({
             edit_file: editFileTool(context),
             write_file: writeFileTool(context),
             delete_file: deleteFileTool(context),
+            search_codebase: searchCodebaseTool(context),
+            query_related_declarations: queryRelatedDeclarationsTool(context),
             fzf: fzfTool(context),
             grep: grepTool(context),
             find: findTool(context),
@@ -171,9 +209,14 @@ export async function coderAgent({
     }
 
     const usage = await result.usage;
-    totalUsage.promptTokens += usage.promptTokens;
-    totalUsage.completionTokens += usage.completionTokens;
-    totalUsage.totalTokens += usage.totalTokens;
+
+    const cost = await calculateModelCost(
+      "google:gemini-2.5-pro",
+      usage.promptTokens,
+      usage.completionTokens,
+    );
+
+    const finishReason = await result.finishReason;
 
     // Add assistant message - all coder activities are internal
     if (assistantContent.length > 0) {
@@ -181,6 +224,20 @@ export async function coderAgent({
         visibility: "internal",
         role: "assistant",
         content: assistantContent,
+        metadata: {
+          provider: "google",
+          model: "gemini-2.5-pro",
+          inputTokens: usage.promptTokens,
+          outputTokens: usage.completionTokens,
+          totalTokens: usage.totalTokens,
+          inputCost: cost?.inputCost ?? 0,
+          outputCost: cost?.outputCost ?? 0,
+          totalCost: cost?.totalCost ?? 0,
+          inputTokensPrice: cost?.inputTokensPrice ?? 0,
+          outputTokensPrice: cost?.outputTokensPrice ?? 0,
+          inputImagesPrice: cost?.inputImagesPrice ?? null,
+          finishReason,
+        },
       });
     }
 
@@ -205,13 +262,18 @@ export async function coderAgent({
   let iterationCount = 0;
   while (shouldContinue) {
     iterationCount++;
-    logger.info(`Starting coder agent iteration ${iterationCount}`);
+    logger.info(
+      `Starting coder agent iteration ${iterationCount} for declaration ${declaration.id}`,
+    );
 
-    shouldContinue = await executeCoderAgent();
+    shouldContinue = await executeCoderLoop();
 
-    logger.info(`Coder agent iteration ${iterationCount} completed`, {
-      extra: { shouldContinue },
-    });
+    logger.info(
+      `Coder agent iteration ${iterationCount} completed for declaration ${declaration.id}`,
+      {
+        extra: { shouldContinue },
+      },
+    );
 
     if (shouldContinue) {
       logger.info(`Recurring in ${coolDownPeriod}ms...`);
@@ -219,11 +281,121 @@ export async function coderAgent({
     }
   }
 
-  logger.info("Coder agent completed");
+  logger.info(`Coder agent completed for declaration ${declaration.id}`);
+}
+
+export async function coderAgent({
+  context,
+  coolDownPeriod = 1000,
+}: {
+  context: WorkflowContext;
+  coolDownPeriod?: number;
+}) {
+  const project = context.get("project");
+  const version = context.get("version");
+  const user = context.get("user");
+
+  // Create contextual logger with base tags and extras
+  const logger = Logger.get({
+    tags: ["coderAgent"],
+    extra: {
+      projectId: project.id,
+      versionId: version.id,
+    },
+  });
+
+  const streamWriter = global.sseConnections?.get(
+    context.get("version").chatId,
+  );
+  if (!streamWriter) {
+    throw new Error("Stream writer not found");
+  }
+
+  logger.info("Starting coder agent");
+
+  const executionPlan = await getExecutionPlan({ projectId: project.id });
 
   logger.info(
-    `Usage Prompt: ${totalUsage.promptTokens} Completion: ${totalUsage.completionTokens} Total: ${totalUsage.totalTokens}`,
+    `Execution plan retrieved with ${executionPlan.length} declarations.`,
   );
+
+  const progress: Map<
+    string,
+    {
+      summary: string;
+      progress: "pending" | "in_progress" | "completed";
+    }
+  > = new Map();
+
+  for (const declaration of executionPlan) {
+    logger.info(
+      `Executing coder for declaration: ${declaration.data?.name ?? declaration.uri}`,
+    );
+
+    const loopChatId = declaration.chatId;
+
+    if (!loopChatId) {
+      throw new Error("Declaration chat ID not found");
+    }
+
+    await db
+      .update(declarations)
+      .set({ progress: "in_progress" })
+      .where(eq(declarations.id, declaration.id));
+
+    const taskContext = `Your current task is to implement the following declaration:
+    ---
+    ${formatTaskDeclarationToMarkdown(declaration)}
+    ---
+    Note:
+    - You can implement any utility functions, components, or other declarations you need to implement the declaration.
+    - Read the files you need and implement the required changes.`;
+
+    await insertMessages({
+      input: {
+        chatId: loopChatId,
+        userId: user.id,
+        messages: [
+          {
+            visibility: "internal",
+            role: "user",
+            content: [{ type: "text", text: taskContext }],
+          },
+        ],
+      },
+    });
+
+    await executeDeclarationCoder({
+      context,
+      declaration,
+      progress,
+      coolDownPeriod,
+    });
+
+    logger.info(
+      `Updating declaration ${declaration.id} progress to 'completed'.`,
+    );
+
+    await db
+      .update(declarations)
+      .set({ progress: "completed" })
+      .where(eq(declarations.id, declaration.id));
+
+    progress.set(declaration.id, {
+      summary: declaration.implementationDetails?.summary ?? "",
+      progress: "completed",
+    });
+  }
+
+  logger.info(
+    "All declarations processed. Updating version progress to 'completed'.",
+  );
+  await db
+    .update(versions)
+    .set({ status: "completed" })
+    .where(eq(versions.id, version.id));
+
+  logger.info("Coder agent completed");
 
   // End the stream
   await streamWriter.write({ type: "end" });

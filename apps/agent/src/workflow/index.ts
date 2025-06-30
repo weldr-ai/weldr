@@ -13,6 +13,6 @@ export const workflow = createWorkflow({
   },
 })
   .step(planStep)
-  .suspend(({ context }) => !context.get("version").progress)
+  .suspend(async ({ context }) => context.get("version").status === "pending")
   .step(codeStep)
   .parallel(isDev ? [] : [enrichStep, deployStep]);

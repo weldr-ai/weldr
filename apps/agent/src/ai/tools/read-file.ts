@@ -10,11 +10,6 @@ export const readFileTool = createTool({
   description: "Use to read a single file with pagination and size safeguards",
   whenToUse:
     "When you need to inspect the contents of a file. You can specify a line range to read.",
-  example: `<read_file>
-  <file_path>src/server/index.ts</file_path>
-  <start_line>10</start_line>
-  <end_line>30</end_line>
-</read_file>`,
   inputSchema: z.object({
     filePath: z
       .string()

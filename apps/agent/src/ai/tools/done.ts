@@ -6,7 +6,6 @@ export const doneTool = createTool({
   description: "Mark the task as done.",
   whenToUse:
     "When you have completed all the requested tasks and want to signal completion.",
-  example: "<done></done>",
   inputSchema: z.object({}),
   outputSchema: z.object({}),
   execute: async () => ({

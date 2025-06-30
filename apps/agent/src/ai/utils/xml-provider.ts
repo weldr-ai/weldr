@@ -6,7 +6,8 @@ import {
   type ToolSet,
   streamText,
 } from "ai";
-import { z } from "zod";
+import type { z } from "zod";
+import type { ZodXml } from "./zod-xml";
 
 export interface XMLToolSpec<
   TName extends string = string,
@@ -15,14 +16,16 @@ export interface XMLToolSpec<
 > {
   name: TName;
   description: string;
-  parameters: TParameters;
+  parameters: ZodXml<TParameters>;
   execute: (params: {
     input: z.infer<TParameters>;
     context: WorkflowContext;
   }) => Promise<TResult> | TResult;
-  whenToUse?: string;
-  example?: string;
+  whenToUse: string;
 }
+
+// Helper type to extract the underlying Zod schema from ZodXml
+type ExtractZodSchema<T> = T extends ZodXml<infer U> ? U : never;
 
 // Stream part definitions
 export type XMLTextDelta = {
@@ -34,14 +37,14 @@ export type XMLToolCall<TTool extends XMLToolSpec> = {
   type: "tool-call";
   toolCallId: string;
   toolName: TTool["name"];
-  args: z.infer<TTool["parameters"]>;
+  args: z.infer<ExtractZodSchema<TTool["parameters"]>>;
 };
 
 export type XMLToolResult<TTool extends XMLToolSpec> = {
   type: "tool-result";
   toolCallId: string;
   toolName: TTool["name"];
-  args: z.infer<TTool["parameters"]>;
+  args: z.infer<ExtractZodSchema<TTool["parameters"]>>;
   result: Awaited<ReturnType<TTool["execute"]>>;
 };
 
@@ -120,30 +123,8 @@ export class XMLProvider<const TTools extends readonly XMLToolSpec[]> {
     return this.tools
       .map((tool, index) => {
         const { name, description } = tool;
-        const whenToUse =
-          tool.whenToUse || `Use when you need to perform ${name} operation.`;
-        const example =
-          tool.example || `<${name}>\n  <!-- parameters here -->\n</${name}>`;
-        let parametersMarkdown = "";
-        if (tool.parameters instanceof z.ZodObject) {
-          const shape = tool.parameters.shape;
-          const entries = Object.entries(shape);
-          if (entries.length > 0) {
-            const parametersList = entries
-              .map(([paramName, paramSchema]) => {
-                const zodSchema = paramSchema as z.ZodSchema;
-                const desc =
-                  zodSchema.description || `The ${paramName} for the tool.`;
-                const isOptional = zodSchema.isOptional();
-                let paramLine = `        -   \`<${paramName}>\`: ${desc}`;
-                if (isOptional) paramLine += " (optional)";
-                return paramLine;
-              })
-              .join("\n");
-            parametersMarkdown = `\n    -   **Parameters:**\n${parametersList}`;
-          }
-        }
-        return `${index + 1}.  **\`${name}\`**: ${description}\n    -   **When to use:** ${whenToUse}${parametersMarkdown}\n    -   **Example:**\n\`\`\`xml\n${example}\n\`\`\``;
+        const structure = tool.parameters.describe(name);
+        return `${index + 1}.  **\`${name}\`**: ${description}\n    -   **When to use:** ${tool.whenToUse}\n    -   **Structure:**\n\`\`\`xml\n${structure}\n\`\`\``;
       })
       .join("\n\n");
   }
@@ -182,7 +163,9 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
       if (!tool) continue;
 
       const toolCallId = nanoid();
-      const parsedParams = tool.parameters.safeParse(rawCall.parameters);
+      const parsedParams = tool.parameters.zSchema.safeParse(
+        rawCall.parameters,
+      );
 
       if (parsedParams.success) {
         const toolCall: XMLToolCall<typeof tool> = {
@@ -358,15 +341,81 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
     for (const [paramName, values] of Object.entries(parameterGroups)) {
       if (values.length === 1 && values[0] !== undefined) {
         const nestedObject = this.parseNestedObject(values[0]);
-        result[paramName] = nestedObject !== null ? nestedObject : values[0];
+        if (nestedObject !== null) {
+          result[paramName] = nestedObject;
+        } else {
+          // Check if value contains separators and should be parsed as array
+          const processedValue = this.parseDelimitedValue(values[0]);
+          result[paramName] = processedValue;
+        }
       } else {
         result[paramName] = values.map((value) => {
           const nestedObject = this.parseNestedObject(value);
-          return nestedObject !== null ? nestedObject : value;
+          if (nestedObject !== null) {
+            return nestedObject;
+          }
+          return this.parseDelimitedValue(value);
         });
       }
     }
     return result;
+  }
+
+  private parseDelimitedValue(value: string): unknown {
+    // Check for pipe separator first (primary separator)
+    if (value.includes("|")) {
+      const items = value
+        .split("|")
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+      if (items.length > 1) {
+        return this.processListItems(items);
+      }
+    }
+
+    // Fall back to comma separator
+    if (value.includes(",")) {
+      const items = value
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+      if (items.length > 1) {
+        return this.processListItems(items);
+      }
+    }
+
+    // Try to convert single value to number only if it's an unquoted literal
+    const trimmedValue = value.trim();
+    if (
+      (trimmedValue.startsWith('"') && trimmedValue.endsWith('"')) ||
+      (trimmedValue.startsWith("'") && trimmedValue.endsWith("'"))
+    ) {
+      return trimmedValue.slice(1, -1); // Remove quotes but keep as string
+    }
+
+    const num = Number(trimmedValue);
+    if (!Number.isNaN(num) && Number.isFinite(num) && trimmedValue !== "") {
+      return num;
+    }
+
+    return value;
+  }
+
+  private processListItems(items: string[]): unknown[] {
+    // Try to convert to numbers only if items are unquoted literals
+    return items.map((item) => {
+      // Don't convert quoted strings
+      if (
+        (item.startsWith('"') && item.endsWith('"')) ||
+        (item.startsWith("'") && item.endsWith("'"))
+      ) {
+        return item.slice(1, -1); // Remove quotes but keep as string
+      }
+
+      // Convert unquoted numeric literals to numbers
+      const num = Number(item);
+      return !Number.isNaN(num) && Number.isFinite(num) ? num : item;
+    });
   }
 
   private parseNestedObject(content: string): Record<string, unknown> | null {

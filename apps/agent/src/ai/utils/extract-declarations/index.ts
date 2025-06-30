@@ -1,0 +1,1 @@
+export { extractDeclarations } from "./main";

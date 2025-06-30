@@ -11,10 +11,6 @@ export const initProjectTool = createTool({
   description: "Initializes a new project.",
   whenToUse:
     "When you need to initialize a new project. You can specify the project title and type.",
-  example: `<init_project>
-  <title>My Project</title>
-  <type>full-stack</type>
-</init_project>`,
   inputSchema: z.object({
     title: z.string().describe("The project title."),
     type: z

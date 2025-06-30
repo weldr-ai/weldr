@@ -2,7 +2,7 @@ import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { and, db, eq, inArray } from "@weldr/db";
-import { locations, versionDeclarations } from "@weldr/db/schema";
+import { declarations, versionDeclarations } from "@weldr/db/schema";
 import { z } from "zod";
 import { createTool } from "../utils/tools";
 
@@ -10,9 +10,6 @@ export const deleteFileTool = createTool({
   name: "delete_file",
   description: "Deletes a file at a specified path.",
   whenToUse: "When you need to delete a file from the project.",
-  example: `<delete_file>
-  <file_path>src/server/index.ts</file_path>
-</delete_file>`,
   inputSchema: z.object({
     filePath: z.string().describe("The path of the file to delete."),
   }),
@@ -60,25 +57,24 @@ export const deleteFileTool = createTool({
       };
     }
 
-    const location = await db.query.locations.findMany({
-      where: eq(locations.path, filePath),
-      with: {
-        declaration: true,
+    const declarationsList = await db.query.declarations.findMany({
+      where: eq(declarations.path, filePath),
+      columns: {
+        id: true,
       },
     });
 
-    const declarationIds = location.map((l) => l.declaration.id);
-
-    if (declarationIds.length > 0) {
-      await db
-        .delete(versionDeclarations)
-        .where(
-          and(
-            inArray(versionDeclarations.declarationId, declarationIds),
-            eq(versionDeclarations.versionId, version.id),
+    if (declarationsList.length > 0) {
+      await db.delete(versionDeclarations).where(
+        and(
+          inArray(
+            versionDeclarations.declarationId,
+            declarationsList.map((d) => d.id),
           ),
-        );
-      logger.info(`Deleted ${declarationIds.length} declarations`);
+          eq(versionDeclarations.versionId, version.id),
+        ),
+      );
+      logger.info(`Deleted ${declarationsList.length} declarations`);
     }
 
     logger.info(`File deleted successfully: ${filePath}`);

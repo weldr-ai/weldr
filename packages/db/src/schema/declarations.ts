@@ -1,59 +1,83 @@
 import { nanoid } from "@weldr/shared/nanoid";
-import type { DeclarationSpecs } from "@weldr/shared/types";
+import type {
+  DeclarationData,
+  DeclarationSpecsV1,
+} from "@weldr/shared/types/declarations";
 import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
   index,
-  integer,
   jsonb,
+  pgEnum,
   pgTable,
   primaryKey,
   text,
   timestamp,
+  vector,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { canvasNodes } from "./canvas-nodes";
 import { chats } from "./chats";
 import { dependencies } from "./dependencies";
 import { integrations } from "./integrations";
+import { nodes } from "./nodes";
 import { projects } from "./projects";
-import { declarationTypes } from "./shared-enums";
 import { versionDeclarations } from "./versions";
+
+export const declarationProgress = pgEnum("declaration_progress", [
+  "pending",
+  "in_progress",
+  "completed",
+]);
 
 export const declarations = pgTable(
   "declarations",
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
-    type: declarationTypes("type").notNull(),
-    name: text("name").notNull(),
-    specs: jsonb().$type<DeclarationSpecs>(),
+    uri: text("uri"),
+    path: text("path"),
+    progress: declarationProgress("progress").notNull(),
+    data: jsonb("data").$type<DeclarationData>(),
+    specs: jsonb("specs").$type<DeclarationSpecsV1>(),
+    implementationDetails: jsonb("implementation_details").$type<{
+      summary: string;
+      description: string;
+      implementationNotes?: string[];
+      acceptanceCriteria: string[];
+      subTasks: string[];
+    }>(),
+    embedding: vector("embedding", { dimensions: 1536 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .defaultNow()
-      .$onUpdate(() => new Date())
-      .notNull(),
     previousId: text("previous_id").references(
       (): AnyPgColumn => declarations.id,
     ),
+    chatId: text("chat_id").references(() => chats.id, {
+      onDelete: "set null",
+    }),
     projectId: text("project_id")
       .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
+    nodeId: text("node_id").references(() => nodes.id, {
+      onDelete: "set null",
+    }),
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),
-    locationId: text("location_id").references(() => locations.id),
-    packages: jsonb("packages").$type<string[]>().default([]).notNull(),
-    canvasNodeId: text("canvas_node_id").references(() => canvasNodes.id),
   },
-  (table) => [index("declaration_created_at_idx").on(table.createdAt)],
+  (table) => [
+    index("declaration_created_at_idx").on(table.createdAt),
+    index("embeddingIndex").using(
+      "hnsw",
+      table.embedding.op("vector_cosine_ops"),
+    ),
+  ],
 );
 
 export const declarationsRelations = relations(
   declarations,
   ({ one, many }) => ({
-    canvasNode: one(canvasNodes, {
-      fields: [declarations.canvasNodeId],
-      references: [canvasNodes.id],
+    node: one(nodes, {
+      fields: [declarations.nodeId],
+      references: [nodes.id],
     }),
     previous: many(declarations),
     project: one(projects, {
@@ -64,39 +88,20 @@ export const declarationsRelations = relations(
       fields: [declarations.userId],
       references: [users.id],
     }),
+    chat: one(chats, {
+      fields: [declarations.chatId],
+      references: [chats.id],
+    }),
     dependencies: many(dependencies, {
       relationName: "dependency_declaration",
     }),
     dependents: many(dependencies, {
       relationName: "dependent_declaration",
     }),
-    location: one(locations, {
-      fields: [declarations.locationId],
-      references: [locations.id],
-    }),
     versions: many(versionDeclarations),
-    chats: many(chats),
+    integrations: many(declarationIntegrations),
   }),
 );
-
-export const locations = pgTable(
-  "locations",
-  {
-    id: text("id").primaryKey().$defaultFn(nanoid),
-    startLine: integer("start_line").notNull(),
-    endLine: integer("end_line").notNull(),
-    path: text("path").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [index("locations_created_at_idx").on(table.createdAt)],
-);
-
-export const locationRelations = relations(locations, ({ one }) => ({
-  declaration: one(declarations, {
-    fields: [locations.id],
-    references: [declarations.locationId],
-  }),
-}));
 
 export const declarationIntegrations = pgTable(
   "declaration_integrations",

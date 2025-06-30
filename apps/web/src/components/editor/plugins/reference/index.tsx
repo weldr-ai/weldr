@@ -31,7 +31,11 @@ export class ReferenceOption extends MenuOption {
       keywords?: string[];
     };
   }) {
-    super(reference.name);
+    super(
+      reference.type === "reference:endpoint"
+        ? `${reference.method.toUpperCase()} ${reference.path}`
+        : reference.name,
+    );
     this.reference = reference;
     this.keywords = options.keywords ?? [];
   }
@@ -76,45 +80,34 @@ export function ReferencesPlugin({
   const inputOptions: ReferenceOption[] = useMemo(() => {
     return references.reduce((acc, reference) => {
       switch (reference.type) {
-        case "reference:function": {
-          acc.push(
-            new ReferenceOption({
-              reference,
-              options: {
-                keywords: [reference.name, "function"],
-              },
-            }),
-          );
-          break;
-        }
         case "reference:endpoint": {
           acc.push(
             new ReferenceOption({
               reference,
               options: {
-                keywords: [reference.name, "endpoint", "api"],
+                keywords: [reference.path, reference.method, "endpoint", "api"],
               },
             }),
           );
           break;
         }
-        case "reference:model": {
+        case "reference:db-model": {
           acc.push(
             new ReferenceOption({
               reference,
               options: {
-                keywords: [reference.name, "database", "table"],
+                keywords: [reference.name, "db-model", "database", "table"],
               },
             }),
           );
           break;
         }
-        case "reference:component": {
+        case "reference:page": {
           acc.push(
             new ReferenceOption({
               reference,
               options: {
-                keywords: [reference.name, reference.subtype, "component"],
+                keywords: [reference.name, "page"],
               },
             }),
           );
@@ -136,8 +129,11 @@ export function ReferencesPlugin({
 
     return inputOptions.filter(
       (option) =>
-        regex.test(option.reference.name) ||
-        option.keywords.some((keyword) => regex.test(keyword)),
+        regex.test(
+          option.reference.type === "reference:endpoint"
+            ? `${option.reference.method.toUpperCase()} ${option.reference.path}`
+            : option.reference.name,
+        ) || option.keywords.some((keyword) => regex.test(keyword)),
     );
   }, [inputOptions, queryString]);
 

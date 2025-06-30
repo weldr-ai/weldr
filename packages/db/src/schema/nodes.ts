@@ -1,26 +1,13 @@
 import { nanoid } from "@weldr/shared/nanoid";
 import { relations } from "drizzle-orm";
-import {
-  index,
-  jsonb,
-  pgEnum,
-  pgTable,
-  text,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { declarations } from "./declarations";
 import { projects } from "./projects";
 
-export const canvasNodeTypes = pgEnum("canvas_node_types", [
-  "preview",
-  "declaration",
-]);
-
-export const canvasNodes = pgTable(
-  "canvas_nodes",
+export const nodes = pgTable(
+  "nodes",
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
-    type: canvasNodeTypes("type").notNull(),
     position: jsonb("position").$type<{ x: number; y: number }>().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -31,9 +18,13 @@ export const canvasNodes = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
   },
-  (t) => [index("canvas_nodes_created_at_idx").on(t.createdAt)],
+  (t) => [index("nodes_created_at_idx").on(t.createdAt)],
 );
 
-export const canvasNodeRelations = relations(canvasNodes, ({ many }) => ({
-  declarations: many(declarations),
+export const nodeRelations = relations(nodes, ({ one }) => ({
+  declaration: one(declarations),
+  project: one(projects, {
+    fields: [nodes.projectId],
+    references: [projects.id],
+  }),
 }));

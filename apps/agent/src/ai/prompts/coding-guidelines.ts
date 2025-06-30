@@ -1,19 +1,19 @@
 export const codingGuidelines = `<tech_stack>
-  - TypeScript
-  - React
-  - Tanstack Router
+  - TypeScript (Programming language)
+  - React (UI library)
+  - Tanstack Router (Routing library)
   - Tanstack Start (Used for SSR only)
-  - Hono
-  - shadcn/ui
-  - Lucide Icons
-  - Tailwind CSS
-  - oRPC
-  - TanStack Query
-  - Drizzle ORM
-  - PostgreSQL
-  - better-auth
-  - zod
-  - react-hook-form
+  - Hono (HTTP server)
+  - oRPC (OpenAPI REST APIs that can be called as RPCs on the client)
+  - shadcn/ui (UI library)
+  - Lucide Icons (Icon library)
+  - Tailwind CSS (CSS framework)
+  - TanStack Query (Data fetching library)
+  - Drizzle ORM (Database ORM)
+  - PostgreSQL (Database)
+  - better-auth (Authentication library)
+  - zod (Validation library)
+  - react-hook-form (Form library)
 </tech_stack>
 
 <full_stack_structure_guidelines>
@@ -86,7 +86,7 @@ export const codingGuidelines = `<tech_stack>
   └── vite.config.ts
 </full_stack_structure_guidelines>
 
-<frontend_only_structure_guidelines>
+<web_only_structure_guidelines>
   The project MUST follow this file structure:
 
   Project root directory:
@@ -124,12 +124,12 @@ export const codingGuidelines = `<tech_stack>
   ├── package.json
   ├── tsconfig.json
   └── vite.config.ts
-</frontend_only_structure_guidelines>
+</web_only_structure_guidelines>
 
-<backend_only_structure_guidelines>
+<server_only_structure_guidelines>
   Project root directory:
   ├── public                        # Folder containing the static assets (images, fonts, etc.)
-  ├── server                        # Folder containing the server-side code
+  ├── src                           # Folder containing the server-side code
   │   ├── db                        # Folder containing the database (Drizzle ORM)
   │   │   ├── schema                # Folder containing the database schema
   │   │   │   ├── [table-name].ts   # Database table file
@@ -166,7 +166,7 @@ export const codingGuidelines = `<tech_stack>
   ├── fly.toml
   ├── package.json
   └── tsconfig.json
-</backend_only_structure_guidelines>
+</server_only_structure_guidelines>
 
 <coding_style_guidelines>
   - MUST NOT use OOP concepts like classes, inheritance, etc.

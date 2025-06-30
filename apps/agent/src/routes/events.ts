@@ -76,7 +76,7 @@ router.openapi(route, async (c) => {
     ),
   });
 
-  if (!activeVersion || activeVersion.progress === "succeeded") {
+  if (!activeVersion || activeVersion.status === "completed") {
     activeVersion = await initVersion({
       projectId,
       userId: session.user.id,

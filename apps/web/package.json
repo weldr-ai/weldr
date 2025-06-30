@@ -65,7 +65,7 @@
   "devDependencies": {
     "@types/d3-hierarchy": "^3.1.7",
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^20.17.32",
+    "@types/node": "^22.15.30",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.6",
     "@weldr/tsconfig": "workspace:*",

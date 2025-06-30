@@ -1,9 +1,8 @@
-CREATE TYPE "public"."canvas_node_types" AS ENUM('preview', 'declaration');--> statement-breakpoint
 CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool');--> statement-breakpoint
 CREATE TYPE "public"."message_visibility" AS ENUM('public', 'internal');--> statement-breakpoint
+CREATE TYPE "public"."declaration_progress" AS ENUM('pending', 'in_progress', 'completed');--> statement-breakpoint
 CREATE TYPE "public"."preset_type" AS ENUM('base');--> statement-breakpoint
-CREATE TYPE "public"."declaration_types" AS ENUM('component', 'endpoint', 'function', 'model', 'other');--> statement-breakpoint
-CREATE TYPE "public"."version_progress" AS ENUM('pending', 'in_progress', 'succeeded', 'failed');--> statement-breakpoint
+CREATE TYPE "public"."version_status" AS ENUM('pending', 'in_progress', 'completed', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."workflow_status" AS ENUM('running', 'completed', 'failed', 'suspended');--> statement-breakpoint
 CREATE TYPE "public"."workflow_step_status" AS ENUM('pending', 'running', 'completed', 'failed', 'skipped');--> statement-breakpoint
 CREATE TABLE "accounts" (
@@ -102,15 +101,6 @@ CREATE TABLE "verifications" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "canvas_nodes" (
-	"id" text PRIMARY KEY NOT NULL,
-	"type" "canvas_node_types" NOT NULL,
-	"position" jsonb NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"project_id" text NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "attachments" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
@@ -147,35 +137,25 @@ CREATE TABLE "declaration_integrations" (
 --> statement-breakpoint
 CREATE TABLE "declarations" (
 	"id" text PRIMARY KEY NOT NULL,
-	"type" "declaration_types" NOT NULL,
-	"name" text NOT NULL,
+	"uri" text,
+	"path" text,
+	"progress" "declaration_progress" NOT NULL,
+	"data" jsonb,
 	"specs" jsonb,
+	"implementation_details" jsonb,
+	"embedding" vector(1536),
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"previous_id" text,
+	"chat_id" text,
 	"project_id" text NOT NULL,
-	"user_id" text NOT NULL,
-	"location_id" text,
-	"packages" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"canvas_node_id" text
-);
---> statement-breakpoint
-CREATE TABLE "locations" (
-	"id" text PRIMARY KEY NOT NULL,
-	"start_line" integer NOT NULL,
-	"end_line" integer NOT NULL,
-	"path" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"node_id" text,
+	"user_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "dependencies" (
-	"dependent_type" "declaration_types" NOT NULL,
 	"dependent_id" text NOT NULL,
-	"dependency_type" "declaration_types" NOT NULL,
 	"dependency_id" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "dependencies_dependent_id_dependency_id_pk" PRIMARY KEY("dependent_id","dependency_id"),
-	CONSTRAINT "no_self_dep" CHECK (dependent_id != dependency_id)
+	CONSTRAINT "dependencies_dependent_id_dependency_id_pk" PRIMARY KEY("dependent_id","dependency_id")
 );
 --> statement-breakpoint
 CREATE TABLE "environment_variables" (
@@ -219,12 +199,19 @@ CREATE TABLE "integrations" (
 	"integration_template_id" text NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "nodes" (
+	"id" text PRIMARY KEY NOT NULL,
+	"position" jsonb NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"project_id" text NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "preset_declarations" (
 	"id" text PRIMARY KEY NOT NULL,
-	"type" "declaration_types" NOT NULL,
 	"name" text NOT NULL,
 	"file" text NOT NULL,
-	"specs" jsonb,
+	"data" jsonb,
 	"dependencies" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
@@ -282,14 +269,15 @@ CREATE TABLE "versions" (
 	"number" integer DEFAULT 1 NOT NULL,
 	"message" text,
 	"description" text,
+	"status" "version_status" DEFAULT 'pending' NOT NULL,
+	"acceptance_criteria" jsonb,
 	"commit_hash" text,
-	"tasks" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"chat_id" text NOT NULL,
 	"changed_files" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"progress" "version_progress",
 	"activated_at" timestamp DEFAULT now(),
 	"parent_version_id" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now(),
 	"user_id" text NOT NULL,
 	"project_id" text NOT NULL
 );
@@ -323,7 +311,6 @@ ALTER TABLE "invitations" ADD CONSTRAINT "invitations_inviter_id_users_id_fk" FO
 ALTER TABLE "members" ADD CONSTRAINT "members_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "members" ADD CONSTRAINT "members_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "canvas_nodes" ADD CONSTRAINT "canvas_nodes_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_message_id_chat_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "public"."chat_messages"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -333,10 +320,10 @@ ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fk" FOREIGN KEY ("use
 ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_declaration_id_declarations_id_fk" FOREIGN KEY ("declaration_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_previous_id_declarations_id_fk" FOREIGN KEY ("previous_id") REFERENCES "public"."declarations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "declarations" ADD CONSTRAINT "declarations_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "declarations" ADD CONSTRAINT "declarations_node_id_nodes_id_fk" FOREIGN KEY ("node_id") REFERENCES "public"."nodes"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "declarations" ADD CONSTRAINT "declarations_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "declarations" ADD CONSTRAINT "declarations_canvas_node_id_canvas_nodes_id_fk" FOREIGN KEY ("canvas_node_id") REFERENCES "public"."canvas_nodes"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_dependent_id_declarations_id_fk" FOREIGN KEY ("dependent_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_dependency_id_declarations_id_fk" FOREIGN KEY ("dependency_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_secret_id_secrets_id_fk" FOREIGN KEY ("secret_id") REFERENCES "vault"."secrets"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -347,6 +334,7 @@ ALTER TABLE "integration_environment_variables" ADD CONSTRAINT "integration_envi
 ALTER TABLE "integrations" ADD CONSTRAINT "integrations_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integrations" ADD CONSTRAINT "integrations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integrations" ADD CONSTRAINT "integrations_integration_template_id_integration_templates_id_fk" FOREIGN KEY ("integration_template_id") REFERENCES "public"."integration_templates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "nodes" ADD CONSTRAINT "nodes_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "preset_declarations" ADD CONSTRAINT "preset_declarations_preset_id_presets_id_fk" FOREIGN KEY ("preset_id") REFERENCES "public"."presets"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "themes" ADD CONSTRAINT "themes_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -359,15 +347,14 @@ ALTER TABLE "versions" ADD CONSTRAINT "versions_user_id_users_id_fk" FOREIGN KEY
 ALTER TABLE "versions" ADD CONSTRAINT "versions_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workflow_runs" ADD CONSTRAINT "workflow_runs_version_id_versions_id_fk" FOREIGN KEY ("version_id") REFERENCES "public"."versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workflow_step_executions" ADD CONSTRAINT "workflow_step_executions_workflow_run_id_workflow_runs_id_fk" FOREIGN KEY ("workflow_run_id") REFERENCES "public"."workflow_runs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "canvas_nodes_created_at_idx" ON "canvas_nodes" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "attachments_created_at_idx" ON "attachments" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "chat_messages_created_at_idx" ON "chat_messages" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "chats_created_at_idx" ON "chats" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "declaration_created_at_idx" ON "declarations" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX "locations_created_at_idx" ON "locations" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX "dependencies_created_at_idx" ON "dependencies" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "embeddingIndex" ON "declarations" USING hnsw ("embedding" vector_cosine_ops);--> statement-breakpoint
 CREATE INDEX "integration_templates_created_at_idx" ON "integration_templates" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "integrations_created_at_idx" ON "integrations" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "nodes_created_at_idx" ON "nodes" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "projects_created_at_idx" ON "projects" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "active_version_idx" ON "versions" USING btree ("project_id","activated_at") WHERE (activated_at IS NOT NULL);--> statement-breakpoint
 CREATE UNIQUE INDEX "version_number_unique_idx" ON "versions" USING btree ("project_id","number");--> statement-breakpoint

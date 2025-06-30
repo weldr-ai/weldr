@@ -10,10 +10,6 @@ export const fzfTool = createTool({
     "Performs a fuzzy search for files or directories in the project.",
   whenToUse:
     "When you need to find files or directories using a fuzzy search on their path.",
-  example: `<fzf>
-  <query>user component</query>
-  <max_results>5</max_results>
-</fzf>`,
   inputSchema: z.object({
     query: z.string().describe("The fuzzy query to search for."),
     includeDirectories: z

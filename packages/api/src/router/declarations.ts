@@ -13,8 +13,14 @@ export const declarationsRouter = {
           eq(declarations.id, input.id),
           eq(declarations.userId, ctx.session.user.id),
         ),
+        columns: {
+          id: true,
+          nodeId: true,
+          specs: true,
+          progress: true,
+        },
         with: {
-          canvasNode: true,
+          node: true,
         },
       });
 

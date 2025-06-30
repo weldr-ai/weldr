@@ -16,14 +16,6 @@ export const grepTool = createTool({
   name: "grep",
   description: "Searches for a regex pattern within files in the project.",
   whenToUse: "When you need to search for a pattern in the project.",
-  example: `<grep>
-  <pattern>console.log</pattern>
-  <file_pattern>*.ts</file_pattern>
-  <ignore_case>true</ignore_case>
-  <whole_word>true</whole_word>
-  <max_results>50</max_results>
-  <context_lines>2</context_lines>
-</grep>`,
   inputSchema: z.object({
     pattern: z.string().describe("The regex pattern to search for."),
     filePattern: z

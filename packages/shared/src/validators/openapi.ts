@@ -3,7 +3,7 @@ import { jsonSchema } from "./json-schema";
 
 // HTTP Methods supported by the endpoint
 export const httpMethodSchema = z
-  .enum(["get", "put", "post", "delete", "patch"])
+  .enum(["get", "put", "post", "delete", "patch", "options", "head"])
   .describe("The HTTP method for the endpoint");
 
 // Where parameters can be located in the request

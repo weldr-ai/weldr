@@ -1,0 +1,230 @@
+import { WORKSPACE_DIR } from "@/lib/constants";
+import { runCommand } from "../commands";
+
+function resolveRelativePath(
+  currentFilePath: string,
+  importPath: string,
+): string {
+  // Pure string-based path resolution without filesystem dependencies
+  const currentDir = currentFilePath.includes("/")
+    ? currentFilePath.substring(0, currentFilePath.lastIndexOf("/"))
+    : "";
+
+  if (importPath === ".") {
+    return currentDir || ".";
+  }
+
+  if (importPath === "..") {
+    if (!currentDir) return "..";
+    const parentDir = currentDir.includes("/")
+      ? currentDir.substring(0, currentDir.lastIndexOf("/"))
+      : "";
+    return parentDir || ".";
+  }
+
+  if (importPath.startsWith("./")) {
+    const relativePart = importPath.substring(2);
+    return currentDir ? `${currentDir}/${relativePart}` : relativePart;
+  }
+
+  if (importPath.startsWith("../")) {
+    const segments = importPath.split("/");
+    let targetDir = currentDir;
+    let i = 0;
+
+    // Process all '../' segments
+    while (i < segments.length && segments[i] === "..") {
+      if (targetDir?.includes("/")) {
+        targetDir = targetDir.substring(0, targetDir.lastIndexOf("/"));
+      } else {
+        targetDir = "..";
+      }
+      i++;
+    }
+
+    // Add remaining path segments
+    const remainingSegments = segments.slice(i);
+    if (remainingSegments.length > 0) {
+      const remainingPath = remainingSegments.join("/");
+      return targetDir ? `${targetDir}/${remainingPath}` : remainingPath;
+    }
+
+    return targetDir || ".";
+  }
+
+  // For other cases, return as-is
+  return importPath;
+}
+
+export async function resolveFilePath(
+  basePath: string,
+  projectRoot: string,
+): Promise<string | null> {
+  const hasExtension = /\.[^/.]+$/.test(basePath);
+
+  if (hasExtension) {
+    const absolutePath = `${projectRoot}/${basePath}`.replace(/\/\//g, "/");
+    const { success } = await runCommand("test", ["-f", absolutePath]);
+    if (success) {
+      return basePath;
+    }
+  }
+
+  const extensions = [".ts", ".tsx", ".js", ".jsx", ".json"];
+  const indexFiles = [
+    "/index.ts",
+    "/index.tsx",
+    "/index.js",
+    "/index.jsx",
+    "/index.json",
+  ];
+
+  const potentialPaths: string[] = [];
+
+  // Direct file matches
+  for (const ext of extensions) {
+    potentialPaths.push(`${basePath}${ext}`);
+  }
+
+  // Index file matches
+  for (const indexFile of indexFiles) {
+    potentialPaths.push(`${basePath}${indexFile}`);
+  }
+
+  for (const path of potentialPaths) {
+    // avoid trying to check root path
+    if (path === "/") continue;
+
+    const absolutePath = `${projectRoot}/${path}`.replace(/\/\//g, "/");
+    const { success } = await runCommand("test", ["-f", absolutePath], {
+      cwd: WORKSPACE_DIR,
+    });
+
+    if (success) {
+      return path;
+    }
+  }
+
+  return null;
+}
+
+function resolvePathAlias({
+  importPath,
+  pathAliases,
+}: {
+  importPath: string;
+  pathAliases?: Record<string, string>;
+}): string | null {
+  if (!pathAliases) return null;
+
+  for (const [alias, target] of Object.entries(pathAliases)) {
+    // Handle glob patterns like "@/*" -> "./src/*"
+    if (alias.endsWith("/*") && target.endsWith("/*")) {
+      const aliasPrefix = alias.slice(0, -2); // Remove "/*"
+      const targetPrefix = target.slice(0, -2); // Remove "/*"
+
+      if (importPath.startsWith(`${aliasPrefix}/`)) {
+        const remainingPath = importPath.slice(aliasPrefix.length + 1);
+        return `${targetPrefix}/${remainingPath}`;
+      }
+    }
+    // Handle exact matches
+    else if (importPath === alias) {
+      return target;
+    }
+  }
+
+  return null;
+}
+
+export function generateDeclarationUri({
+  filename,
+  name,
+  projectRoot,
+}: {
+  filename: string;
+  name: string;
+  projectRoot: string;
+}): string {
+  let normalizedFile = filename.replace(/\\/g, "/");
+
+  // Make path relative to project root using string manipulation
+  if (projectRoot && normalizedFile.startsWith(projectRoot)) {
+    normalizedFile = normalizedFile.substring(projectRoot.length);
+    // Remove leading slash if present
+    if (normalizedFile.startsWith("/")) {
+      normalizedFile = normalizedFile.substring(1);
+    }
+  }
+
+  return `${normalizedFile}#${name}`;
+}
+
+export function isExternalPackage({
+  importPath,
+  pathAliases,
+}: {
+  importPath: string;
+  pathAliases?: Record<string, string>;
+}): boolean {
+  // If it starts with . or /, it's definitely internal
+  if (importPath.startsWith(".") || importPath.startsWith("/")) {
+    return false;
+  }
+
+  // Check if it matches any path alias - if so, it's internal
+  if (pathAliases) {
+    for (const alias of Object.keys(pathAliases)) {
+      // Handle glob patterns like "@/*"
+      if (alias.endsWith("/*")) {
+        const aliasPrefix = alias.slice(0, -2); // Remove "/*"
+        if (importPath.startsWith(`${aliasPrefix}/`)) {
+          return false; // It's internal via alias
+        }
+      }
+      // Handle exact matches
+      else if (importPath === alias) {
+        return false; // It's internal via alias
+      }
+    }
+  }
+
+  // If none of the above, it's external
+  return true;
+}
+
+export async function resolveInternalPathAsync({
+  importPath,
+  currentFilePath,
+  pathAliases,
+  projectRoot,
+}: {
+  importPath: string;
+  currentFilePath: string;
+  pathAliases?: Record<string, string>;
+  projectRoot: string;
+}): Promise<string> {
+  // First try to resolve using path aliases
+  const aliasResolved = resolvePathAlias({ importPath, pathAliases });
+
+  let nonAliasedPath: string;
+  // For relative imports, resolve them relative to current file
+  if (importPath.startsWith(".")) {
+    nonAliasedPath = resolveRelativePath(currentFilePath, importPath);
+  } else {
+    nonAliasedPath = importPath;
+  }
+
+  const pathToCheck = aliasResolved || nonAliasedPath;
+
+  // Now, try to find the actual file with extension
+  const finalPath = await resolveFilePath(pathToCheck, projectRoot);
+
+  if (!finalPath) {
+    throw new Error(
+      `Could not resolve internal dependency path: "${importPath}" from file "${currentFilePath}"`,
+    );
+  }
+
+  return finalPath;
+}

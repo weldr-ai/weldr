@@ -46,7 +46,7 @@ export const versionRouter = {
             with: {
               declaration: {
                 with: {
-                  canvasNode: true,
+                  node: true,
                 },
               },
             },
@@ -62,10 +62,10 @@ export const versionRouter = {
       }
 
       const declarations = version.declarations
-        .filter((declaration) => declaration.declaration.canvasNode)
+        .filter((declaration) => declaration.declaration.node)
         .map((declaration) => ({
           ...declaration,
-          canvasNode: declaration.declaration.canvasNode,
+          node: declaration.declaration.node,
         }));
 
       return {
@@ -111,7 +111,7 @@ export const versionRouter = {
             with: {
               declaration: {
                 with: {
-                  canvasNode: true,
+                  node: true,
                   dependencies: true,
                 },
               },
@@ -124,7 +124,7 @@ export const versionRouter = {
         versionsList.map(async (version) => ({
           ...version,
           thumbnail:
-            version.progress === "succeeded"
+            version.status === "completed"
               ? await Tigris.object.getSignedUrl(
                   // biome-ignore lint/style/noNonNullAssertion: <explanation>
                   process.env.GENERAL_BUCKET!,

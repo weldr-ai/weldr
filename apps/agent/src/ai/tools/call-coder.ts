@@ -1,7 +1,9 @@
 import { Logger } from "@/lib/logger";
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
+import { taskSchema } from "@weldr/shared/validators/tasks";
 import { z } from "zod";
+import { createDeclarations } from "../utils/create-declarations";
 import { createTool } from "../utils/tools";
 
 export const callCoderTool = createTool({
@@ -9,29 +11,15 @@ export const callCoderTool = createTool({
   description: "Hands off the project to the coder agent to start development.",
   whenToUse:
     "After all setup is complete and the user has confirmed the plan. This should be the final action.",
-  example: `<call_coder>
-<commit_message>feat: Create personal project management app</commit_message>
-<description>Build a clean project management interface with project creation, task lists, progress tracking, and an intuitive dashboard for personal project organization.</description>
-</call_coder>`,
-  inputSchema: z.object({
-    commitMessage: z
-      .string()
-      .describe(
-        "A short, descriptive commit message for the work to be done (e.g., 'feat: implement user authentication'). Follow the conventional commit message format.",
-      ),
-    description: z
-      .string()
-      .describe("A detailed description of the features to be built."),
-  }),
+  inputSchema: taskSchema.describe("The task to be completed"),
   outputSchema: z.discriminatedUnion("success", [
-    z.object({
+    taskSchema.extend({
       success: z.literal(true),
-      commitMessage: z.string(),
-      description: z.string(),
     }),
   ]),
   execute: async ({ input, context }) => {
-    const { commitMessage, description } = input;
+    const { commitMessage, description, acceptanceCriteria, declarations } =
+      input;
     const version = context.get("version");
     const project = context.get("project");
 
@@ -52,9 +40,9 @@ export const callCoderTool = createTool({
     const [updatedVersion] = await db
       .update(versions)
       .set({
-        progress: "initiated",
         message: commitMessage,
         description,
+        acceptanceCriteria,
       })
       .where(eq(versions.id, version.id))
       .returning();
@@ -66,6 +54,12 @@ export const callCoderTool = createTool({
       );
     }
 
+    // Create declarations
+    await createDeclarations({
+      context,
+      inputDeclarations: declarations,
+    });
+
     context.set("version", updatedVersion);
 
     logger.info("Version updated successfully");
@@ -74,6 +68,7 @@ export const callCoderTool = createTool({
       success: true,
       commitMessage: input.commitMessage,
       description: input.description,
+      declarations: input.declarations,
     };
   },
 });
