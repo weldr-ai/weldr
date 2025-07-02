@@ -21,10 +21,4 @@ export const pageDeclarationSpecsSchema = z.object({
     .describe(
       "The route of the page in openapi format. Like /users/{id} or /users/new",
     ),
-  meta: z
-    .string()
-    .optional()
-    .describe(
-      "Information about this page for search engines and social sharing.",
-    ),
 });

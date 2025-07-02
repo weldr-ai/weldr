@@ -11,9 +11,13 @@ import {
   nodes,
   versionDeclarations,
 } from "@weldr/db/schema";
+import { mergeJson } from "@weldr/db/utils";
 import { nanoid } from "@weldr/shared/nanoid";
 import type { TaskDeclaration } from "@weldr/shared/types";
-import type { DeclarationMetadata } from "@weldr/shared/types/declarations";
+import type {
+  DeclarationMetadata,
+  DeclarationSpecs,
+} from "@weldr/shared/types/declarations";
 import { inArray } from "drizzle-orm";
 import { extractDeclarations } from "./extract-declarations";
 import { queueSemanticDataGeneration } from "./semantic-data-jobs";
@@ -162,11 +166,11 @@ export const createDeclarations = async ({
         .insert(declarations)
         .values({
           progress: "pending",
+          path: declaration.filePath,
           metadata: {
             version: "v1",
-            data: undefined,
-            specs: declaration.specs,
-          } as DeclarationMetadata,
+            specs: declaration.specs as DeclarationSpecs["data"],
+          },
           implementationDetails: {
             summary: declaration.summary,
             acceptanceCriteria: declaration.acceptanceCriteria,
@@ -314,13 +318,14 @@ export async function extractAndSaveDeclarations({
                   id: true,
                   path: true,
                   uri: true,
+                  progress: true,
                 },
               },
             },
           });
 
         const existingDeclarations = activeVersionDeclarations
-          .filter((d) => d.declaration?.path?.includes(filePath))
+          .filter((d) => d.declaration?.progress === "completed")
           .map((d) => d.declaration);
 
         // Delete existing declarations for this file to create new ones
@@ -343,23 +348,39 @@ export async function extractAndSaveDeclarations({
           const declarationId = nanoid();
           newDeclarationUriToId.set(data.uri, declarationId);
 
-          await tx.insert(declarations).values({
-            id: declarationId,
-            uri: data.uri,
-            path: filePath,
-            progress: "completed",
-            metadata: {
-              version: "v1",
-              codeMetadata: data,
-            },
-            projectId: project.id,
-            userId: project.userId,
-          });
+          const doesDeclarationExist = existingDeclarations.find(
+            (d) => d.path === filePath,
+          );
+
+          if (doesDeclarationExist) {
+            await tx
+              .update(declarations)
+              .set({
+                metadata: mergeJson(declarations.metadata, {
+                  codeMetadata: data,
+                }),
+              })
+              .where(eq(declarations.id, doesDeclarationExist.id))
+              .returning();
+          } else {
+            await tx.insert(declarations).values({
+              id: declarationId,
+              uri: data.uri,
+              path: filePath,
+              progress: "completed",
+              metadata: {
+                version: "v1",
+                codeMetadata: data,
+              },
+              projectId: project.id,
+              userId: project.userId,
+            });
+          }
 
           // Queue semantic data generation as a background job
           await queueSemanticDataGeneration({
             declarationId,
-            declaration: data,
+            codeMetadata: data,
             filePath,
             sourceCode,
           });

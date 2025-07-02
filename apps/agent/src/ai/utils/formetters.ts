@@ -136,9 +136,6 @@ export function formatPageToMarkdown(
   if (page.protected) {
     markdown += "**Authentication:** Required\n\n";
   }
-  if (page.meta) {
-    markdown += `**Meta:** ${page.meta}\n\n`;
-  }
   if (page.parameters) {
     markdown += "**Parameters:**\n";
     markdown += "| Name | In | Required | Description |\n";

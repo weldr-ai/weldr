@@ -36,23 +36,22 @@ export const taskDeclarationSchema = z.object({
 
     Should provide enough context for an LLM to implement without ambiguity.
   `),
+  filePath: z.string().describe(`
+    The file path of the declaration.
+    Should be a valid file path.
+
+    Examples:
+    - src/db/schema/user.ts
+    - src/orpc/routes/users/create.ts
+    - src/routes/dashboard.tsx
+    - server/db/schema/user.ts
+    - server/orpc/routes/users/create.ts
+    - web/routes/dashboard.tsx
+  `),
   specs: z.discriminatedUnion("type", [
     dbModelDeclarationSpecsSchema,
-    endpointDeclarationSpecsSchema.pick({
-      type: true,
-      protected: true,
-      method: true,
-      path: true,
-      summary: true,
-      description: true,
-    }),
-    pageDeclarationSpecsSchema.pick({
-      type: true,
-      name: true,
-      description: true,
-      protected: true,
-      route: true,
-    }),
+    endpointDeclarationSpecsSchema,
+    pageDeclarationSpecsSchema,
   ]),
   integrations: z
     .string()

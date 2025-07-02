@@ -36,7 +36,7 @@ export const semanticDataQueue = new Queue("semantic-data", {
 
 export interface SemanticDataJobData {
   declarationId: string;
-  declaration: DeclarationCodeMetadata;
+  codeMetadata: DeclarationCodeMetadata;
   filePath: string;
   sourceCode: string;
 }
@@ -55,7 +55,7 @@ export const semanticDataWorker = new Worker(
 
     const {
       declarationId,
-      declaration,
+      codeMetadata,
       filePath,
       sourceCode,
     }: SemanticDataJobData = job.data;
@@ -63,14 +63,14 @@ export const semanticDataWorker = new Worker(
     logger.info("Processing semantic data generation job", {
       extra: {
         declarationId,
-        declarationName: declaration.name,
-        declarationType: declaration.type,
+        declarationName: codeMetadata.name,
+        declarationType: codeMetadata.type,
       },
     });
 
     try {
       const semanticData = await generateSemanticData(
-        declaration,
+        codeMetadata,
         filePath,
         sourceCode,
       );
@@ -88,14 +88,14 @@ export const semanticDataWorker = new Worker(
         logger.info("Successfully generated and saved semantic data", {
           extra: {
             declarationId,
-            declarationName: declaration.name,
+            declarationName: codeMetadata.name,
           },
         });
       } else {
         logger.warn("Failed to generate semantic data but job completed", {
           extra: {
             declarationId,
-            declarationName: declaration.name,
+            declarationName: codeMetadata.name,
           },
         });
       }
@@ -104,7 +104,7 @@ export const semanticDataWorker = new Worker(
         extra: {
           error: error instanceof Error ? error.message : String(error),
           declarationId,
-          declarationName: declaration.name,
+          declarationName: codeMetadata.name,
         },
       });
       throw error; // Re-throw to trigger retry
@@ -190,7 +190,7 @@ export async function queueSemanticDataGeneration(
     tags: ["queueSemanticDataGeneration"],
     extra: {
       declarationId: jobData.declarationId,
-      declarationName: jobData.declaration.name,
+      declarationName: jobData.codeMetadata.name,
     },
   });
 
@@ -202,7 +202,7 @@ export async function queueSemanticDataGeneration(
     logger.info("Queued semantic data generation job", {
       extra: {
         declarationId: jobData.declarationId,
-        declarationName: jobData.declaration.name,
+        declarationName: jobData.codeMetadata.name,
       },
     });
   } catch (error) {
