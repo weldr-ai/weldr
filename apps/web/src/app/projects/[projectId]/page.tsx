@@ -256,7 +256,6 @@ export default async function ProjectPage({
               "Main dashboard page where users can view their account overview, recent activity, and quick actions.",
             route: "/dashboard",
             protected: true,
-            meta: "Dashboard - Manage your account and view your activity",
           },
         },
         node: {
@@ -297,7 +296,6 @@ export default async function ProjectPage({
                 },
               },
             ],
-            meta: "User Profile - View and manage user information",
           },
         },
         node: {
@@ -327,7 +325,6 @@ export default async function ProjectPage({
               "Public landing page showcasing features, pricing, and call-to-action for new visitors.",
             route: "/",
             protected: false,
-            meta: "Welcome to Our Platform - Discover amazing features and get started today",
           },
         },
         node: {
