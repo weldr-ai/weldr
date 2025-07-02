@@ -1,7 +1,7 @@
 import { serve } from "@hono/node-server";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
-import { initializeEnrichmentManager, shutdownEnrichmentManager } from "./ai/services/enrichment-manager";
+import { initializeSemanticEnrichment, shutdownSemanticEnrichment } from "./ai/services/semantic-enrichment";
 import { Logger } from "./lib/logger";
 import { configureOpenAPI, createRouter } from "./lib/utils";
 import { loggerMiddleware } from "./middlewares/logger";
@@ -68,8 +68,8 @@ const port = process.env.PORT ? Number.parseInt(process.env.PORT) : 8080;
 process.on("SIGINT", async () => {
   Logger.info("Server shutting down gracefully...", { tags: ["shutdown"] });
 
-  // Shutdown enrichment manager
-  await shutdownEnrichmentManager();
+  // Shutdown semantic enrichment
+  await shutdownSemanticEnrichment();
 
   if (process.env.PROJECT_ID) {
     await workflow.markActiveVersionWorkflowAsFailed(process.env.PROJECT_ID);
@@ -84,8 +84,8 @@ process.on("SIGINT", async () => {
 process.on("SIGTERM", async () => {
   Logger.info("Server shutting down gracefully...", { tags: ["shutdown"] });
 
-  // Shutdown enrichment manager
-  await shutdownEnrichmentManager();
+  // Shutdown semantic enrichment
+  await shutdownSemanticEnrichment();
 
   if (process.env.PROJECT_ID) {
     await workflow.markActiveVersionWorkflowAsFailed(process.env.PROJECT_ID);
@@ -107,13 +107,13 @@ async function recoverWorkflows() {
   }
 }
 
-// Initialize enrichment manager
+// Initialize semantic enrichment
 async function initializeServices() {
   try {
-    await initializeEnrichmentManager();
-    Logger.info("Enrichment manager initialized", { tags: ["startup"] });
+    await initializeSemanticEnrichment();
+    Logger.info("Semantic enrichment initialized", { tags: ["startup"] });
   } catch (error) {
-    Logger.error("Failed to initialize enrichment manager", {
+    Logger.error("Failed to initialize semantic enrichment", {
       tags: ["startup"],
       extra: { error: error instanceof Error ? error.message : error },
     });

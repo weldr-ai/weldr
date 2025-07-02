@@ -16,7 +16,7 @@ import { nanoid } from "@weldr/shared/nanoid";
 import type { TaskDeclaration } from "@weldr/shared/types";
 import type { DeclarationSpecs } from "@weldr/shared/types/declarations";
 import { inArray } from "drizzle-orm";
-import { getEnrichmentManager } from "../services/enrichment-manager";
+import { queueSemanticEnrichment } from "../services/semantic-enrichment";
 import { extractDeclarations } from "./extract-declarations";
 
 export type Declaration = typeof declarations.$inferSelect & {
@@ -302,6 +302,9 @@ export async function extractAndSaveDeclarations({
     logger.info(`Extracted ${extracted.length} declarations.`);
 
     if (extracted.length > 0) {
+      // Map declaration URIs to declaration IDs
+      const newDeclarationUriToId = new Map<string, string>();
+
       await db.transaction(async (tx) => {
         const activeVersionDeclarations =
           await tx.query.versionDeclarations.findMany({
@@ -333,9 +336,6 @@ export async function extractAndSaveDeclarations({
               ),
             );
         }
-
-        // Map declaration URIs to declaration IDs
-        const newDeclarationUriToId = new Map<string, string>();
 
         for (const data of extracted) {
           const declarationId = nanoid();
@@ -396,20 +396,22 @@ export async function extractAndSaveDeclarations({
           }
         }
       });
+      
       logger.info(
         `Successfully inserted ${extracted.length} declarations and linked to version.`,
       );
 
       // Queue semantic enrichment for the newly created declarations (non-blocking)
       try {
-        const enrichmentManager = getEnrichmentManager();
-        const declarationsForEnrichment = extracted.map((data) => ({
-          id: newDeclarationUriToId.get(data.uri)!,
-          data,
-        })).filter(d => d.id); // Filter out any undefined IDs
+        const declarationsForEnrichment = extracted
+          .map((data) => {
+            const id = newDeclarationUriToId.get(data.uri);
+            return id ? { id, data } : null;
+          })
+          .filter((d): d is { id: string; data: DeclarationData } => d !== null);
 
         if (declarationsForEnrichment.length > 0) {
-          await enrichmentManager.queueSemanticEnrichment({
+          await queueSemanticEnrichment({
             declarations: declarationsForEnrichment,
             context,
             filePath,
