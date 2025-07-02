@@ -16,6 +16,7 @@ import type { TaskDeclaration } from "@weldr/shared/types";
 import type { DeclarationMetadata } from "@weldr/shared/types/declarations";
 import { inArray } from "drizzle-orm";
 import { extractDeclarations } from "./extract-declarations";
+import { queueSemanticDataGeneration } from "./semantic-data-jobs";
 
 export type Declaration = typeof declarations.$inferSelect & {
   metadata: DeclarationMetadata;
@@ -349,10 +350,18 @@ export async function extractAndSaveDeclarations({
             progress: "completed",
             metadata: {
               version: "v1",
-              data,
-            } as DeclarationMetadata,
+              codeMetadata: data,
+            },
             projectId: project.id,
             userId: project.userId,
+          });
+
+          // Queue semantic data generation as a background job
+          await queueSemanticDataGeneration({
+            declarationId,
+            declaration: data,
+            filePath,
+            sourceCode,
           });
 
           await tx.insert(versionDeclarations).values({
