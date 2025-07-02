@@ -58,12 +58,11 @@ function resolveRelativePath(
 
 export async function resolveFilePath(
   basePath: string,
-  projectRoot: string,
 ): Promise<string | null> {
   const hasExtension = /\.[^/.]+$/.test(basePath);
 
   if (hasExtension) {
-    const absolutePath = `${projectRoot}/${basePath}`.replace(/\/\//g, "/");
+    const absolutePath = `${WORKSPACE_DIR}/${basePath}`.replace(/\/\//g, "/");
     const { success } = await runCommand("test", ["-f", absolutePath]);
     if (success) {
       return basePath;
@@ -95,7 +94,7 @@ export async function resolveFilePath(
     // avoid trying to check root path
     if (path === "/") continue;
 
-    const absolutePath = `${projectRoot}/${path}`.replace(/\/\//g, "/");
+    const absolutePath = `${WORKSPACE_DIR}/${path}`.replace(/\/\//g, "/");
     const { success } = await runCommand("test", ["-f", absolutePath], {
       cwd: WORKSPACE_DIR,
     });
@@ -140,23 +139,11 @@ function resolvePathAlias({
 export function generateDeclarationUri({
   filename,
   name,
-  projectRoot,
 }: {
   filename: string;
   name: string;
-  projectRoot: string;
 }): string {
-  let normalizedFile = filename.replace(/\\/g, "/");
-
-  // Make path relative to project root using string manipulation
-  if (projectRoot && normalizedFile.startsWith(projectRoot)) {
-    normalizedFile = normalizedFile.substring(projectRoot.length);
-    // Remove leading slash if present
-    if (normalizedFile.startsWith("/")) {
-      normalizedFile = normalizedFile.substring(1);
-    }
-  }
-
+  const normalizedFile = filename.replace(/\\/g, "/").replace(/^\//, "");
   return `${normalizedFile}#${name}`;
 }
 
@@ -197,12 +184,10 @@ export async function resolveInternalPathAsync({
   importPath,
   currentFilePath,
   pathAliases,
-  projectRoot,
 }: {
   importPath: string;
   currentFilePath: string;
   pathAliases?: Record<string, string>;
-  projectRoot: string;
 }): Promise<string> {
   // First try to resolve using path aliases
   const aliasResolved = resolvePathAlias({ importPath, pathAliases });
@@ -218,12 +203,10 @@ export async function resolveInternalPathAsync({
   const pathToCheck = aliasResolved || nonAliasedPath;
 
   // Now, try to find the actual file with extension
-  const finalPath = await resolveFilePath(pathToCheck, projectRoot);
+  const finalPath = await resolveFilePath(pathToCheck);
 
   if (!finalPath) {
-    throw new Error(
-      `Could not resolve internal dependency path: "${importPath}" from file "${currentFilePath}"`,
-    );
+    return pathToCheck;
   }
 
   return finalPath;

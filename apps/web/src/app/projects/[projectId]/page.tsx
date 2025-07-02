@@ -23,11 +23,11 @@ export default async function ProjectPage({
 
     const initialNodes: CanvasNode[] =
       project.currentVersion?.declarations?.reduce<CanvasNode[]>((acc, e) => {
-        if (!e.declaration.specs) return acc;
+        if (!e.declaration.metadata?.specs) return acc;
 
         acc.push({
           id: e.declaration.nodeId ?? "",
-          type: e.declaration.specs.data.type as NodeType,
+          type: e.declaration.metadata?.specs?.type as NodeType,
           data: e.declaration,
           position: e.declaration.node?.position ?? {
             x: 0,
@@ -53,9 +53,9 @@ export default async function ProjectPage({
         id: "sample-endpoint-1",
         nodeId: "sample-endpoint-1",
         progress: "pending",
-        specs: {
+        metadata: {
           version: "v1",
-          data: {
+          specs: {
             type: "endpoint",
             method: "get",
             path: "/api/users/{userId}",
@@ -145,9 +145,9 @@ export default async function ProjectPage({
         id: "sample-db-model-1",
         nodeId: "sample-db-model-1",
         progress: "pending",
-        specs: {
+        metadata: {
           version: "v1",
-          data: {
+          specs: {
             type: "db-model",
             name: "users",
             columns: [
@@ -247,9 +247,9 @@ export default async function ProjectPage({
         id: "sample-page-1",
         nodeId: "sample-page-1",
         progress: "completed",
-        specs: {
+        metadata: {
           version: "v1",
-          data: {
+          specs: {
             type: "page",
             name: "User Dashboard",
             description:
@@ -277,9 +277,9 @@ export default async function ProjectPage({
         id: "sample-page-2",
         nodeId: "sample-page-2",
         progress: "in_progress",
-        specs: {
+        metadata: {
           version: "v1",
-          data: {
+          specs: {
             type: "page",
             name: "User Profile",
             description:
@@ -318,9 +318,9 @@ export default async function ProjectPage({
         id: "sample-page-3",
         nodeId: "sample-page-3",
         progress: "completed",
-        specs: {
+        metadata: {
           version: "v1",
-          data: {
+          specs: {
             type: "page",
             name: "Landing Page",
             description:

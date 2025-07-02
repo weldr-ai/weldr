@@ -45,7 +45,7 @@ const PageNodeHeader = memo(
 
 export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   // Only handle page declarations
-  if (_data.specs?.data.type !== "page") {
+  if (_data.metadata?.specs?.type !== "page") {
     return null;
   }
 
@@ -64,22 +64,22 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
     ),
   );
 
+  const specs = declaration.metadata?.specs;
+
   const [parameterValues, setParameterValues] = useState<
     Record<string, string>
   >({});
   const [showPreview, setShowPreview] = useState(false);
   const [sitePreviewDialogOpen, setSitePreviewDialogOpen] = useState(false);
 
-  if (!declaration.specs || declaration.specs.data.type !== "page") {
+  if (!specs || specs.type !== "page") {
     return null;
   }
-
-  const pageData = declaration.specs.data;
 
   // Extract parameters from route (e.g., /users/{id} -> ["id"])
   const routeParameters = (() => {
     return (
-      pageData.parameters
+      specs.parameters
         ?.filter((param) => param.in === "path")
         .map((param) => param.name) ?? []
     );
@@ -90,7 +90,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   // Build preview URL with parameters
   const previewUrl = useMemo(() => {
     const baseUrl = `https://${currentVersion?.id}.preview.weldr.app`;
-    let route = pageData.route.replace(/^\//, "");
+    let route = specs.route.replace(/^\//, "");
 
     if (!hasParameters) {
       return `${baseUrl}/${route}`;
@@ -106,7 +106,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   }, [
     currentVersion?.id,
     hasParameters,
-    pageData.route,
+    specs.route,
     routeParameters,
     parameterValues,
   ]);
@@ -118,10 +118,10 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
     const hasParameters = routeParameters.length > 0;
 
     if (!hasParameters) {
-      return pageData.route;
+      return specs.route;
     }
 
-    let resolvedRoute = pageData.route;
+    let resolvedRoute = specs.route;
     for (const param of routeParameters) {
       if (parameterValues[param]) {
         resolvedRoute = resolvedRoute.replace(
@@ -142,10 +142,10 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
         {part}
       </span>
     ));
-  }, [pageData.route, routeParameters, parameterValues]);
+  }, [specs.route, routeParameters, parameterValues]);
 
   const colorizedRoute = useMemo(() => {
-    return pageData.route.split(/(\{[^}]+\})/).map((part) => (
+    return specs.route.split(/(\{[^}]+\})/).map((part) => (
       <span
         key={part || `path-segment-${Math.random()}`}
         className={cn(
@@ -155,7 +155,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
         {part}
       </span>
     ));
-  }, [pageData.route]);
+  }, [specs.route]);
 
   // Determine the current state
   const isVersionCompleted = currentVersion?.status === "completed";
@@ -175,10 +175,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
           },
         )}
       >
-        <PageNodeHeader
-          name={pageData.name}
-          protected={pageData.protected ?? false}
-        >
+        <PageNodeHeader name={specs.name} protected={specs.protected ?? false}>
           {isPreviewReady && (
             <Button
               variant="ghost"
@@ -196,7 +193,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
             <iframe
               src={previewUrl}
               className="absolute top-0 left-0 h-[600px] w-[800px] origin-top-left scale-[0.5] rounded-lg border-0"
-              title={pageData.name}
+              title={specs.name}
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
               loading="lazy"
             />
@@ -239,7 +236,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
                 <div className="flex flex-col items-start gap-1">
                   <span className="text-sm">
                     <span className="text-muted-foreground">Page:</span>{" "}
-                    {pageData.name}
+                    {specs.name}
                   </span>
                   <span className="text-sm">
                     <span className="text-muted-foreground">Route:</span>{" "}
@@ -247,12 +244,12 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
                   </span>
                 </div>
                 <Badge variant="secondary" className="text-xs">
-                  {pageData.protected ? (
+                  {specs.protected ? (
                     <ShieldCheckIcon className="size-3 text-success" />
                   ) : (
                     <ShieldXIcon className="size-3 text-destructive" />
                   )}
-                  {pageData.protected ? "Protected" : "Public"}
+                  {specs.protected ? "Protected" : "Public"}
                 </Badge>
               </>
             )}
@@ -325,10 +322,10 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
         <SitePreviewDialog
           open={sitePreviewDialogOpen}
           onOpenChange={setSitePreviewDialogOpen}
-          title={pageData.name}
+          title={specs.name}
           url={previewUrl}
           browserHeader={false}
-          isProtected={pageData.protected ?? false}
+          isProtected={specs.protected ?? false}
         />
       )}
     </>

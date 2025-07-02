@@ -80,7 +80,7 @@ export const queryRelatedDeclarationsTool = createTool({
       }
 
       const targetData = targetDeclaration[0];
-      const targetDataObj = targetData?.data as { name?: string } | null;
+      const targetDataObj = targetData?.metadata?.codeMetadata ?? null;
       const targetName = targetDataObj?.name || declarationId;
       let formattedResults = "";
 

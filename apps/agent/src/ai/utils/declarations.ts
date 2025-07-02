@@ -1,4 +1,3 @@
-import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { and, db, eq } from "@weldr/db";
@@ -14,12 +13,12 @@ import {
 } from "@weldr/db/schema";
 import { nanoid } from "@weldr/shared/nanoid";
 import type { TaskDeclaration } from "@weldr/shared/types";
-import type { DeclarationSpecs } from "@weldr/shared/types/declarations";
+import type { DeclarationMetadata } from "@weldr/shared/types/declarations";
 import { inArray } from "drizzle-orm";
 import { extractDeclarations } from "./extract-declarations";
 
 export type Declaration = typeof declarations.$inferSelect & {
-  specs: DeclarationSpecs;
+  metadata: DeclarationMetadata;
   integrations: {
     integration: typeof integrations.$inferSelect & {
       integrationTemplate: typeof integrationTemplates.$inferSelect;
@@ -101,7 +100,7 @@ export const createDeclarations = async ({
       with: {
         declaration: {
           columns: {
-            specs: true,
+            metadata: true,
           },
         },
       },
@@ -109,8 +108,8 @@ export const createDeclarations = async ({
 
     const allRects: Rect[] = existingNodes.map((node) => {
       const type =
-        (node.declaration?.specs?.data?.type as keyof typeof NODE_DIMENSIONS) ??
-        "default";
+        (node.declaration?.metadata?.codeMetadata
+          ?.type as keyof typeof NODE_DIMENSIONS) ?? "default";
       const dimensions = NODE_DIMENSIONS[type] || NODE_DIMENSIONS.default;
       return {
         x: node.position.x,
@@ -123,7 +122,7 @@ export const createDeclarations = async ({
 
     for (const declaration of inputDeclarations) {
       const type =
-        (declaration.data.type as keyof typeof NODE_DIMENSIONS) ?? "default";
+        (declaration.specs.type as keyof typeof NODE_DIMENSIONS) ?? "default";
       const dimensions = NODE_DIMENSIONS[type] || NODE_DIMENSIONS.default;
 
       let hasCollision = true;
@@ -162,7 +161,11 @@ export const createDeclarations = async ({
         .insert(declarations)
         .values({
           progress: "pending",
-          specs: declaration.data as unknown as DeclarationSpecs,
+          metadata: {
+            version: "v1",
+            data: undefined,
+            specs: declaration.specs,
+          } as DeclarationMetadata,
           implementationDetails: {
             summary: declaration.summary,
             acceptanceCriteria: declaration.acceptanceCriteria,
@@ -192,12 +195,12 @@ export const createDeclarations = async ({
       // Stream node creation to client
       try {
         const streamWriter = global.sseConnections?.get(version.chatId);
-        if (streamWriter && createdDeclaration.specs) {
+        if (streamWriter && createdDeclaration.metadata?.specs) {
           await streamWriter.write({
             type: "node",
             nodeId: canvasNode.id,
             position: canvasNode.position,
-            specs: createdDeclaration.specs,
+            metadata: createdDeclaration.metadata,
             progress: createdDeclaration.progress,
             node: canvasNode,
           });
@@ -294,7 +297,6 @@ export async function extractAndSaveDeclarations({
     const extracted = await extractDeclarations({
       sourceCode: sourceCode,
       filename: filePath,
-      projectRoot: WORKSPACE_DIR,
       pathAliases,
     });
 
@@ -345,7 +347,10 @@ export async function extractAndSaveDeclarations({
             uri: data.uri,
             path: filePath,
             progress: "completed",
-            data,
+            metadata: {
+              version: "v1",
+              data,
+            } as DeclarationMetadata,
             projectId: project.id,
             userId: project.userId,
           });
@@ -523,7 +528,7 @@ function orderDeclarations(declarations: Declaration[]): Declaration[] {
       (d) => !sortedDeclarations.find((sd) => sd.id === d.id),
     );
     const unproccessedDeclNames = unproccessedDecls
-      .map((d) => d.data?.name ?? d.uri ?? d.id)
+      .map((d) => d.metadata?.codeMetadata?.name ?? d.uri ?? d.id)
       .join(", ");
     throw new Error(
       `Circular dependency detected. Could not resolve order for: ${unproccessedDeclNames}`,

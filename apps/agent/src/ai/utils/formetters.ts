@@ -1,9 +1,14 @@
 import type { Declaration } from "@/ai/utils/declarations";
 import type { declarations } from "@weldr/db/schema";
 import type {
-  ClassMemberInfo,
-  DeclarationData,
-  DeclarationSpecs,
+  ClassDeclarationCodeMetadata,
+  DeclarationCodeMetadata,
+  DeclarationMetadata,
+  EnumDeclarationCodeMetadata,
+  FunctionDeclarationCodeMetadata,
+  InterfaceDeclarationCodeMetadata,
+  NamespaceDeclarationCodeMetadata,
+  VariableDeclarationCodeMetadata,
 } from "@weldr/shared/types/declarations";
 import type { dbModelDeclarationSpecsSchema } from "@weldr/shared/validators/declarations/db-model";
 import type { endpointDeclarationSpecsSchema } from "@weldr/shared/validators/declarations/endpoint";
@@ -152,7 +157,7 @@ export function formatPageToMarkdown(
 export function formatTaskDeclarationToMarkdown(
   declaration: Declaration,
 ): string {
-  if (!declaration.specs) {
+  if (!declaration.metadata?.specs) {
     return `### Declaration with invalid specs\n\nID: ${declaration.id}\n\n---\n\n`;
   }
 
@@ -215,15 +220,15 @@ export function formatTaskDeclarationToMarkdown(
 export function formatDeclarationSpecs(
   declaration: typeof declarations.$inferSelect,
 ): string {
-  const specs = declaration.specs as DeclarationSpecs | null;
-  const data = declaration.data;
+  const specs = declaration.metadata?.specs;
+  const data = declaration.metadata?.codeMetadata;
 
   if (
     !specs ||
     !(
-      specs.data.type === "endpoint" ||
-      specs.data.type === "db-model" ||
-      specs.data.type === "page"
+      specs.type === "endpoint" ||
+      specs.type === "db-model" ||
+      specs.type === "page"
     )
   ) {
     return "";
@@ -233,11 +238,8 @@ export function formatDeclarationSpecs(
   const position = data?.position;
 
   const name =
-    specs.data.type === "endpoint"
-      ? `${specs.data.method} ${specs.data.path}`
-      : specs.data.name;
-  const category =
-    specs.data.type === "db-model" ? "db_model" : specs.data.type;
+    specs.type === "endpoint" ? `${specs.method} ${specs.path}` : specs.name;
+  const category = specs.type === "db-model" ? "db_model" : specs.type;
 
   let result = `## ${category}: ${name}\n\n`;
 
@@ -252,15 +254,15 @@ export function formatDeclarationSpecs(
   }
 
   // Use the existing formatters for the specific content
-  switch (specs.data.type) {
+  switch (specs.type) {
     case "endpoint":
-      result += formatEndpointToMarkdown(specs.data);
+      result += formatEndpointToMarkdown(specs);
       break;
     case "db-model":
-      result += formatDbModelToMarkdown(specs.data);
+      result += formatDbModelToMarkdown(specs);
       break;
     case "page":
-      result += formatPageToMarkdown(specs.data);
+      result += formatPageToMarkdown(specs);
       break;
   }
 
@@ -270,16 +272,16 @@ export function formatDeclarationSpecs(
 // Helper function to format common declaration info
 function formatDeclarationHeader(
   declaration: typeof declarations.$inferSelect,
-  data: DeclarationData,
+  data: DeclarationMetadata,
 ): string {
-  const name = data.name || "Unknown";
-  const category = data.semanticInfo?.category || data.type;
-  const position = data.position;
+  const name = data.codeMetadata?.name || "Unknown";
+  const tags = data.semanticData?.tags || [];
+  const position = data.codeMetadata?.position;
 
   // Include category if it's not unknown
   let result = "";
-  if (category && category !== "unknown") {
-    result = `## ${category}: ${name}\n`;
+  if (tags && tags.length > 0) {
+    result = `## ${tags.join(", ")}: ${name}\n`;
   } else {
     result = `## ${name}\n`;
   }
@@ -295,19 +297,21 @@ function formatDeclarationHeader(
   }
 
   // Add purpose - most critical for LLMs
-  if (data.semanticInfo?.purpose) {
-    result += `${data.semanticInfo.purpose}\n\n`;
+  if (data.semanticData?.description) {
+    result += `${data.semanticData.description}\n\n`;
   }
 
   // Add type signature if available - essential for understanding
-  if (data.typeSignature) {
-    result += `\`\`\`typescript\n${data.typeSignature}\n\`\`\`\n\n`;
+  if (data.codeMetadata?.typeSignature) {
+    result += `\`\`\`typescript\n${data.codeMetadata.typeSignature}\n\`\`\`\n\n`;
   }
 
   return result;
 }
 
-function formatFunctionDeclaration(data: DeclarationData): string {
+function formatFunctionDeclaration(
+  data: FunctionDeclarationCodeMetadata,
+): string {
   let result = "";
 
   // Function modifiers (only if present)
@@ -337,74 +341,25 @@ function formatFunctionDeclaration(data: DeclarationData): string {
   return result;
 }
 
-function formatClassDeclaration(data: DeclarationData): string {
+function formatClassDeclaration(data: ClassDeclarationCodeMetadata): string {
   let result = "";
 
-  // Inheritance info - important for understanding structure
   if (data.extends) {
     result += `**Extends:** \`${data.extends}\`\n`;
   }
+
   if (data.implements && data.implements.length > 0) {
     result += `**Implements:** ${data.implements.map((impl) => `\`${impl}\``).join(", ")}\n`;
   }
+
   if (data.extends || (data.implements && data.implements.length > 0)) {
     result += "\n";
-  }
-
-  // Class members - essential structure info
-  if (
-    data.members &&
-    typeof data.members === "object" &&
-    "properties" in data.members
-  ) {
-    const members = data.members as ClassMemberInfo;
-
-    if (members.properties && members.properties.length > 0) {
-      result += "**Properties:**\n";
-      for (const prop of members.properties) {
-        const modifiers = [];
-        if (prop.isStatic) modifiers.push("static");
-        if (prop.isPrivate) modifiers.push("private");
-        if (prop.isProtected) modifiers.push("protected");
-        if (prop.isReadonly) modifiers.push("readonly");
-        const modifierText =
-          modifiers.length > 0 ? `${modifiers.join(" ")} ` : "";
-        const optional = prop.isOptional ? "?" : "";
-        result += `- ${modifierText}${prop.name}${optional}: \`${prop.type}\`\n`;
-      }
-      result += "\n";
-    }
-
-    if (members.methods && members.methods.length > 0) {
-      result += "**Methods:**\n";
-      for (const method of members.methods) {
-        const modifiers = [];
-        if (method.isStatic) modifiers.push("static");
-        if (method.isPrivate) modifiers.push("private");
-        if (method.isProtected) modifiers.push("protected");
-        if (method.isAsync) modifiers.push("async");
-        const modifierText =
-          modifiers.length > 0 ? `${modifiers.join(" ")} ` : "";
-        const params = method.parameters
-          .map((p) => `${p.name}: ${p.type}`)
-          .join(", ");
-        result += `- ${modifierText}${method.name}(${params}): \`${method.returnType}\`\n`;
-      }
-      result += "\n";
-    }
-
-    if (members.constructor) {
-      const params = members.constructor.parameters
-        .map((p) => `${p.name}: ${p.type}`)
-        .join(", ");
-      result += `**Constructor:** (${params})\n\n`;
-    }
   }
 
   return result;
 }
 
-function formatEnumDeclaration(data: DeclarationData): string {
+function formatEnumDeclaration(data: EnumDeclarationCodeMetadata): string {
   let result = "";
 
   if (data.enumMembers && data.enumMembers.length > 0) {
@@ -419,7 +374,7 @@ function formatEnumDeclaration(data: DeclarationData): string {
 }
 
 function formatNamespaceDeclaration(
-  data: DeclarationData,
+  data: NamespaceDeclarationCodeMetadata,
   memberDeclarations?: (typeof declarations.$inferSelect)[],
 ): string {
   let result = "";
@@ -428,24 +383,13 @@ function formatNamespaceDeclaration(
   if (memberDeclarations && memberDeclarations.length > 0) {
     result += "**Members:**\n";
     for (const memberDeclaration of memberDeclarations) {
-      const memberData = memberDeclaration.data as DeclarationData | null;
+      const memberData = memberDeclaration.metadata;
       if (memberData) {
-        const purpose = memberData.semanticInfo?.purpose || "";
-        result += `- **${memberData.name}** (${memberData.type})`;
-        if (purpose) result += ` - ${purpose}`;
+        const description = memberData.semanticData?.description || "";
+        result += `- **${memberData.codeMetadata?.name}** (${memberData.codeMetadata?.type})`;
+        if (description) result += ` - ${description}`;
         result += "\n";
       }
-    }
-    result += "\n";
-  }
-  // Fallback: simple list
-  else if (data.members && Array.isArray(data.members)) {
-    result += "**Members:**\n";
-    for (const member of data.members as DeclarationData[]) {
-      const purpose = member.semanticInfo?.purpose || "";
-      result += `- **${member.name}** (${member.type})`;
-      if (purpose) result += ` - ${purpose}`;
-      result += "\n";
     }
     result += "\n";
   }
@@ -453,7 +397,9 @@ function formatNamespaceDeclaration(
   return result;
 }
 
-function formatInterfaceOrTypeDeclaration(data: DeclarationData): string {
+function formatInterfaceOrTypeDeclaration(
+  data: InterfaceDeclarationCodeMetadata,
+): string {
   let result = "";
 
   // For interfaces, show extends information
@@ -461,20 +407,10 @@ function formatInterfaceOrTypeDeclaration(data: DeclarationData): string {
     result += `**Extends:** \`${data.extends}\`\n\n`;
   }
 
-  // Show members concisely
-  if (data.members && Array.isArray(data.members)) {
-    result += "**Members:**\n";
-    for (const member of data.members as DeclarationData[]) {
-      const memberType = member.typeSignature || member.type || "unknown";
-      result += `- ${member.name}: \`${memberType}\`\n`;
-    }
-    result += "\n";
-  }
-
   return result;
 }
 
-function formatVariableDeclaration(data: DeclarationData): string {
+function formatVariableDeclaration(data: DeclarationCodeMetadata): string {
   let result = "";
 
   // Just show mutability if it's not const (since const is most common)
@@ -485,11 +421,11 @@ function formatVariableDeclaration(data: DeclarationData): string {
   return result;
 }
 
-function formatUsageInfo(data: DeclarationData): string {
+function formatUsageInfo(data: DeclarationMetadata): string {
   let result = "";
 
-  if (data.semanticInfo?.usagePattern) {
-    const usage = data.semanticInfo.usagePattern;
+  if (data.semanticData?.usagePattern) {
+    const usage = data.semanticData?.usagePattern;
 
     // Only show the most practical examples (limit to 1-2)
     if (usage.examples && usage.examples.length > 0) {
@@ -506,9 +442,12 @@ function formatUsageInfo(data: DeclarationData): string {
     }
   }
 
-  // Show only critical dependencies (external packages)
-  if (data.dependencies && data.dependencies.length > 0) {
-    const externalDeps = data.dependencies.filter(
+  // Show external dependencies
+  if (
+    data.codeMetadata?.dependencies &&
+    data.codeMetadata.dependencies.length > 0
+  ) {
+    const externalDeps = data.codeMetadata.dependencies.filter(
       (dep) => dep.type === "external",
     );
     if (externalDeps.length > 0) {
@@ -524,7 +463,7 @@ function formatUsageInfo(data: DeclarationData): string {
 export function formatDeclarationData(
   declaration: typeof declarations.$inferSelect,
 ): string {
-  const data = declaration.data as DeclarationData | null;
+  const data = declaration.metadata;
 
   if (!data) {
     return "";
@@ -533,27 +472,39 @@ export function formatDeclarationData(
   let result = formatDeclarationHeader(declaration, data);
 
   // Dispatch based on declaration type
-  switch (data.type) {
+  switch (data.codeMetadata?.type) {
     case "function":
-      result += formatFunctionDeclaration(data);
+      result += formatFunctionDeclaration(
+        data.codeMetadata as FunctionDeclarationCodeMetadata,
+      );
       break;
     case "class":
-      result += formatClassDeclaration(data);
+      result += formatClassDeclaration(
+        data.codeMetadata as ClassDeclarationCodeMetadata,
+      );
       break;
     case "enum":
-      result += formatEnumDeclaration(data);
+      result += formatEnumDeclaration(
+        data.codeMetadata as EnumDeclarationCodeMetadata,
+      );
       break;
     case "namespace":
-      result += formatNamespaceDeclaration(data);
+      result += formatNamespaceDeclaration(
+        data.codeMetadata as NamespaceDeclarationCodeMetadata,
+      );
       break;
     case "interface":
     case "type":
-      result += formatInterfaceOrTypeDeclaration(data);
+      result += formatInterfaceOrTypeDeclaration(
+        data.codeMetadata as InterfaceDeclarationCodeMetadata,
+      );
       break;
     case "const":
     case "let":
     case "var":
-      result += formatVariableDeclaration(data);
+      result += formatVariableDeclaration(
+        data.codeMetadata as VariableDeclarationCodeMetadata,
+      );
       break;
     default:
       break;

@@ -36,7 +36,7 @@ export const taskDeclarationSchema = z.object({
 
     Should provide enough context for an LLM to implement without ambiguity.
   `),
-  data: z.discriminatedUnion("type", [
+  specs: z.discriminatedUnion("type", [
     dbModelDeclarationSpecsSchema,
     endpointDeclarationSpecsSchema.pick({
       type: true,

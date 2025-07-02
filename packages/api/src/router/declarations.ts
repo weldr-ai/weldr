@@ -16,7 +16,7 @@ export const declarationsRouter = {
         columns: {
           id: true,
           nodeId: true,
-          specs: true,
+          metadata: true,
           progress: true,
         },
         with: {

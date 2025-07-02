@@ -305,7 +305,7 @@ export const projectsRouter = {
                     declaration: {
                       columns: {
                         id: true,
-                        specs: true,
+                        metadata: true,
                         nodeId: true,
                         progress: true,
                       },

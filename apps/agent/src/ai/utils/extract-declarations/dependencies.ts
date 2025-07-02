@@ -1,4 +1,5 @@
 import type { Dependency } from "@weldr/shared/types/declarations";
+import { generateDeclarationUri } from "./path-utils";
 
 function isBuiltinIdentifier(identifier: string): boolean {
   const builtins = new Set([
@@ -102,6 +103,7 @@ export function findDependencies({
   // Map used identifiers to dependencies
   for (const identifier of usedIdentifiers) {
     const importInfo = importedIdentifiers.get(identifier);
+
     if (importInfo) {
       const existing = dependencies.find(
         (dep) =>
@@ -110,7 +112,16 @@ export function findDependencies({
       );
 
       if (existing) {
-        existing.dependsOn.push(identifier);
+        // For internal dependencies, generate URI; for external, keep identifier name
+        if (existing.type === "internal") {
+          const uri = generateDeclarationUri({
+            filename: importInfo.source,
+            name: identifier,
+          });
+          existing.dependsOn.push(uri);
+        } else {
+          existing.dependsOn.push(identifier);
+        }
       } else {
         if (importInfo.isExternal) {
           dependencies.push({
@@ -119,12 +130,18 @@ export function findDependencies({
             importPath: importInfo.source,
             dependsOn: [identifier],
           });
+        } else {
+          // Generate URI for internal dependency
+          const uri = generateDeclarationUri({
+            filename: importInfo.source,
+            name: identifier,
+          });
+          dependencies.push({
+            type: "internal",
+            filePath: importInfo.source,
+            dependsOn: [uri],
+          });
         }
-        dependencies.push({
-          type: "internal",
-          filePath: importInfo.source,
-          dependsOn: [identifier],
-        });
       }
     }
   }

@@ -1,7 +1,6 @@
 CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool');--> statement-breakpoint
 CREATE TYPE "public"."message_visibility" AS ENUM('public', 'internal');--> statement-breakpoint
 CREATE TYPE "public"."declaration_progress" AS ENUM('pending', 'in_progress', 'completed');--> statement-breakpoint
-CREATE TYPE "public"."preset_type" AS ENUM('base');--> statement-breakpoint
 CREATE TYPE "public"."version_status" AS ENUM('pending', 'in_progress', 'completed', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."workflow_status" AS ENUM('running', 'completed', 'failed', 'suspended');--> statement-breakpoint
 CREATE TYPE "public"."workflow_step_status" AS ENUM('pending', 'running', 'completed', 'failed', 'skipped');--> statement-breakpoint
@@ -137,11 +136,11 @@ CREATE TABLE "declaration_integrations" (
 --> statement-breakpoint
 CREATE TABLE "declarations" (
 	"id" text PRIMARY KEY NOT NULL,
+	"version" text DEFAULT 'v1' NOT NULL,
 	"uri" text,
 	"path" text,
 	"progress" "declaration_progress" NOT NULL,
-	"data" jsonb,
-	"specs" jsonb,
+	"metadata" jsonb,
 	"implementation_details" jsonb,
 	"embedding" vector(1536),
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -206,36 +205,6 @@ CREATE TABLE "nodes" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"project_id" text NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "preset_declarations" (
-	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"file" text NOT NULL,
-	"data" jsonb,
-	"dependencies" jsonb,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"preset_id" text NOT NULL,
-	CONSTRAINT "unique_preset_declaration" UNIQUE("name","file","preset_id")
-);
---> statement-breakpoint
-CREATE TABLE "preset_themes" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"data" jsonb NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "presets" (
-	"id" text PRIMARY KEY NOT NULL,
-	"type" "preset_type" NOT NULL,
-	"name" text NOT NULL,
-	"description" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "presets_type_unique" UNIQUE("type")
 );
 --> statement-breakpoint
 CREATE TABLE "projects" (
@@ -336,7 +305,6 @@ ALTER TABLE "integrations" ADD CONSTRAINT "integrations_project_id_projects_id_f
 ALTER TABLE "integrations" ADD CONSTRAINT "integrations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integrations" ADD CONSTRAINT "integrations_integration_template_id_integration_templates_id_fk" FOREIGN KEY ("integration_template_id") REFERENCES "public"."integration_templates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "nodes" ADD CONSTRAINT "nodes_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "preset_declarations" ADD CONSTRAINT "preset_declarations_preset_id_presets_id_fk" FOREIGN KEY ("preset_id") REFERENCES "public"."presets"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "themes" ADD CONSTRAINT "themes_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "themes" ADD CONSTRAINT "themes_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

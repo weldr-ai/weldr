@@ -1,8 +1,5 @@
 import { nanoid } from "@weldr/shared/nanoid";
-import type {
-  DeclarationData,
-  DeclarationSpecsV1,
-} from "@weldr/shared/types/declarations";
+import type { DeclarationMetadata } from "@weldr/shared/types/declarations";
 import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
@@ -33,11 +30,11 @@ export const declarations = pgTable(
   "declarations",
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
+    version: text("version").default("v1").notNull(),
     uri: text("uri"),
     path: text("path"),
     progress: declarationProgress("progress").notNull(),
-    data: jsonb("data").$type<DeclarationData>(),
-    specs: jsonb("specs").$type<DeclarationSpecsV1>(),
+    metadata: jsonb("metadata").$type<DeclarationMetadata>(),
     implementationDetails: jsonb("implementation_details").$type<{
       summary: string;
       description: string;

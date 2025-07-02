@@ -7,7 +7,6 @@ export * from "./environment-variables";
 export * from "./integration-templates";
 export * from "./integrations";
 export * from "./nodes";
-export * from "./presets";
 export * from "./projects";
 export * from "./themes";
 export * from "./vault";

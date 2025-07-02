@@ -330,7 +330,7 @@ export async function coderAgent({
 
   for (const declaration of executionPlan) {
     logger.info(
-      `Executing coder for declaration: ${declaration.data?.name ?? declaration.uri}`,
+      `Executing coder for declaration: ${declaration.metadata?.codeMetadata?.name ?? declaration.uri}`,
     );
 
     const loopChatId = declaration.chatId;
@@ -443,12 +443,12 @@ async function updateCanvasNode({
       throw new Error("Declaration not found");
     }
 
-    if (updatedDeclaration.node && updatedDeclaration.specs) {
+    if (updatedDeclaration.node && updatedDeclaration.metadata?.specs) {
       await streamWriter.write({
         type: "node",
         nodeId: updatedDeclaration.node.id,
         position: updatedDeclaration.node.position,
-        specs: updatedDeclaration.specs,
+        metadata: updatedDeclaration.metadata,
         progress: updatedDeclaration.progress,
         node: updatedDeclaration.node,
       });

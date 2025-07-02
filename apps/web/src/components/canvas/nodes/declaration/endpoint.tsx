@@ -20,7 +20,7 @@ export const EndpointNode = memo(
     positionAbsoluteY,
   }: CanvasNodeProps) => {
     // Only handle endpoint declarations
-    if (_data.specs?.data.type !== "endpoint") {
+    if (_data.metadata?.specs?.type !== "endpoint") {
       return null;
     }
 
@@ -36,6 +36,8 @@ export const EndpointNode = memo(
         },
       ),
     );
+
+    const specs = declaration.metadata?.specs;
 
     const { fitBounds } = useReactFlow();
 
@@ -105,11 +107,9 @@ export const EndpointNode = memo(
       };
     }, [isExpanded]);
 
-    if (!declaration.specs || declaration.specs.data.type !== "endpoint") {
+    if (!specs || specs.type !== "endpoint") {
       return null;
     }
-
-    const endpointData = declaration.specs.data;
 
     const handleCardClick = () => {
       if (!isExpanded && declaration.progress === "completed") {
@@ -163,22 +163,18 @@ export const EndpointNode = memo(
                   )}
                   <Badge
                     className={cn("shrink-0 font-bold uppercase", {
-                      "bg-primary/30 text-primary":
-                        endpointData.method === "get",
-                      "bg-success/30 text-success":
-                        endpointData.method === "post",
-                      "bg-warning/30 text-warning":
-                        endpointData.method === "put",
+                      "bg-primary/30 text-primary": specs.method === "get",
+                      "bg-success/30 text-success": specs.method === "post",
+                      "bg-warning/30 text-warning": specs.method === "put",
                       "bg-destructive/30 text-destructive":
-                        endpointData.method === "delete",
-                      "p-0 font-semibold text-primary text-xs":
-                        !endpointData.method,
+                        specs.method === "delete",
+                      "p-0 font-semibold text-primary text-xs": !specs.method,
                     })}
                   >
-                    {endpointData.method?.toUpperCase() || "API"}
+                    {specs.method?.toUpperCase() || "API"}
                   </Badge>
                   <span className="truncate font-mono text-xs">
-                    {(endpointData.path || "/api/endpoint")
+                    {(specs.path || "/api/endpoint")
                       .split(/(\{[^}]+\})/)
                       .map((part) => (
                         <span
@@ -194,16 +190,16 @@ export const EndpointNode = memo(
                       ))}
                   </span>
                 </div>
-                <ProtectedBadge protected={endpointData.protected ?? false} />
+                <ProtectedBadge protected={specs.protected ?? false} />
               </div>
-              {endpointData.summary && (
+              {specs.summary && (
                 <span className="w-full truncate text-start text-sm">
-                  {endpointData.summary}
+                  {specs.summary}
                 </span>
               )}
-              {endpointData.description && (
+              {specs.description && (
                 <span className="w-full text-start text-muted-foreground text-xs">
-                  {endpointData.description}
+                  {specs.description}
                 </span>
               )}
             </div>
@@ -219,10 +215,10 @@ export const EndpointNode = memo(
                     </span>
                     <span className="text-muted-foreground">Endpoint</span>
                   </div>
-                  <ProtectedBadge protected={endpointData.protected ?? false} />
+                  <ProtectedBadge protected={specs.protected ?? false} />
                 </div>
                 <h3 className="text-sm">
-                  {endpointData.summary || endpointData.path || "API Endpoint"}
+                  {specs.summary || specs.path || "API Endpoint"}
                 </h3>
               </div>
 
@@ -230,7 +226,7 @@ export const EndpointNode = memo(
               <ScrollArea className="flex-1 overflow-hidden p-4">
                 <OpenApiEndpointDocs
                   spec={
-                    endpointData
+                    specs
                       ? ({
                           openapi: "3.0.0",
                           info: {
@@ -238,8 +234,8 @@ export const EndpointNode = memo(
                             version: "1.0.0",
                           },
                           paths: {
-                            [endpointData.path]: {
-                              [endpointData.method]: endpointData,
+                            [specs.path]: {
+                              [specs.method]: specs,
                             },
                           },
                         } as OpenAPIV3.Document)

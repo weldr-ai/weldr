@@ -3,7 +3,6 @@ import { versions } from "@weldr/db/schema";
 import { createStep, createWorkflow } from "./engine";
 import { codeStep } from "./steps/code";
 import { deployStep } from "./steps/deploy";
-import { enrichStep } from "./steps/enrich";
 import { planStep } from "./steps/plan";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -17,7 +16,7 @@ export const workflow = createWorkflow({
   .step(planStep)
   .suspend(async ({ context }) => context.get("version").status === "pending")
   .step(codeStep)
-  .parallel(isDev ? [] : [enrichStep, deployStep])
+  .parallel(isDev ? [] : [deployStep])
   .step(
     createStep({
       id: "complete",

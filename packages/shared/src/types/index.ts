@@ -21,7 +21,7 @@ import type {
 import type { taskDeclarationSchema, taskSchema } from "../validators/tasks";
 import type { themeDataSchema, themeSchema } from "../validators/themes";
 import type { versionSchema } from "../validators/versions";
-import type { DeclarationProgress, DeclarationSpecs } from "./declarations";
+import type { DeclarationMetadata, DeclarationProgress } from "./declarations";
 
 export type DataType = z.infer<typeof dataTypeSchema>;
 
@@ -79,7 +79,7 @@ export type NodeStreamableValue = {
   type: "node";
   nodeId: string;
   position: { x: number; y: number };
-  specs: DeclarationSpecs;
+  metadata: DeclarationMetadata;
   progress: DeclarationProgress;
   node: Node;
 };

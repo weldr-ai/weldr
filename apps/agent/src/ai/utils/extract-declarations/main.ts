@@ -1,28 +1,27 @@
-import { parse } from "@swc/core";
-import type { DeclarationData } from "@weldr/shared/types/declarations";
-import { processModuleBody } from "./processor";
+import type { DeclarationCodeMetadata } from "@weldr/shared/types/declarations";
+import * as ts from "typescript";
+import { processSourceFile } from "./processor";
 
 export async function extractDeclarations({
   sourceCode,
-  filename = "input.ts",
-  includeNonExported = false,
-  projectRoot,
+  filename,
   pathAliases,
 }: {
   sourceCode: string;
-  filename?: string;
-  includeNonExported?: boolean;
-  projectRoot: string;
+  filename: string;
   pathAliases?: Record<string, string>;
-}): Promise<DeclarationData[]> {
+}): Promise<DeclarationCodeMetadata[]> {
   try {
-    const ast = await parse(sourceCode, {
-      syntax: "typescript",
-      tsx: filename.endsWith(".tsx"),
-      decorators: true,
-    });
+    // Create a TypeScript source file
+    const sourceFile = ts.createSourceFile(
+      filename,
+      sourceCode,
+      ts.ScriptTarget.Latest,
+      true, // setParentNodes
+      filename.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+    );
 
-    const declarations: DeclarationData[] = [];
+    const declarations: DeclarationCodeMetadata[] = [];
     const sourceLines = sourceCode.split("\n");
 
     // Track imported identifiers for dependency analysis
@@ -31,11 +30,11 @@ export async function extractDeclarations({
       { source: string; isExternal: boolean }
     >();
 
-    await processModuleBody({
-      body: ast.body,
+    await processSourceFile({
+      sourceFile,
+      sourceCode,
       sourceLines,
       filename,
-      projectRoot,
       pathAliases,
       declarations,
       importedIdentifiers,
@@ -50,218 +49,208 @@ export async function extractDeclarations({
 }
 
 async function main() {
-  const projectRoot = "/Users/user/project"; // Mock project root
-  const pathAliases = {
-    "@/": "src/",
-    "~modules/": "src/modules/",
-  };
+  console.log("Testing extractDeclarations function...\n");
 
-  const testCases = [
-    {
-      name: "Basic Exports",
-      filename: "src/basic.ts",
-      sourceCode: `
-        export const myConst = 123;
-        export let myLet = "hello";
-        export function myFunction() { return "world"; }
-        export class MyClass {
-            public prop: string = "test";
-            private id: number = 1;
-            constructor(id: number) { this.id = id; }
-            public getId(): number { return this.id; }
-            private utility() {}
-        }
-        export type MyType = { a: string };
-        export interface MyInterface { b: number; }
-        export enum MyEnum { A, B }
-        export namespace MyNamespace { export const a = 1; }
-      `,
-    },
-    {
-      name: "Default Exports",
-      filename: "src/defaults.ts",
-      sourceCode: `
-        export default function myDefaultFunction() {}
-        const name = 'world';
-        export default name;
-        export default class MyDefaultClass {
-            public name: string;
-            constructor(name: string) {
-                this.name = name;
-            }
-            greet() {
-                return \`Hello, \${this.name}\`;
-            }
-        }
-        export default function() {} // Anonymous function
-      `,
-    },
-    {
-      name: "Re-exports",
-      filename: "src/re-exports.ts",
-      sourceCode: `
-          export { a, b as c } from './utils';
-          export * from './another-util';
-          export { type T } from './types';
-          export { Button } from 'some-external-lib';
-        `,
-    },
-    {
-      name: "Imports and Dependencies",
-      filename: "src/dependencies.ts",
-      sourceCode: `
-            import { utilFunction, utilConst } from './utils';
-            import type { AnotherType } from '@/types';
-            import DefaultUtil from '~modules/default-util';
-            import * as AllUtils from './all-utils';
+  // Test 1: Simple function declaration
+  const test1 = `
+export function calculateSum(a: number, b: number): number {
+  return a + b;
+}
 
-            const internalConst = 'internal';
+export const multiply = (x: number, y: number) => x * y;
+`;
 
-            export function usesDependencies(param: AnotherType) {
-                console.log(utilConst, internalConst);
-                return utilFunction(param);
-            }
+  try {
+    console.log("=== Test 1: Function declarations ===");
+    const result1 = await extractDeclarations({
+      sourceCode: test1,
+      filename: "math.ts",
+    });
+    console.log(JSON.stringify(result1, null, 2));
+  } catch (error) {
+    console.error(
+      "Test 1 failed:",
+      error instanceof Error ? error.message : error,
+    );
+  }
 
-            export const usesDefault = DefaultUtil.do();
+  console.log("\n");
 
-            export const usesNamespace = AllUtils.someFunc();
-        `,
-    },
-    {
-      name: "Non-exported declarations",
-      filename: "src/non-exported.ts",
-      sourceCode: `
-            const a = 1;
-            function b() { return a; }
-            export const c = b();
-            type T = string;
-            interface I { x: T; }
-        `,
-    },
-    {
-      name: "TSX Component",
-      filename: "src/component.tsx",
-      sourceCode: `
-            import React, { useState } from 'react';
-            import { Button } from '@/components/ui/button';
+  // Test 2: Class and interface declarations
+  const test2 = `
+import { EventEmitter } from 'events';
+import { DatabaseConnection } from './db';
 
-            interface MyComponentProps {
-                title: string;
-            }
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
 
-            export const MyComponent = ({ title }: MyComponentProps) => {
-                const [count, setCount] = useState(0);
-                return (
-                    <div>
-                        <h1>{title}</h1>
-                        <p>Count: {count}</p>
-                        <Button onClick={() => setCount(c => c + 1)}>Increment</Button>
-                    </div>
-                );
-            };
+export class UserService extends EventEmitter {
+  private db: DatabaseConnection;
 
-            export default MyComponent;
-        `,
-    },
-    {
-      name: "Complex Syntax",
-      filename: "src/complex.ts",
-      sourceCode: `
-            export const arrowFunc = (a: number): string => \`val: \${a}\`;
-            export const { a, b: d } = { a: 1, b: 2 };
-            export default function<T extends {id: string}>(arg: T): string {
-                 return arg.id;
-            }
-            export const obj = {
-                method() { return 'hello'; }
-            }
-        `,
-    },
-    {
-      name: "Complex Real-world Example",
-      filename: "src/user-service.ts",
-      sourceCode: `
-            import { BaseService } from './base-service';
-            import type { User, UserRole } from './types';
+  constructor(db: DatabaseConnection) {
+    super();
+    this.db = db;
+  }
 
-            export interface UserServiceConfig<T = any> {
-              maxRetries?: number;
-              timeout?: T;
-            }
+  async getUser(id: string): Promise<User | null> {
+    return this.db.findUser(id);
+  }
+}
+`;
 
-            export type UserStatus = 'active' | 'inactive' | 'pending';
+  try {
+    console.log("=== Test 2: Class and interface declarations ===");
+    const result2 = await extractDeclarations({
+      sourceCode: test2,
+      filename: "src/lib/user-service.ts",
+      pathAliases: { "@/*": "./src/*" },
+    });
+    console.log(JSON.stringify(result2, null, 2));
+  } catch (error) {
+    console.error("Test 2 failed:", error);
+  }
 
-            export async function* processUsers<T extends User>(
-              users: T[],
-              batchSize: number = 10
-            ): AsyncGenerator<T[], void, unknown> {
-              for (let i = 0; i < users.length; i += batchSize) {
-                yield users.slice(i, i + batchSize);
-              }
-            }
+  console.log("\n");
 
-            export class UserService<T extends User = User> extends BaseService implements UserServiceConfig {
-              private readonly cache = new Map<string, T>();
-              public static readonly DEFAULT_TIMEOUT = 5000;
+  // Test 3: React component
+  const test3 = `
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 
-              constructor(private config: UserServiceConfig<number>) {
-                super();
-              }
+export interface TodoItemProps {
+  id: string;
+  text: string;
+  completed: boolean;
+  onToggle: (id: string) => void;
+}
 
-              async getUser(id: string): Promise<T | null> {
-                return this.#cache.get(id) || null;
-              }
+export const TodoItem: React.FC<TodoItemProps> = ({ id, text, completed, onToggle }) => {
+  const [isHovered, setIsHovered] = useState(false);
 
-              static async createService(): Promise<UserService> {
-                return new UserService({ timeout: UserService.DEFAULT_TIMEOUT });
-              }
-            }
+  useEffect(() => {
+    console.log('TodoItem mounted');
+  }, []);
 
-            export const userValidator = (user: User): boolean => user.id.length > 0;
+  return (
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Button onClick={() => onToggle(id)}>
+        {completed ? '✓' : '○'} {text}
+      </Button>
+    </div>
+  );
+};
 
-            export { type UserRole as Role } from './types';
-            export * from './user-utils';
-      `,
-    },
-    {
-      name: "Namespace",
-      filename: "src/namespace.ts",
-      sourceCode: `
-        export namespace MyNamespace {
-          export const a = 1;
-          export function b() { return a; }
-          export class C {
-            public a: number;
-            constructor(a: number) { this.a = a; }
-            public getA() { return this.a; }
-          }
-          export type T = string;
-        }
-      `,
-    },
-  ];
+export default TodoItem;
+`;
 
-  for (const [index, tc] of testCases.entries()) {
-    console.log(`\n--- Test Case ${index + 1}: ${tc.name} ---\n`);
-    console.log(`File: ${tc.filename}`);
-    console.log("\n--- Output ---\n");
+  try {
+    console.log("=== Test 3: React component ===");
+    const result3 = await extractDeclarations({
+      sourceCode: test3,
+      filename: "src/components/todo-item.tsx",
+      pathAliases: { "@/*": "./src/*" },
+    });
+    console.log(JSON.stringify(result3, null, 2));
+  } catch (error) {
+    console.error("Test 3 failed:", error);
+  }
 
-    try {
-      const declarations = await extractDeclarations({
-        sourceCode: tc.sourceCode,
-        filename: tc.filename,
-        projectRoot,
-        pathAliases,
-      });
-      console.log(JSON.stringify(declarations, null, 2));
-    } catch (error) {
-      console.error(`Error in test case "${tc.name}":`, error);
+  console.log("\n");
+
+  // Test 4: Type aliases and enums
+  const test4 = `
+export type Status = 'pending' | 'approved' | 'rejected';
+
+export enum Priority {
+  Low = 0,
+  Medium = 1,
+  High = 2,
+  Critical = 3
+}
+
+export type TaskData = {
+  id: string;
+  title: string;
+  status: Status;
+  priority: Priority;
+  createdAt: Date;
+};
+
+export const defaultTask: TaskData = {
+  id: '',
+  title: '',
+  status: 'pending',
+  priority: Priority.Low,
+  createdAt: new Date()
+};
+`;
+
+  try {
+    console.log("=== Test 4: Type aliases and enums ===");
+    const result4 = await extractDeclarations({
+      sourceCode: test4,
+      filename: "src/lib/types.ts",
+    });
+    console.log(JSON.stringify(result4, null, 2));
+  } catch (error) {
+    console.error("Test 4 failed:", error);
+  }
+
+  console.log("\n");
+
+  // Test 5: Namespace declarations
+  const test5 = `
+export namespace API {
+  export interface User {
+    id: string;
+    name: string;
+  }
+
+  export class UserService {
+    static async getUser(id: string): Promise<User> {
+      return { id, name: 'John' };
     }
-    console.log(`\n${"=".repeat(40)}`);
+  }
+
+  export const BASE_URL = 'https://api.example.com';
+
+  export enum Status {
+    Active = 'active',
+    Inactive = 'inactive'
   }
 }
 
-main().catch((err) => {
-  console.error("Unhandled error in main function:", err);
-  process.exit(1);
-});
+namespace Internal {
+  export const SECRET = 'hidden';
+
+  export function processData(data) {
+    console.log(data);
+    return data;
+  }
+}
+`;
+
+  try {
+    console.log("=== Test 5: Namespace declarations ===");
+    const result5 = await extractDeclarations({
+      sourceCode: test5,
+      filename: "src/lib/api.ts",
+    });
+    console.log(JSON.stringify(result5, null, 2));
+  } catch (error) {
+    console.error("Test 5 failed:", error);
+  }
+
+  console.log("\nAll tests completed!");
+}
+
+// Run tests if this file is executed directly
+if (require.main === module) {
+  main().catch(console.error);
+}

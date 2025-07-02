@@ -32,7 +32,7 @@ export const DbModelNode = memo(
     positionAbsoluteY,
   }: CanvasNodeProps) => {
     // Only handle db-model declarations
-    if (_data.specs?.data.type !== "db-model") {
+    if (_data.metadata?.specs?.type !== "db-model") {
       return null;
     }
 
@@ -48,6 +48,8 @@ export const DbModelNode = memo(
         },
       ),
     );
+
+    const specs = declaration.metadata?.specs;
 
     const { fitBounds } = useReactFlow();
 
@@ -117,16 +119,15 @@ export const DbModelNode = memo(
       };
     }, [isExpanded]);
 
-    if (!declaration.specs || declaration.specs.data.type !== "db-model") {
+    if (!specs || specs.type !== "db-model") {
       return null;
     }
 
-    const modelData = declaration.specs.data;
     const maxColumnsInCollapsed = 5;
-    const visibleColumns = modelData.columns.slice(0, maxColumnsInCollapsed);
+    const visibleColumns = specs.columns.slice(0, maxColumnsInCollapsed);
     const hiddenColumnsCount = Math.max(
       0,
-      modelData.columns.length - maxColumnsInCollapsed,
+      specs.columns.length - maxColumnsInCollapsed,
     );
 
     const handleCardClick = () => {
@@ -180,13 +181,9 @@ export const DbModelNode = memo(
                     <Status progress={declaration.progress} />
                   )}
                   <Table2Icon className="size-3.5 text-primary" />
-                  <span className="font-semibold text-xs">
-                    {modelData.name}
-                  </span>
+                  <span className="font-semibold text-xs">{specs.name}</span>
                 </div>
-                <Badge variant="secondary">
-                  {modelData.columns.length} cols
-                </Badge>
+                <Badge variant="secondary">{specs.columns.length} cols</Badge>
               </div>
 
               {/* Column preview - compact list */}
@@ -237,22 +234,21 @@ export const DbModelNode = memo(
                   <div className="flex items-center gap-2">
                     <Table2Icon className="size-4 text-primary" />
                     <span className="font-semibold text-primary text-sm">
-                      {modelData.name}
+                      {specs.name}
                     </span>
                   </div>
                   <div className="flex gap-1">
                     <Badge variant="secondary">
-                      {modelData.columns.length} cols
+                      {specs.columns.length} cols
                     </Badge>
-                    {modelData.relationships &&
-                      modelData.relationships.length > 0 && (
-                        <Badge variant="outline">
-                          {modelData.relationships.length} rels
-                        </Badge>
-                      )}
-                    {modelData.indexes && modelData.indexes.length > 0 && (
+                    {specs.relationships && specs.relationships.length > 0 && (
                       <Badge variant="outline">
-                        {modelData.indexes.length} idx
+                        {specs.relationships.length} rels
+                      </Badge>
+                    )}
+                    {specs.indexes && specs.indexes.length > 0 && (
+                      <Badge variant="outline">
+                        {specs.indexes.length} idx
                       </Badge>
                     )}
                   </div>
@@ -269,7 +265,7 @@ export const DbModelNode = memo(
                       Columns
                     </h4>
                     <div>
-                      {modelData.columns.map((column, index) => (
+                      {specs.columns.map((column, index) => (
                         <div
                           key={`${column.name}-${index}`}
                           className="flex items-center justify-between rounded py-1.5 text-xs"
@@ -335,50 +331,49 @@ export const DbModelNode = memo(
                   </div>
 
                   {/* Relationships */}
-                  {modelData.relationships &&
-                    modelData.relationships.length > 0 && (
+                  {specs.relationships && specs.relationships.length > 0 && (
+                    <div>
+                      <h4 className="mb-1 flex items-center gap-2 font-medium text-muted-foreground text-xs">
+                        <Link2Icon className="size-3.5" />
+                        Relationships
+                      </h4>
                       <div>
-                        <h4 className="mb-1 flex items-center gap-2 font-medium text-muted-foreground text-xs">
-                          <Link2Icon className="size-3.5" />
-                          Relationships
-                        </h4>
-                        <div>
-                          {modelData.relationships.map((relationship) => (
-                            <div
-                              key={`${relationship.referencedModel}-${relationship.referencedColumn}`}
-                              className="flex items-center justify-between rounded py-1.5 text-xs"
-                            >
-                              <div className="flex min-w-0 flex-1 items-center gap-2">
-                                <Link2Icon className="size-3 text-success" />
-                                <span className="font-mono">
-                                  {relationship.referencedModel}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Badge variant="outline">
-                                  {relationship.type}
-                                </Badge>
-                                {relationship.onDelete && (
-                                  <Badge variant="secondary">
-                                    {relationship.onDelete}
-                                  </Badge>
-                                )}
-                              </div>
+                        {specs.relationships.map((relationship) => (
+                          <div
+                            key={`${relationship.referencedModel}-${relationship.referencedColumn}`}
+                            className="flex items-center justify-between rounded py-1.5 text-xs"
+                          >
+                            <div className="flex min-w-0 flex-1 items-center gap-2">
+                              <Link2Icon className="size-3 text-success" />
+                              <span className="font-mono">
+                                {relationship.referencedModel}
+                              </span>
                             </div>
-                          ))}
-                        </div>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline">
+                                {relationship.type}
+                              </Badge>
+                              {relationship.onDelete && (
+                                <Badge variant="secondary">
+                                  {relationship.onDelete}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
+                    </div>
+                  )}
 
                   {/* Indexes */}
-                  {modelData.indexes && modelData.indexes.length > 0 && (
+                  {specs.indexes && specs.indexes.length > 0 && (
                     <div>
                       <h4 className="mb-1 flex items-center gap-1 font-medium text-muted-foreground text-xs">
                         <HashIcon className="size-3.5" />
                         Indexes
                       </h4>
                       <div>
-                        {modelData.indexes.map((index) => (
+                        {specs.indexes.map((index) => (
                           <div
                             key={index.name}
                             className="flex items-center justify-between rounded py-1.5 text-xs"

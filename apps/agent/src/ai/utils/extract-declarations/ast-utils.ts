@@ -1,309 +1,32 @@
-import type {
-  ArrowFunctionExpression,
-  BindingIdentifier,
-  ClassDeclaration,
-  ClassExpression,
-  ClassMember,
-  Expression,
-  FunctionDeclaration,
-  FunctionExpression,
-  ModuleItem,
-  Param,
-  Pattern,
-  Span,
-  TsEnumDeclaration,
-  TsEnumMember,
-  TsExpressionWithTypeArguments,
-  TsInterfaceDeclaration,
-  TsModuleDeclaration,
-  TsType,
-  TsTypeAliasDeclaration,
-  TsTypeParameter,
-  VariableDeclarator,
-} from "@swc/types";
-import type {
-  ClassMemberInfo,
-  DeclarationData,
-  DeclarationPosition,
-  EnumMemberInfo,
-  MethodSignature,
-} from "@weldr/shared/types/declarations";
+import type { DeclarationPosition } from "@weldr/shared/types/declarations";
+import * as ts from "typescript";
 
-// Extract function information including async, generator, parameters, return type
-export function extractFunctionInfo(
-  func: FunctionDeclaration | FunctionExpression | ArrowFunctionExpression,
-): Partial<DeclarationData> {
-  const info: Partial<DeclarationData> = {
-    isAsync: func.async || false,
-    isGenerator: func.generator || false,
-  };
-
-  // Extract type parameters
-  if (func.typeParameters) {
-    info.typeParameters = extractTypeParameters(func.typeParameters);
-  }
-
-  // Extract parameters
-  if (func.params) {
-    info.parameters = func.params.map((param: Param | Pattern) =>
-      extractParameterInfo(param),
-    );
-  }
-
-  // Extract return type
-  if (func.returnType) {
-    info.returnType = extractTypeAnnotation(func.returnType);
-  }
-
-  // Build full type signature
-  const typeParams = info.typeParameters
-    ? `<${info.typeParameters.join(", ")}>`
-    : "";
-  const params = info.parameters
-    ? info.parameters
-        .map(
-          (p) =>
-            `${p.isRest ? "..." : ""}${p.name}${p.isOptional ? "?" : ""}: ${p.type}`,
-        )
-        .join(", ")
-    : "";
-  const returnType = info.returnType || "void";
-  const asyncPrefix = info.isAsync ? "async " : "";
-  const generatorSuffix = info.isGenerator ? "*" : "";
-
-  info.typeSignature = `${asyncPrefix}function${generatorSuffix}${typeParams}(${params}): ${returnType}`;
-
-  return info;
-}
-
-// Extract class information including extends, implements, and members
-export function extractClassInfo(
-  cls: ClassDeclaration | ClassExpression,
-): Partial<DeclarationData> {
-  const info: Partial<DeclarationData> = {};
-
-  // Extract type parameters
-  if (cls.typeParams) {
-    info.typeParameters = extractTypeParameters(cls.typeParams);
-  }
-
-  // Extract extends clause
-  if (cls.superClass) {
-    info.extends = extractExpressionType(cls.superClass);
-  }
-
-  // Extract implements clause
-  if (cls.implements && cls.implements.length > 0) {
-    info.implements = cls.implements.map(
-      (impl: TsExpressionWithTypeArguments) =>
-        extractExpressionType(impl.expression),
-    );
-  }
-
-  // Extract class members
-  if (cls.body && cls.body.length > 0) {
-    info.members = extractClassMembers(cls.body);
-  }
-
-  // Build type signature
-  const typeParams = info.typeParameters
-    ? `<${info.typeParameters.join(", ")}>`
-    : "";
-  const extendsClause = info.extends ? ` extends ${info.extends}` : "";
-  const implementsClause =
-    info.implements && info.implements.length > 0
-      ? ` implements ${info.implements.join(", ")}`
-      : "";
-
-  info.typeSignature = `class${typeParams}${extendsClause}${implementsClause}`;
-
-  return info;
-}
-
-// Extract class members (properties, methods, constructor)
-function extractClassMembers(members: ClassMember[]): ClassMemberInfo {
-  const memberInfo: ClassMemberInfo = {
-    properties: [],
-    methods: [],
-    constructor: undefined,
-  };
-
-  for (const member of members) {
-    switch (member.type) {
-      case "Constructor":
-        memberInfo.constructor = {
-          name: "constructor",
-          isStatic: false,
-          isPrivate: false,
-          isProtected: false,
-          isAsync: false,
-          isGenerator: false,
-          parameters: member.params.map((p) => {
-            if ("pat" in p) {
-              return extractParameterInfo(p.pat);
-            }
-            // This handles TsParameterProperty
-            return extractParameterInfo(p.param);
-          }),
-          returnType: "void",
-        };
-        break;
-
-      case "ClassMethod":
-        if (member.key.type === "Identifier") {
-          const method: MethodSignature = {
-            name: member.key.value,
-            isStatic: member.isStatic || false,
-            isPrivate: member.accessibility === "private",
-            isProtected: member.accessibility === "protected",
-            isAsync: member.function.async || false,
-            isGenerator: member.function.generator || false,
-            parameters: member.function.params.map((p: Param) =>
-              extractParameterInfo(p),
-            ),
-            returnType: member.function.returnType
-              ? extractTypeAnnotation(member.function.returnType)
-              : "void",
-          };
-
-          if (member.function.typeParameters) {
-            method.typeParameters = extractTypeParameters(
-              member.function.typeParameters,
-            );
-          }
-
-          memberInfo.methods.push(method);
-        }
-        break;
-
-      case "ClassProperty":
-        if (member.key.type === "Identifier") {
-          memberInfo.properties.push({
-            name: member.key.value,
-            type: member.typeAnnotation
-              ? extractTypeAnnotation(member.typeAnnotation)
-              : "any",
-            isStatic: member.isStatic || false,
-            isPrivate: member.accessibility === "private",
-            isProtected: member.accessibility === "protected",
-            isReadonly: member.readonly || false,
-            isOptional: member.isOptional || false,
-          });
-        }
-        break;
-
-      case "PrivateMethod":
-        if (member.key.type === "PrivateName") {
-          const method: MethodSignature = {
-            name: `#${member.key.id.value}`,
-            isStatic: member.isStatic || false,
-            isPrivate: true,
-            isProtected: false,
-            isAsync: member.function.async || false,
-            isGenerator: member.function.generator || false,
-            parameters: member.function.params.map((p: Param) =>
-              extractParameterInfo(p),
-            ),
-            returnType: member.function.returnType
-              ? extractTypeAnnotation(member.function.returnType)
-              : "void",
-          };
-          memberInfo.methods.push(method);
-        }
-        break;
-
-      case "PrivateProperty":
-        if (member.key.type === "PrivateName") {
-          memberInfo.properties.push({
-            name: `#${member.key.id.value}`,
-            type: member.typeAnnotation
-              ? extractTypeAnnotation(member.typeAnnotation)
-              : "any",
-            isStatic: member.isStatic || false,
-            isPrivate: true,
-            isProtected: false,
-            isReadonly: member.readonly || false,
-            isOptional: member.isOptional || false,
-          });
-        }
-        break;
-    }
-  }
-
-  return memberInfo;
-}
-
-// Extract parameter information
-function extractParameterInfo(param: Pattern | Param): {
+// Extract parameter information from TypeScript nodes
+export function extractParameterInfo(param: ts.ParameterDeclaration): {
   name: string;
   type: string;
   isOptional: boolean;
   isRest: boolean;
 } {
-  // Handle Param type
-  if ("pat" in param) {
-    const p = param as Param;
-    return extractParameterInfo(p.pat);
-  }
+  const name = ts.isIdentifier(param.name) ? param.name.text : "_complex_param";
+  const type = param.type ? extractTypeAnnotation(param.type) : "any";
+  const isOptional = !!param.questionToken;
+  const isRest = !!param.dotDotDotToken;
 
-  // Handle Pattern types
-  switch (param.type) {
-    case "Identifier": {
-      const id = param as BindingIdentifier;
-      return {
-        name: id.value,
-        type: id.typeAnnotation
-          ? extractTypeAnnotation(id.typeAnnotation)
-          : "any",
-        isOptional: id.optional || false,
-        isRest: false,
-      };
-    }
-
-    case "RestElement": {
-      const restParam = extractParameterInfo(param.argument);
-      return {
-        ...restParam,
-        isRest: true,
-      };
-    }
-    case "AssignmentPattern": {
-      return extractParameterInfo(param.left);
-    }
-    case "ArrayPattern": {
-      return {
-        name: "_destructured_array",
-        type: "any[]",
-        isOptional: false,
-        isRest: false,
-      };
-    }
-    case "ObjectPattern": {
-      return {
-        name: "_destructured_object",
-        type: "object",
-        isOptional: false,
-        isRest: false,
-      };
-    }
-    default: {
-      return {
-        name: "_unknown",
-        type: "any",
-        isOptional: false,
-        isRest: false,
-      };
-    }
-  }
+  return {
+    name,
+    type,
+    isOptional,
+    isRest,
+  };
 }
 
-// Extract type parameters (generics)
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-function extractTypeParameters(typeParams: any): string[] {
-  if (!typeParams || !typeParams.params) return [];
-
-  return typeParams.params.map((param: TsTypeParameter) => {
-    let str = param.name.value;
+// Extract type parameters (generics) from TypeScript nodes
+export function extractTypeParameters(
+  typeParams: ts.NodeArray<ts.TypeParameterDeclaration>,
+): string[] {
+  return typeParams.map((param) => {
+    let str = param.name.text;
     if (param.constraint) {
       str += ` extends ${extractType(param.constraint)}`;
     }
@@ -314,445 +37,316 @@ function extractTypeParameters(typeParams: any): string[] {
   });
 }
 
-// Extract type annotation
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-function extractTypeAnnotation(typeAnnotation: any): string {
-  if (!typeAnnotation) return "any";
-  if ("typeAnnotation" in typeAnnotation && typeAnnotation.typeAnnotation) {
-    return extractType(typeAnnotation.typeAnnotation);
-  }
-  return extractType(typeAnnotation as TsType);
+// Extract type annotation from TypeScript nodes
+export function extractTypeAnnotation(typeNode: ts.TypeNode): string {
+  return extractType(typeNode);
 }
 
-// Extract expression type (for extends/implements)
-function extractExpressionType(expr: Expression): string {
-  switch (expr.type) {
-    case "Identifier":
-      return expr.value;
-    case "MemberExpression":
-      if (
-        expr.object.type === "Identifier" &&
-        expr.property.type === "Identifier"
-      ) {
-        return `${expr.object.value}.${expr.property.value}`;
-      }
-      return "unknown";
-    default:
-      return "unknown";
+// Extract expression type (for extends/implements) from TypeScript nodes
+export function extractExpressionType(expr: ts.LeftHandSideExpression): string {
+  if (ts.isIdentifier(expr)) {
+    return expr.text;
   }
+  if (ts.isPropertyAccessExpression(expr)) {
+    return `${extractExpressionType(expr.expression)}.${expr.name.text}`;
+  }
+  return expr.getText();
 }
 
-// Comprehensive type extraction
-function extractType(type: TsType): string {
-  switch (type.type) {
-    case "TsKeywordType":
-      return type.kind;
+// Comprehensive type extraction for TypeScript nodes
+export function extractType(type: ts.TypeNode): string {
+  switch (type.kind) {
+    case ts.SyntaxKind.StringKeyword:
+      return "string";
+    case ts.SyntaxKind.NumberKeyword:
+      return "number";
+    case ts.SyntaxKind.BooleanKeyword:
+      return "boolean";
+    case ts.SyntaxKind.VoidKeyword:
+      return "void";
+    case ts.SyntaxKind.AnyKeyword:
+      return "any";
+    case ts.SyntaxKind.UnknownKeyword:
+      return "unknown";
+    case ts.SyntaxKind.NeverKeyword:
+      return "never";
+    case ts.SyntaxKind.UndefinedKeyword:
+      return "undefined";
+    case ts.SyntaxKind.NullKeyword:
+      return "null";
+    case ts.SyntaxKind.ObjectKeyword:
+      return "object";
+    case ts.SyntaxKind.SymbolKeyword:
+      return "symbol";
+    case ts.SyntaxKind.BigIntKeyword:
+      return "bigint";
 
-    case "TsTypeReference": {
-      let base =
-        type.typeName.type === "Identifier"
-          ? type.typeName.value
-          : extractQualifiedName(type.typeName);
+    case ts.SyntaxKind.TypeReference: {
+      const typeRef = type as ts.TypeReferenceNode;
+      let base = ts.isIdentifier(typeRef.typeName)
+        ? typeRef.typeName.text
+        : typeRef.typeName.getText();
 
-      if (type.typeParams) {
-        const params = type.typeParams.params
-          .map((p) => extractType(p))
+      if (typeRef.typeArguments) {
+        const params = typeRef.typeArguments
+          .map((arg) => extractType(arg))
           .join(", ");
         base += `<${params}>`;
       }
       return base;
     }
-    case "TsArrayType": {
-      return `${extractType(type.elemType)}[]`;
+
+    case ts.SyntaxKind.ArrayType: {
+      const arrayType = type as ts.ArrayTypeNode;
+      return `${extractType(arrayType.elementType)}[]`;
     }
-    case "TsTupleType": {
-      const elements = type.elemTypes.map((e) => extractType(e.ty)).join(", ");
+
+    case ts.SyntaxKind.TupleType: {
+      const tupleType = type as ts.TupleTypeNode;
+      const elements = tupleType.elements.map((e) => extractType(e)).join(", ");
       return `[${elements}]`;
     }
-    case "TsUnionType": {
-      return type.types.map((t) => extractType(t)).join(" | ");
+
+    case ts.SyntaxKind.UnionType: {
+      const unionType = type as ts.UnionTypeNode;
+      return unionType.types.map((t) => extractType(t)).join(" | ");
     }
-    case "TsIntersectionType": {
-      return type.types.map((t) => extractType(t)).join(" & ");
+
+    case ts.SyntaxKind.IntersectionType: {
+      const intersectionType = type as ts.IntersectionTypeNode;
+      return intersectionType.types.map((t) => extractType(t)).join(" & ");
     }
-    case "TsThisType":
+
+    case ts.SyntaxKind.ThisType:
       return "this";
 
-    case "TsConstructorType": {
-      const funcParams = type.params
+    case ts.SyntaxKind.FunctionType: {
+      const funcType = type as ts.FunctionTypeNode;
+      const params = funcType.parameters
         .map((p) => extractParameterInfo(p))
         .map((p) => `${p.name}: ${p.type}`)
         .join(", ");
-      const funcReturn = type.typeAnnotation
-        ? extractTypeAnnotation(type.typeAnnotation)
-        : "void";
-      const abstract = type.isAbstract ? "abstract " : "";
-      return `${abstract}new (${funcParams}) => ${funcReturn}`;
+      const returnType = extractType(funcType.type);
+      return `(${params}) => ${returnType}`;
     }
 
-    case "TsInferType":
-      return `infer ${type.typeParam.name.value}`;
-
-    case "TsParenthesizedType":
-      return `(${extractType(type.typeAnnotation)})`;
-
-    case "TsTypeOperator": {
-      const op = type.op;
-      const operand = extractType(type.typeAnnotation);
-      return `${op} ${operand}`;
-    }
-
-    case "TsTypePredicate": {
-      const asserts = type.asserts ? "asserts " : "";
-      const identifier =
-        type.paramName.type === "Identifier" ? type.paramName.value : "this";
-      if (type.typeAnnotation) {
-        const predicateType = extractTypeAnnotation(type.typeAnnotation);
-        return `${asserts}${identifier} is ${predicateType}`;
-      }
-      return `${asserts}${identifier}`;
-    }
-
-    case "TsFunctionType": {
-      const funcParams = type.params
-        .map((p) => extractParameterInfo(p))
-        .map((p) => `${p.name}: ${p.type}`)
-        .join(", ");
-      const funcReturn = type.typeAnnotation
-        ? extractTypeAnnotation(type.typeAnnotation)
-        : "void";
-      return `(${funcParams}) => ${funcReturn}`;
-    }
-    case "TsTypeLiteral": {
-      const memberStrs = type.members
+    case ts.SyntaxKind.TypeLiteral: {
+      const typeLiteral = type as ts.TypeLiteralNode;
+      const memberStrs = typeLiteral.members
         .map((member) => {
-          if (
-            member.type === "TsPropertySignature" &&
-            member.key.type === "Identifier"
-          ) {
-            const optional = member.optional ? "?" : "";
-            const type = member.typeAnnotation
-              ? extractTypeAnnotation(member.typeAnnotation)
-              : "any";
-            return `${member.key.value}${optional}: ${type}`;
+          if (ts.isPropertySignature(member) && ts.isIdentifier(member.name)) {
+            const optional = member.questionToken ? "?" : "";
+            const memberType = member.type ? extractType(member.type) : "any";
+            return `${member.name.text}${optional}: ${memberType}`;
           }
           return "";
         })
         .filter(Boolean);
       return `{ ${memberStrs.join("; ")} }`;
     }
-    case "TsLiteralType": {
-      if (type.literal.type === "StringLiteral") {
-        return `"${type.literal.value}"`;
+
+    case ts.SyntaxKind.LiteralType: {
+      const literalType = type as ts.LiteralTypeNode;
+      if (ts.isStringLiteral(literalType.literal)) {
+        return `"${literalType.literal.text}"`;
       }
-      if (type.literal.type === "NumericLiteral") {
-        return type.literal.value.toString();
+      if (ts.isNumericLiteral(literalType.literal)) {
+        return literalType.literal.text;
       }
-      if (type.literal.type === "BooleanLiteral") {
-        return type.literal.value.toString();
+      if (literalType.literal.kind === ts.SyntaxKind.TrueKeyword) {
+        return "true";
+      }
+      if (literalType.literal.kind === ts.SyntaxKind.FalseKeyword) {
+        return "false";
       }
       return "literal";
     }
-    case "TsTypeQuery": {
-      if (type.exprName.type === "Identifier") {
-        return `typeof ${type.exprName.value}`;
-      }
-      return "typeof unknown";
+
+    case ts.SyntaxKind.TypeQuery: {
+      const typeQuery = type as ts.TypeQueryNode;
+      return `typeof ${typeQuery.exprName.getText()}`;
     }
-    case "TsOptionalType": {
-      return `${extractType(type.typeAnnotation)}?`;
-    }
-    case "TsRestType": {
-      return `...${extractType(type.typeAnnotation)}`;
-    }
-    case "TsConditionalType": {
-      const check = extractType(type.checkType);
-      const ext = extractType(type.extendsType);
-      const trueTy = extractType(type.trueType);
-      const falseTy = extractType(type.falseType);
+
+    case ts.SyntaxKind.ConditionalType: {
+      const conditionalType = type as ts.ConditionalTypeNode;
+      const check = extractType(conditionalType.checkType);
+      const ext = extractType(conditionalType.extendsType);
+      const trueTy = extractType(conditionalType.trueType);
+      const falseTy = extractType(conditionalType.falseType);
       return `${check} extends ${ext} ? ${trueTy} : ${falseTy}`;
     }
-    case "TsIndexedAccessType": {
-      const obj = extractType(type.objectType);
-      const idx = extractType(type.indexType);
+
+    case ts.SyntaxKind.IndexedAccessType: {
+      const indexedAccess = type as ts.IndexedAccessTypeNode;
+      const obj = extractType(indexedAccess.objectType);
+      const idx = extractType(indexedAccess.indexType);
       return `${obj}[${idx}]`;
     }
-    case "TsMappedType": {
-      return "{ [key: string]: any }"; // Simplified
+
+    case ts.SyntaxKind.ParenthesizedType: {
+      const parenthesized = type as ts.ParenthesizedTypeNode;
+      return `(${extractType(parenthesized.type)})`;
     }
-    case "TsImportType": {
-      return type.argument.value;
-    }
+
     default:
-      return "any";
+      return type.getText() || "any";
   }
 }
 
-// Extract qualified names (e.g., Namespace.Type)
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-function extractQualifiedName(name: any): string {
-  if (name.type === "Identifier") {
-    return name.value;
-  }
-
-  if (name.type === "TsQualifiedName") {
-    return `${extractQualifiedName(name.left)}.${name.right.value}`;
-  }
-  return "unknown";
-}
-
-export function spanToPosition({
-  span,
-  sourceLines,
-}: {
-  span: Span;
-  sourceLines: string[];
-}): DeclarationPosition {
-  // Convert byte offsets to line/column positions
-  let startLine = 1;
-  let startColumn = 1;
-  let endLine = 1;
-  let endColumn = 1;
-  let currentOffset = 0;
-
-  // Find start position
-  for (let i = 0; i < sourceLines.length; i++) {
-    const line = sourceLines[i];
-    if (line === undefined) continue;
-    const lineLength = line.length + 1; // +1 for newline
-    if (currentOffset + lineLength > span.start) {
-      startLine = i + 1;
-      startColumn = span.start - currentOffset + 1;
-      break;
-    }
-    currentOffset += lineLength;
-  }
-
-  // Find end position
-  currentOffset = 0;
-  for (let i = 0; i < sourceLines.length; i++) {
-    const line = sourceLines[i];
-    if (line === undefined) continue;
-    const lineLength = line.length + 1; // +1 for newline
-    if (currentOffset + lineLength > span.end) {
-      endLine = i + 1;
-      endColumn = span.end - currentOffset + 1;
-      break;
-    }
-    currentOffset += lineLength;
-  }
-
-  return {
-    start: { line: startLine, column: startColumn },
-    end: { line: endLine, column: endColumn },
-  };
-}
-
-export function extractRawCode(span: Span, sourceLines: string[]): string {
-  const fullSource = sourceLines.join("\n");
-  return fullSource.slice(span.start, span.end);
-}
-
-export function extractInterfaceInfo(
-  interfaceDecl: TsInterfaceDeclaration,
-): Partial<DeclarationData> {
-  const info: Partial<DeclarationData> = {};
-
-  // Extract type parameters
-  if (interfaceDecl.typeParams) {
-    info.typeParameters = extractTypeParameters(interfaceDecl.typeParams);
-  }
-
-  // Extract extends clause
-  if (interfaceDecl.extends && interfaceDecl.extends.length > 0) {
-    info.implements = interfaceDecl.extends.map((ext) =>
-      extractExpressionType(ext.expression),
-    );
-  }
-
-  // Build type signature
-  const typeParams = info.typeParameters
-    ? `<${info.typeParameters.join(", ")}>`
-    : "";
-  const extendsClause =
-    info.implements && info.implements.length > 0
-      ? ` extends ${info.implements.join(", ")}`
-      : "";
-
-  info.typeSignature = `interface${typeParams}${extendsClause}`;
-
-  return info;
-}
-
-export function extractTypeAliasInfo(
-  typeAliasDecl: TsTypeAliasDeclaration,
-): Partial<DeclarationData> {
-  const info: Partial<DeclarationData> = {};
-
-  // Extract type parameters
-  if (typeAliasDecl.typeParams) {
-    info.typeParameters = extractTypeParameters(typeAliasDecl.typeParams);
-  }
-
-  // Extract the type being aliased
-  const aliasedType = extractType(typeAliasDecl.typeAnnotation);
-
-  // Build type signature
-  const typeParams = info.typeParameters
-    ? `<${info.typeParameters.join(", ")}>`
-    : "";
-  info.typeSignature = `type${typeParams} = ${aliasedType}`;
-
-  return info;
-}
-
-export function extractVariableInfo(
-  declarator: VariableDeclarator,
-  kind: string,
-): Partial<DeclarationData> {
-  const info: Partial<DeclarationData> = {};
-
-  // Extract type annotation
-  if (
-    declarator.id.type === "Identifier" &&
-    (declarator.id as BindingIdentifier).typeAnnotation
-  ) {
-    info.typeSignature = `${kind} ${declarator.id.value}: ${extractTypeAnnotation(
-      (declarator.id as BindingIdentifier).typeAnnotation,
-    )}`;
-  } else if (declarator.init) {
-    // Try to infer type from initializer
-    const inferredType = inferTypeFromExpression(declarator.init);
-    if (declarator.id.type === "Identifier") {
-      info.typeSignature = `${kind} ${declarator.id.value}: ${inferredType}`;
-    }
-  } else if (declarator.id.type === "Identifier") {
-    info.typeSignature = `${kind} ${declarator.id.value}`;
-  }
-
-  // If it's a function expression, extract function info
-  if (
-    declarator.init &&
-    (declarator.init.type === "FunctionExpression" ||
-      declarator.init.type === "ArrowFunctionExpression")
-  ) {
-    const funcInfo = extractFunctionInfo(
-      declarator.init as FunctionExpression | ArrowFunctionExpression,
-    );
-    Object.assign(info, funcInfo);
-  }
-
-  return info;
-}
-
-export function extractEnumInfo(
-  enumDecl: TsEnumDeclaration,
+// Get position information from TypeScript nodes
+export function getNodePosition(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
   sourceLines: string[],
-): Partial<DeclarationData> {
-  const members: EnumMemberInfo[] = enumDecl.members.map(
-    (member: TsEnumMember) => {
-      const name =
-        member.id.type === "Identifier"
-          ? member.id.value
-          : member.id.value.toString();
-
-      const enumMember: EnumMemberInfo = { name };
-
-      if (member.init) {
-        if ("span" in member.init) {
-          enumMember.initializer = extractRawCode(
-            member.init.span,
-            sourceLines,
-          );
-        } else {
-          enumMember.initializer = "[complex initializer]";
-        }
-      }
-      return enumMember;
-    },
+): DeclarationPosition {
+  const start = sourceFile.getLineAndCharacterOfPosition(
+    node.getStart(sourceFile),
   );
+  const end = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
 
   return {
-    typeSignature: `enum ${enumDecl.id.value}`,
-    enumMembers: members,
+    start: {
+      line: start.line + 1, // TypeScript uses 0-based lines, we want 1-based
+      column: start.character + 1,
+    },
+    end: {
+      line: end.line + 1,
+      column: end.character + 1,
+    },
   };
 }
 
-export async function extractNamespaceInfo(
-  moduleDecl: TsModuleDeclaration,
-  sourceLines: string[],
-  filename: string,
-  projectRoot: string,
-  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>,
-  pathAliases: Record<string, string> | undefined,
-  processor: (options: {
-    body: ModuleItem[];
-    sourceLines: string[];
-    filename: string;
-    projectRoot: string;
-    pathAliases?: Record<string, string>;
-    declarations: DeclarationData[];
-    importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
-    namespacePrefix?: string;
-  }) => Promise<void>,
-  namespacePrefix: string,
-): Promise<Partial<DeclarationData>> {
-  const members: DeclarationData[] = [];
-  const localNamespaceName =
-    moduleDecl.id.type === "Identifier" ? moduleDecl.id.value : "";
-
-  if (moduleDecl.body?.type !== "TsModuleBlock") {
-    return { members };
-  }
-
-  const newNamespacePrefix = namespacePrefix
-    ? `${namespacePrefix}.${localNamespaceName}`
-    : localNamespaceName;
-
-  await processor({
-    body: moduleDecl.body.body,
-    sourceLines,
-    filename,
-    projectRoot,
-    pathAliases,
-    declarations: members,
-    importedIdentifiers,
-    namespacePrefix: newNamespacePrefix,
-  });
-
-  return { members };
+// Extract raw code from TypeScript nodes
+export function extractRawCode(node: ts.Node, sourceCode: string): string {
+  return sourceCode.slice(node.getStart(), node.getEnd());
 }
 
-export function inferTypeFromExpression(expr: Expression): string {
-  switch (expr.type) {
-    case "StringLiteral":
+// Infer type from expression for TypeScript nodes
+export function inferTypeFromExpression(expr: ts.Expression): string {
+  switch (expr.kind) {
+    case ts.SyntaxKind.StringLiteral:
       return "string";
-    case "NumericLiteral":
+    case ts.SyntaxKind.NumericLiteral:
       return "number";
-    case "BooleanLiteral":
+    case ts.SyntaxKind.TrueKeyword:
+    case ts.SyntaxKind.FalseKeyword:
       return "boolean";
-    case "NullLiteral":
+    case ts.SyntaxKind.NullKeyword:
       return "null";
-    case "ArrayExpression":
+    case ts.SyntaxKind.ArrayLiteralExpression:
       return "any[]";
-    case "ObjectExpression":
+    case ts.SyntaxKind.ObjectLiteralExpression:
       return "object";
-    case "FunctionExpression":
-    case "ArrowFunctionExpression": {
-      // Extract function signature
-      const func = expr as ArrowFunctionExpression | FunctionExpression;
-      const params = func.params.map((p: Param | Pattern) =>
-        extractParameterInfo(p),
-      );
+    case ts.SyntaxKind.FunctionExpression:
+    case ts.SyntaxKind.ArrowFunction: {
+      const func = expr as ts.FunctionExpression | ts.ArrowFunction;
+      const params = func.parameters.map((p) => extractParameterInfo(p));
       const paramStr = params.map((p) => `${p.name}: ${p.type}`).join(", ");
-      const returnType = func.returnType
-        ? extractTypeAnnotation(func.returnType)
-        : "any";
+      const returnType = func.type ? extractType(func.type) : "any";
       return `(${paramStr}) => ${returnType}`;
     }
-    case "Identifier":
+    case ts.SyntaxKind.Identifier:
       return "any"; // Can't infer without context
     default:
       return "any";
   }
+}
+
+// Infer return type from function body by analyzing return statements
+export function inferReturnTypeFromFunctionBody(
+  funcDecl:
+    | ts.FunctionDeclaration
+    | ts.MethodDeclaration
+    | ts.FunctionExpression
+    | ts.ArrowFunction,
+  parameters: {
+    name: string;
+    type: string;
+    isOptional: boolean;
+    isRest: boolean;
+  }[],
+): string {
+  if (!funcDecl.body) {
+    return "void";
+  }
+
+  const returnTypes: string[] = [];
+  let hasVoidReturn = false;
+
+  // Helper function to visit nodes and find return statements
+  function visitNode(node: ts.Node) {
+    if (ts.isReturnStatement(node)) {
+      if (node.expression) {
+        // Try to infer the type of the return expression
+        const returnType = inferTypeFromReturnExpression(
+          node.expression,
+          parameters,
+        );
+        returnTypes.push(returnType);
+      } else {
+        // return; with no expression
+        hasVoidReturn = true;
+      }
+    }
+
+    // Recursively visit child nodes
+    ts.forEachChild(node, visitNode);
+  }
+
+  visitNode(funcDecl.body);
+
+  // If no return statements found, check if it's an arrow function with expression body
+  if (returnTypes.length === 0 && !hasVoidReturn) {
+    if (ts.isArrowFunction(funcDecl) && !ts.isBlock(funcDecl.body)) {
+      // Arrow function with expression body like: (x) => x
+      const returnType = inferTypeFromReturnExpression(
+        funcDecl.body,
+        parameters,
+      );
+      returnTypes.push(returnType);
+    } else {
+      // No return statements and not an expression arrow function
+      return "void";
+    }
+  }
+
+  // Combine return types
+  if (returnTypes.length === 0) {
+    return hasVoidReturn ? "void" : "void";
+  }
+
+  if (hasVoidReturn) {
+    returnTypes.push("void");
+  }
+
+  // Remove duplicates and create union type if needed
+  const uniqueTypes = [...new Set(returnTypes)];
+
+  if (uniqueTypes.length === 1) {
+    return uniqueTypes[0] ?? "any";
+  }
+
+  return uniqueTypes.join(" | ");
+}
+
+// Helper function to infer type from return expression
+function inferTypeFromReturnExpression(
+  expr: ts.Expression,
+  parameters: {
+    name: string;
+    type: string;
+    isOptional: boolean;
+    isRest: boolean;
+  }[],
+): string {
+  // If returning a parameter directly, use the parameter's type
+  if (ts.isIdentifier(expr)) {
+    const param = parameters.find((p) => p.name === expr.text);
+    if (param) {
+      return param.type;
+    }
+  }
+
+  // For other expressions, use the existing inference logic
+  return inferTypeFromExpression(expr);
 }

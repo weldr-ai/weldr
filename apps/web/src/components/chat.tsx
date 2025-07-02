@@ -74,13 +74,15 @@ export function Chat({
   const editorReferences =
     latestVersion?.declarations?.reduce(
       (acc: z.infer<typeof referencePartSchema>[], declaration) => {
-        switch (declaration.declaration.specs?.data.type) {
+        const specs = declaration.declaration.metadata?.specs;
+
+        switch (specs?.type) {
           case "endpoint": {
             acc.push({
               type: "reference:endpoint",
               id: declaration.declaration.id,
-              method: declaration.declaration.specs.data.method,
-              path: declaration.declaration.specs.data.path,
+              method: specs.method,
+              path: specs.path,
             });
             break;
           }
@@ -88,7 +90,7 @@ export function Chat({
             acc.push({
               type: "reference:db-model",
               id: declaration.declaration.id,
-              name: declaration.declaration.specs.data.name,
+              name: specs.name,
             });
             break;
           }
@@ -96,7 +98,7 @@ export function Chat({
             acc.push({
               type: "reference:page",
               id: declaration.declaration.id,
-              name: declaration.declaration.specs.data.name,
+              name: specs.name,
             });
             break;
           }
@@ -316,11 +318,11 @@ export function Chat({
             if (existingNode) {
               updateNodeData(existingNode.id, {
                 ...existingNode.data,
-                specs: chunk.specs,
+                metadata: chunk.metadata,
                 progress: chunk.progress,
               });
             } else {
-              if (!chunk.specs) {
+              if (!chunk.metadata) {
                 throw new Error(
                   `[chat:${project.id}] No specs found for node ${chunk.nodeId}`,
                 );
@@ -328,11 +330,11 @@ export function Chat({
 
               const newNode = {
                 id: chunk.nodeId,
-                type: chunk.specs.data.type,
+                type: chunk.metadata.specs?.type,
                 position: chunk.position,
                 data: {
                   id: chunk.nodeId,
-                  specs: chunk.specs,
+                  metadata: chunk.metadata,
                   progress: chunk.progress,
                   nodeId: chunk.nodeId,
                   node: chunk.node,
