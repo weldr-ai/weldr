@@ -8,31 +8,8 @@ import type {
 } from "@weldr/shared/types/declarations";
 import { declarationSemanticDataSchema } from "@weldr/shared/validators/declarations/index";
 import { generateObject } from "ai";
-import { Queue, Worker } from "bullmq";
 import { eq } from "drizzle-orm";
-import Redis from "ioredis";
 import { registry } from "./registry";
-
-// Redis connection
-const redis = new Redis({
-  host: process.env.REDIS_HOST || "localhost",
-  port: Number(process.env.REDIS_PORT) || 6379,
-  maxRetriesPerRequest: 3,
-});
-
-// Job queue
-export const semanticDataQueue = new Queue("semantic-data", {
-  connection: redis,
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: "exponential",
-      delay: 2000,
-    },
-    removeOnComplete: 10,
-    removeOnFail: 5,
-  },
-});
 
 export interface SemanticDataJobData {
   declarationId: string;
@@ -41,24 +18,107 @@ export interface SemanticDataJobData {
   sourceCode: string;
 }
 
-// Worker to process semantic data generation jobs
-export const semanticDataWorker = new Worker(
-  "semantic-data",
-  async (job) => {
-    const logger = Logger.get({
-      tags: ["semanticDataWorker"],
+interface QueueJob {
+  id: string;
+  data: SemanticDataJobData;
+  attempts: number;
+  maxAttempts: number;
+  createdAt: Date;
+  retryDelay: number;
+}
+
+class SemanticProcessingQueue {
+  private jobs: QueueJob[] = [];
+  private processing = false;
+  private concurrency = 5;
+  private activeJobs = 0;
+  private isShuttingDown = false;
+  private logger = Logger.get({ tags: ["InMemorySemanticQueue"] });
+
+  async add(
+    data: SemanticDataJobData,
+    options?: { jobId?: string },
+  ): Promise<void> {
+    if (this.isShuttingDown) {
+      this.logger.warn("Queue is shutting down, rejecting new job");
+      return;
+    }
+
+    const jobId =
+      options?.jobId ||
+      `job-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Check for duplicate jobId
+    if (this.jobs.some((job) => job.id === jobId)) {
+      this.logger.info("Job with this ID already exists, skipping", {
+        extra: { jobId },
+      });
+      return;
+    }
+
+    const job: QueueJob = {
+      id: jobId,
+      data,
+      attempts: 0,
+      maxAttempts: 3,
+      createdAt: new Date(),
+      retryDelay: 2000,
+    };
+
+    this.jobs.push(job);
+    this.logger.info("Added job to queue", {
       extra: {
-        jobId: job.id,
-        attempt: job.attemptsMade + 1,
+        jobId,
+        queueSize: this.jobs.length,
+        declarationId: data.declarationId,
       },
     });
 
-    const {
-      declarationId,
-      codeMetadata,
-      filePath,
-      sourceCode,
-    }: SemanticDataJobData = job.data;
+    // Start processing if not already processing
+    if (!this.processing) {
+      this.startProcessing();
+    }
+  }
+
+  private async startProcessing(): Promise<void> {
+    if (this.processing || this.isShuttingDown) return;
+
+    this.processing = true;
+    this.logger.info("Started queue processing");
+
+    while (this.jobs.length > 0 && !this.isShuttingDown) {
+      if (this.activeJobs >= this.concurrency) {
+        // Wait a bit before checking again
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        continue;
+      }
+
+      const job = this.jobs.shift();
+      if (!job) continue;
+
+      this.activeJobs++;
+      this.processJob(job).finally(() => {
+        this.activeJobs--;
+      });
+    }
+
+    this.processing = false;
+    this.logger.info("Stopped queue processing");
+  }
+
+  private async processJob(job: QueueJob): Promise<void> {
+    const logger = Logger.get({
+      tags: ["processJob"],
+      extra: {
+        jobId: job.id,
+        attempt: job.attempts + 1,
+        maxAttempts: job.maxAttempts,
+      },
+    });
+
+    job.attempts++;
+
+    const { declarationId, codeMetadata, filePath, sourceCode } = job.data;
 
     logger.info("Processing semantic data generation job", {
       extra: {
@@ -107,14 +167,67 @@ export const semanticDataWorker = new Worker(
           declarationName: codeMetadata.name,
         },
       });
-      throw error; // Re-throw to trigger retry
+
+      // Retry logic
+      if (job.attempts < job.maxAttempts) {
+        logger.info("Retrying job", {
+          extra: {
+            jobId: job.id,
+            attempt: job.attempts,
+            retryDelayMs: job.retryDelay,
+          },
+        });
+
+        // Schedule retry with exponential backoff
+        setTimeout(() => {
+          this.jobs.push(job);
+          if (!this.processing) {
+            this.startProcessing();
+          }
+        }, job.retryDelay);
+
+        job.retryDelay *= 2; // Exponential backoff
+      } else {
+        logger.error("Job failed after maximum attempts", {
+          extra: {
+            jobId: job.id,
+            declarationId,
+            declarationName: codeMetadata.name,
+          },
+        });
+      }
     }
-  },
-  {
-    connection: redis,
-    concurrency: 5, // Process up to 5 jobs concurrently
-  },
-);
+  }
+
+  async shutdown(): Promise<void> {
+    this.logger.info("Shutting down queue");
+    this.isShuttingDown = true;
+
+    // Wait for active jobs to complete
+    while (this.activeJobs > 0) {
+      this.logger.info("Waiting for active jobs to complete", {
+        extra: { activeJobs: this.activeJobs },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    // Clear remaining jobs
+    this.jobs = [];
+    this.logger.info("Queue shutdown complete");
+  }
+
+  getStats() {
+    return {
+      queueSize: this.jobs.length,
+      activeJobs: this.activeJobs,
+      processing: this.processing,
+      isShuttingDown: this.isShuttingDown,
+    };
+  }
+}
+
+// Create singleton queue instance
+export const semanticProcessingQueue = new SemanticProcessingQueue();
 
 async function generateSemanticData(
   declaration: DeclarationCodeMetadata,
@@ -195,7 +308,7 @@ export async function queueSemanticDataGeneration(
   });
 
   try {
-    await semanticDataQueue.add("generate-semantic-data", jobData, {
+    await semanticProcessingQueue.add(jobData, {
       jobId: `semantic-${jobData.declarationId}`, // Prevent duplicate jobs
     });
 
@@ -211,22 +324,6 @@ export async function queueSemanticDataGeneration(
         error: error instanceof Error ? error.message : String(error),
         declarationId: jobData.declarationId,
       },
-    });
-  }
-}
-
-// Graceful shutdown
-export async function shutdownSemanticJobs(): Promise<void> {
-  const logger = Logger.get({ tags: ["shutdownSemanticJobs"] });
-
-  try {
-    await semanticDataWorker.close();
-    await semanticDataQueue.close();
-    await redis.quit();
-    logger.info("Successfully shut down semantic data jobs");
-  } catch (error) {
-    logger.error("Error shutting down semantic data jobs", {
-      extra: { error: error instanceof Error ? error.message : String(error) },
     });
   }
 }
