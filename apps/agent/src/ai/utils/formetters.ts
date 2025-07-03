@@ -338,8 +338,20 @@ function formatFunctionDeclaration(
   return result;
 }
 
-function formatClassDeclaration(data: ClassDeclarationCodeMetadata): string {
+function formatClassDeclaration(
+  data: ClassDeclarationCodeMetadata,
+  memberDeclarations?: (typeof declarations.$inferSelect)[],
+): string {
   let result = "";
+
+  // Show class modifiers
+  const modifiers = [];
+  if (data.isExported) modifiers.push("exported");
+  if (data.isDefault) modifiers.push("default");
+
+  if (modifiers.length > 0) {
+    result += `*${modifiers.join(", ")} class*\n\n`;
+  }
 
   if (data.extends) {
     result += `**Extends:** \`${data.extends}\`\n`;
@@ -350,6 +362,18 @@ function formatClassDeclaration(data: ClassDeclarationCodeMetadata): string {
   }
 
   if (data.extends || (data.implements && data.implements.length > 0)) {
+    result += "\n";
+  }
+
+  // Show minimal member information - just names and IDs
+  if (memberDeclarations && memberDeclarations.length > 0) {
+    result += "**Members:**\n";
+    for (const memberDeclaration of memberDeclarations) {
+      const memberData = memberDeclaration.metadata;
+      if (memberData) {
+        result += `- **${memberData.codeMetadata?.name}** (ID: \`${memberDeclaration.id}\`)\n`;
+      }
+    }
     result += "\n";
   }
 
@@ -376,16 +400,27 @@ function formatNamespaceDeclaration(
 ): string {
   let result = "";
 
-  // If we have actual member declarations from the database, format them concisely
+  // Show namespace modifiers
+  const modifiers = [];
+  if (data.isExported) modifiers.push("exported");
+  if (data.isDefault) modifiers.push("default");
+
+  if (modifiers.length > 0) {
+    result += `*${modifiers.join(", ")} namespace*\n\n`;
+  }
+
+  // Show type parameters if available
+  if (data.typeParameters && data.typeParameters.length > 0) {
+    result += `**Type Parameters:** ${data.typeParameters.map((param) => `\`${param}\``).join(", ")}\n\n`;
+  }
+
+  // Show minimal member information - just names and IDs
   if (memberDeclarations && memberDeclarations.length > 0) {
     result += "**Members:**\n";
     for (const memberDeclaration of memberDeclarations) {
       const memberData = memberDeclaration.metadata;
       if (memberData) {
-        const description = memberData.semanticData?.description || "";
-        result += `- **${memberData.codeMetadata?.name}** (${memberData.codeMetadata?.type})`;
-        if (description) result += ` - ${description}`;
-        result += "\n";
+        result += `- **${memberData.codeMetadata?.name}** (ID: \`${memberDeclaration.id}\`)\n`;
       }
     }
     result += "\n";

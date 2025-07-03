@@ -11,9 +11,10 @@ import { mergeJson } from "@weldr/db/utils";
 import type {
   DeclarationCodeMetadata,
   DeclarationSemanticData,
+  DeclarationSpecs,
 } from "@weldr/shared/types/declarations";
 import { declarationSemanticDataSchema } from "@weldr/shared/validators/declarations/index";
-import { generateObject } from "ai";
+import { embedMany, generateObject } from "ai";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { runCommand } from "./commands";
 import { registry } from "./registry";
@@ -24,11 +25,13 @@ export interface SemanticDataJobData {
   filePath: string;
   sourceCode: string;
   projectId: string;
+  retryCount?: number;
 }
 
 // Simple queue for semantic data jobs
 const jobQueue: SemanticDataJobData[] = [];
 let isProcessing = false;
+const MAX_RETRIES = 3;
 
 export async function queueDeclarationSemanticDataGeneration(
   jobData: SemanticDataJobData,
@@ -204,12 +207,19 @@ async function processDeclaration(jobData: SemanticDataJobData): Promise<void> {
     );
 
     if (semanticData) {
+      // Generate and store embedding after semantic data is saved
+      const embedding = await generateAndStoreEmbedding(
+        jobData.declarationId,
+        logger,
+      );
+
       await db
         .update(declarations)
         .set({
           metadata: mergeJson(declarations.metadata, {
             semanticData,
           }),
+          embedding,
           progress: "completed",
         })
         .where(eq(declarations.id, jobData.declarationId));
@@ -221,32 +231,16 @@ async function processDeclaration(jobData: SemanticDataJobData): Promise<void> {
         },
       });
     } else {
-      logger.warn("Failed to generate semantic data, marking as completed", {
-        extra: {
-          declarationId: jobData.declarationId,
-          declarationName: jobData.codeMetadata.name,
-        },
-      });
-
-      // Mark as completed even if semantic data generation failed
-      await db
-        .update(declarations)
-        .set({ progress: "completed" })
-        .where(eq(declarations.id, jobData.declarationId));
+      handleJobRetry(jobData, "Failed to generate semantic data", logger);
     }
   } catch (error) {
-    logger.error("Failed to process semantic data generation", {
-      extra: {
-        error: error instanceof Error ? error.message : String(error),
-        declarationId: jobData.declarationId,
-      },
-    });
-
-    // Mark as completed even if there was an error
-    await db
-      .update(declarations)
-      .set({ progress: "completed" })
-      .where(eq(declarations.id, jobData.declarationId));
+    const errorObj = error instanceof Error ? error : new Error(String(error));
+    handleJobRetry(
+      jobData,
+      "Failed to process semantic data generation",
+      logger,
+      errorObj,
+    );
   }
 }
 
@@ -283,6 +277,46 @@ async function processDeclarationsQueue(): Promise<void> {
 
   isProcessing = false;
   logger.info("Finished processing semantic data queue");
+}
+
+function handleJobRetry(
+  jobData: SemanticDataJobData,
+  reason: string,
+  logger: ReturnType<typeof Logger.get>,
+  error?: Error,
+): boolean {
+  const currentRetryCount = jobData.retryCount ?? 0;
+
+  if (currentRetryCount >= MAX_RETRIES) {
+    logger.error(`${reason} after max retries, giving up`, {
+      extra: {
+        declarationId: jobData.declarationId,
+        declarationName: jobData.codeMetadata.name,
+        retryCount: currentRetryCount,
+        maxRetries: MAX_RETRIES,
+        ...(error && { error: error.message }),
+      },
+    });
+    return false;
+  }
+
+  logger.warn(`${reason}, retrying`, {
+    extra: {
+      declarationId: jobData.declarationId,
+      declarationName: jobData.codeMetadata.name,
+      retryCount: currentRetryCount + 1,
+      maxRetries: MAX_RETRIES,
+      ...(error && { error: error.message }),
+    },
+  });
+
+  // Add back to queue with incremented retry count
+  jobQueue.push({
+    ...jobData,
+    retryCount: currentRetryCount + 1,
+  });
+
+  return true;
 }
 
 async function generateDeclarationSemanticData(
@@ -349,4 +383,182 @@ Focus on being practical and helpful for developers who need to understand when 
     });
     return null;
   }
+}
+
+async function generateAndStoreEmbedding(
+  declarationId: string,
+  logger: ReturnType<typeof Logger.get>,
+) {
+  try {
+    logger.info("Generating embedding for declaration", {
+      extra: { declarationId },
+    });
+
+    // Fetch the declaration with its metadata
+    const declaration = await db.query.declarations.findFirst({
+      where: eq(declarations.id, declarationId),
+      columns: {
+        id: true,
+        metadata: true,
+      },
+    });
+
+    if (!declaration || !declaration.metadata) {
+      logger.warn("Declaration not found or missing metadata", {
+        extra: { declarationId },
+      });
+      return;
+    }
+
+    // Generate searchable text from semantic data and specs
+    const embeddingText = generateEmbeddingText(
+      declaration.metadata.codeMetadata,
+      declaration.metadata.semanticData,
+      declaration.metadata.specs,
+    );
+
+    if (!embeddingText) {
+      logger.warn("No embedding text generated", {
+        extra: { declarationId },
+      });
+      return;
+    }
+
+    // Generate embedding using OpenAI's text-embedding-ada-002
+    const embeddingModel = registry.textEmbeddingModel(
+      "openai:text-embedding-ada-002",
+    );
+
+    const { embeddings } = await embedMany({
+      model: embeddingModel,
+      values: [embeddingText],
+    });
+
+    if (!embeddings || embeddings.length === 0 || !embeddings[0]) {
+      logger.error("Failed to generate embedding", {
+        extra: { declarationId },
+      });
+      return;
+    }
+
+    logger.info("Successfully generated and stored embedding", {
+      extra: {
+        declarationId,
+        embeddingTextLength: embeddingText.length,
+      },
+    });
+
+    const embedding = embeddings[0];
+
+    if (!embedding) {
+      logger.error("No embedding generated", {
+        extra: { declarationId },
+      });
+      throw new Error("No embedding generated");
+    }
+
+    return embedding;
+  } catch (error) {
+    logger.error("Failed to generate and store embedding", {
+      extra: {
+        error: error instanceof Error ? error.message : String(error),
+        declarationId,
+      },
+    });
+  }
+}
+
+function generateEmbeddingText(
+  codeMetadata?: DeclarationCodeMetadata,
+  semanticData?: DeclarationSemanticData,
+  specs?: DeclarationSpecs["data"],
+): string | null {
+  if (!codeMetadata && !semanticData && !specs) {
+    return null;
+  }
+
+  const textParts: string[] = [];
+
+  // Add basic code metadata
+  if (codeMetadata) {
+    textParts.push(`${codeMetadata.type}: ${codeMetadata.name}`);
+  }
+
+  // Add semantic data - focus on the most searchable information
+  if (semanticData) {
+    // Add summary and description
+    textParts.push(semanticData.summary);
+    textParts.push(semanticData.description);
+
+    // Add tags for searchability
+    if (semanticData.tags.length > 0) {
+      textParts.push(`Tags: ${semanticData.tags.join(", ")}`);
+    }
+
+    // Add common use cases
+    if (semanticData.usagePattern.commonUseCases.length > 0) {
+      textParts.push(
+        `Use cases: ${semanticData.usagePattern.commonUseCases.join(", ")}`,
+      );
+    }
+  }
+
+  // Add specs based on type
+  if (specs) {
+    switch (specs.type) {
+      case "endpoint": {
+        textParts.push(`${specs.method} ${specs.path}`);
+        textParts.push(`Endpoint: ${specs.summary}`);
+        textParts.push(specs.description);
+
+        // Add request body information
+        if (specs.requestBody?.description) {
+          textParts.push(`Request: ${specs.requestBody.description}`);
+        }
+
+        // Add response information
+        if (specs.responses) {
+          const responseDescriptions = Object.values(specs.responses).map(
+            (response) => response.description,
+          );
+          textParts.push(`Responses: ${responseDescriptions.join(", ")}`);
+        }
+        break;
+      }
+      case "db-model": {
+        textParts.push(`Database model: ${specs.name}`);
+
+        // Add column information
+        if (specs.columns && specs.columns.length > 0) {
+          const columnNames = specs.columns.map(
+            (col) => `${col.name} (${col.type})`,
+          );
+          textParts.push(`Columns: ${columnNames.join(", ")}`);
+        }
+
+        // Add relationships
+        if (specs.relationships && specs.relationships.length > 0) {
+          const relationshipInfo = specs.relationships.map(
+            (rel) => `${rel.type} with ${rel.referencedModel}`,
+          );
+          textParts.push(`Relationships: ${relationshipInfo.join(", ")}`);
+        }
+        break;
+      }
+      case "page": {
+        textParts.push(`Page: ${specs.name}`);
+        textParts.push(`Route: ${specs.route}`);
+        textParts.push(specs.description);
+
+        // Add parameter information
+        if (specs.parameters && specs.parameters.length > 0) {
+          const parameterNames = specs.parameters.map((param) => param.name);
+          textParts.push(`Parameters: ${parameterNames.join(", ")}`);
+        }
+        break;
+      }
+    }
+  }
+
+  return textParts.filter(Boolean).join(" ");
 }
