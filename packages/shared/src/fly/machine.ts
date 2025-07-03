@@ -1,6 +1,6 @@
 import { ofetch } from "ofetch/node";
+import { machineLookupStore } from "../machine-lookup-store";
 import { ofetchConfig } from "../ofetch-config";
-import { redisClient } from "../redis";
 import type { FlyAppType } from "./config";
 import { flyApiHostname, flyApiKey } from "./config";
 import type { components, paths } from "./types";
@@ -38,7 +38,7 @@ export const get = async ({
 };
 
 export const getDevMachineId = async ({ projectId }: { projectId: string }) => {
-  let machineId = await redisClient.get(`${projectId}:dev-machine-id`);
+  let machineId = await machineLookupStore.get(`${projectId}:dev-machine-id`);
 
   if (!machineId) {
     machineId = await create({
@@ -47,7 +47,7 @@ export const getDevMachineId = async ({ projectId }: { projectId: string }) => {
       config: presets.development,
     });
 
-    await redisClient.set(`${projectId}:dev-machine-id`, machineId);
+    await machineLookupStore.set(`${projectId}:dev-machine-id`, machineId);
 
     return machineId;
   }
@@ -396,7 +396,7 @@ const pollCommandStatus = async ({
   try {
     // In production, poll from Redis directly
     if (process.env.NODE_ENV === "production") {
-      const redisStatus = await redisClient.get(`job:${jobId}`);
+      const redisStatus = await machineLookupStore.get(`job:${jobId}`);
       if (redisStatus) {
         const parsed = JSON.parse(redisStatus);
         return {

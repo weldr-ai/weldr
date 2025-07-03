@@ -1,5 +1,6 @@
-import { db, eq } from "@weldr/db";
-import { versions } from "@weldr/db/schema";
+import { and, db, eq, or } from "@weldr/db";
+import { projects, users, versions } from "@weldr/db/schema";
+import { WorkflowContext } from "./context";
 import { createStep, createWorkflow } from "./engine";
 import { codeStep } from "./steps/code";
 import { deployStep } from "./steps/deploy";
@@ -13,29 +14,63 @@ export const workflow = createWorkflow({
     delay: 1000,
   },
 })
-  .step(planStep)
-  .suspend(async ({ context }) => context.get("version").status === "pending")
-  .step(codeStep)
-  .parallel(isDev ? [] : [deployStep])
-  .step(
-    createStep({
-      id: "complete",
-      execute: async ({ context }) => {
-        await db
-          .update(versions)
-          .set({ status: "completed" })
-          .where(eq(versions.id, context.get("version").id));
-
-        const streamWriter = global.sseConnections?.get(
-          context.get("version").chatId,
-        );
-
-        if (streamWriter) {
-          await streamWriter.write({
-            type: "update_project",
-            data: { currentVersion: { status: "completed" } },
-          });
-        }
-      },
-    }),
+  .onStatus("planning", planStep)
+  .onStatus("coding", codeStep)
+  .onStatus(
+    "deploying",
+    isDev
+      ? createStep({
+          id: "dev-skip-deploy",
+          execute: async ({ context }) => {
+            // Skip deployment in development
+            const version = context.get("version");
+            await db
+              .update(versions)
+              .set({ status: "completed" })
+              .where(eq(versions.id, version.id));
+          },
+        })
+      : deployStep,
   );
+
+export async function recoverWorkflow() {
+  const project = await db.query.projects.findFirst({
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    where: eq(projects.id, process.env.PROJECT_ID!),
+  });
+
+  if (!project) {
+    throw new Error("Project not found");
+  }
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, project.userId),
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const version = await db.query.versions.findFirst({
+    where: and(
+      eq(versions.projectId, project.id),
+      or(
+        eq(versions.status, "planning"),
+        eq(versions.status, "coding"),
+        eq(versions.status, "deploying"),
+      ),
+    ),
+  });
+
+  if (!version) {
+    return;
+  }
+
+  const context = new WorkflowContext();
+  context.set("project", project);
+  context.set("version", version);
+  context.set("user", user);
+  context.set("isXML", true);
+
+  await workflow.execute({ context });
+}

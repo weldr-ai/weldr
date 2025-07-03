@@ -16,7 +16,6 @@ export default {
     "./src/schema/projects.ts",
     "./src/schema/themes.ts",
     "./src/schema/versions.ts",
-    "./src/schema/workflows.ts",
   ],
   out: "./drizzle",
   dialect: "postgresql",

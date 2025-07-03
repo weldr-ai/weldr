@@ -125,26 +125,30 @@ export function Chat({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Set initial pending message state based on workflow run from database
+  // Set initial pending message state based on version status
   useEffect(() => {
-    const currentWorkflowRun = version.workflowRun;
-    if (currentWorkflowRun && currentWorkflowRun.status === "running") {
-      // Check latest step execution to determine more specific state
-      const latestStep = currentWorkflowRun.stepExecutions
-        ?.filter((step) => step.status === "running")
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        )[0];
-      if (latestStep) {
-        if (latestStep.stepId.includes("coder")) {
-          setPendingMessage("coding");
-        } else if (latestStep.stepId.includes("deploy")) {
-          setPendingMessage("deploying");
-        }
-      }
+    switch (version.status) {
+      case "pending":
+        setPendingMessage(null);
+        break;
+      case "planning":
+        setPendingMessage("planning");
+        break;
+      case "coding":
+        setPendingMessage("coding");
+        break;
+      case "deploying":
+        setPendingMessage("deploying");
+        break;
+      case "completed":
+      case "failed":
+        setPendingMessage(null);
+        break;
+      default:
+        setPendingMessage(null);
+        break;
     }
-  }, [version.workflowRun]);
+  }, [version.status]);
 
   const triggerWorkflow = useCallback(
     async (
@@ -302,11 +306,26 @@ export function Chat({
             if (chunk.data.currentVersion !== undefined) {
               updateProjectData({ currentVersion: chunk.data.currentVersion });
               const status = chunk.data.currentVersion.status;
-
-              if (status === "completed" || status === "failed") {
-                setPendingMessage(null);
-              } else if (status === "in_progress") {
-                setPendingMessage("coding");
+              switch (status) {
+                case "pending":
+                  setPendingMessage(null);
+                  break;
+                case "planning":
+                  setPendingMessage("planning");
+                  break;
+                case "coding":
+                  setPendingMessage("coding");
+                  break;
+                case "deploying":
+                  setPendingMessage("deploying");
+                  break;
+                case "completed":
+                case "failed":
+                  setPendingMessage(null);
+                  break;
+                default:
+                  setPendingMessage(null);
+                  break;
               }
             }
             break;

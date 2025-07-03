@@ -8,8 +8,8 @@ import {
   versions,
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
+import { machineLookupStore } from "@weldr/shared/machine-lookup-store";
 import { nanoid } from "@weldr/shared/nanoid";
-import { redisClient } from "@weldr/shared/redis";
 import { Tigris } from "@weldr/shared/tigris";
 import type { ChatMessage } from "@weldr/shared/types";
 import {
@@ -85,7 +85,10 @@ export const projectsRouter = {
             });
           }
 
-          await redisClient.set(`${projectId}:dev-machine-id`, devMachineId);
+          await machineLookupStore.set(
+            `${projectId}:dev-machine-id`,
+            devMachineId,
+          );
 
           const [project] = await tx
             .insert(projects)
@@ -313,13 +316,6 @@ export const projectsRouter = {
                         node: true,
                         dependencies: true,
                       },
-                    },
-                  },
-                },
-                workflowRun: {
-                  with: {
-                    stepExecutions: {
-                      orderBy: (table, { asc }) => asc(table.createdAt),
                     },
                   },
                 },

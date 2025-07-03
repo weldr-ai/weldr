@@ -11,7 +11,7 @@
     "./fly": "./src/fly/index.ts",
     "./tigris": "./src/tigris.ts",
     "./color-utils": "./src/color-utils.ts",
-    "./redis": "./src/redis.ts",
+    "./machine-lookup-store": "./src/machine-lookup-store.ts",
     "./nanoid": "./src/nanoid.ts"
   },
   "scripts": {

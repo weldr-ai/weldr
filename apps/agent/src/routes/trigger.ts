@@ -108,17 +108,6 @@ router.openapi(route, async (c) => {
     });
   }
 
-  const run = await workflow.getRun({ runId: activeVersion.chatId });
-
-  // Check if there's already a running workflow for this stream
-  if (run?.status === "running") {
-    return c.json({
-      success: true,
-      runId: activeVersion.chatId,
-      message: "Workflow already running",
-    });
-  }
-
   // Save the user message to database first
   const newMessage = {
     visibility: "public" as const,
@@ -140,15 +129,22 @@ router.openapi(route, async (c) => {
   workflowContext.set("project", project);
   workflowContext.set("version", activeVersion);
   workflowContext.set("user", session.user);
-  workflowContext.set("isXML", false);
+  workflowContext.set("isXML", true);
 
-  await workflow.execute({
+  if (
+    activeVersion.status !== "completed" &&
+    activeVersion.status !== "failed"
+  ) {
+    await workflow.execute({
+      context: workflowContext,
+    });
+  }
+
+  return c.json({
+    success: true,
     runId: activeVersion.chatId,
-    context: workflowContext,
-    resetOn: ["suspended"],
+    streamId: activeVersion.chatId,
   });
-
-  return c.json({ success: true });
 });
 
 export default router;

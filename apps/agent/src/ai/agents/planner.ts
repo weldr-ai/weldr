@@ -16,6 +16,8 @@ import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
+import { db, eq } from "@weldr/db";
+import { versions } from "@weldr/db/schema";
 import type {
   addMessageItemSchema,
   assistantMessageContentSchema,
@@ -164,6 +166,14 @@ export async function plannerAgent({
           delta.toolName === "grep" ||
           delta.toolName === "find"
         ) {
+          await db
+            .update(versions)
+            .set({ status: "planning" })
+            .where(eq(versions.id, version.id));
+          await streamWriter.write({
+            type: "update_project",
+            data: { currentVersion: { status: "planning" } },
+          });
           shouldRecur = true;
         }
       } else if (delta.type === "tool-result") {

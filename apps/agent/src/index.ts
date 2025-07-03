@@ -1,11 +1,12 @@
 import { serve } from "@hono/node-server";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
+import { recoverSemanticDataJobs } from "./ai/utils/semantic-data-jobs";
 import { Logger } from "./lib/logger";
 import { configureOpenAPI, createRouter } from "./lib/utils";
 import { loggerMiddleware } from "./middlewares/logger";
 import { routes } from "./routes";
-import { workflow } from "./workflow";
+import { recoverWorkflow } from "./workflow";
 import { WorkflowContext } from "./workflow/context";
 
 const app = createRouter();
@@ -63,43 +64,6 @@ app.onError((err, c) => {
 
 const port = process.env.PORT ? Number.parseInt(process.env.PORT) : 8080;
 
-// Handle graceful shutdown
-process.on("SIGINT", async () => {
-  Logger.info("Server shutting down gracefully...", { tags: ["shutdown"] });
-
-  if (process.env.PROJECT_ID) {
-    await workflow.markActiveVersionWorkflowAsFailed(process.env.PROJECT_ID);
-    Logger.info("Marked active workflow as failed due to shutdown", {
-      tags: ["shutdown"],
-    });
-  }
-
-  process.exit(0);
-});
-
-process.on("SIGTERM", async () => {
-  Logger.info("Server shutting down gracefully...", { tags: ["shutdown"] });
-
-  if (process.env.PROJECT_ID) {
-    await workflow.markActiveVersionWorkflowAsFailed(process.env.PROJECT_ID);
-    Logger.info("Marked active workflow as failed due to shutdown", {
-      tags: ["shutdown"],
-    });
-  }
-
-  process.exit(0);
-});
-
-// Recovery on startup
-async function recoverWorkflows() {
-  if (process.env.PROJECT_ID) {
-    await workflow.recoverActiveVersionWorkflow(process.env.PROJECT_ID);
-    Logger.info("Recovered crashed workflows on startup", {
-      tags: ["startup"],
-    });
-  }
-}
-
 serve(
   {
     fetch: app.fetch,
@@ -110,7 +74,14 @@ serve(
       tags: ["server"],
     });
 
-    // Recover any crashed workflows
-    await recoverWorkflows();
+    const projectId = process.env.PROJECT_ID;
+
+    if (!projectId) {
+      throw new Error("PROJECT_ID is not set");
+    }
+
+    await recoverWorkflow();
+
+    await recoverSemanticDataJobs();
   },
 );

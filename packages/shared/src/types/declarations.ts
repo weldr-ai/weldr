@@ -8,7 +8,11 @@ import type { endpointDeclarationSpecsSchema } from "../validators/declarations/
 import type { pageDeclarationSpecsSchema } from "../validators/declarations/page";
 import type { declarationSpecsV1Schema } from "../validators/declarations/v1";
 
-export type DeclarationProgress = "pending" | "in_progress" | "completed";
+export type DeclarationProgress =
+  | "pending"
+  | "in_progress"
+  | "enriching"
+  | "completed";
 export type DeclarationSpecs = z.infer<typeof declarationSpecsSchema>;
 export type DeclarationSpecsV1 = z.infer<typeof declarationSpecsV1Schema>;
 export type EndpointDeclarationSpecs = z.infer<

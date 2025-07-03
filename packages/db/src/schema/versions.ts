@@ -16,11 +16,12 @@ import { users } from "./auth";
 import { chats } from "./chats";
 import { declarations } from "./declarations";
 import { projects } from "./projects";
-import { workflowRuns } from "./workflows";
 
 export const versionStatus = pgEnum("version_status", [
   "pending",
-  "in_progress",
+  "planning",
+  "coding",
+  "deploying",
   "completed",
   "failed",
 ]);
@@ -93,10 +94,6 @@ export const versionsRelations = relations(versions, ({ one, many }) => ({
   user: one(users, {
     fields: [versions.userId],
     references: [users.id],
-  }),
-  workflowRun: one(workflowRuns, {
-    fields: [versions.id],
-    references: [workflowRuns.versionId],
   }),
   declarations: many(versionDeclarations),
 }));

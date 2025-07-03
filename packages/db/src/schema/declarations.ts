@@ -23,6 +23,7 @@ import { versionDeclarations } from "./versions";
 export const declarationProgress = pgEnum("declaration_progress", [
   "pending",
   "in_progress",
+  "enriching",
   "completed",
 ]);
 

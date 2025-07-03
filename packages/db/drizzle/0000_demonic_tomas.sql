@@ -1,9 +1,7 @@
 CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool');--> statement-breakpoint
 CREATE TYPE "public"."message_visibility" AS ENUM('public', 'internal');--> statement-breakpoint
-CREATE TYPE "public"."declaration_progress" AS ENUM('pending', 'in_progress', 'completed');--> statement-breakpoint
-CREATE TYPE "public"."version_status" AS ENUM('pending', 'in_progress', 'completed', 'failed');--> statement-breakpoint
-CREATE TYPE "public"."workflow_status" AS ENUM('running', 'completed', 'failed', 'suspended');--> statement-breakpoint
-CREATE TYPE "public"."workflow_step_status" AS ENUM('pending', 'running', 'completed', 'failed', 'skipped');--> statement-breakpoint
+CREATE TYPE "public"."declaration_progress" AS ENUM('pending', 'in_progress', 'enriching', 'completed');--> statement-breakpoint
+CREATE TYPE "public"."version_status" AS ENUM('planning', 'coding', 'deploying', 'completed', 'failed');--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -239,7 +237,7 @@ CREATE TABLE "versions" (
 	"number" integer DEFAULT 1 NOT NULL,
 	"message" text,
 	"description" text,
-	"status" "version_status" DEFAULT 'pending' NOT NULL,
+	"status" "version_status" DEFAULT 'planning' NOT NULL,
 	"acceptance_criteria" jsonb,
 	"commit_hash" text,
 	"chat_id" text NOT NULL,
@@ -250,29 +248,6 @@ CREATE TABLE "versions" (
 	"updated_at" timestamp DEFAULT now(),
 	"user_id" text NOT NULL,
 	"project_id" text NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "workflow_runs" (
-	"id" text PRIMARY KEY NOT NULL,
-	"version_id" text NOT NULL,
-	"status" "workflow_status" DEFAULT 'running' NOT NULL,
-	"error_message" text,
-	"started_at" timestamp DEFAULT now() NOT NULL,
-	"completed_at" timestamp,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "workflow_runs_version_id_unique" UNIQUE("version_id")
-);
---> statement-breakpoint
-CREATE TABLE "workflow_step_executions" (
-	"id" text PRIMARY KEY NOT NULL,
-	"workflow_run_id" text NOT NULL,
-	"step_id" text NOT NULL,
-	"status" "workflow_step_status" DEFAULT 'pending' NOT NULL,
-	"output" jsonb,
-	"error_message" text,
-	"started_at" timestamp,
-	"completed_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -314,8 +289,6 @@ ALTER TABLE "versions" ADD CONSTRAINT "versions_chat_id_chats_id_fk" FOREIGN KEY
 ALTER TABLE "versions" ADD CONSTRAINT "versions_parent_version_id_versions_id_fk" FOREIGN KEY ("parent_version_id") REFERENCES "public"."versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "versions" ADD CONSTRAINT "versions_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "workflow_runs" ADD CONSTRAINT "workflow_runs_version_id_versions_id_fk" FOREIGN KEY ("version_id") REFERENCES "public"."versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "workflow_step_executions" ADD CONSTRAINT "workflow_step_executions_workflow_run_id_workflow_runs_id_fk" FOREIGN KEY ("workflow_run_id") REFERENCES "public"."workflow_runs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "attachments_created_at_idx" ON "attachments" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "chat_messages_created_at_idx" ON "chat_messages" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "chats_created_at_idx" ON "chats" USING btree ("created_at");--> statement-breakpoint
@@ -328,10 +301,4 @@ CREATE INDEX "projects_created_at_idx" ON "projects" USING btree ("created_at");
 CREATE UNIQUE INDEX "active_version_idx" ON "versions" USING btree ("project_id","activated_at") WHERE (activated_at IS NOT NULL);--> statement-breakpoint
 CREATE UNIQUE INDEX "version_number_unique_idx" ON "versions" USING btree ("project_id","number");--> statement-breakpoint
 CREATE INDEX "versions_created_at_idx" ON "versions" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX "versions_chat_id_idx" ON "versions" USING btree ("chat_id");--> statement-breakpoint
-CREATE INDEX "workflow_runs_version_id_idx" ON "workflow_runs" USING btree ("version_id");--> statement-breakpoint
-CREATE INDEX "workflow_runs_status_idx" ON "workflow_runs" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "workflow_runs_started_at_idx" ON "workflow_runs" USING btree ("started_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "workflow_step_executions_run_step_idx" ON "workflow_step_executions" USING btree ("workflow_run_id","step_id");--> statement-breakpoint
-CREATE INDEX "workflow_step_executions_run_id_idx" ON "workflow_step_executions" USING btree ("workflow_run_id");--> statement-breakpoint
-CREATE INDEX "workflow_step_executions_status_idx" ON "workflow_step_executions" USING btree ("status");
+CREATE INDEX "versions_chat_id_idx" ON "versions" USING btree ("chat_id");

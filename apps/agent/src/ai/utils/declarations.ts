@@ -20,7 +20,7 @@ import type {
 } from "@weldr/shared/types/declarations";
 import { inArray } from "drizzle-orm";
 import { extractDeclarations } from "./extract-declarations";
-import { queueSemanticDataGeneration } from "./semantic-data-jobs";
+import { queueDeclarationSemanticDataGeneration } from "./semantic-data-jobs";
 
 export type Declaration = typeof declarations.$inferSelect & {
   metadata: DeclarationMetadata;
@@ -359,6 +359,7 @@ export async function extractAndSaveDeclarations({
                 metadata: mergeJson(declarations.metadata, {
                   codeMetadata: data,
                 }),
+                progress: "enriching",
               })
               .where(eq(declarations.id, doesDeclarationExist.id))
               .returning();
@@ -367,7 +368,7 @@ export async function extractAndSaveDeclarations({
               id: declarationId,
               uri: data.uri,
               path: filePath,
-              progress: "completed",
+              progress: "enriching",
               metadata: {
                 version: "v1",
                 codeMetadata: data,
@@ -378,11 +379,12 @@ export async function extractAndSaveDeclarations({
           }
 
           // Queue semantic data generation as a background job
-          await queueSemanticDataGeneration({
+          await queueDeclarationSemanticDataGeneration({
             declarationId,
             codeMetadata: data,
             filePath,
             sourceCode,
+            projectId: project.id,
           });
 
           await tx.insert(versionDeclarations).values({

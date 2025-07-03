@@ -1,8 +1,10 @@
 import { runCommand } from "@/ai/utils/commands";
 import { SCRIPTS_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
+import { db, eq } from "@weldr/db";
+import { versions } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
-import { redisClient } from "@weldr/shared/redis";
+import { machineLookupStore } from "@weldr/shared/machine-lookup-store";
 import { createStep } from "../engine";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -72,12 +74,26 @@ export const deployStep = createStep({
         );
       }
 
-      await redisClient.set(
-        version.id,
-        `${previewMachineId}:app-production-${project.id}`,
+      await machineLookupStore.set(
+        `${project.id}:preview-machine-id`,
+        previewMachineId,
       );
 
       logger.info("Deployment completed successfully");
+
+      await db
+        .update(versions)
+        .set({ status: "completed" })
+        .where(eq(versions.id, version.id));
+
+      // Send SSE notification of completion
+      const streamWriter = global.sseConnections?.get(version.chatId);
+      if (streamWriter) {
+        await streamWriter.write({
+          type: "update_project",
+          data: { currentVersion: { status: "completed" } },
+        });
+      }
     } catch (error) {
       console.error(
         `[deploy:${project.id}] Failed to deploy: ${

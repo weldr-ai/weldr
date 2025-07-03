@@ -56,14 +56,12 @@ export type Task = z.infer<typeof taskSchema>;
 export type TaskDeclaration = z.infer<typeof taskDeclarationSchema>;
 
 export type TPendingMessage =
-  // Conversation phase - planner acting as interface
-  | "thinking" // Processing user request
-  | "responding" // Generating response to user
-  | "waiting" // Setting up integrations/configurations
-  // Workflow execution phase - actual work happening
-  | "coding" // Writing/generating code (includes building)
-  | "deploying" // Deploying to runtime (includes enriching in parallel)
-  | "completing" // Finishing up
+  | "thinking"
+  | "responding"
+  | "waiting"
+  | "planning"
+  | "coding"
+  | "deploying"
   | null;
 
 export type TextStreamableValue = {

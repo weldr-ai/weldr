@@ -6,7 +6,14 @@ export const versionSchema = z.object({
   chatId: z.string(),
   message: z.string(),
   description: z.string(),
-  status: z.enum(["pending", "in_progress", "completed", "failed"]),
+  status: z.enum([
+    "pending",
+    "planning",
+    "coding",
+    "deploying",
+    "completed",
+    "failed",
+  ]),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

@@ -1,14 +1,15 @@
+import type { DeclarationProgress } from "@weldr/shared/types/declarations";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
-import { CircleIcon, HammerIcon } from "lucide-react";
+import { BrainIcon, CircleIcon, HammerIcon } from "lucide-react";
 
 export const Status = ({
   progress,
 }: {
-  progress: "pending" | "in_progress";
+  progress: DeclarationProgress;
 }) => {
   return (
     <Tooltip>
@@ -19,10 +20,14 @@ export const Status = ({
         {progress === "in_progress" && (
           <HammerIcon className="size-3 animate-pulse fill-warning text-warning" />
         )}
+        {progress === "enriching" && (
+          <BrainIcon className="size-3 animate-pulse fill-primary text-primary" />
+        )}
       </TooltipTrigger>
       <TooltipContent className="border bg-muted">
         {progress === "pending" && "Pending"}
         {progress === "in_progress" && "Building"}
+        {progress === "enriching" && "Enriching"}
       </TooltipContent>
     </Tooltip>
   );

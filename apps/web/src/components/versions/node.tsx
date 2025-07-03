@@ -145,21 +145,24 @@ export const VersionNode = memo(({ data }: NodeProps<TVersionNode>) => {
             )}
             {(activeVersion || data.status === "failed") && (
               <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-xs",
-                  data.status === "completed" &&
-                    "bg-success text-success-foreground",
-                  data.status === "pending" &&
-                    "bg-warning text-warning-foreground",
-                  data.status === "in_progress" &&
-                    "bg-primary text-primary-foreground",
-                  data.status === "failed" &&
-                    "bg-destructive text-destructive-foreground",
-                )}
+                className={cn("rounded-full px-2 py-0.5 text-xs", {
+                  "bg-warning text-warning-foreground":
+                    data.status === "pending",
+                  "bg-purple-500 text-purple-50": data.status === "planning",
+                  "bg-teal-500 text-teal-50": data.status === "coding",
+                  "bg-primary text-primary-foreground":
+                    data.status === "deploying",
+                  "bg-success text-success-foreground":
+                    data.status === "completed",
+                  "bg-destructive text-destructive-foreground":
+                    data.status === "failed",
+                })}
               >
                 {data.status === "completed" && "Current"}
                 {data.status === "pending" && "Pending"}
-                {data.status === "in_progress" && "In Progress"}
+                {data.status === "planning" && "Planning"}
+                {data.status === "coding" && "Coding"}
+                {data.status === "deploying" && "Deploying"}
                 {data.status === "failed" && "Failed"}
               </span>
             )}

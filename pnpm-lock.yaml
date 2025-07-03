@@ -62,18 +62,6 @@ importers:
       '@ai-sdk/openai':
         specifier: ^1.3.22
         version: 1.3.22(zod@3.25.67)
-      '@ai-sdk/provider-utils':
-        specifier: ^2.2.8
-        version: 2.2.8(zod@3.25.67)
-      '@aws-sdk/client-s3':
-        specifier: ^3.799.0
-        version: 3.799.0
-      '@aws-sdk/lib-storage':
-        specifier: ^3.799.0
-        version: 3.799.0(@aws-sdk/client-s3@3.799.0)
-      '@aws-sdk/s3-request-presigner':
-        specifier: ^3.799.0
-        version: 3.799.0
       '@hono/node-server':
         specifier: ^1.14.4
         version: 1.14.4(hono@4.7.11)
@@ -132,9 +120,6 @@ importers:
       esbuild:
         specifier: ^0.24.2
         version: 0.24.2
-      json-schema:
-        specifier: ^0.4.0
-        version: 0.4.0
       pino-pretty:
         specifier: ^13.0.0
         version: 13.0.0

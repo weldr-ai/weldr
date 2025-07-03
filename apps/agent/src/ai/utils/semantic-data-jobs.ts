@@ -1,6 +1,12 @@
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { Logger } from "@/lib/logger";
 import { db } from "@weldr/db";
-import { declarations } from "@weldr/db/schema";
+import {
+  declarations,
+  projects,
+  versionDeclarations,
+  versions,
+} from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import type {
   DeclarationCodeMetadata,
@@ -8,7 +14,8 @@ import type {
 } from "@weldr/shared/types/declarations";
 import { declarationSemanticDataSchema } from "@weldr/shared/validators/declarations/index";
 import { generateObject } from "ai";
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
+import { runCommand } from "./commands";
 import { registry } from "./registry";
 
 export interface SemanticDataJobData {
@@ -16,226 +23,275 @@ export interface SemanticDataJobData {
   codeMetadata: DeclarationCodeMetadata;
   filePath: string;
   sourceCode: string;
+  projectId: string;
 }
 
-interface QueueJob {
-  id: string;
-  data: SemanticDataJobData;
-  attempts: number;
-  maxAttempts: number;
-  createdAt: Date;
-  retryDelay: number;
+// Simple queue for semantic data jobs
+const jobQueue: SemanticDataJobData[] = [];
+let isProcessing = false;
+
+export async function queueDeclarationSemanticDataGeneration(
+  jobData: SemanticDataJobData,
+): Promise<void> {
+  const logger = Logger.get({
+    tags: ["queueDeclarationSemanticDataGeneration"],
+    extra: {
+      declarationId: jobData.declarationId,
+      declarationName: jobData.codeMetadata.name,
+      projectId: jobData.projectId,
+    },
+  });
+
+  try {
+    // Set declaration status to "enriching" to mark it for processing
+    await db
+      .update(declarations)
+      .set({ progress: "enriching" })
+      .where(eq(declarations.id, jobData.declarationId));
+
+    // Add to queue
+    jobQueue.push(jobData);
+
+    logger.info("Queued declaration for semantic data generation", {
+      extra: {
+        declarationId: jobData.declarationId,
+        declarationName: jobData.codeMetadata.name,
+        queueLength: jobQueue.length,
+      },
+    });
+
+    // Process queue if not already processing
+    if (!isProcessing) {
+      processDeclarationsQueue();
+    }
+  } catch (error) {
+    logger.error("Failed to queue semantic data generation job", {
+      extra: {
+        error: error instanceof Error ? error.message : String(error),
+        declarationId: jobData.declarationId,
+        projectId: jobData.projectId,
+      },
+    });
+  }
 }
 
-class SemanticProcessingQueue {
-  private jobs: QueueJob[] = [];
-  private processing = false;
-  private concurrency = 5;
-  private activeJobs = 0;
-  private isShuttingDown = false;
-  private logger = Logger.get({ tags: ["InMemorySemanticQueue"] });
+export async function recoverSemanticDataJobs(): Promise<void> {
+  const project = await db.query.projects.findFirst({
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    where: eq(projects.id, process.env.PROJECT_ID!),
+  });
 
-  async add(
-    data: SemanticDataJobData,
-    options?: { jobId?: string },
-  ): Promise<void> {
-    if (this.isShuttingDown) {
-      this.logger.warn("Queue is shutting down, rejecting new job");
+  if (!project) {
+    throw new Error("Project not found");
+  }
+
+  const logger = Logger.get({
+    tags: ["recoverSemanticDataJobs"],
+    extra: { projectId: project.id },
+  });
+
+  try {
+    // Find declarations that are still in "enriching" state
+    const version = await db.query.versions.findFirst({
+      where: and(
+        eq(versions.projectId, project.id),
+        isNotNull(versions.activatedAt),
+      ),
+    });
+
+    if (
+      !version ||
+      version.status === "completed" ||
+      version.status === "failed"
+    ) {
       return;
     }
 
-    const jobId =
-      options?.jobId ||
-      `job-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    // Check for duplicate jobId
-    if (this.jobs.some((job) => job.id === jobId)) {
-      this.logger.info("Job with this ID already exists, skipping", {
-        extra: { jobId },
-      });
-      return;
-    }
-
-    const job: QueueJob = {
-      id: jobId,
-      data,
-      attempts: 0,
-      maxAttempts: 3,
-      createdAt: new Date(),
-      retryDelay: 2000,
-    };
-
-    this.jobs.push(job);
-    this.logger.info("Added job to queue", {
-      extra: {
-        jobId,
-        queueSize: this.jobs.length,
-        declarationId: data.declarationId,
+    const declarationsList = await db.query.versionDeclarations.findMany({
+      where: eq(versionDeclarations.versionId, version.id),
+      with: {
+        declaration: {
+          columns: {
+            id: true,
+            path: true,
+            metadata: true,
+            progress: true,
+          },
+        },
       },
     });
 
-    // Start processing if not already processing
-    if (!this.processing) {
-      this.startProcessing();
-    }
-  }
+    const enrichingDeclarations = declarationsList
+      .map((declaration) => declaration.declaration)
+      .filter((declaration) => declaration.progress === "enriching");
 
-  private async startProcessing(): Promise<void> {
-    if (this.processing || this.isShuttingDown) return;
-
-    this.processing = true;
-    this.logger.info("Started queue processing");
-
-    while (this.jobs.length > 0 && !this.isShuttingDown) {
-      if (this.activeJobs >= this.concurrency) {
-        // Wait a bit before checking again
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        continue;
-      }
-
-      const job = this.jobs.shift();
-      if (!job) continue;
-
-      this.activeJobs++;
-      this.processJob(job).finally(() => {
-        this.activeJobs--;
-      });
-    }
-
-    this.processing = false;
-    this.logger.info("Stopped queue processing");
-  }
-
-  private async processJob(job: QueueJob): Promise<void> {
-    const logger = Logger.get({
-      tags: ["processJob"],
-      extra: {
-        jobId: job.id,
-        attempt: job.attempts + 1,
-        maxAttempts: job.maxAttempts,
-      },
-    });
-
-    job.attempts++;
-
-    const { declarationId, codeMetadata, filePath, sourceCode } = job.data;
-
-    logger.info("Processing semantic data generation job", {
-      extra: {
-        declarationId,
-        declarationName: codeMetadata.name,
-        declarationType: codeMetadata.type,
-      },
-    });
-
-    try {
-      const semanticData = await generateSemanticData(
-        codeMetadata,
-        filePath,
-        sourceCode,
+    if (enrichingDeclarations.length > 0) {
+      logger.info(
+        "Found declarations in enriching state, queueing for processing",
+        {
+          extra: { count: enrichingDeclarations.length },
+        },
       );
 
-      if (semanticData) {
-        await db
-          .update(declarations)
-          .set({
-            metadata: mergeJson(declarations.metadata, {
-              semanticData,
-            }),
-          })
-          .where(eq(declarations.id, declarationId));
+      // Add recovered declarations to queue
+      for (const declaration of enrichingDeclarations) {
+        const codeMetadata = declaration.metadata?.codeMetadata;
 
-        logger.info("Successfully generated and saved semantic data", {
-          extra: {
-            declarationId,
-            declarationName: codeMetadata.name,
-          },
+        if (!declaration.path) {
+          continue;
+        }
+
+        const sourceCode = await runCommand("cat", [declaration.path], {
+          cwd: WORKSPACE_DIR,
         });
-      } else {
-        logger.warn("Failed to generate semantic data but job completed", {
-          extra: {
-            declarationId,
-            declarationName: codeMetadata.name,
-          },
-        });
+
+        if (sourceCode.exitCode !== 0) {
+          logger.error("Failed to read source code", {
+            extra: { declarationId: declaration.id },
+          });
+          continue;
+        }
+
+        if (codeMetadata && declaration.path) {
+          jobQueue.push({
+            declarationId: declaration.id,
+            codeMetadata,
+            filePath: declaration.path,
+            sourceCode: sourceCode.stdout,
+            projectId: project.id,
+          });
+        }
       }
-    } catch (error) {
-      logger.error("Failed to process semantic data job", {
+
+      // Start processing if we have jobs
+      if (jobQueue.length > 0) {
+        processDeclarationsQueue();
+      }
+    }
+  } catch (error) {
+    logger.error("Error recovering semantic data jobs", {
+      extra: {
+        error: error instanceof Error ? error.message : String(error),
+        projectId: project.id,
+      },
+    });
+  }
+}
+
+async function processDeclaration(jobData: SemanticDataJobData): Promise<void> {
+  const logger = Logger.get({
+    tags: ["processDeclaration"],
+    extra: {
+      declarationId: jobData.declarationId,
+      declarationName: jobData.codeMetadata.name,
+    },
+  });
+
+  try {
+    logger.info("Processing semantic data generation", {
+      extra: {
+        declarationId: jobData.declarationId,
+        declarationName: jobData.codeMetadata.name,
+        declarationType: jobData.codeMetadata.type,
+        filePath: jobData.filePath,
+      },
+    });
+
+    const semanticData = await generateDeclarationSemanticData(
+      jobData.codeMetadata,
+      jobData.filePath,
+      jobData.sourceCode,
+    );
+
+    if (semanticData) {
+      await db
+        .update(declarations)
+        .set({
+          metadata: mergeJson(declarations.metadata, {
+            semanticData,
+          }),
+          progress: "completed",
+        })
+        .where(eq(declarations.id, jobData.declarationId));
+
+      logger.info("Successfully generated and saved semantic data", {
         extra: {
-          error: error instanceof Error ? error.message : String(error),
-          declarationId,
-          declarationName: codeMetadata.name,
+          declarationId: jobData.declarationId,
+          declarationName: jobData.codeMetadata.name,
+        },
+      });
+    } else {
+      logger.warn("Failed to generate semantic data, marking as completed", {
+        extra: {
+          declarationId: jobData.declarationId,
+          declarationName: jobData.codeMetadata.name,
         },
       });
 
-      // Retry logic
-      if (job.attempts < job.maxAttempts) {
-        logger.info("Retrying job", {
-          extra: {
-            jobId: job.id,
-            attempt: job.attempts,
-            retryDelayMs: job.retryDelay,
-          },
-        });
-
-        // Schedule retry with exponential backoff
-        setTimeout(() => {
-          this.jobs.push(job);
-          if (!this.processing) {
-            this.startProcessing();
-          }
-        }, job.retryDelay);
-
-        job.retryDelay *= 2; // Exponential backoff
-      } else {
-        logger.error("Job failed after maximum attempts", {
-          extra: {
-            jobId: job.id,
-            declarationId,
-            declarationName: codeMetadata.name,
-          },
-        });
-      }
+      // Mark as completed even if semantic data generation failed
+      await db
+        .update(declarations)
+        .set({ progress: "completed" })
+        .where(eq(declarations.id, jobData.declarationId));
     }
-  }
+  } catch (error) {
+    logger.error("Failed to process semantic data generation", {
+      extra: {
+        error: error instanceof Error ? error.message : String(error),
+        declarationId: jobData.declarationId,
+      },
+    });
 
-  async shutdown(): Promise<void> {
-    this.logger.info("Shutting down queue");
-    this.isShuttingDown = true;
-
-    // Wait for active jobs to complete
-    while (this.activeJobs > 0) {
-      this.logger.info("Waiting for active jobs to complete", {
-        extra: { activeJobs: this.activeJobs },
-      });
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-
-    // Clear remaining jobs
-    this.jobs = [];
-    this.logger.info("Queue shutdown complete");
-  }
-
-  getStats() {
-    return {
-      queueSize: this.jobs.length,
-      activeJobs: this.activeJobs,
-      processing: this.processing,
-      isShuttingDown: this.isShuttingDown,
-    };
+    // Mark as completed even if there was an error
+    await db
+      .update(declarations)
+      .set({ progress: "completed" })
+      .where(eq(declarations.id, jobData.declarationId));
   }
 }
 
-// Create singleton queue instance
-export const semanticProcessingQueue = new SemanticProcessingQueue();
+async function processDeclarationsQueue(): Promise<void> {
+  if (isProcessing) return;
 
-async function generateSemanticData(
+  isProcessing = true;
+  const logger = Logger.get({ tags: ["processDeclarationsQueue"] });
+
+  while (jobQueue.length > 0) {
+    // Take up to 5 jobs from the queue
+    const batch = jobQueue.splice(0, 5);
+
+    logger.info("Processing semantic data batch", {
+      extra: { batchSize: batch.length, remainingInQueue: jobQueue.length },
+    });
+
+    // Process all jobs in the batch concurrently
+    await Promise.allSettled(
+      batch.map(async (jobData) => {
+        try {
+          await processDeclaration(jobData);
+        } catch (error) {
+          logger.error("Failed to process semantic data job", {
+            extra: {
+              error: error instanceof Error ? error.message : String(error),
+              declarationId: jobData.declarationId,
+            },
+          });
+        }
+      }),
+    );
+  }
+
+  isProcessing = false;
+  logger.info("Finished processing semantic data queue");
+}
+
+async function generateDeclarationSemanticData(
   declaration: DeclarationCodeMetadata,
   filePath: string,
   sourceCode: string,
 ): Promise<DeclarationSemanticData | null> {
   const logger = Logger.get({
-    tags: ["generateSemanticData"],
+    tags: ["generateDeclarationSemanticData"],
     extra: {
       declarationName: declaration.name,
       declarationType: declaration.type,
@@ -292,38 +348,5 @@ Focus on being practical and helpful for developers who need to understand when 
       },
     });
     return null;
-  }
-}
-
-// Helper function to queue semantic data generation
-export async function queueSemanticDataGeneration(
-  jobData: SemanticDataJobData,
-): Promise<void> {
-  const logger = Logger.get({
-    tags: ["queueSemanticDataGeneration"],
-    extra: {
-      declarationId: jobData.declarationId,
-      declarationName: jobData.codeMetadata.name,
-    },
-  });
-
-  try {
-    await semanticProcessingQueue.add(jobData, {
-      jobId: `semantic-${jobData.declarationId}`, // Prevent duplicate jobs
-    });
-
-    logger.info("Queued semantic data generation job", {
-      extra: {
-        declarationId: jobData.declarationId,
-        declarationName: jobData.codeMetadata.name,
-      },
-    });
-  } catch (error) {
-    logger.error("Failed to queue semantic data generation job", {
-      extra: {
-        error: error instanceof Error ? error.message : String(error),
-        declarationId: jobData.declarationId,
-      },
-    });
   }
 }
