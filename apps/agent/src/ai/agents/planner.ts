@@ -6,8 +6,8 @@ import {
   grepTool,
   initProjectTool,
   listDirTool,
+  promptIntegrationConfigurationTool,
   readFileTool,
-  requestIntegrationConfigurationTool,
   searchCodebaseTool,
   upgradeProjectTool,
 } from "@/ai/tools";
@@ -59,7 +59,7 @@ export async function plannerAgent({
     [
       initProjectTool.getXML(),
       upgradeProjectTool.getXML(),
-      requestIntegrationConfigurationTool.getXML(),
+      promptIntegrationConfigurationTool.getXML(),
       callCoderTool.getXML(),
       listDirTool.getXML(),
       readFileTool.getXML(),
@@ -103,8 +103,8 @@ export async function plannerAgent({
           tools: {
             init_project: initProjectTool(context),
             upgrade_project: upgradeProjectTool(context),
-            request_integration_configuration:
-              requestIntegrationConfigurationTool(context),
+            prompt_integration_configuration:
+              promptIntegrationConfigurationTool(context),
             list_dir: listDirTool(context),
             read_file: readFileTool(context),
             call_coder: callCoderTool(context),
@@ -177,7 +177,7 @@ export async function plannerAgent({
           shouldRecur = true;
         }
       } else if (delta.type === "tool-result") {
-        if (delta.toolName === "request_integration_configuration") {
+        if (delta.toolName === "prompt_integration_configuration") {
           await streamWriter.write({
             type: "tool",
             toolName: delta.toolName,
@@ -188,7 +188,7 @@ export async function plannerAgent({
         }
         toolResultMessages.push({
           visibility:
-            delta.toolName === "request_integration_configuration"
+            delta.toolName === "prompt_integration_configuration"
               ? "public"
               : "internal",
           role: "tool",

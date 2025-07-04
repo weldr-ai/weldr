@@ -2,16 +2,17 @@ import { Logger } from "@/lib/logger";
 import { z } from "zod";
 import { createTool } from "../utils/tools";
 
-export const requestIntegrationConfigurationTool = createTool({
-  name: "request_integration_configuration",
+export const promptIntegrationConfigurationTool = createTool({
+  name: "prompt_integration_configuration",
   description:
-    "Request the configuration for an integration. You can only request the configuration for one integration at a time. Then wait for the user to respond with the configuration.",
-  whenToUse: "When you need to request the configuration for an integration.",
+    "Request the configuration for integrations. You can only request the configuration for one integration at a time. Then wait for the user to respond with the configuration.",
+  whenToUse:
+    "When you need to request the configuration for integrations that are required for a task.",
   inputSchema: z.object({
-    key: z
-      .enum(["postgres"])
+    keys: z
+      .array(z.enum(["postgres"]))
       .describe(
-        'The key of the integration from the list above (e.g., "postgres").',
+        'The keys of the integrations from the list above (e.g., ["postgres"]).',
       ),
   }),
   outputSchema: z.discriminatedUnion("success", [
@@ -26,7 +27,7 @@ export const requestIntegrationConfigurationTool = createTool({
 
     // Create contextual logger with base tags and extras
     const logger = Logger.get({
-      tags: ["requestIntegrationConfiguration"],
+      tags: ["promptIntegrationConfiguration"],
       extra: {
         projectId: project.id,
         versionId: version.id,
@@ -34,7 +35,7 @@ export const requestIntegrationConfigurationTool = createTool({
       },
     });
 
-    logger.info(`Setting up integration: ${input.key}`);
+    logger.info(`Setting up integrations: ${input.keys.join(", ")}`);
 
     return {
       status: "pending",
