@@ -24,12 +24,9 @@ try {
 
   // Update scripts only for web mode
   if (isWebMode) {
-    const scriptsToUpdate = ["dev", "start", "build"];
-
-    for (const script of scriptsToUpdate) {
-      if (boilerplatePackage.scripts?.[script]) {
-        appPackage.scripts[script] = boilerplatePackage.scripts[script];
-      }
+    // Replace all scripts with boilerplate scripts
+    if (boilerplatePackage.scripts) {
+      appPackage.scripts = { ...boilerplatePackage.scripts };
     }
 
     const depsToRemove = ["esbuild", "tsx"];

@@ -8,10 +8,7 @@
     "start": "node dist/index.js",
     "check-types": "tsc --noEmit",
     "check": "biome check --diagnostic-level=warn .",
-    "check:fix": "biome check --diagnostic-level=warn --write .",
-    "format": "biome format",
-    "lint": "biome lint",
-    "lint:fix": "biome lint --write"
+    "check:fix": "biome check --diagnostic-level=warn --write ."
   },
   "dependencies": {
     "@hono/node-server": "^1.14.3",
