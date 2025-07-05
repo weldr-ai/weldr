@@ -224,7 +224,7 @@ export function formatDeclarationSpecs(
   if (declaration.path) {
     result += `**Path:** \`${declaration.path}\``;
     if (position) {
-      result += ` (Start line ${position.start.line - 5}, End line ${position.end.line + 5})`;
+      result += ` (Start line ${position.start.line}, End line ${position.end.line})`;
     }
     result += "\n\n";
   }
