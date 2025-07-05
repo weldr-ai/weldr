@@ -1,5 +1,5 @@
 {
-  "id": "2ddb06bd-ecab-4e1b-9870-a1d42d7d737d",
+  "id": "f8cc334c-af9d-4452-8635-0d461b76f679",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -964,12 +964,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "implementation_details": {
-          "name": "implementation_details",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
         "embedding": {
           "name": "embedding",
           "type": "vector(1536)",
@@ -985,6 +979,12 @@
         },
         "previous_id": {
           "name": "previous_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "task_id": {
+          "name": "task_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1049,6 +1049,15 @@
           "columnsFrom": ["previous_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "declarations_task_id_tasks_id_fk": {
+          "name": "declarations_task_id_tasks_id_fk",
+          "tableFrom": "declarations",
+          "tableTo": "tasks",
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "declarations_project_id_projects_id_fk": {
@@ -1649,8 +1658,8 @@
       "name": "task_dependencies",
       "schema": "",
       "columns": {
-        "task_id": {
-          "name": "task_id",
+        "dependent_id": {
+          "name": "dependent_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1663,11 +1672,11 @@
         }
       },
       "indexes": {
-        "task_dependencies_task_id_idx": {
-          "name": "task_dependencies_task_id_idx",
+        "task_dependencies_dependent_id_idx": {
+          "name": "task_dependencies_dependent_id_idx",
           "columns": [
             {
-              "expression": "task_id",
+              "expression": "dependent_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1695,11 +1704,11 @@
         }
       },
       "foreignKeys": {
-        "task_dependencies_task_id_tasks_id_fk": {
-          "name": "task_dependencies_task_id_tasks_id_fk",
+        "task_dependencies_dependent_id_tasks_id_fk": {
+          "name": "task_dependencies_dependent_id_tasks_id_fk",
           "tableFrom": "task_dependencies",
           "tableTo": "tasks",
-          "columnsFrom": ["task_id"],
+          "columnsFrom": ["dependent_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1715,9 +1724,9 @@
         }
       },
       "compositePrimaryKeys": {
-        "task_dependencies_task_id_dependency_id_pk": {
-          "name": "task_dependencies_task_id_dependency_id_pk",
-          "columns": ["task_id", "dependency_id"]
+        "task_dependencies_dependent_id_dependency_id_pk": {
+          "name": "task_dependencies_dependent_id_dependency_id_pk",
+          "columns": ["dependent_id", "dependency_id"]
         }
       },
       "uniqueConstraints": {},

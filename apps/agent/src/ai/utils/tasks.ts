@@ -1,9 +1,30 @@
 import type { WorkflowContext } from "@/workflow/context";
 import { db, eq } from "@weldr/db";
-import { chats, taskDependencies, tasks } from "@weldr/db/schema";
+import {
+  chats,
+  type declarations,
+  dependencies,
+  type integrationTemplates,
+  type integrations,
+  taskDependencies,
+  tasks,
+} from "@weldr/db/schema";
 import type { Task } from "@weldr/shared/types";
+import { createDeclarationFromTask } from "./declarations";
 
-export type TaskWithDependencies = typeof tasks.$inferSelect & {
+export type TaskWithRelations = typeof tasks.$inferSelect & {
+  declaration:
+    | (typeof declarations.$inferSelect & {
+        integrations: {
+          integration: typeof integrations.$inferSelect & {
+            integrationTemplate: typeof integrationTemplates.$inferSelect;
+          };
+        }[];
+        dependencies: {
+          dependency: typeof declarations.$inferSelect;
+        }[];
+      })
+    | null;
   dependencies: {
     dependency: typeof tasks.$inferSelect;
   }[];
@@ -20,7 +41,21 @@ export async function createTasks({
   const version = context.get("version");
 
   return await db.transaction(async (tx) => {
-    const insertedTasks = await Promise.all(
+    const taskToDeclaration = new Map<
+      number,
+      typeof declarations.$inferSelect
+    >();
+    const tasksMap = new Map<
+      number,
+      {
+        numericId: number;
+        type: "declaration" | "generic";
+        dbId: string;
+        dependencies: number[];
+      }
+    >();
+
+    await Promise.all(
       taskList.map(async (task) => {
         const [chat] = await tx
           .insert(chats)
@@ -48,58 +83,112 @@ export async function createTasks({
           throw new Error("Failed to insert task");
         }
 
-        return {
+        if (task.type === "declaration") {
+          const declaration = await createDeclarationFromTask({
+            context,
+            task: insertedTask,
+          });
+
+          if (!declaration) {
+            throw new Error("Failed to create declaration");
+          }
+
+          taskToDeclaration.set(task.id, declaration);
+        }
+
+        tasksMap.set(task.id, {
           numericId: task.id,
           dbId: insertedTask.id,
+          type: task.type,
           dependencies: task.dependencies || [],
-        };
+        });
       }),
     );
 
-    const idMapping = new Map<number, string>();
-    for (const insertedTask of insertedTasks) {
-      idMapping.set(insertedTask.numericId, insertedTask.dbId);
-    }
-
-    const dependencyInserts: Array<{
-      taskId: string;
+    const taskDependenciesInserts: Array<{
+      dependentId: string;
       dependencyId: string;
     }> = [];
 
+    const declarationDependenciesInserts: Array<{
+      dependentId: string;
+      dependencyId: string;
+    }> = [];
+
+    const insertedTasks = tasksMap.values();
+
     for (const insertedTask of insertedTasks) {
-      if (insertedTask.dependencies.length > 0) {
-        for (const depId of insertedTask.dependencies) {
-          const dependsOnTaskId = idMapping.get(depId);
-          if (dependsOnTaskId) {
-            dependencyInserts.push({
-              taskId: insertedTask.dbId,
-              dependencyId: dependsOnTaskId,
-            });
+      for (const depId of insertedTask.dependencies) {
+        const dependency = tasksMap.get(depId);
+
+        if (!dependency) {
+          throw new Error("Dependency task not found");
+        }
+
+        taskDependenciesInserts.push({
+          dependentId: insertedTask.dbId,
+          dependencyId: dependency.dbId,
+        });
+
+        // Create declaration dependencies
+        if (
+          insertedTask.type === "declaration" &&
+          dependency.type === "declaration"
+        ) {
+          const dependentId = taskToDeclaration.get(insertedTask.numericId);
+          const dependencyId = taskToDeclaration.get(dependency.numericId);
+
+          if (!dependentId || !dependencyId) {
+            throw new Error(
+              `[createTasks:project_${project.id}:version_${version.id}] Declaration ID not found for dependency mapping`,
+            );
           }
+
+          declarationDependenciesInserts.push({
+            dependentId: dependentId.id,
+            dependencyId: dependencyId.id,
+          });
         }
       }
     }
 
-    if (dependencyInserts.length > 0) {
-      await tx.insert(taskDependencies).values(dependencyInserts);
+    if (taskDependenciesInserts.length > 0) {
+      await tx.insert(taskDependencies).values(taskDependenciesInserts);
     }
 
-    return insertedTasks.map((t) => ({
-      id: t.dbId,
-      numericId: t.numericId,
-    }));
+    if (declarationDependenciesInserts.length > 0) {
+      await tx.insert(dependencies).values(declarationDependenciesInserts);
+    }
   });
 }
 
 export async function getTasksWithDependencies(
   versionId: string,
-): Promise<TaskWithDependencies[]> {
+): Promise<TaskWithRelations[]> {
   return await db.query.tasks.findMany({
     where: (tasks) => eq(tasks.versionId, versionId),
     with: {
       dependencies: {
         with: {
           dependency: true,
+        },
+      },
+      declaration: {
+        with: {
+          integrations: {
+            with: {
+              integration: {
+                with: {
+                  integrationTemplate: true,
+                },
+              },
+            },
+          },
+          dependencies: {
+            with: {
+              dependency: true,
+            },
+          },
         },
       },
     },
@@ -110,7 +199,7 @@ export async function getTaskExecutionPlan({
   versionId,
 }: {
   versionId: string;
-}): Promise<TaskWithDependencies[]> {
+}): Promise<TaskWithRelations[]> {
   const tasks = await getTasksWithDependencies(versionId);
 
   // Filter only pending tasks
@@ -124,8 +213,8 @@ export async function getTaskExecutionPlan({
   return orderedTasks;
 }
 
-function orderTasks(tasks: TaskWithDependencies[]): TaskWithDependencies[] {
-  const taskMap = new Map<string, TaskWithDependencies>();
+function orderTasks(tasks: TaskWithRelations[]): TaskWithRelations[] {
+  const taskMap = new Map<string, TaskWithRelations>();
   for (const task of tasks) {
     taskMap.set(task.id, task);
   }
@@ -159,7 +248,7 @@ function orderTasks(tasks: TaskWithDependencies[]): TaskWithDependencies[] {
     }
   }
 
-  const sortedTasks: TaskWithDependencies[] = [];
+  const sortedTasks: TaskWithRelations[] = [];
   while (queue.length > 0) {
     const taskId = queue.shift();
     if (!taskId) {

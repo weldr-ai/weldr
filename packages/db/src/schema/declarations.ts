@@ -17,6 +17,7 @@ import { dependencies } from "./dependencies";
 import { integrations } from "./integrations";
 import { nodes } from "./nodes";
 import { projects } from "./projects";
+import { tasks } from "./tasks";
 import { versionDeclarations } from "./versions";
 
 export const declarationProgress = pgEnum("declaration_progress", [
@@ -35,18 +36,14 @@ export const declarations = pgTable(
     path: text("path"),
     progress: declarationProgress("progress").notNull(),
     metadata: jsonb("metadata").$type<DeclarationMetadata>(),
-    implementationDetails: jsonb("implementation_details").$type<{
-      summary: string;
-      description: string;
-      implementationNotes?: string[];
-      acceptanceCriteria: string[];
-      subTasks: string[];
-    }>(),
     embedding: vector("embedding", { dimensions: 1536 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     previousId: text("previous_id").references(
       (): AnyPgColumn => declarations.id,
     ),
+    taskId: text("task_id").references(() => tasks.id, {
+      onDelete: "cascade",
+    }),
     projectId: text("project_id")
       .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
@@ -77,6 +74,10 @@ export const declarationsRelations = relations(
     project: one(projects, {
       fields: [declarations.projectId],
       references: [projects.id],
+    }),
+    task: one(tasks, {
+      fields: [declarations.taskId],
+      references: [tasks.id],
     }),
     user: one(users, {
       fields: [declarations.userId],

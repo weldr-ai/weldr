@@ -10,15 +10,10 @@ import {
   searchCodebaseTool,
   writeFileTool,
 } from "@/ai/tools";
-import type { Declaration } from "@/ai/utils/declarations";
-import { createDeclarationFromTask } from "@/ai/utils/declarations";
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
-import {
-  type TaskWithDependencies,
-  getTaskExecutionPlan,
-} from "@/ai/utils/tasks";
+import { type TaskWithRelations, getTaskExecutionPlan } from "@/ai/utils/tasks";
 import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { db, eq } from "@weldr/db";
@@ -87,7 +82,7 @@ export async function coderAgent({
       .set({ status: "in_progress" })
       .where(eq(tasks.id, task.id));
 
-    const { taskContext, declaration } = await createTaskContext(task, context);
+    const { taskContext, declaration } = await createTaskContext(task);
 
     if (declaration) {
       await db
@@ -95,7 +90,7 @@ export async function coderAgent({
         .set({ progress: "in_progress" })
         .where(eq(declarations.id, declaration.id));
 
-      await updateCanvasNode({ context, declaration });
+      await updateCanvasNode({ context, declarationId: declaration.id });
     }
 
     await executeTaskWithContext(
@@ -137,7 +132,7 @@ async function executeTaskCoder({
   coolDownPeriod = 1000,
 }: {
   context: WorkflowContext;
-  task: TaskWithDependencies;
+  task: TaskWithRelations;
   loopChatId: string;
   progress: Map<
     string,
@@ -370,10 +365,10 @@ async function executeTaskCoder({
 
 async function updateCanvasNode({
   context,
-  declaration,
+  declarationId,
 }: {
   context: WorkflowContext;
-  declaration: Declaration;
+  declarationId: string;
 }) {
   const project = context.get("project");
   const version = context.get("version");
@@ -391,13 +386,13 @@ async function updateCanvasNode({
     extra: {
       projectId: project.id,
       versionId: version.id,
-      declarationId: declaration.id,
+      declarationId,
     },
   });
 
   try {
     const updatedDeclaration = await db.query.declarations.findFirst({
-      where: eq(declarations.id, declaration.id),
+      where: eq(declarations.id, declarationId),
       with: { node: true },
     });
 
@@ -417,44 +412,13 @@ async function updateCanvasNode({
     }
   } catch (error) {
     logger.warn("Failed to stream declaration progress start", {
-      extra: { error, declarationId: declaration.id },
+      extra: { error, declarationId },
     });
   }
 }
 
-const createTaskContext = async (
-  task: TaskWithDependencies,
-  context: WorkflowContext,
-): Promise<{ taskContext: string; declaration?: Declaration }> => {
-  if (task.data.type === "declaration") {
-    const declaration = await createDeclarationFromTask({
-      context,
-      taskData: task.data,
-    });
-
-    if (!declaration) {
-      throw new Error("Failed to create declaration from task");
-    }
-
-    const taskContext = `Your current task is to implement the following declaration:
----
-${formatTaskDeclarationToMarkdown(declaration)}
----
-Note:
-- You can implement any utility functions, components, or other declarations you need to implement the declaration.
-- Read the files you need and implement the required changes.`;
-
-    return { taskContext, declaration };
-  }
-
-  // Handle generic tasks
-  const taskContext = `Your current task is to implement the following:
----
-Task: ${task.data.summary}
-
-Description: ${task.data.description}
-
-Acceptance Criteria:
+const createTaskContext = async (task: TaskWithRelations) => {
+  const sharedContext = `Acceptance Criteria:
 ${task.data.acceptanceCriteria.map((criteria) => `- ${criteria}`).join("\n")}
 
 ${
@@ -471,16 +435,45 @@ ${
 ${task.data.subTasks.map((subTask) => `- ${subTask}`).join("\n")}
 `
     : ""
-}
----
+}`;
 
-Read the existing codebase to understand the current implementation and make the necessary changes to complete this task.`;
+  if (task.data.type === "declaration") {
+    const declaration = task.declaration;
+
+    if (!declaration) {
+      throw new Error("Declaration not found");
+    }
+
+    const taskContext = `Your current task is to implement the following declaration:
+---
+${formatTaskDeclarationToMarkdown(declaration)}
+${sharedContext}
+---
+Note:
+- You can implement any utility functions, components, or other declarations you need to implement the declaration.
+- Read the files you need and implement the required changes.
+- Leverage the notes and sub-tasks to implement the declaration.`;
+
+    return { taskContext, declaration };
+  }
+
+  // Handle generic tasks
+  const taskContext = `Your current task is to implement the following:
+---
+Task: ${task.data.summary}
+Description: ${task.data.description}
+${sharedContext}
+---
+Note:
+- You can implement any utility functions, components, or other declarations you need to implement the declaration.
+- Read the files you need and implement the required changes.
+- Leverage the notes and sub-tasks to implement the declaration.`;
 
   return { taskContext };
 };
 
 const executeTaskWithContext = async (
-  task: TaskWithDependencies,
+  task: TaskWithRelations,
   taskContext: string,
   context: WorkflowContext,
   currentProgress: Map<

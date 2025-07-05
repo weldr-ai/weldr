@@ -5,7 +5,6 @@ import {
   declarationIntegrations,
   declarations,
   dependencies,
-  type integrationTemplates,
   integrations,
   nodes,
   type tasks,
@@ -13,22 +12,9 @@ import {
 } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { nanoid } from "@weldr/shared/nanoid";
-import type { DeclarationMetadata } from "@weldr/shared/types/declarations";
 import { inArray } from "drizzle-orm";
 import { extractDeclarations } from "./extract-declarations";
 import { queueDeclarationSemanticDataGeneration } from "./semantic-data-jobs";
-
-export type Declaration = typeof declarations.$inferSelect & {
-  metadata: DeclarationMetadata;
-  integrations: {
-    integration: typeof integrations.$inferSelect & {
-      integrationTemplate: typeof integrationTemplates.$inferSelect;
-    };
-  }[];
-  dependencies: {
-    dependency: typeof declarations.$inferSelect;
-  }[];
-};
 
 const NODE_DIMENSIONS = {
   page: { width: 400, height: 300 },
@@ -62,11 +48,11 @@ const intersects = (a: Rect, b: Rect): boolean => {
 
 export const createDeclarationFromTask = async ({
   context,
-  taskData,
+  task,
 }: {
   context: WorkflowContext;
-  taskData: (typeof tasks.$inferSelect)["data"];
-}): Promise<Declaration | null> => {
+  task: typeof tasks.$inferSelect;
+}) => {
   const project = context.get("project");
   const version = context.get("version");
   const user = context.get("user");
@@ -79,6 +65,8 @@ export const createDeclarationFromTask = async ({
     },
   });
 
+  const taskData = task.data;
+
   if (taskData.type !== "declaration") {
     return null;
   }
@@ -87,9 +75,7 @@ export const createDeclarationFromTask = async ({
     let node: typeof nodes.$inferSelect | undefined = undefined;
     let previousDeclarationId: string | null = null;
 
-    // Handle create operation
     if (taskData.operation === "create") {
-      // Get existing nodes to avoid collisions
       const existingNodes = await tx.query.nodes.findMany({
         where: eq(nodes.projectId, project.id),
         with: {
@@ -150,7 +136,6 @@ export const createDeclarationFromTask = async ({
       node = createdCanvasNode;
     }
 
-    // Handle update operation
     if (taskData.operation === "update") {
       const existingVersionDeclarations =
         await tx.query.versionDeclarations.findMany({
@@ -195,7 +180,6 @@ export const createDeclarationFromTask = async ({
       previousDeclarationId = existingDeclaration.id;
     }
 
-    // Create the declaration
     const [createdDeclaration] = await tx
       .insert(declarations)
       .values({
@@ -205,17 +189,11 @@ export const createDeclarationFromTask = async ({
           version: "v1",
           specs: taskData.specs,
         },
-        implementationDetails: {
-          summary: taskData.summary,
-          acceptanceCriteria: taskData.acceptanceCriteria,
-          description: taskData.description,
-          implementationNotes: taskData.implementationNotes,
-          subTasks: taskData.subTasks,
-        },
         previousId: previousDeclarationId,
         projectId: project.id,
         userId: user.id,
         nodeId: node?.id,
+        taskId: task.id,
       })
       .returning();
 
@@ -226,13 +204,11 @@ export const createDeclarationFromTask = async ({
       );
     }
 
-    // Link to version
     await tx.insert(versionDeclarations).values({
       versionId: version.id,
       declarationId: createdDeclaration.id,
     });
 
-    // Handle integrations
     for (const declarationIntegration of taskData.integrations ?? []) {
       const integration = await tx.query.integrations.findFirst({
         where: and(
@@ -255,7 +231,6 @@ export const createDeclarationFromTask = async ({
       });
     }
 
-    // Stream node creation to client
     try {
       const streamWriter = global.sseConnections?.get(version.chatId);
       if (streamWriter && createdDeclaration.metadata?.specs && node) {
@@ -274,7 +249,6 @@ export const createDeclarationFromTask = async ({
       });
     }
 
-    // Get the created declaration with all relations
     const declarationWithRelations = await tx.query.declarations.findFirst({
       where: eq(declarations.id, createdDeclaration.id),
       with: {
@@ -299,7 +273,7 @@ export const createDeclarationFromTask = async ({
       throw new Error("Failed to fetch created declaration with relations");
     }
 
-    return declarationWithRelations as Declaration;
+    return declarationWithRelations;
   });
 };
 
@@ -361,7 +335,6 @@ export async function extractAndSaveDeclarations({
           .filter((d) => d.declaration?.progress === "completed")
           .map((d) => d.declaration);
 
-        // Delete existing declarations for this file to create new ones
         if (existingDeclarations.length > 0) {
           const idsToDelete = existingDeclarations.map((d) => d.id);
           await tx
@@ -374,7 +347,6 @@ export async function extractAndSaveDeclarations({
             );
         }
 
-        // Map declaration URIs to declaration IDs
         const newDeclarationUriToId = new Map<string, string>();
 
         for (const data of extracted) {
@@ -411,7 +383,6 @@ export async function extractAndSaveDeclarations({
             });
           }
 
-          // Queue semantic data generation as a background job
           await queueDeclarationSemanticDataGeneration({
             declarationId,
             codeMetadata: data,
@@ -436,10 +407,8 @@ export async function extractAndSaveDeclarations({
               for (const depName of dep.dependsOn) {
                 const dependencyUri = `${project.id}:${dep.filePath}:${depName}`;
 
-                // Select from new declarations
                 let dependencyId = newDeclarationUriToId.get(dependencyUri);
 
-                // Select from active version declarations if not found in new declarations
                 if (!dependencyId) {
                   dependencyId = activeVersionDeclarations.find(
                     (d) => d.declaration?.uri === dependencyUri,
@@ -479,126 +448,4 @@ export async function extractAndSaveDeclarations({
       },
     });
   }
-}
-
-export async function getExecutionPlan({
-  projectId,
-  versionId,
-}: {
-  projectId: string;
-  versionId: string;
-}): Promise<Declaration[]> {
-  const versionDeclarationIdsResult =
-    await db.query.versionDeclarations.findMany({
-      where: eq(versionDeclarations.versionId, versionId),
-      columns: {
-        declarationId: true,
-      },
-    });
-
-  if (versionDeclarationIdsResult.length === 0) {
-    return [];
-  }
-
-  const declarationIds = versionDeclarationIdsResult.map(
-    (d) => d.declarationId,
-  );
-
-  const declarationList = await db.query.declarations.findMany({
-    where: and(
-      eq(declarations.projectId, projectId),
-      eq(declarations.progress, "pending"),
-      inArray(declarations.id, declarationIds),
-    ),
-    with: {
-      integrations: {
-        with: {
-          integration: {
-            with: {
-              integrationTemplate: true,
-            },
-          },
-        },
-      },
-      dependencies: {
-        with: {
-          dependency: true,
-        },
-      },
-    },
-  });
-
-  const orderedDeclarations = orderDeclarations(
-    declarationList as Declaration[],
-  );
-
-  return orderedDeclarations as Declaration[];
-}
-
-function orderDeclarations(declarations: Declaration[]): Declaration[] {
-  const declarationMap = new Map<string, Declaration>();
-  for (const d of declarations) {
-    declarationMap.set(d.id, d);
-  }
-
-  const inDegree = new Map<string, number>();
-  const adjList = new Map<string, string[]>();
-
-  for (const decl of declarations) {
-    inDegree.set(decl.id, 0);
-    adjList.set(decl.id, []);
-  }
-
-  for (const decl of declarations) {
-    for (const dep of decl.dependencies) {
-      const dependencyId = dep.dependency.id;
-      const neighbors = adjList.get(dependencyId);
-      if (neighbors) {
-        neighbors.push(decl.id);
-        inDegree.set(decl.id, (inDegree.get(decl.id) ?? 0) + 1);
-      }
-    }
-  }
-
-  const queue: string[] = [];
-  for (const [id, degree] of inDegree.entries()) {
-    if (degree === 0) {
-      queue.push(id);
-    }
-  }
-
-  const sortedDeclarations: Declaration[] = [];
-  while (queue.length > 0) {
-    const uId = queue.shift();
-    if (!uId) {
-      break;
-    }
-    const u = declarationMap.get(uId);
-    if (u) {
-      sortedDeclarations.push(u);
-    }
-
-    const neighbors = adjList.get(uId) ?? [];
-    for (const vId of neighbors) {
-      const currentInDegree = (inDegree.get(vId) ?? 0) - 1;
-      inDegree.set(vId, currentInDegree);
-      if (currentInDegree === 0) {
-        queue.push(vId);
-      }
-    }
-  }
-
-  if (sortedDeclarations.length !== declarations.length) {
-    const unproccessedDecls = declarations.filter(
-      (d) => !sortedDeclarations.find((sd) => sd.id === d.id),
-    );
-    const unproccessedDeclNames = unproccessedDecls
-      .map((d) => d.metadata?.codeMetadata?.name ?? d.uri ?? d.id)
-      .join(", ");
-    throw new Error(
-      `Circular dependency detected. Could not resolve order for: ${unproccessedDeclNames}`,
-    );
-  }
-
-  return sortedDeclarations;
 }

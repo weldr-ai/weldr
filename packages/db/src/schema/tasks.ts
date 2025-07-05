@@ -10,6 +10,7 @@ import {
   text,
 } from "drizzle-orm/pg-core";
 import { chats } from "./chats";
+import { declarations } from "./declarations";
 import { versions } from "./versions";
 
 export const taskStatus = pgEnum("task_status", [
@@ -45,12 +46,13 @@ export const taskRelations = relations(tasks, ({ one, many }) => ({
   dependents: many(taskDependencies, {
     relationName: "taskDependents",
   }),
+  declaration: one(declarations),
 }));
 
 export const taskDependencies = pgTable(
   "task_dependencies",
   {
-    taskId: text("task_id")
+    dependentId: text("dependent_id")
       .references(() => tasks.id, { onDelete: "cascade" })
       .notNull(),
     dependencyId: text("dependency_id")
@@ -58,8 +60,8 @@ export const taskDependencies = pgTable(
       .notNull(),
   },
   (t) => [
-    primaryKey({ columns: [t.taskId, t.dependencyId] }),
-    index("task_dependencies_task_id_idx").on(t.taskId),
+    primaryKey({ columns: [t.dependentId, t.dependencyId] }),
+    index("task_dependencies_dependent_id_idx").on(t.dependentId),
     index("task_dependencies_dependency_id_idx").on(t.dependencyId),
   ],
 );
@@ -67,8 +69,8 @@ export const taskDependencies = pgTable(
 export const taskDependencyRelations = relations(
   taskDependencies,
   ({ one }) => ({
-    task: one(tasks, {
-      fields: [taskDependencies.taskId],
+    dependent: one(tasks, {
+      fields: [taskDependencies.dependentId],
       references: [tasks.id],
       relationName: "taskDependencies",
     }),
