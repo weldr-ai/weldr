@@ -1,4 +1,3 @@
-import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { and, db, eq } from "@weldr/db";
 import {
@@ -11,6 +10,7 @@ import {
   versionDeclarations,
 } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
+import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
 import { inArray } from "drizzle-orm";
 import { extractDeclarations } from "./extract-declarations";
@@ -58,11 +58,8 @@ export const createDeclarationFromTask = async ({
   const user = context.get("user");
 
   const logger = Logger.get({
-    tags: ["createDeclarationFromTask"],
-    extra: {
-      projectId: project.id,
-      versionId: version.id,
-    },
+    projectId: project.id,
+    versionId: version.id,
   });
 
   const taskData = task.data;
@@ -290,11 +287,8 @@ export async function extractAndSaveDeclarations({
   const version = context.get("version");
 
   const logger = Logger.get({
-    tags: ["extractAndSaveDeclarations"],
-    extra: {
-      projectId: project.id,
-      versionId: version.id,
-    },
+    projectId: project.id,
+    versionId: version.id,
   });
 
   try {

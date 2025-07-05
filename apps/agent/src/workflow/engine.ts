@@ -1,6 +1,6 @@
-import { Logger } from "@/lib/logger";
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
 import type { WorkflowContext } from "./context";
 
 // --- Type Definitions ---
@@ -67,11 +67,8 @@ export function createWorkflow(
       const version = context.get("version");
 
       const logger = Logger.get({
-        tags: ["execute"],
-        extra: {
-          projectId: project.id,
-          versionId: version.id,
-        },
+        projectId: project.id,
+        versionId: version.id,
       });
 
       try {
@@ -145,13 +142,10 @@ async function executeWithRetry({
   const version = context.get("version");
 
   const logger = Logger.get({
-    tags: ["executeWithRetry"],
-    extra: {
-      stepId: step.id,
-      projectId: project.id,
-      versionId: version.id,
-      timeout: step.timeout,
-    },
+    stepId: step.id,
+    projectId: project.id,
+    versionId: version.id,
+    timeout: step.timeout,
   });
 
   let lastError: unknown;

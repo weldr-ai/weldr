@@ -1,8 +1,8 @@
-import { Logger } from "@/lib/logger";
+import { Logger } from "@weldr/shared/logger";
 import { pinoLogger } from "hono-pino";
 
 export function loggerMiddleware() {
   return pinoLogger({
-    pino: Logger.get().raw,
+    pino: Logger.instance,
   });
 }

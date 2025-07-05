@@ -1,4 +1,4 @@
-import { Logger } from "@/lib/logger";
+import { Logger } from "@weldr/shared/logger";
 import { z } from "zod";
 import { createTool } from "../utils/tools";
 
@@ -27,14 +27,10 @@ export const reapplyTool = createTool({
     const project = context.get("project");
     const version = context.get("version");
 
-    // Create contextual logger with base tags and extras
     const logger = Logger.get({
-      tags: ["reapplyTool"],
-      extra: {
-        projectId: project.id,
-        versionId: version.id,
-        input,
-      },
+      projectId: project.id,
+      versionId: version.id,
+      input,
     });
 
     logger.info(`Re-applying edit to file: ${input.targetFile}`);

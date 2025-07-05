@@ -29,7 +29,6 @@ export function EnvSection({
   const deleteEnvironmentVariable = useMutation(
     trpc.environmentVariables.delete.mutationOptions({
       onSuccess: () => {
-        console.log("onSuccess");
         queryClient.invalidateQueries(
           trpc.environmentVariables.list.queryFilter(),
         );

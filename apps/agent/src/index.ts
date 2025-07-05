@@ -1,8 +1,8 @@
 import { serve } from "@hono/node-server";
+import { Logger } from "@weldr/shared/logger";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 import { recoverSemanticDataJobs } from "./ai/utils/semantic-data-jobs";
-import { Logger } from "./lib/logger";
 import { configureOpenAPI, createRouter } from "./lib/utils";
 import { loggerMiddleware } from "./middlewares/logger";
 import { routes } from "./routes";
@@ -70,9 +70,7 @@ serve(
     port,
   },
   async (info) => {
-    Logger.info(`Server is running on http://localhost:${info.port}`, {
-      tags: ["server"],
-    });
+    Logger.info(`Server is running on http://localhost:${info.port}`);
 
     const projectId = process.env.PROJECT_ID;
 

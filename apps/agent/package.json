@@ -22,7 +22,6 @@
     "hono": "^4.7.11",
     "hono-pino": "^0.8.0",
     "openai": "^5.5.1",
-    "pino": "^9.7.0",
     "playwright": "^1.52.0",
     "pluralize": "^8.0.0",
     "typescript": "^5.8.3",
@@ -33,7 +32,6 @@
     "@types/pluralize": "^0.0.33",
     "dotenv-cli": "^7.4.4",
     "esbuild": "^0.24.2",
-    "pino-pretty": "^13.0.0",
     "tsx": "^4.7.1"
   }
 }

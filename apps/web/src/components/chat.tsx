@@ -176,7 +176,6 @@ export function Chat({
 
         const triggerResult: TriggerWorkflowResponse =
           await triggerResponse.json();
-        console.log("Workflow triggered:", triggerResult);
         return triggerResult;
       } catch (error) {
         console.error("Failed to trigger workflow:", error);
@@ -189,11 +188,9 @@ export function Chat({
   const connectToEventStream = useCallback(() => {
     // Prevent multiple simultaneous connections
     if (eventSourceRef) {
-      console.log("EventSource already exists, skipping connection");
       return eventSourceRef;
     }
 
-    console.log("Connecting to EventSource for project:", project.id);
     const eventSource = new EventSource(`/api/chat/${project.id}`);
     setEventSourceRef(eventSource);
 
@@ -202,9 +199,6 @@ export function Chat({
         const chunk: SSEEvent = JSON.parse(event.data);
 
         if (chunk.type === "connected") {
-          console.log(
-            `Connected to stream ${chunk.streamId} with client ${chunk.clientId}`,
-          );
           // Reset reconnection attempts on successful connection
           reconnectAttempts.current = 0;
           return;
@@ -396,20 +390,10 @@ export function Chat({
         reconnectAttempts.current += 1;
         const delay = Math.min(1000 * 2 ** reconnectAttempts.current, 10000); // Exponential backoff with max 10s
 
-        console.log(
-          `Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts}) in ${delay}ms`,
-        );
-
         reconnectTimeoutRef.current = setTimeout(() => {
           connectToEventStream();
         }, delay);
-      } else {
-        console.log("Max reconnection attempts reached or workflow completed");
       }
-    };
-
-    eventSource.onopen = () => {
-      console.log("SSE connection opened");
     };
 
     return eventSource;

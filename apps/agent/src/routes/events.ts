@@ -1,10 +1,10 @@
 import { initVersion } from "@/ai/utils/init-version";
-import { Logger } from "@/lib/logger";
 import { createRouter } from "@/lib/utils";
 import { createRoute, z } from "@hono/zod-openapi";
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
 import type { TStreamableValue } from "@weldr/shared/types";
 
 const route = createRoute({
@@ -83,13 +83,9 @@ router.openapi(route, async (c) => {
     });
   }
 
-  // Create contextual logger with base tags and extras
   const logger = Logger.get({
-    tags: ["events"],
-    extra: {
-      projectId,
-      chatId: activeVersion.chatId,
-    },
+    projectId,
+    chatId: activeVersion.chatId,
   });
 
   const clientId = `client:${Date.now()}:${Math.random().toString(36)}`;

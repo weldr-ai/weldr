@@ -14,10 +14,10 @@ import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import { type TaskWithRelations, getTaskExecutionPlan } from "@/ai/utils/tasks";
-import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { db, eq } from "@weldr/db";
 import { declarations, tasks, versions } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
 import type {
   addMessageItemSchema,
   assistantMessageContentSchema,
@@ -41,11 +41,8 @@ export async function coderAgent({
   const version = context.get("version");
 
   const logger = Logger.get({
-    tags: ["coderAgent"],
-    extra: {
-      projectId: project.id,
-      versionId: version.id,
-    },
+    projectId: project.id,
+    versionId: version.id,
   });
 
   const streamWriter = global.sseConnections?.get(
@@ -148,14 +145,10 @@ async function executeTaskCoder({
   const user = context.get("user");
   const isXML = context.get("isXML");
 
-  // Create contextual logger with base tags and extras
   const logger = Logger.get({
-    tags: ["executeTaskCoder"],
-    extra: {
-      projectId: project.id,
-      versionId: version.id,
-      taskId: task.id,
-    },
+    projectId: project.id,
+    versionId: version.id,
+    taskId: task.id,
   });
 
   logger.info("Starting task coder");
@@ -382,12 +375,9 @@ async function updateCanvasNode({
   }
 
   const logger = Logger.get({
-    tags: ["updateCanvasNode"],
-    extra: {
-      projectId: project.id,
-      versionId: version.id,
-      declarationId,
-    },
+    projectId: project.id,
+    versionId: version.id,
+    declarationId,
   });
 
   try {

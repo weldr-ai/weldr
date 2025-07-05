@@ -1,5 +1,4 @@
 import { WORKSPACE_DIR } from "@/lib/constants";
-import { Logger } from "@/lib/logger";
 import { db } from "@weldr/db";
 import {
   declarations,
@@ -8,6 +7,7 @@ import {
   versions,
 } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
+import { Logger } from "@weldr/shared/logger";
 import type {
   DeclarationCodeMetadata,
   DeclarationSemanticData,
@@ -37,12 +37,9 @@ export async function queueDeclarationSemanticDataGeneration(
   jobData: SemanticDataJobData,
 ): Promise<void> {
   const logger = Logger.get({
-    tags: ["queueDeclarationSemanticDataGeneration"],
-    extra: {
-      declarationId: jobData.declarationId,
-      declarationName: jobData.codeMetadata.name,
-      projectId: jobData.projectId,
-    },
+    declarationId: jobData.declarationId,
+    declarationName: jobData.codeMetadata.name,
+    projectId: jobData.projectId,
   });
 
   try {
@@ -89,8 +86,7 @@ export async function recoverSemanticDataJobs(): Promise<void> {
   }
 
   const logger = Logger.get({
-    tags: ["recoverSemanticDataJobs"],
-    extra: { projectId: project.id },
+    projectId: project.id,
   });
 
   try {
@@ -183,11 +179,8 @@ export async function recoverSemanticDataJobs(): Promise<void> {
 
 async function processDeclaration(jobData: SemanticDataJobData): Promise<void> {
   const logger = Logger.get({
-    tags: ["processDeclaration"],
-    extra: {
-      declarationId: jobData.declarationId,
-      declarationName: jobData.codeMetadata.name,
-    },
+    declarationId: jobData.declarationId,
+    declarationName: jobData.codeMetadata.name,
   });
 
   try {
@@ -208,10 +201,7 @@ async function processDeclaration(jobData: SemanticDataJobData): Promise<void> {
 
     if (semanticData) {
       // Generate and store embedding after semantic data is saved
-      const embedding = await generateAndStoreEmbedding(
-        jobData.declarationId,
-        logger,
-      );
+      const embedding = await generateAndStoreEmbedding(jobData.declarationId);
 
       await db
         .update(declarations)
@@ -231,14 +221,13 @@ async function processDeclaration(jobData: SemanticDataJobData): Promise<void> {
         },
       });
     } else {
-      handleJobRetry(jobData, "Failed to generate semantic data", logger);
+      handleJobRetry(jobData, "Failed to generate semantic data");
     }
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error));
     handleJobRetry(
       jobData,
       "Failed to process semantic data generation",
-      logger,
       errorObj,
     );
   }
@@ -248,13 +237,11 @@ async function processDeclarationsQueue(): Promise<void> {
   if (isProcessing) return;
 
   isProcessing = true;
-  const logger = Logger.get({ tags: ["processDeclarationsQueue"] });
-
   while (jobQueue.length > 0) {
     // Take up to 5 jobs from the queue
     const batch = jobQueue.splice(0, 5);
 
-    logger.info("Processing semantic data batch", {
+    Logger.info("Processing semantic data batch", {
       extra: { batchSize: batch.length, remainingInQueue: jobQueue.length },
     });
 
@@ -264,7 +251,7 @@ async function processDeclarationsQueue(): Promise<void> {
         try {
           await processDeclaration(jobData);
         } catch (error) {
-          logger.error("Failed to process semantic data job", {
+          Logger.error("Failed to process semantic data job", {
             extra: {
               error: error instanceof Error ? error.message : String(error),
               declarationId: jobData.declarationId,
@@ -276,19 +263,18 @@ async function processDeclarationsQueue(): Promise<void> {
   }
 
   isProcessing = false;
-  logger.info("Finished processing semantic data queue");
+  Logger.info("Finished processing semantic data queue");
 }
 
 function handleJobRetry(
   jobData: SemanticDataJobData,
   reason: string,
-  logger: ReturnType<typeof Logger.get>,
   error?: Error,
 ): boolean {
   const currentRetryCount = jobData.retryCount ?? 0;
 
   if (currentRetryCount >= MAX_RETRIES) {
-    logger.error(`${reason} after max retries, giving up`, {
+    Logger.error(`${reason} after max retries, giving up`, {
       extra: {
         declarationId: jobData.declarationId,
         declarationName: jobData.codeMetadata.name,
@@ -300,7 +286,7 @@ function handleJobRetry(
     return false;
   }
 
-  logger.warn(`${reason}, retrying`, {
+  Logger.warn(`${reason}, retrying`, {
     extra: {
       declarationId: jobData.declarationId,
       declarationName: jobData.codeMetadata.name,
@@ -325,11 +311,8 @@ async function generateDeclarationSemanticData(
   sourceCode: string,
 ): Promise<DeclarationSemanticData | null> {
   const logger = Logger.get({
-    tags: ["generateDeclarationSemanticData"],
-    extra: {
-      declarationName: declaration.name,
-      declarationType: declaration.type,
-    },
+    declarationName: declaration.name,
+    declarationType: declaration.type,
   });
 
   try {
@@ -385,12 +368,9 @@ Focus on being practical and helpful for developers who need to understand when 
   }
 }
 
-async function generateAndStoreEmbedding(
-  declarationId: string,
-  logger: ReturnType<typeof Logger.get>,
-) {
+async function generateAndStoreEmbedding(declarationId: string) {
   try {
-    logger.info("Generating embedding for declaration", {
+    Logger.info("Generating embedding for declaration", {
       extra: { declarationId },
     });
 
@@ -404,7 +384,7 @@ async function generateAndStoreEmbedding(
     });
 
     if (!declaration || !declaration.metadata) {
-      logger.warn("Declaration not found or missing metadata", {
+      Logger.warn("Declaration not found or missing metadata", {
         extra: { declarationId },
       });
       return;
@@ -418,7 +398,7 @@ async function generateAndStoreEmbedding(
     );
 
     if (!embeddingText) {
-      logger.warn("No embedding text generated", {
+      Logger.warn("No embedding text generated", {
         extra: { declarationId },
       });
       return;
@@ -435,13 +415,13 @@ async function generateAndStoreEmbedding(
     });
 
     if (!embeddings || embeddings.length === 0 || !embeddings[0]) {
-      logger.error("Failed to generate embedding", {
+      Logger.error("Failed to generate embedding", {
         extra: { declarationId },
       });
       return;
     }
 
-    logger.info("Successfully generated and stored embedding", {
+    Logger.info("Successfully generated and stored embedding", {
       extra: {
         declarationId,
         embeddingTextLength: embeddingText.length,
@@ -451,7 +431,7 @@ async function generateAndStoreEmbedding(
     const embedding = embeddings[0];
 
     if (!embedding) {
-      logger.error("No embedding generated", {
+      Logger.error("No embedding generated", {
         extra: { declarationId },
       });
       throw new Error("No embedding generated");
@@ -459,7 +439,7 @@ async function generateAndStoreEmbedding(
 
     return embedding;
   } catch (error) {
-    logger.error("Failed to generate and store embedding", {
+    Logger.error("Failed to generate and store embedding", {
       extra: {
         error: error instanceof Error ? error.message : String(error),
         declarationId,

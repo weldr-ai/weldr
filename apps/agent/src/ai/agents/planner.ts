@@ -14,10 +14,10 @@ import {
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
-import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
 import type {
   addMessageItemSchema,
   assistantMessageContentSchema,
@@ -45,14 +45,10 @@ export async function plannerAgent({
     throw new Error("Stream writer not found");
   }
 
-  // Create contextual logger with base tags and extras
   const logger = Logger.get({
-    tags: ["plannerAgent"],
-    extra: {
-      projectId: project.id,
-      versionId: version.id,
-      mode: isXML ? "xml" : "ai-sdk",
-    },
+    projectId: project.id,
+    versionId: version.id,
+    mode: isXML ? "xml" : "ai-sdk",
   });
 
   const xmlProvider = new XMLProvider(

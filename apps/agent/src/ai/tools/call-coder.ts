@@ -1,6 +1,6 @@
-import { Logger } from "@/lib/logger";
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
 import { planSchema } from "@weldr/shared/validators/plans";
 import { z } from "zod";
 import { createTasks } from "../utils/tasks";
@@ -24,12 +24,9 @@ export const callCoderTool = createTool({
 
     // Create contextual logger with base tags and extras
     const logger = Logger.get({
-      tags: ["callCoderTool"],
-      extra: {
-        projectId: project.id,
-        versionId: version.id,
-        input,
-      },
+      projectId: project.id,
+      versionId: version.id,
+      input,
     });
 
     logger.info(

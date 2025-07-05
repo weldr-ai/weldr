@@ -1,9 +1,9 @@
 import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
-import { Logger } from "@/lib/logger";
 import { db } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
+import { Logger } from "@weldr/shared/logger";
 import { OpenAI } from "openai";
 import { z } from "zod";
 import { extractAndSaveDeclarations } from "../utils/declarations";
@@ -47,14 +47,10 @@ export const editFileTool = createTool({
     const project = context.get("project");
     const version = context.get("version");
 
-    // Create contextual logger with base tags and extras
     const logger = Logger.get({
-      tags: ["editFileTool"],
-      extra: {
-        projectId: project.id,
-        versionId: version.id,
-        input,
-      },
+      projectId: project.id,
+      versionId: version.id,
+      input,
     });
 
     logger.info(`Editing file: ${input.targetFile}`);

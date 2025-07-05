@@ -1,6 +1,6 @@
 import { runShell } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
-import { Logger } from "@/lib/logger";
+import { Logger } from "@weldr/shared/logger";
 import { z } from "zod";
 import { createTool } from "../utils/tools";
 
@@ -51,14 +51,10 @@ export const fzfTool = createTool({
     const project = context.get("project");
     const version = context.get("version");
 
-    // Create contextual logger with base tags and extras
     const logger = Logger.get({
-      tags: ["fzfTool"],
-      extra: {
-        projectId: project.id,
-        versionId: version.id,
-        input,
-      },
+      projectId: project.id,
+      versionId: version.id,
+      input,
     });
 
     const { query, includeDirectories, includeFiles, maxResults, exactMatch } =

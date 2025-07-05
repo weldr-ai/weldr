@@ -3,9 +3,9 @@ import {
   formatDeclarationSpecs,
 } from "@/ai/utils/formetters";
 import { registry } from "@/ai/utils/registry";
-import { Logger } from "@/lib/logger";
 import { cosineDistance, db, desc, getTableColumns, gt, sql } from "@weldr/db";
 import { declarations, versionDeclarations, versions } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
 import { embedMany } from "ai";
 import { z } from "zod";
 import { createTool } from "../utils/tools";
@@ -51,15 +51,11 @@ export const searchCodebaseTool = createTool({
     const user = context.get("user");
     const version = context.get("version");
 
-    // Create contextual logger with base tags and extras
     const logger = Logger.get({
-      tags: ["searchCodebaseTool"],
-      extra: {
-        projectId: project.id,
-        versionId: version.id,
-        userId: user.id,
-        input,
-      },
+      projectId: project.id,
+      versionId: version.id,
+      userId: user.id,
+      input,
     });
 
     logger.info(`Starting codebase search for query: "${query}"`);

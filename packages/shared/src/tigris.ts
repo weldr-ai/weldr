@@ -14,6 +14,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Logger } from "./logger";
 
 interface Credentials {
   accessKeyId: string;
@@ -46,13 +47,15 @@ async function createBucket(projectId: string): Promise<void> {
         Bucket: projectId,
       }),
     );
-    console.log(
-      `[tigris:${projectId}] Create bucket response: ${JSON.stringify(response, null, 2)}`,
-    );
+    Logger.info("Create bucket response", {
+      projectId,
+      response,
+    });
   } catch (error) {
-    console.error(
-      `[tigris:${projectId}] Create bucket error: ${JSON.stringify(error, null, 2)}`,
-    );
+    Logger.error("Create bucket error", {
+      projectId,
+      error,
+    });
     throw error;
   }
 }
@@ -64,9 +67,10 @@ async function deleteBucket(projectId: string): Promise<void> {
         Bucket: projectId,
       }),
     );
-    console.log(
-      `[tigris:${projectId}] Delete bucket response: ${JSON.stringify(response, null, 2)}`,
-    );
+    Logger.info("Delete bucket response", {
+      projectId,
+      response,
+    });
   } catch (error) {
     if (
       (error as { $metadata?: { httpStatusCode?: number } })?.$metadata
@@ -74,9 +78,10 @@ async function deleteBucket(projectId: string): Promise<void> {
     ) {
       return;
     }
-    console.error(
-      `[tigris:${projectId}] Delete bucket error: ${JSON.stringify(error, null, 2)}`,
-    );
+    Logger.error("Delete bucket error", {
+      projectId,
+      error,
+    });
     throw error;
   }
 }
@@ -111,9 +116,10 @@ async function createAccessKey(
         UserName: projectId,
       }),
     );
-    console.log(
-      `[tigris:${projectId}] Create credentials access key response: ${JSON.stringify(accessKeyResponse, null, 2)}`,
-    );
+    Logger.info("Create credentials access key response", {
+      projectId,
+      accessKeyResponse,
+    });
 
     if (
       !accessKeyResponse.AccessKey?.AccessKeyId ||
@@ -127,9 +133,10 @@ async function createAccessKey(
       secretAccessKey: accessKeyResponse.AccessKey.SecretAccessKey,
     };
   } catch (error) {
-    console.error(
-      `[tigris:${projectId}] Create access key error: ${JSON.stringify(error, null, 2)}`,
-    );
+    Logger.error("Create access key error", {
+      projectId,
+      error,
+    });
     throw error;
   }
 }
@@ -142,16 +149,16 @@ async function deleteAccessKey(projectId: string): Promise<Error | undefined> {
         AccessKeyId: projectId,
       }),
     );
-    console.log(
-      `[tigris:${projectId}] Delete access key response:`,
-      JSON.stringify(response, null, 2),
-    );
+    Logger.info("Delete access key response", {
+      projectId,
+      response,
+    });
     return undefined;
   } catch (error) {
-    console.error(
-      `[tigris:${projectId}] Delete access key error:`,
-      JSON.stringify(error, null, 2),
-    );
+    Logger.error("Delete access key error", {
+      projectId,
+      error,
+    });
     return new Error(
       `Failed to delete access key: ${(error as Error).message}`,
     );
@@ -168,9 +175,10 @@ async function createPolicy(projectId: string): Promise<string> {
         PolicyDocument: policyDocument,
       }),
     );
-    console.log(
-      `[tigris:${projectId}] Create credentials policy response: ${JSON.stringify(policyResponse, null, 2)}`,
-    );
+    Logger.info("Create credentials policy response", {
+      projectId,
+      policyResponse,
+    });
 
     if (!policyResponse.Policy?.Arn) {
       throw new Error(
@@ -180,9 +188,10 @@ async function createPolicy(projectId: string): Promise<string> {
 
     return policyResponse.Policy.Arn;
   } catch (error) {
-    console.error(
-      `[tigris:${projectId}] Create policy error: ${JSON.stringify(error, null, 2)}`,
-    );
+    Logger.error("Create policy error", {
+      projectId,
+      error,
+    });
     throw error;
   }
 }
@@ -198,11 +207,16 @@ async function attachPolicyToUser(
         PolicyArn: policyArn,
       }),
     );
-    console.log(`[tigris:${accessKeyId}] Attached policy: ${policyArn}`);
+    Logger.info("Attached policy", {
+      accessKeyId,
+      policyArn,
+    });
   } catch (error) {
-    console.error(
-      `[tigris:${accessKeyId}] Attach policy error: ${JSON.stringify(error, null, 2)}`,
-    );
+    Logger.error("Attach policy error", {
+      accessKeyId,
+      policyArn,
+      error,
+    });
     throw error;
   }
 }
@@ -224,10 +238,10 @@ async function findPolicyByName(
     );
     return policy?.Arn;
   } catch (error) {
-    console.error(
-      `[tigris:${projectId}] Failed to find policy by name:`,
-      JSON.stringify(error, null, 2),
-    );
+    Logger.error("Failed to find policy by name", {
+      projectId,
+      error,
+    });
     return undefined;
   }
 }
@@ -238,7 +252,10 @@ async function deletePolicy(projectId: string): Promise<Error | undefined> {
     const policyArn = await findPolicyByName(projectId);
 
     if (!policyArn) {
-      console.log(`[tigris:${projectId}] Policy not found: ${policyName}`);
+      Logger.info("Policy not found", {
+        policyName,
+        projectId,
+      });
       return undefined;
     }
 
@@ -247,16 +264,16 @@ async function deletePolicy(projectId: string): Promise<Error | undefined> {
         PolicyArn: policyArn,
       }),
     );
-    console.log(
-      `[tigris:${projectId}] Delete policy response:`,
-      JSON.stringify(response, null, 2),
-    );
+    Logger.info("Delete policy response", {
+      projectId,
+      response,
+    });
     return undefined;
   } catch (error) {
-    console.error(
-      `[tigris:${projectId}] Delete policy error:`,
-      JSON.stringify(error, null, 2),
-    );
+    Logger.error("Delete policy error", {
+      projectId,
+      error,
+    });
     return new Error(`Failed to delete policy: ${(error as Error).message}`);
   }
 }
@@ -274,9 +291,10 @@ async function createCredentials(projectId: string): Promise<Credentials> {
       secretAccessKey: accessKey.secretAccessKey,
     };
   } catch (error) {
-    console.error(
-      `[tigris:${projectId}] Create credentials error: ${JSON.stringify(error, null, 2)}`,
-    );
+    Logger.error("Create credentials error", {
+      projectId,
+      error,
+    });
     throw error;
   }
 }
@@ -287,18 +305,18 @@ async function createTigrisBucket(projectId: string): Promise<Credentials> {
     try {
       return await createCredentials(projectId);
     } catch (error) {
-      console.error(
-        `[tigris:${projectId}] Error creating credentials, cleaning up bucket:`,
-        JSON.stringify(error, null, 2),
-      );
+      Logger.error("Error creating credentials, cleaning up bucket", {
+        projectId,
+        error,
+      });
       await deleteBucket(projectId);
       throw error;
     }
   } catch (error) {
-    console.error(
-      `[tigris:${projectId}] Create Tigris bucket error:`,
-      JSON.stringify(error, null, 2),
-    );
+    Logger.error("Create Tigris bucket error", {
+      projectId,
+      error,
+    });
     throw new Error("Failed to set up Tigris bucket");
   }
 }
@@ -324,7 +342,6 @@ async function getObjectSignedUrl(
     }),
     { expiresIn },
   );
-
   return url;
 }
 

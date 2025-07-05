@@ -1,4 +1,5 @@
 import { ofetch } from "ofetch/node";
+import { Logger } from "../logger";
 import { machineLookupStore } from "../machine-lookup-store";
 import { ofetchConfig } from "../ofetch-config";
 import type { FlyAppType } from "./config";
@@ -289,9 +290,10 @@ const asyncExecute = async ({
       }),
       onResponseError: async (context) => {
         if (context.response.status === 412) {
-          console.log(
-            `[fly:machine:executeCommandAsync:${projectId}] Machine is not started, starting it`,
-          );
+          Logger.info("Machine is not started, starting it", {
+            projectId,
+            machineId,
+          });
           await start({
             type: "development",
             projectId,
@@ -355,9 +357,10 @@ export const executeCommand = async ({
       }),
       onResponseError: async (context) => {
         if (context.response.status === 412) {
-          console.log(
-            `[fly:machine:executeCommand:${projectId}] Machine is not started, starting it`,
-          );
+          Logger.info("Machine is not started, starting it", {
+            projectId,
+            machineId,
+          });
           await start({
             type: "development",
             projectId,
@@ -440,9 +443,10 @@ const pollCommandStatus = async ({
           process.env.NODE_ENV !== "production" &&
           context.response.status === 412
         ) {
-          console.log(
-            `[fly:machine:pollCommandStatus:${projectId}] Machine is not started, starting it`,
-          );
+          Logger.info("Machine is not started, starting it", {
+            projectId,
+            machineId,
+          });
           await start({
             type: "development",
             projectId,

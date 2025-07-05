@@ -1,8 +1,8 @@
 import { runCommand } from "@/ai/utils/commands";
 import { SCRIPTS_DIR } from "@/lib/constants";
-import { Logger } from "@/lib/logger";
 import { db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
 import { z } from "zod";
 import { createTool } from "../utils/tools";
 
@@ -26,13 +26,9 @@ export const upgradeProjectTool = createTool({
     const project = context.get("project");
     const version = context.get("version");
 
-    // Create contextual logger with base tags and extras
     const logger = Logger.get({
-      tags: ["upgradeProjectTool"],
-      extra: {
-        projectId: project.id,
-        versionId: version.id,
-      },
+      projectId: project.id,
+      versionId: version.id,
     });
 
     if (project.config?.server && project.config?.client) {

@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
       };
     };
 
-    console.log("[API] POST /api/chat/[projectId]/trigger called");
     const session = await auth.api.getSession({
       headers: request.headers,
     });

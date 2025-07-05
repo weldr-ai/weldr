@@ -1,6 +1,6 @@
-import { Logger } from "@/lib/logger";
 import { and, db, eq, isNotNull } from "@weldr/db";
 import { chats, versionDeclarations, versions } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
 
 export const initVersion = async ({
   projectId,
@@ -9,12 +9,8 @@ export const initVersion = async ({
   projectId: string;
   userId: string;
 }): Promise<typeof versions.$inferSelect> => {
-  // Create contextual logger with base tags and extras
   const logger = Logger.get({
-    tags: ["initVersion"],
-    extra: {
-      projectId,
-    },
+    projectId,
   });
 
   return db.transaction(async (tx) => {

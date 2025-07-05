@@ -6,6 +6,7 @@ import {
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { auth } from "@weldr/auth";
+import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -94,7 +95,10 @@ export async function POST(request: Request) {
       });
 
       upload.on("httpUploadProgress", (progress) => {
-        console.log(progress);
+        Logger.info("Upload progress", {
+          progress,
+          chatId: validatedAttachment.data.chatId,
+        });
       });
 
       await upload.done();

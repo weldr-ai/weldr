@@ -2,7 +2,6 @@ import {
   formatDeclarationData,
   formatDeclarationSpecs,
 } from "@/ai/utils/formetters";
-import { Logger } from "@/lib/logger";
 import { db, eq, sql } from "@weldr/db";
 import {
   declarations,
@@ -10,6 +9,7 @@ import {
   versionDeclarations,
   versions,
 } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
 import { z } from "zod";
 import { createTool } from "../utils/tools";
 
@@ -46,15 +46,11 @@ export const queryRelatedDeclarationsTool = createTool({
     const user = context.get("user");
     const version = context.get("version");
 
-    // Create contextual logger with base tags and extras
     const logger = Logger.get({
-      tags: ["queryRelatedDeclarationsTool"],
-      extra: {
-        projectId: project.id,
-        versionId: version.id,
-        userId: user.id,
-        input,
-      },
+      projectId: project.id,
+      versionId: version.id,
+      userId: user.id,
+      input,
     });
 
     logger.info(`Querying related declarations for: "${declarationId}"`);

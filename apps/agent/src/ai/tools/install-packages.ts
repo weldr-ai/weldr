@@ -1,6 +1,6 @@
 import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
-import { Logger } from "@/lib/logger";
+import { Logger } from "@weldr/shared/logger";
 import { z } from "zod";
 import { createTool } from "../utils/tools";
 
@@ -37,13 +37,9 @@ export const installPackagesTool = createTool({
     const project = context.get("project");
     const version = context.get("version");
 
-    // Create contextual logger with base tags and extras
     const logger = Logger.get({
-      tags: ["installPackagesTool"],
-      extra: {
-        projectId: project.id,
-        versionId: version.id,
-      },
+      projectId: project.id,
+      versionId: version.id,
     });
 
     logger.info("Installing packages", {

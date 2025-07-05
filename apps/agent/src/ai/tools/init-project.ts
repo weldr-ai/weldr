@@ -1,7 +1,7 @@
 import { SCRIPTS_DIR, WORKSPACE_DIR } from "@/lib/constants";
-import { Logger } from "@/lib/logger";
 import { db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
 import { z } from "zod";
 import { runCommand } from "../utils/commands";
 import { createTool } from "../utils/tools";
@@ -31,14 +31,10 @@ export const initProjectTool = createTool({
     const project = context.get("project");
     const version = context.get("version");
 
-    // Create contextual logger with base tags and extras
     const logger = Logger.get({
-      tags: ["initProjectTool"],
-      extra: {
-        projectId: project.id,
-        versionId: version?.id,
-        input,
-      },
+      projectId: project.id,
+      versionId: version?.id,
+      input,
     });
 
     logger.info(`Initializing project: ${input.title}`);

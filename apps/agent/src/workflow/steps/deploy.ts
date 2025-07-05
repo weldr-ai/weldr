@@ -1,9 +1,9 @@
 import { runCommand } from "@/ai/utils/commands";
 import { SCRIPTS_DIR } from "@/lib/constants";
-import { Logger } from "@/lib/logger";
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
+import { Logger } from "@weldr/shared/logger";
 import { machineLookupStore } from "@weldr/shared/machine-lookup-store";
 import { createStep } from "../engine";
 
@@ -15,13 +15,9 @@ export const deployStep = createStep({
     const project = context.get("project");
     const version = context.get("version");
 
-    // Create contextual logger with base tags and extras
     const logger = Logger.get({
-      tags: ["deploy"],
-      extra: {
-        projectId: project.id,
-        versionId: version.id,
-      },
+      projectId: project.id,
+      versionId: version.id,
     });
 
     if (isDev) {
