@@ -13,7 +13,6 @@ import {
   vector,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
-import { chats } from "./chats";
 import { dependencies } from "./dependencies";
 import { integrations } from "./integrations";
 import { nodes } from "./nodes";
@@ -48,9 +47,6 @@ export const declarations = pgTable(
     previousId: text("previous_id").references(
       (): AnyPgColumn => declarations.id,
     ),
-    chatId: text("chat_id").references(() => chats.id, {
-      onDelete: "set null",
-    }),
     projectId: text("project_id")
       .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
@@ -85,10 +81,6 @@ export const declarationsRelations = relations(
     user: one(users, {
       fields: [declarations.userId],
       references: [users.id],
-    }),
-    chat: one(chats, {
-      fields: [declarations.chatId],
-      references: [chats.id],
     }),
     dependencies: many(dependencies, {
       relationName: "dependency_declaration",

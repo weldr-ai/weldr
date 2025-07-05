@@ -2,22 +2,18 @@ import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { and, db, eq } from "@weldr/db";
 import {
-  chats,
   declarationIntegrations,
   declarations,
   dependencies,
   type integrationTemplates,
   integrations,
   nodes,
+  type tasks,
   versionDeclarations,
 } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { nanoid } from "@weldr/shared/nanoid";
-import type { TaskDeclaration } from "@weldr/shared/types";
-import type {
-  DeclarationMetadata,
-  DeclarationSpecs,
-} from "@weldr/shared/types/declarations";
+import type { DeclarationMetadata } from "@weldr/shared/types/declarations";
 import { inArray } from "drizzle-orm";
 import { extractDeclarations } from "./extract-declarations";
 import { queueDeclarationSemanticDataGeneration } from "./semantic-data-jobs";
@@ -40,6 +36,7 @@ const NODE_DIMENSIONS = {
   "db-model": { width: 300, height: 250 },
   default: { width: 300, height: 200 },
 };
+
 const PLACEMENT_CONFIG = {
   gap: 50,
   maxCanvasWidth: 2000,
@@ -63,73 +60,64 @@ const intersects = (a: Rect, b: Rect): boolean => {
   );
 };
 
-export const createDeclarations = async ({
+export const createDeclarationFromTask = async ({
   context,
-  inputDeclarations,
+  taskData,
 }: {
   context: WorkflowContext;
-  inputDeclarations: TaskDeclaration[];
-}) => {
+  taskData: (typeof tasks.$inferSelect)["data"];
+}): Promise<Declaration | null> => {
   const project = context.get("project");
   const version = context.get("version");
   const user = context.get("user");
 
   const logger = Logger.get({
-    tags: ["createDeclarations"],
+    tags: ["createDeclarationFromTask"],
     extra: {
       projectId: project.id,
       versionId: version.id,
     },
   });
 
-  await db.transaction(async (tx) => {
-    const [createdDeclarationChat] = await tx
-      .insert(chats)
-      .values({
-        userId: version.userId,
-        projectId: project.id,
-      })
-      .returning();
+  if (taskData.type !== "declaration") {
+    return null;
+  }
 
-    if (!createdDeclarationChat) {
-      logger.error("Failed to create declaration chat");
-      throw new Error(
-        `[createTasks:project_${project.id}:version_${version.id}] Failed to create declaration chat`,
-      );
-    }
+  return await db.transaction(async (tx) => {
+    let node: typeof nodes.$inferSelect | undefined = undefined;
+    let previousDeclarationId: string | null = null;
 
-    // Create declarations
-    const declarationIds = new Map<number, typeof declarations.$inferSelect>();
-    const existingNodes = await tx.query.nodes.findMany({
-      where: eq(nodes.projectId, project.id),
-      with: {
-        declaration: {
-          columns: {
-            metadata: true,
+    // Handle create operation
+    if (taskData.operation === "create") {
+      // Get existing nodes to avoid collisions
+      const existingNodes = await tx.query.nodes.findMany({
+        where: eq(nodes.projectId, project.id),
+        with: {
+          declaration: {
+            columns: {
+              metadata: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    const allRects: Rect[] = existingNodes.map((node) => {
+      const allRects: Rect[] = existingNodes.map((node) => {
+        const type =
+          (node.declaration?.metadata?.codeMetadata
+            ?.type as keyof typeof NODE_DIMENSIONS) ?? "default";
+        const dimensions = NODE_DIMENSIONS[type] || NODE_DIMENSIONS.default;
+        return {
+          x: node.position.x,
+          y: node.position.y,
+          ...dimensions,
+        };
+      });
+
       const type =
-        (node.declaration?.metadata?.codeMetadata
-          ?.type as keyof typeof NODE_DIMENSIONS) ?? "default";
-      const dimensions = NODE_DIMENSIONS[type] || NODE_DIMENSIONS.default;
-      return {
-        x: node.position.x,
-        y: node.position.y,
-        ...dimensions,
-      };
-    });
-
-    const nextPos = { x: 0, y: 0 };
-
-    for (const declaration of inputDeclarations) {
-      const type =
-        (declaration.specs.type as keyof typeof NODE_DIMENSIONS) ?? "default";
+        (taskData.specs.type as keyof typeof NODE_DIMENSIONS) ?? "default";
       const dimensions = NODE_DIMENSIONS[type] || NODE_DIMENSIONS.default;
 
+      const nextPos = { x: 0, y: 0 };
       let hasCollision = true;
       while (hasCollision) {
         const candidateRect: Rect = { ...nextPos, ...dimensions };
@@ -144,129 +132,174 @@ export const createDeclarations = async ({
         }
       }
 
-      const newPosition = { ...nextPos };
-      allRects.push({ ...newPosition, ...dimensions });
-
-      const [canvasNode] = await tx
+      const [createdCanvasNode] = await tx
         .insert(nodes)
         .values({
           projectId: project.id,
-          position: newPosition,
+          position: nextPos,
         })
         .returning();
 
-      if (!canvasNode) {
+      if (!createdCanvasNode) {
         logger.error("Failed to create canvas node");
         throw new Error(
-          `[createTasks:project_${project.id}:version_${version.id}] Failed to create canvas node`,
+          `[createDeclarationFromTask:project_${project.id}:version_${version.id}] Failed to create canvas node`,
         );
       }
 
-      const [createdDeclaration] = await tx
-        .insert(declarations)
-        .values({
-          progress: "pending",
-          path: declaration.filePath,
-          metadata: {
-            version: "v1",
-            specs: declaration.specs as DeclarationSpecs["data"],
-          },
-          implementationDetails: {
-            summary: declaration.summary,
-            acceptanceCriteria: declaration.acceptanceCriteria,
-            description: declaration.description,
-            implementationNotes: declaration.implementationNotes,
-            subTasks: declaration.subTasks,
-          },
-          projectId: project.id,
-          userId: user.id,
-          nodeId: canvasNode.id,
-          chatId: createdDeclarationChat.id,
-        })
-        .returning();
+      node = createdCanvasNode;
+    }
 
-      if (!createdDeclaration) {
-        logger.error("Failed to create declaration");
+    // Handle update operation
+    if (taskData.operation === "update") {
+      const existingVersionDeclarations =
+        await tx.query.versionDeclarations.findMany({
+          where: eq(versionDeclarations.versionId, version.id),
+          with: {
+            declaration: {
+              columns: {
+                id: true,
+                uri: true,
+                nodeId: true,
+              },
+            },
+          },
+        });
+
+      const existingDeclaration = existingVersionDeclarations
+        .map((d) => d.declaration)
+        .find((d) => d?.uri === taskData.uri);
+
+      if (!existingDeclaration) {
+        logger.error("Declaration not found");
         throw new Error(
-          `[createTasks:project_${project.id}:version_${version.id}] Failed to create declaration`,
+          `[createDeclarationFromTask:project_${project.id}:version_${version.id}] Declaration URI ${taskData.uri} not found, please make sure the declaration exists.`,
         );
       }
 
-      await tx.insert(versionDeclarations).values({
-        versionId: version.id,
-        declarationId: createdDeclaration.id,
+      if (!existingDeclaration.nodeId) {
+        logger.error("Node ID not found");
+        throw new Error(
+          `[createDeclarationFromTask:project_${project.id}:version_${version.id}] Node ID not found, please make sure the node exists.`,
+        );
+      }
+
+      await tx
+        .delete(versionDeclarations)
+        .where(eq(versionDeclarations.declarationId, existingDeclaration.id));
+
+      node = await tx.query.nodes.findFirst({
+        where: eq(nodes.id, existingDeclaration.nodeId),
       });
 
-      // Stream node creation to client
-      try {
-        const streamWriter = global.sseConnections?.get(version.chatId);
-        if (streamWriter && createdDeclaration.metadata?.specs) {
-          await streamWriter.write({
-            type: "node",
-            nodeId: canvasNode.id,
-            position: canvasNode.position,
-            metadata: createdDeclaration.metadata,
-            progress: createdDeclaration.progress,
-            node: canvasNode,
-          });
-        }
-      } catch (error) {
-        logger.warn("Failed to stream node creation", {
-          extra: { error, nodeId: canvasNode.id },
-        });
-      }
-
-      declarationIds.set(declaration.id, createdDeclaration);
-
-      for (const declarationIntegration of declaration.integrations ?? []) {
-        const integration = await tx.query.integrations.findFirst({
-          where: and(
-            eq(integrations.id, declarationIntegration),
-            eq(integrations.projectId, project.id),
-            eq(integrations.userId, user.id),
-          ),
-        });
-
-        if (!integration) {
-          logger.error("Integration not found");
-          throw new Error(
-            `[createTasks:project_${project.id}:version_${version.id}] Integration not found`,
-          );
-        }
-
-        await tx.insert(declarationIntegrations).values({
-          declarationId: createdDeclaration.id,
-          integrationId: integration.id,
-        });
-      }
+      previousDeclarationId = existingDeclaration.id;
     }
 
-    // Create declaration dependencies
-    for (const declaration of inputDeclarations) {
-      for (const dependency of declaration.dependencies ?? []) {
-        const dependentId = declarationIds.get(declaration.id);
-        const dependencyId = declarationIds.get(dependency);
+    // Create the declaration
+    const [createdDeclaration] = await tx
+      .insert(declarations)
+      .values({
+        progress: "pending",
+        path: taskData.filePath,
+        metadata: {
+          version: "v1",
+          specs: taskData.specs,
+        },
+        implementationDetails: {
+          summary: taskData.summary,
+          acceptanceCriteria: taskData.acceptanceCriteria,
+          description: taskData.description,
+          implementationNotes: taskData.implementationNotes,
+          subTasks: taskData.subTasks,
+        },
+        previousId: previousDeclarationId,
+        projectId: project.id,
+        userId: user.id,
+        nodeId: node?.id,
+      })
+      .returning();
 
-        if (!dependentId || !dependencyId) {
-          logger.error("Declaration ID not found for dependency mapping", {
-            extra: {
-              dependentInputId: declaration.id,
-              dependencyInputId: dependency,
-              foundDependent: !!dependentId,
-              foundDependency: !!dependencyId,
+    if (!createdDeclaration) {
+      logger.error("Failed to create declaration");
+      throw new Error(
+        `[createDeclarationFromTask:project_${project.id}:version_${version.id}] Failed to create declaration`,
+      );
+    }
+
+    // Link to version
+    await tx.insert(versionDeclarations).values({
+      versionId: version.id,
+      declarationId: createdDeclaration.id,
+    });
+
+    // Handle integrations
+    for (const declarationIntegration of taskData.integrations ?? []) {
+      const integration = await tx.query.integrations.findFirst({
+        where: and(
+          eq(integrations.id, declarationIntegration),
+          eq(integrations.projectId, project.id),
+          eq(integrations.userId, user.id),
+        ),
+      });
+
+      if (!integration) {
+        logger.error("Integration not found");
+        throw new Error(
+          `[createDeclarationFromTask:project_${project.id}:version_${version.id}] Integration not found`,
+        );
+      }
+
+      await tx.insert(declarationIntegrations).values({
+        declarationId: createdDeclaration.id,
+        integrationId: integration.id,
+      });
+    }
+
+    // Stream node creation to client
+    try {
+      const streamWriter = global.sseConnections?.get(version.chatId);
+      if (streamWriter && createdDeclaration.metadata?.specs && node) {
+        await streamWriter.write({
+          type: "node",
+          nodeId: node.id,
+          position: node.position,
+          metadata: createdDeclaration.metadata,
+          progress: createdDeclaration.progress,
+          node: node,
+        });
+      }
+    } catch (error) {
+      logger.warn("Failed to stream node creation", {
+        extra: { error, nodeId: node?.id },
+      });
+    }
+
+    // Get the created declaration with all relations
+    const declarationWithRelations = await tx.query.declarations.findFirst({
+      where: eq(declarations.id, createdDeclaration.id),
+      with: {
+        integrations: {
+          with: {
+            integration: {
+              with: {
+                integrationTemplate: true,
+              },
             },
-          });
-          throw new Error(
-            `[createTasks:project_${project.id}:version_${version.id}] Declaration ID not found for dependency mapping`,
-          );
-        }
+          },
+        },
+        dependencies: {
+          with: {
+            dependency: true,
+          },
+        },
+      },
+    });
 
-        await tx.insert(dependencies).values({
-          dependentId: dependentId.id,
-          dependencyId: dependencyId.id,
-        });
-      }
+    if (!declarationWithRelations) {
+      throw new Error("Failed to fetch created declaration with relations");
     }
+
+    return declarationWithRelations as Declaration;
   });
 };
 

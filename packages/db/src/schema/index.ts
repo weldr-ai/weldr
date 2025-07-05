@@ -8,6 +8,7 @@ export * from "./integration-templates";
 export * from "./integrations";
 export * from "./nodes";
 export * from "./projects";
+export * from "./tasks";
 export * from "./themes";
 export * from "./vault";
 export * from "./versions";

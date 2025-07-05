@@ -11,14 +11,18 @@ import {
   writeFileTool,
 } from "@/ai/tools";
 import type { Declaration } from "@/ai/utils/declarations";
-import { getExecutionPlan } from "@/ai/utils/declarations";
+import { createDeclarationFromTask } from "@/ai/utils/declarations";
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
+import {
+  type TaskWithDependencies,
+  getTaskExecutionPlan,
+} from "@/ai/utils/tasks";
 import { Logger } from "@/lib/logger";
 import type { WorkflowContext } from "@/workflow/context";
 import { db, eq } from "@weldr/db";
-import { declarations, versions } from "@weldr/db/schema";
+import { declarations, tasks, versions } from "@weldr/db/schema";
 import type {
   addMessageItemSchema,
   assistantMessageContentSchema,
@@ -31,14 +35,110 @@ import { formatTaskDeclarationToMarkdown } from "../utils/formetters";
 import { calculateModelCost } from "../utils/providers-pricing";
 import { XMLProvider } from "../utils/xml-provider";
 
-async function executeDeclarationCoder({
+export async function coderAgent({
   context,
-  declaration,
+  coolDownPeriod = 1000,
+}: {
+  context: WorkflowContext;
+  coolDownPeriod?: number;
+}) {
+  const project = context.get("project");
+  const version = context.get("version");
+
+  const logger = Logger.get({
+    tags: ["coderAgent"],
+    extra: {
+      projectId: project.id,
+      versionId: version.id,
+    },
+  });
+
+  const streamWriter = global.sseConnections?.get(
+    context.get("version").chatId,
+  );
+  if (!streamWriter) {
+    throw new Error("Stream writer not found");
+  }
+
+  logger.info("Starting coder agent");
+
+  const executionPlan = await getTaskExecutionPlan({
+    versionId: version.id,
+  });
+
+  logger.info(`Execution plan retrieved with ${executionPlan.length} tasks.`);
+
+  const currentProgress: Map<
+    string,
+    {
+      summary: string;
+      progress: "pending" | "in_progress" | "completed";
+    }
+  > = new Map();
+
+  for (const task of executionPlan) {
+    const taskName = task.data.summary;
+
+    logger.info(`Processing task: ${taskName}`);
+
+    // Update task status to in_progress
+    await db
+      .update(tasks)
+      .set({ status: "in_progress" })
+      .where(eq(tasks.id, task.id));
+
+    const { taskContext, declaration } = await createTaskContext(task, context);
+
+    if (declaration) {
+      await db
+        .update(declarations)
+        .set({ progress: "in_progress" })
+        .where(eq(declarations.id, declaration.id));
+
+      await updateCanvasNode({ context, declaration });
+    }
+
+    await executeTaskWithContext(
+      task,
+      taskContext,
+      context,
+      currentProgress,
+      coolDownPeriod,
+    );
+
+    await db
+      .update(tasks)
+      .set({ status: "completed" })
+      .where(eq(tasks.id, task.id));
+
+    currentProgress.set(task.id, {
+      summary: task.data.summary,
+      progress: "completed",
+    });
+  }
+
+  logger.info("All tasks processed. Updating version progress to 'completed'.");
+  await db
+    .update(versions)
+    .set({ status: "completed" })
+    .where(eq(versions.id, version.id));
+
+  logger.info("Coder agent completed");
+
+  // End the stream
+  await streamWriter.write({ type: "end" });
+}
+
+async function executeTaskCoder({
+  context,
+  task,
+  loopChatId,
   progress,
   coolDownPeriod = 1000,
 }: {
   context: WorkflowContext;
-  declaration: Declaration;
+  task: TaskWithDependencies;
+  loopChatId: string;
   progress: Map<
     string,
     {
@@ -55,29 +155,15 @@ async function executeDeclarationCoder({
 
   // Create contextual logger with base tags and extras
   const logger = Logger.get({
-    tags: ["executeDeclarationCoder"],
+    tags: ["executeTaskCoder"],
     extra: {
       projectId: project.id,
       versionId: version.id,
-      declarationId: declaration.id,
+      taskId: task.id,
     },
   });
 
-  const loopChatId = declaration.chatId;
-
-  if (!loopChatId) {
-    throw new Error("Declaration chat ID not found");
-  }
-
-  const streamWriter = global.sseConnections?.get(
-    context.get("version").chatId,
-  );
-
-  if (!streamWriter) {
-    throw new Error("Stream writer not found");
-  }
-
-  logger.info("Starting declaration coder");
+  logger.info("Starting task coder");
 
   const xmlProvider = new XMLProvider(
     [
@@ -261,13 +347,13 @@ async function executeDeclarationCoder({
   while (shouldContinue) {
     iterationCount++;
     logger.info(
-      `Starting coder agent iteration ${iterationCount} for declaration ${declaration.id}`,
+      `Starting coder agent iteration ${iterationCount} for task ${task.id}`,
     );
 
     shouldContinue = await executeCoderLoop();
 
     logger.info(
-      `Coder agent iteration ${iterationCount} completed for declaration ${declaration.id}`,
+      `Coder agent iteration ${iterationCount} completed for task ${task.id}`,
       {
         extra: { shouldContinue },
       },
@@ -279,131 +365,7 @@ async function executeDeclarationCoder({
     }
   }
 
-  logger.info(`Coder agent completed for declaration ${declaration.id}`);
-}
-
-export async function coderAgent({
-  context,
-  coolDownPeriod = 1000,
-}: {
-  context: WorkflowContext;
-  coolDownPeriod?: number;
-}) {
-  const project = context.get("project");
-  const version = context.get("version");
-  const user = context.get("user");
-
-  // Create contextual logger with base tags and extras
-  const logger = Logger.get({
-    tags: ["coderAgent"],
-    extra: {
-      projectId: project.id,
-      versionId: version.id,
-    },
-  });
-
-  const streamWriter = global.sseConnections?.get(
-    context.get("version").chatId,
-  );
-  if (!streamWriter) {
-    throw new Error("Stream writer not found");
-  }
-
-  logger.info("Starting coder agent");
-
-  const executionPlan = await getExecutionPlan({
-    projectId: project.id,
-    versionId: version.id,
-  });
-
-  logger.info(
-    `Execution plan retrieved with ${executionPlan.length} declarations.`,
-  );
-
-  const progress: Map<
-    string,
-    {
-      summary: string;
-      progress: "pending" | "in_progress" | "completed";
-    }
-  > = new Map();
-
-  for (const declaration of executionPlan) {
-    logger.info(
-      `Executing coder for declaration: ${declaration.metadata?.codeMetadata?.name ?? declaration.uri}`,
-    );
-
-    const loopChatId = declaration.chatId;
-
-    if (!loopChatId) {
-      throw new Error("Declaration chat ID not found");
-    }
-
-    await db
-      .update(declarations)
-      .set({ progress: "in_progress" })
-      .where(eq(declarations.id, declaration.id));
-
-    await updateCanvasNode({ context, declaration });
-
-    const taskContext = `Your current task is to implement the following declaration:
-    ---
-    ${formatTaskDeclarationToMarkdown(declaration)}
-    ---
-    Note:
-    - You can implement any utility functions, components, or other declarations you need to implement the declaration.
-    - Read the files you need and implement the required changes.`;
-
-    await insertMessages({
-      input: {
-        chatId: loopChatId,
-        userId: user.id,
-        messages: [
-          {
-            visibility: "internal",
-            role: "user",
-            content: [{ type: "text", text: taskContext }],
-          },
-        ],
-      },
-    });
-
-    await executeDeclarationCoder({
-      context,
-      declaration,
-      progress,
-      coolDownPeriod,
-    });
-
-    logger.info(
-      `Updating declaration ${declaration.id} progress to 'completed'.`,
-    );
-
-    await db
-      .update(declarations)
-      .set({ progress: "completed" })
-      .where(eq(declarations.id, declaration.id));
-
-    progress.set(declaration.id, {
-      summary: declaration.implementationDetails?.summary ?? "",
-      progress: "completed",
-    });
-
-    await updateCanvasNode({ context, declaration });
-  }
-
-  logger.info(
-    "All declarations processed. Updating version progress to 'completed'.",
-  );
-  await db
-    .update(versions)
-    .set({ status: "completed" })
-    .where(eq(versions.id, version.id));
-
-  logger.info("Coder agent completed");
-
-  // End the stream
-  await streamWriter.write({ type: "end" });
+  logger.info(`Coder agent completed for task ${task.id}`);
 }
 
 async function updateCanvasNode({
@@ -459,3 +421,96 @@ async function updateCanvasNode({
     });
   }
 }
+
+const createTaskContext = async (
+  task: TaskWithDependencies,
+  context: WorkflowContext,
+): Promise<{ taskContext: string; declaration?: Declaration }> => {
+  if (task.data.type === "declaration") {
+    const declaration = await createDeclarationFromTask({
+      context,
+      taskData: task.data,
+    });
+
+    if (!declaration) {
+      throw new Error("Failed to create declaration from task");
+    }
+
+    const taskContext = `Your current task is to implement the following declaration:
+---
+${formatTaskDeclarationToMarkdown(declaration)}
+---
+Note:
+- You can implement any utility functions, components, or other declarations you need to implement the declaration.
+- Read the files you need and implement the required changes.`;
+
+    return { taskContext, declaration };
+  }
+
+  // Handle generic tasks
+  const taskContext = `Your current task is to implement the following:
+---
+Task: ${task.data.summary}
+
+Description: ${task.data.description}
+
+Acceptance Criteria:
+${task.data.acceptanceCriteria.map((criteria) => `- ${criteria}`).join("\n")}
+
+${
+  task.data.implementationNotes
+    ? `Implementation Notes:
+${task.data.implementationNotes.map((note) => `- ${note}`).join("\n")}
+`
+    : ""
+}
+
+${
+  task.data.subTasks
+    ? `Sub-tasks:
+${task.data.subTasks.map((subTask) => `- ${subTask}`).join("\n")}
+`
+    : ""
+}
+---
+
+Read the existing codebase to understand the current implementation and make the necessary changes to complete this task.`;
+
+  return { taskContext };
+};
+
+const executeTaskWithContext = async (
+  task: TaskWithDependencies,
+  taskContext: string,
+  context: WorkflowContext,
+  currentProgress: Map<
+    string,
+    { summary: string; progress: "pending" | "in_progress" | "completed" }
+  >,
+  coolDownPeriod: number,
+) => {
+  const user = context.get("user");
+  const loopChatId = task.chatId;
+
+  await insertMessages({
+    input: {
+      chatId: loopChatId,
+      userId: user.id,
+      messages: [
+        {
+          visibility: "internal",
+          role: "user",
+          content: [{ type: "text", text: taskContext }],
+        },
+      ],
+    },
+  });
+
+  await executeTaskCoder({
+    context,
+    task,
+    loopChatId,
+    progress: currentProgress,
+    coolDownPeriod,
+  });
+};

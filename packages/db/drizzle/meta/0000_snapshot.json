@@ -1,5 +1,5 @@
 {
-  "id": "6fa4598c-8f75-4087-8637-5eaa0b7e99f7",
+  "id": "2ddb06bd-ecab-4e1b-9870-a1d42d7d737d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -989,12 +989,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "chat_id": {
-          "name": "chat_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "project_id": {
           "name": "project_id",
           "type": "text",
@@ -1055,15 +1049,6 @@
           "columnsFrom": ["previous_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "declarations_chat_id_chats_id_fk": {
-          "name": "declarations_chat_id_chats_id_fk",
-          "tableFrom": "declarations",
-          "tableTo": "chats",
-          "columnsFrom": ["chat_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "declarations_project_id_projects_id_fk": {
@@ -1660,6 +1645,150 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.task_dependencies": {
+      "name": "task_dependencies",
+      "schema": "",
+      "columns": {
+        "task_id": {
+          "name": "task_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dependency_id": {
+          "name": "dependency_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "task_dependencies_task_id_idx": {
+          "name": "task_dependencies_task_id_idx",
+          "columns": [
+            {
+              "expression": "task_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "task_dependencies_dependency_id_idx": {
+          "name": "task_dependencies_dependency_id_idx",
+          "columns": [
+            {
+              "expression": "dependency_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "task_dependencies_task_id_tasks_id_fk": {
+          "name": "task_dependencies_task_id_tasks_id_fk",
+          "tableFrom": "task_dependencies",
+          "tableTo": "tasks",
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "task_dependencies_dependency_id_tasks_id_fk": {
+          "name": "task_dependencies_dependency_id_tasks_id_fk",
+          "tableFrom": "task_dependencies",
+          "tableTo": "tasks",
+          "columnsFrom": ["dependency_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "task_dependencies_task_id_dependency_id_pk": {
+          "name": "task_dependencies_task_id_dependency_id_pk",
+          "columns": ["task_id", "dependency_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tasks": {
+      "name": "tasks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "task_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "chat_id": {
+          "name": "chat_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version_id": {
+          "name": "version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tasks_chat_id_chats_id_fk": {
+          "name": "tasks_chat_id_chats_id_fk",
+          "tableFrom": "tasks",
+          "tableTo": "chats",
+          "columnsFrom": ["chat_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "tasks_version_id_versions_id_fk": {
+          "name": "tasks_version_id_versions_id_fk",
+          "tableFrom": "tasks",
+          "tableTo": "versions",
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.themes": {
       "name": "themes",
       "schema": "",
@@ -1814,7 +1943,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'planning'"
+          "default": "'pending'"
         },
         "acceptance_criteria": {
           "name": "acceptance_criteria",
@@ -1848,12 +1977,6 @@
           "notNull": false,
           "default": "now()"
         },
-        "parent_version_id": {
-          "name": "parent_version_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -1867,6 +1990,12 @@
           "primaryKey": false,
           "notNull": false,
           "default": "now()"
+        },
+        "parent_version_id": {
+          "name": "parent_version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "user_id": {
           "name": "user_id",
@@ -2017,10 +2146,22 @@
       "schema": "public",
       "values": ["pending", "in_progress", "enriching", "completed"]
     },
+    "public.task_status": {
+      "name": "task_status",
+      "schema": "public",
+      "values": ["pending", "in_progress", "completed"]
+    },
     "public.version_status": {
       "name": "version_status",
       "schema": "public",
-      "values": ["planning", "coding", "deploying", "completed", "failed"]
+      "values": [
+        "pending",
+        "planning",
+        "coding",
+        "deploying",
+        "completed",
+        "failed"
+      ]
     }
   },
   "schemas": {},
