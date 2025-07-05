@@ -16,6 +16,7 @@ import { users } from "./auth";
 import { chats } from "./chats";
 import { declarations } from "./declarations";
 import { projects } from "./projects";
+import { tasks } from "./tasks";
 
 export const versionStatus = pgEnum("version_status", [
   "pending",
@@ -49,14 +50,14 @@ export const versions = pgTable(
       .default([])
       .notNull(),
     activatedAt: timestamp("activated_at").defaultNow(),
-    parentVersionId: text("parent_version_id").references(
-      (): AnyPgColumn => versions.id,
-      { onDelete: "cascade" },
-    ),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date()),
+    parentVersionId: text("parent_version_id").references(
+      (): AnyPgColumn => versions.id,
+      { onDelete: "cascade" },
+    ),
     userId: text("user_id")
       .references(() => users.id)
       .notNull(),
@@ -80,6 +81,7 @@ export const versionsRelations = relations(versions, ({ one, many }) => ({
     references: [versions.id],
     relationName: "version_parent",
   }),
+  tasks: many(tasks),
   children: many(versions, {
     relationName: "version_children",
   }),

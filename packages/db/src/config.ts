@@ -14,6 +14,7 @@ export default {
     "./src/schema/nodes.ts",
     "./src/schema/presets.ts",
     "./src/schema/projects.ts",
+    "./src/schema/tasks.ts",
     "./src/schema/themes.ts",
     "./src/schema/versions.ts",
   ],

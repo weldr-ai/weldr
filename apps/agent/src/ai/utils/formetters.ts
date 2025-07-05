@@ -1,5 +1,8 @@
-import type { Declaration } from "@/ai/utils/declarations";
-import type { declarations } from "@weldr/db/schema";
+import type {
+  declarations,
+  integrationTemplates,
+  integrations,
+} from "@weldr/db/schema";
 import type {
   ClassDeclarationCodeMetadata,
   DeclarationCodeMetadata,
@@ -152,7 +155,16 @@ export function formatPageToMarkdown(
 }
 
 export function formatTaskDeclarationToMarkdown(
-  declaration: Declaration,
+  declaration: typeof declarations.$inferSelect & {
+    dependencies: {
+      dependency: typeof declarations.$inferSelect;
+    }[];
+    integrations: {
+      integration: typeof integrations.$inferSelect & {
+        integrationTemplate: typeof integrationTemplates.$inferSelect;
+      };
+    }[];
+  },
 ): string {
   if (!declaration.metadata?.specs) {
     return `### Declaration with invalid specs\n\nID: ${declaration.id}\n\n---\n\n`;
@@ -174,39 +186,6 @@ export function formatTaskDeclarationToMarkdown(
       markdown += `- ${int.integration.integrationTemplate.name} - ${int.integration.integrationTemplate.type}\n`;
     }
     markdown += "\n";
-  }
-
-  if (
-    declaration.implementationDetails?.acceptanceCriteria &&
-    declaration.implementationDetails.acceptanceCriteria.length > 0
-  ) {
-    markdown += "**Acceptance Criteria You Should Follow:**\n";
-    for (const criteria of declaration.implementationDetails
-      .acceptanceCriteria) {
-      markdown += `- ${criteria}\n`;
-    }
-    markdown += "\n";
-  }
-
-  if (
-    declaration.implementationDetails?.implementationNotes &&
-    declaration.implementationDetails.implementationNotes.length > 0
-  ) {
-    markdown += "**Implementation Notes You Should Follow:**\n";
-    for (const note of declaration.implementationDetails.implementationNotes) {
-      markdown += `- ${note}\n`;
-    }
-    markdown += "\n";
-  }
-
-  if (
-    declaration.implementationDetails?.subTasks &&
-    declaration.implementationDetails?.subTasks.length > 0
-  ) {
-    markdown += "**Sub-Tasks That Can Help You Implement the Declaration:**\n";
-    for (const subTask of declaration.implementationDetails.subTasks) {
-      markdown += `- ${subTask}\n`;
-    }
   }
 
   markdown += "\n---\n\n";
@@ -245,7 +224,7 @@ export function formatDeclarationSpecs(
   if (declaration.path) {
     result += `**Path:** \`${declaration.path}\``;
     if (position) {
-      result += ` (Start line ${position.start.line - 5}, End line ${position.end.line + 5})`;
+      result += ` (Start line ${position.start.line}, End line ${position.end.line})`;
     }
     result += "\n\n";
   }

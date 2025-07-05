@@ -1,9 +1,9 @@
 import { Logger } from "@/lib/logger";
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
-import { taskSchema } from "@weldr/shared/validators/tasks";
+import { planSchema } from "@weldr/shared/validators/plans";
 import { z } from "zod";
-import { createDeclarations } from "../utils/declarations";
+import { createTasks } from "../utils/tasks";
 import { createTool } from "../utils/tools";
 
 export const callCoderTool = createTool({
@@ -11,15 +11,14 @@ export const callCoderTool = createTool({
   description: "Hands off the project to the coder agent to start development.",
   whenToUse:
     "After all setup is complete and the user has confirmed the plan. This should be the final action.",
-  inputSchema: taskSchema.describe("The task to be completed"),
+  inputSchema: planSchema.describe("The plan to be completed"),
   outputSchema: z.discriminatedUnion("success", [
-    taskSchema.extend({
+    planSchema.extend({
       success: z.literal(true),
     }),
   ]),
   execute: async ({ input, context }) => {
-    const { commitMessage, description, acceptanceCriteria, declarations } =
-      input;
+    const { commitMessage, description, acceptanceCriteria } = input;
     const version = context.get("version");
     const project = context.get("project");
 
@@ -55,10 +54,9 @@ export const callCoderTool = createTool({
       );
     }
 
-    // Create declarations
-    await createDeclarations({
+    await createTasks({
+      taskList: input.tasks,
       context,
-      inputDeclarations: declarations,
     });
 
     context.set("version", updatedVersion);
@@ -86,7 +84,7 @@ export const callCoderTool = createTool({
       success: true,
       commitMessage: input.commitMessage,
       description: input.description,
-      declarations: input.declarations,
+      tasks: input.tasks,
     };
   },
 });
