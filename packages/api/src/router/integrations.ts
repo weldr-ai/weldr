@@ -64,6 +64,9 @@ export const integrationsRouter = createTRPCRouter({
         const integrationTemplate =
           await tx.query.integrationTemplates.findFirst({
             where: eq(integrationTemplates.id, integrationTemplateId),
+            with: {
+              variables: true,
+            },
           });
 
         if (!integrationTemplate) {
@@ -75,6 +78,10 @@ export const integrationsRouter = createTRPCRouter({
             message: "Failed to create integration",
           });
         }
+
+        const integrationVariables = integrationTemplate.variables.map(
+          (v) => v.name,
+        );
 
         for (const mapping of environmentVariableMappings) {
           const envVarKey = await tx.query.environmentVariables.findFirst({
@@ -91,13 +98,9 @@ export const integrationsRouter = createTRPCRouter({
             });
           }
 
-          if (
-            !(integrationTemplate.config as { env: string[] }).env.includes(
-              envVarKey.key,
-            )
-          ) {
+          if (!integrationVariables.includes(envVarKey.key)) {
             console.error(
-              `[integrations.create:${projectId}] Environment variable not in config`,
+              `[plugins.create:${projectId}] Environment variable not in config`,
             );
             throw new TRPCError({
               code: "BAD_REQUEST",
@@ -112,7 +115,7 @@ export const integrationsRouter = createTRPCRouter({
           });
         }
 
-        switch (integrationTemplate.type) {
+        switch (integrationTemplate.key) {
           case "postgresql": {
             // TODO: Implement
             // Write integration boilerplate to the machine
@@ -177,11 +180,8 @@ export const integrationsRouter = createTRPCRouter({
             },
           },
           integrationTemplate: {
-            columns: {
-              config: false,
-              llmTxt: false,
-              docsUrl: false,
-              version: false,
+            with: {
+              variables: true,
             },
           },
         },

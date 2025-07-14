@@ -19,6 +19,7 @@
     "@weldr/shared": "workspace:*",
     "ai": "^4.3.16",
     "fast-xml-parser": "^5.2.5",
+    "handlebars": "^4.7.8",
     "hono": "^4.7.11",
     "hono-pino": "^0.8.0",
     "openai": "^5.5.1",
@@ -28,6 +29,7 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@types/handlebars": "^4.1.0",
     "@types/node": "^22.15.30",
     "@types/pluralize": "^0.0.33",
     "dotenv-cli": "^7.4.4",

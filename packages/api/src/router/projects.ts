@@ -256,11 +256,8 @@ export const projectsRouter = {
                   },
                 },
                 integrationTemplate: {
-                  columns: {
-                    config: false,
-                    llmTxt: false,
-                    docsUrl: false,
-                    version: false,
+                  with: {
+                    variables: true,
                   },
                 },
               },

@@ -1,7 +1,6 @@
 import { nanoid } from "@weldr/shared/nanoid";
-import type { ProjectConfig } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
-import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { environmentVariables } from "./environment-variables";
 import { integrations } from "./integrations";
@@ -13,7 +12,6 @@ export const projects = pgTable(
     id: text("id").primaryKey().$defaultFn(nanoid),
     title: text("title"),
     subdomain: text("subdomain").unique().notNull(),
-    config: jsonb("config").$type<ProjectConfig>(),
     initiatedAt: timestamp("initiated_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

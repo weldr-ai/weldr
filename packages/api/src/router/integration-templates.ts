@@ -6,25 +6,24 @@ import { createTRPCRouter, publicProcedure } from "../init";
 export const integrationTemplatesRouter = createTRPCRouter({
   list: publicProcedure.query(async () => {
     return await db.query.integrationTemplates.findMany({
-      columns: {
-        config: false,
-        llmTxt: false,
-        docsUrl: false,
-      },
       orderBy: (templates, { desc }) => [desc(templates.createdAt)],
+      with: {
+        variables: {
+          orderBy: (variables, { asc }) => [asc(variables.name)],
+        },
+      },
     });
   }),
-
   byId: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       const integrationTemplate = await db.query.integrationTemplates.findFirst(
         {
           where: (templates, { eq }) => eq(templates.id, input.id),
-          columns: {
-            config: false,
-            llmTxt: false,
-            docsUrl: false,
+          with: {
+            variables: {
+              orderBy: (variables, { asc }) => [asc(variables.name)],
+            },
           },
         },
       );

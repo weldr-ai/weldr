@@ -11,21 +11,9 @@ export default async function ProjectLayout({
 }): Promise<JSX.Element> {
   try {
     const projects = await api.projects.list();
-    // const resourcesWithMetadata = await api.resources.listWithMetadata({
-    //   projectId,
-    // });
 
     return (
       <>
-        {/* <ResourcesProvider
-          resources={resourcesWithMetadata.map((resource) => ({
-            id: resource.id,
-            name: resource.name,
-            integrationType: resource.integration.type,
-            metadata: resource.metadata,
-          }))}
-        > */}
-
         <main className="flex size-full h-screen">
           <div className="size-full flex-1 bg-background dark:bg-muted">
             {children}

@@ -1,7 +1,8 @@
+import type { ProjectWithType } from "@/workflow/context";
 import { db, eq } from "@weldr/db";
-import { integrations, type projects, versions } from "@weldr/db/schema";
+import { integrations, versions } from "@weldr/db/schema";
 
-export async function getProjectContext(project: typeof projects.$inferSelect) {
+export async function getProjectContext(project: ProjectWithType) {
   const projectIntegrationsList = await db.query.integrations.findMany({
     where: eq(integrations.projectId, project.id),
     with: {
@@ -22,7 +23,7 @@ export async function getProjectContext(project: typeof projects.$inferSelect) {
   });
 
   return project.initiatedAt
-    ? `You are working on a ${project.config?.server && project.config?.client ? "full-stack" : project.config?.server ? "server" : "client"} app called ${project.title}${
+    ? `You are working on a ${project.type === "full-stack" ? "full-stack" : project.type === "standalone-backend" ? "backend" : "frontend"} app called ${project.title}${
         projectIntegrationsList.length > 0
           ? `\nThis project has the following integrations setup:
 ${projectIntegrationsList

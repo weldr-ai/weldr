@@ -1,15 +1,14 @@
 import { prompts } from "@/ai/prompts";
 import {
+  addIntegrationsTool,
   callCoderTool,
   findTool,
   fzfTool,
   grepTool,
   initProjectTool,
   listDirTool,
-  promptIntegrationConfigurationTool,
   readFileTool,
   searchCodebaseTool,
-  upgradeProjectTool,
 } from "@/ai/tools";
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
@@ -53,10 +52,9 @@ export async function plannerAgent({
 
   const xmlProvider = new XMLProvider(
     [
-      initProjectTool.getXML(),
-      upgradeProjectTool.getXML(),
-      promptIntegrationConfigurationTool.getXML(),
+      addIntegrationsTool.getXML(),
       callCoderTool.getXML(),
+      initProjectTool.getXML(),
       listDirTool.getXML(),
       readFileTool.getXML(),
       searchCodebaseTool.getXML(),
@@ -97,10 +95,8 @@ export async function plannerAgent({
           system,
           messages: promptMessages,
           tools: {
+            add_integrations: addIntegrationsTool(context),
             init_project: initProjectTool(context),
-            upgrade_project: upgradeProjectTool(context),
-            prompt_integration_configuration:
-              promptIntegrationConfigurationTool(context),
             list_dir: listDirTool(context),
             read_file: readFileTool(context),
             call_coder: callCoderTool(context),
@@ -152,8 +148,8 @@ export async function plannerAgent({
           args: delta.args,
         });
         if (
+          delta.toolName === "add_integrations" ||
           delta.toolName === "init_project" ||
-          delta.toolName === "upgrade_project" ||
           delta.toolName === "list_dir" ||
           delta.toolName === "read_file" ||
           delta.toolName === "search_codebase" ||
@@ -173,7 +169,10 @@ export async function plannerAgent({
           shouldRecur = true;
         }
       } else if (delta.type === "tool-result") {
-        if (delta.toolName === "prompt_integration_configuration") {
+        if (
+          delta.toolName === "add_integrations" &&
+          delta.result?.status === "requires_configuration"
+        ) {
           await streamWriter.write({
             type: "tool",
             toolName: delta.toolName,
@@ -184,7 +183,8 @@ export async function plannerAgent({
         }
         toolResultMessages.push({
           visibility:
-            delta.toolName === "prompt_integration_configuration"
+            delta.toolName === "add_integrations" &&
+            delta.result?.status === "requires_configuration"
               ? "public"
               : "internal",
           role: "tool",

@@ -37,11 +37,40 @@ export async function recoverWorkflow() {
   const project = await db.query.projects.findFirst({
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
     where: eq(projects.id, process.env.PROJECT_ID!),
+    with: {
+      integrations: {
+        with: {
+          integrationTemplate: true,
+        },
+      },
+    },
   });
 
   if (!project) {
     throw new Error("Project not found");
   }
+
+  const integrations = project.integrations.reduce(
+    (acc, integration) => {
+      if (integration.integrationTemplate.type === "backend") {
+        acc.push("backend");
+      }
+      if (integration.integrationTemplate.type === "frontend") {
+        acc.push("frontend");
+      }
+      return acc;
+    },
+    [] as ("frontend" | "backend")[],
+  );
+
+  const projectType =
+    integrations.includes("backend") && integrations.includes("frontend")
+      ? "full-stack"
+      : integrations.includes("backend")
+        ? "standalone-backend"
+        : integrations.includes("frontend")
+          ? "standalone-frontend"
+          : null;
 
   const user = await db.query.users.findFirst({
     where: eq(users.id, project.userId),
@@ -67,7 +96,7 @@ export async function recoverWorkflow() {
   }
 
   const context = new WorkflowContext();
-  context.set("project", project);
+  context.set("project", { ...project, type: projectType });
   context.set("version", version);
   context.set("user", user);
   context.set("isXML", true);

@@ -8,12 +8,24 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 
+export type AiModelProvider = "google" | "openai" | "anthropic";
+
+export type GoogleModelKey = "gemini-2.5-pro" | "gemini-2.5-flash";
+export type OpenAIModelKey = "gpt-4.1" | "gpt-4.1-mini" | "gpt-image-1";
+export type AnthropicModelKey = "claude-sonnet-4" | "claude-opus-4";
+export type AiModelKey = GoogleModelKey | OpenAIModelKey | AnthropicModelKey;
+
+export type AiModel =
+  | `google:${GoogleModelKey}`
+  | `openai:${OpenAIModelKey}`
+  | `anthropic:${AnthropicModelKey}`;
+
 export const aiModels = pgTable(
   "ai_models",
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
-    provider: text("provider").notNull(), // e.g., "openai", "anthropic", "google"
-    modelKey: text("model_key").notNull(), // e.g., "gpt-4o", "claude-3-5-sonnet-20241022"
+    provider: text("provider").$type<AiModelProvider>().notNull(),
+    modelKey: text("model_key").$type<AiModelKey>().notNull(),
     inputTokensPrice: numeric("input_tokens_price", {
       precision: 10,
       scale: 3,
@@ -35,13 +47,3 @@ export const aiModels = pgTable(
   },
   (t) => [unique("unique_provider_model").on(t.provider, t.modelKey)],
 );
-
-export type AiModelProvider = "google" | "openai" | "anthropic";
-export type GoogleModelKey = "gemini-2.5-pro" | "gemini-2.5-flash";
-export type OpenAIModelKey = "gpt-4.1" | "gpt-4.1-mini" | "gpt-image-1";
-export type AnthropicModelKey = "claude-sonnet-4" | "claude-opus-4";
-
-export type AiModel =
-  | `google:${GoogleModelKey}`
-  | `openai:${OpenAIModelKey}`
-  | `anthropic:${AnthropicModelKey}`;

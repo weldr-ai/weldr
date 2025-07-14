@@ -293,10 +293,14 @@ export async function extractAndSaveDeclarations({
 
   try {
     const pathAliases: Record<string, string> = {};
-    if (project.config?.server && project.config?.client) {
+
+    if (project.type === "full-stack") {
       pathAliases["@/"] = "web/";
       pathAliases["@server/"] = "server/";
-    } else if (project.config?.server || project.config?.client) {
+    } else if (
+      project.type === "standalone-backend" ||
+      project.type === "standalone-frontend"
+    ) {
       pathAliases["@/"] = "src/";
     }
 

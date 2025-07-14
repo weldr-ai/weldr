@@ -1,0 +1,254 @@
+[
+  {
+    "type": "copy",
+    "path": "web/styles/app.css"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/aspect-ratio.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/alert-dialog.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/pagination.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/tabs.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/card.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/slider.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/popover.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/progress.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/input-otp.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/chart.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/hover-card.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/sheet.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/scroll-area.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/resizable.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/label.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/sonner.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/navigation-menu.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/accordion.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/drawer.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/tooltip.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/alert.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/switch.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/calendar.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/breadcrumb.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/radio-group.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/command.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/toggle-group.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/avatar.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/menubar.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/dialog.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/badge.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/sidebar.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/table.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/separator.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/button.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/toggle.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/checkbox.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/collapsible.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/dropdown-menu.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/select.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/textarea.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/input.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/skeleton.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/context-menu.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/form.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/ui/carousel.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/error-boundary.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/mode-toggle.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/components/not-found.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/router.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/hooks/use-mobile.ts"
+  },
+  {
+    "type": "copy",
+    "path": "web/routeTree.gen.ts"
+  },
+  {
+    "type": "copy",
+    "path": "web/lib/orpc.ts"
+  },
+  {
+    "type": "copy",
+    "path": "web/lib/utils.ts"
+  },
+  {
+    "type": "copy",
+    "path": "web/lib/seo.ts"
+  },
+  {
+    "type": "copy",
+    "path": "web/tanstack-start.d.ts"
+  },
+  {
+    "type": "copy",
+    "path": "web/logo.svg"
+  },
+  {
+    "type": "copy",
+    "path": "web/routes/index.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/routes/__root.tsx"
+  },
+  {
+    "type": "copy",
+    "path": "web/routes/api.$.ts"
+  },
+  {
+    "type": "copy",
+    "path": "tsconfig.json"
+  },
+  {
+    "type": "copy",
+    "path": "vite.config.ts"
+  }
+]

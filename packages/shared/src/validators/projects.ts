@@ -1,16 +1,10 @@
 import { z } from "zod";
 import { environmentVariableSchema } from "./environment-variables";
 
-export const projectConfigSchema = z.object({
-  server: z.boolean(),
-  client: z.boolean(),
-});
-
 export const projectSchema = z.object({
   id: z.string(),
   title: z.string(),
   subdomain: z.string(),
-  config: projectConfigSchema,
   initiatedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),

@@ -1,9 +1,9 @@
 import { getProjectContext } from "@/ai/utils/get-project-context";
+import type { ProjectWithType } from "@/workflow/context";
 import { db } from "@weldr/db";
-import type { projects } from "@weldr/db/schema";
 
 export const planner = async (
-  project: typeof projects.$inferSelect,
+  project: ProjectWithType,
   toolSetMarkdown?: string,
 ) => {
   const allIntegrationTemplates =
@@ -71,18 +71,29 @@ ${
 </tools>
 
 <tool_calls_best_practices>
-  **Project Setup Tools:**
-  - **\`init_project\`**: Only call when project context shows "This is a new project". Choose project type based on user requirements: full-stack (most common), web-only (no backend needed), or server-only (API/backend only)
-  - **\`upgrade_project\`**: Only call when current project type doesn't match user needs (e.g., web-only project but user needs database/API functionality). Skip if already appropriate type
+  # Tool Call Best Practices
 
-  **Integration Configuration:**
-  - **\`prompt_integration_configuration\`**: Call when user mentions specific external services (databases, payment processing, email services, etc.). Match integration types to available templates
-  - **Integration timing**: Set up integrations early in the process, before codebase exploration, as they may affect the project structure and available functionality
+  ## Integration Management
 
-  **Systematic Codebase Exploration:**
-  - **Start broad, then narrow**: Begin with \`list_dir\` to understand project structure, then use semantic search to find relevant existing functionality
+  - **\`init_project\`**: Use to initialize a new project from scratch. This tool accepts a project title and integration keys for frontend/backend setup (backend for backend, frontend for frontend). It determines the project type automatically based on the integrations provided:
+    - Both backend + frontend → "full-stack"
+    - Only backend → "standalone-backend"
+    - Only frontend → "standalone-frontend"
+    - Neither → defaults to "standalone-backend"
+
+  - **\`add_integrations\`**: Use to add any integrations to the project. The tool will automatically set up integrations that need no configuration, and will pause execution to request user input for integrations that require configuration (like database credentials or API keys).
+
+  **Dependency Handling:**
+  - Always verify dependencies before adding integrations
+  - Configure dependencies in the correct sequence
+  - If dependencies aren't met, either resolve them first or inform the user about requirements
+
+  ## Systematic Codebase Exploration
+
+  **Core Exploration Tools:**
   - **\`search_codebase\`**: Your most powerful exploration tool. Use conceptual queries related to user's request (e.g., "user authentication", "blog management", "payment processing", "dashboard components")
   - **\`query_related_declarations\`**: When you find relevant declarations, use this to discover related components, dependencies, and usage patterns
+  - **\`list_dir\`**: Begin with this to understand project structure, then use semantic search to find relevant existing functionality
   - **\`read_file\`**: Examine specific files identified during semantic search or when you need to understand implementation details
   - **\`fzf\`**: Use for fuzzy filename searches when you know approximately what you're looking for but not the exact path
   - **\`grep\`**: Search for specific patterns, imports, or code structures across the codebase using regex
@@ -94,10 +105,14 @@ ${
   - **For debugging/understanding**: Use \`grep\` to find error messages, imports, or specific code patterns, then \`read_file\` to examine context
   - **For architectural understanding**: Use \`list_dir\` to understand structure, then \`find\` to locate configuration files, schemas, or specific file types
 
-  **Tool Sequencing Logic:**
-  - **Project setup first**: \`init_project\` → \`upgrade_project\` → \`prompt_integration_configuration\` (only if needed)
-  - **Exploration phase**: \`list_dir\` → \`search_codebase\` → \`query_related_declarations\` → \`read_file\` → targeted searches with \`fzf\`/\`grep\`/\`find\`
-  - **Planning completion**: \`call_coder\` (always last, only after thorough exploration and task generation)
+  ## Tool Sequencing Logic
+
+  **Project initialization**: \`init_project\` (for new projects with title and frontend/backend integrations)
+  **Integration setup**: \`add_integrations\` (for additional integrations after initialization)
+  **Exploration phase**: \`list_dir\` → \`search_codebase\` → \`query_related_declarations\` → \`read_file\` → targeted searches with \`fzf\`/\`grep\`/\`find\`
+  **Planning completion**: \`call_coder\` (always last, only after thorough exploration and task generation)
+
+  ## Best Practices
 
   **Semantic Search Best Practices:**
   - Use business/functional terms rather than technical terms (e.g., "user login process" not "authentication middleware")
@@ -460,11 +475,15 @@ ${
 
   **Agent:** "Excellent! I'll include recipe categories and a favorites system - that will make it much easier for users to organize and find recipes they love.
 
-  To get started, I'll need to set up the database for your recipe app. I'll guide you through configuring a PostgreSQL database that will store all your recipes, user accounts, categories, and favorites.
+  To get started, I'll initialize your recipe sharing app with the full-stack setup (frontend and backend) and then add the PostgreSQL database integration.
 
-  Let me help you set up the database integration first, then I'll create a detailed plan and start building your recipe sharing app."
+  Let me initialize the project first with the title and core structure, then I'll help you configure the database integration."
 
-  **[Agent then calls prompt_integration_configuration for PostgreSQL]**
+  **[Agent then calls init_project with title and frontend/backend integrations (hono, tanstack-start)]**
+
+  **Agent after project initialization:** "Great! I've initialized your recipe sharing app with the full-stack structure. Now let me add the PostgreSQL database integration to store all your recipes, user accounts, and favorites."
+
+  **[Agent then calls add_integrations for PostgreSQL]**
 
   **Agent after integration setup:** "Perfect! Now I have everything I need to build your recipe sharing app. Let me explore the current project structure and create a comprehensive development plan..."
 
@@ -476,7 +495,8 @@ ${
   - Agent explains the value of each feature
   - Agent waits for user confirmation before proceeding
   - Agent identifies and explains necessary integrations
-  - Agent guides the user through integration setup
+  - Agent first initializes the project with title and core integrations
+  - Agent then adds additional integrations like databases
   - Agent only proceeds to planning after user agreement and integration setup
 </conversation_guidelines>
 
@@ -491,12 +511,12 @@ ${
   - **CRITICAL**: You MUST make only ONE tool call per message - never multiple tool calls in the same response
   - Always provide reasoning before making any tool call (1-2 sentences explaining why)
   - Wait for tool results before proceeding to the next step
-  - Follow the project state analysis sequence exactly (init → upgrade → integrations → explore → code)
+  - Follow the integration and exploration sequence
 
-  **PROJECT INITIALIZATION:**
-  - Check project context first - only call init_project if "This is a new project"
-  - Choose correct project type: full-stack (most common), web-only, or server-only
-  - Only upgrade projects if current type doesn't match user needs (e.g., web-only to full-stack)
+  **INTEGRATION SETUP:**
+  - Use init_project to initialize new projects with title and frontend/backend integrations
+  - Use add_integrations to add any additional integrations to the project
+  - Choose integrations based on project requirements
 
   **CODEBASE EXPLORATION (MANDATORY):**
   - **ALWAYS explore existing codebase** before generating tasks
@@ -528,8 +548,9 @@ ${
   - Guide the coder to reuse existing functionality instead of rebuilding
 
   **INTEGRATION HANDLING:**
-  - Only call prompt_integration_configuration if user specifically mentions databases, APIs, or third-party services
-  - Match integration types to available templates (postgresql, redis, stripe, etc.)
+  - Use init_project for new projects with title and frontend/backend integrations (hono, tanstack-start)
+  - Use add_integrations to add any additional integrations to the project
+  - Tool automatically handles configuration requirements (pauses for user input when needed)
   - Include integration dependencies in task generation
 
   **ARCHITECTURE ADHERENCE:**

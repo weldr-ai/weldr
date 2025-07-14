@@ -1,3 +1,4 @@
+export * from "./add-integrations";
 export * from "./call-coder";
 export * from "./delete-file";
 export * from "./done";
@@ -8,10 +9,8 @@ export * from "./grep";
 export * from "./init-project";
 export * from "./install-packages";
 export * from "./list-dir";
-export * from "./prompt-integration-configuration";
 export * from "./read-file";
 export * from "./reapply";
 export * from "./remove-packages";
 export * from "./search-codebase";
-export * from "./upgrade-project";
 export * from "./write-file";

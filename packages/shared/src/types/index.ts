@@ -10,6 +10,17 @@ import type {
   userMessageSchema,
 } from "../validators/chats";
 import type { environmentVariableSchema } from "../validators/environment-variables";
+import type {
+  integrationEnvironmentVariableMappingSchema,
+  integrationKeySchema,
+  integrationSchema,
+  integrationTemplateFileTypeSchema,
+  integrationTemplateSchema,
+  integrationTemplateVariableSchema,
+  integrationTemplateWithVariablesSchema,
+  integrationTypeSchema,
+  variableSourceTypeSchema,
+} from "../validators/integrations";
 import type { dataTypeSchema } from "../validators/json-schema";
 import type { nodeSchema, nodeTypeSchema } from "../validators/nodes";
 import type { openApiEndpointSpecSchema } from "../validators/openapi";
@@ -20,10 +31,7 @@ import type {
   planSchema,
   taskSchema,
 } from "../validators/plans";
-import type {
-  projectConfigSchema,
-  projectSchema,
-} from "../validators/projects";
+import type { projectSchema } from "../validators/projects";
 import type { themeDataSchema, themeSchema } from "../validators/themes";
 import type { versionSchema } from "../validators/versions";
 import type { DeclarationMetadata, DeclarationProgress } from "./declarations";
@@ -34,7 +42,6 @@ export type OpenApiEndpointSpec = z.infer<typeof openApiEndpointSpecSchema>;
 export type JsonSchema = JSONSchema7;
 
 export type Project = z.infer<typeof projectSchema>;
-export type ProjectConfig = z.infer<typeof projectConfigSchema>;
 
 export type Version = z.infer<typeof versionSchema>;
 
@@ -153,3 +160,21 @@ export type TriggerWorkflowResponse = {
   runId: string;
   message?: string;
 };
+
+export type IntegrationType = z.infer<typeof integrationTypeSchema>;
+export type IntegrationKey = z.infer<typeof integrationKeySchema>;
+export type VariableSourceType = z.infer<typeof variableSourceTypeSchema>;
+export type IntegrationTemplateFileType = z.infer<
+  typeof integrationTemplateFileTypeSchema
+>;
+export type IntegrationTemplateVariable = z.infer<
+  typeof integrationTemplateVariableSchema
+>;
+export type IntegrationTemplate = z.infer<typeof integrationTemplateSchema>;
+export type IntegrationTemplateWithVariables = z.infer<
+  typeof integrationTemplateWithVariablesSchema
+>;
+export type Integration = z.infer<typeof integrationSchema>;
+export type IntegrationEnvironmentVariableMapping = z.infer<
+  typeof integrationEnvironmentVariableMappingSchema
+>;

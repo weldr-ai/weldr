@@ -61,7 +61,7 @@ const PureMessageItem = ({
         {message.role === "tool" &&
           message.content.some((content) => {
             if (content.type === "tool-result") {
-              return content.toolName === "request_integration_configuration";
+              return content.toolName === "add_integrations";
             }
             return false;
           }) && (

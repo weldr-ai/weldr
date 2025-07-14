@@ -14,13 +14,13 @@ show_usage() {
     echo "Usage: $0 <template>"
     echo ""
     echo "Templates:"
-    echo "  server-only     - Server-only boilerplate"
-    echo "  web-only   - Web-only boilerplate"
+    echo "  standalone-backend     - Standalone backend boilerplate"
+    echo "  standalone-frontend   - Standalone frontend boilerplate"
     echo "  full-stack - Full-stack boilerplate"
     echo ""
     echo "Examples:"
-    echo "  $0 server-only"
-    echo "  $0 web-only"
+    echo "  $0 standalone-backend"
+    echo "  $0 standalone-frontend"
     echo "  $0 full-stack"
 }
 
@@ -31,11 +31,11 @@ copy_boilerplate() {
     # Map template names to boilerplate directories
     local source_template=""
     case "$template" in
-        "server-only")
-            source_template="server-only"
+        "standalone-backend")
+            source_template="standalone-backend"
             ;;
-        "web-only")
-            source_template="web-only"
+        "standalone-frontend")
+            source_template="standalone-frontend"
             ;;
         "full-stack")
             source_template="full-stack"
