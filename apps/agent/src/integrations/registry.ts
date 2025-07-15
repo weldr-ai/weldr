@@ -4,7 +4,7 @@ import { backendIntegration } from "./backend";
 import { frontendIntegration } from "./frontend";
 import { postgresqlIntegration } from "./postgresql";
 import type { IntegrationDefinition } from "./types";
-import { applyIntegrationFiles } from "./utils";
+import { applyIntegrationFiles } from "./utils/integration-core";
 
 class IntegrationRegistry {
   private integrations = new Map<IntegrationKey, IntegrationDefinition>();
@@ -25,7 +25,7 @@ class IntegrationRegistry {
     // Run the pre-install hook
     await integration.preInstall?.(context);
     // Apply the files
-    await applyIntegrationFiles(integration);
+    await applyIntegrationFiles(integration, context);
     // Run the post-install hook
     await integration.postInstall?.(context);
   }

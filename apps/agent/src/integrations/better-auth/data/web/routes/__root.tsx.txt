@@ -1,0 +1,24 @@
+// ... existing code ...
+import { getSessionFn, type User } from "@/lib/auth";
+
+// ... existing code ...
+
+interface MyRouterContext {
+  // ... existing code ...
+	user: User | null;
+  // ... existing code ...
+}
+
+export const Route = createRootRouteWithContext<MyRouterContext>()({
+  // ... existing code ...
+	beforeLoad: async () => {
+		const data = await getSessionFn();
+		return { session: data?.session, user: data?.user };
+	},
+	loader: ({ context }) => {
+		return { session: context.session, user: context.user };
+	},
+  // ... existing code ...
+});
+
+// ... existing code ...

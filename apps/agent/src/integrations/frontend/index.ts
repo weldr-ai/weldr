@@ -1,9 +1,9 @@
 import {
-  defineIntegration,
   directoryExists,
   renameDirectory,
   replaceTextInFiles,
-} from "../utils";
+} from "../utils/file-system";
+import { defineIntegration } from "../utils/integration-core";
 
 export const frontendIntegration = await defineIntegration({
   key: "frontend",

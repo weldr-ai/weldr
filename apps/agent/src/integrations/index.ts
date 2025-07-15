@@ -10,13 +10,12 @@ export type {
 
 // Export utilities
 export {
-  combineResults,
   createDirectory,
   directoryExists,
   fileExists,
-  installPackages,
-  runBunScript,
-} from "./utils";
+} from "./utils/file-system";
+export { combineResults } from "./utils/integration-core";
+export { installPackages, runBunScript } from "./utils/packages";
 
 async function main() {
   const postgresqlIntegration = await integrationRegistry.get("postgresql");

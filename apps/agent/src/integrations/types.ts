@@ -30,7 +30,10 @@ export interface IntegrationDefinition {
   key: IntegrationKey;
   name: string;
   description?: string;
-  location?: "frontend" | "backend";
+  dirMap?: {
+    "standalone-backend"?: Record<string, string>;
+    "standalone-frontend"?: Record<string, string>;
+  };
 
   packages?: {
     add: {

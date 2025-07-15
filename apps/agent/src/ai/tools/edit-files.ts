@@ -66,7 +66,10 @@ export const editFileTool = createTool({
     // Use the apply-edit utility to generate the updated code
     let updatedCode: string;
     try {
-      updatedCode = await applyEdit(originalCode, input.codeEdit);
+      updatedCode = await applyEdit({
+        originalCode,
+        editInstructions: input.codeEdit,
+      });
     } catch (error) {
       const errorMsg = `Failed to apply edit: ${error instanceof Error ? error.message : JSON.stringify(error, null, 2)}`;
       logger.error(errorMsg);

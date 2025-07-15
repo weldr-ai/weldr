@@ -1,4 +1,5 @@
-import { defineIntegration, runBunScript } from "../utils";
+import { defineIntegration } from "../utils/integration-core";
+import { runBunScript } from "../utils/packages";
 
 export const backendIntegration = await defineIntegration({
   key: "backend",

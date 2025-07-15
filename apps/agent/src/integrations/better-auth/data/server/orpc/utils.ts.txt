@@ -1,0 +1,6 @@
+// ... existing code ...
+import { requireAuth } from "./middlewares/auth";
+
+// ... existing code ...
+
+export const protectedProcedure = base.use(requireAuth);

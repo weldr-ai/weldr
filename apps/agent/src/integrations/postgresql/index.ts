@@ -1,12 +1,11 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { defineIntegration } from "../utils";
+import { defineIntegration } from "../utils/integration-core";
 
 export const postgresqlIntegration = await defineIntegration({
   key: "postgresql",
   name: "PostgreSQL",
   description: "PostgreSQL integration",
-  location: "backend",
   scripts: {
     "db:check": "drizzle-kit check",
     "db:generate": "drizzle-kit generate",
@@ -24,6 +23,11 @@ export const postgresqlIntegration = await defineIntegration({
       development: {
         "drizzle-kit": "^0.31.4",
       },
+    },
+  },
+  dirMap: {
+    "standalone-backend": {
+      server: "src",
     },
   },
 

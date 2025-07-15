@@ -5,10 +5,13 @@ const morphClient = new OpenAI({
   baseURL: "https://api.morphllm.com/v1",
 });
 
-export async function applyEdit(
-  originalCode: string,
-  editInstructions: string,
-): Promise<string> {
+export async function applyEdit({
+  originalCode,
+  editInstructions,
+}: {
+  originalCode: string;
+  editInstructions: string;
+}): Promise<string> {
   const response = await morphClient.chat.completions.create({
     model: "auto",
     messages: [
