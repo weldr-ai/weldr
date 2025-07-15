@@ -22,12 +22,6 @@ export const variableSourceTypeSchema = z.enum([
   "system_generated",
 ]);
 
-export const integrationTemplateFileTypeSchema = z.enum([
-  "copy",
-  "handlebars",
-  "llm_instruction",
-]);
-
 export const integrationTemplateVariableSchema = z.object({
   id: z.string(),
   pluginTemplateId: z.string(),

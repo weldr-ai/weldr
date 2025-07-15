@@ -264,7 +264,7 @@ export function Chat({
             break;
           }
           case "tool": {
-            if (chunk.toolName === "request_integration_configuration") {
+            if (chunk.toolName === "add_integrations") {
               setPendingMessage("waiting");
               setMessages((prevMessages) => {
                 return [
@@ -290,37 +290,29 @@ export function Chat({
             break;
           }
           case "update_project": {
-            // Handle specific project updates
-            if (chunk.data.title !== undefined) {
-              updateProjectData({ title: chunk.data.title });
-            }
-            if (chunk.data.initiatedAt !== undefined) {
-              updateProjectData({ initiatedAt: chunk.data.initiatedAt });
-            }
-            if (chunk.data.currentVersion !== undefined) {
-              updateProjectData({ currentVersion: chunk.data.currentVersion });
-              const status = chunk.data.currentVersion.status;
-              switch (status) {
-                case "pending":
-                  setPendingMessage(null);
-                  break;
-                case "planning":
-                  setPendingMessage("planning");
-                  break;
-                case "coding":
-                  setPendingMessage("coding");
-                  break;
-                case "deploying":
-                  setPendingMessage("deploying");
-                  break;
-                case "completed":
-                case "failed":
-                  setPendingMessage(null);
-                  break;
-                default:
-                  setPendingMessage(null);
-                  break;
-              }
+            updateProjectData({ ...chunk.data });
+            const status = chunk.data.currentVersion?.status;
+
+            switch (status) {
+              case "pending":
+                setPendingMessage(null);
+                break;
+              case "planning":
+                setPendingMessage("planning");
+                break;
+              case "coding":
+                setPendingMessage("coding");
+                break;
+              case "deploying":
+                setPendingMessage("deploying");
+                break;
+              case "completed":
+              case "failed":
+                setPendingMessage(null);
+                break;
+              default:
+                setPendingMessage(null);
+                break;
             }
             break;
           }
@@ -452,7 +444,7 @@ export function Chat({
       lastMessage.content.find(
         (content) =>
           content.type === "tool-result" &&
-          content.toolName === "request_integration_configuration" &&
+          content.toolName === "add_integrations" &&
           (content.result as { status: "pending" }).status === "pending",
       ) !== undefined
     ) {

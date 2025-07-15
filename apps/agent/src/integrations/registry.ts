@@ -1,16 +1,33 @@
-import { runCommand } from "@/ai/utils/commands";
+import type { WorkflowContext } from "@/workflow/context";
 import type { IntegrationKey } from "@weldr/shared/types";
+import { backendIntegration } from "./backend";
+import { frontendIntegration } from "./frontend";
+import { postgresqlIntegration } from "./postgresql";
 import type { IntegrationDefinition } from "./types";
+import { applyIntegrationFiles } from "./utils";
 
 class IntegrationRegistry {
   private integrations = new Map<IntegrationKey, IntegrationDefinition>();
 
-  register(integration: IntegrationDefinition): void {
+  async register(integration: IntegrationDefinition): Promise<void> {
     this.integrations.set(integration.key, integration);
   }
 
   get(key: IntegrationKey): IntegrationDefinition | undefined {
     return this.integrations.get(key);
+  }
+
+  async install(key: IntegrationKey, context: WorkflowContext): Promise<void> {
+    const integration = this.get(key);
+    if (!integration) {
+      throw new Error(`Integration ${key} not found`);
+    }
+    // Run the pre-install hook
+    await integration.preInstall?.(context);
+    // Apply the files
+    await applyIntegrationFiles(integration);
+    // Run the post-install hook
+    await integration.postInstall?.(context);
   }
 
   getAll(): IntegrationDefinition[] {
@@ -24,70 +41,9 @@ class IntegrationRegistry {
   list(): IntegrationKey[] {
     return Array.from(this.integrations.keys());
   }
-
-  async generateSpecs(integrationKey?: IntegrationKey): Promise<void> {
-    const integrations = integrationKey
-      ? [this.get(integrationKey)].filter(
-          (integration): integration is IntegrationDefinition =>
-            integration !== undefined,
-        )
-      : this.getAll();
-
-    if (integrationKey && integrations.length === 0) {
-      console.error(`Integration '${integrationKey}' not found`);
-      return;
-    }
-
-    for (const integration of integrations) {
-      const dataDir = `${integration.key}/data`;
-
-      // Check if data directory exists
-      const checkResult = await runCommand("test", ["-d", dataDir], {
-        cwd: "apps/agent/src/integrations",
-      });
-      if (!checkResult.success) {
-        console.log(`No data directory found for ${integration.key}`);
-        continue;
-      }
-
-      // Recursively find all files in the data directory
-      const findResult = await runCommand("find", [dataDir, "-type", "f"], {
-        cwd: "apps/agent/src/integrations",
-      });
-      if (!findResult.success) {
-        console.error(`Failed to list files for ${integration.key}`);
-        continue;
-      }
-
-      const files = findResult.stdout.trim().split("\n").filter(Boolean);
-      const specs = files.map((filePath) => {
-        const relativePath = filePath.replace(`${dataDir}/`, "");
-        let type: string;
-
-        if (filePath.endsWith(".txt")) {
-          type = "llm_instruction";
-        } else if (filePath.endsWith(".hbs")) {
-          type = "handlebars";
-        } else {
-          type = "copy";
-        }
-
-        return {
-          type,
-          path: relativePath,
-        };
-      });
-
-      // Write the JSON spec file
-      const specContent = JSON.stringify(specs, null, 2);
-      const specPath = `${integration.key}/specs.json`;
-
-      await runCommand("sh", ["-c", `echo '${specContent}' > "${specPath}"`], {
-        cwd: "apps/agent/src/integrations",
-      });
-      console.log(`Generated spec for ${integration.key} at ${specPath}`);
-    }
-  }
 }
 
 export const integrationRegistry = new IntegrationRegistry();
+integrationRegistry.register(backendIntegration);
+integrationRegistry.register(frontendIntegration);
+integrationRegistry.register(postgresqlIntegration);

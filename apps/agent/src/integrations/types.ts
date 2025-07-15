@@ -1,12 +1,5 @@
+import type { WorkflowContext } from "@/workflow/context";
 import type { IntegrationKey } from "@weldr/shared/types";
-
-export interface IntegrationContext {
-  projectId: string;
-  userId: string;
-  integrationKey: IntegrationKey;
-  integrationName: string;
-  workspaceDir: string;
-}
 
 export interface IntegrationCallbackResult {
   success: boolean;
@@ -16,22 +9,45 @@ export interface IntegrationCallbackResult {
   errors?: string[];
 }
 
-export type IntegrationCallback = () => Promise<IntegrationCallbackResult>;
+export type FileItem =
+  | {
+      type: "copy" | "llm_instruction";
+      path: string;
+      content: string;
+    }
+  | {
+      type: "handlebars";
+      path: string;
+      template: string;
+      variables: Record<string, string>;
+    };
+
+export type IntegrationCallback = (
+  context: WorkflowContext,
+) => Promise<IntegrationCallbackResult>;
 
 export interface IntegrationDefinition {
   key: IntegrationKey;
   name: string;
   description?: string;
+  location?: "frontend" | "backend";
+
+  packages?: {
+    add: {
+      runtime?: Record<string, string>;
+      development?: Record<string, string>;
+    };
+    remove?: string[];
+  };
+
+  scripts?: Record<string, string>;
+
+  // Get the files for the integration
+  files: FileItem[];
 
   // Pre-installation callback (runs before file operations)
   preInstall?: IntegrationCallback;
 
   // Post-installation callback (runs after file operations)
   postInstall?: IntegrationCallback;
-
-  // Package installation callback
-  installPackages?: IntegrationCallback;
-
-  // Validation callback
-  validate?: IntegrationCallback;
 }

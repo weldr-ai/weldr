@@ -32,7 +32,7 @@ function PureMessages({
               message.content.some(
                 (content) =>
                   content.type === "tool-result" &&
-                  content.toolName !== "request_integration_configuration",
+                  content.toolName !== "add_integrations",
               )
             ),
         )

@@ -14,7 +14,6 @@ import type {
   integrationEnvironmentVariableMappingSchema,
   integrationKeySchema,
   integrationSchema,
-  integrationTemplateFileTypeSchema,
   integrationTemplateSchema,
   integrationTemplateVariableSchema,
   integrationTemplateWithVariablesSchema,
@@ -164,9 +163,6 @@ export type TriggerWorkflowResponse = {
 export type IntegrationType = z.infer<typeof integrationTypeSchema>;
 export type IntegrationKey = z.infer<typeof integrationKeySchema>;
 export type VariableSourceType = z.infer<typeof variableSourceTypeSchema>;
-export type IntegrationTemplateFileType = z.infer<
-  typeof integrationTemplateFileTypeSchema
->;
 export type IntegrationTemplateVariable = z.infer<
   typeof integrationTemplateVariableSchema
 >;

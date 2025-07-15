@@ -120,7 +120,7 @@ export const initProjectTool = createTool({
       await streamWriter.write({
         type: "update_project",
         data: {
-          title: updatedProject.title ?? undefined,
+          title: input.title,
           initiatedAt: updatedProject.initiatedAt,
         },
       });

@@ -1,9 +1,10 @@
+import { integrationRegistry } from "./registry";
+
 // Export main registry and types
 export { integrationRegistry } from "./registry";
 export type {
   IntegrationCallback,
   IntegrationCallbackResult,
-  IntegrationContext,
   IntegrationDefinition,
 } from "./types";
 
@@ -17,5 +18,9 @@ export {
   runBunScript,
 } from "./utils";
 
-// The registry will automatically import all integrations
-// when this module is loaded
+async function main() {
+  const postgresqlIntegration = await integrationRegistry.get("postgresql");
+  console.log(postgresqlIntegration?.files);
+}
+
+main().catch(console.error);
