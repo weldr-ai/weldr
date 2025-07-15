@@ -19,7 +19,7 @@
     "studio": "pnpm with-env drizzle-kit studio --config src/config.ts",
     "seed": "pnpm with-env tsx src/scripts/seed.ts",
     "up": "pnpm with-env drizzle-kit up --config src/config.ts",
-    "check-types": "tsc --noEmit --emitDeclarationOnly false",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {

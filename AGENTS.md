@@ -3,7 +3,7 @@
 ## Commands
 
 - **Build**: `pnpm build` (turbo build all packages)
-- **Type Check**: `pnpm check-types` (turbo check-types)
+- **Type Check**: `pnpm typecheck` (turbo typecheck)
 - **Lint/Format**: `pnpm check:fix` (biome check --write)
 - **Dev**: `pnpm dev` (turbo dev)
 - **Test**: No global test command - only `apps/agent` has vitest

@@ -15,7 +15,7 @@
   "scripts": {
     "add-component": "pnpm dlx shadcn-ui add",
     "clean": "git clean -xdf .turbo node_modules dist",
-    "check-types": "tsc --noEmit --emitDeclarationOnly false"
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

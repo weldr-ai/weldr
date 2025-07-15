@@ -22,8 +22,8 @@
     "//#check:fix": {
       "cache": false
     },
-    "check-types": {
-      "dependsOn": ["^build", "^check-types"],
+    "typecheck": {
+      "dependsOn": ["^build", "^typecheck"],
       "outputs": ["node_modules/.cache/tsbuildinfo.json"]
     },
     "clean": {

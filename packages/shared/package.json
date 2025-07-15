@@ -17,7 +17,7 @@
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
-    "check-types": "tsc --noEmit --emitDeclarationOnly false"
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
     "@aws-sdk/client-iam": "^3.828.0",
