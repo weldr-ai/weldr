@@ -75,7 +75,7 @@ export const searchCodebaseTool = createTool({
       if (!embeddings || embeddings.length === 0) {
         logger.error("Failed to generate embedding for query");
         return {
-          success: false,
+          success: false as const,
           error: "Failed to generate embedding for the search query",
         };
       }
@@ -84,7 +84,7 @@ export const searchCodebaseTool = createTool({
       if (!queryEmbedding) {
         logger.error("Query embedding is undefined");
         return {
-          success: false,
+          success: false as const,
           error: "Failed to generate valid embedding for the search query",
         };
       }
@@ -144,7 +144,7 @@ export const searchCodebaseTool = createTool({
       logger.info(`Found ${similarDeclarations.length} similar declarations`);
 
       return {
-        success: true,
+        success: true as const,
         formattedResults,
       };
     } catch (error) {
@@ -155,7 +155,7 @@ export const searchCodebaseTool = createTool({
       });
 
       return {
-        success: false,
+        success: false as const,
         error:
           error instanceof Error
             ? error.message

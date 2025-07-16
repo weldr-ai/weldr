@@ -1,9 +1,15 @@
-import { SCRIPTS_DIR, WORKSPACE_DIR } from "@/lib/constants";
-import { db, eq, inArray } from "@weldr/db";
-import { integrationTemplates, integrations, projects } from "@weldr/db/schema";
+import { db, eq } from "@weldr/db";
+import { projects } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
+import {
+  integrationKeySchema,
+  integrationStatusSchema,
+} from "@weldr/shared/validators/integrations";
 import { z } from "zod";
-import { runCommand } from "../utils/commands";
+import {
+  getIntegrations,
+  installIntegrations,
+} from "@/integrations/utils/integration-core";
 import { createTool } from "../utils/tools";
 
 export const initProjectTool = createTool({
@@ -15,23 +21,27 @@ export const initProjectTool = createTool({
   inputSchema: z.object({
     title: z.string().describe("The title/name of the project"),
     keys: z
-      .array(z.enum(["backend", "frontend"]))
-      .describe(
-        "The frontend/backend integration keys to determine project type: backend (backend), frontend (frontend)",
-      ),
+      .array(integrationKeySchema)
+      .describe("Integrations to install in the project."),
   }),
-  outputSchema: z.discriminatedUnion("success", [
+  outputSchema: z.discriminatedUnion("status", [
     z.object({
-      success: z.literal(true),
-      config: z.enum([
-        "full-stack",
-        "standalone-backend",
-        "standalone-frontend",
-      ]),
+      status: z.literal("success"),
+      message: z.string(),
     }),
     z.object({
-      success: z.literal(false),
+      status: z.literal("error"),
       error: z.string(),
+    }),
+    z.object({
+      status: z.literal("requires_configuration"),
+      integrations: z.array(
+        z.object({
+          id: z.string(),
+          key: integrationKeySchema,
+          status: integrationStatusSchema,
+        }),
+      ),
     }),
   ]),
   execute: async ({ input, context }) => {
@@ -47,8 +57,8 @@ export const initProjectTool = createTool({
     logger.info(`Initializing project: ${input.title}`);
 
     // Determine project type based on integrations
-    const hasBackend = input.keys.includes("backend");
-    const hasFrontend = input.keys.includes("frontend");
+    const hasBackend = input.keys.includes("hono");
+    const hasFrontend = input.keys.includes("tanstack-start");
 
     const projectType =
       hasBackend && hasFrontend
@@ -56,41 +66,6 @@ export const initProjectTool = createTool({
         : hasBackend
           ? "standalone-backend"
           : "standalone-frontend";
-
-    logger.info(`Determined project type: ${projectType}`);
-
-    logger.info(`Wiping workspace directory: ${WORKSPACE_DIR}`);
-    await runCommand("rm", ["-rf", WORKSPACE_DIR]);
-
-    const { exitCode, stderr, success } = await runCommand("bash", [
-      `${SCRIPTS_DIR}/init-project.sh`,
-      projectType,
-    ]);
-
-    if (exitCode !== 0 || !success) {
-      const error = `Failed to initialize project: ${stderr || "Unknown error"}`;
-      logger.error(error, {
-        extra: {
-          exitCode,
-          stderr,
-        },
-      });
-      return { success: false, error };
-    }
-
-    const integrationTemplatesResult =
-      await db.query.integrationTemplates.findMany({
-        where: inArray(integrationTemplates.key, input.keys),
-      });
-
-    await db.insert(integrations).values(
-      integrationTemplatesResult.map((integrationTemplate) => ({
-        projectId: project.id,
-        integrationTemplateId: integrationTemplate.id,
-        name: integrationTemplate.name,
-        userId: project.userId,
-      })),
-    );
 
     const [updatedProject] = await db
       .update(projects)
@@ -104,7 +79,7 @@ export const initProjectTool = createTool({
     if (!updatedProject) {
       const error = "Failed to initialize project: Project not found";
       logger.error(error);
-      return { success: false, error };
+      return { status: "error" as const, error };
     }
 
     context.set("project", {
@@ -126,8 +101,41 @@ export const initProjectTool = createTool({
       });
     }
 
+    const integrationsToInstall = await getIntegrations({
+      keys: input.keys,
+      context,
+    });
+
+    if (
+      integrationsToInstall.some((i) => i.status === "requires_configuration")
+    ) {
+      return {
+        status: "requires_configuration" as const,
+        integrations: integrationsToInstall.map((i) => ({
+          id: i.id,
+          key: i.key,
+          status: i.status,
+        })),
+      };
+    }
+
+    const installationResult = await installIntegrations(
+      integrationsToInstall,
+      context,
+    );
+
+    if (installationResult.status === "error") {
+      return {
+        status: "error" as const,
+        error: installationResult.error,
+      };
+    }
+
     logger.info("Project initialized successfully");
 
-    return { success: true, config: projectType };
+    return {
+      status: "success" as const,
+      message: `Project initialized successfully with ${input.keys.join(", ")}`,
+    };
   },
 });

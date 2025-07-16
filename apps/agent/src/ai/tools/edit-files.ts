@@ -31,7 +31,7 @@ export const editFileTool = createTool({
     z.object({
       success: z.literal(true),
       message: z.string(),
-      changes_applied: z.string(),
+      changesApplied: z.string(),
     }),
     z.object({
       success: z.literal(false),
@@ -58,7 +58,7 @@ export const editFileTool = createTool({
     if (!readResult.success) {
       const errorMsg = `Failed to read file: ${readResult.stderr}`;
       logger.error(errorMsg);
-      return { success: false, error: errorMsg };
+      return { success: false as const, error: errorMsg };
     }
 
     const originalCode = readResult.stdout;
@@ -73,7 +73,7 @@ export const editFileTool = createTool({
     } catch (error) {
       const errorMsg = `Failed to apply edit: ${error instanceof Error ? error.message : JSON.stringify(error, null, 2)}`;
       logger.error(errorMsg);
-      return { success: false, error: errorMsg };
+      return { success: false as const, error: errorMsg };
     }
 
     // Write the updated content back to the file
@@ -85,7 +85,7 @@ export const editFileTool = createTool({
     if (!writeResult.success) {
       const errorMsg = `Failed to write file: ${writeResult.stderr}`;
       logger.error(errorMsg);
-      return { success: false, error: errorMsg };
+      return { success: false as const, error: errorMsg };
     }
 
     logger.info(
@@ -108,9 +108,9 @@ export const editFileTool = createTool({
     });
 
     return {
-      success: true,
+      success: true as const,
       message: `Successfully edited ${input.targetFile}`,
-      changes_applied: updatedCode,
+      changesApplied: updatedCode,
     };
   },
 });

@@ -86,7 +86,7 @@ export const findTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: stderr || "Failed to execute find search",
       };
     }
@@ -100,7 +100,7 @@ export const findTool = createTool({
         },
       });
       return {
-        success: true,
+        success: true as const,
         results: [] as string[],
         summary: {
           totalResults: 0,
@@ -129,7 +129,7 @@ export const findTool = createTool({
     });
 
     return {
-      success: true,
+      success: true as const,
       results,
       summary: {
         totalResults: allResults.length,

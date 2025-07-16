@@ -10,15 +10,12 @@ import type {
   userMessageSchema,
 } from "../validators/chats";
 import type { environmentVariableSchema } from "../validators/environment-variables";
+import type { integrationTemplateSchema } from "../validators/integration-templates";
 import type {
-  integrationCategorySchema,
   integrationEnvironmentVariableMappingSchema,
   integrationKeySchema,
   integrationSchema,
-  integrationTemplateSchema,
-  integrationTemplateVariableSchema,
-  integrationTemplateWithVariablesSchema,
-  variableSourceTypeSchema,
+  integrationStatusSchema,
 } from "../validators/integrations";
 import type { dataTypeSchema } from "../validators/json-schema";
 import type { nodeSchema, nodeTypeSchema } from "../validators/nodes";
@@ -160,16 +157,23 @@ export type TriggerWorkflowResponse = {
   message?: string;
 };
 
-export type IntegrationCategory = z.infer<typeof integrationCategorySchema>;
-export type IntegrationKey = z.infer<typeof integrationKeySchema>;
-export type VariableSourceType = z.infer<typeof variableSourceTypeSchema>;
+export type IntegrationTemplateOptions = z.infer<
+  typeof integrationTemplateSchema
+>["options"];
+export type IntegrationTemplateDependencies = z.infer<
+  typeof integrationTemplateSchema
+>["dependencies"];
 export type IntegrationTemplateVariable = z.infer<
-  typeof integrationTemplateVariableSchema
->;
+  typeof integrationTemplateSchema
+>["variables"];
 export type IntegrationTemplate = z.infer<typeof integrationTemplateSchema>;
-export type IntegrationTemplateWithVariables = z.infer<
-  typeof integrationTemplateWithVariablesSchema
->;
+export type IntegrationCategory = z.infer<
+  typeof integrationTemplateSchema
+>["category"];
+
+export type IntegrationKey = z.infer<typeof integrationKeySchema>;
+export type IntegrationOptions = z.infer<typeof integrationSchema>["options"];
+export type IntegrationStatus = z.infer<typeof integrationStatusSchema>;
 export type Integration = z.infer<typeof integrationSchema>;
 export type IntegrationEnvironmentVariableMapping = z.infer<
   typeof integrationEnvironmentVariableMappingSchema

@@ -1,6 +1,6 @@
+import { db } from "@weldr/db";
 import { getProjectContext } from "@/ai/utils/get-project-context";
 import type { ProjectWithType } from "@/workflow/context";
-import { db } from "@weldr/db";
 
 export const planner = async (
   project: ProjectWithType,
@@ -14,7 +14,8 @@ export const planner = async (
       (integrationTemplate) =>
         `- ${integrationTemplate.name} (key: ${integrationTemplate.key}):
 Category: ${integrationTemplate.category}
-Description: ${integrationTemplate.description}`,
+Description: ${integrationTemplate.description}
+${integrationTemplate.dependencies ? `Dependencies: ${integrationTemplate.dependencies.join(", ")}` : ""}`,
     )
     .join("\n\n");
 
@@ -81,12 +82,11 @@ ${
     - Only frontend → "standalone-frontend"
     - Neither → defaults to "standalone-backend"
 
-  - **\`add_integrations\`**: Use to add any integrations to the project. The tool will automatically set up integrations that need no configuration, and will pause execution to request user input for integrations that require configuration (like database credentials or API keys).
+  - **\`add_integrations\`**: Use to add integrations to an existing initialized project. Automatically resolves and installs dependencies before installing requested integrations. The project must be initialized first using the init_project tool.
 
   **Dependency Handling:**
-  - Always verify dependencies before adding integrations
-  - Configure dependencies in the correct sequence
-  - If dependencies aren't met, either resolve them first or inform the user about requirements
+  - Always include all required dependencies when calling add_integrations
+  - Do not make separate tool calls for dependencies - include them all in one add_integrations call
 
   ## Systematic Codebase Exploration
 

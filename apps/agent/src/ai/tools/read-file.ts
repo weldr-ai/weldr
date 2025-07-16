@@ -103,7 +103,7 @@ export const readFileTool = createTool({
 
         if (suggestions.length > 0) {
           return {
-            success: false,
+            success: false as const,
             error: `File not found: ${filePath}\n\nDid you mean one of these?\n${suggestions.join(
               "\n",
             )}`,
@@ -112,7 +112,7 @@ export const readFileTool = createTool({
       }
 
       return {
-        success: false,
+        success: false as const,
         error: wcStderr || `Failed to access file ${filePath}`,
       };
     }
@@ -145,7 +145,7 @@ export const readFileTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: stderr || `Failed to read file ${filePath}`,
       };
     }
@@ -153,7 +153,7 @@ export const readFileTool = createTool({
     logger.info("File read successfully");
 
     return {
-      success: true,
+      success: true as const,
       content: stdout || "",
       totalLines,
       startLine: actualStartLine,

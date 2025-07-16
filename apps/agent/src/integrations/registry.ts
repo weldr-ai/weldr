@@ -1,49 +1,147 @@
+import { db, eq } from "@weldr/db";
+import { integrations } from "@weldr/db/schema";
+import type {
+  Integration,
+  IntegrationCategory,
+  IntegrationKey,
+} from "@weldr/shared/types";
 import type { WorkflowContext } from "@/workflow/context";
-import type { IntegrationKey } from "@weldr/shared/types";
-import { backendIntegration } from "./backend";
-import { frontendIntegration } from "./frontend";
-import { postgresqlIntegration } from "./postgresql";
+import { betterAuthIntegration } from "./authentication/better-auth";
+import { honoIntegration } from "./backend/hono";
+import { postgresqlIntegration } from "./database/postgresql";
+import { tanstackStartIntegration } from "./frontend/tanstack-start";
 import type { IntegrationDefinition } from "./types";
 import { applyIntegrationFiles } from "./utils/integration-core";
 
+function getIntegrationKeyFromCategory(
+  category: IntegrationCategory,
+): IntegrationKey[] {
+  switch (category) {
+    case "backend":
+      return ["hono"];
+    case "frontend":
+      return ["tanstack-start"];
+    case "database":
+      return ["postgresql"];
+    case "authentication":
+      return ["better-auth"];
+    default:
+      return [];
+  }
+}
+
 class IntegrationRegistry {
-  private integrations = new Map<IntegrationKey, IntegrationDefinition>();
+  private integrationDefinitions = new Map<
+    IntegrationKey,
+    IntegrationDefinition<IntegrationKey>
+  >();
 
-  async register(integration: IntegrationDefinition): Promise<void> {
-    this.integrations.set(integration.key, integration);
+  async register<K extends IntegrationKey>(
+    integration: IntegrationDefinition<K>,
+  ): Promise<void> {
+    // biome-ignore lint/suspicious/noExplicitAny: reason
+    this.integrationDefinitions.set(integration.key, integration as any);
   }
 
-  get(key: IntegrationKey): IntegrationDefinition | undefined {
-    return this.integrations.get(key);
-  }
-
-  async install(key: IntegrationKey, context: WorkflowContext): Promise<void> {
-    const integration = this.get(key);
-    if (!integration) {
+  get<K extends IntegrationKey>(key: K): IntegrationDefinition<K> {
+    const integrationDefinition = this.integrationDefinitions.get(key);
+    if (!integrationDefinition) {
       throw new Error(`Integration ${key} not found`);
     }
-    // Run the pre-install hook
-    await integration.preInstall?.(context);
-    // Apply the files
-    await applyIntegrationFiles(integration, context);
-    // Run the post-install hook
-    await integration.postInstall?.(context);
+    return integrationDefinition as IntegrationDefinition<K>;
   }
 
-  getAll(): IntegrationDefinition[] {
-    return Array.from(this.integrations.values());
+  async install({
+    integration,
+    context,
+  }: {
+    integration: Integration;
+    context: WorkflowContext;
+  }): Promise<void> {
+    const integrationDefinition = this.get(integration.key);
+    if (!integrationDefinition) {
+      throw new Error(`Integration ${integration.key} not found`);
+    }
+
+    // Run the pre-install hook
+    await integrationDefinition.preInstall?.(context);
+
+    // Apply the files
+    await applyIntegrationFiles({
+      integration,
+      context,
+    });
+
+    // Run the post-install hook
+    await integrationDefinition.postInstall?.(context);
+
+    // Update the integration status
+    await db
+      .update(integrations)
+      .set({
+        status: "installed",
+      })
+      .where(eq(integrations.id, integration.id));
+  }
+
+  resolveInstallationOrder(
+    integrationKeys: IntegrationKey[],
+  ): IntegrationKey[] {
+    const visited = new Set<IntegrationKey>();
+    const resolved: IntegrationKey[] = [];
+
+    const resolveDependencies = (key: IntegrationKey) => {
+      if (visited.has(key)) {
+        return;
+      }
+
+      visited.add(key);
+
+      const integrationDefinition = this.get(key);
+      if (!integrationDefinition) {
+        return;
+      }
+
+      const dependencies = integrationDefinition.dependencies || [];
+
+      const dependencyKeys: IntegrationKey[] = [];
+      for (const category of dependencies) {
+        const categoryKeys = getIntegrationKeyFromCategory(category);
+        dependencyKeys.push(...categoryKeys);
+      }
+
+      for (const depKey of dependencyKeys) {
+        resolveDependencies(depKey);
+      }
+
+      if (!resolved.includes(key)) {
+        resolved.push(key);
+      }
+    };
+
+    // Process each requested integration
+    for (const key of integrationKeys) {
+      resolveDependencies(key);
+    }
+
+    return resolved;
+  }
+
+  getAll(): IntegrationDefinition<IntegrationKey>[] {
+    return Array.from(this.integrationDefinitions.values());
   }
 
   has(key: IntegrationKey): boolean {
-    return this.integrations.has(key);
+    return this.integrationDefinitions.has(key);
   }
 
   list(): IntegrationKey[] {
-    return Array.from(this.integrations.keys());
+    return Array.from(this.integrationDefinitions.keys());
   }
 }
 
 export const integrationRegistry = new IntegrationRegistry();
-integrationRegistry.register(backendIntegration);
-integrationRegistry.register(frontendIntegration);
+integrationRegistry.register(honoIntegration);
+integrationRegistry.register(tanstackStartIntegration);
 integrationRegistry.register(postgresqlIntegration);
+integrationRegistry.register(betterAuthIntegration);

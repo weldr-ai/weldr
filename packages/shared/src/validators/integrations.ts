@@ -1,66 +1,66 @@
 import { z } from "zod";
 
-export const integrationCategorySchema = z.enum([
-  "backend",
-  "frontend",
-  "database",
-  "authentication",
+export const integrationKeySchema = z.enum([
+  "hono",
+  "tanstack-start",
+  "postgresql",
+  "better-auth",
 ]);
 
-export const databaseIntegrationKeySchema = z.enum(["postgresql"]);
-export const authenticationIntegrationKeySchema = z.enum(["better-auth"]);
-
-export const integrationKeySchema = z.union([
-  z.literal("backend"),
-  z.literal("frontend"),
-  databaseIntegrationKeySchema,
-  authenticationIntegrationKeySchema,
+export const integrationStatusSchema = z.enum([
+  "pending",
+  "requires_configuration",
+  "installed",
+  "failed",
 ]);
 
-export const variableSourceTypeSchema = z.enum([
-  "user_provided",
-  "system_generated",
-]);
-
-export const integrationTemplateVariableSchema = z.object({
+const baseIntegrationSchema = z.object({
   id: z.string(),
-  pluginTemplateId: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  type: variableSourceTypeSchema,
-  isRequired: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const integrationTemplateSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  category: integrationCategorySchema,
   key: integrationKeySchema,
-  version: z.string(),
-  isSystemManaged: z.boolean(),
-  allowMultiple: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  variables: z.array(integrationTemplateVariableSchema).optional(),
-});
-
-export const integrationTemplateWithVariablesSchema =
-  integrationTemplateSchema.extend({
-    variables: z.array(integrationTemplateVariableSchema),
-  });
-
-export const integrationSchema = z.object({
-  id: z.string(),
   name: z.string().optional(),
+  status: integrationStatusSchema,
   createdAt: z.date(),
   projectId: z.string(),
   userId: z.string(),
   integrationTemplateId: z.string(),
-  integrationTemplate: integrationTemplateSchema.optional(),
 });
+
+export const honoIntegrationSchema = baseIntegrationSchema.extend({
+  key: z.literal("hono"),
+  options: z.null(),
+});
+
+export const tanstackStartIntegrationSchema = baseIntegrationSchema.extend({
+  key: z.literal("tanstack-start"),
+  options: z.null(),
+});
+
+export const postgresqlIntegrationSchema = baseIntegrationSchema.extend({
+  key: z.literal("postgresql"),
+  options: z.object({
+    orm: z.enum(["drizzle", "prisma"]).default("drizzle"),
+  }),
+});
+
+export const betterAuthIntegrationSchema = baseIntegrationSchema.extend({
+  key: z.literal("better-auth"),
+  options: z.object({
+    socialProviders: z.enum(["github", "google", "microsoft"]).array(),
+    plugins: z
+      .enum(["admin", "oAuthProxy", "openAPI", "organization", "stripe"])
+      .array(),
+    emailVerification: z.boolean().default(false),
+    emailAndPassword: z.boolean().default(true),
+    stripeIntegration: z.boolean().default(false),
+  }),
+});
+
+export const integrationSchema = z.discriminatedUnion("key", [
+  honoIntegrationSchema,
+  tanstackStartIntegrationSchema,
+  postgresqlIntegrationSchema,
+  betterAuthIntegrationSchema,
+]);
 
 export const integrationEnvironmentVariableMappingSchema = z.object({
   envVarId: z.string(),

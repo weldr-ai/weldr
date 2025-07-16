@@ -1,40 +1,68 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path, { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineIntegration } from "../utils/integration-core";
+import { defineIntegration } from "@/integrations/utils/integration-core";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const postgresqlIntegration = await defineIntegration({
+export const postgresqlIntegration = await defineIntegration<"postgresql">({
+  category: "database",
   key: "postgresql",
   name: "PostgreSQL",
-  description: "PostgreSQL integration",
-  scripts: {
-    "db:check": "drizzle-kit check",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
-    "db:pull": "drizzle-kit pull",
-  },
-  packages: {
-    add: {
-      runtime: {
-        "drizzle-orm": "^0.44.2",
-        "drizzle-zod": "^0.7.1",
-        postgres: "^3.4.7",
-      },
-      development: {
-        "drizzle-kit": "^0.31.4",
-      },
+  description:
+    "Powerful relational database that stores, organizes, and retrieves data with support for complex queries, transactions, and scalable performance.",
+  version: "1.0.0",
+  allowMultiple: true,
+  dependencies: ["backend"],
+  variables: [
+    {
+      name: "DATABASE_URL",
+      source: "user",
+      isRequired: true,
     },
+  ],
+  options: {
+    orm: ["drizzle", "prisma"],
+  },
+  packages: (options) => {
+    if (options?.orm === "drizzle") {
+      return {
+        add: {
+          runtime: {
+            "drizzle-orm": "^0.44.2",
+            "drizzle-zod": "^0.7.1",
+            postgres: "^3.4.7",
+          },
+          development: {
+            "drizzle-kit": "^0.31.4",
+          },
+        },
+      };
+    }
   },
   dirMap: {
     "standalone-backend": {
       server: "src",
+      "config/*": ".",
+    },
+    "full-stack": {
+      server: "server",
+      "config/*": ".",
     },
   },
-
+  scripts: async (options) => {
+    const orm = options?.orm;
+    if (orm === "drizzle") {
+      return {
+        "db:check": "drizzle-kit check",
+        "db:generate": "drizzle-kit generate",
+        "db:migrate": "drizzle-kit migrate",
+        "db:push": "drizzle-kit push",
+        "db:pull": "drizzle-kit pull",
+      };
+    }
+  },
   preInstall: async (context) => {
     const project = context.get("project");
 

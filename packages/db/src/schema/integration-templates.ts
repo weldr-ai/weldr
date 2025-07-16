@@ -1,9 +1,15 @@
 import { nanoid } from "@weldr/shared/nanoid";
-import type { IntegrationCategory, IntegrationKey } from "@weldr/shared/types";
-import { relations } from "drizzle-orm";
+import type {
+  IntegrationCategory,
+  IntegrationKey,
+  IntegrationTemplateDependencies,
+  IntegrationTemplateOptions,
+  IntegrationTemplateVariable,
+} from "@weldr/shared/types";
 import {
   boolean,
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -15,11 +21,14 @@ export const integrationTemplates = pgTable(
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
     name: text("name").notNull(),
-    description: text("description"),
+    description: text("description").notNull(),
     category: text("category").$type<IntegrationCategory>().notNull(),
     key: text("key").$type<IntegrationKey>().notNull(),
     version: text("version").notNull(),
-    isSystemManaged: boolean("is_system_managed").notNull().default(false),
+    dependencies:
+      jsonb("dependencies").$type<IntegrationTemplateDependencies>(),
+    variables: jsonb("variables").$type<IntegrationTemplateVariable>(),
+    options: jsonb("options").$type<IntegrationTemplateOptions>(),
     allowMultiple: boolean("allow_multiple").notNull().default(true),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")
@@ -30,42 +39,6 @@ export const integrationTemplates = pgTable(
   (t) => [
     index("integration_templates_created_at_idx").on(t.createdAt),
     index("integration_templates_category_idx").on(t.category),
-    index("integration_templates_system_managed_idx").on(t.isSystemManaged),
     uniqueIndex("integration_templates_key_version_idx").on(t.key, t.version),
   ],
-);
-
-export const integrationTemplatesRelations = relations(
-  integrationTemplates,
-  ({ many }) => ({
-    variables: many(integrationTemplateVariables),
-  }),
-);
-
-export const integrationTemplateVariables = pgTable(
-  "integration_template_variables",
-  {
-    id: text("id").primaryKey().$defaultFn(nanoid),
-    integrationTemplateId: text("integration_template_id")
-      .notNull()
-      .references(() => integrationTemplates.id, { onDelete: "cascade" }),
-    name: text("name").notNull(),
-    description: text("description"),
-    isRequired: boolean("is_required").notNull().default(false),
-  },
-  (t) => [
-    index("integration_template_variables_integration_template_idx").on(
-      t.integrationTemplateId,
-    ),
-  ],
-);
-
-export const integrationTemplateVariablesRelations = relations(
-  integrationTemplateVariables,
-  ({ one }) => ({
-    integrationTemplate: one(integrationTemplates, {
-      fields: [integrationTemplateVariables.integrationTemplateId],
-      references: [integrationTemplates.id],
-    }),
-  }),
 );

@@ -1,5 +1,5 @@
 {
-  "id": "1031e376-69f6-488c-a7ac-d2bb0257a634",
+  "id": "9301c864-2198-463e-be14-778dcb7091ee",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1235,76 +1235,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.integration_template_variables": {
-      "name": "integration_template_variables",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "integration_template_id": {
-          "name": "integration_template_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_required": {
-          "name": "is_required",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        }
-      },
-      "indexes": {
-        "integration_template_variables_integration_template_idx": {
-          "name": "integration_template_variables_integration_template_idx",
-          "columns": [
-            {
-              "expression": "integration_template_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "integration_template_variables_integration_template_id_integration_templates_id_fk": {
-          "name": "integration_template_variables_integration_template_id_integration_templates_id_fk",
-          "tableFrom": "integration_template_variables",
-          "tableTo": "integration_templates",
-          "columnsFrom": ["integration_template_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.integration_templates": {
       "name": "integration_templates",
       "schema": "",
@@ -1325,7 +1255,7 @@
           "name": "description",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "category": {
           "name": "category",
@@ -1345,12 +1275,23 @@
           "primaryKey": false,
           "notNull": true
         },
-        "is_system_managed": {
-          "name": "is_system_managed",
-          "type": "boolean",
+        "dependencies": {
+          "name": "dependencies",
+          "type": "jsonb",
           "primaryKey": false,
-          "notNull": true,
-          "default": false
+          "notNull": false
+        },
+        "variables": {
+          "name": "variables",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "options": {
+          "name": "options",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "allow_multiple": {
           "name": "allow_multiple",
@@ -1395,21 +1336,6 @@
           "columns": [
             {
               "expression": "category",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "integration_templates_system_managed_idx": {
-          "name": "integration_templates_system_managed_idx",
-          "columns": [
-            {
-              "expression": "is_system_managed",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1514,14 +1440,40 @@
           "primaryKey": true,
           "notNull": true
         },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
+        "options": {
+          "name": "options",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,

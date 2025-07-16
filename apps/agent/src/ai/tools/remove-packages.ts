@@ -49,7 +49,7 @@ export const removePackagesTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: stderr || "Failed to remove packages",
       };
     }
@@ -58,7 +58,7 @@ export const removePackagesTool = createTool({
 
     // The caller of this tool is responsible for updating the database after removing packages.
     return {
-      success: true,
+      success: true as const,
       packages: input.packages,
     };
   },

@@ -2,13 +2,20 @@ import {
   directoryExists,
   renameDirectory,
   replaceTextInFiles,
-} from "../utils/file-system";
-import { defineIntegration } from "../utils/integration-core";
+} from "@/integrations/utils/file-system";
+import { defineIntegration } from "@/integrations/utils/integration-core";
 
-export const frontendIntegration = await defineIntegration({
-  key: "frontend",
-  name: "Frontend Integration",
-  description: "Adds React frontend capabilities to the project",
+export const tanstackStartIntegration = await defineIntegration({
+  category: "frontend",
+  key: "tanstack-start",
+  name: "Tanstack Start",
+  description:
+    "Modern React framework that provides server-side rendering, routing, and data fetching for building high-performance web applications.",
+  version: "1.0.0",
+  allowMultiple: false,
+  dependencies: null,
+  options: null,
+  variables: null,
   scripts: {
     dev: "vite dev",
     build: "vite build",
@@ -59,6 +66,18 @@ export const frontendIntegration = await defineIntegration({
       },
     },
     remove: ["tsx", "esbuild"],
+  },
+  dirMap: {
+    "standalone-frontend": {
+      web: "src",
+      "config/shared/*": ".",
+      "config/standalone/*": ".",
+    },
+    "full-stack": {
+      web: "web",
+      "config/shared/*": ".",
+      "config/full-stack/*": ".",
+    },
   },
   preInstall: async () => {
     // Handle src -> server directory rename

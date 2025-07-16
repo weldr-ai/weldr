@@ -112,7 +112,7 @@ export const fzfTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: stderr || "Failed to execute fzf search",
       };
     }
@@ -124,7 +124,7 @@ export const fzfTool = createTool({
         },
       });
       return {
-        success: true,
+        success: true as const,
         results: [] as string[],
         summary: {
           totalResults: 0,
@@ -160,7 +160,7 @@ export const fzfTool = createTool({
     }
 
     return {
-      success: true,
+      success: true as const,
       results,
       summary: {
         totalResults: allResults.length,

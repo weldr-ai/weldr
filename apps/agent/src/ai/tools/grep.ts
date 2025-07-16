@@ -108,7 +108,7 @@ export const grepTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: stderr || "Failed to execute ripgrep search",
       };
     }
@@ -166,7 +166,7 @@ export const grepTool = createTool({
     });
 
     return {
-      success: true,
+      success: true as const,
       results,
       summary: {
         totalMatches,

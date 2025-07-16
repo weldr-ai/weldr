@@ -1,5 +1,5 @@
-import type { WorkflowContext } from "@/workflow/context";
 import type { z } from "zod";
+import type { WorkflowContext } from "@/workflow/context";
 import { ZodXml } from "./zod-xml";
 
 export type ToolConfig<
@@ -11,7 +11,7 @@ export type ToolConfig<
   description: string;
   whenToUse: string;
   inputSchema: TArgs;
-  outputSchema?: z.ZodSchema;
+  outputSchema?: z.ZodSchema<TOutput>;
   execute: (params: {
     input: z.infer<TArgs>;
     context: WorkflowContext;

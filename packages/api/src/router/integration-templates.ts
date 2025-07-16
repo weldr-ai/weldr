@@ -6,16 +6,7 @@ import { createTRPCRouter, publicProcedure } from "../init";
 export const integrationTemplatesRouter = createTRPCRouter({
   list: publicProcedure.query(async () => {
     return await db.query.integrationTemplates.findMany({
-      where: (templates, { eq }) => eq(templates.isSystemManaged, false),
-      orderBy: (templates, { desc }) => [desc(templates.createdAt)],
-      columns: {
-        isSystemManaged: false,
-      },
-      with: {
-        variables: {
-          orderBy: (variables, { asc }) => [asc(variables.name)],
-        },
-      },
+      orderBy: (templates, { asc }) => [asc(templates.category)],
     });
   }),
   byId: publicProcedure
@@ -23,16 +14,7 @@ export const integrationTemplatesRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const integrationTemplate = await db.query.integrationTemplates.findFirst(
         {
-          where: (templates, { and, eq }) =>
-            and(eq(templates.id, input.id), eq(templates.isSystemManaged, false)),
-          columns: {
-            isSystemManaged: false,
-          },
-          with: {
-            variables: {
-              orderBy: (variables, { asc }) => [asc(variables.name)],
-            },
-          },
+          where: (templates, { eq }) => eq(templates.id, input.id),
         },
       );
 

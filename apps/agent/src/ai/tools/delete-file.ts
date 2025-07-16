@@ -49,7 +49,7 @@ export const deleteFileTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: stderr || `Failed to delete file ${filePath}`,
       };
     }
@@ -84,8 +84,8 @@ export const deleteFileTool = createTool({
 
     // The caller of this tool is responsible for updating the database.
     return {
+      success: true as const,
       filePath,
-      success: true,
     };
   },
 });

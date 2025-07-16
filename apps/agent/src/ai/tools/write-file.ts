@@ -60,7 +60,7 @@ export const writeFileTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: `Failed to create directories: ${mkdirResult.stderr || mkdirResult.stdout}`,
       };
     }
@@ -79,7 +79,7 @@ export const writeFileTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: `Failed to write file: ${writeResult.stderr || writeResult.stdout}`,
       };
     }
@@ -99,7 +99,7 @@ export const writeFileTool = createTool({
     });
 
     return {
-      success: true,
+      success: true as const,
       filePath,
       message: `Successfully wrote ${content.length} characters to ${filePath}`,
     };

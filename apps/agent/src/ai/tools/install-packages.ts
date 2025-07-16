@@ -63,7 +63,7 @@ export const installPackagesTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: stderr || "Failed to install packages",
       };
     }
@@ -72,7 +72,7 @@ export const installPackagesTool = createTool({
 
     // The caller of this tool is responsible for updating the database with the installed packages.
     return {
-      success: true,
+      success: true as const,
       packages: input.packages,
     };
   },

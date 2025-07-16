@@ -41,9 +41,25 @@ export const integrationsRouter = createTRPCRouter({
           });
         }
 
+        const integrationTemplate =
+          await tx.query.integrationTemplates.findFirst({
+            where: eq(integrationTemplates.id, integrationTemplateId),
+          });
+
+        if (!integrationTemplate) {
+          console.error(
+            `[integrations.create:${projectId}] Failed to find integration template`,
+          );
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Failed to create integration",
+          });
+        }
+
         const [integration] = await tx
           .insert(integrations)
           .values({
+            key: integrationTemplate.key,
             name,
             projectId,
             userId: ctx.session.user.id,
@@ -61,25 +77,7 @@ export const integrationsRouter = createTRPCRouter({
           });
         }
 
-        const integrationTemplate =
-          await tx.query.integrationTemplates.findFirst({
-            where: eq(integrationTemplates.id, integrationTemplateId),
-            with: {
-              variables: true,
-            },
-          });
-
-        if (!integrationTemplate) {
-          console.error(
-            `[integrations.create:${projectId}] Failed to find integration template`,
-          );
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Failed to create integration",
-          });
-        }
-
-        const integrationVariables = integrationTemplate.variables.map(
+        const integrationVariables = (integrationTemplate.variables ?? []).map(
           (v) => v.name,
         );
 
@@ -98,7 +96,11 @@ export const integrationsRouter = createTRPCRouter({
             });
           }
 
-          if (!integrationVariables.includes(envVarKey.key)) {
+          if (
+            !integrationVariables.includes(
+              envVarKey.key as (typeof integrationVariables)[number],
+            )
+          ) {
             console.error(
               `[plugins.create:${projectId}] Environment variable not in config`,
             );
