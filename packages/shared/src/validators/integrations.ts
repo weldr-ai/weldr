@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const integrationTypeSchema = z.enum([
+export const integrationCategorySchema = z.enum([
   "backend",
   "frontend",
   "database",
@@ -37,7 +37,7 @@ export const integrationTemplateSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
-  type: integrationTypeSchema,
+  category: integrationCategorySchema,
   key: integrationKeySchema,
   version: z.string(),
   isSystemManaged: z.boolean(),

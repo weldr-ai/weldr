@@ -1,6 +1,10 @@
 import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import path, { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineIntegration } from "../utils/integration-core";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const postgresqlIntegration = await defineIntegration({
   key: "postgresql",

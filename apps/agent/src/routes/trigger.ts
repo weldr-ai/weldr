@@ -103,10 +103,10 @@ router.openapi(route, async (c) => {
 
   const integrations = project.integrations.reduce(
     (acc, integration) => {
-      if (integration.integrationTemplate.type === "backend") {
+      if (integration.integrationTemplate.category === "backend") {
         acc.push("backend");
       }
-      if (integration.integrationTemplate.type === "frontend") {
+      if (integration.integrationTemplate.category === "frontend") {
         acc.push("frontend");
       }
       return acc;

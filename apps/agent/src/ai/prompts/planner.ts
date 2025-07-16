@@ -13,7 +13,7 @@ export const planner = async (
     .map(
       (integrationTemplate) =>
         `- ${integrationTemplate.name} (key: ${integrationTemplate.key}):
-Type: ${integrationTemplate.type}
+Category: ${integrationTemplate.category}
 Description: ${integrationTemplate.description}`,
     )
     .join("\n\n");

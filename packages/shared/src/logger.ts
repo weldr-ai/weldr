@@ -1,8 +1,12 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import pino from "pino";
 import pinoCaller from "pino-caller";
 import pretty from "pino-pretty";
 
 const isDevelopment = process.env.NODE_ENV === "development";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export namespace Logger {
   const baseLogger = pino(

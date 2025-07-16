@@ -183,7 +183,7 @@ export function formatTaskDeclarationToMarkdown(
   if (declaration.integrations && declaration.integrations.length > 0) {
     markdown += "**Integrations and Services You Should Use:**\n";
     for (const int of declaration.integrations) {
-      markdown += `- ${int.integration.integrationTemplate.name} - ${int.integration.integrationTemplate.type}\n`;
+      markdown += `- ${int.integration.integrationTemplate.name} (category: ${int.integration.integrationTemplate.category})\n`;
     }
     markdown += "\n";
   }

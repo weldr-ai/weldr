@@ -228,7 +228,7 @@ export const genericTaskSchema = baseTaskSchema
     - Set up monitoring and alerting for production environment
   `);
 
-export const taskSchema = z.discriminatedUnion("type", [
+export const taskSchema = z.union([
   ...declarationTaskSchema.options,
   genericTaskSchema,
 ]);

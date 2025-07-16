@@ -71,15 +71,9 @@ serve(
   },
   async (info) => {
     Logger.info(`Server is running on http://localhost:${info.port}`);
-
-    const projectId = process.env.PROJECT_ID;
-
-    if (!projectId) {
-      throw new Error("PROJECT_ID is not set");
+    if (process.env.PROJECT_ID) {
+      await recoverWorkflow();
+      await recoverSemanticDataJobs();
     }
-
-    await recoverWorkflow();
-
-    await recoverSemanticDataJobs();
   },
 );

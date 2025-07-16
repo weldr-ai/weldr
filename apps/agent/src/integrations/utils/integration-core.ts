@@ -3,6 +3,7 @@ import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import type { WorkflowContext } from "@/workflow/context";
 import type { IntegrationKey } from "@weldr/shared/types";
+import path from "node:path";
 import type {
   FileItem,
   IntegrationCallbackResult,
@@ -174,20 +175,19 @@ export function combineResults(
 async function generateFiles(
   integrationKey: IntegrationKey,
 ): Promise<FileItem[]> {
-  const dataDir = `${integrationKey}/data`;
+  const dataDir = path.join(
+    process.cwd(),
+    `src/integrations/${integrationKey}/data`,
+  );
 
-  const checkResult = await runCommand("test", ["-d", dataDir], {
-    cwd: "apps/agent/src/integrations",
-  });
+  const checkResult = await runCommand("test", ["-d", dataDir]);
 
   if (!checkResult.success) {
     console.log(`No data directory found for ${integrationKey}`);
     return [];
   }
 
-  const findResult = await runCommand("find", [dataDir, "-type", "f"], {
-    cwd: "apps/agent/src/integrations",
-  });
+  const findResult = await runCommand("find", [dataDir, "-type", "f"]);
 
   if (!findResult.success) {
     console.error(`Failed to list files for ${integrationKey}`);
@@ -210,9 +210,7 @@ async function generateFiles(
     }
 
     // Read the file content
-    const readResult = await runCommand("cat", [filePath], {
-      cwd: "apps/agent/src/integrations",
-    });
+    const readResult = await runCommand("cat", [filePath]);
 
     if (!readResult.success) {
       console.error(`Failed to read file ${filePath}`);

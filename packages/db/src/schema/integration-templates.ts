@@ -1,5 +1,5 @@
 import { nanoid } from "@weldr/shared/nanoid";
-import type { IntegrationKey, IntegrationType } from "@weldr/shared/types";
+import type { IntegrationCategory, IntegrationKey } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
   boolean,
@@ -16,7 +16,7 @@ export const integrationTemplates = pgTable(
     id: text("id").primaryKey().$defaultFn(nanoid),
     name: text("name").notNull(),
     description: text("description"),
-    type: text("type").$type<IntegrationType>().notNull(),
+    category: text("category").$type<IntegrationCategory>().notNull(),
     key: text("key").$type<IntegrationKey>().notNull(),
     version: text("version").notNull(),
     isSystemManaged: boolean("is_system_managed").notNull().default(false),
@@ -29,7 +29,7 @@ export const integrationTemplates = pgTable(
   },
   (t) => [
     index("integration_templates_created_at_idx").on(t.createdAt),
-    index("integration_templates_type_idx").on(t.type),
+    index("integration_templates_category_idx").on(t.category),
     index("integration_templates_system_managed_idx").on(t.isSystemManaged),
     uniqueIndex("integration_templates_key_version_idx").on(t.key, t.version),
   ],

@@ -55,7 +55,7 @@ export function AddIntegrationDialog({
             </span>
           </div>
           <Badge variant="outline" className="rounded-full px-3 py-2">
-            {integrationTemplate.type.toLocaleUpperCase()}
+            {integrationTemplate.category.toLocaleUpperCase()}
           </Badge>
         </Button>
       </DialogTrigger>

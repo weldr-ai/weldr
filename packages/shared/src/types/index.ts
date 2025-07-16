@@ -11,13 +11,13 @@ import type {
 } from "../validators/chats";
 import type { environmentVariableSchema } from "../validators/environment-variables";
 import type {
+  integrationCategorySchema,
   integrationEnvironmentVariableMappingSchema,
   integrationKeySchema,
   integrationSchema,
   integrationTemplateSchema,
   integrationTemplateVariableSchema,
   integrationTemplateWithVariablesSchema,
-  integrationTypeSchema,
   variableSourceTypeSchema,
 } from "../validators/integrations";
 import type { dataTypeSchema } from "../validators/json-schema";
@@ -160,7 +160,7 @@ export type TriggerWorkflowResponse = {
   message?: string;
 };
 
-export type IntegrationType = z.infer<typeof integrationTypeSchema>;
+export type IntegrationCategory = z.infer<typeof integrationCategorySchema>;
 export type IntegrationKey = z.infer<typeof integrationKeySchema>;
 export type VariableSourceType = z.infer<typeof variableSourceTypeSchema>;
 export type IntegrationTemplateVariable = z.infer<
