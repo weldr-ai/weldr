@@ -1,6 +1,5 @@
 "use client";
 
-import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import {
@@ -12,6 +11,7 @@ import {
 } from "@weldr/ui/components/card";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import { useMemo } from "react";
+import { useTRPC } from "@/lib/trpc/react";
 import { AddIntegrationDialog } from "../add-integration-dialog";
 
 export function IntegrationsSection({
@@ -45,12 +45,12 @@ export function IntegrationsSection({
           (integration) => integration.integrationTemplate.id === template.id,
         );
 
-        return Object.assign(acc, {
-          [template.key]: {
-            integration,
-            template,
-          },
-        });
+        acc[template.key] = {
+          integration:
+            integration as RouterOutputs["projects"]["byId"]["integrations"][0],
+          template,
+        };
+        return acc;
       },
       {} as Record<
         string,

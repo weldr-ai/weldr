@@ -1,4 +1,3 @@
-import type { WorkflowContext } from "@/workflow/context";
 import { and, db, eq } from "@weldr/db";
 import {
   declarationIntegrations,
@@ -13,6 +12,7 @@ import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
 import { inArray } from "drizzle-orm";
+import type { WorkflowContext } from "@/workflow/context";
 import { extractDeclarations } from "./extract-declarations";
 import { queueDeclarationSemanticDataGeneration } from "./semantic-data-jobs";
 
@@ -69,7 +69,7 @@ export const createDeclarationFromTask = async ({
   }
 
   return await db.transaction(async (tx) => {
-    let node: typeof nodes.$inferSelect | undefined = undefined;
+    let node: typeof nodes.$inferSelect | undefined;
     let previousDeclarationId: string | null = null;
 
     if (taskData.operation === "create") {

@@ -55,7 +55,6 @@ export const JsonViewer = ({
               setIsExpanded(!isExpanded);
             }
           }}
-          // biome-ignore lint/a11y/useSemanticElements: <explanation>
           role="button"
           tabIndex={0}
         >
@@ -88,7 +87,7 @@ export const JsonViewer = ({
   // Render object
   const renderObject = () => {
     const entries = Object.entries(data as Record<string, unknown>);
-    const content = entries.map(([key, value], index) => (
+    const content = entries.map(([key, value], _index) => (
       <div key={nanoid()} className="ml-6 flex">
         <span className="text-warning">"{key}"</span>
         <span className="mr-1">:</span>
@@ -104,7 +103,7 @@ export const JsonViewer = ({
 
   // Render array
   const renderArray = () => {
-    const content = (data as unknown[]).map((item, index) => (
+    const content = (data as unknown[]).map((item, _index) => (
       <div key={nanoid()} className="flex">
         <JsonViewer
           data={item}

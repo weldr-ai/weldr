@@ -1,7 +1,5 @@
 "use client";
 
-import { type LucideIcon, PlusCircleIcon } from "lucide-react";
-
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -9,6 +7,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@weldr/ui/components/sidebar";
+import { type LucideIcon, PlusCircleIcon } from "lucide-react";
 
 export function NavMain({
   items,

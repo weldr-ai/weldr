@@ -1,6 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-import Link from "next/link";
-
 import { buttonVariants } from "@weldr/ui/components/button";
 import {
   Tooltip,
@@ -8,6 +5,8 @@ import {
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
+import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
 
 interface NavProps {
   isCollapsed: boolean;
@@ -28,7 +27,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
       <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
         {links.map((link, index) =>
           isCollapsed ? (
-            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+            // biome-ignore lint/suspicious/noArrayIndexKey: reason
             <Tooltip key={index} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
@@ -55,7 +54,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
             </Tooltip>
           ) : (
             <Link
-              // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+              // biome-ignore lint/suspicious/noArrayIndexKey: reason
               key={index}
               href="#"
               className={cn(

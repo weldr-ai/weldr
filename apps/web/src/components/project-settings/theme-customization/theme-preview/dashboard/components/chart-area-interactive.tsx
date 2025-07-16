@@ -1,6 +1,3 @@
-import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-
 import {
   Card,
   CardContent,
@@ -26,6 +23,8 @@ import {
   ToggleGroupItem,
 } from "@weldr/ui/components/toggle-group";
 import { useIsMobile } from "@weldr/ui/hooks/use-mobile";
+import * as React from "react";
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 
 export const description = "An interactive area chart";
 

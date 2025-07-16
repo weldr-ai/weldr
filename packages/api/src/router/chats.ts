@@ -46,7 +46,7 @@ export const chatsRouter = {
 
           for (const attachment of message.attachments) {
             const url = await Tigris.object.getSignedUrl(
-              // biome-ignore lint/style/noNonNullAssertion: <explanation>
+              // biome-ignore lint/style/noNonNullAssertion: reason
               process.env.GENERAL_BUCKET!,
               attachment.key,
             );

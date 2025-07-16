@@ -1,8 +1,7 @@
 import { Slot } from "@radix-ui/react-slot";
+import { cn } from "@weldr/ui/lib/utils";
 import { ChevronRight, MoreHorizontal } from "lucide-react";
 import type * as React from "react";
-
-import { cn } from "@weldr/ui/lib/utils";
 
 function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
   return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
@@ -51,7 +50,6 @@ function BreadcrumbLink({
 
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
   return (
-    // biome-ignore lint/a11y/useFocusableInteractive: <explanation>
     <span
       data-slot="breadcrumb-page"
       role="link"

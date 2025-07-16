@@ -1,13 +1,12 @@
 "use client";
 
+import { Button } from "@weldr/ui/components/button";
+import { cn } from "@weldr/ui/lib/utils";
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import * as React from "react";
-
-import { Button } from "@weldr/ui/components/button";
-import { cn } from "@weldr/ui/lib/utils";
 
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
@@ -121,7 +120,6 @@ function Carousel({
       <div
         onKeyDownCapture={handleKeyDown}
         className={cn("relative", className)}
-        // biome-ignore lint/a11y/useSemanticElements: <explanation>
         role="region"
         aria-roledescription="carousel"
         data-slot="carousel"

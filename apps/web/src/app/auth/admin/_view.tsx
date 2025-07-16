@@ -192,7 +192,7 @@ export function AdminView() {
       await authClient.admin.banUser({
         userId: banForm.userId,
         banReason: banForm.reason,
-        banExpiresIn: banForm.expirationDate.getTime() - new Date().getTime(),
+        banExpiresIn: banForm.expirationDate.getTime() - Date.now(),
       });
       toast.success("User banned successfully");
       setIsBanDialogOpen(false);

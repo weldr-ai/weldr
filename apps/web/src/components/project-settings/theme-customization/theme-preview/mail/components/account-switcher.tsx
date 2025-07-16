@@ -1,5 +1,3 @@
-import * as React from "react";
-
 import {
   Select,
   SelectContent,
@@ -8,6 +6,7 @@ import {
   SelectValue,
 } from "@weldr/ui/components/select";
 import { cn } from "@weldr/ui/lib/utils";
+import * as React from "react";
 
 interface AccountSwitcherProps {
   isCollapsed: boolean;

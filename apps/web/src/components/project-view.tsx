@@ -1,12 +1,7 @@
 "use client";
 
-import type { CanvasNode } from "@/types";
-import type { RouterOutputs } from "@weldr/api";
-
-import { Canvas } from "@/components/canvas";
-import { useProject } from "@/lib/context/project";
-import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
+import type { RouterOutputs } from "@weldr/api";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
 import {
   Tooltip,
@@ -19,6 +14,10 @@ import { Badge, EyeIcon, GitGraphIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { Canvas } from "@/components/canvas";
+import { useProject } from "@/lib/context/project";
+import { useTRPC } from "@/lib/trpc/react";
+import type { CanvasNode } from "@/types";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 import { ProjectSettings } from "./project-settings";
 import { SitePreviewDialog } from "./site-preview-dialog";

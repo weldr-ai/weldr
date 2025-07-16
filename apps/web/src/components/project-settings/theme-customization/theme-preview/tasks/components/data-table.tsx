@@ -3,8 +3,6 @@
 import {
   type ColumnDef,
   type ColumnFiltersState,
-  type SortingState,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFacetedRowModel,
@@ -12,10 +10,10 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  type SortingState,
   useReactTable,
+  type VisibilityState,
 } from "@tanstack/react-table";
-import * as React from "react";
-
 import {
   Table,
   TableBody,
@@ -24,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@weldr/ui/components/table";
+import * as React from "react";
 
 import { DataTablePagination } from "./data-table-pagination";
 import { DataTableToolbar } from "./data-table-toolbar";

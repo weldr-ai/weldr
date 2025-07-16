@@ -6,11 +6,7 @@ import {
 } from "@weldr/ui/components/tooltip";
 import { BrainIcon, CircleIcon, HammerIcon } from "lucide-react";
 
-export const Status = ({
-  progress,
-}: {
-  progress: DeclarationProgress;
-}) => {
+export const Status = ({ progress }: { progress: DeclarationProgress }) => {
   return (
     <Tooltip>
       <TooltipTrigger className="animate-pulse space-y-2">

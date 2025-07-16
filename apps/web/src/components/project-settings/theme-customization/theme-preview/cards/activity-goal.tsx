@@ -1,9 +1,5 @@
 "use client";
 
-import { Minus, Plus } from "lucide-react";
-import * as React from "react";
-import { Bar, BarChart } from "recharts";
-
 import { Button } from "@weldr/ui/components/button";
 import {
   Card,
@@ -14,6 +10,9 @@ import {
   CardTitle,
 } from "@weldr/ui/components/card";
 import { type ChartConfig, ChartContainer } from "@weldr/ui/components/chart";
+import { Minus, Plus } from "lucide-react";
+import * as React from "react";
+import { Bar, BarChart } from "recharts";
 
 const data = [
   {

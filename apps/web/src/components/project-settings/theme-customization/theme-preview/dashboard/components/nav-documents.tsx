@@ -1,11 +1,4 @@
 import {
-  FolderIcon,
-  type LucideIcon,
-  MoreHorizontalIcon,
-  ShareIcon,
-} from "lucide-react";
-
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -20,6 +13,12 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@weldr/ui/components/sidebar";
+import {
+  FolderIcon,
+  type LucideIcon,
+  MoreHorizontalIcon,
+  ShareIcon,
+} from "lucide-react";
 
 export function NavDocuments({
   items,

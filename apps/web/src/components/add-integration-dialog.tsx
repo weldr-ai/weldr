@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-
+import type { RouterOutputs } from "@weldr/api";
+import { Badge } from "@weldr/ui/components/badge";
 import { Button } from "@weldr/ui/components/button";
 import {
   Dialog,
@@ -11,11 +11,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@weldr/ui/components/dialog";
-
-import type { RouterOutputs } from "@weldr/api";
-import { Badge } from "@weldr/ui/components/badge";
 import { PostgresIcon } from "@weldr/ui/icons";
 import { CheckCircle2Icon } from "lucide-react";
+import { useState } from "react";
 import { AddIntegrationsForm } from "./add-integrations-form";
 
 export function AddIntegrationDialog({

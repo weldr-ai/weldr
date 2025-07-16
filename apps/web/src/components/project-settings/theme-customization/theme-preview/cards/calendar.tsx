@@ -1,9 +1,8 @@
 "use client";
 
-import { addDays } from "date-fns";
-
 import { Calendar } from "@weldr/ui/components/calendar";
 import { Card, CardContent } from "@weldr/ui/components/card";
+import { addDays } from "date-fns";
 
 const start = new Date(2023, 5, 5);
 

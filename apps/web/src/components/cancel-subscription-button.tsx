@@ -19,7 +19,7 @@ export function CancelSubscriptionButton({
         await authClient.subscription.cancel({
           returnUrl: "/",
           fetchOptions: {
-            onError: (error) => {
+            onError: (_error) => {
               toast({
                 variant: "destructive",
                 title: "Error cancelling subscription",

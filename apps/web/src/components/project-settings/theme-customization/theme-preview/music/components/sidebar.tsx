@@ -1,8 +1,7 @@
-import type * as React from "react";
-
 import { Button } from "@weldr/ui/components/button";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import { cn } from "@weldr/ui/lib/utils";
+import type * as React from "react";
 
 import type { Playlist } from "../data/playlists";
 
@@ -183,7 +182,7 @@ export function Sidebar({ className, playlists }: SidebarProps) {
               {playlists?.map((playlist, i) => (
                 <Button
                   key={`${playlist}-${
-                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                    // biome-ignore lint/suspicious/noArrayIndexKey: reason
                     i
                   }`}
                   variant="ghost"

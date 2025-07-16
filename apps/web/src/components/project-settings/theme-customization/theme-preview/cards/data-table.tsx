@@ -3,18 +3,15 @@
 import {
   type ColumnDef,
   type ColumnFiltersState,
-  type SortingState,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  type SortingState,
   useReactTable,
+  type VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
-import * as React from "react";
-
 import { Button } from "@weldr/ui/components/button";
 import {
   Card,
@@ -42,6 +39,8 @@ import {
   TableHeader,
   TableRow,
 } from "@weldr/ui/components/table";
+import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import * as React from "react";
 
 const data: Payment[] = [
   {

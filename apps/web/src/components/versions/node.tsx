@@ -1,7 +1,5 @@
 "use client";
 
-import { useTRPC } from "@/lib/trpc/react";
-import { parseConventionalCommit } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
@@ -16,6 +14,8 @@ import {
   Undo2Icon,
 } from "lucide-react";
 import { memo } from "react";
+import { useTRPC } from "@/lib/trpc/react";
+import { parseConventionalCommit } from "@/lib/utils";
 
 import "@xyflow/react/dist/base.css";
 

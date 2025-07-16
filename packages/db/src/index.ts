@@ -18,9 +18,9 @@ export const db = drizzle(conn, { schema });
 export * from "drizzle-orm";
 
 export type Tx = typeof db.transaction extends (
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: reason
   callback: (tx: infer T) => any,
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: reason
 ) => any
   ? T
   : never;

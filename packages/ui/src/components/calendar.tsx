@@ -1,11 +1,10 @@
 "use client";
 
+import { buttonVariants } from "@weldr/ui/components/button";
+import { cn } from "@weldr/ui/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type * as React from "react";
 import { DayPicker } from "react-day-picker";
-
-import { buttonVariants } from "@weldr/ui/components/button";
-import { cn } from "@weldr/ui/lib/utils";
 
 function Calendar({
   className,

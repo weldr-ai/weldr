@@ -1,14 +1,6 @@
 "use client";
 
 import {
-  BellIcon,
-  CreditCardIcon,
-  LogOutIcon,
-  MoreVerticalIcon,
-  UserCircleIcon,
-} from "lucide-react";
-
-import {
   Avatar,
   AvatarFallback,
   AvatarImage,
@@ -28,6 +20,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@weldr/ui/components/sidebar";
+import {
+  BellIcon,
+  CreditCardIcon,
+  LogOutIcon,
+  MoreVerticalIcon,
+  UserCircleIcon,
+} from "lucide-react";
 
 export function NavUser({
   user,

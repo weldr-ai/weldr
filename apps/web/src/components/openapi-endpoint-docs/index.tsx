@@ -14,8 +14,8 @@ import { MinusIcon, PlusIcon } from "lucide-react";
 import type { OpenAPIV3 } from "openapi-types";
 import { useState } from "react";
 import {
-  type ParsedSchema,
   getResponseSchema,
+  type ParsedSchema,
   parseOpenApiEndpoint,
   parseSchema,
 } from "./utils";

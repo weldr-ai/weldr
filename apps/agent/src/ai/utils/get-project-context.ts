@@ -1,6 +1,6 @@
-import type { ProjectWithType } from "@/workflow/context";
 import { db, eq } from "@weldr/db";
 import { integrations, versions } from "@weldr/db/schema";
+import type { ProjectWithType } from "@/workflow/context";
 
 export async function getProjectContext(project: ProjectWithType) {
   const projectIntegrationsList = await db.query.integrations.findMany({

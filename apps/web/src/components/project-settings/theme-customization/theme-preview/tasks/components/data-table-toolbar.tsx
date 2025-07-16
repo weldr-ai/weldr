@@ -1,12 +1,10 @@
 import type { Table } from "@tanstack/react-table";
-import { X } from "lucide-react";
-
 import { Button } from "@weldr/ui/components/button";
 import { Input } from "@weldr/ui/components/input";
-import { DataTableViewOptions } from "./data-table-view-options";
-
+import { X } from "lucide-react";
 import { priorities, statuses } from "../data/data";
 import { DataTableFacetedFilter } from "./data-table-faceted-filter";
+import { DataTableViewOptions } from "./data-table-view-options";
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;

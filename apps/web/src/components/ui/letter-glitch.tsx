@@ -109,7 +109,7 @@ const LetterGlitch = ({
     const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
     let tempHex = hex;
 
-    tempHex = tempHex.replace(shorthandRegex, (m, r, g, b) => {
+    tempHex = tempHex.replace(shorthandRegex, (_m, r, g, b) => {
       return r + r + g + g + b + b;
     });
 
@@ -258,7 +258,7 @@ const LetterGlitch = ({
     animationRef.current = requestAnimationFrame(animate);
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reason
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;

@@ -134,7 +134,7 @@ export function CardsPaymentMethod({ mode }: { mode: "light" | "dark" }) {
               </SelectTrigger>
               <SelectContent>
                 {Array.from({ length: 10 }, (_, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                  // biome-ignore lint/suspicious/noArrayIndexKey: reason
                   <SelectItem key={i} value={`${new Date().getFullYear() + i}`}>
                     {new Date().getFullYear() + i}
                   </SelectItem>

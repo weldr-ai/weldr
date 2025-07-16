@@ -1,3 +1,4 @@
+import type { referencePartSchema } from "@weldr/shared/validators/chats";
 import type {
   DOMExportOutput,
   EditorConfig,
@@ -8,10 +9,8 @@ import type {
 } from "lexical";
 import { DecoratorNode } from "lexical";
 import type { ReactNode } from "react";
-
-import { ReferenceBadge } from "@/components/editor/reference-badge";
-import type { referencePartSchema } from "@weldr/shared/validators/chats";
 import type { z } from "zod";
+import { ReferenceBadge } from "@/components/editor/reference-badge";
 export type SerializedReferenceNode = Spread<
   z.infer<typeof referencePartSchema>,
   SerializedLexicalNode

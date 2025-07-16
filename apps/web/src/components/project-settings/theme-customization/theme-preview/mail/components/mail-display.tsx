@@ -1,15 +1,3 @@
-import { addDays, addHours, format, nextSaturday } from "date-fns";
-import {
-  Archive,
-  ArchiveX,
-  Clock,
-  Forward,
-  MoreVertical,
-  Reply,
-  ReplyAll,
-  Trash2,
-} from "lucide-react";
-
 import {
   Avatar,
   AvatarFallback,
@@ -32,6 +20,17 @@ import {
 import { Separator } from "@weldr/ui/components/separator";
 import { Switch } from "@weldr/ui/components/switch";
 import { Textarea } from "@weldr/ui/components/textarea";
+import { addDays, addHours, format, nextSaturday } from "date-fns";
+import {
+  Archive,
+  ArchiveX,
+  Clock,
+  Forward,
+  MoreVertical,
+  Reply,
+  ReplyAll,
+  Trash2,
+} from "lucide-react";
 import type { Mail } from "../data";
 
 interface MailDisplayProps {

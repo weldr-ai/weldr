@@ -1,18 +1,18 @@
 import {
+  closestCenter,
   DndContext,
   type DragEndEvent,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
   type UniqueIdentifier,
-  closestCenter,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
-  SortableContext,
   arrayMove,
+  SortableContext,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -20,9 +20,6 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   type ColumnDef,
   type ColumnFiltersState,
-  type Row,
-  type SortingState,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFacetedRowModel,
@@ -30,25 +27,11 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  type Row,
+  type SortingState,
   useReactTable,
+  type VisibilityState,
 } from "@tanstack/react-table";
-import {
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
-  ColumnsIcon,
-  GripVerticalIcon,
-  MoreVerticalIcon,
-  PlusIcon,
-  TrendingUpIcon,
-} from "lucide-react";
-import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-import { toast } from "sonner";
-import { z } from "zod";
-
 import { Badge } from "@weldr/ui/components/badge";
 import { Button } from "@weldr/ui/components/button";
 import {
@@ -101,6 +84,22 @@ import {
   TabsTrigger,
 } from "@weldr/ui/components/tabs";
 import { useIsMobile } from "@weldr/ui/hooks/use-mobile";
+import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
+  ColumnsIcon,
+  GripVerticalIcon,
+  MoreVerticalIcon,
+  PlusIcon,
+  TrendingUpIcon,
+} from "lucide-react";
+import * as React from "react";
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { toast } from "sonner";
+import { z } from "zod";
 
 export const schema = z.object({
   id: z.number(),

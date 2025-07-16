@@ -1,4 +1,13 @@
 import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@weldr/ui/components/sidebar";
+import {
   ArrowUpCircleIcon,
   BarChartIcon,
   CameraIcon,
@@ -16,16 +25,6 @@ import {
   UsersIcon,
 } from "lucide-react";
 import type * as React from "react";
-
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@weldr/ui/components/sidebar";
 import { NavDocuments } from "./nav-documents";
 import { NavMain } from "./nav-main";
 import { NavSecondary } from "./nav-secondary";
@@ -158,7 +157,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              {/* biome-ignore lint/a11y/useValidAnchor: <explanation> */}
               <a href="#">
                 <ArrowUpCircleIcon className="h-5 w-5" />
                 <span className="font-semibold text-base">Acme Inc.</span>

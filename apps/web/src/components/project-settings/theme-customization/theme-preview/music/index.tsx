@@ -1,5 +1,3 @@
-import { PlusCircle } from "lucide-react";
-
 import { Button } from "@weldr/ui/components/button";
 import { ScrollArea, ScrollBar } from "@weldr/ui/components/scroll-area";
 import { Separator } from "@weldr/ui/components/separator";
@@ -9,6 +7,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@weldr/ui/components/tabs";
+import { PlusCircle } from "lucide-react";
 
 import { AlbumArtwork } from "./components/album-artwork";
 import { Menu } from "./components/menu";

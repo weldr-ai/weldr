@@ -1,12 +1,12 @@
 "use client";
 
-import { useUIStore } from "@/lib/context/ui-store";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from "@weldr/ui/components/dialog";
 import { VisuallyHidden } from "@weldr/ui/components/visually-hidden";
+import { useUIStore } from "@/lib/context/ui-store";
 import { SignInForm } from "./sign-in-form";
 import { SignUpForm } from "./sign-up-form";
 

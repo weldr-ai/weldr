@@ -1,49 +1,54 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.1.1/schema.json",
-	"vcs": {
-		"enabled": false,
-		"clientKind": "git",
-		"useIgnoreFile": false
-	},
-	"files": {
-		"ignoreUnknown": false,
-		"includes": [
-			"!**/.next/**",
-			"!**/dist/**",
-			"!**/node_modules/**",
-			"!**/.nitro/**",
-			"!**/.turbo/**",
-			"!**/temp/**",
-			"!**/.temp/**",
-			"!**/data/**"
-		]
-	},
-	"formatter": {
-		"enabled": true,
-		"indentStyle": "tab"
-	},
-	"assist": { "actions": { "source": { "organizeImports": "on" } } },
-	"linter": {
-		"enabled": true,
-		"rules": {
-			"recommended": true,
-			"correctness": {
-				"useExhaustiveDependencies": "info"
-			},
-			"nursery": {
-				"useSortedClasses": {
-					"level": "warn",
-					"fix": "safe",
-					"options": {
-						"functions": ["clsx", "cva", "cn"]
-					}
-				}
-			}
-		}
-	},
-	"javascript": {
-		"formatter": {
-			"quoteStyle": "double"
-		}
-	}
+  "$schema": "https://biomejs.dev/schemas/2.1.1/schema.json",
+  "files": {
+    "includes": [
+      "apps/**",
+      "packages/**",
+      "!**/.next/**",
+      "!**/dist/**",
+      "!**/node_modules/**",
+      "!**/.nitro/**",
+      "!**/.turbo/**",
+      "!**/temp/**",
+      "!**/.temp/**",
+      "!**/data/**"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space"
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "react": "recommended",
+      "next": "recommended",
+      "project": "recommended"
+    },
+    "rules": {
+      "recommended": true,
+      "a11y": "info",
+      "correctness": {
+        "useExhaustiveDependencies": "info",
+        "useHookAtTopLevel": "info",
+        "noUnusedFunctionParameters": "info"
+      },
+      "nursery": {
+        "useSortedClasses": {
+          "level": "warn",
+          "fix": "safe",
+          "options": {
+            "functions": ["clsx", "cva", "cn"]
+          }
+        }
+      }
+    }
+  }
 }

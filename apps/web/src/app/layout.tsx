@@ -1,15 +1,14 @@
-import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
-
-import { QueryProvider } from "@/components/query-client-provider";
-import { UIStoreProvider } from "@/lib/context/ui-store";
-import { TRPCReactProvider } from "@/lib/trpc/react";
-import { HydrateClient } from "@/lib/trpc/server";
 import { Toaster } from "@weldr/ui/components/toaster";
 import { TooltipProvider } from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
 import { ReactFlowProvider } from "@xyflow/react";
+import type { Metadata } from "next";
+import { Poppins } from "next/font/google";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { QueryProvider } from "@/components/query-client-provider";
+import { UIStoreProvider } from "@/lib/context/ui-store";
+import { TRPCReactProvider } from "@/lib/trpc/react";
+import { HydrateClient } from "@/lib/trpc/server";
 
 import "@weldr/ui/styles/globals.css";
 

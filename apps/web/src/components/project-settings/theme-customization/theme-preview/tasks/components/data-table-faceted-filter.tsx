@@ -1,7 +1,4 @@
 import type { Column } from "@tanstack/react-table";
-import { Check, PlusCircle } from "lucide-react";
-import type * as React from "react";
-
 import { Badge } from "@weldr/ui/components/badge";
 import { Button } from "@weldr/ui/components/button";
 import {
@@ -20,6 +17,8 @@ import {
 } from "@weldr/ui/components/popover";
 import { Separator } from "@weldr/ui/components/separator";
 import { cn } from "@weldr/ui/lib/utils";
+import { Check, PlusCircle } from "lucide-react";
+import type * as React from "react";
 
 interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>;

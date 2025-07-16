@@ -34,6 +34,7 @@ export function AlbumArtwork({
       <ContextMenu>
         <ContextMenuTrigger>
           <div className="overflow-hidden rounded-md">
+            {/** biome-ignore lint/performance/noImgElement: reason */}
             <img
               src={album.cover}
               alt={album.name}

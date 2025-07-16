@@ -1,7 +1,3 @@
-import { SitePreviewDialog } from "@/components/site-preview-dialog";
-import { useProject } from "@/lib/context/project";
-import { useTRPC } from "@/lib/trpc/react";
-import type { CanvasNodeProps } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@weldr/ui/components/badge";
 import { Button } from "@weldr/ui/components/button";
@@ -20,6 +16,10 @@ import {
   ShieldXIcon,
 } from "lucide-react";
 import { memo, useMemo, useState } from "react";
+import { SitePreviewDialog } from "@/components/site-preview-dialog";
+import { useProject } from "@/lib/context/project";
+import { useTRPC } from "@/lib/trpc/react";
+import type { CanvasNodeProps } from "@/types";
 import { ProtectedBadge } from "../components/protected-badge";
 
 interface PageNodeHeaderProps {
@@ -44,7 +44,6 @@ const PageNodeHeader = memo(
 );
 
 export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
-  // Only handle page declarations
   if (_data.metadata?.specs?.type !== "page") {
     return null;
   }
@@ -131,7 +130,6 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
       }
     }
 
-    // Colorize the resolved route
     return resolvedRoute.split(/(\{[^}]+\})/).map((part) => (
       <span
         key={part || `path-segment-${Math.random()}`}

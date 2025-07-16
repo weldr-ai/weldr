@@ -59,7 +59,7 @@ export function FieldWrapper({
         onChange={onChange}
       />
       {errors.map((error, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+        // biome-ignore lint/suspicious/noArrayIndexKey: reason
         <Alert variant="destructive" key={index}>
           <AlertDescription>{error.message}</AlertDescription>
         </Alert>

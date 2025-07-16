@@ -1,10 +1,9 @@
 "use client";
 
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
-import type * as React from "react";
-
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { cn } from "@weldr/ui/lib/utils";
+import type * as React from "react";
 
 function TooltipProvider({
   delayDuration = 0,

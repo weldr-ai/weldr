@@ -1,8 +1,5 @@
 "use client";
 
-import { Check, Plus, Send } from "lucide-react";
-import * as React from "react";
-
 import {
   Avatar,
   AvatarFallback,
@@ -39,6 +36,8 @@ import {
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
+import { Check, Plus, Send } from "lucide-react";
+import * as React from "react";
 
 const users = [
   {
@@ -130,7 +129,7 @@ export function CardsChat() {
           <div className="space-y-4">
             {messages.map((message, index) => (
               <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                // biome-ignore lint/suspicious/noArrayIndexKey: reason
                 key={index}
                 className={cn(
                   "flex w-max max-w-[75%] flex-col gap-2 rounded-lg px-3 py-2 text-sm",

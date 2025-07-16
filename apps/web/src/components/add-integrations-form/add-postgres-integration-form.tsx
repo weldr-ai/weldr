@@ -1,12 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckIcon, LoaderIcon, PlusIcon } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/components/button";
 import {
   Command,
@@ -30,12 +26,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@weldr/ui/components/popover";
-
-import { useTRPC } from "@/lib/trpc/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { RouterOutputs } from "@weldr/api";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { cn } from "@weldr/ui/lib/utils";
+import { CheckIcon, LoaderIcon, PlusIcon } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { useTRPC } from "@/lib/trpc/react";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 
 const validationSchema = z.object({

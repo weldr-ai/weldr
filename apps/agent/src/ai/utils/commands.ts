@@ -42,7 +42,7 @@ export async function runCommand(
     encoding = "utf8",
   } = options;
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const child = spawn(command, args, {
       cwd,
       env,

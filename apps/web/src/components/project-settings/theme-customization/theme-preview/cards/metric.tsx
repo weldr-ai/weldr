@@ -1,7 +1,5 @@
 "use client";
 
-import { Line, LineChart } from "recharts";
-
 import {
   Card,
   CardContent,
@@ -15,6 +13,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@weldr/ui/components/chart";
+import { Line, LineChart } from "recharts";
 
 const data = [
   {

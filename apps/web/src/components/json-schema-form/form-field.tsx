@@ -125,7 +125,7 @@ export function FormField({
         return (
           <div className="space-y-2">
             {arrayValue.map((itemValue, index) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+              // biome-ignore lint/suspicious/noArrayIndexKey: reason
               <div key={index} className="flex items-center space-x-2">
                 <FormField
                   name={`${name}[${index}]`}

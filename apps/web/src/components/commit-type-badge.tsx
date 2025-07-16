@@ -2,7 +2,10 @@
 export function CommitTypeBadge({
   type,
   className,
-}: { type: string | null; className?: string }) {
+}: {
+  type: string | null;
+  className?: string;
+}) {
   if (!type) return null;
 
   const getTypeStyles = (type: string) => {

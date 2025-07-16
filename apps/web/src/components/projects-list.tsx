@@ -1,8 +1,8 @@
 "use client";
 
-import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
+import { useTRPC } from "@/lib/trpc/react";
 
 export function ProjectsList({
   projects: _projects,

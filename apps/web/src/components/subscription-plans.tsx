@@ -1,5 +1,3 @@
-import { CheckIcon } from "lucide-react";
-
 import type { Session, Subscription } from "@weldr/auth";
 import { Badge } from "@weldr/ui/components/badge";
 import { buttonVariants } from "@weldr/ui/components/button";
@@ -11,6 +9,7 @@ import {
   CardTitle,
 } from "@weldr/ui/components/card";
 import { cn } from "@weldr/ui/lib/utils";
+import { CheckIcon } from "lucide-react";
 import Link from "next/link";
 import { CancelSubscriptionButton } from "./cancel-subscription-button";
 import { RestoreSubscriptionButton } from "./restore-subscription-button";
@@ -48,7 +47,7 @@ export function SubscriptionPlans({
           <ul className="list-outside space-y-3 text-sm">
             {["Limited to 1 project", "2 generations per day"].map(
               (item, index) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                // biome-ignore lint/suspicious/noArrayIndexKey: reason
                 <li key={index} className="flex items-center gap-2">
                   <CheckIcon className="size-3" />
                   {item}
@@ -103,7 +102,7 @@ export function SubscriptionPlans({
           <ul className="list-outside space-y-3 text-sm">
             {["Unlimited projects", "Unlimited generations per day"].map(
               (item, index) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                // biome-ignore lint/suspicious/noArrayIndexKey: reason
                 <li key={index} className="flex items-center gap-2">
                   <CheckIcon className="size-3" />
                   {item}

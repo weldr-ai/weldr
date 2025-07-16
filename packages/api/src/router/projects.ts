@@ -66,7 +66,7 @@ export const projectsRouter = {
               type: "development",
               projectId,
               key: "FLY_API_TOKEN",
-              // biome-ignore lint/style/noNonNullAssertion: <explanation>
+              // biome-ignore lint/style/noNonNullAssertion: reason
               value: process.env.FLY_API_TOKEN!,
             }),
           ]);
@@ -342,7 +342,7 @@ export const projectsRouter = {
                 message.attachments.map(async (attachment) => ({
                   name: attachment.name,
                   url: await Tigris.object.getSignedUrl(
-                    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+                    // biome-ignore lint/style/noNonNullAssertion: reason
                     process.env.GENERAL_BUCKET!,
                     attachment.key,
                   ),

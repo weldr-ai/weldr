@@ -1,9 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@weldr/auth/client";
 import { Button } from "@weldr/ui/components/button";
@@ -26,6 +23,8 @@ import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 const updateEmailSchema = z.object({
   email: z.string().email({
@@ -35,7 +34,9 @@ const updateEmailSchema = z.object({
 
 export function UpdateEmailForm({
   session: initialSession,
-}: { session: typeof authClient.$Infer.Session }) {
+}: {
+  session: typeof authClient.$Infer.Session;
+}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const queryClient = useQueryClient();

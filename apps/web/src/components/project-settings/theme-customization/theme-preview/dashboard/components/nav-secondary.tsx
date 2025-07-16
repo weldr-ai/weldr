@@ -1,8 +1,5 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
-import type * as React from "react";
-
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -10,6 +7,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@weldr/ui/components/sidebar";
+import type { LucideIcon } from "lucide-react";
+import type * as React from "react";
 
 export function NavSecondary({
   items,

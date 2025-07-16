@@ -352,7 +352,7 @@ async function processClassDeclaration(
   const dependencies = findDependencies({ code: raw, importedIdentifiers });
 
   // Process class members
-  let constructorInfo: ConstructorMemberMetadata | undefined = undefined;
+  let constructorInfo: ConstructorMemberMetadata | undefined;
 
   const methods: MethodMemberMetadata[] = [];
   const properties: PropertyMemberMetadata[] = [];

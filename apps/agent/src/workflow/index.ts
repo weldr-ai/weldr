@@ -35,7 +35,7 @@ export const workflow = createWorkflow({
 
 export async function recoverWorkflow() {
   const project = await db.query.projects.findFirst({
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    // biome-ignore lint/style/noNonNullAssertion: reason
     where: eq(projects.id, process.env.PROJECT_ID!),
     with: {
       integrations: {

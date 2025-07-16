@@ -1,7 +1,5 @@
 "use client";
 
-import * as React from "react";
-
 import { Button } from "@weldr/ui/components/button";
 import {
   Card,
@@ -21,6 +19,7 @@ import {
   SelectValue,
 } from "@weldr/ui/components/select";
 import { Textarea } from "@weldr/ui/components/textarea";
+import * as React from "react";
 
 export function CardsReportIssue() {
   const id = React.useId();

@@ -102,7 +102,7 @@ export function ThemeCustomization({
   //   }),
   // );
 
-  const handleSaveTheme = async (data: z.infer<typeof themeSchema>) => {
+  const handleSaveTheme = async (_data: z.infer<typeof themeSchema>) => {
     // await createTheme.mutateAsync({
     //   projectId: project.id,
     //   data,

@@ -1,9 +1,9 @@
 "use client";
 
-import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
 import type { RouterOutputs } from "@weldr/api";
 import { useParams } from "next/navigation";
+import { useTRPC } from "@/lib/trpc/react";
 import { AddPostgresIntegrationForm } from "./add-postgres-integration-form";
 
 export function AddIntegrationsForm({

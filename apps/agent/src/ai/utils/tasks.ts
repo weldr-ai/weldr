@@ -1,15 +1,15 @@
-import type { WorkflowContext } from "@/workflow/context";
 import { db, eq } from "@weldr/db";
 import {
   chats,
   type declarations,
   dependencies,
-  type integrationTemplates,
   type integrations,
+  type integrationTemplates,
   taskDependencies,
   tasks,
 } from "@weldr/db/schema";
 import type { Task } from "@weldr/shared/types";
+import type { WorkflowContext } from "@/workflow/context";
 import { createDeclarationFromTask } from "./declarations";
 
 export type TaskWithRelations = typeof tasks.$inferSelect & {

@@ -7,7 +7,7 @@ export function getVariablesFromTemplate(
     const ast = Handlebars.parse(template);
     const variables: Record<string, string> = {};
 
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    // biome-ignore lint/suspicious/noExplicitAny: reason
     function traverseNode(node: any) {
       if (!node) return;
 

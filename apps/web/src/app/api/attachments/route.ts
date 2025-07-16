@@ -34,9 +34,9 @@ const s3Client = new S3Client({
   endpoint: process.env.TIGRIS_ENDPOINT_URL ?? "https://t3.storage.dev",
   forcePathStyle: false,
   credentials: {
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    // biome-ignore lint/style/noNonNullAssertion: reason
     accessKeyId: process.env.TIGRIS_ACCESS_KEY_ID!,
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    // biome-ignore lint/style/noNonNullAssertion: reason
     secretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY!,
   },
 });
@@ -120,10 +120,10 @@ export async function POST(request: Request) {
         size: file.size,
         url: imageUrl,
       });
-    } catch (error) {
+    } catch {
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to process request" },
       { status: 500 },

@@ -1,3 +1,12 @@
+import { db, eq } from "@weldr/db";
+import { declarations, tasks, versions } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
+import type {
+  addMessageItemSchema,
+  assistantMessageContentSchema,
+} from "@weldr/shared/validators/chats";
+import { streamText } from "ai";
+import type { z } from "zod";
 import {
   deleteFileTool,
   doneTool,
@@ -13,17 +22,8 @@ import {
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
-import { type TaskWithRelations, getTaskExecutionPlan } from "@/ai/utils/tasks";
+import { getTaskExecutionPlan, type TaskWithRelations } from "@/ai/utils/tasks";
 import type { WorkflowContext } from "@/workflow/context";
-import { db, eq } from "@weldr/db";
-import { declarations, tasks, versions } from "@weldr/db/schema";
-import { Logger } from "@weldr/shared/logger";
-import type {
-  addMessageItemSchema,
-  assistantMessageContentSchema,
-} from "@weldr/shared/validators/chats";
-import { streamText } from "ai";
-import type { z } from "zod";
 import { prompts } from "../prompts";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
 import { formatTaskDeclarationToMarkdown } from "../utils/formetters";

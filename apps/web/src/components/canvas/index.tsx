@@ -1,7 +1,6 @@
 "use client";
 
-import { useTRPC } from "@/lib/trpc/react";
-import type { CanvasNode } from "@/types";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import type { ColorMode, Edge } from "@xyflow/react";
@@ -16,16 +15,16 @@ import {
 } from "@xyflow/react";
 import { ArrowUpDownIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { useTRPC } from "@/lib/trpc/react";
+import type { CanvasNode } from "@/types";
 import { DbModelNode } from "./nodes/declaration/db-model";
 import { EndpointNode } from "./nodes/declaration/endpoint";
 import { PageNode } from "./nodes/declaration/page";
 
-import { useMutation } from "@tanstack/react-query";
-
 import "@xyflow/react/dist/base.css";
-import { useTheme } from "next-themes";
 
 import type { RouterOutputs } from "@weldr/api";
+import { useTheme } from "next-themes";
 import "@weldr/ui/styles/canvas.css";
 import { Chat } from "../chat";
 import { Placeholder } from "./placeholder";

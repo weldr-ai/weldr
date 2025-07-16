@@ -8,7 +8,9 @@ export type Step = {
   id: string;
   execute: ({
     context,
-  }: { context: WorkflowContext }) => Promise<unknown> | unknown;
+  }: {
+    context: WorkflowContext;
+  }) => Promise<unknown> | unknown;
   timeout?: number; // timeout in milliseconds
 };
 
@@ -36,7 +38,9 @@ export function createStep({
   id: string;
   execute: ({
     context,
-  }: { context: WorkflowContext }) => Promise<unknown> | unknown;
+  }: {
+    context: WorkflowContext;
+  }) => Promise<unknown> | unknown;
   timeout?: number;
 }): Step {
   return { id, execute, timeout };
@@ -58,11 +62,7 @@ export function createWorkflow(
       stepMapping[status] = { step };
       return api;
     },
-    async execute({
-      context,
-    }: {
-      context: WorkflowContext;
-    }): Promise<void> {
+    async execute({ context }: { context: WorkflowContext }): Promise<void> {
       const project = context.get("project");
       const version = context.get("version");
 

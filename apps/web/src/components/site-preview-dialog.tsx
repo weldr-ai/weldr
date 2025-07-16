@@ -1,6 +1,5 @@
 "use client";
 
-import { useProject } from "@/lib/context/project";
 import { Badge } from "@weldr/ui/components/badge";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
 import {
@@ -26,6 +25,7 @@ import {
   SmartphoneIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useProject } from "@/lib/context/project";
 
 interface SitePreviewDialogProps {
   open: boolean;

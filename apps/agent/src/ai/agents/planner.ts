@@ -1,3 +1,12 @@
+import { db, eq } from "@weldr/db";
+import { versions } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
+import type {
+  addMessageItemSchema,
+  assistantMessageContentSchema,
+} from "@weldr/shared/validators/chats";
+import { streamText } from "ai";
+import type { z } from "zod";
 import { prompts } from "@/ai/prompts";
 import {
   addIntegrationsTool,
@@ -14,15 +23,6 @@ import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import type { WorkflowContext } from "@/workflow/context";
-import { db, eq } from "@weldr/db";
-import { versions } from "@weldr/db/schema";
-import { Logger } from "@weldr/shared/logger";
-import type {
-  addMessageItemSchema,
-  assistantMessageContentSchema,
-} from "@weldr/shared/validators/chats";
-import { streamText } from "ai";
-import type { z } from "zod";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
 import { calculateModelCost } from "../utils/providers-pricing";
 import { XMLProvider } from "../utils/xml-provider";

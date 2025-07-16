@@ -1,18 +1,3 @@
-import {
-  AlertCircle,
-  Archive,
-  ArchiveX,
-  File,
-  Inbox,
-  MessagesSquare,
-  Search,
-  Send,
-  ShoppingCart,
-  Trash2,
-  Users2,
-} from "lucide-react";
-import * as React from "react";
-
 import { Input } from "@weldr/ui/components/input";
 import {
   ResizableHandle,
@@ -28,6 +13,20 @@ import {
 } from "@weldr/ui/components/tabs";
 import { TooltipProvider } from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
+import {
+  AlertCircle,
+  Archive,
+  ArchiveX,
+  File,
+  Inbox,
+  MessagesSquare,
+  Search,
+  Send,
+  ShoppingCart,
+  Trash2,
+  Users2,
+} from "lucide-react";
+import * as React from "react";
 import type { Mail as MailType } from "../data";
 import { useMail } from "../use-mail";
 import { AccountSwitcher } from "./account-switcher";
@@ -62,6 +61,7 @@ export function Mail({
       <ResizablePanelGroup
         direction="horizontal"
         onLayout={(sizes: number[]) => {
+          // biome-ignore lint/suspicious/noDocumentCookie: reason
           document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(
             sizes,
           )}`;
@@ -76,12 +76,14 @@ export function Mail({
           maxSize={20}
           onCollapse={() => {
             setIsCollapsed(true);
+            // biome-ignore lint/suspicious/noDocumentCookie: reason
             document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
               true,
             )}`;
           }}
           onResize={() => {
             setIsCollapsed(false);
+            // biome-ignore lint/suspicious/noDocumentCookie: reason
             document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
               false,
             )}`;

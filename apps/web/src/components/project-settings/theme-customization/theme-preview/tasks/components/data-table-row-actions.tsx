@@ -1,6 +1,4 @@
 import type { Row } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-
 import { Button } from "@weldr/ui/components/button";
 import {
   DropdownMenu,
@@ -15,6 +13,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@weldr/ui/components/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
 
 import { labels } from "../data/data";
 import { taskSchema } from "../data/schema";

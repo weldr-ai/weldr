@@ -1,7 +1,5 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
-
 import {
   Avatar,
   AvatarFallback,
@@ -28,6 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@weldr/ui/components/popover";
+import { ChevronDown } from "lucide-react";
 
 export function CardsTeamMembers() {
   return (

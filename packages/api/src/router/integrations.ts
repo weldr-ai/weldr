@@ -3,8 +3,8 @@ import { db } from "@weldr/db";
 import {
   environmentVariables,
   integrationEnvironmentVariables,
-  integrationTemplates,
   integrations,
+  integrationTemplates,
 } from "@weldr/db/schema";
 import {
   createIntegrationSchema,

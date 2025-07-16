@@ -1,9 +1,8 @@
-import { formatDistanceToNow } from "date-fns";
-import type { ComponentProps } from "react";
-
 import { Badge } from "@weldr/ui/components/badge";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import { cn } from "@weldr/ui/lib/utils";
+import { formatDistanceToNow } from "date-fns";
+import type { ComponentProps } from "react";
 import type { Mail } from "../data";
 import { useMail } from "../use-mail";
 

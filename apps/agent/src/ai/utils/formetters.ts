@@ -1,7 +1,7 @@
 import type {
   declarations,
-  integrationTemplates,
   integrations,
+  integrationTemplates,
 } from "@weldr/db/schema";
 import type {
   ClassDeclarationCodeMetadata,

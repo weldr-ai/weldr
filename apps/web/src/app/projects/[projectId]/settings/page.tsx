@@ -1,12 +1,11 @@
-import { api } from "@/lib/trpc/server";
-import { notFound, redirect } from "next/navigation";
-
-import { ProjectSettings } from "@/components/project-settings";
 import { TRPCError } from "@trpc/server";
 import { buttonVariants } from "@weldr/ui/components/button";
 import { cn } from "@weldr/ui/lib/utils";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { ProjectSettings } from "@/components/project-settings";
+import { api } from "@/lib/trpc/server";
 
 export default async function ProjectSettingsPage({
   params,

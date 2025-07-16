@@ -1,12 +1,11 @@
 import { TRPCError } from "@trpc/server";
+import type { NodeType } from "@weldr/shared/types";
+import type { Edge } from "@xyflow/react";
 import { notFound, redirect } from "next/navigation";
-
 import { ProjectView } from "@/components/project-view";
 import { ProjectProvider } from "@/lib/context/project";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
-import type { NodeType } from "@weldr/shared/types";
-import type { Edge } from "@xyflow/react";
 
 export default async function ProjectPage({
   params,

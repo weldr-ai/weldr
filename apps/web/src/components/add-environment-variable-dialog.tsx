@@ -1,6 +1,5 @@
 "use client";
 
-import { useTRPC } from "@/lib/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { insertEnvironmentVariableSchema } from "@weldr/shared/validators/environment-variables";
@@ -27,6 +26,7 @@ import { EyeIcon, EyeOffIcon, LoaderIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
+import { useTRPC } from "@/lib/trpc/react";
 
 export default function AddEnvironmentVariableDialog({
   projectId,

@@ -1,18 +1,5 @@
 "use client";
 
-import type React from "react";
-import {
-  type ChangeEvent,
-  type Dispatch,
-  type SetStateAction,
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-
-import { useUIStore } from "@/lib/context/ui-store";
 import { authClient } from "@weldr/auth/client";
 import type {
   Attachment,
@@ -33,7 +20,19 @@ import {
   type ParagraphNode,
 } from "lexical";
 import { ArrowUpIcon, PaperclipIcon } from "lucide-react";
+import type React from "react";
+import {
+  type ChangeEvent,
+  type Dispatch,
+  memo,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { z } from "zod";
+import { useUIStore } from "@/lib/context/ui-store";
 import { Editor } from "./editor";
 import type { ReferenceNode } from "./editor/plugins/reference/node";
 import { PreviewAttachment } from "./preview-attachment";
@@ -163,7 +162,7 @@ function PureMultimodalInput({
         title: "Something went wrong!",
         description: error,
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         variant: "destructive",
         title: "Something went wrong!",
@@ -172,7 +171,7 @@ function PureMultimodalInput({
     }
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reason
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
@@ -199,7 +198,7 @@ function PureMultimodalInput({
     [setAttachments],
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reason
   const handlePaste = useCallback(
     async (event: ClipboardEvent) => {
       const items = event.clipboardData?.items;
