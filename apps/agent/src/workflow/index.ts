@@ -50,28 +50,21 @@ export async function recoverWorkflow() {
     throw new Error("Project not found");
   }
 
-  const integrations = project.integrations.reduce(
-    (acc, integration) => {
-      if (integration.integrationTemplate.category === "backend") {
-        acc.push("backend");
-      }
-      if (integration.integrationTemplate.category === "frontend") {
-        acc.push("frontend");
-      }
-      return acc;
-    },
-    [] as ("frontend" | "backend")[],
-  );
-
-  const projectType =
-    integrations.includes("backend") && integrations.includes("frontend")
-      ? "full-stack"
-      : integrations.includes("backend")
-        ? "standalone-backend"
-        : integrations.includes("frontend")
-          ? "standalone-frontend"
-          : null;
-
+  const config = project.integrations.reduce((acc, integration) => {
+    if (integration.integrationTemplate.category === "backend") {
+      acc.add("server");
+    }
+    if (integration.integrationTemplate.category === "frontend") {
+      acc.add("web");
+    }
+    if (integration.integrationTemplate.category === "database") {
+      acc.add("database");
+    }
+    if (integration.integrationTemplate.category === "authentication") {
+      acc.add("authentication");
+    }
+    return acc;
+  }, new Set<"database" | "authentication" | "server" | "web">());
   const user = await db.query.users.findFirst({
     where: eq(users.id, project.userId),
   });
@@ -96,7 +89,7 @@ export async function recoverWorkflow() {
   }
 
   const context = new WorkflowContext();
-  context.set("project", { ...project, type: projectType });
+  context.set("project", { ...project, config });
   context.set("version", version);
   context.set("user", user);
   context.set("isXML", true);

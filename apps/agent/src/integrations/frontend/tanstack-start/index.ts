@@ -1,8 +1,7 @@
-import {
-  directoryExists,
-  renameDirectory,
-  replaceTextInFiles,
-} from "@/integrations/utils/file-system";
+import type {
+  IntegrationPackageSets,
+  IntegrationScriptSets,
+} from "@/integrations/types";
 import { defineIntegration } from "@/integrations/utils/integration-core";
 
 export const tanstackStartIntegration = await defineIntegration({
@@ -16,23 +15,44 @@ export const tanstackStartIntegration = await defineIntegration({
   dependencies: null,
   options: null,
   variables: null,
-  scripts: {
-    dev: "vite dev",
-    build: "vite build",
-    start: "node .output/server/index.mjs",
-    typecheck: "tsc --noEmit",
-    check: "biome check --diagnostic-level=warn",
-    "check:fix": "biome check --diagnostic-level=warn --write",
-    clean: "rm -rf node_modules .output .nitro .vinxi",
+  scripts: async () => {
+    const scripts: IntegrationScriptSets = [
+      {
+        target: "web",
+        scripts: {
+          dev: "vite dev",
+          build: "vite build",
+          start: "node .output/server/index.mjs",
+          typecheck: "tsc --noEmit",
+          check: "biome check --diagnostic-level=warn",
+          "check:fix": "biome check --diagnostic-level=warn --write",
+          clean: "rm -rf node_modules .output .turbo",
+        },
+      },
+      {
+        target: "root",
+        scripts: {
+          dev: "turbo dev -F @repo/web",
+          build: "turbo build -F @repo/web",
+          start: "turbo start -F @repo/web",
+        },
+      },
+    ];
+
+    return scripts;
   },
-  packages: {
-    add: {
+  packages: async (context) => {
+    const project = context.get("project");
+    const hasServer = project.config.has("server");
+    const hasAuthentication = project.config.has("authentication");
+
+    const packages: IntegrationPackageSets[number] = {
+      target: "web",
       runtime: {
-        "@hookform/resolvers": "^5.1.1",
         "@tanstack/react-query": "^5.82.0",
-        "@tanstack/react-router": "^1.125.6",
-        "@tanstack/react-router-with-query": "^1.125.6",
-        "@tanstack/react-start": "^1.126.1",
+        "@tanstack/react-router": "^1.128.0",
+        "@tanstack/react-router-with-query": "^1.128.0",
+        "@tanstack/react-start": "^1.128.0",
         "class-variance-authority": "^0.7.1",
         clsx: "^2.1.1",
         cmdk: "^1.1.1",
@@ -53,7 +73,7 @@ export const tanstackStartIntegration = await defineIntegration({
         tailwindcss: "^4.1.11",
         "tw-animate-css": "^1.3.5",
         vaul: "^1.1.2",
-        zod: "^3.25.49",
+        zod: "^4.0.5",
       },
       development: {
         "@biomejs/biome": "2.1.1",
@@ -64,48 +84,16 @@ export const tanstackStartIntegration = await defineIntegration({
         vite: "^7.0.3",
         "vite-tsconfig-paths": "^5.1.4",
       },
-    },
-    remove: ["tsx", "esbuild"],
-  },
-  dirMap: {
-    "standalone-frontend": {
-      web: "src",
-      "config/shared/*": ".",
-      "config/standalone/*": ".",
-    },
-    "full-stack": {
-      web: "web",
-      "config/shared/*": ".",
-      "config/full-stack/*": ".",
-    },
-  },
-  preInstall: async () => {
-    // Handle src -> server directory rename
-    const hasSrcDir = await directoryExists("src");
-    if (hasSrcDir) {
-      const renamed = await renameDirectory("src", "server");
-      if (!renamed) {
-        return {
-          success: false,
-          message: "Failed to rename src directory to server",
-          errors: ["Could not rename src directory to server"],
-        };
-      }
-    }
-
-    // Replace @/ with @server/ in all files
-    const replaced = await replaceTextInFiles("@/", "@server/");
-    if (!replaced) {
-      return {
-        success: false,
-        message: "Failed to replace @/ with @server/",
-        errors: ["Could not replace import paths"],
-      };
-    }
-
-    return {
-      success: true,
-      message: "Successfully ran frontend integration pre-install hook",
     };
+
+    if (hasServer) {
+      packages.runtime["@orpc/tanstack-query"] = "^1.7.2";
+    }
+
+    if (hasAuthentication) {
+      packages.runtime["better-auth"] = "^1.3.1";
+    }
+
+    return [packages];
   },
 });

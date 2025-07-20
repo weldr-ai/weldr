@@ -1,9 +1,9 @@
+import type { projects } from "@weldr/db/schema";
 import { codingGuidelines } from "@/ai/prompts/coding-guidelines";
 import { getProjectContext } from "@/ai/utils/get-project-context";
-import type { ProjectWithType } from "@/workflow/context";
 
 export const generalCoder = async (
-  project: ProjectWithType,
+  project: typeof projects.$inferSelect,
   versionContext: string,
   toolSetMarkdown?: string,
 ) => {

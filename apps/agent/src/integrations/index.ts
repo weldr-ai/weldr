@@ -1,8 +1,8 @@
 import type { IntegrationKey } from "@weldr/shared/types";
+import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { WorkflowContext } from "@/workflow/context";
 import { integrationRegistry } from "./registry";
-import { createDirectory, directoryExists } from "./utils/file-system";
 
 // Export main registry and types
 export { integrationRegistry } from "./registry";
@@ -13,26 +13,17 @@ export type {
 } from "./types";
 
 // Export utilities
-export {
-  createDirectory,
-  directoryExists,
-  fileExists,
-} from "./utils/file-system";
 export { combineResults } from "./utils/integration-core";
-export { installPackages, runBunScript } from "./utils/packages";
+export { installPackages, runPnpmScript } from "./utils/packages";
 
 async function main() {
   try {
     // Ensure .temp directory exists
-    const tempExists = await directoryExists(WORKSPACE_DIR);
-    if (!tempExists) {
-      const createResult = await createDirectory(WORKSPACE_DIR);
-      if (!createResult.success) {
-        console.error(
-          `Failed to create .temp directory: ${createResult.message}`,
-        );
-        return;
-      }
+    const workspace = await runCommand("mkdir", ["-p", WORKSPACE_DIR]);
+
+    if (!workspace.success) {
+      console.error(`Failed to create ${WORKSPACE_DIR} directory`);
+      return;
     }
 
     // Create a mock workflow context for testing
@@ -43,7 +34,7 @@ async function main() {
       id: "test-project",
       title: "Test Project",
       subdomain: "test-project",
-      type: "standalone-backend", // or "standalone-frontend" or "full-stack"
+      config: new Set(["server", "web"]),
       initiatedAt: null,
       userId: "test-user",
       createdAt: new Date(),
@@ -84,7 +75,7 @@ async function main() {
     });
 
     // List of integrations to install
-    const integrationsToInstall: IntegrationKey[] = ["postgresql", "hono"];
+    const integrationsToInstall: IntegrationKey[] = ["postgresql", "orpc"];
 
     console.log(`Installing integrations in: ${WORKSPACE_DIR}`);
 

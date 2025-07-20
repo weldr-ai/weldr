@@ -56,17 +56,6 @@ export const initProjectTool = createTool({
 
     logger.info(`Initializing project: ${input.title}`);
 
-    // Determine project type based on integrations
-    const hasBackend = input.keys.includes("hono");
-    const hasFrontend = input.keys.includes("tanstack-start");
-
-    const projectType =
-      hasBackend && hasFrontend
-        ? "full-stack"
-        : hasBackend
-          ? "standalone-backend"
-          : "standalone-frontend";
-
     const [updatedProject] = await db
       .update(projects)
       .set({
@@ -82,9 +71,24 @@ export const initProjectTool = createTool({
       return { status: "error" as const, error };
     }
 
+    const config: Set<"database" | "authentication" | "server" | "web"> =
+      new Set();
+
+    for (const key of input.keys) {
+      if (key === "postgresql") {
+        config.add("database");
+      } else if (key === "better-auth") {
+        config.add("authentication");
+      } else if (key === "orpc") {
+        config.add("server");
+      } else if (key === "tanstack-start") {
+        config.add("web");
+      }
+    }
+
     context.set("project", {
       ...updatedProject,
-      type: projectType,
+      config,
     });
 
     const streamWriter = global.sseConnections?.get(

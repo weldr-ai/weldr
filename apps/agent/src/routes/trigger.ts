@@ -101,27 +101,21 @@ router.openapi(route, async (c) => {
     return c.json({ error: "Project not found" }, 404);
   }
 
-  const integrations = project.integrations.reduce(
-    (acc, integration) => {
-      if (integration.integrationTemplate.category === "backend") {
-        acc.push("backend");
-      }
-      if (integration.integrationTemplate.category === "frontend") {
-        acc.push("frontend");
-      }
-      return acc;
-    },
-    [] as ("frontend" | "backend")[],
-  );
-
-  const projectType =
-    integrations.includes("backend") && integrations.includes("frontend")
-      ? "full-stack"
-      : integrations.includes("backend")
-        ? "standalone-backend"
-        : integrations.includes("frontend")
-          ? "standalone-frontend"
-          : null;
+  const integrations = project.integrations.reduce((acc, integration) => {
+    if (integration.integrationTemplate.category === "backend") {
+      acc.add("server");
+    }
+    if (integration.integrationTemplate.category === "frontend") {
+      acc.add("web");
+    }
+    if (integration.integrationTemplate.category === "authentication") {
+      acc.add("authentication");
+    }
+    if (integration.integrationTemplate.category === "database") {
+      acc.add("database");
+    }
+    return acc;
+  }, new Set<"server" | "web" | "authentication" | "database">());
 
   let activeVersion = await db.query.versions.findFirst({
     where: and(
@@ -155,7 +149,7 @@ router.openapi(route, async (c) => {
 
   // Store the context we need for the workflow
   const workflowContext = c.get("workflowContext");
-  workflowContext.set("project", { ...project, type: projectType });
+  workflowContext.set("project", { ...project, config: integrations });
   workflowContext.set("version", activeVersion);
   workflowContext.set("user", session.user);
   workflowContext.set("isXML", true);

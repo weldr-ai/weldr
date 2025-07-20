@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const integrationKeySchema = z.enum([
-  "hono",
+  "orpc",
   "tanstack-start",
   "postgresql",
   "better-auth",
@@ -26,7 +26,7 @@ const baseIntegrationSchema = z.object({
 });
 
 export const honoIntegrationSchema = baseIntegrationSchema.extend({
-  key: z.literal("hono"),
+  key: z.literal("orpc"),
   options: z.null(),
 });
 

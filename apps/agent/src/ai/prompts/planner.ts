@@ -1,9 +1,9 @@
 import { db } from "@weldr/db";
+import type { projects } from "@weldr/db/schema";
 import { getProjectContext } from "@/ai/utils/get-project-context";
-import type { ProjectWithType } from "@/workflow/context";
 
 export const planner = async (
-  project: ProjectWithType,
+  project: typeof projects.$inferSelect,
   toolSetMarkdown?: string,
 ) => {
   const allIntegrationTemplates =

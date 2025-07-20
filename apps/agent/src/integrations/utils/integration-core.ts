@@ -14,7 +14,6 @@ import type {
   IntegrationCallbackResult,
   IntegrationDefinition,
 } from "../types";
-import { replacePatternInContent } from "./file-system";
 import { installPackages, updatePackageJsonScripts } from "./packages";
 import { getVariablesFromTemplate } from "./templates";
 
@@ -23,51 +22,25 @@ export async function defineIntegration<K extends IntegrationKey>(
 ): Promise<IntegrationDefinition<K>> {
   return {
     ...props,
-    preInstall: async (context: WorkflowContext) => {
-      const project = context.get("project");
-
-      const integrationTemplate = await db.query.integrationTemplates.findFirst(
-        {
-          where: (t, { eq }) => eq(t.key, props.key),
-        },
-      );
-
-      if (!integrationTemplate) {
-        throw new Error(`Integration template not found: ${props.key}`);
-      }
-
-      const integration = await db.query.integrations.findFirst({
-        where: (t, { and, eq }) =>
-          and(
-            eq(t.projectId, project.id),
-            eq(t.integrationTemplateId, integrationTemplate.id),
-          ),
-      });
-
+    preInstall: async ({
+      context,
+      integration,
+    }: {
+      context: WorkflowContext;
+      integration: Integration;
+    }) => {
       const options = integration?.options as
         | ExtractOptionsForKey<K>
         | undefined;
 
-      const packages =
-        typeof props.packages === "function"
-          ? props.packages(options)
-          : props.packages;
+      const packages = (await props.packages?.(context, options)) ?? [];
 
-      const scripts =
-        (typeof props.scripts === "function"
-          ? await props.scripts(options)
-          : props.scripts) ?? {};
+      const scripts = (await props.scripts?.(context, options)) ?? [];
 
       const results = await Promise.all([
-        installPackages({
-          packages: packages?.add?.runtime ?? {},
-        }),
-        installPackages({
-          packages: packages?.add?.development ?? {},
-          isDev: true,
-        }),
+        installPackages(packages),
         updatePackageJsonScripts(scripts),
-        props.preInstall?.(context),
+        props.preInstall?.({ context, integration }),
       ]);
       return combineResults(results.filter((r) => r !== undefined));
     },
@@ -81,43 +54,9 @@ export async function applyIntegrationFiles({
   integration: Integration;
   context: WorkflowContext;
 }): Promise<void> {
-  const project = context.get("project");
-  const integrationDefinition = integrationRegistry.get(integration.key);
-
-  const projectType = project.type;
-
-  if (!projectType) {
-    throw new Error(`Project type is not defined`);
-  }
-
-  const dirMap = integrationDefinition.dirMap[projectType];
-
-  if (!dirMap) {
-    throw new Error(`No dirMap found for project type: ${projectType}`);
-  }
-
-  let baseDataDir = path.join(
-    process.cwd(),
-    `src/integrations/${integration.key}`,
-  );
-
-  // Handle special case for postgresql with ORM subdirectory
-  if (
-    integration.key === "postgresql" &&
-    integration.options &&
-    typeof integration.options === "object" &&
-    "orm" in integration.options &&
-    typeof integration.options.orm === "string"
-  ) {
-    baseDataDir = path.join(baseDataDir, integration.options.orm);
-  }
-
-  baseDataDir = path.join(baseDataDir, "data");
-
   const files = await generateFiles({
-    baseDataDir,
-    dirMap,
-    projectType,
+    integration,
+    context,
   });
 
   for (const file of files) {
@@ -134,22 +73,11 @@ export async function applyIntegrationFiles({
       continue;
     }
 
-    let processedContent = readResult.stdout;
-
-    // Replace @server/ with @/ for standalone-backend projects
-    if (projectType === "standalone-backend") {
-      processedContent = replacePatternInContent(
-        processedContent,
-        "@server/",
-        "@/",
-      );
-    }
-
     try {
       switch (file.type) {
         case "copy": {
           const writeResult = await runCommand("tee", [targetPath], {
-            stdin: processedContent,
+            stdin: file.content,
             cwd: WORKSPACE_DIR,
           });
           if (writeResult.success) {
@@ -175,7 +103,7 @@ export async function applyIntegrationFiles({
 
           const updatedContent = await applyEdit({
             originalCode: originalContentResult.stdout,
-            editInstructions: processedContent,
+            editInstructions: file.content,
           });
 
           const writeResult = await runCommand("tee", [targetPath], {
@@ -195,7 +123,7 @@ export async function applyIntegrationFiles({
           // For handlebars files, we need to process the template with variables
           // This would typically involve rendering the template with context variables
           const writeResult = await runCommand("tee", [targetPath], {
-            stdin: processedContent,
+            stdin: file.template,
             cwd: WORKSPACE_DIR,
           });
           if (writeResult.success) {
@@ -346,11 +274,32 @@ export function combineResults(
 }
 
 async function generateFiles(params: {
-  baseDataDir: string;
-  dirMap: Record<string, string>;
-  projectType: string;
+  integration: Integration;
+  context: WorkflowContext;
 }): Promise<FileItem[]> {
-  const { baseDataDir, dirMap } = params;
+  const { integration, context } = params;
+  const project = context.get("project");
+  const hasServer = project.config.has("server");
+  const hasWeb = project.config.has("web");
+
+  let baseDataDir = path.join(
+    process.cwd(),
+    `src/integrations/${integration.key}`,
+  );
+
+  // Handle special case for postgresql with ORM subdirectory
+  if (
+    integration.key === "postgresql" &&
+    integration.options &&
+    typeof integration.options === "object" &&
+    "orm" in integration.options &&
+    typeof integration.options.orm === "string"
+  ) {
+    baseDataDir = path.join(baseDataDir, integration.options.orm);
+  }
+
+  baseDataDir = path.join(baseDataDir, "data");
+
   const checkResult = await runCommand("test", ["-d", baseDataDir]);
 
   if (!checkResult.success) {
@@ -358,70 +307,54 @@ async function generateFiles(params: {
     return [];
   }
 
-  const specs: FileItem[] = [];
+  const files: FileItem[] = [];
 
-  // Process each directory mapping in dirMap
-  for (const [sourceDir, targetDir] of Object.entries(dirMap)) {
-    const sourcePath = path.join(baseDataDir, sourceDir);
-
-    // Handle wildcard patterns like "config/*"
-    if (sourceDir.endsWith("/*")) {
-      const baseSourceDir = sourceDir.slice(0, -2); // Remove /*
-      const baseSourcePath = path.join(baseDataDir, baseSourceDir);
-
-      const checkDirResult = await runCommand("test", ["-d", baseSourcePath]);
-      if (!checkDirResult.success) {
-        continue; // Skip if directory doesn't exist
-      }
-
-      const findResult = await runCommand("find", [
-        baseSourcePath,
-        "-type",
-        "f",
-      ]);
-      if (!findResult.success) {
-        continue;
-      }
-
-      const files = findResult.stdout.trim().split("\n").filter(Boolean);
-
-      for (const filePath of files) {
-        const relativePath = filePath.replace(`${baseSourcePath}/`, "");
-        const targetPath = path.join(targetDir, relativePath);
-
-        await processFile(filePath, targetPath, specs);
-      }
-    } else {
-      // Handle direct directory mapping
-      const checkDirResult = await runCommand("test", ["-d", sourcePath]);
-      if (!checkDirResult.success) {
-        continue; // Skip if directory doesn't exist
-      }
-
-      const findResult = await runCommand("find", [sourcePath, "-type", "f"]);
-      if (!findResult.success) {
-        continue;
-      }
-
-      const files = findResult.stdout.trim().split("\n").filter(Boolean);
-
-      for (const filePath of files) {
-        const relativePath = filePath.replace(`${sourcePath}/`, "");
-        const targetPath = path.join(targetDir, relativePath);
-
-        await processFile(filePath, targetPath, specs);
-      }
-    }
+  // Process server files if project includes server and integration has server data
+  if (hasServer) {
+    const serverPath = path.join(baseDataDir, "server");
+    const serverFiles = await processDirectoryFiles(serverPath);
+    files.push(...serverFiles);
   }
 
-  return specs;
+  // Process web files if project includes web and integration has web data
+  if (hasWeb) {
+    const webPath = path.join(baseDataDir, "web");
+    const webFiles = await processDirectoryFiles(webPath);
+    files.push(...webFiles);
+  }
+
+  return files;
+}
+
+async function processDirectoryFiles(sourcePath: string): Promise<FileItem[]> {
+  const findResult = await runCommand("find", [sourcePath, "-type", "f"]);
+  if (!findResult.success) {
+    return [];
+  }
+
+  const files: FileItem[] = [];
+
+  const filePaths = findResult.stdout.trim().split("\n").filter(Boolean);
+
+  for (const filePath of filePaths) {
+    if (typeof filePath !== "string") continue;
+
+    const relativePath = filePath.replace(`${sourcePath}/`, "");
+    const targetPath = path.join(WORKSPACE_DIR, relativePath);
+
+    const file = await processFile(filePath, targetPath);
+    files.push(...file);
+  }
+
+  return files;
 }
 
 async function processFile(
   filePath: string,
   targetPath: string,
-  specs: FileItem[],
-): Promise<void> {
+): Promise<FileItem[]> {
+  const files: FileItem[] = [];
+
   let type: FileItem["type"];
 
   if (filePath.endsWith(".txt")) {
@@ -437,13 +370,13 @@ async function processFile(
 
   if (!readResult.success) {
     console.error(`Failed to read file ${filePath}`);
-    return;
+    throw new Error(`Failed to read file ${filePath}`);
   }
 
   if (type === "handlebars") {
     const template = readResult.stdout;
     const variables = getVariablesFromTemplate(template);
-    specs.push({
+    files.push({
       type,
       sourcePath: filePath,
       targetPath,
@@ -451,11 +384,13 @@ async function processFile(
       variables,
     });
   } else {
-    specs.push({
+    files.push({
       type,
       sourcePath: filePath,
       targetPath,
       content: readResult.stdout,
     });
   }
+
+  return files;
 }

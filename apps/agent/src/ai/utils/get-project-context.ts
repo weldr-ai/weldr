@@ -1,8 +1,8 @@
 import { db, eq } from "@weldr/db";
+import type { projects } from "@weldr/db/schema";
 import { integrations, versions } from "@weldr/db/schema";
-import type { ProjectWithType } from "@/workflow/context";
 
-export async function getProjectContext(project: ProjectWithType) {
+export async function getProjectContext(project: typeof projects.$inferSelect) {
   const projectIntegrationsList = await db.query.integrations.findMany({
     where: eq(integrations.projectId, project.id),
     with: {
@@ -23,16 +23,12 @@ export async function getProjectContext(project: ProjectWithType) {
   });
 
   return project.initiatedAt
-    ? `You are working on a ${project.type === "full-stack" ? "full-stack" : project.type === "standalone-backend" ? "backend" : "frontend"} app called ${project.title}${
-        projectIntegrationsList.length > 0
-          ? `\nThis project has the following integrations setup:
+    ? `You are working on an app called ${project.title} with the following configurations:
 ${projectIntegrationsList
   .map((integration) => `- ${integration.integrationTemplate.name}`)
-  .join(", ")}`
-          : ""
-      }${
-        projectVersionsList.length > 0
-          ? `\nLast 5 versions:
+  .join(", ")}${
+  projectVersionsList.length > 0
+    ? `\nLast 5 versions:
 ${projectVersionsList
   .map(
     (version) =>
@@ -41,7 +37,7 @@ ${version.description}
 Changed files: ${version.changedFiles.map((file) => `- ${file.path} (${file.type})`).join("\n")}`,
   )
   .join("\n")}`
-          : ""
-      }`
+    : ""
+}`
     : "This is a new project";
 }

@@ -1,105 +1,101 @@
 import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
-import type { IntegrationCallbackResult } from "../types";
+import type {
+  IntegrationCallbackResult,
+  IntegrationPackageSets,
+  IntegrationScriptSets,
+} from "../types";
+import { combineResults } from "./integration-core";
 
-export async function installPackages({
-  packages,
-  isDev = false,
-}: {
-  packages: Record<string, string>;
-  isDev?: boolean;
-}): Promise<IntegrationCallbackResult> {
-  const packageEntries = Object.entries(packages);
-  if (packageEntries.length === 0) {
-    return { success: true, message: "No packages to install" };
-  }
-
-  const installCommand = isDev ? "bun add --dev" : "bun add";
-  const packageStrings = packageEntries.map(([name, version]) =>
-    version ? `${name}@${version}` : name,
-  );
-
-  const result = await runCommand(
-    "sh",
-    ["-c", `${installCommand} ${packageStrings.join(" ")}`],
-    {
-      cwd: WORKSPACE_DIR,
-    },
-  );
-
-  if (result.success) {
-    return {
-      success: true,
-      message: `Successfully installed packages: ${packageStrings.join(", ")}`,
-      installedPackages: packageStrings,
-    };
-  }
-
-  return {
-    success: false,
-    message: `Failed to install packages: ${result.stderr}`,
-    errors: [result.stderr],
-  };
-}
-
-export async function removePackages(
-  packageNames: string[],
+export async function installPackages(
+  packagesSets: IntegrationPackageSets,
 ): Promise<IntegrationCallbackResult> {
-  const result = await runCommand(
-    "sh",
-    ["-c", `bun remove ${packageNames.join(" ")}`],
-    {
-      cwd: WORKSPACE_DIR,
-    },
-  );
+  const results: IntegrationCallbackResult[] = [];
 
-  if (result.success) {
-    return {
-      success: true,
-      message: `Successfully removed packages: ${packageNames.join(", ")}`,
-    };
+  for (const packages of packagesSets) {
+    const runtimePackages = Object.entries(packages.runtime);
+    const developmentPackages = Object.entries(packages.development);
+
+    const runtimeInstallCommand = runtimePackages.map(([name, version]) =>
+      version ? `${name}@${version}` : name,
+    );
+
+    const developmentInstallCommand = developmentPackages.map(
+      ([name, version]) => (version ? `${name}@${version}` : name),
+    );
+
+    const target = packages.target;
+
+    const runtimeResult = await runCommand(
+      "sh",
+      ["-c", `pnpm add --filter ${target} ${runtimeInstallCommand.join(" ")}`],
+      {
+        cwd: WORKSPACE_DIR,
+      },
+    );
+
+    const developmentResult = await runCommand(
+      "sh",
+      [
+        "-c",
+        `pnpm add --filter ${target} --dev ${developmentInstallCommand.join(" ")}`,
+      ],
+      {
+        cwd: WORKSPACE_DIR,
+      },
+    );
+
+    results.push(runtimeResult);
+    results.push(developmentResult);
   }
 
-  return {
-    success: false,
-    message: `Failed to remove packages: ${result.stderr}`,
-    errors: [result.stderr],
-  };
+  return combineResults(results);
 }
 
 export async function updatePackageJsonScripts(
-  scripts: Record<string, string>,
+  scriptSets: IntegrationScriptSets,
 ): Promise<IntegrationCallbackResult> {
   try {
-    const packageJson = await runCommand("cat", ["package.json"], {
-      cwd: WORKSPACE_DIR,
-    });
+    const results: IntegrationCallbackResult[] = [];
 
-    if (!packageJson.success) {
-      return {
-        success: false,
-        message: `Failed to read package.json: ${packageJson.stderr}`,
-        errors: [packageJson.stderr],
-      };
+    for (const scriptSet of scriptSets) {
+      const directory =
+        scriptSet.target === "root"
+          ? WORKSPACE_DIR
+          : `${WORKSPACE_DIR}/apps/${scriptSet.target}`;
+
+      const packageJson = await runCommand("cat", ["package.json"], {
+        cwd: directory,
+      });
+
+      if (!packageJson.success) {
+        return {
+          success: false,
+          message: `Failed to read package.json: ${packageJson.stderr}`,
+          errors: [packageJson.stderr],
+        };
+      }
+
+      const packageJsonContent = JSON.parse(packageJson.stdout);
+
+      if (scriptSet.scripts) {
+        packageJsonContent.scripts = {
+          ...packageJsonContent.scripts,
+          ...scriptSet.scripts,
+        };
+      }
+
+      await runCommand("echo", [JSON.stringify(packageJsonContent, null, 2)], {
+        cwd: directory,
+      });
+
+      results.push({
+        success: true,
+        message: `Successfully updated ${scriptSet.target} package.json scripts`,
+      });
     }
 
-    const packageJsonContent = JSON.parse(packageJson.stdout);
-
-    if (scripts) {
-      packageJsonContent.scripts = {
-        ...packageJsonContent.scripts,
-        ...scripts,
-      };
-    }
-
-    await runCommand("echo", [JSON.stringify(packageJsonContent, null, 2)], {
-      cwd: WORKSPACE_DIR,
-    });
-
-    return {
-      success: true,
-      message: "Successfully updated package.json scripts",
-    };
+    return combineResults(results);
   } catch (error) {
     console.error("Error updating package.json:", error);
     return {
@@ -110,10 +106,10 @@ export async function updatePackageJsonScripts(
   }
 }
 
-export async function runBunScript(
+export async function runPnpmScript(
   script: string,
 ): Promise<IntegrationCallbackResult> {
-  const result = await runCommand("bun", ["run", script], {
+  const result = await runCommand("pnpm", ["run", script], {
     cwd: WORKSPACE_DIR,
   });
 

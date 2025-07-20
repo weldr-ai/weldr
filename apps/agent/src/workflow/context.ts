@@ -1,12 +1,12 @@
 import type { User } from "@weldr/auth";
 import type { projects, versions } from "@weldr/db/schema";
 
-export type ProjectWithType = typeof projects.$inferSelect & {
-  type: "standalone-backend" | "standalone-frontend" | "full-stack" | null;
+export type ProjectWithConfig = typeof projects.$inferSelect & {
+  config: Set<"server" | "web" | "authentication" | "database">;
 };
 
 type WorkflowContextStore = {
-  project: ProjectWithType;
+  project: ProjectWithConfig;
   version: typeof versions.$inferSelect;
   isXML: boolean;
   user: User;

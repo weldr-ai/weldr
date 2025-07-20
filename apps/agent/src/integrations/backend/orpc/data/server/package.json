@@ -1,0 +1,14 @@
+{
+  "name": "@repo/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "dotenv -e .env -- tsx watch src/server.ts",
+    "build": "tsdown src/server.ts --platform=node --bundle --minify --format=esm --outdir=dist",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "check": "biome check --diagnostic-level=warn",
+    "check:fix": "biome check --diagnostic-level=warn --write",
+    "clean": "rm -rf node_modules dist .turbo"
+  }
+}

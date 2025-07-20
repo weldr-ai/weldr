@@ -28,9 +28,10 @@ export type FileItem =
       variables: Record<string, string>;
     };
 
-export type IntegrationCallback = (
-  context: WorkflowContext,
-) => Promise<IntegrationCallbackResult>;
+export type IntegrationCallback = (params: {
+  context: WorkflowContext;
+  integration: Integration;
+}) => Promise<IntegrationCallbackResult>;
 
 export type ExtractOptionsForKey<K extends IntegrationKey> = Extract<
   Integration,
@@ -42,34 +43,26 @@ export type ExtractTemplateForKey<K extends IntegrationKey> = Extract<
   { key: K }
 >;
 
+export type IntegrationPackageSets = {
+  target: "web" | "server";
+  runtime: Record<string, string>;
+  development: Record<string, string>;
+}[];
+
+export type IntegrationScriptSets = {
+  target: "root" | "server" | "web";
+  scripts: Record<string, string>;
+}[];
+
 interface IntegrationDefinitionExtension<K extends IntegrationKey> {
-  packages?:
-    | {
-        add: {
-          runtime?: Record<string, string>;
-          development?: Record<string, string>;
-        };
-        remove?: string[];
-      }
-    | ((options?: ExtractOptionsForKey<K>) =>
-        | {
-            add: {
-              runtime?: Record<string, string>;
-              development?: Record<string, string>;
-            };
-            remove?: string[];
-          }
-        | undefined);
-  dirMap: {
-    "standalone-backend"?: Record<string, string>;
-    "standalone-frontend"?: Record<string, string>;
-    "full-stack"?: Record<string, string>;
-  };
-  scripts?:
-    | Record<string, string>
-    | ((
-        options?: ExtractOptionsForKey<K>,
-      ) => Promise<Record<string, string> | undefined>);
+  packages?: (
+    context: WorkflowContext,
+    options?: ExtractOptionsForKey<K>,
+  ) => Promise<IntegrationPackageSets>;
+  scripts?: (
+    context: WorkflowContext,
+    options?: ExtractOptionsForKey<K>,
+  ) => Promise<IntegrationScriptSets>;
   preInstall?: IntegrationCallback;
   postInstall?: IntegrationCallback;
 }

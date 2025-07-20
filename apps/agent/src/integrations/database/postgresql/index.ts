@@ -1,10 +1,8 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import path, { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import type {
+  IntegrationPackageSets,
+  IntegrationScriptSets,
+} from "@/integrations/types";
 import { defineIntegration } from "@/integrations/utils/integration-core";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const postgresqlIntegration = await defineIntegration<"postgresql">({
   category: "database",
@@ -25,76 +23,56 @@ export const postgresqlIntegration = await defineIntegration<"postgresql">({
   options: {
     orm: ["drizzle", "prisma"],
   },
-  packages: (options) => {
+  packages: async (_, options) => {
     if (options?.orm === "drizzle") {
-      return {
-        add: {
+      const packages: IntegrationPackageSets = [
+        {
+          target: "server",
           runtime: {
-            "drizzle-orm": "^0.44.2",
-            "drizzle-zod": "^0.7.1",
+            "drizzle-orm": "^0.44.3",
+            "drizzle-zod": "^0.8.2",
             postgres: "^3.4.7",
           },
           development: {
             "drizzle-kit": "^0.31.4",
           },
         },
-      };
+      ];
+
+      return packages;
+    } else {
+      throw new Error("Unsupported ORM");
     }
   },
-  dirMap: {
-    "standalone-backend": {
-      server: "src",
-      "config/*": ".",
-    },
-    "full-stack": {
-      server: "server",
-      "config/*": ".",
-    },
-  },
-  scripts: async (options) => {
+  scripts: async (_, options) => {
     const orm = options?.orm;
     if (orm === "drizzle") {
-      return {
-        "db:check": "drizzle-kit check",
-        "db:generate": "drizzle-kit generate",
-        "db:migrate": "drizzle-kit migrate",
-        "db:push": "drizzle-kit push",
-        "db:pull": "drizzle-kit pull",
-      };
+      const scripts: IntegrationScriptSets = [
+        {
+          target: "server",
+          scripts: {
+            "db:check": "drizzle-kit check",
+            "db:generate": "drizzle-kit generate",
+            "db:migrate": "drizzle-kit migrate",
+            "db:push": "drizzle-kit push",
+            "db:pull": "drizzle-kit pull",
+          },
+        },
+        {
+          target: "root",
+          scripts: {
+            "db:check": "turbo -F @repo/server db:check",
+            "db:generate": "turbo -F @repo/server db:generate",
+            "db:migrate": "turbo -F @repo/server db:migrate",
+            "db:push": "turbo -F @repo/server db:push",
+            "db:pull": "turbo -F @repo/server db:pull",
+          },
+        },
+      ];
+
+      return scripts;
+    } else {
+      throw new Error("Unsupported ORM");
     }
-  },
-  preInstall: async (context) => {
-    const project = context.get("project");
-
-    if (project.type === "full-stack") {
-      // For full-stack projects, update the template to use "./server/" instead of "./src/"
-      try {
-        const templatePath = join(__dirname, "data", "drizzle.config.ts.hbs");
-        const templateContent = readFileSync(templatePath, "utf8");
-
-        // Replace "./src/" with "./server/" in the template
-        const updatedContent = templateContent.replace(
-          /\.\/src\//g,
-          "./server/",
-        );
-
-        writeFileSync(templatePath, updatedContent);
-      } catch (error) {
-        return {
-          success: false,
-          message:
-            "Failed to update drizzle.config.ts template for full-stack project",
-          errors: [
-            `Error updating template: ${error instanceof Error ? error.message : String(error)}`,
-          ],
-        };
-      }
-    }
-
-    return {
-      success: true,
-      message:
-        "Successfully ran drizzle-postgresql integration pre-install hook",
-    };
   },
 });

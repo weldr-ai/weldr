@@ -7,7 +7,7 @@ import type {
 } from "@weldr/shared/types";
 import type { WorkflowContext } from "@/workflow/context";
 import { betterAuthIntegration } from "./authentication/better-auth";
-import { honoIntegration } from "./backend/hono";
+import { orpcIntegration } from "./backend/orpc";
 import { postgresqlIntegration } from "./database/postgresql";
 import { tanstackStartIntegration } from "./frontend/tanstack-start";
 import type { IntegrationDefinition } from "./types";
@@ -18,7 +18,7 @@ function getIntegrationKeyFromCategory(
 ): IntegrationKey[] {
   switch (category) {
     case "backend":
-      return ["hono"];
+      return ["orpc"];
     case "frontend":
       return ["tanstack-start"];
     case "database":
@@ -64,7 +64,7 @@ class IntegrationRegistry {
     }
 
     // Run the pre-install hook
-    await integrationDefinition.preInstall?.(context);
+    await integrationDefinition.preInstall?.({ context, integration });
 
     // Apply the files
     await applyIntegrationFiles({
@@ -73,7 +73,7 @@ class IntegrationRegistry {
     });
 
     // Run the post-install hook
-    await integrationDefinition.postInstall?.(context);
+    await integrationDefinition.postInstall?.({ context, integration });
 
     // Update the integration status
     await db
@@ -141,7 +141,7 @@ class IntegrationRegistry {
 }
 
 export const integrationRegistry = new IntegrationRegistry();
-integrationRegistry.register(honoIntegration);
+integrationRegistry.register(orpcIntegration);
 integrationRegistry.register(tanstackStartIntegration);
 integrationRegistry.register(postgresqlIntegration);
 integrationRegistry.register(betterAuthIntegration);

@@ -9,9 +9,9 @@ const baseIntegrationTemplateSchema = z.object({
   updatedAt: z.date(),
 });
 
-export const honoIntegrationTemplateSchema =
+export const orpcIntegrationTemplateSchema =
   baseIntegrationTemplateSchema.extend({
-    key: z.literal("hono"),
+    key: z.literal("orpc"),
     category: z.literal("backend"),
     allowMultiple: z.literal(false),
     dependencies: z.null(),
@@ -80,7 +80,7 @@ export const betterAuthIntegrationTemplateSchema =
   });
 
 export const integrationTemplateSchema = z.discriminatedUnion("key", [
-  honoIntegrationTemplateSchema,
+  orpcIntegrationTemplateSchema,
   tanstackStartIntegrationTemplateSchema,
   postgresqlIntegrationTemplateSchema,
   betterAuthIntegrationTemplateSchema,
