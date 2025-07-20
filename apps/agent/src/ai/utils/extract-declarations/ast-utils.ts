@@ -1,5 +1,6 @@
-import type { DeclarationPosition } from "@weldr/shared/types/declarations";
 import * as ts from "typescript";
+
+import type { DeclarationPosition } from "@weldr/shared/types/declarations";
 
 // Extract parameter information from TypeScript nodes
 export function extractParameterInfo(param: ts.ParameterDeclaration): {
@@ -197,7 +198,6 @@ export function extractType(type: ts.TypeNode): string {
 export function getNodePosition(
   node: ts.Node,
   sourceFile: ts.SourceFile,
-  sourceLines: string[],
 ): DeclarationPosition {
   const start = sourceFile.getLineAndCharacterOfPosition(
     node.getStart(sourceFile),

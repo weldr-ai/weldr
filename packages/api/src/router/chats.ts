@@ -1,5 +1,8 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
+import { and, eq } from "drizzle-orm";
+import { z } from "zod";
+
 import { chatMessages, chats } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Tigris } from "@weldr/shared/tigris";
@@ -8,8 +11,6 @@ import {
   addMessagesInputSchema,
   toolResultPartSchema,
 } from "@weldr/shared/validators/chats";
-import { and, eq } from "drizzle-orm";
-import { z } from "zod";
 import { protectedProcedure } from "../init";
 
 export const chatsRouter = {

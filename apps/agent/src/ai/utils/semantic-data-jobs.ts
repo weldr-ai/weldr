@@ -1,3 +1,7 @@
+import { embedMany, generateObject } from "ai";
+import { and, eq, isNotNull } from "drizzle-orm";
+import { WORKSPACE_DIR } from "@/lib/constants";
+
 import { db } from "@weldr/db";
 import {
   declarations,
@@ -13,9 +17,6 @@ import type {
   DeclarationSpecs,
 } from "@weldr/shared/types/declarations";
 import { declarationSemanticDataSchema } from "@weldr/shared/validators/declarations/index";
-import { embedMany, generateObject } from "ai";
-import { and, eq, isNotNull } from "drizzle-orm";
-import { WORKSPACE_DIR } from "@/lib/constants";
 import { runCommand } from "./commands";
 import { registry } from "./registry";
 

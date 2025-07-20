@@ -1,7 +1,8 @@
-import type { referencePartSchema } from "@weldr/shared/validators/chats";
-import { cn } from "@weldr/ui/lib/utils";
 import { AppWindowIcon, TableIcon } from "lucide-react";
 import type { z } from "zod";
+
+import type { referencePartSchema } from "@weldr/shared/validators/chats";
+import { cn } from "@weldr/ui/lib/utils";
 
 interface ReferenceBadgeProps {
   reference: z.infer<typeof referencePartSchema>;
@@ -22,9 +23,7 @@ export function ReferenceBadge({ reference, className }: ReferenceBadgeProps) {
         <AppWindowIcon className="mr-1 size-3 text-primary" />
       ) : reference.type === "reference:endpoint" ? (
         <span className="mr-1 text-primary text-xs">{reference.method}</span>
-      ) : (
-        <></>
-      )}
+      ) : null}
       {reference.type === "reference:endpoint"
         ? reference.path
         : reference.name}

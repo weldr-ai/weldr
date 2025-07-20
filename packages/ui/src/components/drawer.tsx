@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "@weldr/ui/lib/utils";
 import type * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
+
+import { cn } from "@weldr/ui/lib/utils";
 
 function Drawer({
   ...props

@@ -5,6 +5,7 @@ import { cva } from "class-variance-authority";
 import type { JSONSchema7, JSONSchema7Definition } from "json-schema";
 import { ChevronRight } from "lucide-react";
 import React from "react";
+
 import { cn, getDataTypeIcon } from "../lib/utils";
 
 const treeVariants = cva(
@@ -464,6 +465,8 @@ const TreeLeaf = React.forwardRef<
     ref,
   ) => {
     return (
+      // biome-ignore lint/a11y/noStaticElementInteractions: reason
+      // biome-ignore lint/a11y/useKeyWithClickEvents: reason
       <div
         ref={ref}
         className={cn(

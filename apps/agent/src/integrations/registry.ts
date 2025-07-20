@@ -1,3 +1,5 @@
+import type { WorkflowContext } from "@/workflow/context";
+
 import { db, eq } from "@weldr/db";
 import { integrations } from "@weldr/db/schema";
 import type {
@@ -5,7 +7,6 @@ import type {
   IntegrationCategory,
   IntegrationKey,
 } from "@weldr/shared/types";
-import type { WorkflowContext } from "@/workflow/context";
 import { betterAuthIntegration } from "./authentication/better-auth";
 import { orpcIntegration } from "./backend/orpc";
 import { postgresqlIntegration } from "./database/postgresql";

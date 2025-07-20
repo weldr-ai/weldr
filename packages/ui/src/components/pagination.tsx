@@ -1,5 +1,3 @@
-import { type Button, buttonVariants } from "@weldr/ui/components/button";
-import { cn } from "@weldr/ui/lib/utils";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -7,9 +5,13 @@ import {
 } from "lucide-react";
 import type * as React from "react";
 
+import { type Button, buttonVariants } from "@weldr/ui/components/button";
+import { cn } from "@weldr/ui/lib/utils";
+
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (
     <nav
+      // biome-ignore lint/a11y/noRedundantRoles: reason
       role="navigation"
       aria-label="pagination"
       data-slot="pagination"

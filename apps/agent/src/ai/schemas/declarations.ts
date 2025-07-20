@@ -1,5 +1,6 @@
-import { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 import { z } from "zod";
+
+import { declarationSpecsSchema } from "@weldr/shared/validators/declarations/index";
 
 export const declarationSpecsWithDependenciesSchema =
   declarationSpecsSchema.and(

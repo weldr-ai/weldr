@@ -1,4 +1,3 @@
-import { nanoid } from "@weldr/shared/nanoid";
 import {
   integer,
   numeric,
@@ -7,6 +6,8 @@ import {
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
+
+import { nanoid } from "@weldr/shared/nanoid";
 
 export type AiModelProvider = "google" | "openai" | "anthropic";
 

@@ -1,6 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { EyeIcon, EyeOffIcon, LoaderIcon } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import type { z } from "zod";
+import { useUIStore } from "@/lib/context/ui-store";
+
 import { authClient } from "@weldr/auth/client";
 import { signInSchema } from "@weldr/shared/validators/auth";
 import { Button } from "@weldr/ui/components/button";
@@ -24,12 +31,6 @@ import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
-import { EyeIcon, EyeOffIcon, LoaderIcon } from "lucide-react";
-import Link from "next/link";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import type { z } from "zod";
-import { useUIStore } from "@/lib/context/ui-store";
 import { Socials } from "./socials";
 import { SupportLinks } from "./support-links";
 

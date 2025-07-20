@@ -1,9 +1,10 @@
-import type { Attachment } from "@weldr/shared/types";
-import { Button } from "@weldr/ui/components/button";
 import { filesize } from "filesize";
 import { LoaderIcon, XIcon } from "lucide-react";
 import Image from "next/image";
 import { shortenFileName } from "@/lib/utils";
+
+import type { Attachment } from "@weldr/shared/types";
+import { Button } from "@weldr/ui/components/button";
 
 export const PreviewAttachment = ({
   attachment,

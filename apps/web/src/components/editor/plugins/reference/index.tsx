@@ -6,15 +6,16 @@ import {
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
-import { nanoid } from "@weldr/shared/nanoid";
-import type { referencePartSchema } from "@weldr/shared/validators/chats";
-import { ScrollArea } from "@weldr/ui/components/scroll-area";
-import { cn } from "@weldr/ui/lib/utils";
 import type { TextNode } from "lexical";
 import { useCallback, useMemo, useState } from "react";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";
 import { $createReferenceNode } from "@/components/editor/plugins/reference/node";
+
+import { nanoid } from "@weldr/shared/nanoid";
+import type { referencePartSchema } from "@weldr/shared/validators/chats";
+import { ScrollArea } from "@weldr/ui/components/scroll-area";
+import { cn } from "@weldr/ui/lib/utils";
 import { ReferenceBadge } from "../../reference-badge";
 
 export class ReferenceOption extends MenuOption {

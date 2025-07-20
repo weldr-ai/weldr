@@ -1,7 +1,5 @@
 "use client";
 
-import type { RouterOutputs } from "@weldr/api";
-import type { Project, Version } from "@weldr/shared/types";
 import {
   createContext,
   type ReactNode,
@@ -9,6 +7,9 @@ import {
   useEffect,
   useState,
 } from "react";
+
+import type { RouterOutputs } from "@weldr/api";
+import type { Project, Version } from "@weldr/shared/types";
 
 type PartialProject = Partial<Project & { currentVersion: Partial<Version> }>;
 

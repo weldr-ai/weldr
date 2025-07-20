@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { environmentVariableSchema } from "./environment-variables";
 
 export const projectSchema = z.object({

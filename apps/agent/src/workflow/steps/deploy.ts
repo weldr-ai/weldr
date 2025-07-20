@@ -1,10 +1,11 @@
+import { runCommand } from "@/ai/utils/commands";
+import { SCRIPTS_DIR } from "@/lib/constants";
+
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import { Logger } from "@weldr/shared/logger";
 import { machineLookupStore } from "@weldr/shared/machine-lookup-store";
-import { runCommand } from "@/ai/utils/commands";
-import { SCRIPTS_DIR } from "@/lib/constants";
 import { createStep } from "../engine";
 
 const isDev = process.env.NODE_ENV === "development";

@@ -1,18 +1,5 @@
 "use client";
 
-import { Badge } from "@weldr/ui/components/badge";
-import { Button, buttonVariants } from "@weldr/ui/components/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@weldr/ui/components/dialog";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@weldr/ui/components/toggle-group";
-import { cn } from "@weldr/ui/lib/utils";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -26,6 +13,20 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useProject } from "@/lib/context/project";
+
+import { Badge } from "@weldr/ui/components/badge";
+import { Button, buttonVariants } from "@weldr/ui/components/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@weldr/ui/components/dialog";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@weldr/ui/components/toggle-group";
+import { cn } from "@weldr/ui/lib/utils";
 
 interface SitePreviewDialogProps {
   open: boolean;

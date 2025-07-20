@@ -2,6 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { EyeIcon, EyeOffIcon, LoaderIcon, PlusIcon } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import type { z } from "zod";
+import { useTRPC } from "@/lib/trpc/react";
+
 import { insertEnvironmentVariableSchema } from "@weldr/shared/validators/environment-variables";
 import { Button } from "@weldr/ui/components/button";
 import {
@@ -22,11 +28,6 @@ import {
 } from "@weldr/ui/components/form";
 import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { EyeIcon, EyeOffIcon, LoaderIcon, PlusIcon } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import type { z } from "zod";
-import { useTRPC } from "@/lib/trpc/react";
 
 export default function AddEnvironmentVariableDialog({
   projectId,

@@ -1,6 +1,7 @@
+import { getProjectContext } from "@/ai/utils/get-project-context";
+
 import { db } from "@weldr/db";
 import type { projects } from "@weldr/db/schema";
-import { getProjectContext } from "@/ai/utils/get-project-context";
 
 export const planner = async (
   project: typeof projects.$inferSelect,

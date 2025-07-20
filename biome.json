@@ -1,6 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.1.1/schema.json",
   "files": {
+    "ignoreUnknown": true,
     "includes": [
       "apps/**",
       "packages/**",
@@ -16,29 +17,39 @@
   },
   "formatter": {
     "enabled": true,
-    "indentStyle": "space"
+    "indentStyle": "space",
+    "indentWidth": 2
   },
   "assist": {
     "actions": {
       "source": {
-        "organizeImports": "on"
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              ":BUN:",
+              ":NODE:",
+              ["**", "!@weldr/**", "!./**", "!../**"],
+              ":BLANK_LINE:",
+              ["@weldr/**"],
+              ["./", "../", "/**"]
+            ]
+          }
+        }
       }
     }
   },
   "linter": {
-    "enabled": true,
     "domains": {
       "react": "recommended",
-      "next": "recommended",
-      "project": "recommended"
+      "next": "recommended"
     },
     "rules": {
       "recommended": true,
       "a11y": "info",
       "correctness": {
         "useExhaustiveDependencies": "info",
-        "useHookAtTopLevel": "info",
-        "noUnusedFunctionParameters": "info"
+        "useHookAtTopLevel": "info"
       },
       "nursery": {
         "useSortedClasses": {

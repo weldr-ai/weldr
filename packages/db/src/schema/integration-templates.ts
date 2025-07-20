@@ -1,11 +1,3 @@
-import { nanoid } from "@weldr/shared/nanoid";
-import type {
-  IntegrationCategory,
-  IntegrationKey,
-  IntegrationTemplateDependencies,
-  IntegrationTemplateOptions,
-  IntegrationTemplateVariable,
-} from "@weldr/shared/types";
 import {
   boolean,
   index,
@@ -15,6 +7,15 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+
+import { nanoid } from "@weldr/shared/nanoid";
+import type {
+  IntegrationCategory,
+  IntegrationKey,
+  IntegrationTemplateDependencies,
+  IntegrationTemplateOptions,
+  IntegrationTemplateVariable,
+} from "@weldr/shared/types";
 
 export const integrationTemplates = pgTable(
   "integration_templates",

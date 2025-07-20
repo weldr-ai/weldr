@@ -1,13 +1,14 @@
-import { Logger } from "@weldr/shared/logger";
-import {
-  integrationKeySchema,
-  integrationStatusSchema,
-} from "@weldr/shared/validators/integrations";
 import { z } from "zod";
 import {
   getIntegrations,
   installIntegrations,
 } from "@/integrations/utils/integration-core";
+
+import { Logger } from "@weldr/shared/logger";
+import {
+  integrationKeySchema,
+  integrationStatusSchema,
+} from "@weldr/shared/validators/integrations";
 import { createTool } from "../utils/tools";
 
 export const addIntegrationsTool = createTool({

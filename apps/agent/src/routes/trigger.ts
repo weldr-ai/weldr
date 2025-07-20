@@ -1,4 +1,9 @@
 import { createRoute, z } from "@hono/zod-openapi";
+import { initVersion } from "@/ai/utils/init-version";
+import { insertMessages } from "@/ai/utils/insert-messages";
+import { createRouter } from "@/lib/utils";
+import { workflow } from "@/workflow";
+
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
@@ -6,10 +11,6 @@ import {
   attachmentSchema,
   userMessageContentSchema,
 } from "@weldr/shared/validators/chats";
-import { initVersion } from "@/ai/utils/init-version";
-import { insertMessages } from "@/ai/utils/insert-messages";
-import { createRouter } from "@/lib/utils";
-import { workflow } from "@/workflow";
 
 const route = createRoute({
   method: "post",

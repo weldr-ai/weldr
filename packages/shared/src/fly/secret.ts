@@ -1,4 +1,5 @@
 import { ofetch } from "ofetch/node";
+
 import { ofetchConfig } from "../ofetch-config";
 import { type FlyAppType, flyApiKey } from "./config";
 

@@ -1,4 +1,15 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useReactFlow } from "@xyflow/react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { z } from "zod";
+import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
+import { useProject } from "@/lib/context/project";
+import { useTRPC } from "@/lib/trpc/react";
+import { parseConventionalCommit } from "@/lib/utils";
+import type { CanvasNode } from "@/types";
+
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
 import { nanoid } from "@weldr/shared/nanoid";
@@ -19,16 +30,6 @@ import {
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
-import { useReactFlow } from "@xyflow/react";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { z } from "zod";
-import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
-import { useProject } from "@/lib/context/project";
-import { useTRPC } from "@/lib/trpc/react";
-import { parseConventionalCommit } from "@/lib/utils";
-import type { CanvasNode } from "@/types";
 import { CommitTypeBadge } from "./commit-type-badge";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";

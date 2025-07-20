@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+
 import { and, desc, eq, isNotNull } from "@weldr/db";
 import { chats, versions } from "@weldr/db/schema";
-import { z } from "zod";
 import { protectedProcedure } from "../init";
 
 export const versionRouter = {

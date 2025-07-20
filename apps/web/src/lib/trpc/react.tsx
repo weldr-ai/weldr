@@ -8,10 +8,10 @@ import {
   loggerLink,
 } from "@trpc/client";
 import { createTRPCContext } from "@trpc/tanstack-react-query";
-import type { AppRouter } from "@weldr/api";
 import { useState } from "react";
 import SuperJSON from "superjson";
 
+import type { AppRouter } from "@weldr/api";
 import { createQueryClient } from "./query-client";
 
 let clientQueryClientSingleton: QueryClient | undefined;

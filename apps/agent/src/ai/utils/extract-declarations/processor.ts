@@ -1,3 +1,5 @@
+import * as ts from "typescript";
+
 import type {
   ConstructorMemberMetadata,
   DeclarationCodeMetadata,
@@ -7,7 +9,6 @@ import type {
   PropertyMemberMetadata,
   SetterMemberMetadata,
 } from "@weldr/shared/types/declarations";
-import * as ts from "typescript";
 import {
   extractExpressionType,
   extractParameterInfo,
@@ -82,12 +83,12 @@ async function processStatement({
 }): Promise<void> {
   // Handle import declarations
   if (ts.isImportDeclaration(statement)) {
-    await processImportDeclaration(
-      statement,
+    await processImportDeclaration({
+      importDecl: statement,
       importedIdentifiers,
       filename,
       pathAliases,
-    );
+    });
     return;
   }
 
@@ -96,114 +97,107 @@ async function processStatement({
 
   // Handle different types of declarations
   if (ts.isFunctionDeclaration(statement)) {
-    const funcDecl = await processFunctionDeclaration(
-      statement,
+    const funcDecl = await processFunctionDeclaration({
+      funcDecl: statement,
       sourceFile,
       sourceCode,
       sourceLines,
       filename,
-      actuallyExported,
+      isExported: actuallyExported,
       importedIdentifiers,
-    );
+    });
     if (funcDecl) declarations.push(funcDecl);
   } else if (ts.isClassDeclaration(statement)) {
-    const classDecl = await processClassDeclaration(
-      statement,
+    const classDecl = await processClassDeclaration({
+      classDecl: statement,
       sourceFile,
       sourceCode,
       sourceLines,
       filename,
-      actuallyExported,
+      isExported: actuallyExported,
       importedIdentifiers,
       declarations,
-    );
+    });
     if (classDecl) declarations.push(classDecl);
   } else if (ts.isInterfaceDeclaration(statement)) {
-    const interfaceDecl = await processInterfaceDeclaration(
-      statement,
+    const interfaceDecl = await processInterfaceDeclaration({
+      interfaceDecl: statement,
       sourceFile,
-      sourceCode,
-      sourceLines,
       filename,
-      actuallyExported,
-    );
+      isExported: actuallyExported,
+    });
     if (interfaceDecl) declarations.push(interfaceDecl);
   } else if (ts.isTypeAliasDeclaration(statement)) {
-    const typeDecl = await processTypeAliasDeclaration(
-      statement,
+    const typeDecl = await processTypeAliasDeclaration({
+      typeAliasDecl: statement,
       sourceFile,
-      sourceCode,
-      sourceLines,
       filename,
-      actuallyExported,
-    );
+      isExported: actuallyExported,
+    });
     if (typeDecl) declarations.push(typeDecl);
   } else if (ts.isEnumDeclaration(statement)) {
-    const enumDecl = await processEnumDeclaration(
-      statement,
+    const enumDecl = await processEnumDeclaration({
+      enumDecl: statement,
       sourceFile,
-      sourceCode,
-      sourceLines,
       filename,
-      actuallyExported,
-    );
+      isExported: actuallyExported,
+    });
     if (enumDecl) declarations.push(enumDecl);
   } else if (ts.isModuleDeclaration(statement)) {
-    const moduleDecl = await processModuleDeclaration(
-      statement,
+    const moduleDecl = await processModuleDeclaration({
+      moduleDecl: statement,
       sourceFile,
       sourceCode,
       sourceLines,
       filename,
-      actuallyExported,
+      isExported: actuallyExported,
       pathAliases,
       declarations,
       importedIdentifiers,
-    );
+    });
     if (moduleDecl) declarations.push(moduleDecl);
   } else if (ts.isVariableStatement(statement)) {
-    const varDecls = await processVariableStatement(
-      statement,
+    const varDecls = await processVariableStatement({
+      varStatement: statement,
       sourceFile,
       sourceCode,
-      sourceLines,
       filename,
-      actuallyExported,
+      isExported: actuallyExported,
       importedIdentifiers,
-    );
+    });
     declarations.push(...varDecls);
   } else if (ts.isExportDeclaration(statement)) {
     // Handle re-exports
-    await processExportDeclaration(
-      statement,
+    await processExportDeclaration({
+      exportDecl: statement,
       sourceFile,
-      sourceCode,
-      sourceLines,
       filename,
-      pathAliases,
       declarations,
-      importedIdentifiers,
-    );
+    });
   } else if (ts.isExportAssignment(statement)) {
     // Handle export default
-    await processExportAssignment(
-      statement,
+    await processExportAssignment({
+      exportAssignment: statement,
       sourceFile,
       sourceCode,
-      sourceLines,
       filename,
       declarations,
       importedIdentifiers,
-    );
+    });
   }
 }
 
-async function processImportDeclaration(
-  importDecl: ts.ImportDeclaration,
-  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>,
-  filename: string,
-  pathAliases?: Record<string, string>,
-): Promise<void> {
+async function processImportDeclaration({
+  importDecl,
+  importedIdentifiers,
+  filename,
+  pathAliases,
+}: {
+  importDecl: ts.ImportDeclaration;
+  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
+  filename: string;
+  pathAliases?: Record<string, string>;
+}): Promise<void> {
   const moduleSpecifier = importDecl.moduleSpecifier;
   if (!ts.isStringLiteral(moduleSpecifier)) return;
 
@@ -248,19 +242,26 @@ async function processImportDeclaration(
   }
 }
 
-async function processFunctionDeclaration(
-  funcDecl: ts.FunctionDeclaration,
-  sourceFile: ts.SourceFile,
-  sourceCode: string,
-  sourceLines: string[],
-  filename: string,
-  isExported: boolean,
-  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>,
-): Promise<DeclarationCodeMetadata | null> {
+async function processFunctionDeclaration({
+  funcDecl,
+  sourceFile,
+  sourceCode,
+  filename,
+  isExported,
+  importedIdentifiers,
+}: {
+  funcDecl: ts.FunctionDeclaration;
+  sourceFile: ts.SourceFile;
+  sourceCode: string;
+  sourceLines: string[];
+  filename: string;
+  isExported: boolean;
+  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
+}): Promise<DeclarationCodeMetadata | null> {
   if (!funcDecl.name) return null;
 
   const name = funcDecl.name.text;
-  const position = getNodePosition(funcDecl, sourceFile, sourceLines);
+  const position = getNodePosition(funcDecl, sourceFile);
 
   const typeParameters = funcDecl.typeParameters
     ? extractTypeParameters(funcDecl.typeParameters)
@@ -311,20 +312,28 @@ async function processFunctionDeclaration(
   };
 }
 
-async function processClassDeclaration(
-  classDecl: ts.ClassDeclaration,
-  sourceFile: ts.SourceFile,
-  sourceCode: string,
-  sourceLines: string[],
-  filename: string,
-  isExported: boolean,
-  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>,
-  declarations: DeclarationCodeMetadata[],
-): Promise<DeclarationCodeMetadata | null> {
+async function processClassDeclaration({
+  classDecl,
+  sourceFile,
+  sourceCode,
+  filename,
+  isExported,
+  importedIdentifiers,
+  declarations,
+}: {
+  classDecl: ts.ClassDeclaration;
+  sourceFile: ts.SourceFile;
+  sourceCode: string;
+  sourceLines: string[];
+  filename: string;
+  isExported: boolean;
+  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
+  declarations: DeclarationCodeMetadata[];
+}): Promise<DeclarationCodeMetadata | null> {
   if (!classDecl.name) return null;
 
   const name = classDecl.name.text;
-  const position = getNodePosition(classDecl, sourceFile, sourceLines);
+  const position = getNodePosition(classDecl, sourceFile);
 
   const typeParameters = classDecl.typeParameters
     ? extractTypeParameters(classDecl.typeParameters)
@@ -381,11 +390,7 @@ async function processClassDeclaration(
       const parameters = member.parameters.map((param) =>
         extractParameterInfo(param),
       );
-      const constructorPosition = getNodePosition(
-        member,
-        sourceFile,
-        sourceLines,
-      );
+      const constructorPosition = getNodePosition(member, sourceFile);
 
       const constructorRaw = extractRawCode(member, sourceCode);
       const constructorDependencies = findDependencies({
@@ -409,7 +414,7 @@ async function processClassDeclaration(
       const memberName = ts.isIdentifier(member.name)
         ? member.name.text
         : member.name.getText();
-      const memberPosition = getNodePosition(member, sourceFile, sourceLines);
+      const memberPosition = getNodePosition(member, sourceFile);
 
       const parameters = member.parameters.map((param) =>
         extractParameterInfo(param),
@@ -450,7 +455,7 @@ async function processClassDeclaration(
       const memberName = ts.isIdentifier(member.name)
         ? member.name.text
         : member.name.getText();
-      const memberPosition = getNodePosition(member, sourceFile, sourceLines);
+      const memberPosition = getNodePosition(member, sourceFile);
       const propType = member.type
         ? extractTypeAnnotation(member.type)
         : member.initializer
@@ -489,7 +494,7 @@ async function processClassDeclaration(
       const memberName = ts.isIdentifier(member.name)
         ? member.name.text
         : member.name.getText();
-      const memberPosition = getNodePosition(member, sourceFile, sourceLines);
+      const memberPosition = getNodePosition(member, sourceFile);
       const returnType = member.type
         ? extractTypeAnnotation(member.type)
         : "any";
@@ -519,7 +524,7 @@ async function processClassDeclaration(
       const memberName = ts.isIdentifier(member.name)
         ? member.name.text
         : member.name.getText();
-      const memberPosition = getNodePosition(member, sourceFile, sourceLines);
+      const memberPosition = getNodePosition(member, sourceFile);
       const parameter = member.parameters[0];
       const parameterInfo = parameter
         ? extractParameterInfo(parameter)
@@ -605,16 +610,19 @@ async function processClassDeclaration(
   };
 }
 
-async function processInterfaceDeclaration(
-  interfaceDecl: ts.InterfaceDeclaration,
-  sourceFile: ts.SourceFile,
-  sourceCode: string,
-  sourceLines: string[],
-  filename: string,
-  isExported: boolean,
-): Promise<DeclarationCodeMetadata | null> {
+async function processInterfaceDeclaration({
+  interfaceDecl,
+  sourceFile,
+  filename,
+  isExported,
+}: {
+  interfaceDecl: ts.InterfaceDeclaration;
+  sourceFile: ts.SourceFile;
+  filename: string;
+  isExported: boolean;
+}): Promise<DeclarationCodeMetadata | null> {
   const name = interfaceDecl.name.text;
-  const position = getNodePosition(interfaceDecl, sourceFile, sourceLines);
+  const position = getNodePosition(interfaceDecl, sourceFile);
 
   const typeParameters = interfaceDecl.typeParameters
     ? extractTypeParameters(interfaceDecl.typeParameters)
@@ -643,16 +651,19 @@ async function processInterfaceDeclaration(
   };
 }
 
-async function processTypeAliasDeclaration(
-  typeAliasDecl: ts.TypeAliasDeclaration,
-  sourceFile: ts.SourceFile,
-  sourceCode: string,
-  sourceLines: string[],
-  filename: string,
-  isExported: boolean,
-): Promise<DeclarationCodeMetadata | null> {
+async function processTypeAliasDeclaration({
+  typeAliasDecl,
+  sourceFile,
+  filename,
+  isExported,
+}: {
+  typeAliasDecl: ts.TypeAliasDeclaration;
+  sourceFile: ts.SourceFile;
+  filename: string;
+  isExported: boolean;
+}): Promise<DeclarationCodeMetadata | null> {
   const name = typeAliasDecl.name.text;
-  const position = getNodePosition(typeAliasDecl, sourceFile, sourceLines);
+  const position = getNodePosition(typeAliasDecl, sourceFile);
 
   const typeParameters = typeAliasDecl.typeParameters
     ? extractTypeParameters(typeAliasDecl.typeParameters)
@@ -674,16 +685,19 @@ async function processTypeAliasDeclaration(
   };
 }
 
-async function processEnumDeclaration(
-  enumDecl: ts.EnumDeclaration,
-  sourceFile: ts.SourceFile,
-  sourceCode: string,
-  sourceLines: string[],
-  filename: string,
-  isExported: boolean,
-): Promise<DeclarationCodeMetadata | null> {
+async function processEnumDeclaration({
+  enumDecl,
+  sourceFile,
+  filename,
+  isExported,
+}: {
+  enumDecl: ts.EnumDeclaration;
+  sourceFile: ts.SourceFile;
+  filename: string;
+  isExported: boolean;
+}): Promise<DeclarationCodeMetadata | null> {
   const name = enumDecl.name.text;
-  const position = getNodePosition(enumDecl, sourceFile, sourceLines);
+  const position = getNodePosition(enumDecl, sourceFile);
 
   const enumMembers = enumDecl.members.map((member) => {
     const memberName = ts.isIdentifier(member.name)
@@ -711,21 +725,27 @@ async function processEnumDeclaration(
   };
 }
 
-async function processVariableStatement(
-  varStatement: ts.VariableStatement,
-  sourceFile: ts.SourceFile,
-  sourceCode: string,
-  sourceLines: string[],
-  filename: string,
-  isExported: boolean,
-  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>,
-): Promise<DeclarationCodeMetadata[]> {
+async function processVariableStatement({
+  varStatement,
+  sourceFile,
+  sourceCode,
+  filename,
+  isExported,
+  importedIdentifiers,
+}: {
+  varStatement: ts.VariableStatement;
+  sourceFile: ts.SourceFile;
+  sourceCode: string;
+  filename: string;
+  isExported: boolean;
+  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
+}): Promise<DeclarationCodeMetadata[]> {
   const declarations: DeclarationCodeMetadata[] = [];
 
   for (const declaration of varStatement.declarationList.declarations) {
     if (ts.isIdentifier(declaration.name)) {
       const name = declaration.name.text;
-      const position = getNodePosition(varStatement, sourceFile, sourceLines);
+      const position = getNodePosition(varStatement, sourceFile);
 
       let typeSignature: string;
       const varKind =
@@ -763,21 +783,31 @@ async function processVariableStatement(
   return declarations;
 }
 
-async function processModuleDeclaration(
-  moduleDecl: ts.ModuleDeclaration,
-  sourceFile: ts.SourceFile,
-  sourceCode: string,
-  sourceLines: string[],
-  filename: string,
-  isExported: boolean,
-  pathAliases?: Record<string, string>,
-  declarations?: DeclarationCodeMetadata[],
-  importedIdentifiers?: Map<string, { source: string; isExternal: boolean }>,
-): Promise<DeclarationCodeMetadata | null> {
+async function processModuleDeclaration({
+  moduleDecl,
+  sourceFile,
+  sourceCode,
+  sourceLines,
+  filename,
+  isExported,
+  pathAliases,
+  declarations,
+  importedIdentifiers,
+}: {
+  moduleDecl: ts.ModuleDeclaration;
+  sourceFile: ts.SourceFile;
+  sourceCode: string;
+  sourceLines: string[];
+  filename: string;
+  isExported: boolean;
+  pathAliases?: Record<string, string>;
+  declarations?: DeclarationCodeMetadata[];
+  importedIdentifiers?: Map<string, { source: string; isExternal: boolean }>;
+}): Promise<DeclarationCodeMetadata | null> {
   if (!moduleDecl.name || !ts.isIdentifier(moduleDecl.name)) return null;
 
   const name = moduleDecl.name.text;
-  const position = getNodePosition(moduleDecl, sourceFile, sourceLines);
+  const position = getNodePosition(moduleDecl, sourceFile);
 
   // Process nested declarations within the namespace
   if (moduleDecl.body && ts.isModuleBlock(moduleDecl.body)) {
@@ -819,23 +849,24 @@ async function processModuleDeclaration(
   };
 }
 
-async function processExportDeclaration(
-  exportDecl: ts.ExportDeclaration,
-  sourceFile: ts.SourceFile,
-  sourceCode: string,
-  sourceLines: string[],
-  filename: string,
-  pathAliases: Record<string, string> | undefined,
-  declarations: DeclarationCodeMetadata[],
-  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>,
-): Promise<void> {
+async function processExportDeclaration({
+  exportDecl,
+  sourceFile,
+  filename,
+  declarations,
+}: {
+  exportDecl: ts.ExportDeclaration;
+  sourceFile: ts.SourceFile;
+  filename: string;
+  declarations: DeclarationCodeMetadata[];
+}): Promise<void> {
   // Handle re-exports - simplified for now
   if (
     exportDecl.moduleSpecifier &&
     ts.isStringLiteral(exportDecl.moduleSpecifier)
   ) {
     const source = exportDecl.moduleSpecifier.text;
-    const position = getNodePosition(exportDecl, sourceFile, sourceLines);
+    const position = getNodePosition(exportDecl, sourceFile);
 
     declarations.push({
       name: "*",
@@ -850,17 +881,23 @@ async function processExportDeclaration(
   }
 }
 
-async function processExportAssignment(
-  exportAssignment: ts.ExportAssignment,
-  sourceFile: ts.SourceFile,
-  sourceCode: string,
-  sourceLines: string[],
-  filename: string,
-  declarations: DeclarationCodeMetadata[],
-  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>,
-): Promise<void> {
+async function processExportAssignment({
+  exportAssignment,
+  sourceFile,
+  sourceCode,
+  filename,
+  declarations,
+  importedIdentifiers,
+}: {
+  exportAssignment: ts.ExportAssignment;
+  sourceFile: ts.SourceFile;
+  sourceCode: string;
+  filename: string;
+  declarations: DeclarationCodeMetadata[];
+  importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
+}): Promise<void> {
   // Handle export default - simplified for now
-  const position = getNodePosition(exportAssignment, sourceFile, sourceLines);
+  const position = getNodePosition(exportAssignment, sourceFile);
   const raw = extractRawCode(exportAssignment, sourceCode);
   const dependencies = findDependencies({ code: raw, importedIdentifiers });
 

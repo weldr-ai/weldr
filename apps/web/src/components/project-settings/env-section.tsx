@@ -1,6 +1,10 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Trash2Icon } from "lucide-react";
+import { useState } from "react";
+import { useTRPC } from "@/lib/trpc/react";
+
 import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/components/button";
 import {
@@ -11,9 +15,6 @@ import {
   CardTitle,
 } from "@weldr/ui/components/card";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { Trash2Icon } from "lucide-react";
-import { useState } from "react";
-import { useTRPC } from "@/lib/trpc/react";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 import { DeleteAlertDialog } from "../delete-alert-dialog";
 

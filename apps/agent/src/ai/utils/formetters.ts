@@ -1,3 +1,5 @@
+import type { z } from "zod";
+
 import type {
   declarations,
   integrations,
@@ -16,7 +18,6 @@ import type {
 import type { dbModelDeclarationSpecsSchema } from "@weldr/shared/validators/declarations/db-model";
 import type { endpointDeclarationSpecsSchema } from "@weldr/shared/validators/declarations/endpoint";
 import type { pageDeclarationSpecsSchema } from "@weldr/shared/validators/declarations/page";
-import type { z } from "zod";
 
 export function formatEndpointToMarkdown(
   endpoint: z.infer<typeof endpointDeclarationSpecsSchema>,

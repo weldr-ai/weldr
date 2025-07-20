@@ -1,7 +1,8 @@
-import { auth } from "@weldr/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
+
+import { auth } from "@weldr/auth";
 
 export default async function ResetPasswordPage() {
   const session = await auth.api.getSession({ headers: await headers() });

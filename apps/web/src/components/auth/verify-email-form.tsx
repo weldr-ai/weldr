@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
 import { buttonVariants } from "@weldr/ui/components/button";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 
 export function VerifyEmailForm({ className }: { className?: string }) {
   const searchParams = useSearchParams();

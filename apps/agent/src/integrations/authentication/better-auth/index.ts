@@ -1,6 +1,9 @@
 // TODO: Generate a secret for the integration
 
 import crypto from "node:crypto";
+import type { IntegrationPackageSets } from "@/integrations/types";
+import { defineIntegration } from "@/integrations/utils/integration-core";
+
 import { db } from "@weldr/db";
 import {
   environmentVariables,
@@ -8,8 +11,6 @@ import {
   secrets,
 } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import type { IntegrationPackageSets } from "@/integrations/types";
-import { defineIntegration } from "@/integrations/utils/integration-core";
 
 export const betterAuthIntegration = await defineIntegration({
   category: "authentication",

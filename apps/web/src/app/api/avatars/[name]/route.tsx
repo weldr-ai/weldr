@@ -1,7 +1,8 @@
-import { nanoid } from "@weldr/shared/nanoid";
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 import { generateGradient } from "@/lib/gradient";
+
+import { nanoid } from "@weldr/shared/nanoid";
 
 export const config = {
   runtime: "edge",

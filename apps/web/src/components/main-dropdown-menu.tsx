@@ -1,22 +1,5 @@
 "use client";
 
-import { authClient } from "@weldr/auth/client";
-import { Button } from "@weldr/ui/components/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@weldr/ui/components/dropdown-menu";
-import { LogoIcon } from "@weldr/ui/icons";
-import { cn } from "@weldr/ui/lib/utils";
 import {
   BoxesIcon,
   ExternalLinkIcon,
@@ -35,6 +18,24 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useUIStore } from "@/lib/context/ui-store";
+
+import { authClient } from "@weldr/auth/client";
+import { Button } from "@weldr/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@weldr/ui/components/dropdown-menu";
+import { LogoIcon } from "@weldr/ui/icons";
+import { cn } from "@weldr/ui/lib/utils";
 
 export function MainDropdownMenu({
   side = "bottom",

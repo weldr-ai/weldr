@@ -1,8 +1,9 @@
+import { z } from "zod";
+
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import { planSchema, taskSchema } from "@weldr/shared/validators/plans";
-import { z } from "zod";
 import { createTasks } from "../utils/tasks";
 import { createTool } from "../utils/tools";
 

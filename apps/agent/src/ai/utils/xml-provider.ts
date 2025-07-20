@@ -1,4 +1,3 @@
-import { nanoid } from "@weldr/shared/nanoid";
 import {
   type StreamTextResult,
   streamText,
@@ -7,6 +6,8 @@ import {
 } from "ai";
 import type { z } from "zod";
 import type { WorkflowContext } from "@/workflow/context";
+
+import { nanoid } from "@weldr/shared/nanoid";
 import type { ZodXml } from "./zod-xml";
 
 export interface XMLToolSpec<

@@ -1,5 +1,8 @@
 "use client";
 
+import { SettingsIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+
 import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/components/button";
 import {
@@ -20,8 +23,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
-import { SettingsIcon } from "lucide-react";
-import { useEffect, useState } from "react";
 import { EnvSection } from "./env-section";
 import { GeneralSection } from "./general-section";
 import { IntegrationsSection } from "./integrations-section";

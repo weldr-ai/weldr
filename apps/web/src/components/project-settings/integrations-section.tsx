@@ -1,6 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useTRPC } from "@/lib/trpc/react";
+
 import type { RouterOutputs } from "@weldr/api";
 import {
   Card,
@@ -10,8 +13,6 @@ import {
   CardTitle,
 } from "@weldr/ui/components/card";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
-import { useMemo } from "react";
-import { useTRPC } from "@/lib/trpc/react";
 import { AddIntegrationDialog } from "../add-integration-dialog";
 
 export function IntegrationsSection({

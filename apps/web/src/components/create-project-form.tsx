@@ -1,6 +1,12 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import { LoaderIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useUIStore } from "@/lib/context/ui-store";
+import { useTRPC } from "@/lib/trpc/react";
+
 import type { Session } from "@weldr/auth";
 import { nanoid } from "@weldr/shared/nanoid";
 import type { Attachment } from "@weldr/shared/types";
@@ -13,11 +19,6 @@ import {
   DialogTitle,
 } from "@weldr/ui/components/dialog";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { LoaderIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useUIStore } from "@/lib/context/ui-store";
-import { useTRPC } from "@/lib/trpc/react";
 import { MultimodalInput } from "./multimodal-input";
 
 const placeholders = [

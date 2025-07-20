@@ -1,6 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+
 import { authClient } from "@weldr/auth/client";
 import { Button } from "@weldr/ui/components/button";
 import {
@@ -20,11 +26,6 @@ import {
 } from "@weldr/ui/components/form";
 import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
 
 const changePasswordSchema = z
   .object({

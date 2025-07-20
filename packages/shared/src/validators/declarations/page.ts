@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { parameterObjectSchema } from "../openapi";
 
 export const pageDeclarationSpecsSchema = z.object({

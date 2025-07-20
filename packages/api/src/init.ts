@@ -7,10 +7,11 @@
  * The pieces you will need to use are documented accordingly near the end
  */
 import { initTRPC, TRPCError } from "@trpc/server";
-import type { Session } from "@weldr/auth";
-import { db } from "@weldr/db";
 import SuperJSON from "superjson";
 import { ZodError } from "zod";
+
+import type { Session } from "@weldr/auth";
+import { db } from "@weldr/db";
 
 /**
  * 1. CONTEXT

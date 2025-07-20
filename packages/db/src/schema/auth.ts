@@ -1,4 +1,3 @@
-import { nanoid } from "@weldr/shared/nanoid";
 import { relations } from "drizzle-orm";
 import {
   boolean,
@@ -7,6 +6,8 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+
+import { nanoid } from "@weldr/shared/nanoid";
 import { chatMessages, chats } from "./chats";
 import { environmentVariables } from "./environment-variables";
 import { projects } from "./projects";

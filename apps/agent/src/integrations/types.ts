@@ -1,9 +1,10 @@
+import type { WorkflowContext } from "@/workflow/context";
+
 import type {
   Integration,
   IntegrationKey,
   IntegrationTemplate,
 } from "@weldr/shared/types";
-import type { WorkflowContext } from "@/workflow/context";
 
 export interface IntegrationCallbackResult {
   success: boolean;

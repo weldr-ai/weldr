@@ -1,7 +1,8 @@
+import type { z } from "zod";
+
 import { and, db, eq } from "@weldr/db";
 import { chatMessages, chats } from "@weldr/db/schema";
 import type { addMessagesInputSchema } from "@weldr/shared/validators/chats";
-import type { z } from "zod";
 
 export async function insertMessages({
   input,

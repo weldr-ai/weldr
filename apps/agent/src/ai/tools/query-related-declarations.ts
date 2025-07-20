@@ -1,3 +1,9 @@
+import { z } from "zod";
+import {
+  formatDeclarationData,
+  formatDeclarationSpecs,
+} from "@/ai/utils/formetters";
+
 import { db, eq, sql } from "@weldr/db";
 import {
   declarations,
@@ -6,11 +12,6 @@ import {
   versions,
 } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import { z } from "zod";
-import {
-  formatDeclarationData,
-  formatDeclarationSpecs,
-} from "@/ai/utils/formetters";
 import { createTool } from "../utils/tools";
 
 export const queryRelatedDeclarationsTool = createTool({

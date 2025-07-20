@@ -1,5 +1,8 @@
 "use client";
 
+import { LoaderIcon } from "lucide-react";
+import { useState } from "react";
+
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -11,8 +14,6 @@ import {
 } from "@weldr/ui/components/alert-dialog";
 import { Button } from "@weldr/ui/components/button";
 import { Input } from "@weldr/ui/components/input";
-import { LoaderIcon } from "lucide-react";
-import { useState } from "react";
 
 export function DeleteAlertDialog({
   open,

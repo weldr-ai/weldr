@@ -1,7 +1,8 @@
 import { serve } from "@hono/node-server";
-import { Logger } from "@weldr/shared/logger";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
+
+import { Logger } from "@weldr/shared/logger";
 import { recoverSemanticDataJobs } from "./ai/utils/semantic-data-jobs";
 import { configureOpenAPI, createRouter } from "./lib/utils";
 import { loggerMiddleware } from "./middlewares/logger";

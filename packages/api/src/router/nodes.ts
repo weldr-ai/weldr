@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+
 import { eq } from "@weldr/db";
 import { nodes } from "@weldr/db/schema";
-import { z } from "zod";
 import { protectedProcedure } from "../init";
 
 export const nodesRouter = {

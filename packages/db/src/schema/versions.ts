@@ -1,4 +1,3 @@
-import { nanoid } from "@weldr/shared/nanoid";
 import { relations, sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
@@ -12,6 +11,8 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+
+import { nanoid } from "@weldr/shared/nanoid";
 import { users } from "./auth";
 import { chats } from "./chats";
 import { declarations } from "./declarations";

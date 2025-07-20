@@ -1,17 +1,5 @@
 "use client";
 
-import { authClient } from "@weldr/auth/client";
-import type {
-  Attachment,
-  TPendingMessage,
-  UserMessage,
-} from "@weldr/shared/types";
-import { referencePartSchema } from "@weldr/shared/validators/chats";
-import { Button } from "@weldr/ui/components/button";
-import { Textarea } from "@weldr/ui/components/textarea";
-import { toast } from "@weldr/ui/hooks/use-toast";
-import { LogoIcon } from "@weldr/ui/icons";
-import { cn } from "@weldr/ui/lib/utils";
 import equal from "fast-deep-equal";
 import {
   $getRoot,
@@ -33,6 +21,19 @@ import {
 } from "react";
 import type { z } from "zod";
 import { useUIStore } from "@/lib/context/ui-store";
+
+import { authClient } from "@weldr/auth/client";
+import type {
+  Attachment,
+  TPendingMessage,
+  UserMessage,
+} from "@weldr/shared/types";
+import { referencePartSchema } from "@weldr/shared/validators/chats";
+import { Button } from "@weldr/ui/components/button";
+import { Textarea } from "@weldr/ui/components/textarea";
+import { toast } from "@weldr/ui/hooks/use-toast";
+import { LogoIcon } from "@weldr/ui/icons";
+import { cn } from "@weldr/ui/lib/utils";
 import { Editor } from "./editor";
 import type { ReferenceNode } from "./editor/plugins/reference/node";
 import { PreviewAttachment } from "./preview-attachment";

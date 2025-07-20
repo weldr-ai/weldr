@@ -1,5 +1,3 @@
-import { nanoid } from "@weldr/shared/nanoid";
-import type { Task } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
   index,
@@ -9,6 +7,9 @@ import {
   primaryKey,
   text,
 } from "drizzle-orm/pg-core";
+
+import { nanoid } from "@weldr/shared/nanoid";
+import type { Task } from "@weldr/shared/types";
 import { chats } from "./chats";
 import { declarations } from "./declarations";
 import { versions } from "./versions";

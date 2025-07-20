@@ -1,7 +1,8 @@
+import type { CoreMessage, ToolContent } from "ai";
+
 import { db, eq } from "@weldr/db";
 import { declarations } from "@weldr/db/schema";
 import type { ChatMessage } from "@weldr/shared/types";
-import type { CoreMessage, ToolContent } from "ai";
 import { formatDeclarationSpecs } from "./formetters";
 
 export async function convertMessagesToCore(messages: ChatMessage[]) {

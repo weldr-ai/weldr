@@ -1,7 +1,8 @@
-import type { IntegrationKey } from "@weldr/shared/types";
 import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { WorkflowContext } from "@/workflow/context";
+
+import type { IntegrationKey } from "@weldr/shared/types";
 import { integrationRegistry } from "./registry";
 
 // Export main registry and types
@@ -11,7 +12,6 @@ export type {
   IntegrationCallbackResult,
   IntegrationDefinition,
 } from "./types";
-
 // Export utilities
 export { combineResults } from "./utils/integration-core";
 export { installPackages, runPnpmScript } from "./utils/packages";

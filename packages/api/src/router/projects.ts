@@ -1,4 +1,6 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
+import { z } from "zod";
+
 import { and, eq, isNotNull } from "@weldr/db";
 import {
   attachments,
@@ -16,7 +18,6 @@ import {
   insertProjectSchema,
   updateProjectSchema,
 } from "@weldr/shared/validators/projects";
-import { z } from "zod";
 import { protectedProcedure } from "../init";
 
 export const projectsRouter = {

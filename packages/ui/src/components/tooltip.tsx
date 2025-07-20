@@ -2,8 +2,9 @@
 
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { cn } from "@weldr/ui/lib/utils";
 import type * as React from "react";
+
+import { cn } from "@weldr/ui/lib/utils";
 
 function TooltipProvider({
   delayDuration = 0,

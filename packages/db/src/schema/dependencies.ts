@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import { pgTable, primaryKey, text } from "drizzle-orm/pg-core";
+
 import { declarations } from "./declarations";
 
 export const dependencies = pgTable(

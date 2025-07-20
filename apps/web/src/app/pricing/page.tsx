@@ -1,12 +1,13 @@
-import { auth } from "@weldr/auth";
-import { buttonVariants } from "@weldr/ui/components/button";
-import { LogoIcon } from "@weldr/ui/icons";
-import { cn } from "@weldr/ui/lib/utils";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { MainDropdownMenu } from "@/components/main-dropdown-menu";
 import { SubscriptionPlans } from "@/components/subscription-plans";
 import { getActiveSubscription } from "@/lib/actions/get-active-subscription";
+
+import { auth } from "@weldr/auth";
+import { buttonVariants } from "@weldr/ui/components/button";
+import { LogoIcon } from "@weldr/ui/icons";
+import { cn } from "@weldr/ui/lib/utils";
 
 export default async function PricingPage() {
   const session = await auth.api.getSession({ headers: await headers() });
