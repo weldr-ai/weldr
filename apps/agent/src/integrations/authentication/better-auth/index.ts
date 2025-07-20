@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 import path from "node:path";
-import { runCommand } from "@/ai/utils/commands";
 import type { IntegrationPackageSets } from "@/integrations/types";
 import { defineIntegration } from "@/integrations/utils/integration-core";
+import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 
 import { db } from "@weldr/db";

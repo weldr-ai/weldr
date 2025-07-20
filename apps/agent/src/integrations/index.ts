@@ -1,4 +1,4 @@
-import { runCommand } from "@/ai/utils/commands";
+import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { WorkflowContext } from "@/workflow/context";
 

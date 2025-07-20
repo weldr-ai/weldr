@@ -17,7 +17,7 @@ import type {
   DeclarationSpecs,
 } from "@weldr/shared/types/declarations";
 import { declarationSemanticDataSchema } from "@weldr/shared/validators/declarations/index";
-import { runCommand } from "./commands";
+import { runCommand } from "../../lib/commands";
 import { registry } from "./registry";
 
 export interface SemanticDataJobData {

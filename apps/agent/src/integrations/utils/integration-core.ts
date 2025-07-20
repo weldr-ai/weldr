@@ -1,7 +1,7 @@
 import path from "node:path";
 import Handlebars from "handlebars";
 import { applyEdit } from "@/ai/utils/apply-edit";
-import { runCommand } from "@/ai/utils/commands";
+import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import type { WorkflowContext } from "@/workflow/context";
 

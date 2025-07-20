@@ -1,6 +1,6 @@
 import { dirname } from "node:path";
 import { z } from "zod";
-import { runCommand } from "@/ai/utils/commands";
+import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 
 import { db } from "@weldr/db";

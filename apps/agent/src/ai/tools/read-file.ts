@@ -1,6 +1,6 @@
 import path from "node:path";
 import { z } from "zod";
-import { runCommand, runShell } from "@/ai/utils/commands";
+import { runCommand, runShell } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 
 import { Logger } from "@weldr/shared/logger";
