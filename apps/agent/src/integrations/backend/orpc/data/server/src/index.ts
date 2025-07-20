@@ -1,4 +1,3 @@
-import { auth } from "./lib/auth";
 import { openApiHandler, rpcHandler } from "./lib/handlers";
 import { logger } from "./lib/logger";
 
@@ -20,10 +19,6 @@ export default {
       }
 
       return new Response("Not found", { status: 404 });
-    }
-
-    if (url.pathname.startsWith("/api/auth")) {
-      return auth.handler(request);
     }
 
     if (url.pathname.startsWith("/api")) {

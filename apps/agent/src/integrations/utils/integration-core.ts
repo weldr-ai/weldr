@@ -1,4 +1,5 @@
 import path from "node:path";
+import Handlebars from "handlebars";
 import { applyEdit } from "@/ai/utils/apply-edit";
 import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
@@ -16,14 +17,13 @@ import type {
   IntegrationDefinition,
 } from "../types";
 import { installPackages, updatePackageJsonScripts } from "./packages";
-import { getVariablesFromTemplate } from "./templates";
 
 export async function defineIntegration<K extends IntegrationKey>(
   props: IntegrationDefinition<K>,
 ): Promise<IntegrationDefinition<K>> {
   return {
     ...props,
-    preInstall: async ({
+    postInstall: async ({
       context,
       integration,
     }: {
@@ -35,14 +35,21 @@ export async function defineIntegration<K extends IntegrationKey>(
         | undefined;
 
       const packages = (await props.packages?.(context, options)) ?? [];
-
       const scripts = (await props.scripts?.(context, options)) ?? [];
 
       const results = await Promise.all([
-        installPackages(packages),
         updatePackageJsonScripts(scripts),
-        props.preInstall?.({ context, integration }),
+        installPackages(packages),
+        props.postInstall?.({ context, integration }),
       ]);
+
+      const project = context.get("project");
+
+      context.set("project", {
+        ...project,
+        config: new Set([...project.config, integration.category]),
+      });
+
       return combineResults(results.filter((r) => r !== undefined));
     },
   } as unknown as IntegrationDefinition<K>;
@@ -61,8 +68,6 @@ export async function applyIntegrationFiles({
   });
 
   for (const file of files) {
-    const targetPath = file.targetPath.replace(/\.(txt|hbs)$/, "");
-
     const readResult = await runCommand("cat", [file.sourcePath], {
       cwd: WORKSPACE_DIR,
     });
@@ -74,31 +79,61 @@ export async function applyIntegrationFiles({
       continue;
     }
 
+    const targetDir = path.dirname(file.targetPath);
+
+    const mkdirResult = await runCommand("mkdir", ["-p", targetDir], {
+      cwd: WORKSPACE_DIR,
+    });
+
+    if (!mkdirResult.success) {
+      throw new Error(
+        `Failed to create directories for ${file.targetPath}: ${mkdirResult.stderr}`,
+      );
+    }
+
     try {
       switch (file.type) {
         case "copy": {
-          const writeResult = await runCommand("tee", [targetPath], {
-            stdin: file.content,
-            cwd: WORKSPACE_DIR,
-          });
-          if (writeResult.success) {
-            console.log(
-              `Successfully processed and wrote ${file.sourcePath} to ${targetPath}`,
-            );
+          if (file.content.trim().length === 0) {
+            const result = await runCommand("touch", [file.targetPath], {
+              cwd: WORKSPACE_DIR,
+            });
+
+            if (!result.success) {
+              throw new Error(
+                `Failed to create empty file ${file.targetPath}: ${result.stderr}`,
+              );
+            }
           } else {
-            throw new Error(
-              `Failed to write processed content to ${targetPath}: ${writeResult.stderr}`,
+            const result = await runCommand(
+              "sh",
+              ["-c", `cat > "${file.targetPath}"`],
+              {
+                stdin: file.content,
+                cwd: WORKSPACE_DIR,
+              },
             );
+
+            if (!result.success) {
+              throw new Error(
+                `Failed to write processed content to ${file.targetPath}: ${result.stderr}`,
+              );
+            }
           }
+
           break;
         }
         case "llm_instruction": {
-          const originalContentResult = await runCommand("cat", [targetPath], {
-            cwd: WORKSPACE_DIR,
-          });
+          const originalContentResult = await runCommand(
+            "cat",
+            [file.targetPath],
+            {
+              cwd: WORKSPACE_DIR,
+            },
+          );
 
           if (!originalContentResult.success) {
-            console.error(`Failed to read target file ${targetPath}`);
+            console.error(`Failed to read target file ${file.targetPath}`);
             continue;
           }
 
@@ -107,35 +142,52 @@ export async function applyIntegrationFiles({
             editInstructions: file.content,
           });
 
-          const writeResult = await runCommand("tee", [targetPath], {
-            stdin: updatedContent,
-            cwd: WORKSPACE_DIR,
-          });
+          const result = await runCommand(
+            "sh",
+            ["-c", `cat > "${file.targetPath}"`],
+            {
+              stdin: updatedContent,
+              cwd: WORKSPACE_DIR,
+            },
+          );
 
-          if (writeResult.success) {
-            console.log(`Successfully applied LLM edits to ${targetPath}`);
-          } else {
-            throw new Error(`Failed to write updated content to ${targetPath}`);
+          if (!result.success) {
+            throw new Error(
+              `Failed to write updated content to ${file.targetPath}: ${result.stderr}`,
+            );
           }
 
           break;
         }
         case "handlebars": {
-          // For handlebars files, we need to process the template with variables
-          // This would typically involve rendering the template with context variables
-          const writeResult = await runCommand("tee", [targetPath], {
-            stdin: file.template,
-            cwd: WORKSPACE_DIR,
-          });
-          if (writeResult.success) {
-            console.log(
-              `Successfully processed handlebars template ${file.sourcePath} to ${targetPath}`,
+          const template = Handlebars.compile(file.template);
+
+          const integrationVariables =
+            integration.environmentVariableMappings.reduce(
+              (acc, mapping) => {
+                acc[mapping.mapTo] = mapping.environmentVariable.key;
+                return acc;
+              },
+              {} as Record<string, string>,
             );
-          } else {
+
+          const compiledContent = template(integrationVariables);
+
+          const writeResult = await runCommand(
+            "sh",
+            ["-c", `cat > "${file.targetPath}"`],
+            {
+              stdin: compiledContent,
+              cwd: WORKSPACE_DIR,
+            },
+          );
+
+          if (!writeResult.success) {
             throw new Error(
-              `Failed to write processed handlebars content to ${targetPath}: ${writeResult.stderr}`,
+              `Failed to write processed handlebars content to ${file.targetPath}: ${writeResult.stderr}`,
             );
           }
+
           break;
         }
       }
@@ -149,7 +201,7 @@ export async function applyIntegrationFiles({
 export async function getIntegrations(input: {
   keys: IntegrationKey[];
   context: WorkflowContext;
-}) {
+}): Promise<Integration[]> {
   const project = input.context.get("project");
   const user = input.context.get("user");
   Logger.info(`Resolved dependencies: ${input.keys.join(", ")}`);
@@ -176,6 +228,13 @@ export async function getIntegrations(input: {
             eq(t.projectId, project.id),
             eq(t.integrationTemplateId, integrationTemplate.id),
           ),
+        with: {
+          environmentVariableMappings: {
+            with: {
+              environmentVariable: true,
+            },
+          },
+        },
       });
 
       if (
@@ -195,6 +254,7 @@ export async function getIntegrations(input: {
           .insert(integrations)
           .values({
             key,
+            category: integrationTemplate.category,
             projectId: project.id,
             userId: user.id,
             integrationTemplateId: integrationTemplate.id,
@@ -205,12 +265,17 @@ export async function getIntegrations(input: {
         if (!integration) {
           throw new Error(`Failed to create integration: ${key}`);
         }
-        integrationsToInstall.push(integration as Integration);
+
+        integrationsToInstall.push({
+          ...integration,
+          environmentVariableMappings: [],
+        } as Integration);
       } else {
         const [integration] = await tx
           .insert(integrations)
           .values({
             key,
+            category: integrationTemplate.category,
             projectId: project.id,
             userId: user.id,
             integrationTemplateId: integrationTemplate.id,
@@ -220,7 +285,11 @@ export async function getIntegrations(input: {
         if (!integration) {
           throw new Error(`Failed to create integration: ${key}`);
         }
-        integrationsToInstall.push(integration as Integration);
+
+        integrationsToInstall.push({
+          ...integration,
+          environmentVariableMappings: [],
+        } as Integration);
       }
     }
   });
@@ -274,21 +343,22 @@ export function combineResults(
   };
 }
 
-async function generateFiles(params: {
+async function generateFiles({
+  integration,
+  context,
+}: {
   integration: Integration;
   context: WorkflowContext;
 }): Promise<FileItem[]> {
-  const { integration, context } = params;
   const project = context.get("project");
-  const hasServer = project.config.has("server");
-  const hasWeb = project.config.has("web");
+  const hasFrontend = project.config.has("frontend");
+  const hasBackend = project.config.has("backend");
 
   let baseDataDir = path.join(
     process.cwd(),
-    `src/integrations/${integration.key}`,
+    `apps/agent/src/integrations/${integration.category}/${integration.key}`,
   );
 
-  // Handle special case for postgresql with ORM subdirectory
   if (
     integration.key === "postgresql" &&
     integration.options &&
@@ -310,24 +380,25 @@ async function generateFiles(params: {
 
   const files: FileItem[] = [];
 
-  // Process server files if project includes server and integration has server data
-  if (hasServer) {
+  if (hasBackend) {
     const serverPath = path.join(baseDataDir, "server");
-    const serverFiles = await processDirectoryFiles(serverPath);
+    const serverFiles = await processDirectoryFiles(serverPath, "server");
     files.push(...serverFiles);
   }
 
-  // Process web files if project includes web and integration has web data
-  if (hasWeb) {
+  if (hasFrontend) {
     const webPath = path.join(baseDataDir, "web");
-    const webFiles = await processDirectoryFiles(webPath);
+    const webFiles = await processDirectoryFiles(webPath, "web");
     files.push(...webFiles);
   }
 
   return files;
 }
 
-async function processDirectoryFiles(sourcePath: string): Promise<FileItem[]> {
+async function processDirectoryFiles(
+  sourcePath: string,
+  target: "server" | "web",
+): Promise<FileItem[]> {
   const findResult = await runCommand("find", [sourcePath, "-type", "f"]);
   if (!findResult.success) {
     return [];
@@ -341,7 +412,7 @@ async function processDirectoryFiles(sourcePath: string): Promise<FileItem[]> {
     if (typeof filePath !== "string") continue;
 
     const relativePath = filePath.replace(`${sourcePath}/`, "");
-    const targetPath = path.join(WORKSPACE_DIR, relativePath);
+    const targetPath = path.join(WORKSPACE_DIR, "apps", target, relativePath);
 
     const file = await processFile(filePath, targetPath);
     files.push(...file);
@@ -374,21 +445,21 @@ async function processFile(
     throw new Error(`Failed to read file ${filePath}`);
   }
 
+  const targetPathWithoutExtension = targetPath.replace(/\.(txt|hbs)$/, "");
+
   if (type === "handlebars") {
     const template = readResult.stdout;
-    const variables = getVariablesFromTemplate(template);
     files.push({
       type,
       sourcePath: filePath,
-      targetPath,
+      targetPath: targetPathWithoutExtension,
       template,
-      variables,
     });
   } else {
     files.push({
       type,
       sourcePath: filePath,
-      targetPath,
+      targetPath: targetPathWithoutExtension,
       content: readResult.stdout,
     });
   }

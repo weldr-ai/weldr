@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { environmentVariableSchema } from "./environment-variables";
+
 export const integrationKeySchema = z.enum([
   "orpc",
   "tanstack-start",
@@ -23,20 +25,31 @@ const baseIntegrationSchema = z.object({
   projectId: z.string(),
   userId: z.string(),
   integrationTemplateId: z.string(),
+  environmentVariableMappings: z.array(
+    z.object({
+      integrationId: z.string(),
+      mapTo: z.string(),
+      environmentVariableId: z.string(),
+      environmentVariable: environmentVariableSchema,
+    }),
+  ),
 });
 
 export const honoIntegrationSchema = baseIntegrationSchema.extend({
   key: z.literal("orpc"),
+  category: z.literal("backend"),
   options: z.null(),
 });
 
 export const tanstackStartIntegrationSchema = baseIntegrationSchema.extend({
   key: z.literal("tanstack-start"),
+  category: z.literal("frontend"),
   options: z.null(),
 });
 
 export const postgresqlIntegrationSchema = baseIntegrationSchema.extend({
   key: z.literal("postgresql"),
+  category: z.literal("database"),
   options: z.object({
     orm: z.enum(["drizzle", "prisma"]).default("drizzle"),
   }),
@@ -44,6 +57,7 @@ export const postgresqlIntegrationSchema = baseIntegrationSchema.extend({
 
 export const betterAuthIntegrationSchema = baseIntegrationSchema.extend({
   key: z.literal("better-auth"),
+  category: z.literal("authentication"),
   options: z.object({
     socialProviders: z.enum(["github", "google", "microsoft"]).array(),
     plugins: z

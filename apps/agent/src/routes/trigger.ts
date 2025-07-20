@@ -104,10 +104,10 @@ router.openapi(route, async (c) => {
 
   const integrations = project.integrations.reduce((acc, integration) => {
     if (integration.integrationTemplate.category === "backend") {
-      acc.add("server");
+      acc.add("backend");
     }
     if (integration.integrationTemplate.category === "frontend") {
-      acc.add("web");
+      acc.add("frontend");
     }
     if (integration.integrationTemplate.category === "authentication") {
       acc.add("authentication");
@@ -116,7 +116,7 @@ router.openapi(route, async (c) => {
       acc.add("database");
     }
     return acc;
-  }, new Set<"server" | "web" | "authentication" | "database">());
+  }, new Set<"backend" | "frontend" | "authentication" | "database">());
 
   let activeVersion = await db.query.versions.findFirst({
     where: and(

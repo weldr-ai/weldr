@@ -52,10 +52,10 @@ export async function recoverWorkflow() {
 
   const config = project.integrations.reduce((acc, integration) => {
     if (integration.integrationTemplate.category === "backend") {
-      acc.add("server");
+      acc.add("backend");
     }
     if (integration.integrationTemplate.category === "frontend") {
-      acc.add("web");
+      acc.add("frontend");
     }
     if (integration.integrationTemplate.category === "database") {
       acc.add("database");
@@ -64,7 +64,7 @@ export async function recoverWorkflow() {
       acc.add("authentication");
     }
     return acc;
-  }, new Set<"database" | "authentication" | "server" | "web">());
+  }, new Set<"database" | "authentication" | "backend" | "frontend">());
   const user = await db.query.users.findFirst({
     where: eq(users.id, project.userId),
   });

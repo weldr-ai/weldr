@@ -17,9 +17,9 @@ export const orpcIntegration = await defineIntegration({
   dependencies: null,
   scripts: async (context) => {
     const project = context.get("project");
-    const hasWeb = project.config.has("web");
+    const hasFrontend = project.config.has("frontend");
 
-    if (hasWeb) {
+    if (hasFrontend) {
       return [];
     }
 
@@ -38,7 +38,7 @@ export const orpcIntegration = await defineIntegration({
   },
   packages: async (context) => {
     const project = context.get("project");
-    const hasWeb = project.config.has("web");
+    const hasFrontend = project.config.has("frontend");
 
     const packages: IntegrationPackageSets = [
       {
@@ -63,7 +63,7 @@ export const orpcIntegration = await defineIntegration({
       },
     ];
 
-    if (hasWeb) {
+    if (hasFrontend) {
       packages.push({
         target: "web",
         runtime: {

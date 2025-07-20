@@ -60,6 +60,7 @@ export const integrationsRouter = createTRPCRouter({
         const [integration] = await tx
           .insert(integrations)
           .values({
+            category: integrationTemplate.category,
             key: integrationTemplate.key,
             name,
             projectId,

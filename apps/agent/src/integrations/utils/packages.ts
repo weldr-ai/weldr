@@ -27,27 +27,35 @@ export async function installPackages(
 
     const target = packages.target;
 
-    const runtimeResult = await runCommand(
-      "sh",
-      ["-c", `pnpm add --filter ${target} ${runtimeInstallCommand.join(" ")}`],
-      {
-        cwd: WORKSPACE_DIR,
-      },
-    );
+    if (runtimeInstallCommand.length > 0) {
+      const runtimeResult = await runCommand(
+        "sh",
+        [
+          "-c",
+          `pnpm add ${runtimeInstallCommand.join(" ")} -F @repo/${target}`,
+        ],
+        {
+          cwd: WORKSPACE_DIR,
+        },
+      );
 
-    const developmentResult = await runCommand(
-      "sh",
-      [
-        "-c",
-        `pnpm add --filter ${target} --dev ${developmentInstallCommand.join(" ")}`,
-      ],
-      {
-        cwd: WORKSPACE_DIR,
-      },
-    );
+      results.push(runtimeResult);
+    }
 
-    results.push(runtimeResult);
-    results.push(developmentResult);
+    if (developmentInstallCommand.length > 0) {
+      const developmentResult = await runCommand(
+        "sh",
+        [
+          "-c",
+          `pnpm add -D ${developmentInstallCommand.join(" ")} -F @repo/${target}`,
+        ],
+        {
+          cwd: WORKSPACE_DIR,
+        },
+      );
+
+      results.push(developmentResult);
+    }
   }
 
   return combineResults(results);
@@ -70,6 +78,7 @@ export async function updatePackageJsonScripts(
       });
 
       if (!packageJson.success) {
+        console.error("Failed to read package.json:", packageJson.stderr);
         return {
           success: false,
           message: `Failed to read package.json: ${packageJson.stderr}`,
@@ -86,7 +95,8 @@ export async function updatePackageJsonScripts(
         };
       }
 
-      await runCommand("echo", [JSON.stringify(packageJsonContent, null, 2)], {
+      await runCommand("sh", ["-c", `cat > package.json`], {
+        stdin: JSON.stringify(packageJsonContent, null, 2),
         cwd: directory,
       });
 

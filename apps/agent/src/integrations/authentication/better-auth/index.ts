@@ -1,8 +1,9 @@
-// TODO: Generate a secret for the integration
-
 import crypto from "node:crypto";
+import path from "node:path";
+import { runCommand } from "@/ai/utils/commands";
 import type { IntegrationPackageSets } from "@/integrations/types";
 import { defineIntegration } from "@/integrations/utils/integration-core";
+import { WORKSPACE_DIR } from "@/lib/constants";
 
 import { db } from "@weldr/db";
 import {
@@ -37,7 +38,7 @@ export const betterAuthIntegration = await defineIntegration({
   dependencies: ["backend", "database"],
   packages: async (context) => {
     const project = context.get("project");
-    const hasWeb = project.config.has("web");
+    const hasFrontend = project.config.has("frontend");
 
     const packages: IntegrationPackageSets = [
       {
@@ -49,7 +50,7 @@ export const betterAuthIntegration = await defineIntegration({
       },
     ];
 
-    if (hasWeb) {
+    if (hasFrontend) {
       packages.push({
         target: "web",
         runtime: {
@@ -61,14 +62,18 @@ export const betterAuthIntegration = await defineIntegration({
 
     return packages;
   },
-  postInstall: async ({ context, integration }) => {
+  preInstall: async ({ context, integration }) => {
     const user = context.get("user");
     const project = context.get("project");
 
-    const BETTER_AUTH_SECRET = await crypto.randomBytes(32).toString("hex");
-
     try {
-      return await db.transaction(async (tx) => {
+      // Store secret in database
+      await db.transaction(async (tx) => {
+        // Generate secret
+        const BETTER_AUTH_SECRET = await crypto
+          .randomBytes(32)
+          .toString("base64");
+
         const [secret] = await tx
           .insert(secrets)
           .values({
@@ -99,12 +104,56 @@ export const betterAuthIntegration = await defineIntegration({
           mapTo: "BETTER_AUTH_SECRET",
           environmentVariableId: environmentVariable.id,
         });
-
-        return {
-          success: true,
-          message: "Successfully installed Better-Auth",
-        };
       });
+
+      // Generate schema
+      const generateSchemaResult = await runCommand(
+        "pnpm",
+        [
+          "dlx",
+          "@better-auth/cli@latest",
+          "generate",
+          "--config",
+          "src/lib/auth.ts",
+          "--output",
+          "src/db/schema/auth.ts",
+          "--y",
+        ],
+        {
+          cwd: path.join(WORKSPACE_DIR, "apps", "server"),
+        },
+      );
+
+      if (!generateSchemaResult.success) {
+        throw new Error(
+          `Failed to generate schema for Better-Auth: ${generateSchemaResult.stderr}`,
+        );
+      }
+
+      // Add re-export to schema index file
+      const schemaIndexPath = path.join(
+        WORKSPACE_DIR,
+        "apps/server/src/db/schema/index.ts",
+      );
+
+      const appendResult = await runCommand(
+        "sh",
+        ["-c", `echo 'export * from "./auth";' | tee -a ${schemaIndexPath}`],
+        {
+          cwd: WORKSPACE_DIR,
+        },
+      );
+
+      if (!appendResult.success) {
+        throw new Error(
+          `Failed to append to schema index file: ${appendResult.stderr}`,
+        );
+      }
+
+      return {
+        success: true,
+        message: "Successfully generated schema for Better-Auth",
+      };
     } catch (error) {
       Logger.error(
         `Failed to run post-install hook while setting up Better-Auth: ${error instanceof Error ? error.message : String(error)}`,

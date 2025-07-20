@@ -1,9 +1,7 @@
 import { createServer } from "node:http";
 import { OpenAPIHandler } from "@orpc/openapi/node";
-import { toNodeHandler } from "better-auth/node";
 import pinoHttp from "pino-http";
 
-import { auth } from "./lib/auth";
 import { openApiHandlerOptions } from "./lib/handlers";
 import { logger } from "./lib/logger";
 import { nanoid } from "./lib/nanoid";
@@ -28,10 +26,6 @@ const server = createServer(async (req, res) => {
 
   if (result.matched) {
     return;
-  }
-
-  if (req.url?.startsWith("/api/auth")) {
-    return toNodeHandler(auth)(req, res);
   }
 
   if (!result.matched) {

@@ -18,18 +18,6 @@ export const tanstackStartIntegration = await defineIntegration({
   scripts: async () => {
     const scripts: IntegrationScriptSets = [
       {
-        target: "web",
-        scripts: {
-          dev: "vite dev",
-          build: "vite build",
-          start: "node .output/server/index.mjs",
-          typecheck: "tsc --noEmit",
-          check: "biome check --diagnostic-level=warn",
-          "check:fix": "biome check --diagnostic-level=warn --write",
-          clean: "rm -rf node_modules .output .turbo",
-        },
-      },
-      {
         target: "root",
         scripts: {
           dev: "turbo dev -F @repo/web",
@@ -43,7 +31,7 @@ export const tanstackStartIntegration = await defineIntegration({
   },
   packages: async (context) => {
     const project = context.get("project");
-    const hasServer = project.config.has("server");
+    const hasBackend = project.config.has("backend");
     const hasAuthentication = project.config.has("authentication");
 
     const packages: IntegrationPackageSets[number] = {
@@ -86,7 +74,7 @@ export const tanstackStartIntegration = await defineIntegration({
       },
     };
 
-    if (hasServer) {
+    if (hasBackend) {
       packages.runtime["@orpc/tanstack-query"] = "^1.7.2";
     }
 

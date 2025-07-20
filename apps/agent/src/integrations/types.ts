@@ -26,7 +26,6 @@ export type FileItem =
       sourcePath: string;
       targetPath: string;
       template: string;
-      variables: Record<string, string>;
     };
 
 export type IntegrationCallback = (params: {

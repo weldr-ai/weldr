@@ -90,6 +90,18 @@ class IntegrationRegistry {
   ): IntegrationKey[] {
     const visited = new Set<IntegrationKey>();
     const resolved: IntegrationKey[] = [];
+    const frontendKeys: IntegrationKey[] = [];
+    const nonFrontendKeys: IntegrationKey[] = [];
+
+    // Separate frontend and non-frontend integrations
+    for (const key of integrationKeys) {
+      const integrationDefinition = this.get(key);
+      if (integrationDefinition?.category === "frontend") {
+        frontendKeys.push(key);
+      } else {
+        nonFrontendKeys.push(key);
+      }
+    }
 
     const resolveDependencies = (key: IntegrationKey) => {
       if (visited.has(key)) {
@@ -120,8 +132,13 @@ class IntegrationRegistry {
       }
     };
 
-    // Process each requested integration
-    for (const key of integrationKeys) {
+    // Process frontend integrations first
+    for (const key of frontendKeys) {
+      resolveDependencies(key);
+    }
+
+    // Then process non-frontend integrations
+    for (const key of nonFrontendKeys) {
       resolveDependencies(key);
     }
 

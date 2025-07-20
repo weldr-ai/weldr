@@ -89,7 +89,7 @@ export const initProjectTool = createTool({
 
     context.set("project", {
       ...updatedProject,
-      config,
+      config: new Set(),
     });
 
     const streamWriter = global.sseConnections?.get(

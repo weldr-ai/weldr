@@ -2,7 +2,7 @@ import type { User } from "@weldr/auth";
 import type { projects, versions } from "@weldr/db/schema";
 
 export type ProjectWithConfig = typeof projects.$inferSelect & {
-  config: Set<"server" | "web" | "authentication" | "database">;
+  config: Set<"backend" | "frontend" | "authentication" | "database">;
 };
 
 type WorkflowContextStore = {

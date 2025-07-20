@@ -2,7 +2,7 @@ import { runCommand } from "@/ai/utils/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { WorkflowContext } from "@/workflow/context";
 
-import type { IntegrationKey } from "@weldr/shared/types";
+import type { Integration, IntegrationKey } from "@weldr/shared/types";
 import { integrationRegistry } from "./registry";
 
 // Export main registry and types
@@ -34,7 +34,7 @@ async function main() {
       id: "test-project",
       title: "Test Project",
       subdomain: "test-project",
-      config: new Set(["server", "web"]),
+      config: new Set(["backend", "frontend"]),
       initiatedAt: null,
       userId: "test-user",
       createdAt: new Date(),
@@ -75,12 +75,23 @@ async function main() {
     });
 
     // List of integrations to install
-    const integrationsToInstall: IntegrationKey[] = ["postgresql", "orpc"];
+    const integrationsToInstall: IntegrationKey[] = [
+      "orpc",
+      "tanstack-start",
+      "postgresql",
+      "better-auth",
+    ];
+
+    const resolvedIntegrations = integrationRegistry.resolveInstallationOrder(
+      integrationsToInstall,
+    );
 
     console.log(`Installing integrations in: ${WORKSPACE_DIR}`);
 
+    console.log(`Resolved integrations: ${resolvedIntegrations.join(" -> ")}`);
+
     // Install integrations one by one
-    for (const integrationKey of integrationsToInstall) {
+    for (const integrationKey of resolvedIntegrations) {
       try {
         console.log(`\n--- Installing ${integrationKey} integration ---`);
 
@@ -97,8 +108,25 @@ async function main() {
               userId: "test-user",
               projectId: "test-project" as string,
               key: "postgresql",
+              category: "database",
               options: { orm: "drizzle" as const },
               integrationTemplateId: "test-template" as string,
+              environmentVariableMappings: [
+                {
+                  environmentVariable: {
+                    id: "test-env-var",
+                    key: "DATABASE_URL",
+                    secretId: "test-secret",
+                    projectId: "test-project",
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: "test-user",
+                  },
+                  integrationId: "test-integration",
+                  mapTo: "DATABASE_URL",
+                  environmentVariableId: "test-env-var",
+                },
+              ],
             },
             context,
           });
@@ -111,6 +139,7 @@ async function main() {
               userId: "test-user",
               projectId: "test-project" as string,
               key: "better-auth",
+              category: "authentication",
               options: {
                 socialProviders: ["google", "github"] as (
                   | "google"
@@ -129,6 +158,22 @@ async function main() {
                 stripeIntegration: true,
               },
               integrationTemplateId: "test-template" as string,
+              environmentVariableMappings: [
+                {
+                  environmentVariable: {
+                    id: "test-env-var",
+                    key: "BETTER_AUTH_SECRET",
+                    secretId: "test-secret",
+                    projectId: "test-project",
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: "test-user",
+                  },
+                  integrationId: "test-integration",
+                  mapTo: "BETTER_AUTH_SECRET",
+                  environmentVariableId: "test-env-var",
+                },
+              ],
             },
             context,
           });
@@ -142,9 +187,10 @@ async function main() {
               userId: "test-user",
               projectId: "test-project" as string,
               key: integrationKey,
+              category: integration.category,
               options: null,
               integrationTemplateId: "test-template" as string,
-            },
+            } as Integration,
             context,
           });
         }
