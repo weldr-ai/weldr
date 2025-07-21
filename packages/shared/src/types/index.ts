@@ -2,6 +2,7 @@ import type { JSONSchema7 } from "json-schema";
 import type { z } from "zod";
 
 import type {
+  aiMetadataSchema,
   assistantMessageSchema,
   attachmentSchema,
   chatMessageSchema,
@@ -45,6 +46,7 @@ export type Version = z.infer<typeof versionSchema>;
 export type MessageRole = z.infer<typeof messageRoleSchema>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export type ChatMessageContent = z.infer<typeof chatMessageSchema>["content"];
+export type AiMessageMetadata = z.infer<typeof aiMetadataSchema>;
 export type UserMessage = z.infer<typeof userMessageSchema>;
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
 export type ToolMessage = z.infer<typeof toolMessageSchema>;

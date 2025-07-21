@@ -101,15 +101,15 @@ export const assistantMessageContentSchema = z.discriminatedUnion("type", [
 // ===========================================================================
 
 export const baseAiMetadataSchema = z.object({
-  inputTokens: z.number(),
-  outputTokens: z.number(),
-  totalTokens: z.number(),
-  inputCost: z.number(),
-  outputCost: z.number(),
-  totalCost: z.number(),
-  inputTokensPrice: z.number(),
-  outputTokensPrice: z.number(),
-  inputImagesPrice: z.number().nullable(),
+  inputTokens: z.number().optional(),
+  outputTokens: z.number().optional(),
+  totalTokens: z.number().optional(),
+  inputCost: z.number().optional(),
+  outputCost: z.number().optional(),
+  totalCost: z.number().optional(),
+  inputTokensPrice: z.number().optional(),
+  outputTokensPrice: z.number().optional(),
+  inputImagesPrice: z.number().nullable().optional(),
   finishReason: z.enum([
     "stop",
     "length",
@@ -177,13 +177,6 @@ export const assistantMessageSchema = baseMessageSchema.extend({
   role: z.literal("assistant"),
   content: assistantMessageContentSchema.array(),
   metadata: aiMetadataSchema.optional(),
-  version: z
-    .object({
-      id: z.string(),
-      versionName: z.string(),
-      versionNumber: z.number(),
-    })
-    .optional(),
 });
 
 export const toolMessageSchema = baseMessageSchema.extend({
@@ -208,7 +201,7 @@ export const addMessageItemSchema = z.discriminatedUnion("role", [
     visibility: z.enum(["public", "internal"]),
     role: z.literal("assistant"),
     content: assistantMessageContentSchema.array(),
-    metadata: aiMetadataSchema,
+    metadata: aiMetadataSchema.optional(),
     createdAt: z.date().optional(),
   }),
   z.object({

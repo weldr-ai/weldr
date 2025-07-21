@@ -25,7 +25,6 @@ import type {
   assistantMessageContentSchema,
 } from "@weldr/shared/validators/chats";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
-import { calculateModelCost } from "../utils/providers-pricing";
 import { XMLProvider } from "../utils/xml-provider";
 
 export async function plannerAgent({
@@ -34,7 +33,7 @@ export async function plannerAgent({
 }: {
   context: WorkflowContext;
   coolDownPeriod?: number;
-}) {
+}): Promise<"suspend" | undefined> {
   const project = context.get("project");
   const user = context.get("user");
   const version = context.get("version");
@@ -74,6 +73,7 @@ export async function plannerAgent({
   // Local function to execute planner agent and handle tool calls
   const executePlannerAgent = async (): Promise<boolean> => {
     let shouldRecur = false;
+    let hasToolErrors = false;
     const promptMessages = await getMessages(version.chatId);
 
     logger.info("promptMessages", {
@@ -171,6 +171,23 @@ export async function plannerAgent({
         }
       } else if (delta.type === "tool-result") {
         if (
+          delta.result &&
+          typeof delta.result === "object" &&
+          "error" in delta.result &&
+          Boolean(delta.result.error)
+        ) {
+          hasToolErrors = true;
+          logger.warn(
+            "Tool execution error detected, breaking stream processing",
+            {
+              toolName: delta.toolName,
+              toolCallId: delta.toolCallId,
+              error: delta.result,
+            },
+          );
+        }
+
+        if (
           delta.toolName === "add_integrations" &&
           delta.result?.status === "requires_configuration"
         ) {
@@ -182,6 +199,7 @@ export async function plannerAgent({
             toolResult: delta.result,
           });
         }
+
         toolResultMessages.push({
           visibility:
             delta.toolName === "add_integrations" &&
@@ -198,20 +216,28 @@ export async function plannerAgent({
             },
           ],
         });
+
+        if (hasToolErrors) {
+          break;
+        }
       }
     }
 
-    const usage = await result.usage;
+    if (hasToolErrors) {
+      shouldRecur = true;
+      logger.info("Continuing loop due to tool errors");
+    }
 
-    const cost = await calculateModelCost(
-      "google:gemini-2.5-pro",
-      usage.promptTokens,
-      usage.completionTokens,
-    );
+    // const usage = await result.usage;
+
+    // const cost = await calculateModelCost(
+    //   "google:gemini-2.5-pro",
+    //   usage.promptTokens,
+    //   usage.completionTokens,
+    // );
 
     const finishReason = await result.finishReason;
 
-    // Add assistant message
     if (assistantContent.length > 0) {
       messagesToSave.push({
         visibility: "public",
@@ -220,15 +246,15 @@ export async function plannerAgent({
         metadata: {
           provider: "google",
           model: "gemini-2.5-pro",
-          inputTokens: usage.promptTokens,
-          outputTokens: usage.completionTokens,
-          totalTokens: usage.totalTokens,
-          inputCost: cost?.inputCost ?? 0,
-          outputCost: cost?.outputCost ?? 0,
-          totalCost: cost?.totalCost ?? 0,
-          inputTokensPrice: cost?.inputTokensPrice ?? 0,
-          outputTokensPrice: cost?.outputTokensPrice ?? 0,
-          inputImagesPrice: cost?.inputImagesPrice ?? null,
+          // inputTokens: usage.promptTokens,
+          // outputTokens: usage.completionTokens,
+          // totalTokens: usage.totalTokens,
+          // inputCost: cost?.inputCost ?? 0,
+          // outputCost: cost?.outputCost ?? 0,
+          // totalCost: cost?.totalCost ?? 0,
+          // inputTokensPrice: cost?.inputTokensPrice ?? 0,
+          // outputTokensPrice: cost?.outputTokensPrice ?? 0,
+          // inputImagesPrice: cost?.inputImagesPrice ?? null,
           finishReason,
         },
       });
@@ -236,7 +262,6 @@ export async function plannerAgent({
 
     messagesToSave.push(...toolResultMessages);
 
-    // Store messages if any
     if (messagesToSave.length > 0) {
       await insertMessages({
         input: {
@@ -261,6 +286,12 @@ export async function plannerAgent({
       logger.info(`Recurring in ${coolDownPeriod}ms...`);
       await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
     }
+  }
+
+  if (version.status === "pending") {
+    logger.info("Version status is still pending, stopping planner agent");
+    await streamWriter.write({ type: "end" });
+    return "suspend";
   }
 
   logger.info("Planner agent completed");

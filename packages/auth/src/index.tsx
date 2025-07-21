@@ -9,6 +9,7 @@ import Stripe from "stripe";
 import { db } from "@weldr/db";
 import ResetPasswordEmail from "@weldr/emails/reset-password";
 import VerificationEmail from "@weldr/emails/verification-email";
+import { nanoid } from "@weldr/shared/nanoid";
 
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2025-02-24.acacia",
@@ -19,6 +20,9 @@ const resend = new Resend(process.env.RESEND_API_KEY ?? "");
 export const auth = betterAuth({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL,
   advanced: {
+    database: {
+      generateId: () => nanoid(),
+    },
     cookiePrefix: "weldr",
   },
   trustedOrigins: ["https://weldr.ai", "http://localhost:3000"],

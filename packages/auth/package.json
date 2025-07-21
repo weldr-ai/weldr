@@ -15,6 +15,7 @@
     "@better-auth/stripe": "^1.2.7",
     "@weldr/db": "workspace:*",
     "@weldr/emails": "workspace:*",
+    "@weldr/shared": "workspace:*",
     "better-auth": "1.2.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

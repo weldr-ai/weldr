@@ -17,7 +17,7 @@
     "pull": "pnpm with-env drizzle-kit introspect",
     "push": "pnpm with-env drizzle-kit push",
     "studio": "pnpm with-env drizzle-kit studio",
-    "seed": "pnpm with-env tsx src/scripts/seed.ts",
+    "seed": "pnpm with-env tsx src/seed.ts",
     "up": "pnpm with-env drizzle-kit up",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"

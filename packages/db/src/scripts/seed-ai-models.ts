@@ -1,5 +1,6 @@
-import { db } from "../src";
-import { aiModels } from "../src/schema";
+import { db } from "..";
+
+import { aiModels } from "../schema";
 
 /**
  * Seed data for AI models pricing

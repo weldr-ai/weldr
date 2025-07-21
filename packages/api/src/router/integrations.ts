@@ -144,8 +144,19 @@ export const integrationsRouter = createTRPCRouter({
           eq(integrations.id, input.id),
           eq(integrations.userId, ctx.session.user.id),
         ),
+        columns: {
+          id: true,
+          name: true,
+          category: true,
+          key: true,
+        },
         with: {
-          integrationTemplate: true,
+          environmentVariableMappings: {
+            columns: {
+              environmentVariableId: true,
+              mapTo: true,
+            },
+          },
         },
       });
 
@@ -183,11 +194,7 @@ export const integrationsRouter = createTRPCRouter({
               mapTo: true,
             },
           },
-          integrationTemplate: {
-            with: {
-              variables: true,
-            },
-          },
+          integrationTemplate: true,
         },
         orderBy: desc(integrations.id),
       });

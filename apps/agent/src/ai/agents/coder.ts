@@ -190,6 +190,7 @@ async function executeTaskCoder({
   // Local function to execute coder agent and handle tool calls
   const executeCoderLoop = async (): Promise<boolean> => {
     let shouldRecur = false;
+    let hasToolErrors = false;
     const promptMessages = await getMessages(loopChatId);
 
     const result = isXML
@@ -266,6 +267,23 @@ async function executeTaskCoder({
           shouldRecur = true;
         }
       } else if (delta.type === "tool-result") {
+        if (
+          delta.result &&
+          typeof delta.result === "object" &&
+          "error" in delta.result &&
+          Boolean(delta.result.error)
+        ) {
+          hasToolErrors = true;
+          logger.warn(
+            "Tool execution error detected, breaking stream processing",
+            {
+              toolName: delta.toolName,
+              toolCallId: delta.toolCallId,
+              error: delta.result,
+            },
+          );
+        }
+
         toolResultMessages.push({
           visibility: "internal",
           role: "tool",
@@ -278,7 +296,16 @@ async function executeTaskCoder({
             },
           ],
         });
+
+        if (hasToolErrors) {
+          break;
+        }
       }
+    }
+
+    if (hasToolErrors) {
+      shouldRecur = true;
+      logger.info("Continuing loop due to tool errors");
     }
 
     const usage = await result.usage;

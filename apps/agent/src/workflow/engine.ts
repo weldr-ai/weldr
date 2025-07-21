@@ -10,7 +10,7 @@ export type Step = {
     context,
   }: {
     context: WorkflowContext;
-  }) => Promise<unknown> | unknown;
+  }) => Promise<unknown | "suspend"> | unknown | "suspend";
   timeout?: number; // timeout in milliseconds
 };
 
@@ -55,11 +55,17 @@ export function createWorkflow(
   const stepMapping: StatusStepMapping = {} as StatusStepMapping;
 
   const api = {
-    onStatus<T extends "planning" | "coding" | "deploying">(
-      status: T,
+    onStatus<T extends "pending" | "planning" | "coding" | "deploying">(
+      status: T | T[],
       step: Step,
     ) {
-      stepMapping[status] = { step };
+      if (Array.isArray(status)) {
+        status.forEach((s) => {
+          stepMapping[s as keyof StatusStepMapping] = { step };
+        });
+      } else {
+        stepMapping[status as keyof StatusStepMapping] = { step };
+      }
       return api;
     },
     async execute({ context }: { context: WorkflowContext }): Promise<void> {
@@ -99,11 +105,18 @@ export function createWorkflow(
 
         // Execute the step (with its own retry logic)
         // The step is responsible for updating the version status
-        await executeWithRetry({
+        const output = await executeWithRetry({
           step,
           retryConfig,
           context,
         });
+
+        console.log("output", output);
+
+        if (output === "suspend") {
+          logger.info(`Step ${step.id} suspended`);
+          return;
+        }
 
         logger.info(`Step ${step.id} completed successfully`);
 
@@ -137,7 +150,7 @@ async function executeWithRetry({
   step: Step;
   retryConfig: RetryConfig;
   context: WorkflowContext;
-}): Promise<unknown> {
+}): Promise<unknown | "suspend"> {
   const project = context.get("project");
   const version = context.get("version");
 
@@ -152,9 +165,10 @@ async function executeWithRetry({
 
   for (let i = 0; i < retryConfig.attempts; i++) {
     try {
-      let output: unknown;
-
       if (step.timeout && step.timeout > 0) {
+        logger.info(
+          `Step ${step.id} executing with timeout: ${step.timeout}ms`,
+        );
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => {
             reject(
@@ -163,16 +177,30 @@ async function executeWithRetry({
           }, step.timeout);
         });
 
-        output = await Promise.race([
+        return await Promise.race([
           Promise.resolve(step.execute({ context })),
           timeoutPromise,
         ]);
-      } else {
-        output = await Promise.resolve(step.execute({ context }));
       }
 
-      return output;
+      return await step.execute({ context });
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      logger.error(
+        `Step ${step.id} failed on attempt ${i + 1}: ${errorMessage}`,
+        {
+          extra: {
+            error: errorMessage,
+            errorStack,
+            attempt: i + 1,
+            maxAttempts: retryConfig.attempts,
+          },
+        },
+      );
+
       lastError = error;
       if (i < retryConfig.attempts - 1) {
         const isTimeout =
@@ -185,6 +213,7 @@ async function executeWithRetry({
               maxAttempts: retryConfig.attempts,
               delay: retryConfig.delay,
               isTimeout,
+              errorMessage,
             },
           },
         );

@@ -105,7 +105,7 @@ export function VersionsCanvas({
 
   return (
     <ReactFlow
-      className="rounded-xl border"
+      className="border"
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}

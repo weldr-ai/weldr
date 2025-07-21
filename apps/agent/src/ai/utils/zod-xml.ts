@@ -55,6 +55,20 @@ class UnparsedString extends ZodString {
 
 export const createUnparsedString = () => new UnparsedString();
 
+/**
+ * Complex recursive schema traversal algorithm that identifies nodes requiring raw string preservation.
+ * This function implements a sophisticated depth-first search through Zod schema structures to:
+ *
+ * 1. Handle wrapper types (Optional, Default) by unwrapping to access inner schemas
+ * 2. Process union types by exploring ALL possible branches to catch unparsed strings in any variant
+ * 3. Navigate object schemas recursively, building dot-notation paths for nested structures
+ * 4. Handle array schemas by recursing into element types while preserving path context
+ * 5. Identify custom UnparsedString instances that need special XML parser treatment
+ *
+ * The path tracking is crucial for the XML parser's stopNodes configuration, which prevents
+ * certain nodes from being parsed into JavaScript objects, keeping them as raw strings.
+ * This is essential for handling complex nested XML that should remain as text content.
+ */
 function getUnparsedStringNodeNames(
   schema: ZodSchema,
   path: string[] = [],
@@ -136,6 +150,39 @@ export class ZodXml<T extends ZodSchema> {
     });
   }
 
+  /**
+   * Core XML-to-Zod transformation engine implementing sophisticated type coercion and structure mapping.
+   * This method represents the heart of the XML validation system and handles incredibly complex scenarios:
+   *
+   * WRAPPER TYPE HANDLING:
+   * - Gracefully unwraps Optional types, returning undefined for null/undefined values
+   * - Processes Default types by falling back to default values when data is missing
+   *
+   * UNION TYPE RESOLUTION:
+   * - Attempts each union option sequentially until one succeeds (fail-fast approach)
+   * - Provides comprehensive error handling when no union branch matches
+   *
+   * DISCRIMINATED UNION ROUTING:
+   * - Uses discriminator fields to intelligently select the correct union variant
+   * - Matches literal discriminator values against available schema options
+   *
+   * ARRAY PROCESSING COMPLEXITY:
+   * The array handling is particularly sophisticated, addressing XML's inherent structural ambiguity:
+   *
+   * Case 1: Direct arrays where XML structure matches expected array format
+   * Case 2: Single-key objects containing arrays (e.g., {users: [user1, user2]})
+   * Case 3: Single-key objects with single values that should become single-element arrays
+   * Case 4: Complex nested structures requiring intelligent flattening
+   *
+   * The algorithm uses pluralization logic and structural analysis to determine whether
+   * XML elements represent direct array items or wrapped collections, making intelligent
+   * decisions about when to flatten vs preserve structure.
+   *
+   * OBJECT TRANSFORMATION:
+   * - Recursively processes object properties while maintaining type safety
+   * - Handles nested objects with arbitrary depth
+   * - Preserves property relationships and validates against schema constraints
+   */
   fromXmlToZod(
     xml: UnknownXML,
     schema: ZodSchema,
@@ -247,6 +294,26 @@ export class ZodXml<T extends ZodSchema> {
 
     if (isXMLRecord(xml)) {
       if (isArrayRequested) {
+        /**
+         * Complex XML array structure resolution algorithm.
+         * XML parsers create ambiguous structures for arrays, requiring intelligent interpretation:
+         *
+         * CASE ANALYSIS:
+         * 1. Single-key with array value: {users: [user1, user2]}
+         *    - Need to determine if this should be direct array or wrapped objects
+         *    - Use pluralization logic to detect direct vs wrapped arrays
+         *    - Direct arrays: return the array contents directly
+         *    - Wrapped arrays: wrap each item with the key name
+         *
+         * 2. Single-key with object value: {users: {name: "John"}}
+         *    - This represents a single array element that XML parser didn't wrap in array
+         *    - Transform to single-element array: [{name: "John"}]
+         *
+         * 3. Multi-key objects or edge cases: fallback to wrapping entire object in array
+         *
+         * This handles XML's lack of native array syntax by intelligently interpreting
+         * the structure based on naming conventions and content patterns.
+         */
         // Check if there's only one property which is an array
         const keys = Object.keys(xml);
         const firstKey = keys[0];
@@ -336,7 +403,44 @@ export class ZodXml<T extends ZodSchema> {
   }
 
   /**
-   * Returns a properly formatted XML structure description optimized for LLMs
+   * Advanced XML structure description generator optimized for LLM consumption.
+   * This method implements a sophisticated recursive descent algorithm that transforms
+   * Zod schemas into human-readable, properly formatted XML structure documentation.
+   *
+   * KEY COMPLEXITIES:
+   *
+   * WRAPPER TYPE PROCESSING:
+   * - Intelligently unwraps Optional/Default types while preserving metadata
+   * - Adds contextual comments (<!-- optional -->, <!-- default: value -->) to XML output
+   * - Maintains type information through unwrapping layers
+   *
+   * UNION TYPE DOCUMENTATION:
+   * - Generates comprehensive documentation for all union variants
+   * - Provides brief structural summaries for complex object unions
+   * - Uses intelligent truncation for readability (shows first 3 fields + ...)
+   *
+   * DISCRIMINATED UNION FORMATTING:
+   * - Creates clear documentation showing all possible discriminator values
+   * - Formats each variant with proper nesting and indentation
+   * - Includes discriminator field information in examples
+   *
+   * ARRAY STRUCTURE VISUALIZATION:
+   * - Uses intelligent pluralization to generate singular element names
+   * - Shows complete structure of array elements with "(repeats)" indicators
+   * - Handles nested arrays and complex element types recursively
+   *
+   * ATTRIBUTE HANDLING:
+   * - Separates XML attributes from element content using special markers
+   * - Generates proper XML attribute syntax in examples
+   * - Handles mixed attribute/element schemas correctly
+   *
+   * INDENTATION AND FORMATTING:
+   * - Maintains proper XML indentation for nested structures
+   * - Uses self-closing tags where appropriate
+   * - Preserves readability while showing complete structure
+   *
+   * The output is specifically optimized for AI model consumption, providing clear,
+   * unambiguous examples that help models generate correctly structured XML.
    */
   describe(
     key = "",
@@ -486,6 +590,15 @@ export class ZodXml<T extends ZodSchema> {
       return `${indent}<${key}>${unionLabel}${descriptionString}</${key}>`;
     }
 
+    /**
+     * Discriminated union documentation generator with comprehensive variant display.
+     * This handles the complex task of documenting all possible discriminated union variants
+     * in a clear, structured format that shows:
+     * 1. The discriminator field and its possible values
+     * 2. Complete structure for each variant option
+     * 3. Proper nesting and indentation for readability
+     * 4. Integration with recursive schema description for nested complexity
+     */
     // Handle discriminated unions
     if (subSchema instanceof ZodDiscriminatedUnion) {
       const discriminator = subSchema.discriminator;
@@ -765,7 +878,43 @@ function getSingularKey(key: string): string {
 }
 
 /**
- * Converts Zod errors into LLM-friendly formatted strings
+ * Comprehensive Zod error formatting system providing detailed, actionable error messages.
+ * This function implements an exhaustive error analysis and formatting system that:
+ *
+ * CORE FEATURES:
+ * - Transforms cryptic Zod validation errors into human-readable explanations
+ * - Provides specific examples and corrections for each error type
+ * - Includes contextual path information showing exactly where errors occurred
+ * - Offers actionable suggestions for fixing common validation issues
+ *
+ * ERROR TYPE COVERAGE:
+ * The system handles every major Zod error type with specialized formatting:
+ *
+ * TYPE MISMATCHES:
+ * - Provides specific guidance for number/string/boolean conversion issues
+ * - Explains array vs object structure problems with examples
+ * - Handles null/undefined scenarios with clear remediation steps
+ *
+ * UNION/DISCRIMINATED UNION ERRORS:
+ * - Shows which union options were attempted and why they failed
+ * - Provides detailed breakdown of discriminator field issues
+ * - Offers examples of valid union formats
+ *
+ * STRING VALIDATION FAILURES:
+ * - Comprehensive coverage of all string validation types (email, URL, UUID, etc.)
+ * - Provides format examples for each validation type
+ * - Includes regex pattern guidance and common format issues
+ *
+ * NUMERIC CONSTRAINTS:
+ * - Clear explanations for min/max violations with remediation suggestions
+ * - Handles special numeric cases (finite numbers, multiples, etc.)
+ *
+ * ARRAY/OBJECT SIZE CONSTRAINTS:
+ * - Explains length requirements with actionable advice
+ * - Provides context for why certain limits exist
+ *
+ * The formatted output is optimized for both human readability and LLM consumption,
+ * enabling better error understanding and faster issue resolution.
  */
 function formatZodError(zodError: z.ZodError, xmlPath: string[] = []): string {
   const formatIssue = (issue: z.ZodIssue, depth = 0): string[] => {

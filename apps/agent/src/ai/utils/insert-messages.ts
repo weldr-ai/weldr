@@ -28,8 +28,9 @@ export async function insertMessages({
   for (const item of input.messages) {
     messages.push({
       visibility: item.visibility,
-      content: item.content,
       role: item.role,
+      content: item.content,
+      metadata: item.role === "assistant" ? item.metadata : undefined,
       userId: input.userId,
       chatId: input.chatId,
     });

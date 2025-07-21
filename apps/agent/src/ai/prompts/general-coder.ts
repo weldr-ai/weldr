@@ -32,13 +32,17 @@ export const generalCoder = async (
 ${
   toolSetMarkdown &&
   `To use a tool, you must respond with an XML block like this:
-  <tool_name>
-    <parameter_name>parameter_value</parameter_name>
-  </tool_name>`
+  <tool_call>
+    <tool_name>tool_name</tool_name>
+    <parameters>
+      <parameter_name>parameter_value</parameter_name>
+      ...
+    </parameters>
+  </tool_call>`
 }
   **CRITICAL TOOL CALLING RULES - MANDATORY ENFORCEMENT:**
   - **PROVIDE REASONING FIRST**: Before making any tool call, always provide a brief 1-2 sentence explanation of why you're calling this specific tool and what you expect to achieve
-  - **YOU MUST MAKE TOOL CALLS**: When the user asks you to code, modify files, install packages, or perform any development task, you MUST use the appropriate tools - never just describe what should be done
+  - **YOU MUST MAKE TOOL CALLS**: When the user asks you to code, modify files, install packages, or perform any development task, you MUST use the appropriate tools
   - **ONE TOOL PER MESSAGE**: You MUST make only ONE tool call per message - never multiple tool calls in the same response
   - **NO TEXT-ONLY RESPONSES FOR CODING TASKS**: If the user requests coding work, file modifications, or development tasks, you CANNOT just respond with explanatory text - you MUST use tools
   - **SEQUENTIAL EXECUTION**: After making a tool call, wait for the system to process it before making another
@@ -143,7 +147,6 @@ export const Button = ({ children, onClick }: ButtonProps) => {
     2. Wait for and analyze the tool results
     3. Based on the results, make the next required tool call
     4. Continue this pattern until the development task is complete
-  - **WHEN FINISHED**: Call the \`done\` tool to mark the task as complete
 </final_response_format>
 
 <reminders>

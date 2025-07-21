@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -6,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
 import { useProject } from "@/lib/context/project";
-import { useTRPC } from "@/lib/trpc/react";
 import { parseConventionalCommit } from "@/lib/utils";
 import type { CanvasNode } from "@/types";
 
@@ -70,7 +68,6 @@ export function Chat({
   const maxReconnectAttempts = 5;
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get declarations from the latest generation
   const latestVersion = project.versions[project.versions.length - 1];
   const editorReferences =
     latestVersion?.declarations?.reduce(
@@ -123,10 +120,6 @@ export function Chat({
 
   const { getNodes, setNodes, updateNodeData } = useReactFlow<CanvasNode>();
 
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-
-  // Set initial pending message state based on version status
   useEffect(() => {
     switch (version.status) {
       case "pending":
@@ -390,17 +383,7 @@ export function Chat({
     };
 
     return eventSource;
-  }, [
-    project.id,
-    project.currentVersion.status,
-    getNodes,
-    setNodes,
-    updateNodeData,
-    queryClient,
-    trpc,
-    pendingMessage,
-    updateProjectData,
-  ]);
+  }, [project.id, getNodes, setNodes, updateNodeData, updateProjectData]);
 
   const triggerGeneration = useCallback(async () => {
     setPendingMessage("thinking");
@@ -409,20 +392,28 @@ export function Chat({
       // First trigger the workflow
       await triggerWorkflow(userMessageContent, attachments);
 
-      // Then connect to event stream
-      connectToEventStream();
+      // Only connect to event stream if we don't already have a connection
+      if (!eventSourceRef) {
+        connectToEventStream();
+      }
     } catch (error) {
       console.error("Failed to start generation:", error);
       setPendingMessage(null);
     }
-  }, [triggerWorkflow, connectToEventStream, userMessageContent, attachments]);
+  }, [
+    triggerWorkflow,
+    connectToEventStream,
+    userMessageContent,
+    attachments,
+    eventSourceRef,
+  ]);
 
   // Auto-connect to SSE when component mounts if workflow is active
   useEffect(() => {
     if (project.currentVersion.status !== "completed" && !eventSourceRef) {
       connectToEventStream();
     }
-  }, [project.currentVersion.status]);
+  }, [connectToEventStream, project.currentVersion.status, eventSourceRef]);
 
   // Cleanup SSE connection and timeouts on unmount
   useEffect(() => {

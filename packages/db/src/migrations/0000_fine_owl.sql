@@ -3,6 +3,19 @@ CREATE TYPE "public"."message_visibility" AS ENUM('public', 'internal');--> stat
 CREATE TYPE "public"."declaration_progress" AS ENUM('pending', 'in_progress', 'enriching', 'completed');--> statement-breakpoint
 CREATE TYPE "public"."task_status" AS ENUM('pending', 'in_progress', 'completed');--> statement-breakpoint
 CREATE TYPE "public"."version_status" AS ENUM('pending', 'planning', 'coding', 'deploying', 'completed', 'failed');--> statement-breakpoint
+CREATE TABLE "ai_models" (
+	"id" text PRIMARY KEY NOT NULL,
+	"provider" text NOT NULL,
+	"model_key" text NOT NULL,
+	"input_tokens_price" numeric(10, 3) NOT NULL,
+	"output_tokens_price" numeric(10, 3) NOT NULL,
+	"input_images_price" numeric(10, 3),
+	"context_window" integer NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "unique_provider_model" UNIQUE("provider","model_key")
+);
+--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -115,6 +128,7 @@ CREATE TABLE "chat_messages" (
 	"visibility" "message_visibility" DEFAULT 'public' NOT NULL,
 	"role" "message_roles" DEFAULT 'assistant' NOT NULL,
 	"content" jsonb NOT NULL,
+	"metadata" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"chat_id" text NOT NULL,
 	"user_id" text

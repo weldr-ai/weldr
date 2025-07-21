@@ -14,7 +14,7 @@ export const workflow = createWorkflow({
     delay: 1000,
   },
 })
-  .onStatus("planning", planStep)
+  .onStatus(["pending", "planning"], planStep)
   .onStatus("coding", codeStep)
   .onStatus(
     "deploying",
