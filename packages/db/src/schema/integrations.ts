@@ -29,10 +29,7 @@ export const integrations = pgTable(
     category: text("category").$type<IntegrationCategory>().notNull(),
     name: text("name"),
     options: jsonb("options").$type<IntegrationOptions>(),
-    status: text("status")
-      .$type<IntegrationStatus>()
-      .default("pending")
-      .notNull(),
+    status: text("status").$type<IntegrationStatus>().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

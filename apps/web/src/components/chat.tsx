@@ -273,7 +273,8 @@ export function Chat({
                         type: "tool-result",
                         toolName: chunk.toolName,
                         toolCallId: chunk.toolCallId,
-                        result: chunk.toolResult,
+                        input: chunk.input,
+                        output: chunk.output,
                       },
                     ],
                   },
@@ -436,8 +437,10 @@ export function Chat({
       lastMessage.content.find(
         (content) =>
           content.type === "tool-result" &&
-          content.toolName === "add_integrations" &&
-          (content.result as { status: "pending" }).status === "pending",
+          (content.toolName === "add_integrations" ||
+            content.toolName === "init_project") &&
+          (content.output as { status: "requires_configuration" }).status ===
+            "requires_configuration",
       ) !== undefined
     ) {
       setPendingMessage("waiting");

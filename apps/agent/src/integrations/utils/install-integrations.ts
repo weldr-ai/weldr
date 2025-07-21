@@ -1,16 +1,24 @@
 import type { WorkflowContext } from "@/workflow/context";
 
 import { Logger } from "@weldr/shared/logger";
-import type { Integration, IntegrationKey } from "@weldr/shared/types";
+import type {
+  Integration,
+  IntegrationKey,
+  IntegrationStatus,
+} from "@weldr/shared/types";
 import { integrationRegistry } from "../registry";
 
 export async function installIntegrations(
   integrations: Integration[],
   context: WorkflowContext,
 ) {
-  const addedIntegrations: IntegrationKey[] = [];
+  const addedIntegrations: {
+    id: string;
+    key: IntegrationKey;
+    status: IntegrationStatus;
+  }[] = [];
   for (const integration of integrations) {
-    if (integration.status === "installed") {
+    if (integration.status === "completed") {
       continue;
     }
 
@@ -20,7 +28,11 @@ export async function installIntegrations(
         context,
       });
       Logger.info(`Installed ${integration.key} integration`);
-      addedIntegrations.push(integration.key);
+      addedIntegrations.push({
+        id: integration.id,
+        key: integration.key,
+        status: "completed",
+      });
     } catch (error) {
       Logger.error(`Failed to apply ${integration.key} integration`, {
         extra: { error },
@@ -29,5 +41,5 @@ export async function installIntegrations(
       return { status: "error" as const, error: errorMessage };
     }
   }
-  return { status: "success" as const, addedIntegrations };
+  return { status: "completed" as const, addedIntegrations };
 }

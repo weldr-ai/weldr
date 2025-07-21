@@ -190,7 +190,7 @@ async function executeTaskCoder({
   // Local function to execute coder agent and handle tool calls
   const executeCoderLoop = async (): Promise<boolean> => {
     let shouldRecur = false;
-    let hasToolErrors = false;
+    const hasToolErrors = false;
     const promptMessages = await getMessages(loopChatId);
 
     const result = isXML
@@ -237,53 +237,27 @@ async function executeTaskCoder({
 
     // Process the stream and handle tool calls
     for await (const delta of result.fullStream) {
-      if (delta.type === "text-delta") {
+      if (delta.type === "text") {
         // Add text content immediately to maintain proper order
         const lastItem = assistantContent[assistantContent.length - 1];
         if (lastItem && lastItem.type === "text") {
           // Append to existing text item
-          lastItem.text += delta.textDelta;
+          lastItem.text += delta.text;
         } else {
           // Create new text item
           assistantContent.push({
             type: "text",
-            text: delta.textDelta,
+            text: delta.text,
           });
         }
       } else if (delta.type === "tool-call") {
-        // Handle tool calls - add them as they come in to maintain order
         assistantContent.push({
           type: "tool-call",
           toolCallId: delta.toolCallId,
           toolName: delta.toolName,
-          args: delta.args,
+          input: delta.input,
         });
-
-        // Check if done tool was called - if so, don't recur
-        if (delta.toolName === "done") {
-          shouldRecur = false;
-        } else {
-          // For other tools, continue recursing
-          shouldRecur = true;
-        }
       } else if (delta.type === "tool-result") {
-        if (
-          delta.result &&
-          typeof delta.result === "object" &&
-          "error" in delta.result &&
-          Boolean(delta.result.error)
-        ) {
-          hasToolErrors = true;
-          logger.warn(
-            "Tool execution error detected, breaking stream processing",
-            {
-              toolName: delta.toolName,
-              toolCallId: delta.toolCallId,
-              error: delta.result,
-            },
-          );
-        }
-
         toolResultMessages.push({
           visibility: "internal",
           role: "tool",
@@ -292,13 +266,21 @@ async function executeTaskCoder({
               type: "tool-result",
               toolCallId: delta.toolCallId,
               toolName: delta.toolName,
-              result: delta.result,
+              output: delta.output,
+              isError: "isError" in delta && delta.isError,
             },
           ],
         });
 
-        if (hasToolErrors) {
+        if ("isError" in delta && delta.isError) {
+          shouldRecur = true;
           break;
+        }
+
+        if (delta.toolName === "done") {
+          shouldRecur = false;
+        } else {
+          shouldRecur = true;
         }
       }
     }
@@ -312,8 +294,8 @@ async function executeTaskCoder({
 
     const cost = await calculateModelCost(
       "google:gemini-2.5-pro",
-      usage.promptTokens,
-      usage.completionTokens,
+      usage?.inputTokens ?? 0,
+      usage?.outputTokens ?? 0,
     );
 
     const finishReason = await result.finishReason;
@@ -327,15 +309,15 @@ async function executeTaskCoder({
         metadata: {
           provider: "google",
           model: "gemini-2.5-pro",
-          inputTokens: usage.promptTokens,
-          outputTokens: usage.completionTokens,
-          totalTokens: usage.totalTokens,
-          inputCost: cost?.inputCost ?? 0,
-          outputCost: cost?.outputCost ?? 0,
-          totalCost: cost?.totalCost ?? 0,
-          inputTokensPrice: cost?.inputTokensPrice ?? 0,
-          outputTokensPrice: cost?.outputTokensPrice ?? 0,
-          inputImagesPrice: cost?.inputImagesPrice ?? null,
+          inputTokens: usage?.inputTokens,
+          outputTokens: usage?.outputTokens,
+          totalTokens: usage?.totalTokens,
+          inputCost: cost?.inputCost,
+          outputCost: cost?.outputCost,
+          totalCost: cost?.totalCost,
+          inputTokensPrice: cost?.inputTokensPrice,
+          outputTokensPrice: cost?.outputTokensPrice,
+          inputImagesPrice: cost?.inputImagesPrice,
           finishReason,
         },
       });

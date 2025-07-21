@@ -35,23 +35,24 @@ type ExtractZodSchema<T> = T extends ZodXml<infer U> ? U : never;
 
 // Stream part definitions
 export type XMLTextDelta = {
-  type: "text-delta";
-  textDelta: string;
+  type: "text";
+  text: string;
 };
 
 export type XMLToolCall<TTool extends XMLToolSpec> = {
   type: "tool-call";
   toolCallId: string;
   toolName: TTool["name"];
-  args: z.infer<ExtractZodSchema<TTool["parameters"]>>;
+  input: z.infer<ExtractZodSchema<TTool["parameters"]>>;
 };
 
 export type XMLToolResult<TTool extends XMLToolSpec> = {
   type: "tool-result";
   toolCallId: string;
   toolName: TTool["name"];
-  args: z.infer<ExtractZodSchema<TTool["parameters"]>>;
-  result: Awaited<ReturnType<TTool["execute"]>>;
+  input: z.infer<ExtractZodSchema<TTool["parameters"]>>;
+  output: Awaited<ReturnType<TTool["execute"]>>;
+  isError?: boolean;
 };
 
 /**
@@ -144,12 +145,10 @@ export class XMLProvider<const TTools extends readonly XMLToolSpec[]> {
 
     try {
       for await (const delta of baseFullStream) {
-        if (delta.type === "text-delta") {
+        if (delta.type === "text") {
           textChunkCount++;
-          yield { type: "text-delta", textDelta: delta.textDelta };
-          for await (const toolDelta of processor.processChunk(
-            delta.textDelta,
-          )) {
+          yield { type: "text", text: delta.text };
+          for await (const toolDelta of processor.processChunk(delta.text)) {
             toolDeltaCount++;
             yield toolDelta;
           }
@@ -281,13 +280,13 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
           type: "tool-call",
           toolCallId,
           toolName: tool.name,
-          args: parsedParams.data,
+          input: parsedParams.data,
         };
         this.toolCalls.push(toolCall as AnyXMLToolCall<TTools>);
         this.logger.info("Tool call validated successfully", {
           toolName: tool.name,
           toolCallId,
-          args: parsedParams.data,
+          input: parsedParams.data,
         });
         yield toolCall as AnyXMLToolCall<TTools>;
 
@@ -319,8 +318,8 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
           type: "tool-result",
           toolCallId,
           toolName: tool.name,
-          args: {},
-          result: {
+          input: {},
+          output: {
             error: true,
             message: parsedParams.error.message,
             toolName: rawCall.name,
@@ -615,7 +614,7 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
           result[paramName] = nestedObject;
         } else {
           // Check if value contains separators and should be parsed as array
-          const processedValue = this.parseDelimitedValue(values[0]);
+          const processedValue = this.parseValue(values[0]);
           result[paramName] = processedValue;
         }
       } else {
@@ -624,7 +623,7 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
           if (nestedObject !== null) {
             return nestedObject;
           }
-          return this.parseDelimitedValue(value);
+          return this.parseValue(value);
         });
       }
     }
@@ -632,37 +631,13 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
   }
 
   /**
-   * Parses delimited values with intelligent type conversion.
-   * This method handles multiple delimiter types and provides smart type coercion:
-   * 1. Primary delimiter: pipe (|) for explicit array values
-   * 2. Fallback delimiter: comma (,) for CSV-like values
-   * 3. Preserves quoted strings as strings (no number conversion)
-   * 4. Converts unquoted numeric literals to numbers
-   * 5. Maintains original strings for non-numeric values
+   * Simple value processing with basic type conversion.
+   * This method handles basic type coercion:
+   * 1. Preserves quoted strings as strings (no number conversion)
+   * 2. Converts unquoted numeric literals to numbers
+   * 3. Maintains original strings for all other values
    */
-  private parseDelimitedValue(value: string): unknown {
-    // Check for pipe separator first (primary separator)
-    if (value.includes("|")) {
-      const items = value
-        .split("|")
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0);
-      if (items.length > 1) {
-        return this.processListItems(items);
-      }
-    }
-
-    // Fall back to comma separator
-    if (value.includes(",")) {
-      const items = value
-        .split(",")
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0);
-      if (items.length > 1) {
-        return this.processListItems(items);
-      }
-    }
-
+  private parseValue(value: string): unknown {
     // Try to convert single value to number only if it's an unquoted literal
     const trimmedValue = value.trim();
     if (
@@ -678,23 +653,6 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
     }
 
     return value;
-  }
-
-  private processListItems(items: string[]): unknown[] {
-    // Try to convert to numbers only if items are unquoted literals
-    return items.map((item) => {
-      // Don't convert quoted strings
-      if (
-        (item.startsWith('"') && item.endsWith('"')) ||
-        (item.startsWith("'") && item.endsWith("'"))
-      ) {
-        return item.slice(1, -1); // Remove quotes but keep as string
-      }
-
-      // Convert unquoted numeric literals to numbers
-      const num = Number(item);
-      return !Number.isNaN(num) && Number.isFinite(num) ? num : item;
-    });
   }
 
   /**
@@ -776,12 +734,12 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
     this.logger.debug("Starting tool execution", {
       toolName: tool.name,
       toolCallId: toolCall.toolCallId,
-      args: toolCall.args,
+      input: toolCall.input,
     });
 
     try {
       const result = await tool.execute({
-        input: toolCall.args,
+        input: toolCall.input,
         context: this.context,
       });
 
@@ -796,8 +754,9 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
         type: "tool-result",
         toolCallId: toolCall.toolCallId,
         toolName: tool.name,
-        args: toolCall.args,
-        result: result as Awaited<ReturnType<TCurrentTool["execute"]>>,
+        input: toolCall.input,
+        output: result as Awaited<ReturnType<TCurrentTool["execute"]>>,
+        isError: false,
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -808,7 +767,18 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });
-      throw error;
+      return {
+        type: "tool-result",
+        toolCallId: toolCall.toolCallId,
+        toolName: tool.name,
+        input: toolCall.input,
+        output: (error instanceof Error
+          ? { message: error.message }
+          : { message: JSON.stringify(error) }) as Awaited<
+          ReturnType<TCurrentTool["execute"]>
+        >,
+        isError: true,
+      };
     }
   }
 

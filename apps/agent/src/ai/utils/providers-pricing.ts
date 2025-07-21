@@ -9,12 +9,12 @@ import {
 } from "@weldr/db/schema";
 
 export interface CostCalculation {
-  inputCost: number;
-  outputCost: number;
-  totalCost: number;
-  inputTokensPrice: number;
-  outputTokensPrice: number;
-  inputImagesPrice: number | null;
+  inputCost?: number;
+  outputCost?: number;
+  totalCost?: number;
+  inputTokensPrice?: number;
+  outputTokensPrice?: number;
+  inputImagesPrice?: number;
 }
 
 export async function calculateModelCost(
@@ -54,6 +54,6 @@ export async function calculateModelCost(
     outputTokensPrice: Number(modelResult.outputTokensPrice),
     inputImagesPrice: modelResult.inputImagesPrice
       ? Number(modelResult.inputImagesPrice)
-      : null,
+      : undefined,
   };
 }

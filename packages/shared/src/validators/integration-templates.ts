@@ -33,7 +33,7 @@ export const postgresqlIntegrationTemplateSchema =
   baseIntegrationTemplateSchema.extend({
     key: z.literal("postgresql"),
     category: z.literal("database"),
-    allowMultiple: z.literal(true),
+    allowMultiple: z.literal(false),
     dependencies: z.tuple([z.literal("backend")]),
     variables: z.tuple([
       z.object({

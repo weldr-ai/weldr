@@ -86,6 +86,7 @@ export async function getIntegrations(input: {
             category: integrationTemplate.category,
             projectId: project.id,
             userId: user.id,
+            status: "ready",
             integrationTemplateId: integrationTemplate.id,
           })
           .returning();

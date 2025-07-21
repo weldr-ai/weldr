@@ -2,10 +2,11 @@ import { streamText } from "ai";
 import type { z } from "zod";
 import { prompts } from "@/ai/prompts";
 import {
-  callCoderTool,
+  addIntegrationsTool,
   findTool,
   fzfTool,
   grepTool,
+  initProjectTool,
   listDirTool,
   readFileTool,
   searchCodebaseTool,
@@ -20,11 +21,12 @@ import type {
   addMessageItemSchema,
   assistantMessageContentSchema,
 } from "@weldr/shared/validators/chats";
+import { callPlannerTool } from "../tools/call-planner";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
 import { calculateModelCost } from "../utils/providers-pricing";
 import { XMLProvider } from "../utils/xml-provider";
 
-export async function plannerAgent({
+export async function requirementsAgent({
   context,
   coolDownPeriod = 1000,
 }: {
@@ -49,6 +51,8 @@ export async function plannerAgent({
 
   const xmlProvider = new XMLProvider(
     [
+      addIntegrationsTool.getXML(),
+      initProjectTool.getXML(),
       listDirTool.getXML(),
       readFileTool.getXML(),
       searchCodebaseTool.getXML(),
@@ -56,17 +60,16 @@ export async function plannerAgent({
       fzfTool.getXML(),
       grepTool.getXML(),
       findTool.getXML(),
-      callCoderTool.getXML(),
+      callPlannerTool.getXML(),
     ],
     context,
   );
 
   const system = isXML
-    ? await prompts.planner(project, xmlProvider.getSpecsMarkdown())
-    : await prompts.planner(project);
+    ? await prompts.requirementsAgent(project, xmlProvider.getSpecsMarkdown())
+    : await prompts.requirementsAgent(project);
 
-  // Local function to execute planner agent and handle tool calls
-  const executePlannerAgent = async (): Promise<boolean> => {
+  const executeRequirementsAgent = async (): Promise<boolean> => {
     let shouldRecur = false;
     const promptMessages = await getMessages(version.chatId);
 
@@ -80,7 +83,7 @@ export async function plannerAgent({
           system,
           messages: promptMessages,
           onError: (error) => {
-            logger.error("Error in planner agent", {
+            logger.error("Error in requirements agent", {
               extra: { error },
             });
           },
@@ -90,6 +93,8 @@ export async function plannerAgent({
           system,
           messages: promptMessages,
           tools: {
+            add_integrations: addIntegrationsTool(context),
+            init_project: initProjectTool(context),
             list_dir: listDirTool(context),
             read_file: readFileTool(context),
             search_codebase: searchCodebaseTool(context),
@@ -97,10 +102,10 @@ export async function plannerAgent({
             fzf: fzfTool(context),
             grep: grepTool(context),
             find: findTool(context),
-            call_coder: callCoderTool(context),
+            call_planner: callPlannerTool(context),
           },
           onError: (error) => {
-            logger.error("Error in planner agent", {
+            logger.error("Error in requirements agent", {
               extra: { error },
             });
           },
@@ -156,7 +161,11 @@ export async function plannerAgent({
         }
         case "tool-result": {
           toolResultMessages.push({
-            visibility: "internal",
+            visibility:
+              delta.toolName === "add_integrations" ||
+              delta.toolName === "init_project"
+                ? "public"
+                : "internal",
             role: "tool",
             content: [
               {
@@ -172,6 +181,24 @@ export async function plannerAgent({
           if ("isError" in delta && delta.isError) {
             shouldRecur = true;
             break;
+          }
+
+          if (
+            delta.toolName === "add_integrations" ||
+            delta.toolName === "init_project"
+          ) {
+            await streamWriter.write({
+              type: "tool",
+              toolName: delta.toolName,
+              toolCallId: delta.toolCallId,
+              input: delta.input,
+              output: delta.output,
+            });
+            if (delta.output.status === "requires_configuration") {
+              shouldRecur = false;
+            } else {
+              shouldRecur = true;
+            }
           }
 
           if (
@@ -237,13 +264,12 @@ export async function plannerAgent({
     return shouldRecur;
   };
 
-  // Main execution loop for the planner agent
   let shouldContinue = true;
   let iterationCount = 0;
   while (shouldContinue) {
     iterationCount++;
-    logger.info(`Starting planner agent iteration ${iterationCount}`);
-    shouldContinue = await executePlannerAgent();
+    logger.info(`Starting requirements agent iteration ${iterationCount}`);
+    shouldContinue = await executeRequirementsAgent();
     if (shouldContinue) {
       logger.info(`Recurring in ${coolDownPeriod}ms...`);
       await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
@@ -251,10 +277,10 @@ export async function plannerAgent({
   }
 
   if (version.status === "pending") {
-    logger.info("Version status is still pending, stopping planner agent");
+    logger.info("Version status is still pending, stopping requirements agent");
     await streamWriter.write({ type: "end" });
     return "suspend";
   }
 
-  logger.info("Planner agent completed");
+  logger.info("Requirements agent completed");
 }

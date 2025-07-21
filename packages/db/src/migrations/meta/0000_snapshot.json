@@ -1,5 +1,5 @@
 {
-  "id": "79ef7338-9ab8-4509-a639-57bc91ae4640",
+  "id": "a2532f9e-0e94-4918-921f-1889f18434b6",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1549,8 +1549,7 @@
           "name": "status",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",

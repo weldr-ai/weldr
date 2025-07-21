@@ -11,7 +11,7 @@ export const postgresqlIntegration = defineIntegration<"postgresql">({
   description:
     "Powerful relational database that stores, organizes, and retrieves data with support for complex queries, transactions, and scalable performance.",
   version: "1.0.0",
-  allowMultiple: true,
+  allowMultiple: false,
   dependencies: ["backend"],
   variables: [
     {

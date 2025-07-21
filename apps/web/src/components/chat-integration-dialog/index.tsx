@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
+import type { IntegrationStatus } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/components/button";
 import {
   Dialog,
@@ -19,7 +20,7 @@ import { PostgresForm } from "./postgres-form";
 interface ChatIntegrationDialogProps {
   integrationTemplate: RouterOutputs["integrationTemplates"]["byId"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
-  status: "pending" | "success" | "error" | "cancelled";
+  status: IntegrationStatus;
   onSuccess?: () => void;
   onCancel?: () => void;
   className?: string;
@@ -69,10 +70,10 @@ export function ChatIntegrationDialog({
           size="sm"
           variant="outline"
           className={cn(
-            "group gap-2 bg-background px-1 hover:bg-accent",
+            "group w-full justify-between gap-2 bg-background px-1 hover:bg-accent",
             className,
           )}
-          disabled={status !== "pending"}
+          disabled={status !== "requires_configuration"}
         >
           <div className="flex items-center gap-2">
             <PostgresIcon className="size-4" />
@@ -87,13 +88,17 @@ export function ChatIntegrationDialog({
             <div
               className={cn(
                 "size-1.5 rounded-full",
-                status === "pending" && "animate-pulse bg-warning",
-                status === "success" && "bg-success",
-                status === "error" && "bg-destructive",
+                status === "requires_configuration" && "bg-warning",
+                status === "completed" && "bg-success",
+                status === "failed" && "bg-destructive",
                 status === "cancelled" && "bg-muted-foreground",
               )}
             />
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {status
+              .replaceAll("_", " ")
+              .split(" ")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(" ")}
           </div>
         </Button>
       </DialogTrigger>

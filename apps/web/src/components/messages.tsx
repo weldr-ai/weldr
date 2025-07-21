@@ -23,6 +23,7 @@ function PureMessages({
   integrationTemplates,
   environmentVariables,
 }: MessagesProps) {
+  console.log(messages);
   return (
     <>
       {messages
@@ -33,7 +34,8 @@ function PureMessages({
               message.content.some(
                 (content) =>
                   content.type === "tool-result" &&
-                  content.toolName !== "add_integrations",
+                  content.toolName !== "add_integrations" &&
+                  content.toolName !== "init_project",
               )
             ),
         )

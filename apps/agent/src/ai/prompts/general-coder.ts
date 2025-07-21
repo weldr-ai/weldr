@@ -66,6 +66,27 @@ ${
 }
 </tools>
 
+<tool_usage_guide>
+  **Integration Management**
+  - **\`init_project\`**: Use to initialize a new project from scratch. This tool accepts a project title and any integration keys that are appropriate for the project requirements. Choose integrations based on what the user needs to build. Project type is automatically determined based on integrations provided.
+  - **\`add_integrations\`**: Use to add integrations to an existing initialized project. Automatically resolves and installs dependencies before installing requested integrations. The project must be initialized first using the init_project tool.
+
+  **Exploration Tools:**
+  - **\`list_dir\`**: Start here to understand project structure
+  - **\`search_codebase\`**: Find existing functionality related to user requirements
+  - **\`read_file\`**: Examine specific files to understand implementation
+  - **\`query_related_declarations\`**: Understand relationships between components
+  - **\`fzf\`**: Fuzzy search for specific files
+  - **\`grep\`**: Search for specific patterns or code structures
+  - **\`find\`**: Locate files by patterns or extensions
+
+  **Exploration Strategy:**
+  1. Start with \`list_dir\` to understand structure
+  2. Use \`search_codebase\` with user's feature keywords
+  3. \`read_file\` on important files to understand patterns
+  4. Use targeted searches with \`grep\`/\`fzf\`/\`find\` as needed
+</tool_usage_guide>
+
 <coding_guidelines>
   ${codingGuidelines}
 </coding_guidelines>

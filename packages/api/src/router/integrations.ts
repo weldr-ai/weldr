@@ -66,6 +66,7 @@ export const integrationsRouter = createTRPCRouter({
             projectId,
             userId: ctx.session.user.id,
             integrationTemplateId,
+            status: "ready",
           })
           .returning();
 

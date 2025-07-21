@@ -80,7 +80,7 @@ class IntegrationRegistry {
     await db
       .update(integrations)
       .set({
-        status: "installed",
+        status: "completed",
       })
       .where(eq(integrations.id, integration.id));
   }

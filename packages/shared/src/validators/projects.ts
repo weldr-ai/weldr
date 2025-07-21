@@ -5,7 +5,7 @@ import { environmentVariableSchema } from "./environment-variables";
 export const projectSchema = z.object({
   id: z.string(),
   title: z.string(),
-  subdomain: z.string(),
+  subdomain: z.string().nullable(),
   initiatedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),

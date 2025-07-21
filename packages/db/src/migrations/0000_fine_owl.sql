@@ -208,7 +208,7 @@ CREATE TABLE "integrations" (
 	"category" text NOT NULL,
 	"name" text,
 	"options" jsonb,
-	"status" text DEFAULT 'pending' NOT NULL,
+	"status" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"project_id" text NOT NULL,

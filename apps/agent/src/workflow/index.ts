@@ -5,6 +5,7 @@ import { createStep, createWorkflow } from "./engine";
 import { codeStep } from "./steps/code";
 import { deployStep } from "./steps/deploy";
 import { planStep } from "./steps/plan";
+import { requirementsStep } from "./steps/requirements";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -14,7 +15,8 @@ export const workflow = createWorkflow({
     delay: 1000,
   },
 })
-  .onStatus(["pending", "planning"], planStep)
+  .onStatus("pending", requirementsStep)
+  .onStatus("planning", planStep)
   .onStatus("coding", codeStep)
   .onStatus(
     "deploying",

@@ -25,22 +25,28 @@ export const initProjectTool = createTool({
   }),
   outputSchema: z.discriminatedUnion("status", [
     z.object({
-      status: z.literal("success"),
-      message: z.string(),
-    }),
-    z.object({
-      status: z.literal("error"),
-      error: z.string(),
-    }),
-    z.object({
       status: z.literal("requires_configuration"),
-      integrations: z.array(
-        z.object({
+      integrations: z
+        .object({
           id: z.string(),
           key: integrationKeySchema,
           status: integrationStatusSchema,
-        }),
-      ),
+        })
+        .array(),
+    }),
+    z.object({
+      status: z.literal("completed"),
+      integrations: z
+        .object({
+          id: z.string(),
+          key: integrationKeySchema,
+          status: integrationStatusSchema,
+        })
+        .array(),
+    }),
+    z.object({
+      status: z.literal("failed"),
+      error: z.string(),
     }),
   ]),
   execute: async ({ input, context }) => {
@@ -52,6 +58,14 @@ export const initProjectTool = createTool({
       versionId: version?.id,
       input,
     });
+
+    const streamWriter = global.sseConnections?.get(version.chatId);
+
+    if (!streamWriter) {
+      const error = "Failed to initialize project: Stream writer not found";
+      logger.error(error);
+      throw new Error(error);
+    }
 
     logger.info(`Initializing project: ${input.title}`);
 
@@ -67,8 +81,21 @@ export const initProjectTool = createTool({
     if (!updatedProject) {
       const error = "Failed to initialize project: Project not found";
       logger.error(error);
-      return { status: "error" as const, error };
+      return { status: "failed" as const, error };
     }
+
+    context.set("project", {
+      ...updatedProject,
+      config: new Set(),
+    });
+
+    await streamWriter.write({
+      type: "update_project",
+      data: {
+        title: input.title,
+        initiatedAt: updatedProject.initiatedAt,
+      },
+    });
 
     const config: Set<"database" | "authentication" | "server" | "web"> =
       new Set();
@@ -83,25 +110,6 @@ export const initProjectTool = createTool({
       } else if (key === "tanstack-start") {
         config.add("web");
       }
-    }
-
-    context.set("project", {
-      ...updatedProject,
-      config: new Set(),
-    });
-
-    const streamWriter = global.sseConnections?.get(
-      context.get("version").chatId,
-    );
-
-    if (streamWriter) {
-      await streamWriter.write({
-        type: "update_project",
-        data: {
-          title: input.title,
-          initiatedAt: updatedProject.initiatedAt,
-        },
-      });
     }
 
     const integrationsToInstall = await getIntegrations({
@@ -129,7 +137,7 @@ export const initProjectTool = createTool({
 
     if (installationResult.status === "error") {
       return {
-        status: "error" as const,
+        status: "failed" as const,
         error: installationResult.error,
       };
     }
@@ -137,8 +145,12 @@ export const initProjectTool = createTool({
     logger.info("Project initialized successfully");
 
     return {
-      status: "success" as const,
-      message: `Project initialized successfully with ${input.keys.join(", ")}`,
+      status: "completed" as const,
+      integrations: integrationsToInstall.map((i) => ({
+        id: i.id,
+        key: i.key,
+        status: i.status,
+      })),
     };
   },
 });

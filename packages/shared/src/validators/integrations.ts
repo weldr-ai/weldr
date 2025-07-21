@@ -10,9 +10,10 @@ export const integrationKeySchema = z.enum([
 ]);
 
 export const integrationStatusSchema = z.enum([
-  "pending",
   "requires_configuration",
-  "installed",
+  "ready",
+  "completed",
+  "cancelled",
   "failed",
 ]);
 

@@ -99,22 +99,8 @@ export type ToolStreamableValue = {
   type: "tool";
   toolName: string;
   toolCallId: string;
-  toolArgs?: unknown;
-  toolResult: unknown;
-};
-
-export type VersionStreamableValue = {
-  id?: string;
-  createdAt?: Date;
-  type: "version";
-  versionId: string;
-  versionMessage: string;
-  versionNumber: number;
-  versionDescription: string;
-  changedFiles: {
-    path: string;
-    status: "pending" | "success";
-  }[];
+  input: unknown;
+  output: unknown;
 };
 
 export type ProjectStreamableValue = {

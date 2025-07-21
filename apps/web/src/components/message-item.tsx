@@ -1,14 +1,16 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
 import { memo } from "react";
 import type { z } from "zod";
-import { useTRPC } from "@/lib/trpc/react";
 
 import type { RouterOutputs } from "@weldr/api";
-import type { ChatMessage, TPendingMessage } from "@weldr/shared/types";
+import type {
+  ChatMessage,
+  IntegrationKey,
+  IntegrationStatus,
+  TPendingMessage,
+} from "@weldr/shared/types";
 import type { toolMessageSchema } from "@weldr/shared/validators/chats";
-import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
 import { ChatIntegrationDialog } from "./chat-integration-dialog";
@@ -59,12 +61,11 @@ const PureMessageItem = ({
         )}
 
         {message.role === "tool" &&
-          message.content.some((content) => {
-            if (content.type === "tool-result") {
-              return content.toolName === "add_integrations";
-            }
-            return false;
-          }) && (
+          message.content.some(
+            (content) =>
+              content.toolName === "add_integrations" ||
+              content.toolName === "init_project",
+          ) && (
             <SetupIntegration
               setMessages={setMessages}
               setPendingMessage={setPendingMessage}
@@ -87,9 +88,9 @@ export const MessageItem = memo(PureMessageItem, (prevProps, nextProps) => {
 const PureSetupIntegration = ({
   message,
   integrationTemplates,
+  environmentVariables,
   setMessages,
   setPendingMessage,
-  environmentVariables,
 }: {
   message: z.infer<typeof toolMessageSchema>;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
@@ -97,89 +98,69 @@ const PureSetupIntegration = ({
   setMessages: (messages: ChatMessage[]) => void;
   setPendingMessage: (pendingMessage: "thinking" | "waiting" | null) => void;
 }) => {
-  const toolInfo = message.content as unknown as {
-    toolArgs: { integrations: "postgresql"[] };
-    toolResult: { status: "pending" | "success" | "error" | "cancelled" };
+  // Get the first content item which contains the tool result
+  const toolResult = Array.isArray(message.content)
+    ? message.content[0]
+    : message.content;
+
+  const toolInfo = toolResult as unknown as {
+    output: {
+      status: "requires_configuration" | "completed" | "failed";
+      integrations: {
+        id: string;
+        key: IntegrationKey;
+        status: IntegrationStatus;
+      }[];
+    };
+    toolName: string;
   };
 
-  const trpc = useTRPC();
-
-  const updateMessageMutation = useMutation(
-    trpc.chats.updateToolMessage.mutationOptions({
-      onSuccess: (data) => {
-        // @ts-expect-error
-        setMessages((messages: ChatMessage[]) => {
-          const message = messages.find((m) => m.id === data.id);
-          if (message) {
-            message.content = data.content as z.infer<
-              typeof toolMessageSchema
-            >["content"];
-          }
-          return messages;
-        });
-        setPendingMessage(null);
-      },
-      onError: () => {
-        toast({
-          title: "Error",
-          description: "Failed to update message",
-        });
-        setPendingMessage(null);
-      },
-    }),
-  );
-
-  for (const integration of toolInfo.toolArgs.integrations) {
-    switch (integration) {
-      case "postgresql": {
-        const postgresIntegrationTemplate = integrationTemplates?.find(
-          (integrationTemplate) => integrationTemplate.key === "postgresql",
-        );
-
-        if (!postgresIntegrationTemplate) {
-          return null;
+  const integrationsMap =
+    toolInfo.output.integrations?.reduce(
+      (acc, integration) => {
+        if (integration.status === "requires_configuration") {
+          acc[integration.id] = {
+            status: integration.status,
+            template: integrationTemplates.find(
+              (template) => template.key === integration.key,
+            ) as RouterOutputs["integrationTemplates"]["list"][number],
+          };
         }
+        return acc;
+      },
+      {} as Record<
+        string,
+        {
+          status: IntegrationStatus;
+          template: RouterOutputs["integrationTemplates"]["list"][number];
+        }
+      >,
+    ) || {};
 
+  return (
+    <div className="flex flex-col gap-1 rounded-md border p-1.5">
+      <span className="font-medium text-muted-foreground text-xs">
+        Setup integrations
+      </span>
+      {Object.entries(integrationsMap).map(([id, integration]) => {
         return (
-          <ChatIntegrationDialog
-            integrationTemplate={postgresIntegrationTemplate}
-            environmentVariables={environmentVariables}
-            status={toolInfo.toolResult.status}
-            onSuccess={() => {
-              updateMessageMutation.mutate({
-                where: { messageId: message.id as string },
-                data: {
-                  content: [
-                    {
-                      type: "tool-result",
-                      toolName: message.content[0]?.toolName as string,
-                      toolCallId: message.content[0]?.toolCallId as string,
-                      result: { status: "success" },
-                    },
-                  ],
-                },
-              });
-            }}
-            onCancel={() => {
-              updateMessageMutation.mutate({
-                where: { messageId: message.id as string },
-                data: {
-                  content: [
-                    {
-                      type: "tool-result",
-                      toolName: message.content[0]?.toolName as string,
-                      toolCallId: message.content[0]?.toolCallId as string,
-                      result: { status: "cancelled" },
-                    },
-                  ],
-                },
-              });
-            }}
-          />
+          <div key={id}>
+            <ChatIntegrationDialog
+              integrationTemplate={integration.template}
+              environmentVariables={environmentVariables}
+              status={integration.status}
+              // onSuccess={() => {
+              //   updateIntegrationStatus(integration, "completed");
+              // }}
+              // onCancel={() => {
+              //   updateIntegrationStatus(integration, "cancelled");
+              // }}
+            />
+          </div>
         );
-      }
-    }
-  }
+      })}
+    </div>
+  );
 };
 
 export const SetupIntegration = memo(

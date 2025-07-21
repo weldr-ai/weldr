@@ -103,7 +103,7 @@ async function main() {
           await integrationRegistry.install({
             integration: {
               id: "test-integration",
-              status: "installed" as const,
+              status: "ready" as const,
               createdAt: new Date(),
               userId: "test-user",
               projectId: "test-project" as string,
@@ -134,7 +134,7 @@ async function main() {
           await integrationRegistry.install({
             integration: {
               id: "test-integration",
-              status: "installed" as const,
+              status: "ready" as const,
               createdAt: new Date(),
               userId: "test-user",
               projectId: "test-project" as string,
@@ -182,7 +182,7 @@ async function main() {
           await integrationRegistry.install({
             integration: {
               id: "test-integration",
-              status: "installed" as const,
+              status: "ready" as const,
               createdAt: new Date(),
               userId: "test-user",
               projectId: "test-project" as string,

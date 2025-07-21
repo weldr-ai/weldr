@@ -1,4 +1,4 @@
-import type { CoreMessage, ToolContent } from "ai";
+import type { ModelMessage, ToolContent } from "ai";
 
 import { db, eq } from "@weldr/db";
 import { declarations } from "@weldr/db/schema";
@@ -6,7 +6,7 @@ import type { ChatMessage } from "@weldr/shared/types";
 import { formatDeclarationSpecs } from "./formetters";
 
 export async function convertMessagesToCore(messages: ChatMessage[]) {
-  const result: CoreMessage[] = [];
+  const result: ModelMessage[] = [];
 
   for (const message of messages) {
     // Skip tool messages as they are converted by default
@@ -19,7 +19,8 @@ export async function convertMessagesToCore(messages: ChatMessage[]) {
               type: "tool-result",
               toolName: c.toolName,
               toolCallId: c.toolCallId,
-              result: c.result,
+              // biome-ignore lint/suspicious/noExplicitAny: reason
+              output: c.output as any,
             });
           }
           return acc;
@@ -71,7 +72,9 @@ export async function convertMessagesToCore(messages: ChatMessage[]) {
 
         result.push({
           role: message.role as "user",
-          content: [{ type: "file", data: item.data, mimeType: item.mimeType }],
+          content: [
+            { type: "file", data: item.data, mediaType: item.mediaType },
+          ],
         });
       }
 
@@ -82,7 +85,7 @@ export async function convertMessagesToCore(messages: ChatMessage[]) {
         result.push({
           role: message.role as "user",
           content: [
-            { type: "image", image: item.image, mimeType: item.mimeType },
+            { type: "image", image: item.image, mediaType: item.mediaType },
           ],
         });
       }
@@ -94,7 +97,7 @@ export async function convertMessagesToCore(messages: ChatMessage[]) {
             {
               type: "tool-call",
               toolName: item.toolName,
-              args: item.args,
+              input: item.input,
               toolCallId: item.toolCallId,
             },
           ],

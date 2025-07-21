@@ -22,14 +22,6 @@ export const addIntegrationsTool = createTool({
   }),
   outputSchema: z.discriminatedUnion("status", [
     z.object({
-      status: z.literal("success"),
-      addedIntegrations: z.array(integrationKeySchema),
-    }),
-    z.object({
-      status: z.literal("error"),
-      error: z.string(),
-    }),
-    z.object({
       status: z.literal("requires_configuration"),
       integrations: z
         .object({
@@ -39,10 +31,29 @@ export const addIntegrationsTool = createTool({
         })
         .array(),
     }),
+    z.object({
+      status: z.literal("completed"),
+      integrations: z
+        .object({
+          id: z.string(),
+          key: integrationKeySchema,
+          status: integrationStatusSchema,
+        })
+        .array(),
+    }),
+    z.object({
+      status: z.literal("failed"),
+      error: z.string(),
+    }),
   ]),
   execute: async ({ input, context }) => {
     const project = context.get("project");
     const version = context.get("version");
+    const streamWriter = global.sseConnections?.get(version.chatId);
+
+    if (!streamWriter) {
+      throw new Error("Stream writer not found");
+    }
 
     const logger = Logger.get({
       projectId: project.id,
@@ -54,9 +65,9 @@ export const addIntegrationsTool = createTool({
 
     if (!project.initiatedAt) {
       const error =
-        "Project must be initialized before adding integrations. Use the init_project tool first.";
+        "Cannot add integrations to an uninitialized project. Use the init_project tool first.";
       logger.error(error);
-      return { status: "error" as const, error };
+      return { status: "failed" as const, error };
     }
 
     const integrationsToInstall = await getIntegrations({
@@ -84,11 +95,18 @@ export const addIntegrationsTool = createTool({
 
     if (installationResult.status === "error") {
       return {
-        status: "error" as const,
+        status: "failed" as const,
         error: installationResult.error,
       };
     }
 
-    return installationResult;
+    return {
+      status: "completed" as const,
+      integrations: integrationsToInstall.map((i) => ({
+        id: i.id,
+        key: i.key,
+        status: i.status,
+      })),
+    };
   },
 });
