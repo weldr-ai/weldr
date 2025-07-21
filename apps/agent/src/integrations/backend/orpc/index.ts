@@ -1,10 +1,7 @@
-import type {
-  IntegrationPackageSets,
-  IntegrationScriptSets,
-} from "@/integrations/types";
+import type { IntegrationPackageSets } from "@/integrations/types";
 import { defineIntegration } from "@/integrations/utils/integration-core";
 
-export const orpcIntegration = await defineIntegration({
+export const orpcIntegration = defineIntegration<"orpc">({
   category: "backend",
   key: "orpc",
   name: "oRPC",
@@ -15,27 +12,6 @@ export const orpcIntegration = await defineIntegration({
   variables: null,
   options: null,
   dependencies: null,
-  scripts: async (context) => {
-    const project = context.get("project");
-    const hasFrontend = project.config.has("frontend");
-
-    if (hasFrontend) {
-      return [];
-    }
-
-    const scripts: IntegrationScriptSets = [
-      {
-        target: "root",
-        scripts: {
-          dev: "turbo dev",
-          build: "turbo build",
-          start: "turbo start",
-        },
-      },
-    ];
-
-    return scripts;
-  },
   packages: async (context) => {
     const project = context.get("project");
     const hasFrontend = project.config.has("frontend");

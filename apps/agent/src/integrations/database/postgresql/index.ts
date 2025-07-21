@@ -4,7 +4,7 @@ import type {
 } from "@/integrations/types";
 import { defineIntegration } from "@/integrations/utils/integration-core";
 
-export const postgresqlIntegration = await defineIntegration<"postgresql">({
+export const postgresqlIntegration = defineIntegration<"postgresql">({
   category: "database",
   key: "postgresql",
   name: "PostgreSQL",

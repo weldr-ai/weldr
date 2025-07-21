@@ -2,8 +2,8 @@
   "name": "@weldr/agent",
   "type": "module",
   "scripts": {
-    "dev": "rm -rf .weldr && pnpm with-env tsx watch src/index.ts",
-    "build": "esbuild src/index.ts --bundle --minify --platform=node --target=node20 --outfile=dist/index.js",
+    "dev": "pnpm with-env tsdown --watch",
+    "build": "tsdown",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
@@ -34,6 +34,7 @@
     "@types/pluralize": "^0.0.33",
     "dotenv-cli": "^7.4.4",
     "esbuild": "^0.24.2",
+    "tsdown": "^0.12.9",
     "tsx": "^4.7.1"
   }
 }

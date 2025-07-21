@@ -18,9 +18,9 @@ import type {
 } from "../types";
 import { installPackages, updatePackageJsonScripts } from "./packages";
 
-export async function defineIntegration<K extends IntegrationKey>(
+export function defineIntegration<K extends IntegrationKey>(
   props: IntegrationDefinition<K>,
-): Promise<IntegrationDefinition<K>> {
+): IntegrationDefinition<K> {
   return {
     ...props,
     postInstall: async ({

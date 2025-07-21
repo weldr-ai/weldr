@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import path from "node:path";
 import type { IntegrationPackageSets } from "@/integrations/types";
 import { defineIntegration } from "@/integrations/utils/integration-core";
@@ -13,7 +12,7 @@ import {
 } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 
-export const betterAuthIntegration = await defineIntegration({
+export const betterAuthIntegration = defineIntegration<"better-auth">({
   category: "authentication",
   key: "better-auth",
   name: "Better-Auth",
@@ -70,9 +69,7 @@ export const betterAuthIntegration = await defineIntegration({
       // Store secret in database
       await db.transaction(async (tx) => {
         // Generate secret
-        const BETTER_AUTH_SECRET = await crypto
-          .randomBytes(32)
-          .toString("base64");
+        const BETTER_AUTH_SECRET = "SECRET";
 
         const [secret] = await tx
           .insert(secrets)

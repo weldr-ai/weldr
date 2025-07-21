@@ -2,26 +2,36 @@ import { experimental_SmartCoercionPlugin as SmartCoercionPlugin } from "@orpc/j
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { RPCHandler } from "@orpc/server/fetch";
-import { BatchHandlerPlugin, CORSPlugin } from "@orpc/server/plugins";
-import { ZodSmartCoercionPlugin, ZodToJsonSchemaConverter } from "@orpc/zod";
+import {
+  BatchHandlerPlugin,
+  CORSPlugin,
+  ResponseHeadersPlugin,
+} from "@orpc/server/plugins";
+import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 
 import { router } from "@repo/server/router";
 
+const sharedPlugins = [
+  new BatchHandlerPlugin(),
+  new ResponseHeadersPlugin(),
+  new CORSPlugin({
+    origin: process.env.CORS_ORIGIN?.split(","),
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["POST", "GET", "PUT", "DELETE", "OPTIONS"],
+    exposeHeaders: ["Content-Length"],
+    maxAge: 600,
+    credentials: true,
+  }),
+  new SmartCoercionPlugin({
+    schemaConverters: [new ZodToJsonSchemaConverter()],
+  }),
+];
+
 export const openApiHandlerOptions = {
   plugins: [
-    new CORSPlugin({
-      origin: process.env.CORS_ORIGIN?.split(","),
-      allowHeaders: ["Content-Type", "Authorization"],
-      allowMethods: ["POST", "GET", "PUT", "DELETE", "OPTIONS"],
-      exposeHeaders: ["Content-Length"],
-      maxAge: 600,
-      credentials: true,
-    }),
-    new SmartCoercionPlugin({
-      schemaConverters: [new ZodToJsonSchemaConverter()],
-    }),
+    ...sharedPlugins,
     new OpenAPIReferencePlugin({
-      docsPath: "/api/reference",
+      docsPath: "/reference",
       schemaConverters: [new ZodToJsonSchemaConverter()],
       specGenerateOptions: {
         info: {
@@ -35,6 +45,8 @@ export const openApiHandlerOptions = {
 
 export const openApiHandler = new OpenAPIHandler(router, openApiHandlerOptions);
 
-export const rpcHandler = new RPCHandler(router, {
-  plugins: [new ZodSmartCoercionPlugin(), new BatchHandlerPlugin()],
-});
+export const rpcHandlerOptions = {
+  plugins: [...sharedPlugins],
+};
+
+export const rpcHandler = new RPCHandler(router, rpcHandlerOptions);

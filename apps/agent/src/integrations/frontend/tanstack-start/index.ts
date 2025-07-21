@@ -1,10 +1,7 @@
-import type {
-  IntegrationPackageSets,
-  IntegrationScriptSets,
-} from "@/integrations/types";
+import type { IntegrationPackageSets } from "@/integrations/types";
 import { defineIntegration } from "@/integrations/utils/integration-core";
 
-export const tanstackStartIntegration = await defineIntegration({
+export const tanstackStartIntegration = defineIntegration<"tanstack-start">({
   category: "frontend",
   key: "tanstack-start",
   name: "Tanstack Start",
@@ -15,20 +12,6 @@ export const tanstackStartIntegration = await defineIntegration({
   dependencies: null,
   options: null,
   variables: null,
-  scripts: async () => {
-    const scripts: IntegrationScriptSets = [
-      {
-        target: "root",
-        scripts: {
-          dev: "turbo dev -F @repo/web",
-          build: "turbo build -F @repo/web",
-          start: "turbo start -F @repo/web",
-        },
-      },
-    ];
-
-    return scripts;
-  },
   packages: async (context) => {
     const project = context.get("project");
     const hasBackend = project.config.has("backend");
