@@ -1,5 +1,5 @@
 import type { IntegrationPackageSets } from "@/integrations/types";
-import { defineIntegration } from "@/integrations/utils/integration-core";
+import { defineIntegration } from "@/integrations/utils/define-integration";
 
 export const tanstackStartIntegration = defineIntegration<"tanstack-start">({
   category: "frontend",

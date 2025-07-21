@@ -2,7 +2,7 @@ import type {
   IntegrationPackageSets,
   IntegrationScriptSets,
 } from "@/integrations/types";
-import { defineIntegration } from "@/integrations/utils/integration-core";
+import { defineIntegration } from "@/integrations/utils/define-integration";
 
 export const postgresqlIntegration = defineIntegration<"postgresql">({
   category: "database",

@@ -1,8 +1,6 @@
 import { z } from "zod";
-import {
-  getIntegrations,
-  installIntegrations,
-} from "@/integrations/utils/integration-core";
+import { getIntegrations } from "@/integrations/utils/get-integrations";
+import { installIntegrations } from "@/integrations/utils/install-integrations";
 
 import { Logger } from "@weldr/shared/logger";
 import {

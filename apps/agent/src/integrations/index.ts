@@ -13,7 +13,7 @@ export type {
   IntegrationDefinition,
 } from "./types";
 // Export utilities
-export { combineResults } from "./utils/integration-core";
+export { combineResults } from "./utils/combine-results";
 export { installPackages, runPnpmScript } from "./utils/packages";
 
 async function main() {

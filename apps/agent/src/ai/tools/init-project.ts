@@ -1,8 +1,6 @@
 import { z } from "zod";
-import {
-  getIntegrations,
-  installIntegrations,
-} from "@/integrations/utils/integration-core";
+import { getIntegrations } from "@/integrations/utils/get-integrations";
+import { installIntegrations } from "@/integrations/utils/install-integrations";
 
 import { db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";

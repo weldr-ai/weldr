@@ -6,7 +6,7 @@ import type {
   IntegrationPackageSets,
   IntegrationScriptSets,
 } from "../types";
-import { combineResults } from "./integration-core";
+import { combineResults } from "./combine-results";
 
 export async function installPackages(
   packagesSets: IntegrationPackageSets,

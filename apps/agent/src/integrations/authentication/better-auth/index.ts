@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { IntegrationPackageSets } from "@/integrations/types";
-import { defineIntegration } from "@/integrations/utils/integration-core";
+import { defineIntegration } from "@/integrations/utils/define-integration";
 import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 

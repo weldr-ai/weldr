@@ -12,7 +12,7 @@ import { orpcIntegration } from "./backend/orpc";
 import { postgresqlIntegration } from "./database/postgresql";
 import { tanstackStartIntegration } from "./frontend/tanstack-start";
 import type { IntegrationDefinition } from "./types";
-import { applyIntegrationFiles } from "./utils/integration-core";
+import { applyFiles } from "./utils/apply-files";
 
 function getIntegrationKeyFromCategory(
   category: IntegrationCategory,
@@ -68,7 +68,7 @@ class IntegrationRegistry {
     await integrationDefinition.preInstall?.({ context, integration });
 
     // Apply the files
-    await applyIntegrationFiles({
+    await applyFiles({
       integration,
       context,
     });
