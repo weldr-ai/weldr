@@ -191,6 +191,7 @@ CREATE TABLE "integration_environment_variables" (
 CREATE TABLE "integrations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"key" text NOT NULL,
+	"category" text NOT NULL,
 	"name" text,
 	"options" jsonb,
 	"status" text DEFAULT 'pending' NOT NULL,

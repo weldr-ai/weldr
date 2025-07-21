@@ -256,11 +256,7 @@ export const projectsRouter = {
                     mapTo: true,
                   },
                 },
-                integrationTemplate: {
-                  with: {
-                    variables: true,
-                  },
-                },
+                integrationTemplate: true,
               },
             },
             versions: {
@@ -448,6 +444,7 @@ export const projectsRouter = {
             },
           },
         };
+
         return result;
       } catch (error) {
         console.error(error);

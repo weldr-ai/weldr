@@ -18,7 +18,7 @@ export default {
     "./src/schema/themes.ts",
     "./src/schema/versions.ts",
   ],
-  out: "./drizzle",
+  out: "./src/migrations",
   dialect: "postgresql",
   dbCredentials: { url: connectionString },
 } satisfies Config;
