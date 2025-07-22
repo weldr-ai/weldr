@@ -102,59 +102,52 @@ export function SitePreviewDialog({
       >
         <DialogHeader className="flex flex-row items-center justify-between gap-1 border-b py-1.5 pr-1.5 pl-3">
           {browserHeader ? (
-            <>
-              <div className="flex flex-1 items-center gap-1">
-                <div className="flex items-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7"
-                    onClick={handleBack}
-                  >
-                    <ArrowLeftIcon className="size-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7"
-                    onClick={handleForward}
-                  >
-                    <ArrowRightIcon className="size-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7"
-                    onClick={handleRefresh}
-                  >
-                    <RefreshCwIcon className="size-3.5" />
-                  </Button>
-                </div>
-                <div className="flex w-full items-center rounded-md border px-2 py-1 text-sm">
-                  <span className="text-muted-foreground">{baseUrl}</span>
-                  <span>{currentPath}</span>
-                </div>
+            <div className="flex flex-1 items-center gap-1">
+              <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={handleBack}
+                >
+                  <ArrowLeftIcon className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={handleForward}
+                >
+                  <ArrowRightIcon className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={handleRefresh}
+                >
+                  <RefreshCwIcon className="size-3.5" />
+                </Button>
               </div>
-            </>
+              <div className="flex w-full items-center rounded-md border px-2 py-1 text-sm">
+                <span className="text-muted-foreground">{baseUrl}</span>
+                <span>{currentPath}</span>
+              </div>
+            </div>
           ) : (
-            <>
-              <DialogTitle className="flex items-center gap-2">
-                <span>{title}</span>
-                {isProtected && (
-                  <Badge
-                    variant="secondary"
-                    className="flex items-center gap-1"
-                  >
-                    {isProtected ? (
-                      <ShieldCheckIcon className="text-success" />
-                    ) : (
-                      <ShieldXIcon className="text-destructive" />
-                    )}
-                    {isProtected ? "Protected" : "Unprotected"}
-                  </Badge>
-                )}
-              </DialogTitle>
-            </>
+            <DialogTitle className="flex items-center gap-2">
+              <span>{title}</span>
+              {isProtected && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  {isProtected ? (
+                    <ShieldCheckIcon className="text-success" />
+                  ) : (
+                    <ShieldXIcon className="text-destructive" />
+                  )}
+                  {isProtected ? "Protected" : "Unprotected"}
+                </Badge>
+              )}
+            </DialogTitle>
           )}
           <div className="flex items-center gap-1">
             <a
