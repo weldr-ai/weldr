@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { useTRPC } from "@/lib/trpc/react";
 
 import type { RouterOutputs } from "@weldr/api";
@@ -18,12 +17,10 @@ import { AddIntegrationDialog } from "../add-integration-dialog";
 export function IntegrationsSection({
   projectId,
   integrations: initialIntegrations,
-  integrationTemplates,
   environmentVariables,
 }: {
   projectId: string;
   integrations: RouterOutputs["projects"]["byId"]["integrations"];
-  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) {
   const trpc = useTRPC();
@@ -39,30 +36,6 @@ export function IntegrationsSection({
     ),
   );
 
-  const mappedIntegrations = useMemo(() => {
-    return integrationTemplates.reduce(
-      (acc, template) => {
-        const integration = integrations.find(
-          (integration) => integration.integrationTemplate.id === template.id,
-        );
-
-        acc[template.key] = {
-          integration:
-            integration as RouterOutputs["projects"]["byId"]["integrations"][0],
-          template,
-        };
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          integration: RouterOutputs["projects"]["byId"]["integrations"][0];
-          template: RouterOutputs["integrationTemplates"]["list"][0];
-        }
-      >,
-    );
-  }, [integrations, integrationTemplates]);
-
   return (
     <Card className="h-full">
       <CardHeader>
@@ -72,11 +45,11 @@ export function IntegrationsSection({
       <CardContent className="h-full">
         <ScrollArea className="h-[calc(100%-65px)]">
           <div className="grid size-full grid-cols-3 gap-4 pb-6">
-            {Object.entries(mappedIntegrations).map(([key, integration]) => (
+            {integrations.map((integration) => (
               <AddIntegrationDialog
-                key={key}
-                integrationTemplate={integration.template}
-                integration={integration.integration}
+                key={integration.id}
+                integrationTemplate={integration.integrationTemplate}
+                integration={integration}
                 environmentVariables={environmentVariables}
               />
             ))}

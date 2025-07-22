@@ -1,7 +1,15 @@
 "use client";
 
-import { memo } from "react";
+import { useMutation } from "@tanstack/react-query";
+import {
+  type Dispatch,
+  memo,
+  type SetStateAction,
+  useCallback,
+  useState,
+} from "react";
 import type { z } from "zod";
+import { useTRPC } from "@/lib/trpc/react";
 
 import type { RouterOutputs } from "@weldr/api";
 import type {
@@ -18,17 +26,14 @@ import { CustomMarkdown } from "./custom-markdown";
 
 const PureMessageItem = ({
   message,
+  environmentVariables,
   setMessages,
   setPendingMessage,
-  integrationTemplates,
-  environmentVariables,
 }: {
   message: ChatMessage;
-  setMessages: (messages: ChatMessage[]) => void;
-  pendingMessage: TPendingMessage;
-  setPendingMessage: (pendingMessage: TPendingMessage) => void;
-  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  setPendingMessage: Dispatch<SetStateAction<TPendingMessage>>;
 }) => {
   return (
     <div
@@ -67,10 +72,9 @@ const PureMessageItem = ({
               content.toolName === "init_project",
           ) && (
             <SetupIntegration
+              message={message}
               setMessages={setMessages}
               setPendingMessage={setPendingMessage}
-              message={message}
-              integrationTemplates={integrationTemplates}
               environmentVariables={environmentVariables}
             />
           )}
@@ -80,83 +84,164 @@ const PureMessageItem = ({
 };
 
 export const MessageItem = memo(PureMessageItem, (prevProps, nextProps) => {
-  if (prevProps.pendingMessage !== nextProps.pendingMessage) return false;
   if (prevProps.message.content !== nextProps.message.content) return false;
   return true;
 });
 
+type IntegrationToolResultPart = {
+  type: "tool-result";
+  toolCallId: string;
+  toolName: string;
+  output: {
+    status: "requires_configuration" | "completed" | "failed";
+    integrations: {
+      id: string;
+      key: IntegrationKey;
+      status: IntegrationStatus;
+    }[];
+  };
+  isError: boolean;
+};
+
+type IntegrationMessage = {
+  id: string;
+  visibility: "public" | "internal";
+  createdAt: Date;
+  chatId: string;
+  role: "tool";
+  content: IntegrationToolResultPart[];
+};
+
 const PureSetupIntegration = ({
   message,
-  integrationTemplates,
   environmentVariables,
   setMessages,
   setPendingMessage,
 }: {
   message: z.infer<typeof toolMessageSchema>;
-  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
-  setMessages: (messages: ChatMessage[]) => void;
-  setPendingMessage: (pendingMessage: "thinking" | "waiting" | null) => void;
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  setPendingMessage: Dispatch<SetStateAction<TPendingMessage>>;
 }) => {
-  // Get the first content item which contains the tool result
-  const toolResult = Array.isArray(message.content)
-    ? message.content[0]
-    : message.content;
+  const [integrationMessage, setIntegrationMessage] =
+    useState<IntegrationMessage>({
+      id: message.id,
+      visibility: message.visibility,
+      createdAt: message.createdAt,
+      chatId: message.chatId,
+      role: "tool",
+      content: message.content as IntegrationToolResultPart[],
+    } as IntegrationMessage);
 
-  const toolInfo = toolResult as unknown as {
-    output: {
-      status: "requires_configuration" | "completed" | "failed";
-      integrations: {
-        id: string;
-        key: IntegrationKey;
-        status: IntegrationStatus;
-      }[];
-    };
-    toolName: string;
-  };
+  const integrations = integrationMessage.content[0]?.output.integrations?.sort(
+    (a, b) => {
+      if (a.status === "requires_configuration") return -1;
+      if (b.status === "requires_configuration") return 1;
+      return 0;
+    },
+  );
 
-  const integrationsMap =
-    toolInfo.output.integrations?.reduce(
-      (acc, integration) => {
-        if (integration.status === "requires_configuration") {
-          acc[integration.id] = {
-            status: integration.status,
-            template: integrationTemplates.find(
-              (template) => template.key === integration.key,
-            ) as RouterOutputs["integrationTemplates"]["list"][number],
-          };
-        }
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          status: IntegrationStatus;
-          template: RouterOutputs["integrationTemplates"]["list"][number];
-        }
-      >,
-    ) || {};
+  const trpc = useTRPC();
+
+  const updateToolMessageMutation = useMutation(
+    trpc.chats.updateToolMessage.mutationOptions(),
+  );
+
+  const onIntegrationMessageChange = useCallback(
+    ({
+      integrationId,
+      integrationStatus,
+    }: {
+      integrationId: string;
+      integrationStatus: IntegrationStatus;
+    }) => {
+      // biome-ignore lint/style/noNonNullAssertion: reason
+      const messageContent = integrationMessage.content[0]!;
+
+      // Create a new integration message with updated integrations
+      const updatedIntegrations = messageContent.output.integrations?.map(
+        (integration) => {
+          if (integration.id === integrationId) {
+            return { ...integration, status: integrationStatus };
+          }
+          return integration;
+        },
+      );
+
+      // Check if all integrations are ready
+      const allIntegrationsReady = updatedIntegrations?.every(
+        (integration) => integration.status === "ready",
+      );
+
+      const updatedIntegrationMessage = {
+        ...integrationMessage,
+        content: [
+          {
+            ...messageContent,
+            output: {
+              ...messageContent.output,
+              integrations: updatedIntegrations,
+              status: allIntegrationsReady
+                ? "completed"
+                : messageContent.output.status,
+            },
+          },
+        ] as IntegrationToolResultPart[],
+      } as IntegrationMessage;
+
+      // Update the message in the database
+      updateToolMessageMutation.mutate({
+        where: {
+          messageId: integrationMessage.id,
+        },
+        data: {
+          content: updatedIntegrationMessage.content,
+        },
+      });
+
+      console.log({
+        updatedIntegrationMessage,
+      });
+
+      // Update the integration message state
+      setIntegrationMessage(updatedIntegrationMessage);
+
+      // Update the message in the messages array
+      setMessages((prevMessages) => {
+        return prevMessages.map((m) => {
+          if (m.id === integrationMessage.id) {
+            return updatedIntegrationMessage;
+          }
+          return m;
+        }) as ChatMessage[];
+      });
+
+      // If all integrations are ready, set the pending message to null
+      if (allIntegrationsReady) {
+        setPendingMessage(null);
+      }
+    },
+    [
+      integrationMessage,
+      setMessages,
+      setPendingMessage,
+      updateToolMessageMutation,
+    ],
+  );
 
   return (
     <div className="flex flex-col gap-1 rounded-md border p-1.5">
       <span className="font-medium text-muted-foreground text-xs">
         Setup integrations
       </span>
-      {Object.entries(integrationsMap).map(([id, integration]) => {
+      {integrations?.map((integration) => {
         return (
-          <div key={id}>
-            <ChatIntegrationDialog
-              integrationTemplate={integration.template}
-              environmentVariables={environmentVariables}
-              status={integration.status}
-              // onSuccess={() => {
-              //   updateIntegrationStatus(integration, "completed");
-              // }}
-              // onCancel={() => {
-              //   updateIntegrationStatus(integration, "cancelled");
-              // }}
-            />
-          </div>
+          <ChatIntegrationDialog
+            key={integration.id}
+            environmentVariables={environmentVariables}
+            integration={integration}
+            onIntegrationMessageChange={onIntegrationMessageChange}
+          />
         );
       })}
     </div>

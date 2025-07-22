@@ -248,6 +248,9 @@ export const projectsRouter = {
               columns: {
                 id: true,
                 name: true,
+                category: true,
+                key: true,
+                status: true,
               },
               with: {
                 environmentVariableMappings: {

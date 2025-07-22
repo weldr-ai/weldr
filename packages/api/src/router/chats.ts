@@ -4,7 +4,6 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { chatMessages, chats } from "@weldr/db/schema";
-import { mergeJson } from "@weldr/db/utils";
 import { Tigris } from "@weldr/shared/tigris";
 import type { ChatMessage } from "@weldr/shared/types";
 import {
@@ -117,7 +116,7 @@ export const chatsRouter = {
       const [message] = await ctx.db
         .update(chatMessages)
         .set({
-          content: mergeJson(chatMessages.content, input.data.content),
+          content: input.data.content,
         })
         .where(
           and(

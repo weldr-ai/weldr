@@ -150,6 +150,7 @@ export const integrationsRouter = createTRPCRouter({
           name: true,
           category: true,
           key: true,
+          status: true,
         },
         with: {
           environmentVariableMappings: {
@@ -158,6 +159,7 @@ export const integrationsRouter = createTRPCRouter({
               mapTo: true,
             },
           },
+          integrationTemplate: true,
         },
       });
 
@@ -187,6 +189,8 @@ export const integrationsRouter = createTRPCRouter({
         columns: {
           id: true,
           name: true,
+          key: true,
+          status: true,
         },
         with: {
           environmentVariableMappings: {

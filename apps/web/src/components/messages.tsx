@@ -1,5 +1,5 @@
 import equal from "fast-deep-equal";
-import { memo } from "react";
+import { type Dispatch, memo, type SetStateAction } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
 import { nanoid } from "@weldr/shared/nanoid";
@@ -7,55 +7,34 @@ import type { ChatMessage, TPendingMessage } from "@weldr/shared/types";
 import { MessageItem } from "./message-item";
 
 interface MessagesProps {
-  pendingMessage: TPendingMessage;
-  setPendingMessage: (pendingMessage: TPendingMessage) => void;
   messages: ChatMessage[];
-  setMessages: (messages: ChatMessage[]) => void;
-  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  setPendingMessage: Dispatch<SetStateAction<TPendingMessage>>;
 }
 
 function PureMessages({
   messages,
   setMessages,
-  pendingMessage,
   setPendingMessage,
-  integrationTemplates,
   environmentVariables,
 }: MessagesProps) {
-  console.log(messages);
   return (
     <>
-      {messages
-        .filter(
-          (message) =>
-            !(
-              message.role === "tool" &&
-              message.content.some(
-                (content) =>
-                  content.type === "tool-result" &&
-                  content.toolName !== "add_integrations" &&
-                  content.toolName !== "init_project",
-              )
-            ),
-        )
-        .map((message) => (
-          <MessageItem
-            key={message.id ?? nanoid()}
-            message={message}
-            setMessages={setMessages}
-            pendingMessage={pendingMessage}
-            setPendingMessage={setPendingMessage}
-            integrationTemplates={integrationTemplates}
-            environmentVariables={environmentVariables}
-          />
-        ))}
+      {messages.map((message) => (
+        <MessageItem
+          key={message.id ?? nanoid()}
+          message={message}
+          environmentVariables={environmentVariables}
+          setMessages={setMessages}
+          setPendingMessage={setPendingMessage}
+        />
+      ))}
     </>
   );
 }
 
 export const Messages = memo(PureMessages, (prevProps, nextProps) => {
-  if (prevProps.pendingMessage !== nextProps.pendingMessage) return false;
   if (prevProps.messages.length !== nextProps.messages.length) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
   return true;

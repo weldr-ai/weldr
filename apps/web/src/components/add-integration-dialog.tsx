@@ -14,7 +14,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@weldr/ui/components/dialog";
-import { PostgresIcon } from "@weldr/ui/icons";
+import {
+  BetterAuthIcon,
+  ORPCIcon,
+  PostgresIcon,
+  TanstackIcon,
+} from "@weldr/ui/icons";
 import { AddIntegrationsForm } from "./add-integrations-form";
 
 export function AddIntegrationDialog({
@@ -38,16 +43,25 @@ export function AddIntegrationDialog({
           <div className="flex w-full flex-col items-start gap-4">
             <div className="flex w-full justify-between">
               <div className="flex flex-col items-start gap-4">
-                {integrationTemplate.key === "postgresql" ? (
+                {integrationTemplate.key === "postgresql" && (
                   <PostgresIcon className="size-10" />
-                ) : null}
+                )}
+                {integrationTemplate.key === "better-auth" && (
+                  <BetterAuthIcon className="size-10" />
+                )}
+                {integrationTemplate.key === "tanstack-start" && (
+                  <TanstackIcon className="size-10" />
+                )}
+                {integrationTemplate.key === "orpc" && (
+                  <ORPCIcon className="size-10" />
+                )}
                 <span className="font-semibold text-lg">
                   {integrationTemplate.name}
                 </span>
               </div>
-              {integration ? (
+              {integration?.status === "completed" && (
                 <CheckCircle2Icon className="size-4 text-green-500" />
-              ) : null}
+              )}
             </div>
             <span className="text-wrap text-start text-muted-foreground">
               {integrationTemplate.description}

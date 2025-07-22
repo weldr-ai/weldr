@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckIcon, LoaderIcon, PlusIcon, XIcon } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -25,7 +25,6 @@ import {
   FormItem,
   FormMessage,
 } from "@weldr/ui/components/form";
-import { Input } from "@weldr/ui/components/input";
 import {
   Popover,
   PopoverContent,
@@ -35,21 +34,19 @@ import { cn } from "@weldr/ui/lib/utils";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 
 const validationSchema = z.object({
-  integrationTemplateId: z.string(),
-  name: z.string().min(1),
   DATABASE_URL: z.string().min(1),
 });
 
 interface PostgresFormProps {
-  integrationTemplate: RouterOutputs["integrationTemplates"]["byId"];
+  integrationId: string;
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
-  onSuccess?: () => void;
-  onCancel?: () => void;
+  onSuccess: () => void;
+  onCancel: () => void;
   onClose: () => void;
 }
 
 export function PostgresForm({
-  integrationTemplate,
+  integrationId,
   environmentVariables,
   onSuccess,
   onCancel,
@@ -58,12 +55,27 @@ export function PostgresForm({
   const { projectId } = useParams<{ projectId: string }>();
   const [isEnvVarOpen, setIsEnvVarOpen] = useState(false);
 
+  const queryClient = useQueryClient();
   const trpc = useTRPC();
 
-  const addIntegrationMutation = useMutation(
-    trpc.integrations.create.mutationOptions({
+  const { data: envVars } = useQuery(
+    trpc.environmentVariables.list.queryOptions(
+      {
+        projectId,
+      },
+      {
+        initialData: environmentVariables,
+      },
+    ),
+  );
+
+  const updateIntegrationMutation = useMutation(
+    trpc.integrations.update.mutationOptions({
       onSuccess: () => {
-        onSuccess?.();
+        queryClient.invalidateQueries({
+          queryKey: trpc.integrations.byId.queryKey({ id: integrationId }),
+        });
+        onSuccess();
         onClose();
       },
     }),
@@ -73,19 +85,21 @@ export function PostgresForm({
     mode: "onChange",
     resolver: zodResolver(validationSchema),
     defaultValues: {
-      integrationTemplateId: integrationTemplate.id,
-      name: "Main Database",
       DATABASE_URL: "",
     },
   });
 
+  const { isDirty, isValid } = form.formState;
+
   const onSubmit = async (data: z.infer<typeof validationSchema>) => {
-    await addIntegrationMutation.mutateAsync({
-      ...data,
-      projectId,
-      environmentVariableMappings: [
-        { envVarId: data.DATABASE_URL, configKey: "DATABASE_URL" },
-      ],
+    await updateIntegrationMutation.mutateAsync({
+      where: { id: integrationId },
+      payload: {
+        status: "completed",
+        environmentVariableMappings: [
+          { envVarId: data.DATABASE_URL, configKey: "DATABASE_URL" },
+        ],
+      },
     });
   };
 
@@ -112,9 +126,7 @@ export function PostgresForm({
                       className="w-full justify-between rounded-l-none text-xs"
                     >
                       {field.value
-                        ? environmentVariables.find(
-                            (env) => env.id === field.value,
-                          )?.key
+                        ? envVars.find((env) => env.id === field.value)?.key
                         : "Select environment variable"}
                     </Button>
                   </PopoverTrigger>
@@ -129,12 +141,16 @@ export function PostgresForm({
                           No environment variables found.
                         </CommandEmpty>
                         <CommandGroup>
-                          {environmentVariables.map((env) => (
+                          {envVars.map((env) => (
                             <CommandItem
                               key={env.id}
                               value={env.key}
                               onSelect={() => {
-                                form.setValue("DATABASE_URL", env.id);
+                                form.setValue("DATABASE_URL", env.id, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                  shouldTouch: true,
+                                });
                                 setIsEnvVarOpen(false);
                               }}
                               className="text-xs"
@@ -169,23 +185,15 @@ export function PostgresForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="integrationTemplateId"
-          render={({ field }) => <Input {...field} className="hidden" />}
-        />
-
         <div className="flex w-full justify-between gap-2">
           <div className="flex gap-2">
             <Button
               type="submit"
               disabled={
-                !form.formState.isValid ||
-                addIntegrationMutation.isPending ||
-                !form.formState.isDirty
+                updateIntegrationMutation.isPending || !isValid || !isDirty
               }
             >
-              {addIntegrationMutation.isPending && (
+              {updateIntegrationMutation.isPending && (
                 <LoaderIcon className="mr-1 size-3 animate-spin" />
               )}
               Continue
@@ -195,7 +203,7 @@ export function PostgresForm({
               variant="outline"
               onClick={() => {
                 onClose();
-                onCancel?.();
+                onCancel();
               }}
             >
               <div className="mr-2 flex items-center justify-center rounded-full bg-destructive p-0.5">

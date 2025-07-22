@@ -89,7 +89,6 @@ export const createIntegrationSchema = z.object({
   environmentVariableMappings: z.array(
     integrationEnvironmentVariableMappingSchema,
   ),
-  variableValues: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const updateIntegrationSchema = z.object({
@@ -98,9 +97,9 @@ export const updateIntegrationSchema = z.object({
   }),
   payload: z.object({
     name: z.string().min(1).optional(),
+    status: integrationStatusSchema.optional(),
     environmentVariableMappings: z
       .array(integrationEnvironmentVariableMappingSchema)
       .optional(),
-    variableValues: z.record(z.string(), z.unknown()).optional(),
   }),
 });

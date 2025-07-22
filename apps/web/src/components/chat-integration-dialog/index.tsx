@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
-import type { IntegrationStatus } from "@weldr/shared/types";
+import type { IntegrationKey, IntegrationStatus } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/components/button";
 import {
   Dialog,
@@ -13,38 +13,59 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@weldr/ui/components/dialog";
-import { PostgresIcon } from "@weldr/ui/icons";
+import {
+  BetterAuthIcon,
+  ORPCIcon,
+  PostgresIcon,
+  TanstackIcon,
+} from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
 import { PostgresForm } from "./postgres-form";
 
 interface ChatIntegrationDialogProps {
-  integrationTemplate: RouterOutputs["integrationTemplates"]["byId"];
+  onIntegrationMessageChange: ({
+    integrationId,
+    integrationStatus,
+  }: {
+    integrationId: string;
+    integrationStatus: IntegrationStatus;
+  }) => void;
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
-  status: IntegrationStatus;
-  onSuccess?: () => void;
-  onCancel?: () => void;
+  integration: {
+    id: string;
+    key: IntegrationKey;
+    status: IntegrationStatus;
+  };
   className?: string;
 }
 
 export function ChatIntegrationDialog({
-  integrationTemplate,
+  onIntegrationMessageChange,
   environmentVariables,
-  status,
-  onSuccess,
-  onCancel,
   className,
+  integration,
 }: ChatIntegrationDialogProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const renderForm = () => {
-    switch (integrationTemplate.key) {
+    switch (integration.key) {
       case "postgresql": {
         return (
           <PostgresForm
+            integrationId={integration.id}
             environmentVariables={environmentVariables}
-            integrationTemplate={integrationTemplate}
-            onSuccess={onSuccess}
-            onCancel={onCancel}
+            onSuccess={() =>
+              onIntegrationMessageChange({
+                integrationId: integration.id,
+                integrationStatus: "ready",
+              })
+            }
+            onCancel={() =>
+              onIntegrationMessageChange({
+                integrationId: integration.id,
+                integrationStatus: "cancelled",
+              })
+            }
             onClose={() => setDialogOpen(false)}
           />
         );
@@ -56,9 +77,29 @@ export function ChatIntegrationDialog({
   };
 
   const getDescription = () => {
-    switch (integrationTemplate.key) {
+    switch (integration.key) {
       case "postgresql": {
         return "Add your database connection details to continue";
+      }
+    }
+  };
+
+  const getTitle = () => {
+    switch (integration.key) {
+      case "postgresql": {
+        return "PostgreSQL";
+      }
+      case "better-auth": {
+        return "BetterAuth";
+      }
+      case "tanstack-start": {
+        return "Tanstack Start";
+      }
+      case "orpc": {
+        return "oRPC";
+      }
+      default: {
+        return null;
       }
     }
   };
@@ -73,11 +114,20 @@ export function ChatIntegrationDialog({
             "group w-full justify-between gap-2 bg-background px-1 hover:bg-accent",
             className,
           )}
-          disabled={status !== "requires_configuration"}
+          disabled={integration.status !== "requires_configuration"}
         >
           <div className="flex items-center gap-2">
-            <PostgresIcon className="size-4" />
-            Setup {integrationTemplate.name}
+            {integration.key === "postgresql" && (
+              <PostgresIcon className="size-4" />
+            )}
+            {integration.key === "better-auth" && (
+              <BetterAuthIcon className="size-4" />
+            )}
+            {integration.key === "tanstack-start" && (
+              <TanstackIcon className="size-4" />
+            )}
+            {integration.key === "orpc" && <ORPCIcon className="size-4" />}
+            {getTitle()}
           </div>
           <div
             className={cn(
@@ -88,13 +138,14 @@ export function ChatIntegrationDialog({
             <div
               className={cn(
                 "size-1.5 rounded-full",
-                status === "requires_configuration" && "bg-warning",
-                status === "completed" && "bg-success",
-                status === "failed" && "bg-destructive",
-                status === "cancelled" && "bg-muted-foreground",
+                integration.status === "requires_configuration" && "bg-warning",
+                integration.status === "ready" && "bg-blue-500",
+                integration.status === "completed" && "bg-success",
+                integration.status === "failed" && "bg-destructive",
+                integration.status === "cancelled" && "bg-muted-foreground",
               )}
             />
-            {status
+            {integration.status
               .replaceAll("_", " ")
               .split(" ")
               .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -104,7 +155,7 @@ export function ChatIntegrationDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Setup {integrationTemplate.name}</DialogTitle>
+          <DialogTitle>Setup {getTitle()}</DialogTitle>
           <DialogDescription>{getDescription()}</DialogDescription>
         </DialogHeader>
         {renderForm()}

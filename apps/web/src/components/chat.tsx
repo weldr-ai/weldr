@@ -34,17 +34,11 @@ import { MultimodalInput } from "./multimodal-input";
 
 interface ChatProps {
   version: RouterOutputs["projects"]["byId"]["currentVersion"];
-  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
   project: RouterOutputs["projects"]["byId"];
 }
 
-export function Chat({
-  version,
-  integrationTemplates,
-  environmentVariables,
-  project,
-}: ChatProps) {
+export function Chat({ version, environmentVariables, project }: ChatProps) {
   const router = useRouter();
 
   const { data: session } = authClient.useSession();
@@ -610,10 +604,8 @@ export function Chat({
         >
           <Messages
             messages={messages}
-            setMessages={setMessages}
-            integrationTemplates={integrationTemplates}
             environmentVariables={environmentVariables}
-            pendingMessage={pendingMessage}
+            setMessages={setMessages}
             setPendingMessage={setPendingMessage}
           />
           <div ref={messagesEndRef} />

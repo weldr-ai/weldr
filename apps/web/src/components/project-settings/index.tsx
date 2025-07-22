@@ -29,11 +29,9 @@ import { IntegrationsSection } from "./integrations-section";
 
 export function ProjectSettings({
   project,
-  integrationTemplates,
   environmentVariables,
 }: {
   project: RouterOutputs["projects"]["byId"];
-  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -101,7 +99,6 @@ export function ProjectSettings({
               <IntegrationsSection
                 projectId={project.id}
                 integrations={project.integrations}
-                integrationTemplates={integrationTemplates}
                 environmentVariables={environmentVariables}
               />
             </TabsContent>
