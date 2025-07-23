@@ -259,7 +259,15 @@ export const projectsRouter = {
                     mapTo: true,
                   },
                 },
-                integrationTemplate: true,
+                integrationTemplate: {
+                  columns: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    category: true,
+                    key: true,
+                  },
+                },
               },
             },
             versions: {

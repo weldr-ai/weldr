@@ -59,9 +59,10 @@ export function AddIntegrationDialog({
                   {integrationTemplate.name}
                 </span>
               </div>
-              {integration?.status === "completed" && (
-                <CheckCircle2Icon className="size-4 text-green-500" />
-              )}
+              {integration?.integrationTemplate.id === integrationTemplate.id &&
+                integration?.status === "completed" && (
+                  <CheckCircle2Icon className="size-4 text-green-500" />
+                )}
             </div>
             <span className="text-wrap text-start text-muted-foreground">
               {integrationTemplate.description}

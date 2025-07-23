@@ -27,6 +27,7 @@ export function ProjectView({
   project: _project,
   initialNodes,
   initialEdges,
+  integrationTemplates,
 }: {
   project: RouterOutputs["projects"]["byId"];
   initialNodes: CanvasNode[];
@@ -121,7 +122,11 @@ export function ProjectView({
                 <p>View Version History</p>
               </TooltipContent>
             </Tooltip>
-            <ProjectSettings project={project} environmentVariables={env} />
+            <ProjectSettings
+              project={project}
+              integrationTemplates={integrationTemplates}
+              environmentVariables={env}
+            />
           </div>
         </div>
         <div className="flex size-full">
