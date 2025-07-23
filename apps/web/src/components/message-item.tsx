@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import type { z } from "zod";
+import { useProject } from "@/lib/context/project";
 import { useTRPC } from "@/lib/trpc/react";
 
 import type { RouterOutputs } from "@weldr/api";
@@ -93,7 +94,7 @@ type IntegrationToolResultPart = {
   toolCallId: string;
   toolName: string;
   output: {
-    status: "requires_configuration" | "completed" | "failed";
+    status: "awaiting_config" | "completed" | "failed";
     integrations: {
       id: string;
       key: IntegrationKey;
@@ -135,16 +136,21 @@ const PureSetupIntegration = ({
 
   const integrations = integrationMessage.content[0]?.output.integrations?.sort(
     (a, b) => {
-      if (a.status === "requires_configuration") return -1;
-      if (b.status === "requires_configuration") return 1;
+      if (a.status === "awaiting_config") return -1;
+      if (b.status === "awaiting_config") return 1;
       return 0;
     },
   );
 
+  const { project } = useProject();
   const trpc = useTRPC();
 
   const updateToolMessageMutation = useMutation(
     trpc.chats.updateToolMessage.mutationOptions(),
+  );
+
+  const installIntegrationsMutation = useMutation(
+    trpc.integrations.install.mutationOptions(),
   );
 
   const onIntegrationMessageChange = useCallback(
@@ -168,9 +174,9 @@ const PureSetupIntegration = ({
         },
       );
 
-      // Check if all integrations are ready
-      const allIntegrationsReady = updatedIntegrations?.every(
-        (integration) => integration.status === "ready",
+      // Check if all integrations are configured (no longer awaiting config)
+      const allIntegrationsConfigured = updatedIntegrations?.every(
+        (integration) => integration.status !== "awaiting_config",
       );
 
       const updatedIntegrationMessage = {
@@ -181,7 +187,7 @@ const PureSetupIntegration = ({
             output: {
               ...messageContent.output,
               integrations: updatedIntegrations,
-              status: allIntegrationsReady
+              status: allIntegrationsConfigured
                 ? "completed"
                 : messageContent.output.status,
             },
@@ -216,16 +222,21 @@ const PureSetupIntegration = ({
         }) as ChatMessage[];
       });
 
-      // If all integrations are ready, set the pending message to null
-      if (allIntegrationsReady) {
-        setPendingMessage(null);
+      if (allIntegrationsConfigured) {
+        installIntegrationsMutation.mutate({
+          projectId: project.id,
+          triggerWorkflow: true,
+        });
+        setPendingMessage("thinking");
       }
     },
     [
+      project,
       integrationMessage,
       setMessages,
       setPendingMessage,
       updateToolMessageMutation,
+      installIntegrationsMutation,
     ],
   );
 

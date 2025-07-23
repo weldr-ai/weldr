@@ -29,10 +29,12 @@ export const createTRPCContext: (opts: {
   headers: Headers;
   session: Session | null;
 }) => Promise<{
+  headers: Headers;
   session: Session | null;
   db: typeof db;
 }> = async (opts) => {
   return {
+    headers: opts.headers,
     session: opts.session,
     db,
   };

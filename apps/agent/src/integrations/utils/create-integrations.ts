@@ -1,24 +1,30 @@
 import type { WorkflowContext } from "@/workflow/context";
 
-import { and, db } from "@weldr/db";
+import { and, db, eq } from "@weldr/db";
 import { integrations } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import type { Integration, IntegrationKey } from "@weldr/shared/types";
 import { integrationRegistry } from "../registry";
+import { processIntegrationQueue } from "./queue-manager";
 
-export async function getIntegrations(input: {
-  keys: IntegrationKey[];
-  context: WorkflowContext;
-}): Promise<Integration[]> {
-  const project = input.context.get("project");
-  const user = input.context.get("user");
-  Logger.info(`Resolved dependencies: ${input.keys.join(", ")}`);
+export async function createIntegrations(
+  keys: IntegrationKey[],
+  context: WorkflowContext,
+): Promise<Integration[]> {
+  const project = context.get("project");
+  const user = context.get("user");
+  const logger = Logger.get({ projectId: project.id });
 
-  const integrationsToInstall: Integration[] = [];
+  logger.info(`Creating integrations: ${keys.join(", ")}`);
+
+  const createdIntegrations: Integration[] = [];
 
   await db.transaction(async (tx) => {
-    for (const key of input.keys) {
+    for (const key of keys) {
       const integrationDefinition = integrationRegistry.get(key);
+      if (!integrationDefinition) {
+        throw new Error(`Integration definition not found: ${key}`);
+      }
 
       const integrationTemplate = await tx.query.integrationTemplates.findFirst(
         {
@@ -30,7 +36,7 @@ export async function getIntegrations(input: {
         throw new Error(`Integration template not found: ${key}`);
       }
 
-      const doesIntegrationExist = await tx.query.integrations.findFirst({
+      const existingIntegration = await tx.query.integrations.findFirst({
         where: (t, { eq }) =>
           and(
             eq(t.projectId, project.id),
@@ -45,11 +51,9 @@ export async function getIntegrations(input: {
         },
       });
 
-      if (
-        doesIntegrationExist &&
-        integrationDefinition.allowMultiple === false
-      ) {
-        integrationsToInstall.push(doesIntegrationExist as Integration);
+      if (existingIntegration && !integrationDefinition.allowMultiple) {
+        logger.info(`Integration ${key} already exists, skipping creation`);
+        createdIntegrations.push(existingIntegration as Integration);
         continue;
       }
 
@@ -66,7 +70,7 @@ export async function getIntegrations(input: {
             projectId: project.id,
             userId: user.id,
             integrationTemplateId: integrationTemplate.id,
-            status: "requires_configuration",
+            status: "awaiting_config",
           })
           .returning();
 
@@ -74,7 +78,9 @@ export async function getIntegrations(input: {
           throw new Error(`Failed to create integration: ${key}`);
         }
 
-        integrationsToInstall.push({
+        logger.info(`Created integration ${key} with status awaiting_config`);
+
+        createdIntegrations.push({
           ...integration,
           environmentVariableMappings: [],
         } as Integration);
@@ -86,8 +92,8 @@ export async function getIntegrations(input: {
             category: integrationTemplate.category,
             projectId: project.id,
             userId: user.id,
-            status: "ready",
             integrationTemplateId: integrationTemplate.id,
+            status: "queued",
           })
           .returning();
 
@@ -95,7 +101,9 @@ export async function getIntegrations(input: {
           throw new Error(`Failed to create integration: ${key}`);
         }
 
-        integrationsToInstall.push({
+        logger.info(`Created integration ${key} with status queued`);
+
+        createdIntegrations.push({
           ...integration,
           environmentVariableMappings: [],
         } as Integration);
@@ -103,5 +111,23 @@ export async function getIntegrations(input: {
     }
   });
 
-  return integrationsToInstall;
+  await processIntegrationQueue(context);
+
+  const updatedIntegrations = await Promise.all(
+    createdIntegrations.map(async (integration) => {
+      const updated = await db.query.integrations.findFirst({
+        where: eq(integrations.id, integration.id),
+        with: {
+          environmentVariableMappings: {
+            with: {
+              environmentVariable: true,
+            },
+          },
+        },
+      });
+      return updated as Integration;
+    }),
+  );
+
+  return updatedIntegrations;
 }

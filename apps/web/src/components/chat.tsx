@@ -252,9 +252,39 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
             break;
           }
           case "tool": {
-            if (chunk.toolName === "add_integrations") {
+            if (
+              chunk.toolName === "add_integrations" ||
+              chunk.toolName === "init_project"
+            ) {
               setPendingMessage("waiting");
               setMessages((prevMessages) => {
+                const lastMessage = prevMessages[prevMessages.length - 1];
+
+                if (
+                  lastMessage?.role === "tool" &&
+                  lastMessage.content.some(
+                    (content) =>
+                      content.type === "tool-result" &&
+                      content.toolCallId === chunk.toolCallId,
+                  )
+                ) {
+                  const messagesWithoutLast = prevMessages.slice(0, -1);
+                  return [
+                    ...messagesWithoutLast,
+                    {
+                      ...lastMessage,
+                      content: [
+                        {
+                          type: "tool-result",
+                          toolName: chunk.toolName,
+                          toolCallId: chunk.toolCallId,
+                          output: chunk.output,
+                        },
+                      ],
+                    } as ChatMessage,
+                  ];
+                }
+
                 return [
                   ...prevMessages,
                   {
@@ -267,7 +297,6 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
                         type: "tool-result",
                         toolName: chunk.toolName,
                         toolCallId: chunk.toolCallId,
-                        input: chunk.input,
                         output: chunk.output,
                       },
                     ],
@@ -433,8 +462,8 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
           content.type === "tool-result" &&
           (content.toolName === "add_integrations" ||
             content.toolName === "init_project") &&
-          (content.output as { status: "requires_configuration" }).status ===
-            "requires_configuration",
+          (content.output as { status: "awaiting_config" }).status ===
+            "awaiting_config",
       ) !== undefined
     ) {
       setPendingMessage("waiting");

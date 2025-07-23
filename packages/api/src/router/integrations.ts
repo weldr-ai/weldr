@@ -8,6 +8,7 @@ import {
   integrationEnvironmentVariables,
   integrations,
   integrationTemplates,
+  projects,
 } from "@weldr/db/schema";
 import {
   createIntegrationSchema,
@@ -16,6 +17,74 @@ import {
 import { createTRPCRouter, protectedProcedure } from "../init";
 
 export const integrationsRouter = createTRPCRouter({
+  install: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        triggerWorkflow: z.boolean().optional().default(false),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const project = await db.query.projects.findFirst({
+        where: and(
+          eq(projects.id, input.projectId),
+          eq(projects.userId, ctx.session.user.id),
+        ),
+      });
+
+      if (!project) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Project not found",
+        });
+      }
+
+      let url = "http://localhost:8080";
+
+      if (process.env.NODE_ENV === "production") {
+        const { Fly } = await import("@weldr/shared/fly");
+        const devMachineId = await Fly.machine.getDevMachineId({
+          projectId: input.projectId,
+        });
+        url = `http://${devMachineId}.vm.development-app-${input.projectId}.internal:8080`;
+      }
+
+      // Create headers object, preserving original headers but updating origin-related ones
+      const headers = new Headers();
+
+      // Copy all headers from the original request except origin-related ones
+      ctx.headers.forEach((value, key) => {
+        if (!["host", "origin", "referer"].includes(key.toLowerCase())) {
+          headers.set(key, value);
+        }
+      });
+
+      // Set the new origin and host for the destination
+      headers.set("host", "localhost:8080");
+      headers.set("origin", url);
+      headers.set("content-type", "application/json");
+
+      const response = await fetch(
+        `${url}/projects/${input.projectId}/integrations/install`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            projectId: input.projectId,
+            triggerWorkflow: input.triggerWorkflow,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to trigger installation",
+        });
+      }
+
+      return await response.json();
+    }),
   create: protectedProcedure
     .input(createIntegrationSchema)
     .mutation(async ({ ctx, input }) => {
@@ -66,7 +135,7 @@ export const integrationsRouter = createTRPCRouter({
             projectId,
             userId: ctx.session.user.id,
             integrationTemplateId,
-            status: "ready",
+            status: "queued", // User has provided config via API, ready for queue processing
           })
           .returning();
 
@@ -120,22 +189,23 @@ export const integrationsRouter = createTRPCRouter({
           });
         }
 
-        switch (integrationTemplate.key) {
-          case "postgresql": {
-            // TODO: Implement
-            // Write integration boilerplate to the machine
-            break;
-          }
-          default: {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: "Unsupported integration template type",
-            });
-          }
-        }
-
         return integration;
       });
+
+      try {
+        await integrationsRouter.createCaller(ctx).install({
+          projectId: input.projectId,
+        });
+
+        console.log(
+          `[integrations.create:${input.projectId}] Installation triggered successfully`,
+        );
+      } catch (error) {
+        console.error(
+          `[integrations.create:${input.projectId}] Failed to trigger installation:`,
+          error,
+        );
+      }
     }),
   byId: protectedProcedure
     .input(z.object({ id: z.string() }))

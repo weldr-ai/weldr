@@ -244,7 +244,7 @@ ${
   - User requirements are clearly understood and documented
   - Project has appropriate integrations for the requirements
   - Existing codebase has been analyzed and understood
-  - Integration configuration is complete (no "requires_configuration" status)
+  - Integration configuration is complete (no "awaiting_config" status)
   - Project status moves from "pending" to "planning"
   - Sufficient information is available for the planning agent to take over
 

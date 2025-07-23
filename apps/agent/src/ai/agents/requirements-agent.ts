@@ -191,10 +191,9 @@ export async function requirementsAgent({
               type: "tool",
               toolName: delta.toolName,
               toolCallId: delta.toolCallId,
-              input: delta.input,
               output: delta.output,
             });
-            if (delta.output.status === "requires_configuration") {
+            if (delta.output.status === "awaiting_config") {
               shouldRecur = false;
             } else {
               shouldRecur = true;

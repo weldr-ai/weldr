@@ -99,7 +99,6 @@ export type ToolStreamableValue = {
   type: "tool";
   toolName: string;
   toolCallId: string;
-  input: unknown;
   output: unknown;
 };
 

@@ -8,9 +8,6 @@ import { installPackages, updatePackageJsonScripts } from "./packages";
 export function defineIntegration<K extends IntegrationKey>(
   props: IntegrationDefinition<K>,
 ): IntegrationDefinition<K> {
-  // Store the original postInstall function to avoid recursion
-  const postInstall = props.postInstall;
-
   return {
     ...props,
     postInstall: async ({
@@ -30,7 +27,7 @@ export function defineIntegration<K extends IntegrationKey>(
       const results = await Promise.all([
         updatePackageJsonScripts(scripts),
         installPackages(packages),
-        postInstall?.({ context, integration }),
+        props.postInstall?.({ context, integration }),
       ]);
 
       const project = context.get("project");

@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { getIntegrations } from "@/integrations/utils/get-integrations";
-import { installIntegrations } from "@/integrations/utils/install-integrations";
+import { createIntegrations } from "@/integrations/utils/create-integrations";
+import { installQueuedIntegrations } from "@/integrations/utils/queue-installer";
+import { validateDependencies } from "@/integrations/utils/validate-dependencies";
 
 import { db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
@@ -14,7 +15,7 @@ import { createTool } from "../utils/tools";
 export const initProjectTool = createTool({
   name: "init_project",
   description:
-    "Initializes a new project with the specified title and integrations. Sets up project structure, installs dependencies, and configures the codebase based on the integration keys provided.",
+    "Initializes a new project with the specified title and integrations.",
   whenToUse:
     "Use this tool when you need to initialize a new project from scratch. This should be done before adding any integrations to the project.",
   inputSchema: z.object({
@@ -25,7 +26,7 @@ export const initProjectTool = createTool({
   }),
   outputSchema: z.discriminatedUnion("status", [
     z.object({
-      status: z.literal("requires_configuration"),
+      status: z.literal("awaiting_config"),
       integrations: z
         .object({
           id: z.string(),
@@ -69,6 +70,16 @@ export const initProjectTool = createTool({
 
     logger.info(`Initializing project: ${input.title}`);
 
+    const dependencyValidation = await validateDependencies(
+      input.keys,
+      context,
+    );
+    if (!dependencyValidation.isValid) {
+      const error = `Dependency validation failed: ${dependencyValidation.errors.join(", ")}`;
+      logger.error(error);
+      return { status: "failed" as const, error };
+    }
+
     const [updatedProject] = await db
       .update(projects)
       .set({
@@ -97,32 +108,12 @@ export const initProjectTool = createTool({
       },
     });
 
-    const config: Set<"database" | "authentication" | "server" | "web"> =
-      new Set();
+    const createdIntegrations = await createIntegrations(input.keys, context);
 
-    for (const key of input.keys) {
-      if (key === "postgresql") {
-        config.add("database");
-      } else if (key === "better-auth") {
-        config.add("authentication");
-      } else if (key === "orpc") {
-        config.add("server");
-      } else if (key === "tanstack-start") {
-        config.add("web");
-      }
-    }
-
-    const integrationsToInstall = await getIntegrations({
-      keys: input.keys,
-      context,
-    });
-
-    if (
-      integrationsToInstall.some((i) => i.status === "requires_configuration")
-    ) {
+    if (createdIntegrations.some((i) => i.status === "awaiting_config")) {
       return {
-        status: "requires_configuration" as const,
-        integrations: integrationsToInstall.map((i) => ({
+        status: "awaiting_config" as const,
+        integrations: createdIntegrations.map((i) => ({
           id: i.id,
           key: i.key,
           status: i.status,
@@ -130,10 +121,7 @@ export const initProjectTool = createTool({
       };
     }
 
-    const installationResult = await installIntegrations(
-      integrationsToInstall,
-      context,
-    );
+    const installationResult = await installQueuedIntegrations(context);
 
     if (installationResult.status === "error") {
       return {
@@ -146,11 +134,12 @@ export const initProjectTool = createTool({
 
     return {
       status: "completed" as const,
-      integrations: integrationsToInstall.map((i) => ({
-        id: i.id,
-        key: i.key,
-        status: i.status,
-      })),
+      integrations:
+        installationResult.installedIntegrations?.map((i) => ({
+          id: i.id,
+          key: i.key,
+          status: i.status,
+        })) ?? [],
     };
   },
 });

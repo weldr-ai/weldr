@@ -1,5 +1,6 @@
 "use client";
 
+import { LoaderIcon } from "lucide-react";
 import { useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
@@ -57,7 +58,7 @@ export function ChatIntegrationDialog({
             onSuccess={() =>
               onIntegrationMessageChange({
                 integrationId: integration.id,
-                integrationStatus: "ready",
+                integrationStatus: "queued",
               })
             }
             onCancel={() =>
@@ -114,7 +115,7 @@ export function ChatIntegrationDialog({
             "group w-full justify-between gap-2 bg-background px-1 hover:bg-accent",
             className,
           )}
-          disabled={integration.status !== "requires_configuration"}
+          disabled={integration.status !== "awaiting_config"}
         >
           <div className="flex items-center gap-2">
             {integration.key === "postgresql" && (
@@ -135,16 +136,20 @@ export function ChatIntegrationDialog({
               "font-medium text-[0.65rem] text-muted-foreground",
             )}
           >
-            <div
-              className={cn(
-                "size-1.5 rounded-full",
-                integration.status === "requires_configuration" && "bg-warning",
-                integration.status === "ready" && "bg-blue-500",
-                integration.status === "completed" && "bg-success",
-                integration.status === "failed" && "bg-destructive",
-                integration.status === "cancelled" && "bg-muted-foreground",
-              )}
-            />
+            {integration.status === "installing" ? (
+              <LoaderIcon className="size-3 animate-spin text-primary" />
+            ) : (
+              <div
+                className={cn(
+                  "size-1.5 rounded-full",
+                  integration.status === "awaiting_config" && "bg-warning",
+                  integration.status === "queued" && "bg-primary",
+                  integration.status === "completed" && "bg-success",
+                  integration.status === "failed" && "bg-destructive",
+                  integration.status === "cancelled" && "bg-muted-foreground",
+                )}
+              />
+            )}
             {integration.status
               .replaceAll("_", " ")
               .split(" ")

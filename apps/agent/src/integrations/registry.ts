@@ -85,9 +85,7 @@ class IntegrationRegistry {
       .where(eq(integrations.id, integration.id));
   }
 
-  resolveInstallationOrder(
-    integrationKeys: IntegrationKey[],
-  ): IntegrationKey[] {
+  getInstallationOrder(integrationKeys: IntegrationKey[]): IntegrationKey[] {
     const visited = new Set<IntegrationKey>();
     const resolved: IntegrationKey[] = [];
     const frontendKeys: IntegrationKey[] = [];

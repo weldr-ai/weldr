@@ -1,8 +1,10 @@
 import { z } from "zod";
-import { getIntegrations } from "@/integrations/utils/get-integrations";
-import { installIntegrations } from "@/integrations/utils/install-integrations";
+import { createIntegrations } from "@/integrations/utils/create-integrations";
+import { installQueuedIntegrations } from "@/integrations/utils/queue-installer";
+import { validateDependencies } from "@/integrations/utils/validate-dependencies";
 
 import { Logger } from "@weldr/shared/logger";
+import type { IntegrationKey, IntegrationStatus } from "@weldr/shared/types";
 import {
   integrationKeySchema,
   integrationStatusSchema,
@@ -11,8 +13,7 @@ import { createTool } from "../utils/tools";
 
 export const addIntegrationsTool = createTool({
   name: "add_integrations",
-  description:
-    "Adds integrations to an existing initialized project. Automatically resolves and installs dependencies before installing requested integrations.",
+  description: "Adds integrations to an existing initialized project.",
   whenToUse:
     "Use this tool when you need to add integrations to an already initialized project. The project must be initialized first using the init_project tool.",
   inputSchema: z.object({
@@ -22,7 +23,7 @@ export const addIntegrationsTool = createTool({
   }),
   outputSchema: z.discriminatedUnion("status", [
     z.object({
-      status: z.literal("requires_configuration"),
+      status: z.literal("awaiting_config"),
       integrations: z
         .object({
           id: z.string(),
@@ -31,6 +32,7 @@ export const addIntegrationsTool = createTool({
         })
         .array(),
     }),
+
     z.object({
       status: z.literal("completed"),
       integrations: z
@@ -70,17 +72,23 @@ export const addIntegrationsTool = createTool({
       return { status: "failed" as const, error };
     }
 
-    const integrationsToInstall = await getIntegrations({
-      keys: input.keys,
+    const dependencyValidation = await validateDependencies(
+      input.keys,
       context,
-    });
+    );
 
-    if (
-      integrationsToInstall.some((i) => i.status === "requires_configuration")
-    ) {
+    if (!dependencyValidation.isValid) {
+      const error = `Dependency validation failed: ${dependencyValidation.errors.join(", ")}`;
+      logger.error(error);
+      return { status: "failed" as const, error };
+    }
+
+    const createdIntegrations = await createIntegrations(input.keys, context);
+
+    if (createdIntegrations.some((i) => i.status === "awaiting_config")) {
       return {
-        status: "requires_configuration" as const,
-        integrations: integrationsToInstall.map((i) => ({
+        status: "awaiting_config" as const,
+        integrations: createdIntegrations.map((i) => ({
           id: i.id,
           key: i.key,
           status: i.status,
@@ -88,10 +96,7 @@ export const addIntegrationsTool = createTool({
       };
     }
 
-    const installationResult = await installIntegrations(
-      integrationsToInstall,
-      context,
-    );
+    const installationResult = await installQueuedIntegrations(context);
 
     if (installationResult.status === "error") {
       return {
@@ -102,11 +107,17 @@ export const addIntegrationsTool = createTool({
 
     return {
       status: "completed" as const,
-      integrations: integrationsToInstall.map((i) => ({
-        id: i.id,
-        key: i.key,
-        status: i.status,
-      })),
+      integrations: installationResult.installedIntegrations.map(
+        (i: {
+          id: string;
+          key: IntegrationKey;
+          status: IntegrationStatus;
+        }) => ({
+          id: i.id,
+          key: i.key,
+          status: i.status,
+        }),
+      ),
     };
   },
 });

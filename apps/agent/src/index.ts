@@ -17,7 +17,7 @@ app
   .use(loggerMiddleware())
   .use(
     cors({
-      origin: "http://localhost:3000",
+      origin: process.env.CORS_ORIGIN?.split(",") ?? "http://localhost:3000",
       allowHeaders: ["Content-Type", "Authorization"],
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       exposeHeaders: ["Content-Type", "Authorization"],
