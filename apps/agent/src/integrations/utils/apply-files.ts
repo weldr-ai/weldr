@@ -1,12 +1,17 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import Handlebars from "handlebars";
 import { applyEdit } from "@/ai/utils/apply-edit";
 import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import type { WorkflowContext } from "@/workflow/context";
 
+import { Logger } from "@weldr/shared/logger";
 import type { Integration } from "@weldr/shared/types";
 import type { FileItem } from "../types";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function applyFiles({
   integration,
@@ -20,16 +25,20 @@ export async function applyFiles({
     context,
   });
 
+  const logger = Logger.get({ projectId: integration.projectId });
+
   for (const file of files) {
     const readResult = await runCommand("cat", [file.sourcePath], {
       cwd: WORKSPACE_DIR,
     });
 
     if (!readResult.success) {
-      console.error(
+      logger.error(
         `Failed to read file ${file.sourcePath}: ${readResult.stderr}`,
       );
-      continue;
+      throw new Error(
+        `Failed to read file ${file.sourcePath}: ${readResult.stderr}`,
+      );
     }
 
     const targetDir = path.dirname(file.targetPath);
@@ -86,8 +95,10 @@ export async function applyFiles({
           );
 
           if (!originalContentResult.success) {
-            console.error(`Failed to read target file ${file.targetPath}`);
-            continue;
+            logger.error(`Failed to read target file ${file.targetPath}`);
+            throw new Error(
+              `Failed to read target file ${file.targetPath}: ${originalContentResult.stderr}`,
+            );
           }
 
           const updatedContent = await applyEdit({
@@ -145,7 +156,9 @@ export async function applyFiles({
         }
       }
     } catch (error) {
-      console.error(`Failed to process file ${file.sourcePath}:`, error);
+      logger.error(`Failed to process file ${file.sourcePath}:`, {
+        extra: { error },
+      });
       throw error;
     }
   }
@@ -162,9 +175,11 @@ async function generateFiles({
   const hasFrontend = project.config.has("frontend");
   const hasBackend = project.config.has("backend");
 
+  const logger = Logger.get({ projectId: integration.projectId });
+
   let baseDataDir = path.join(
-    process.cwd(),
-    `apps/agent/src/integrations/${integration.category}/${integration.key}`,
+    path.resolve(__dirname, "../.."),
+    `integrations/${integration.category}/${integration.key}`,
   );
 
   if (
@@ -182,8 +197,8 @@ async function generateFiles({
   const checkResult = await runCommand("test", ["-d", baseDataDir]);
 
   if (!checkResult.success) {
-    console.log(`No data directory found for ${baseDataDir}`);
-    return [];
+    logger.error(`No data directory found for ${baseDataDir}`);
+    throw new Error(`No data directory found for ${baseDataDir}`);
   }
 
   const files: FileItem[] = [];
@@ -249,7 +264,7 @@ async function processFile(
   const readResult = await runCommand("cat", [filePath]);
 
   if (!readResult.success) {
-    console.error(`Failed to read file ${filePath}`);
+    Logger.error(`Failed to read file ${filePath}`);
     throw new Error(`Failed to read file ${filePath}`);
   }
 

@@ -15,7 +15,10 @@ import type {
   AssistantMessage,
   Attachment,
   ChatMessage,
+  IntegrationKey,
+  IntegrationStatus,
   SSEEvent,
+  ToolResultPartMessage,
   TPendingMessage,
   TriggerWorkflowResponse,
   UserMessage,
@@ -61,6 +64,7 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isConnectingRef = useRef(false);
 
   const latestVersion = project.versions[project.versions.length - 1];
   const editorReferences =
@@ -131,6 +135,21 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
       case "completed":
       case "failed":
         setPendingMessage(null);
+        // Close any existing EventSource connection when workflow completes/fails
+        if (eventSourceRef) {
+          if (eventSourceRef.readyState !== EventSource.CLOSED) {
+            eventSourceRef.close();
+          }
+          setEventSourceRef(null);
+        }
+        // Clear any pending reconnection timeout
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
+        }
+        // Reset reconnection attempts and connecting flag
+        reconnectAttempts.current = 0;
+        isConnectingRef.current = false;
         break;
       default:
         setPendingMessage(null);
@@ -175,8 +194,17 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
 
   const connectToEventStream = useCallback(() => {
     // Prevent multiple simultaneous connections
-    if (eventSourceRef) {
+    if (eventSourceRef || isConnectingRef.current) {
       return eventSourceRef;
+    }
+
+    // Mark as connecting to prevent race conditions
+    isConnectingRef.current = true;
+
+    // Clear any pending reconnection timeout before creating new connection
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
 
     const eventSource = new EventSource(`/api/chat/${project.id}`);
@@ -189,21 +217,33 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
         if (chunk.type === "connected") {
           // Reset reconnection attempts on successful connection
           reconnectAttempts.current = 0;
+          // Clear connecting flag
+          isConnectingRef.current = false;
           return;
         }
 
         if (chunk.type === "workflow_complete") {
           setPendingMessage(null);
-          eventSource.close();
+          if (eventSource.readyState !== EventSource.CLOSED) {
+            eventSource.close();
+          }
           setEventSourceRef(null);
+          // Clear reconnection attempts and connecting flag since workflow is complete
+          reconnectAttempts.current = 0;
+          isConnectingRef.current = false;
           return;
         }
 
         if (chunk.type === "error") {
           console.error("Workflow error:", chunk.error);
           setPendingMessage(null);
-          eventSource.close();
+          if (eventSource.readyState !== EventSource.CLOSED) {
+            eventSource.close();
+          }
           setEventSourceRef(null);
+          // Clear reconnection attempts and connecting flag on error
+          reconnectAttempts.current = 0;
+          isConnectingRef.current = false;
           return;
         }
 
@@ -252,59 +292,27 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
             break;
           }
           case "tool": {
-            if (
-              chunk.toolName === "add_integrations" ||
-              chunk.toolName === "init_project"
-            ) {
-              setPendingMessage("waiting");
-              setMessages((prevMessages) => {
-                const lastMessage = prevMessages[prevMessages.length - 1];
+            setMessages((prevMessages) => {
+              const lastMessage = prevMessages[prevMessages.length - 1];
 
+              if (lastMessage?.role === "tool") {
+                const integrationToolResult = chunk.message.content.find(
+                  (content) =>
+                    content.type === "tool-result" &&
+                    (content.toolName === "add_integrations" ||
+                      content.toolName === "init_project"),
+                );
                 if (
-                  lastMessage?.role === "tool" &&
-                  lastMessage.content.some(
-                    (content) =>
-                      content.type === "tool-result" &&
-                      content.toolCallId === chunk.toolCallId,
-                  )
+                  integrationToolResult?.toolCallId ===
+                  lastMessage.content[0]?.toolCallId
                 ) {
-                  const messagesWithoutLast = prevMessages.slice(0, -1);
-                  return [
-                    ...messagesWithoutLast,
-                    {
-                      ...lastMessage,
-                      content: [
-                        {
-                          type: "tool-result",
-                          toolName: chunk.toolName,
-                          toolCallId: chunk.toolCallId,
-                          output: chunk.output,
-                        },
-                      ],
-                    } as ChatMessage,
-                  ];
+                  const chatWithLastMessage = prevMessages.slice(0, -1);
+                  return [...chatWithLastMessage, chunk.message as ChatMessage];
                 }
+              }
 
-                return [
-                  ...prevMessages,
-                  {
-                    id: nanoid(),
-                    visibility: "public",
-                    role: "tool",
-                    createdAt: new Date(),
-                    content: [
-                      {
-                        type: "tool-result",
-                        toolName: chunk.toolName,
-                        toolCallId: chunk.toolCallId,
-                        output: chunk.output,
-                      },
-                    ],
-                  },
-                ];
-              });
-            }
-
+              return [...prevMessages, chunk.message as ChatMessage];
+            });
             break;
           }
           case "update_project": {
@@ -383,7 +391,14 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
 
     eventSource.onerror = (error) => {
       console.error("SSE connection error:", error);
-      eventSource.close();
+
+      // Clear connecting flag
+      isConnectingRef.current = false;
+
+      // Ensure connection is properly closed and state is cleaned up
+      if (eventSource.readyState !== EventSource.CLOSED) {
+        eventSource.close();
+      }
       setEventSourceRef(null);
 
       // Clear any pending reconnection timeout
@@ -407,7 +422,15 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
     };
 
     return eventSource;
-  }, [project.id, getNodes, setNodes, updateNodeData, updateProjectData]);
+  }, [
+    project,
+    getNodes,
+    setNodes,
+    updateNodeData,
+    updateProjectData,
+    eventSourceRef,
+    pendingMessage,
+  ]);
 
   const triggerGeneration = useCallback(async () => {
     setPendingMessage("thinking");
@@ -442,31 +465,54 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
   // Cleanup SSE connection and timeouts on unmount
   useEffect(() => {
     return () => {
-      if (eventSourceRef) {
-        eventSourceRef.close();
-        setEventSourceRef(null);
-      }
+      // Reset reconnection attempts and connecting flag
+      reconnectAttempts.current = 0;
+      isConnectingRef.current = false;
+
+      // Clear any pending timeout
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
+
+      // Close EventSource connection if it exists and is not already closed
+      if (eventSourceRef) {
+        if (eventSourceRef.readyState !== EventSource.CLOSED) {
+          eventSourceRef.close();
+        }
+        setEventSourceRef(null);
+      }
     };
-  }, []);
+  }, [eventSourceRef]);
 
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (
-      lastMessage?.role === "tool" &&
-      lastMessage.content.find(
+    if (lastMessage?.role === "tool") {
+      const toolResult = lastMessage.content.find(
         (content) =>
           content.type === "tool-result" &&
           (content.toolName === "add_integrations" ||
-            content.toolName === "init_project") &&
-          (content.output as { status: "awaiting_config" }).status ===
-            "awaiting_config",
-      ) !== undefined
-    ) {
-      setPendingMessage("waiting");
+            content.toolName === "init_project"),
+      ) as ToolResultPartMessage & {
+        output: {
+          status: "awaiting_config" | "completed" | "failed";
+          integrations: {
+            id: string;
+            key: IntegrationKey;
+            status: IntegrationStatus;
+          }[];
+        };
+      };
+
+      if (
+        toolResult?.output?.integrations.some(
+          (integration) =>
+            integration.status !== "completed" &&
+            integration.status !== "failed",
+        )
+      ) {
+        setPendingMessage("waiting");
+      }
     }
   }, [messages]);
 
@@ -544,12 +590,14 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
           "transition-all delay-300 ease-in-out":
             !isChatVisible &&
             pendingMessage !== "thinking" &&
-            pendingMessage !== "responding",
+            pendingMessage !== "responding" &&
+            pendingMessage !== "waiting",
           "transition-none":
             attachments.length > 0 ||
             isChatVisible ||
             pendingMessage === "thinking" ||
-            pendingMessage === "responding",
+            pendingMessage === "responding" ||
+            pendingMessage === "waiting",
         },
       )}
     >
@@ -560,11 +608,13 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
             "h-0":
               !isChatVisible &&
               pendingMessage !== "thinking" &&
-              pendingMessage !== "responding",
+              pendingMessage !== "responding" &&
+              pendingMessage !== "waiting",
             "h-[300px]":
               isChatVisible ||
               pendingMessage === "thinking" ||
-              pendingMessage === "responding",
+              pendingMessage === "responding" ||
+              pendingMessage === "waiting",
           },
         )}
       >

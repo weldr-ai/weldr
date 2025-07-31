@@ -11,6 +11,7 @@ export const orpcIntegration = defineIntegration<"orpc">({
   allowMultiple: false,
   variables: null,
   options: null,
+  recommendedOptions: null,
   dependencies: null,
   packages: async (context) => {
     const project = context.get("project");

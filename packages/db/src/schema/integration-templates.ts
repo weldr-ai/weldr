@@ -14,6 +14,7 @@ import type {
   IntegrationKey,
   IntegrationTemplateDependencies,
   IntegrationTemplateOptions,
+  IntegrationTemplateRecommendedOptions,
   IntegrationTemplateVariable,
 } from "@weldr/shared/types";
 
@@ -30,6 +31,9 @@ export const integrationTemplates = pgTable(
       jsonb("dependencies").$type<IntegrationTemplateDependencies>(),
     variables: jsonb("variables").$type<IntegrationTemplateVariable>(),
     options: jsonb("options").$type<IntegrationTemplateOptions>(),
+    recommendedOptions: jsonb(
+      "recommended_options",
+    ).$type<IntegrationTemplateRecommendedOptions>(),
     allowMultiple: boolean("allow_multiple").notNull().default(true),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")

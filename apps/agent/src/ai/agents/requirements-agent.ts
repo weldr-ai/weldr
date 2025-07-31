@@ -17,6 +17,7 @@ import { registry } from "@/ai/utils/registry";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { Logger } from "@weldr/shared/logger";
+import { nanoid } from "@weldr/shared/nanoid";
 import type {
   addMessageItemSchema,
   assistantMessageContentSchema,
@@ -189,9 +190,21 @@ export async function requirementsAgent({
           ) {
             await streamWriter.write({
               type: "tool",
-              toolName: delta.toolName,
-              toolCallId: delta.toolCallId,
-              output: delta.output,
+              message: {
+                id: nanoid(),
+                visibility: "public",
+                createdAt: new Date(),
+                chatId: version.chatId,
+                role: "tool",
+                content: [
+                  {
+                    type: "tool-result",
+                    toolCallId: delta.toolCallId,
+                    toolName: delta.toolName,
+                    output: delta.output,
+                  },
+                ],
+              },
             });
             if (delta.output.status === "awaiting_config") {
               shouldRecur = false;

@@ -23,6 +23,9 @@ export const postgresqlIntegration = defineIntegration<"postgresql">({
   options: {
     orm: ["drizzle", "prisma"],
   },
+  recommendedOptions: {
+    orm: "drizzle",
+  },
   packages: async (_, options) => {
     if (options?.orm === "drizzle") {
       const packages: IntegrationPackageSets = [

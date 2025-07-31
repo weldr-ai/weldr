@@ -28,6 +28,7 @@ export async function seedIntegrationTemplates(): Promise<void> {
           variables: integration.variables,
           options: integration.options,
           allowMultiple: integration.allowMultiple,
+          recommendedOptions: integration.recommendedOptions,
         };
 
         const result = await tx
@@ -43,6 +44,7 @@ export async function seedIntegrationTemplates(): Promise<void> {
               variables: templateData.variables,
               options: templateData.options,
               allowMultiple: templateData.allowMultiple,
+              recommendedOptions: templateData.recommendedOptions,
             },
           })
           .returning({

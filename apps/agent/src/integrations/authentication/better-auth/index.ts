@@ -27,6 +27,7 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
     emailAndPassword: true,
     stripeIntegration: true,
   },
+  recommendedOptions: null,
   variables: [
     {
       name: "BETTER_AUTH_SECRET",

@@ -1,11 +1,13 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import fastDeepEqual from "fast-deep-equal";
 import {
   type Dispatch,
   memo,
   type SetStateAction,
   useCallback,
+  useEffect,
   useState,
 } from "react";
 import type { z } from "zod";
@@ -85,7 +87,9 @@ const PureMessageItem = ({
 };
 
 export const MessageItem = memo(PureMessageItem, (prevProps, nextProps) => {
-  if (prevProps.message.content !== nextProps.message.content) return false;
+  if (!fastDeepEqual(prevProps.message, nextProps.message)) {
+    return false;
+  }
   return true;
 });
 
@@ -134,6 +138,17 @@ const PureSetupIntegration = ({
       content: message.content as IntegrationToolResultPart[],
     } as IntegrationMessage);
 
+  useEffect(() => {
+    setIntegrationMessage({
+      id: message.id,
+      visibility: message.visibility,
+      createdAt: message.createdAt,
+      chatId: message.chatId,
+      role: "tool",
+      content: message.content as IntegrationToolResultPart[],
+    } as IntegrationMessage);
+  }, [message]);
+
   const integrations = integrationMessage.content[0]?.output.integrations?.sort(
     (a, b) => {
       if (a.status === "awaiting_config") return -1;
@@ -147,6 +162,10 @@ const PureSetupIntegration = ({
 
   const updateToolMessageMutation = useMutation(
     trpc.chats.updateToolMessage.mutationOptions(),
+  );
+
+  const updateIntegrationMutation = useMutation(
+    trpc.integrations.update.mutationOptions(),
   );
 
   const installIntegrationsMutation = useMutation(
@@ -173,6 +192,15 @@ const PureSetupIntegration = ({
           return integration;
         },
       );
+
+      updateIntegrationMutation.mutate({
+        where: {
+          id: integrationId,
+        },
+        payload: {
+          status: integrationStatus,
+        },
+      });
 
       // Check if all integrations are configured (no longer awaiting config)
       const allIntegrationsConfigured = updatedIntegrations?.every(
@@ -205,10 +233,6 @@ const PureSetupIntegration = ({
         },
       });
 
-      console.log({
-        updatedIntegrationMessage,
-      });
-
       // Update the integration message state
       setIntegrationMessage(updatedIntegrationMessage);
 
@@ -237,6 +261,7 @@ const PureSetupIntegration = ({
       setPendingMessage,
       updateToolMessageMutation,
       installIntegrationsMutation,
+      updateIntegrationMutation,
     ],
   );
 
@@ -262,7 +287,9 @@ const PureSetupIntegration = ({
 export const SetupIntegration = memo(
   PureSetupIntegration,
   (prevProps, nextProps) => {
-    if (prevProps.message !== nextProps.message) return false;
+    if (!fastDeepEqual(prevProps.message, nextProps.message)) {
+      return false;
+    }
     return true;
   },
 );

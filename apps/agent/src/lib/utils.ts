@@ -2,10 +2,10 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import type { PinoLogger } from "hono-pino";
 import type { WorkflowContext } from "@/workflow/context";
 
-import type { TStreamableValue } from "@weldr/shared/types";
+import type { SSEEvent } from "@weldr/shared/types";
 
 export interface StreamWriter {
-  write(chunk: TStreamableValue): Promise<void>;
+  write(chunk: SSEEvent): Promise<void>;
   close(): Promise<void>;
 }
 

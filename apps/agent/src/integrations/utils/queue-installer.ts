@@ -7,6 +7,7 @@ import type {
   IntegrationKey,
   IntegrationStatus,
   ToolMessage,
+  ToolResultPartMessage,
 } from "@weldr/shared/types";
 import { integrationRegistry } from "../registry";
 import {
@@ -35,7 +36,7 @@ async function streamToolMessageUpdate({
 
   const message = await db.query.chatMessages.findFirst({
     where: and(
-      eq(chatMessages.id, version.chatId),
+      eq(chatMessages.chatId, version.chatId),
       eq(chatMessages.role, "tool"),
     ),
     orderBy: (chatMessages, { desc }) => [desc(chatMessages.createdAt)],
@@ -47,31 +48,56 @@ async function streamToolMessageUpdate({
 
   const toolMessage = message as ToolMessage;
 
-  // biome-ignore lint/style/noNonNullAssertion: reason
-  const toolContent = toolMessage.content[0]!;
+  const toolContent = toolMessage.content[0] as ToolResultPartMessage;
+
+  const toolOutput = toolContent.output as {
+    status: "awaiting_config" | "completed" | "failed";
+    integrations: {
+      id: string;
+      key: IntegrationKey;
+      status: IntegrationStatus;
+    }[];
+  };
+
+  const existingIntegrations = toolOutput.integrations || [];
+  const updatedIntegrations = existingIntegrations.map(
+    (integration: {
+      id: string;
+      key: IntegrationKey;
+      status: IntegrationStatus;
+    }) =>
+      integration.id === integrationId
+        ? { ...integration, status }
+        : integration,
+  );
+
+  const updatedContent = [
+    {
+      type: "tool-result",
+      toolCallId: toolContent.toolCallId,
+      toolName: toolContent.toolName,
+      isError: false,
+      output: {
+        ...toolOutput,
+        integrations: updatedIntegrations,
+      },
+    } satisfies ToolResultPartMessage,
+  ];
+
+  console.log("updatedContent", JSON.stringify(updatedContent, null, 2));
+
+  await db
+    .update(chatMessages)
+    .set({
+      content: updatedContent,
+    })
+    .where(eq(chatMessages.id, message.id));
 
   await streamWriter.write({
     type: "tool",
-    toolName: toolContent.toolName,
-    toolCallId: toolContent.toolCallId,
-    output: {
-      status,
-      integrations: [
-        ...(
-          toolContent.output as {
-            integrations: {
-              id: string;
-              key: IntegrationKey;
-              status: IntegrationStatus;
-            }[];
-          }
-        ).integrations,
-        {
-          id: integrationId,
-          key: integrationId,
-          status,
-        },
-      ],
+    message: {
+      ...toolMessage,
+      content: updatedContent,
     },
   });
 }

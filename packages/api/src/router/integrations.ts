@@ -10,6 +10,7 @@ import {
   integrationTemplates,
   projects,
 } from "@weldr/db/schema";
+import { Fly } from "@weldr/shared/fly";
 import {
   createIntegrationSchema,
   updateIntegrationSchema,
@@ -42,39 +43,36 @@ export const integrationsRouter = createTRPCRouter({
       let url = "http://localhost:8080";
 
       if (process.env.NODE_ENV === "production") {
-        const { Fly } = await import("@weldr/shared/fly");
         const devMachineId = await Fly.machine.getDevMachineId({
           projectId: input.projectId,
         });
         url = `http://${devMachineId}.vm.development-app-${input.projectId}.internal:8080`;
       }
 
-      // Create headers object, preserving original headers but updating origin-related ones
       const headers = new Headers();
 
-      // Copy all headers from the original request except origin-related ones
       ctx.headers.forEach((value, key) => {
-        if (!["host", "origin", "referer"].includes(key.toLowerCase())) {
+        if (
+          !["host", "origin", "referer", "content-length"].includes(
+            key.toLowerCase(),
+          )
+        ) {
           headers.set(key, value);
         }
       });
 
-      // Set the new origin and host for the destination
       headers.set("host", "localhost:8080");
       headers.set("origin", url);
       headers.set("content-type", "application/json");
 
-      const response = await fetch(
-        `${url}/projects/${input.projectId}/integrations/install`,
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            projectId: input.projectId,
-            triggerWorkflow: input.triggerWorkflow,
-          }),
-        },
-      );
+      const response = await fetch(`${url}/integrations/install`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          projectId: input.projectId,
+          triggerWorkflow: input.triggerWorkflow,
+        }),
+      });
 
       if (!response.ok) {
         throw new TRPCError({
@@ -314,6 +312,7 @@ export const integrationsRouter = createTRPCRouter({
           .update(integrations)
           .set({
             name: input.payload.name ?? existingIntegration.name,
+            status: input.payload.status ?? existingIntegration.status,
           })
           .where(eq(integrations.id, input.where.id))
           .returning();

@@ -190,6 +190,7 @@ CREATE TABLE "integration_templates" (
 	"dependencies" jsonb,
 	"variables" jsonb,
 	"options" jsonb,
+	"recommended_options" jsonb,
 	"allow_multiple" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL

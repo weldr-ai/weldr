@@ -11,6 +11,7 @@ export const tanstackStartIntegration = defineIntegration<"tanstack-start">({
   allowMultiple: false,
   dependencies: null,
   options: null,
+  recommendedOptions: null,
   variables: null,
   packages: async (context) => {
     const project = context.get("project");

@@ -17,6 +17,7 @@ export const orpcIntegrationTemplateSchema =
     dependencies: z.null(),
     variables: z.null(),
     options: z.null(),
+    recommendedOptions: z.null(),
   });
 
 export const tanstackStartIntegrationTemplateSchema =
@@ -27,6 +28,7 @@ export const tanstackStartIntegrationTemplateSchema =
     dependencies: z.null(),
     variables: z.null(),
     options: z.null(),
+    recommendedOptions: z.null(),
   });
 
 export const postgresqlIntegrationTemplateSchema =
@@ -44,6 +46,9 @@ export const postgresqlIntegrationTemplateSchema =
     ]),
     options: z.object({
       orm: z.tuple([z.literal("drizzle"), z.literal("prisma")]),
+    }),
+    recommendedOptions: z.object({
+      orm: z.literal("drizzle"),
     }),
   });
 
@@ -77,6 +82,7 @@ export const betterAuthIntegrationTemplateSchema =
       emailAndPassword: z.boolean().default(true),
       stripeIntegration: z.boolean().default(false),
     }),
+    recommendedOptions: z.null(),
   });
 
 export const integrationTemplateSchema = z.discriminatedUnion("key", [

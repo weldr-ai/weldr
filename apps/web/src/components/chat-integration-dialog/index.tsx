@@ -112,7 +112,7 @@ export function ChatIntegrationDialog({
           size="sm"
           variant="outline"
           className={cn(
-            "group w-full justify-between gap-2 bg-background px-1 hover:bg-accent",
+            "group w-full justify-between gap-2 bg-background pr-1 pl-2 hover:bg-accent disabled:text-muted-foreground disabled:opacity-100",
             className,
           )}
           disabled={integration.status !== "awaiting_config"}

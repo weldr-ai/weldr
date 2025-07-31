@@ -9,6 +9,7 @@ import type {
   chatSchema,
   messageRoleSchema,
   toolMessageSchema,
+  toolResultPartSchema,
   userMessageSchema,
 } from "../validators/chats";
 import type { environmentVariableSchema } from "../validators/environment-variables";
@@ -50,6 +51,7 @@ export type AiMessageMetadata = z.infer<typeof aiMetadataSchema>;
 export type UserMessage = z.infer<typeof userMessageSchema>;
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
 export type ToolMessage = z.infer<typeof toolMessageSchema>;
+export type ToolResultPartMessage = z.infer<typeof toolResultPartSchema>;
 export type Chat = z.infer<typeof chatSchema>;
 export type Attachment = z.infer<typeof attachmentSchema>;
 
@@ -97,22 +99,13 @@ export type NodeStreamableValue = {
 
 export type ToolStreamableValue = {
   type: "tool";
-  toolName: string;
-  toolCallId: string;
-  output: unknown;
+  message: ToolMessage;
 };
 
 export type ProjectStreamableValue = {
   type: "update_project";
   data: Partial<Project & { currentVersion: Partial<Version> }>;
 };
-
-export type TStreamableValue =
-  | TextStreamableValue
-  | ToolStreamableValue
-  | NodeStreamableValue
-  | ProjectStreamableValue
-  | EndStreamableValue;
 
 // SSE-specific event types
 export type SSEConnectionEvent = {
@@ -135,7 +128,11 @@ export type SSEEvent =
   | SSEConnectionEvent
   | SSEWorkflowCompleteEvent
   | SSEErrorEvent
-  | TStreamableValue;
+  | TextStreamableValue
+  | ToolStreamableValue
+  | NodeStreamableValue
+  | ProjectStreamableValue
+  | EndStreamableValue;
 
 // Trigger API response type
 export type TriggerWorkflowResponse = {
@@ -148,6 +145,9 @@ export type TriggerWorkflowResponse = {
 export type IntegrationTemplateOptions = z.infer<
   typeof integrationTemplateSchema
 >["options"];
+export type IntegrationTemplateRecommendedOptions = z.infer<
+  typeof integrationTemplateSchema
+>["recommendedOptions"];
 export type IntegrationTemplateDependencies = z.infer<
   typeof integrationTemplateSchema
 >["dependencies"];

@@ -93,6 +93,7 @@ export async function createIntegrations(
             projectId: project.id,
             userId: user.id,
             integrationTemplateId: integrationTemplate.id,
+            options: integrationTemplate.recommendedOptions,
             status: "queued",
           })
           .returning();
