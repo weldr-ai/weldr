@@ -1,11 +1,6 @@
 "use client";
 
-import { useTRPC } from "@/lib/trpc/react";
-import { parseConventionalCommit } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { RouterOutputs } from "@weldr/api";
-import { Button, buttonVariants } from "@weldr/ui/components/button";
-import { toast } from "@weldr/ui/hooks/use-toast";
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import {
@@ -16,6 +11,12 @@ import {
   Undo2Icon,
 } from "lucide-react";
 import { memo } from "react";
+import { useTRPC } from "@/lib/trpc/react";
+import { parseConventionalCommit } from "@/lib/utils";
+
+import type { RouterOutputs } from "@weldr/api";
+import { Button, buttonVariants } from "@weldr/ui/components/button";
+import { toast } from "@weldr/ui/hooks/use-toast";
 
 import "@xyflow/react/dist/base.css";
 
@@ -38,6 +39,7 @@ import {
 import { cn } from "@weldr/ui/lib/utils";
 import "@weldr/ui/styles/canvas.css";
 import Link from "next/link";
+
 import { CommitTypeBadge } from "../commit-type-badge";
 
 export type TVersionNode = Node<RouterOutputs["versions"]["list"][number]>;

@@ -7,7 +7,7 @@
     "clean": "git clean -xdf .next .turbo node_modules dist",
     "dev": "pnpm with-env next dev --turbopack -p 3000",
     "start": "next start",
-    "check-types": "tsc --noEmit --emitDeclarationOnly false",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
@@ -60,7 +60,7 @@
     "server-only": "^0.0.1",
     "superjson": "^2.2.2",
     "ua-parser-js": "^2.0.3",
-    "zod": "^3.25.67"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/d3-hierarchy": "^3.1.7",

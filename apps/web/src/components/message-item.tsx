@@ -1,33 +1,16 @@
 "use client";
 
+import fastDeepEqual from "fast-deep-equal";
 import { memo } from "react";
 
-import { useTRPC } from "@/lib/trpc/react";
-import { useMutation } from "@tanstack/react-query";
-import type { RouterOutputs } from "@weldr/api";
-import type { ChatMessage, TPendingMessage } from "@weldr/shared/types";
-import type { toolMessageSchema } from "@weldr/shared/validators/chats";
-import { toast } from "@weldr/ui/hooks/use-toast";
+import type { ChatMessage } from "@weldr/shared/types";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
-import type { z } from "zod";
-import { ChatIntegrationDialog } from "./chat-integration-dialog";
 import { CustomMarkdown } from "./custom-markdown";
+import { IntegrationsSetupStatus } from "./setup-integrations/integrations-setup-status";
+import type { IntegrationToolMessage } from "./setup-integrations/types";
 
-const PureMessageItem = ({
-  message,
-  setMessages,
-  setPendingMessage,
-  integrationTemplates,
-  environmentVariables,
-}: {
-  message: ChatMessage;
-  setMessages: (messages: ChatMessage[]) => void;
-  pendingMessage: TPendingMessage;
-  setPendingMessage: (pendingMessage: TPendingMessage) => void;
-  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
-  environmentVariables: RouterOutputs["environmentVariables"]["list"];
-}) => {
+const PureMessageItem = ({ message }: { message: ChatMessage }) => {
   return (
     <div
       className={cn(
@@ -59,18 +42,11 @@ const PureMessageItem = ({
         )}
 
         {message.role === "tool" &&
-          message.content.some((content) => {
-            if (content.type === "tool-result") {
-              return content.toolName === "request_integration_configuration";
-            }
-            return false;
-          }) && (
-            <SetupIntegration
-              setMessages={setMessages}
-              setPendingMessage={setPendingMessage}
-              message={message}
-              integrationTemplates={integrationTemplates}
-              environmentVariables={environmentVariables}
+          message.content.some(
+            (content) => content.toolName === "add_integrations",
+          ) && (
+            <IntegrationsSetupStatus
+              message={message as IntegrationToolMessage}
             />
           )}
       </div>
@@ -79,113 +55,8 @@ const PureMessageItem = ({
 };
 
 export const MessageItem = memo(PureMessageItem, (prevProps, nextProps) => {
-  if (prevProps.pendingMessage !== nextProps.pendingMessage) return false;
-  if (prevProps.message.content !== nextProps.message.content) return false;
+  if (!fastDeepEqual(prevProps.message, nextProps.message)) {
+    return false;
+  }
   return true;
 });
-
-const PureSetupIntegration = ({
-  message,
-  integrationTemplates,
-  setMessages,
-  setPendingMessage,
-  environmentVariables,
-}: {
-  message: z.infer<typeof toolMessageSchema>;
-  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
-  environmentVariables: RouterOutputs["environmentVariables"]["list"];
-  setMessages: (messages: ChatMessage[]) => void;
-  setPendingMessage: (pendingMessage: "thinking" | "waiting" | null) => void;
-}) => {
-  const toolInfo = message.content as unknown as {
-    toolArgs: { integrations: "postgresql"[] };
-    toolResult: { status: "pending" | "success" | "error" | "cancelled" };
-  };
-
-  const trpc = useTRPC();
-
-  const updateMessageMutation = useMutation(
-    trpc.chats.updateToolMessage.mutationOptions({
-      onSuccess: (data) => {
-        // @ts-expect-error
-        setMessages((messages: ChatMessage[]) => {
-          const message = messages.find((m) => m.id === data.id);
-          if (message) {
-            message.content = data.content as z.infer<
-              typeof toolMessageSchema
-            >["content"];
-          }
-          return messages;
-        });
-        setPendingMessage(null);
-      },
-      onError: () => {
-        toast({
-          title: "Error",
-          description: "Failed to update message",
-        });
-        setPendingMessage(null);
-      },
-    }),
-  );
-
-  for (const integration of toolInfo.toolArgs.integrations) {
-    switch (integration) {
-      case "postgresql": {
-        const postgresIntegrationTemplate = integrationTemplates?.find(
-          (integrationTemplate) => integrationTemplate.key === "postgresql",
-        );
-
-        if (!postgresIntegrationTemplate) {
-          return null;
-        }
-
-        return (
-          <ChatIntegrationDialog
-            integrationTemplate={postgresIntegrationTemplate}
-            environmentVariables={environmentVariables}
-            status={toolInfo.toolResult.status}
-            onSuccess={() => {
-              updateMessageMutation.mutate({
-                where: { messageId: message.id as string },
-                data: {
-                  content: [
-                    {
-                      type: "tool-result",
-                      toolName: message.content[0]?.toolName as string,
-                      toolCallId: message.content[0]?.toolCallId as string,
-                      result: { status: "success" },
-                    },
-                  ],
-                },
-              });
-            }}
-            onCancel={() => {
-              updateMessageMutation.mutate({
-                where: { messageId: message.id as string },
-                data: {
-                  content: [
-                    {
-                      type: "tool-result",
-                      toolName: message.content[0]?.toolName as string,
-                      toolCallId: message.content[0]?.toolCallId as string,
-                      result: { status: "cancelled" },
-                    },
-                  ],
-                },
-              });
-            }}
-          />
-        );
-      }
-    }
-  }
-};
-
-export const SetupIntegration = memo(
-  PureSetupIntegration,
-  (prevProps, nextProps) => {
-    if (prevProps.message !== nextProps.message) return false;
-    return true;
-  },
-);

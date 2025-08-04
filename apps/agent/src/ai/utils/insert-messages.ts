@@ -1,7 +1,8 @@
+import type { z } from "zod";
+
 import { and, db, eq } from "@weldr/db";
 import { chatMessages, chats } from "@weldr/db/schema";
 import type { addMessagesInputSchema } from "@weldr/shared/validators/chats";
-import type { z } from "zod";
 
 export async function insertMessages({
   input,
@@ -27,8 +28,9 @@ export async function insertMessages({
   for (const item of input.messages) {
     messages.push({
       visibility: item.visibility,
-      content: item.content,
       role: item.role,
+      content: item.content,
+      metadata: item.role === "assistant" ? item.metadata : undefined,
       userId: input.userId,
       chatId: input.chatId,
     });

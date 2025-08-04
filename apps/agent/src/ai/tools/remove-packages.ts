@@ -1,7 +1,8 @@
-import { runCommand } from "@/ai/utils/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
-import { Logger } from "@weldr/shared/logger";
 import { z } from "zod";
+import { runCommand } from "@/lib/commands";
+import { WORKSPACE_DIR } from "@/lib/constants";
+
+import { Logger } from "@weldr/shared/logger";
 import { createTool } from "../utils/tools";
 
 export const removePackagesTool = createTool({
@@ -49,7 +50,7 @@ export const removePackagesTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: stderr || "Failed to remove packages",
       };
     }
@@ -58,7 +59,7 @@ export const removePackagesTool = createTool({
 
     // The caller of this tool is responsible for updating the database after removing packages.
     return {
-      success: true,
+      success: true as const,
       packages: input.packages,
     };
   },

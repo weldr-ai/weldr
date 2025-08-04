@@ -1,7 +1,8 @@
 "use client";
 
-import { useTRPC } from "@/lib/trpc/react";
 import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/lib/trpc/react";
+
 import type { RouterOutputs } from "@weldr/api";
 import {
   Card,
@@ -11,18 +12,17 @@ import {
   CardTitle,
 } from "@weldr/ui/components/card";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
-import { useMemo } from "react";
 import { AddIntegrationDialog } from "../add-integration-dialog";
 
 export function IntegrationsSection({
   projectId,
-  integrations: initialIntegrations,
   integrationTemplates,
+  integrations: initialIntegrations,
   environmentVariables,
 }: {
   projectId: string;
-  integrations: RouterOutputs["projects"]["byId"]["integrations"];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  integrations: RouterOutputs["projects"]["byId"]["integrations"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) {
   const trpc = useTRPC();
@@ -38,30 +38,6 @@ export function IntegrationsSection({
     ),
   );
 
-  const mappedIntegrations = useMemo(() => {
-    return integrationTemplates.reduce(
-      (acc, template) => {
-        const integration = integrations.find(
-          (integration) => integration.integrationTemplate.id === template.id,
-        );
-
-        return Object.assign(acc, {
-          [template.key]: {
-            integration,
-            template,
-          },
-        });
-      },
-      {} as Record<
-        string,
-        {
-          integration: RouterOutputs["projects"]["byId"]["integrations"][0];
-          template: RouterOutputs["integrationTemplates"]["list"][0];
-        }
-      >,
-    );
-  }, [integrations, integrationTemplates]);
-
   return (
     <Card className="h-full">
       <CardHeader>
@@ -71,11 +47,17 @@ export function IntegrationsSection({
       <CardContent className="h-full">
         <ScrollArea className="h-[calc(100%-65px)]">
           <div className="grid size-full grid-cols-3 gap-4 pb-6">
-            {Object.entries(mappedIntegrations).map(([key, integration]) => (
+            {integrationTemplates.map((integrationTemplate) => (
               <AddIntegrationDialog
-                key={key}
-                integrationTemplate={integration.template}
-                integration={integration.integration}
+                key={integrationTemplate.id}
+                integrationTemplate={
+                  integrationTemplate as RouterOutputs["integrationTemplates"]["byId"]
+                }
+                integration={integrations?.find(
+                  (integration) =>
+                    integration.integrationTemplate.id ===
+                    integrationTemplate.id,
+                )}
                 environmentVariables={environmentVariables}
               />
             ))}

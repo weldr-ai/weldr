@@ -1,5 +1,6 @@
 import { WORKSPACE_DIR } from "@/lib/constants";
-import { runCommand } from "../commands";
+
+import { runCommand } from "../../../lib/commands";
 
 function resolveRelativePath(
   currentFilePath: string,

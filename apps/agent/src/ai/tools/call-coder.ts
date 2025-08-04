@@ -1,8 +1,9 @@
+import { z } from "zod";
+
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import { planSchema } from "@weldr/shared/validators/plans";
-import { z } from "zod";
+import { planSchema, taskSchema } from "@weldr/shared/validators/plans";
 import { createTasks } from "../utils/tasks";
 import { createTool } from "../utils/tools";
 
@@ -13,8 +14,11 @@ export const callCoderTool = createTool({
     "After all setup is complete and the user has confirmed the plan. This should be the final action.",
   inputSchema: planSchema.describe("The plan to be completed"),
   outputSchema: z.discriminatedUnion("success", [
-    planSchema.extend({
+    z.object({
       success: z.literal(true),
+      commitMessage: z.string(),
+      description: z.string(),
+      tasks: z.array(taskSchema),
     }),
   ]),
   execute: async ({ input, context }) => {
@@ -78,7 +82,7 @@ export const callCoderTool = createTool({
     logger.info("Version updated successfully");
 
     return {
-      success: true,
+      success: true as const,
       commitMessage: input.commitMessage,
       description: input.description,
       tasks: input.tasks,

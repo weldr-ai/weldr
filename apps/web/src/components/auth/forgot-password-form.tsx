@@ -3,11 +3,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoaderIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-
 import { SupportLinks } from "@/components/auth/support-links";
+
 import { authClient } from "@weldr/auth/client";
 import { forgotPasswordSchema } from "@weldr/shared/validators/auth";
 import { Button } from "@weldr/ui/components/button";
@@ -30,13 +31,8 @@ import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
-import { useRouter } from "next/navigation";
 
-export function ForgotPasswordForm({
-  className,
-}: {
-  className?: string;
-}) {
+export function ForgotPasswordForm({ className }: { className?: string }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 

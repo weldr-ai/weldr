@@ -1,19 +1,14 @@
 "use client";
 
+import { createContext, type ReactNode, useContext, useState } from "react";
+
 import type { RouterOutputs } from "@weldr/api";
 import type { Project, Version } from "@weldr/shared/types";
-import {
-  type ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
 
 type PartialProject = Partial<Project & { currentVersion: Partial<Version> }>;
 
 interface ProjectContextType {
-  project: RouterOutputs["projects"]["byId"] | null;
+  project: RouterOutputs["projects"]["byId"];
   updateProjectData: (data: PartialProject) => void;
 }
 
@@ -37,12 +32,9 @@ export function ProjectProvider({
   const [projectData, setProjectData] =
     useState<RouterOutputs["projects"]["byId"]>(project);
 
-  useEffect(() => {
-    setProjectData(project);
-  }, [project]);
-
   return (
     <ProjectContext.Provider
+      key={project.id}
       value={{
         project: projectData,
         updateProjectData: (data: PartialProject) => {
@@ -54,8 +46,6 @@ export function ProjectProvider({
 
             // Update simple fields
             if (data.title !== undefined) updated.title = data.title;
-            if (data.initiatedAt !== undefined)
-              updated.initiatedAt = data.initiatedAt;
 
             // Handle currentVersion updates separately
             if (data.currentVersion) {

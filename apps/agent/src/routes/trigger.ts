@@ -1,8 +1,10 @@
+import { createRoute, z } from "@hono/zod-openapi";
 import { initVersion } from "@/ai/utils/init-version";
 import { insertMessages } from "@/ai/utils/insert-messages";
+import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
 import { createRouter } from "@/lib/utils";
 import { workflow } from "@/workflow";
-import { createRoute, z } from "@hono/zod-openapi";
+
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
@@ -88,11 +90,24 @@ router.openapi(route, async (c) => {
       eq(projects.id, projectId),
       eq(projects.userId, session.user.id),
     ),
+    with: {
+      integrations: {
+        with: {
+          integrationTemplate: {
+            with: {
+              category: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!project) {
     return c.json({ error: "Project not found" }, 404);
   }
+
+  const installedCategories = await getInstalledCategories(projectId);
 
   let activeVersion = await db.query.versions.findFirst({
     where: and(
@@ -126,9 +141,11 @@ router.openapi(route, async (c) => {
 
   // Store the context we need for the workflow
   const workflowContext = c.get("workflowContext");
-  workflowContext.set("project", project);
+  workflowContext.set("project", {
+    ...project,
+    integrationCategories: new Set(installedCategories),
+  });
   workflowContext.set("version", activeVersion);
-  workflowContext.set("user", session.user);
   workflowContext.set("isXML", true);
 
   if (

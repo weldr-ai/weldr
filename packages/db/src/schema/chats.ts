@@ -1,5 +1,3 @@
-import { nanoid } from "@weldr/shared/nanoid";
-import type { ChatMessageContent } from "@weldr/shared/types";
 import { relations } from "drizzle-orm";
 import {
   index,
@@ -10,6 +8,12 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+
+import { nanoid } from "@weldr/shared/nanoid";
+import type {
+  AiMessageMetadata,
+  ChatMessageContent,
+} from "@weldr/shared/types";
 import { users } from "./auth";
 import { projects } from "./projects";
 import { versions } from "./versions";
@@ -64,6 +68,7 @@ export const chatMessages = pgTable(
     visibility: messageVisibility("visibility").notNull().default("public"),
     role: messageRoles("role").notNull().default("assistant"),
     content: jsonb("content").$type<ChatMessageContent>().notNull(),
+    metadata: jsonb("metadata").$type<AiMessageMetadata>(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     chatId: text("chat_id")
       .references(() => chats.id, { onDelete: "cascade" })

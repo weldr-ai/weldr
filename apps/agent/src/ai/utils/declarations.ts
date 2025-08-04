@@ -1,4 +1,6 @@
+import { inArray } from "drizzle-orm";
 import type { WorkflowContext } from "@/workflow/context";
+
 import { and, db, eq } from "@weldr/db";
 import {
   declarationIntegrations,
@@ -12,7 +14,6 @@ import {
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
-import { inArray } from "drizzle-orm";
 import { extractDeclarations } from "./extract-declarations";
 import { queueDeclarationSemanticDataGeneration } from "./semantic-data-jobs";
 
@@ -69,7 +70,7 @@ export const createDeclarationFromTask = async ({
   }
 
   return await db.transaction(async (tx) => {
-    let node: typeof nodes.$inferSelect | undefined = undefined;
+    let node: typeof nodes.$inferSelect | undefined;
     let previousDeclarationId: string | null = null;
 
     if (taskData.operation === "create") {
@@ -293,11 +294,17 @@ export async function extractAndSaveDeclarations({
 
   try {
     const pathAliases: Record<string, string> = {};
-    if (project.config?.server && project.config?.client) {
-      pathAliases["@/"] = "web/";
-      pathAliases["@server/"] = "server/";
-    } else if (project.config?.server || project.config?.client) {
-      pathAliases["@/"] = "src/";
+
+    if (
+      project.integrationCategories.has("frontend") &&
+      project.integrationCategories.has("backend")
+    ) {
+      pathAliases["@repo/web/*"] = "./src/*";
+      pathAliases["@repo/server/*"] = "../server/src/*";
+    } else if (project.integrationCategories.has("backend")) {
+      pathAliases["@repo/server/*"] = "./src/*";
+    } else if (project.integrationCategories.has("frontend")) {
+      pathAliases["@repo/web/*"] = "./src/*";
     }
 
     const extracted = await extractDeclarations({

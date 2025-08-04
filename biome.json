@@ -1,57 +1,66 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "organizeImports": {
-    "enabled": true,
-    "ignore": [
-      "**/.next/**",
-      "**/dist/**",
-      "**/node_modules/**",
-      "**/.nitro/**",
-      "**/.turbo/**",
-      "**/temp/**",
-      "**/.temp/**",
-      "**/data/**"
+  "$schema": "https://biomejs.dev/schemas/2.1.1/schema.json",
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "apps/**",
+      "packages/**",
+      "!**/.next/**",
+      "!**/dist/**",
+      "!**/node_modules/**",
+      "!**/.nitro/**",
+      "!**/.turbo/**",
+      "!**/temp/**",
+      "!**/.temp/**",
+      "!**/data/**",
+      "!**/build/**"
     ]
   },
   "formatter": {
+    "enabled": true,
     "indentStyle": "space",
-    "ignore": [
-      "**/.next/**",
-      "**/dist/**",
-      "**/node_modules/**",
-      "**/.nitro/**",
-      "**/.turbo/**",
-      "**/temp/**",
-      "**/.temp/**",
-      "**/data/**"
-    ]
+    "indentWidth": 2
   },
-  "linter": {
-    "rules": {
-      "recommended": true,
-      "correctness": {
-        "useExhaustiveDependencies": "info"
-      },
-      "nursery": {
-        "useSortedClasses": {
-          "level": "error",
-          "fix": "safe",
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
           "options": {
-            "attributes": ["className"],
-            "functions": ["cn"]
+            "groups": [
+              ":BUN:",
+              ":NODE:",
+              ["**", "!@weldr/**", "!./**", "!../**"],
+              ":BLANK_LINE:",
+              ["@weldr/**"],
+              ["./", "../", "/**"]
+            ]
           }
         }
       }
+    }
+  },
+  "linter": {
+    "domains": {
+      "react": "recommended",
+      "next": "recommended"
     },
-    "ignore": [
-      "**/.next/**",
-      "**/dist/**",
-      "**/node_modules/**",
-      "**/.nitro/**",
-      "**/.turbo/**",
-      "**/temp/**",
-      "**/.temp/**",
-      "**/data/**"
-    ]
+    "rules": {
+      "recommended": true,
+      "a11y": "info",
+      "correctness": {
+        "useExhaustiveDependencies": "info",
+        "useHookAtTopLevel": "info"
+      },
+      "nursery": {
+        "useSortedClasses": {
+          "level": "warn",
+          "fix": "safe",
+          "options": {
+            "functions": ["clsx", "cva", "cn"]
+          }
+        }
+      }
+    }
   }
 }

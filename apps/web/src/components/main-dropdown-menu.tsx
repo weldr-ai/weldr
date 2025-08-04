@@ -1,7 +1,5 @@
 "use client";
 
-import { authClient } from "@weldr/auth/client";
-
 import {
   BoxesIcon,
   ExternalLinkIcon,
@@ -16,8 +14,12 @@ import {
   SettingsIcon,
   SunIcon,
 } from "lucide-react";
-
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { useUIStore } from "@/lib/context/ui-store";
+
+import { authClient } from "@weldr/auth/client";
 import { Button } from "@weldr/ui/components/button";
 import {
   DropdownMenu,
@@ -34,9 +36,6 @@ import {
 } from "@weldr/ui/components/dropdown-menu";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
-import { useTheme } from "next-themes";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export function MainDropdownMenu({
   side = "bottom",

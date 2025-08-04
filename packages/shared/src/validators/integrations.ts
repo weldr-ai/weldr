@@ -1,30 +1,118 @@
 import { z } from "zod";
 
-export const createIntegrationSchema = z.object({
-  name: z.string(),
+import { environmentVariableSchema } from "./environment-variables";
+
+export const integrationKeySchema = z.enum([
+  "orpc",
+  "tanstack-start",
+  "postgresql",
+  "better-auth",
+]);
+
+export const integrationStatusSchema = z.enum([
+  "queued",
+  "blocked",
+  "installing",
+  "completed",
+  "cancelled",
+  "failed",
+]);
+
+const baseIntegrationSchema = z.object({
+  id: z.string(),
+  key: integrationKeySchema,
+  name: z.string().optional(),
+  status: integrationStatusSchema,
+  createdAt: z.date(),
   projectId: z.string(),
+  userId: z.string(),
   integrationTemplateId: z.string(),
   environmentVariableMappings: z.array(
     z.object({
-      envVarId: z.string(),
-      configKey: z.string(),
+      integrationId: z.string(),
+      mapTo: z.string(),
+      environmentVariableId: z.string(),
+      environmentVariable: environmentVariableSchema,
     }),
+  ),
+});
+
+export const honoIntegrationSchema = baseIntegrationSchema.extend({
+  key: z.literal("orpc"),
+  options: z.null(),
+});
+
+export const tanstackStartIntegrationSchema = baseIntegrationSchema.extend({
+  key: z.literal("tanstack-start"),
+  options: z.null(),
+});
+
+export const postgresqlIntegrationSchema = baseIntegrationSchema.extend({
+  key: z.literal("postgresql"),
+  options: z.object({
+    orm: z.enum(["drizzle", "prisma"]).default("drizzle"),
+  }),
+});
+
+export const betterAuthIntegrationSchema = baseIntegrationSchema.extend({
+  key: z.literal("better-auth"),
+  options: z.object({
+    socialProviders: z.enum(["github", "google", "microsoft"]).array(),
+    plugins: z
+      .enum(["admin", "oAuthProxy", "openAPI", "organization", "stripe"])
+      .array(),
+    emailVerifiion: z.boolean().default(false),
+    emailAndPassword: z.boolean().default(true),
+    stripeIntegration: z.boolean().default(false),
+  }),
+});
+
+export const integrationSchema = z.discriminatedUnion("key", [
+  honoIntegrationSchema,
+  tanstackStartIntegrationSchema,
+  postgresqlIntegrationSchema,
+  betterAuthIntegrationSchema,
+]);
+
+export const integrationEnvironmentVariableMappingSchema = z.object({
+  envVarId: z.string(),
+  configKey: z.string(),
+});
+
+export const createIntegrationSchema = z.object({
+  name: z.string().min(1).optional(),
+  projectId: z.string().min(1),
+  integrationTemplateId: z.string().min(1),
+  environmentVariableMappings: z.array(
+    integrationEnvironmentVariableMappingSchema,
   ),
 });
 
 export const updateIntegrationSchema = z.object({
   where: z.object({
-    id: z.string(),
+    id: z.string().min(1),
   }),
   payload: z.object({
-    name: z.string().optional(),
+    name: z.string().min(1).optional(),
+    status: integrationStatusSchema.optional(),
     environmentVariableMappings: z
-      .array(
-        z.object({
-          envVarId: z.string(),
-          configKey: z.string(),
-        }),
-      )
+      .array(integrationEnvironmentVariableMappingSchema)
       .optional(),
   }),
+});
+
+export const createBatchIntegrationsSchema = z.object({
+  projectId: z.string().min(1),
+  triggerWorkflow: z.boolean().optional().default(false),
+  integrations: z
+    .array(
+      z.object({
+        name: z.string().min(1).optional(),
+        integrationTemplateId: z.string().min(1),
+        environmentVariableMappings: z.array(
+          integrationEnvironmentVariableMappingSchema,
+        ),
+      }),
+    )
+    .min(1),
 });

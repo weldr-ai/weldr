@@ -4,6 +4,7 @@ export * from "./chats";
 export * from "./declarations";
 export * from "./dependencies";
 export * from "./environment-variables";
+export * from "./integration-categories";
 export * from "./integration-templates";
 export * from "./integrations";
 export * from "./nodes";

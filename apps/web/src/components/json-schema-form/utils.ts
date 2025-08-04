@@ -1,5 +1,6 @@
-import type { JsonSchema } from "@weldr/shared/types";
 import type { JSONSchema7Definition } from "json-schema";
+
+import type { JsonSchema } from "@weldr/shared/types";
 
 export function isJsonSchema(
   schema: JSONSchema7Definition,

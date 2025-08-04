@@ -1,0 +1,18 @@
+// ...existing code...
+
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./lib/auth";
+
+// ...existing code...
+
+const server = createServer(async (req, res) => {
+  // ...existing code...
+
+  if (req.url?.startsWith("/api/auth")) {
+    return toNodeHandler(auth)(req, res);
+  }
+
+  // ...existing code...
+});
+
+// ...existing code...

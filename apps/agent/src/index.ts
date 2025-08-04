@@ -1,7 +1,8 @@
 import { serve } from "@hono/node-server";
-import { Logger } from "@weldr/shared/logger";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
+
+import { Logger } from "@weldr/shared/logger";
 import { recoverSemanticDataJobs } from "./ai/utils/semantic-data-jobs";
 import { configureOpenAPI, createRouter } from "./lib/utils";
 import { loggerMiddleware } from "./middlewares/logger";
@@ -16,7 +17,7 @@ app
   .use(loggerMiddleware())
   .use(
     cors({
-      origin: "http://localhost:3000",
+      origin: process.env.CORS_ORIGIN?.split(",") ?? "http://localhost:3000",
       allowHeaders: ["Content-Type", "Authorization"],
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       exposeHeaders: ["Content-Type", "Authorization"],
@@ -71,15 +72,9 @@ serve(
   },
   async (info) => {
     Logger.info(`Server is running on http://localhost:${info.port}`);
-
-    const projectId = process.env.PROJECT_ID;
-
-    if (!projectId) {
-      throw new Error("PROJECT_ID is not set");
+    if (process.env.PROJECT_ID) {
+      await recoverWorkflow();
+      await recoverSemanticDataJobs();
     }
-
-    await recoverWorkflow();
-
-    await recoverSemanticDataJobs();
   },
 );

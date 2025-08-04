@@ -1,14 +1,15 @@
-import { generateGradient } from "@/lib/gradient";
-import { nanoid } from "@weldr/shared/nanoid";
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
+import { generateGradient } from "@/lib/gradient";
+
+import { nanoid } from "@weldr/shared/nanoid";
 
 export const config = {
   runtime: "edge",
 };
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: { name: string } },
 ) {
   const { name } = await params;
@@ -23,7 +24,6 @@ export async function GET(
   ]);
 
   const pngSvg = (
-    // biome-ignore lint/a11y/noSvgWithoutTitle: <explanation>
     <svg
       viewBox={`0 0 ${size} ${size}`}
       fill="none"

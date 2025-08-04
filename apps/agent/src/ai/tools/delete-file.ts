@@ -1,10 +1,11 @@
-import { runCommand } from "@/ai/utils/commands";
+import { z } from "zod";
+import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
+
 import { and, db, eq, inArray } from "@weldr/db";
 import { declarations, versionDeclarations, versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
-import { z } from "zod";
 import { createTool } from "../utils/tools";
 
 export const deleteFileTool = createTool({
@@ -49,7 +50,7 @@ export const deleteFileTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: stderr || `Failed to delete file ${filePath}`,
       };
     }
@@ -84,8 +85,8 @@ export const deleteFileTool = createTool({
 
     // The caller of this tool is responsible for updating the database.
     return {
+      success: true as const,
       filePath,
-      success: true,
     };
   },
 });

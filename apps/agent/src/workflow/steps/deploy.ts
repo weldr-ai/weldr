@@ -1,5 +1,6 @@
-import { runCommand } from "@/ai/utils/commands";
+import { runCommand } from "@/lib/commands";
 import { SCRIPTS_DIR } from "@/lib/constants";
+
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";

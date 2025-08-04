@@ -12,10 +12,9 @@ import { useState } from "react";
 import SuperJSON from "superjson";
 
 import type { AppRouter } from "@weldr/api";
-
 import { createQueryClient } from "./query-client";
 
-let clientQueryClientSingleton: QueryClient | undefined = undefined;
+let clientQueryClientSingleton: QueryClient | undefined;
 const getQueryClient = () => {
   if (typeof window === "undefined") {
     // Server: always make a new query client
@@ -23,7 +22,7 @@ const getQueryClient = () => {
   }
 
   // Browser: use singleton pattern to keep the same query client
-  // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+  // biome-ignore lint/suspicious/noAssignInExpressions: reason
   return (clientQueryClientSingleton ??= createQueryClient());
 };
 

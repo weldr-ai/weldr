@@ -1,7 +1,5 @@
 "use client";
 
-import type { RouterOutputs } from "@weldr/api";
-import { Button } from "@weldr/ui/components/button";
 import type { ColorMode, Edge } from "@xyflow/react";
 import {
   Background,
@@ -15,6 +13,9 @@ import {
 import { hierarchy, tree } from "d3-hierarchy";
 import { ArrowLeftIcon, MinusIcon, PlusIcon } from "lucide-react";
 
+import type { RouterOutputs } from "@weldr/api";
+import { Button } from "@weldr/ui/components/button";
+
 import "@xyflow/react/dist/base.css";
 
 import {
@@ -24,6 +25,7 @@ import {
 } from "@weldr/ui/components/tooltip";
 import "@weldr/ui/styles/canvas.css";
 import { useTheme } from "next-themes";
+
 import { type TVersionNode, VersionNode } from "./node";
 
 type VersionEdge = Edge & {
@@ -103,7 +105,7 @@ export function VersionsCanvas({
 
   return (
     <ReactFlow
-      className="rounded-xl border"
+      className="border"
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}

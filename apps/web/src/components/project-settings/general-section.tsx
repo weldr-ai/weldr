@@ -1,4 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { DownloadIcon, LoaderIcon, TrashIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import type { z } from "zod";
+import { getProjectDownloadUrl } from "@/lib/actions/get-project-download-url";
+import { useTRPC } from "@/lib/trpc/react";
+
 import type { RouterOutputs } from "@weldr/api";
 import { updateProjectSchema } from "@weldr/shared/validators/projects";
 import { Button } from "@weldr/ui/components/button";
@@ -19,21 +28,13 @@ import {
 } from "@weldr/ui/components/form";
 import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { DownloadIcon, LoaderIcon, TrashIcon } from "lucide-react";
-
-import { getProjectDownloadUrl } from "@/lib/actions/get-project-download-url";
-import { useTRPC } from "@/lib/trpc/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import type { z } from "zod";
 import { DeleteAlertDialog } from "../delete-alert-dialog";
-import { ThemeCustomization } from "./theme-customization";
 
 export function GeneralSection({
   project,
-}: { project: RouterOutputs["projects"]["byId"] }) {
+}: {
+  project: RouterOutputs["projects"]["byId"];
+}) {
   const router = useRouter();
   const [isDownloading, setIsDownloading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -166,15 +167,6 @@ export function GeneralSection({
               </div>
             </form>
           </Form>
-        </div>
-        <div className="flex items-center justify-between gap-2 rounded-lg border p-4">
-          <div className="flex flex-col">
-            <h3 className="font-medium">Theme</h3>
-            <p className="text-muted-foreground text-sm">
-              Customize your project theme.
-            </p>
-          </div>
-          <ThemeCustomization project={project} />
         </div>
         <div className="flex items-center justify-between gap-2 rounded-lg border p-4">
           <div className="flex flex-col">

@@ -80,7 +80,7 @@ This is Weldr, a TypeScript monorepo for building AI-powered development tools a
 ## Available Commands
 
 ### Commands
-- Type check: `pnpm run check-types`
+- Type check: `pnpm run typecheck`
 - Lint and Format: `pnpm run check:fix`
 - Clean: `pnpm run clean`
 

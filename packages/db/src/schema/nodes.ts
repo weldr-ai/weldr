@@ -1,6 +1,7 @@
-import { nanoid } from "@weldr/shared/nanoid";
 import { relations } from "drizzle-orm";
 import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+
+import { nanoid } from "@weldr/shared/nanoid";
 import { declarations } from "./declarations";
 import { projects } from "./projects";
 

@@ -1,20 +1,38 @@
 import { TRPCError } from "@trpc/server";
-import { db } from "@weldr/db";
 import { z } from "zod";
+
+import { db } from "@weldr/db";
 import { createTRPCRouter, publicProcedure } from "../init";
 
 export const integrationTemplatesRouter = createTRPCRouter({
   list: publicProcedure.query(async () => {
     return await db.query.integrationTemplates.findMany({
       columns: {
-        config: false,
-        llmTxt: false,
-        docsUrl: false,
+        id: true,
+        name: true,
+        description: true,
+        key: true,
+        version: true,
+        variables: true,
+        options: true,
+        recommendedOptions: true,
+        isRecommended: true,
       },
-      orderBy: (templates, { desc }) => [desc(templates.createdAt)],
+      with: {
+        category: {
+          columns: {
+            id: true,
+            key: true,
+            description: true,
+            priority: true,
+            recommendedIntegrations: true,
+            dependencies: true,
+          },
+        },
+      },
+      orderBy: (templates, { asc }) => [asc(templates.key)],
     });
   }),
-
   byId: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
@@ -22,9 +40,18 @@ export const integrationTemplatesRouter = createTRPCRouter({
         {
           where: (templates, { eq }) => eq(templates.id, input.id),
           columns: {
-            config: false,
-            llmTxt: false,
-            docsUrl: false,
+            id: true,
+            name: true,
+            description: true,
+            key: true,
+            isRecommended: true,
+            version: true,
+            variables: true,
+            options: true,
+            recommendedOptions: true,
+          },
+          with: {
+            category: true,
           },
         },
       );

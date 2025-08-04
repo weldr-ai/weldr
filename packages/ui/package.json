@@ -15,7 +15,7 @@
   "scripts": {
     "add-component": "pnpm dlx shadcn-ui add",
     "clean": "git clean -xdf .turbo node_modules dist",
-    "check-types": "tsc --noEmit --emitDeclarationOnly false"
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -69,7 +69,7 @@
     "tailwind-scrollbar": "^4.0.2",
     "tw-animate-css": "^1.2.8",
     "vaul": "^0.9.9",
-    "zod": "^3.25.67"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.4",

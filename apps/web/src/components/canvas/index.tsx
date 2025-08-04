@@ -1,9 +1,6 @@
 "use client";
 
-import { useTRPC } from "@/lib/trpc/react";
-import type { CanvasNode } from "@/types";
-import { Button } from "@weldr/ui/components/button";
-import { toast } from "@weldr/ui/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
 import type { ColorMode, Edge } from "@xyflow/react";
 import {
   Background,
@@ -16,17 +13,22 @@ import {
 } from "@xyflow/react";
 import { ArrowUpDownIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { useTRPC } from "@/lib/trpc/react";
+import type { CanvasNode } from "@/types";
+
+import { Button } from "@weldr/ui/components/button";
+import { toast } from "@weldr/ui/hooks/use-toast";
 import { DbModelNode } from "./nodes/declaration/db-model";
 import { EndpointNode } from "./nodes/declaration/endpoint";
 import { PageNode } from "./nodes/declaration/page";
 
-import { useMutation } from "@tanstack/react-query";
-
 import "@xyflow/react/dist/base.css";
+
 import { useTheme } from "next-themes";
 
 import type { RouterOutputs } from "@weldr/api";
 import "@weldr/ui/styles/canvas.css";
+
 import { Chat } from "../chat";
 import { Placeholder } from "./placeholder";
 
@@ -40,14 +42,14 @@ export function Canvas({
   initialNodes,
   initialEdges,
   project,
-  integrationTemplates,
   environmentVariables,
+  integrationTemplates,
 }: {
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
   project: RouterOutputs["projects"]["byId"];
-  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const viewPort = useViewport();
@@ -325,9 +327,9 @@ export function Canvas({
       <Panel position="bottom-center" className="max-h-[400px] w-[500px]">
         <Chat
           project={project}
-          integrationTemplates={integrationTemplates}
           version={project.currentVersion}
           environmentVariables={environmentVariables}
+          integrationTemplates={integrationTemplates}
         />
       </Panel>
 

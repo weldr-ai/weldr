@@ -10,26 +10,25 @@
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
-    "check": "pnpm with-env drizzle-kit check --config src/config.ts",
-    "generate": "pnpm with-env drizzle-kit generate --config src/config.ts",
-    "migrate": "pnpm with-env drizzle-kit migrate --config src/config.ts",
-    "migrate:drop": "pnpm with-env drizzle-kit drop --config src/config.ts",
-    "pull": "pnpm with-env drizzle-kit introspect --config src/config.ts",
-    "push": "pnpm with-env drizzle-kit push --config src/config.ts",
-    "studio": "pnpm with-env drizzle-kit studio --config src/config.ts",
-    "seed": "pnpm with-env tsx src/scripts/seed.ts",
-    "up": "pnpm with-env drizzle-kit up --config src/config.ts",
-    "check-types": "tsc --noEmit --emitDeclarationOnly false",
+    "check": "pnpm with-env drizzle-kit check",
+    "generate": "pnpm with-env drizzle-kit generate",
+    "migrate": "pnpm with-env drizzle-kit migrate",
+    "migrate:drop": "pnpm with-env drizzle-kit drop",
+    "pull": "pnpm with-env drizzle-kit introspect",
+    "push": "pnpm with-env drizzle-kit push",
+    "studio": "pnpm with-env drizzle-kit studio",
+    "seed": "pnpm with-env tsx src/seed.ts",
+    "up": "pnpm with-env drizzle-kit up",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
     "@weldr/shared": "workspace:*",
     "drizzle-orm": "^0.38.4",
     "drizzle-zod": "^0.6.1",
-    "pg": "^8.15.6"
+    "postgres": "^3.4.7"
   },
   "devDependencies": {
-    "@types/pg": "^8.11.14",
     "@weldr/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.4",
     "drizzle-kit": "^0.30.6",

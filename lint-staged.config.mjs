@@ -1,5 +1,5 @@
 const buildBiomeCommand = () => "pnpm check";
-const buildCheckTypesCommand = () => "pnpm check-types";
+const buildCheckTypesCommand = () => "pnpm typecheck";
 
 export default {
   "*.{js,cjs,mjs,jsx,ts,tsx}": [buildCheckTypesCommand],

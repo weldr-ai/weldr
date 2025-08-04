@@ -1,12 +1,17 @@
 "use client";
 
-import type { CanvasNode } from "@/types";
-import type { RouterOutputs } from "@weldr/api";
-
+import { useQuery } from "@tanstack/react-query";
+import type { Edge } from "@xyflow/react";
+import { Badge, EyeIcon, GitGraphIcon } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import { Canvas } from "@/components/canvas";
 import { useProject } from "@/lib/context/project";
 import { useTRPC } from "@/lib/trpc/react";
-import { useQuery } from "@tanstack/react-query";
+import type { CanvasNode } from "@/types";
+
+import type { RouterOutputs } from "@weldr/api";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
 import {
   Tooltip,
@@ -14,11 +19,6 @@ import {
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
-import type { Edge } from "@xyflow/react";
-import { Badge, EyeIcon, GitGraphIcon } from "lucide-react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 import { ProjectSettings } from "./project-settings";
 import { SitePreviewDialog } from "./site-preview-dialog";
@@ -134,8 +134,8 @@ export function ProjectView({
             initialNodes={initialNodes}
             initialEdges={initialEdges}
             project={project}
-            integrationTemplates={integrationTemplates}
             environmentVariables={env}
+            integrationTemplates={integrationTemplates}
           />
         </div>
       </div>

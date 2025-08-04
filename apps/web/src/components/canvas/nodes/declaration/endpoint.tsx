@@ -1,14 +1,15 @@
+import { useQuery } from "@tanstack/react-query";
+import { Handle, Position, useReactFlow } from "@xyflow/react";
+import type { OpenAPIV3 } from "openapi-types";
+import { memo, useEffect, useRef, useState } from "react";
 import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
-import { useQuery } from "@tanstack/react-query";
+
 import { Badge } from "@weldr/ui/components/badge";
 import { Card } from "@weldr/ui/components/card";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import { cn } from "@weldr/ui/lib/utils";
-import { Handle, Position, useReactFlow } from "@xyflow/react";
-import type { OpenAPIV3 } from "openapi-types";
-import { memo, useEffect, useRef, useState } from "react";
 import { ProtectedBadge } from "../components/protected-badge";
 import { Status } from "../components/status";
 
@@ -19,11 +20,6 @@ export const EndpointNode = memo(
     positionAbsoluteX,
     positionAbsoluteY,
   }: CanvasNodeProps) => {
-    // Only handle endpoint declarations
-    if (_data.metadata?.specs?.type !== "endpoint") {
-      return null;
-    }
-
     const trpc = useTRPC();
 
     const { data: declaration } = useQuery(
@@ -44,7 +40,6 @@ export const EndpointNode = memo(
     const [isExpanded, setIsExpanded] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
 
-    // Handle click outside to collapse
     useEffect(() => {
       const handleClickOutside = (event: Event) => {
         if (
@@ -53,7 +48,6 @@ export const EndpointNode = memo(
           !cardRef.current.contains(event.target as Node)
         ) {
           setIsExpanded(false);
-          // Call onCollapse callback if it exists
           if (
             "onCollapse" in _data &&
             typeof (_data as unknown as Record<string, unknown>).onCollapse ===
@@ -74,7 +68,6 @@ export const EndpointNode = memo(
           !cardRef.current.contains(event.target as Node)
         ) {
           setIsExpanded(false);
-          // Call onCollapse callback if it exists
           if (
             "onCollapse" in _data &&
             typeof (_data as unknown as Record<string, unknown>).onCollapse ===
@@ -89,12 +82,10 @@ export const EndpointNode = memo(
       };
 
       if (isExpanded) {
-        // Find the React Flow container and listen to it
         const reactFlowContainer = document.querySelector(".react-flow");
         if (reactFlowContainer) {
           reactFlowContainer.addEventListener("click", handleClickOutside);
         }
-        // Also listen to document as fallback
         document.addEventListener("click", handleDocumentClick);
       }
 
@@ -105,7 +96,7 @@ export const EndpointNode = memo(
         }
         document.removeEventListener("click", handleDocumentClick);
       };
-    }, [isExpanded]);
+    }, [isExpanded, _data]);
 
     if (!specs || specs.type !== "endpoint") {
       return null;

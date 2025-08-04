@@ -5,11 +5,12 @@ import {
 } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+
 import { auth } from "@weldr/auth";
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
-import { NextResponse } from "next/server";
-import { z } from "zod";
 
 const BUCKET_NAME = process.env.GENERAL_BUCKET;
 
@@ -34,9 +35,9 @@ const s3Client = new S3Client({
   endpoint: process.env.TIGRIS_ENDPOINT_URL ?? "https://t3.storage.dev",
   forcePathStyle: false,
   credentials: {
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    // biome-ignore lint/style/noNonNullAssertion: reason
     accessKeyId: process.env.TIGRIS_ACCESS_KEY_ID!,
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    // biome-ignore lint/style/noNonNullAssertion: reason
     secretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY!,
   },
 });
@@ -120,10 +121,10 @@ export async function POST(request: Request) {
         size: file.size,
         url: imageUrl,
       });
-    } catch (error) {
+    } catch {
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to process request" },
       { status: 500 },

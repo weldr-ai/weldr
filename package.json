@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "turbo build",
-    "check-types": "turbo check-types",
+    "typecheck": "turbo typecheck",
     "clean": "rm -rf .turbo node_modules",
     "clean:ws": "turbo clean",
     "commit": "git-cz",
@@ -21,15 +21,15 @@
     "db:seed": "pnpm -F @weldr/db seed",
     "db:up": "pnpm -F @weldr/db up",
     "dev": "turbo dev",
-    "check": "biome check .",
-    "check:fix": "biome check --diagnostic-level=warn --write .",
+    "check": "biome check",
+    "check:fix": "biome check --diagnostic-level=warn --write",
     "lint:staged": "lint-staged",
     "publish-packages": "changeset version && changeset publish",
     "start": "turbo start",
     "preview": "turbo preview"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "2.1.1",
     "@changesets/cli": "^2.27.7",
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",

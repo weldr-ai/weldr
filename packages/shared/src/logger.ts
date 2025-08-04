@@ -1,8 +1,12 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import pino from "pino";
 import pinoCaller from "pino-caller";
 import pretty from "pino-pretty";
 
 const isDevelopment = process.env.NODE_ENV === "development";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export namespace Logger {
   const baseLogger = pino(
@@ -15,10 +19,6 @@ export namespace Logger {
   export const instance = isDevelopment
     ? pinoCaller(baseLogger, { relativeTo: __dirname })
     : pinoCaller(baseLogger, { relativeTo: process.cwd() });
-
-  export const get = (options?: Record<string, unknown>) => {
-    return instance.child(options || {});
-  };
 
   export const debug = (message: string, data?: Record<string, unknown>) =>
     instance.debug(data || {}, message);
@@ -37,4 +37,23 @@ export namespace Logger {
 
   export const warn = (message: string, data?: Record<string, unknown>) =>
     instance.warn(data || {}, message);
+
+  export const get = (options?: Record<string, unknown>) => {
+    const child = instance.child(options || {});
+
+    return {
+      info: (message: string, data?: Record<string, unknown>) =>
+        child.info(data || {}, message),
+      error: (message: string, data?: Record<string, unknown>) =>
+        child.error(data || {}, message),
+      fatal: (message: string, data?: Record<string, unknown>) =>
+        child.fatal(data || {}, message),
+      trace: (message: string, data?: Record<string, unknown>) =>
+        child.trace(data || {}, message),
+      warn: (message: string, data?: Record<string, unknown>) =>
+        child.warn(data || {}, message),
+      debug: (message: string, data?: Record<string, unknown>) =>
+        child.debug(data || {}, message),
+    };
+  };
 }

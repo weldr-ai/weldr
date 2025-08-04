@@ -1,9 +1,10 @@
 "use client";
 
-import { Button } from "@weldr/ui/components/button";
 import type { ChatRequestOptions, CreateMessage, Message } from "ai";
 import { motion } from "framer-motion";
 import { memo } from "react";
+
+import { Button } from "@weldr/ui/components/button";
 
 interface SuggestedActionsProps {
   chatId: string;

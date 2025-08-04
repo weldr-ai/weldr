@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  type ReactNode,
   createContext,
+  type ReactNode,
   useContext,
   useEffect,
   useState,
@@ -51,11 +51,7 @@ export function useUIStore(props?: {
   return context;
 }
 
-export function UIStoreProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function UIStoreProvider({ children }: { children: ReactNode }) {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [authDialogView, setAuthDialogView] = useState<"sign-in" | "sign-up">(
     "sign-in",

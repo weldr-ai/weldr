@@ -5,8 +5,8 @@ A lightweight development environment designed for AI agents to develop applicat
 ## Features
 
 - **Agent-Ready Environment**: Optimized for AI agents to autonomously develop applications
-- **Command Execution API**: HTTP endpoint to execute shell commands in a controlled environment  
-- **Project Boilerplates**: Ready-to-use templates for server-only, web-only, and full-stack projects
+- **Command Execution API**: HTTP endpoint to execute shell commands in a controlled environment
+- **Project Boilerplates**: Ready-to-use templates for standalone-backend, standalone-frontend, and full-stack projects
 - **Automated Scripts**: Collection of utility scripts for workspace management
 
 ## Available Scripts

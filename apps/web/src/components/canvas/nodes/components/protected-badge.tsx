@@ -1,9 +1,10 @@
+import { ShieldCheckIcon, ShieldXIcon } from "lucide-react";
+
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
-import { ShieldCheckIcon, ShieldXIcon } from "lucide-react";
 
 interface ProtectedBadgeProps {
   protected: boolean;

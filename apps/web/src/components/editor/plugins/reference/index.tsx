@@ -1,20 +1,21 @@
 "use client";
 
-import { $createReferenceNode } from "@/components/editor/plugins/reference/node";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   LexicalTypeaheadMenuPlugin,
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
-import { nanoid } from "@weldr/shared/nanoid";
-import type { referencePartSchema } from "@weldr/shared/validators/chats";
-import { ScrollArea } from "@weldr/ui/components/scroll-area";
-import { cn } from "@weldr/ui/lib/utils";
 import type { TextNode } from "lexical";
 import { useCallback, useMemo, useState } from "react";
 import * as ReactDOM from "react-dom";
 import type { z } from "zod";
+import { $createReferenceNode } from "@/components/editor/plugins/reference/node";
+
+import { nanoid } from "@weldr/shared/nanoid";
+import type { referencePartSchema } from "@weldr/shared/validators/chats";
+import { ScrollArea } from "@weldr/ui/components/scroll-area";
+import { cn } from "@weldr/ui/lib/utils";
 import { ReferenceBadge } from "../../reference-badge";
 
 export class ReferenceOption extends MenuOption {
@@ -172,7 +173,6 @@ export function ReferencesPlugin({
                         },
                       )}
                       tabIndex={-1}
-                      // biome-ignore lint/a11y/useSemanticElements: <explanation>
                       role="option"
                       aria-selected={selectedIndex === i}
                       onClick={() => {

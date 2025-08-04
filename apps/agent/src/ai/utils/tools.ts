@@ -1,19 +1,20 @@
-import type { WorkflowContext } from "@/workflow/context";
 import type { z } from "zod";
+import type { WorkflowContext } from "@/workflow/context";
+
 import { ZodXml } from "./zod-xml";
 
 export type ToolConfig<
   TName extends string,
-  TArgs extends z.ZodObject<z.ZodRawShape>,
+  TInput extends z.ZodObject<z.ZodRawShape>,
   TOutput,
 > = {
   name: TName;
   description: string;
   whenToUse: string;
-  inputSchema: TArgs;
-  outputSchema?: z.ZodSchema;
+  inputSchema: TInput;
+  outputSchema?: z.ZodSchema<TOutput>;
   execute: (params: {
-    input: z.infer<TArgs>;
+    input: z.infer<TInput>;
     context: WorkflowContext;
   }) => Promise<TOutput>;
 };
@@ -23,14 +24,14 @@ export type ToolConfig<
  */
 export function createTool<
   TName extends string,
-  TArgs extends z.ZodObject<z.ZodRawShape>,
+  TInput extends z.ZodObject<z.ZodRawShape>,
   TOutput,
->(config: ToolConfig<TName, TArgs, TOutput>) {
+>(config: ToolConfig<TName, TInput, TOutput>) {
   // Return AI SDK tool format by default
   const aiSDKTool = (context: WorkflowContext) => ({
     description: config.description,
     parameters: config.inputSchema,
-    execute: async (input: z.infer<TArgs>) =>
+    execute: async (input: z.infer<TInput>) =>
       config.execute({ input, context }),
   });
 

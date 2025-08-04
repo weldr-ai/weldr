@@ -1,7 +1,8 @@
-import { runCommand } from "@/ai/utils/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
-import { Logger } from "@weldr/shared/logger";
 import { z } from "zod";
+import { runCommand } from "@/lib/commands";
+import { WORKSPACE_DIR } from "@/lib/constants";
+
+import { Logger } from "@weldr/shared/logger";
 import { createTool } from "../utils/tools";
 
 export const installPackagesTool = createTool({
@@ -63,7 +64,7 @@ export const installPackagesTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: stderr || "Failed to install packages",
       };
     }
@@ -72,7 +73,7 @@ export const installPackagesTool = createTool({
 
     // The caller of this tool is responsible for updating the database with the installed packages.
     return {
-      success: true,
+      success: true as const,
       packages: input.packages,
     };
   },

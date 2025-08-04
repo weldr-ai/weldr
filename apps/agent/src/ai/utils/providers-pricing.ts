@@ -1,14 +1,20 @@
-import { db } from "@weldr/db";
-import { type AiModel, aiModels } from "@weldr/db/schema";
 import { and, eq } from "drizzle-orm";
 
+import { db } from "@weldr/db";
+import {
+  type AiModel,
+  type AiModelKey,
+  type AiModelProvider,
+  aiModels,
+} from "@weldr/db/schema";
+
 export interface CostCalculation {
-  inputCost: number;
-  outputCost: number;
-  totalCost: number;
-  inputTokensPrice: number;
-  outputTokensPrice: number;
-  inputImagesPrice: number | null;
+  inputCost?: number;
+  outputCost?: number;
+  totalCost?: number;
+  inputTokensPrice?: number;
+  outputTokensPrice?: number;
+  inputImagesPrice?: number;
 }
 
 export async function calculateModelCost(
@@ -16,7 +22,10 @@ export async function calculateModelCost(
   inputTokens: number,
   outputTokens: number,
 ): Promise<CostCalculation | null> {
-  const [provider, modelKey] = model.split(":");
+  const [provider, modelKey] = model.split(":") as [
+    AiModelProvider,
+    AiModelKey,
+  ];
 
   if (!provider || !modelKey) {
     throw new Error("Invalid model format");
@@ -45,6 +54,6 @@ export async function calculateModelCost(
     outputTokensPrice: Number(modelResult.outputTokensPrice),
     inputImagesPrice: modelResult.inputImagesPrice
       ? Number(modelResult.inputImagesPrice)
-      : null,
+      : undefined,
   };
 }

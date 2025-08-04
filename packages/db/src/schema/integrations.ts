@@ -1,12 +1,19 @@
-import { nanoid } from "@weldr/shared/nanoid";
 import { relations } from "drizzle-orm";
 import {
   index,
+  jsonb,
   pgTable,
   primaryKey,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+
+import { nanoid } from "@weldr/shared/nanoid";
+import type {
+  IntegrationKey,
+  IntegrationOptions,
+  IntegrationStatus,
+} from "@weldr/shared/types";
 import { users } from "./auth";
 import { declarations } from "./declarations";
 import { environmentVariables } from "./environment-variables";
@@ -17,8 +24,15 @@ export const integrations = pgTable(
   "integrations",
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
+    key: text("key").$type<IntegrationKey>().notNull(),
     name: text("name"),
+    options: jsonb("options").$type<IntegrationOptions>(),
+    status: text("status").$type<IntegrationStatus>().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
     projectId: text("project_id")
       .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),

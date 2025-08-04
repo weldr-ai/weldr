@@ -1,13 +1,14 @@
+import { embedMany } from "ai";
+import { z } from "zod";
 import {
   formatDeclarationData,
   formatDeclarationSpecs,
-} from "@/ai/utils/formetters";
+} from "@/ai/utils/formatters";
 import { registry } from "@/ai/utils/registry";
+
 import { cosineDistance, db, desc, getTableColumns, gt, sql } from "@weldr/db";
 import { declarations, versionDeclarations, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import { embedMany } from "ai";
-import { z } from "zod";
 import { createTool } from "../utils/tools";
 
 export const searchCodebaseTool = createTool({
@@ -75,7 +76,7 @@ export const searchCodebaseTool = createTool({
       if (!embeddings || embeddings.length === 0) {
         logger.error("Failed to generate embedding for query");
         return {
-          success: false,
+          success: false as const,
           error: "Failed to generate embedding for the search query",
         };
       }
@@ -84,7 +85,7 @@ export const searchCodebaseTool = createTool({
       if (!queryEmbedding) {
         logger.error("Query embedding is undefined");
         return {
-          success: false,
+          success: false as const,
           error: "Failed to generate valid embedding for the search query",
         };
       }
@@ -144,7 +145,7 @@ export const searchCodebaseTool = createTool({
       logger.info(`Found ${similarDeclarations.length} similar declarations`);
 
       return {
-        success: true,
+        success: true as const,
         formattedResults,
       };
     } catch (error) {
@@ -155,7 +156,7 @@ export const searchCodebaseTool = createTool({
       });
 
       return {
-        success: false,
+        success: false as const,
         error:
           error instanceof Error
             ? error.message

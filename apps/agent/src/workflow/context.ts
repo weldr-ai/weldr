@@ -1,8 +1,13 @@
 import type { User } from "@weldr/auth";
 import type { projects, versions } from "@weldr/db/schema";
+import type { IntegrationCategoryKey } from "@weldr/shared/types";
+
+export type ProjectWithConfig = typeof projects.$inferSelect & {
+  integrationCategories: Set<IntegrationCategoryKey>;
+};
 
 type WorkflowContextStore = {
-  project: typeof projects.$inferSelect;
+  project: ProjectWithConfig;
   version: typeof versions.$inferSelect;
   isXML: boolean;
   user: User;

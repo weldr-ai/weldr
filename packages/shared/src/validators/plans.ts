@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { dbModelDeclarationSpecsSchema } from "./declarations/db-model";
 import { endpointDeclarationSpecsSchema } from "./declarations/endpoint";
 import { pageDeclarationSpecsSchema } from "./declarations/page";
@@ -228,7 +229,7 @@ export const genericTaskSchema = baseTaskSchema
     - Set up monitoring and alerting for production environment
   `);
 
-export const taskSchema = z.discriminatedUnion("type", [
+export const taskSchema = z.union([
   ...declarationTaskSchema.options,
   genericTaskSchema,
 ]);

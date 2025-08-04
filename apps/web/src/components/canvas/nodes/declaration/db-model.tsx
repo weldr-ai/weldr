@@ -1,15 +1,4 @@
-import { useTRPC } from "@/lib/trpc/react";
-import type { CanvasNodeProps } from "@/types";
 import { useQuery } from "@tanstack/react-query";
-import { Badge } from "@weldr/ui/components/badge";
-import { Card } from "@weldr/ui/components/card";
-import { ScrollArea } from "@weldr/ui/components/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@weldr/ui/components/tooltip";
-import { cn } from "@weldr/ui/lib/utils";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import {
   ChevronRightIcon,
@@ -22,6 +11,18 @@ import {
   Table2Icon,
 } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
+import { useTRPC } from "@/lib/trpc/react";
+import type { CanvasNodeProps } from "@/types";
+
+import { Badge } from "@weldr/ui/components/badge";
+import { Card } from "@weldr/ui/components/card";
+import { ScrollArea } from "@weldr/ui/components/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@weldr/ui/components/tooltip";
+import { cn } from "@weldr/ui/lib/utils";
 import { Status } from "../components/status";
 
 export const DbModelNode = memo(

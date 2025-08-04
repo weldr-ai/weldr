@@ -1,7 +1,8 @@
-import { runCommand } from "@/ai/utils/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
-import { Logger } from "@weldr/shared/logger";
 import { z } from "zod";
+import { runCommand } from "@/lib/commands";
+import { WORKSPACE_DIR } from "@/lib/constants";
+
+import { Logger } from "@weldr/shared/logger";
 import { createTool } from "../utils/tools";
 
 export const listDirTool = createTool({
@@ -57,7 +58,7 @@ export const listDirTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: "Invalid path: Directory traversal is not allowed.",
       };
     }
@@ -93,13 +94,13 @@ export const listDirTool = createTool({
       });
       if (stderr?.includes("not found") || stderr?.includes("no such file")) {
         return {
-          success: false,
+          success: false as const,
           error:
             "`tree` command is not installed or not found in PATH. Please install it to use this tool.",
         };
       }
       return {
-        success: false,
+        success: false as const,
         error: stderr || "Failed to execute `tree` command.",
       };
     }
@@ -118,7 +119,7 @@ export const listDirTool = createTool({
     });
 
     return {
-      success: true,
+      success: true as const,
       tree: cleanedOutput,
     };
   },

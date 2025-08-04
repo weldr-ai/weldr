@@ -1,4 +1,6 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
+import { z } from "zod";
+
 import { and, eq, isNotNull } from "@weldr/db";
 import {
   attachments,
@@ -16,7 +18,6 @@ import {
   insertProjectSchema,
   updateProjectSchema,
 } from "@weldr/shared/validators/projects";
-import { z } from "zod";
 import { protectedProcedure } from "../init";
 
 export const projectsRouter = {
@@ -66,7 +67,7 @@ export const projectsRouter = {
               type: "development",
               projectId,
               key: "FLY_API_TOKEN",
-              // biome-ignore lint/style/noNonNullAssertion: <explanation>
+              // biome-ignore lint/style/noNonNullAssertion: reason
               value: process.env.FLY_API_TOKEN!,
             }),
           ]);
@@ -247,6 +248,8 @@ export const projectsRouter = {
               columns: {
                 id: true,
                 name: true,
+                key: true,
+                status: true,
               },
               with: {
                 environmentVariableMappings: {
@@ -257,10 +260,18 @@ export const projectsRouter = {
                 },
                 integrationTemplate: {
                   columns: {
-                    config: false,
-                    llmTxt: false,
-                    docsUrl: false,
-                    version: false,
+                    id: true,
+                    name: true,
+                    description: true,
+                    key: true,
+                    isRecommended: true,
+                    version: true,
+                    variables: true,
+                    options: true,
+                    recommendedOptions: true,
+                  },
+                  with: {
+                    category: true,
                   },
                 },
               },
@@ -345,7 +356,7 @@ export const projectsRouter = {
                 message.attachments.map(async (attachment) => ({
                   name: attachment.name,
                   url: await Tigris.object.getSignedUrl(
-                    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+                    // biome-ignore lint/style/noNonNullAssertion: reason
                     process.env.GENERAL_BUCKET!,
                     attachment.key,
                   ),
@@ -450,6 +461,7 @@ export const projectsRouter = {
             },
           },
         };
+
         return result;
       } catch (error) {
         console.error(error);

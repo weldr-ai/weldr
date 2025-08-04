@@ -1,11 +1,12 @@
+import { createRoute, z } from "@hono/zod-openapi";
 import { initVersion } from "@/ai/utils/init-version";
 import { createRouter } from "@/lib/utils";
-import { createRoute, z } from "@hono/zod-openapi";
+
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import type { TStreamableValue } from "@weldr/shared/types";
+import type { SSEEvent } from "@weldr/shared/types";
 
 const route = createRoute({
   method: "get",
@@ -111,7 +112,7 @@ router.openapi(route, async (c) => {
 
         // Create a stream writer for this SSE connection
         const sseStreamWriter = {
-          write: async (chunk: TStreamableValue) => {
+          write: async (chunk: SSEEvent) => {
             const message = JSON.stringify(chunk);
             try {
               controller.enqueue(encoder.encode(`data: ${message}\n\n`));

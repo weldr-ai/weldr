@@ -5,13 +5,14 @@ import { cva } from "class-variance-authority";
 import type { JSONSchema7, JSONSchema7Definition } from "json-schema";
 import { ChevronRight } from "lucide-react";
 import React from "react";
+
 import { cn, getDataTypeIcon } from "../lib/utils";
 
 const treeVariants = cva(
-  "group hover:before:opacity-100 before:absolute before:rounded-lg before:left-0 before:w-full before:opacity-0 before:h-[2rem] before:-z-10",
+  "group before:-z-10 before:absolute before:left-0 before:h-[2rem] before:w-full before:rounded-lg before:opacity-0 hover:before:opacity-100",
 );
 
-const selectedTreeVariants = cva("before:opacity-100 text-accent-foreground");
+const selectedTreeVariants = cva("text-accent-foreground before:opacity-100");
 
 interface TreeDataItem {
   id: string;
@@ -464,6 +465,8 @@ const TreeLeaf = React.forwardRef<
     ref,
   ) => {
     return (
+      // biome-ignore lint/a11y/noStaticElementInteractions: reason
+      // biome-ignore lint/a11y/useKeyWithClickEvents: reason
       <div
         ref={ref}
         className={cn(

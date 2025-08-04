@@ -1,15 +1,29 @@
 import type { JSONSchema7 } from "json-schema";
 import type { z } from "zod";
+
 import type {
+  aiMetadataSchema,
   assistantMessageSchema,
   attachmentSchema,
   chatMessageSchema,
   chatSchema,
   messageRoleSchema,
   toolMessageSchema,
+  toolResultPartSchema,
   userMessageSchema,
 } from "../validators/chats";
 import type { environmentVariableSchema } from "../validators/environment-variables";
+import type {
+  integrationCategoryKeySchema,
+  integrationCategorySchema,
+} from "../validators/integration-categories";
+import type { integrationTemplateSchema } from "../validators/integration-templates";
+import type {
+  integrationEnvironmentVariableMappingSchema,
+  integrationKeySchema,
+  integrationSchema,
+  integrationStatusSchema,
+} from "../validators/integrations";
 import type { dataTypeSchema } from "../validators/json-schema";
 import type { nodeSchema, nodeTypeSchema } from "../validators/nodes";
 import type { openApiEndpointSpecSchema } from "../validators/openapi";
@@ -20,10 +34,7 @@ import type {
   planSchema,
   taskSchema,
 } from "../validators/plans";
-import type {
-  projectConfigSchema,
-  projectSchema,
-} from "../validators/projects";
+import type { projectSchema } from "../validators/projects";
 import type { themeDataSchema, themeSchema } from "../validators/themes";
 import type { versionSchema } from "../validators/versions";
 import type { DeclarationMetadata, DeclarationProgress } from "./declarations";
@@ -34,16 +45,17 @@ export type OpenApiEndpointSpec = z.infer<typeof openApiEndpointSpecSchema>;
 export type JsonSchema = JSONSchema7;
 
 export type Project = z.infer<typeof projectSchema>;
-export type ProjectConfig = z.infer<typeof projectConfigSchema>;
 
 export type Version = z.infer<typeof versionSchema>;
 
 export type MessageRole = z.infer<typeof messageRoleSchema>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export type ChatMessageContent = z.infer<typeof chatMessageSchema>["content"];
+export type AiMessageMetadata = z.infer<typeof aiMetadataSchema>;
 export type UserMessage = z.infer<typeof userMessageSchema>;
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
 export type ToolMessage = z.infer<typeof toolMessageSchema>;
+export type ToolResultPartMessage = z.infer<typeof toolResultPartSchema>;
 export type Chat = z.infer<typeof chatSchema>;
 export type Attachment = z.infer<typeof attachmentSchema>;
 
@@ -91,24 +103,7 @@ export type NodeStreamableValue = {
 
 export type ToolStreamableValue = {
   type: "tool";
-  toolName: string;
-  toolCallId: string;
-  toolArgs?: unknown;
-  toolResult: unknown;
-};
-
-export type VersionStreamableValue = {
-  id?: string;
-  createdAt?: Date;
-  type: "version";
-  versionId: string;
-  versionMessage: string;
-  versionNumber: number;
-  versionDescription: string;
-  changedFiles: {
-    path: string;
-    status: "pending" | "success";
-  }[];
+  message: ToolMessage;
 };
 
 export type ProjectStreamableValue = {
@@ -116,35 +111,21 @@ export type ProjectStreamableValue = {
   data: Partial<Project & { currentVersion: Partial<Version> }>;
 };
 
-export type TStreamableValue =
+export type IntegrationStreamableValue = {
+  type: "integration";
+  data: {
+    id: string;
+    key: IntegrationKey;
+    status: "installing" | "completed" | "failed";
+  };
+};
+
+export type SSEEvent =
   | TextStreamableValue
   | ToolStreamableValue
   | NodeStreamableValue
   | ProjectStreamableValue
   | EndStreamableValue;
-
-// SSE-specific event types
-export type SSEConnectionEvent = {
-  type: "connected";
-  clientId: string;
-  streamId: string;
-  workflowRunning?: boolean;
-};
-
-export type SSEWorkflowCompleteEvent = {
-  type: "workflow_complete";
-};
-
-export type SSEErrorEvent = {
-  type: "error";
-  error: string;
-};
-
-export type SSEEvent =
-  | SSEConnectionEvent
-  | SSEWorkflowCompleteEvent
-  | SSEErrorEvent
-  | TStreamableValue;
 
 // Trigger API response type
 export type TriggerWorkflowResponse = {
@@ -153,3 +134,27 @@ export type TriggerWorkflowResponse = {
   runId: string;
   message?: string;
 };
+
+export type IntegrationCategory = z.infer<typeof integrationCategorySchema>;
+export type IntegrationCategoryKey = z.infer<
+  typeof integrationCategoryKeySchema
+>;
+
+export type IntegrationTemplateOptions = z.infer<
+  typeof integrationTemplateSchema
+>["options"];
+export type IntegrationTemplateRecommendedOptions = z.infer<
+  typeof integrationTemplateSchema
+>["recommendedOptions"];
+export type IntegrationTemplateVariable = z.infer<
+  typeof integrationTemplateSchema
+>["variables"];
+export type IntegrationTemplate = z.infer<typeof integrationTemplateSchema>;
+
+export type IntegrationKey = z.infer<typeof integrationKeySchema>;
+export type IntegrationOptions = z.infer<typeof integrationSchema>["options"];
+export type IntegrationStatus = z.infer<typeof integrationStatusSchema>;
+export type Integration = z.infer<typeof integrationSchema>;
+export type IntegrationEnvironmentVariableMapping = z.infer<
+  typeof integrationEnvironmentVariableMappingSchema
+>;

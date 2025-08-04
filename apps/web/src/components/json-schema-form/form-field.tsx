@@ -1,3 +1,6 @@
+import type { JSONSchema7Type } from "json-schema";
+import { Minus, Plus } from "lucide-react";
+
 import { Button } from "@weldr/ui/components/button";
 import { Card, CardContent } from "@weldr/ui/components/card";
 import { Input } from "@weldr/ui/components/input";
@@ -10,8 +13,6 @@ import {
 } from "@weldr/ui/components/select";
 import { Switch } from "@weldr/ui/components/switch";
 import { Textarea } from "@weldr/ui/components/textarea";
-import type { JSONSchema7Type } from "json-schema";
-import { Minus, Plus } from "lucide-react";
 import type { FormFieldProps } from "./types";
 
 export function FormField({
@@ -125,7 +126,7 @@ export function FormField({
         return (
           <div className="space-y-2">
             {arrayValue.map((itemValue, index) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+              // biome-ignore lint/suspicious/noArrayIndexKey: reason
               <div key={index} className="flex items-center space-x-2">
                 <FormField
                   name={`${name}[${index}]`}

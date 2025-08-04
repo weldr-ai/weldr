@@ -1,7 +1,8 @@
 "use client";
 
 import { useUIStore } from "@/lib/context/ui-store";
-import type { Session, Subscription, auth } from "@weldr/auth";
+
+import type { auth, Session, Subscription } from "@weldr/auth";
 import {
   Dialog,
   DialogContent,

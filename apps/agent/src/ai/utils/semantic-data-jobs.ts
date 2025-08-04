@@ -1,4 +1,7 @@
+import { embedMany, generateObject } from "ai";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { WORKSPACE_DIR } from "@/lib/constants";
+
 import { db } from "@weldr/db";
 import {
   declarations,
@@ -14,9 +17,7 @@ import type {
   DeclarationSpecs,
 } from "@weldr/shared/types/declarations";
 import { declarationSemanticDataSchema } from "@weldr/shared/validators/declarations/index";
-import { embedMany, generateObject } from "ai";
-import { and, eq, isNotNull } from "drizzle-orm";
-import { runCommand } from "./commands";
+import { runCommand } from "../../lib/commands";
 import { registry } from "./registry";
 
 export interface SemanticDataJobData {
@@ -77,7 +78,7 @@ export async function queueDeclarationSemanticDataGeneration(
 
 export async function recoverSemanticDataJobs(): Promise<void> {
   const project = await db.query.projects.findFirst({
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    // biome-ignore lint/style/noNonNullAssertion: reason
     where: eq(projects.id, process.env.PROJECT_ID!),
   });
 

@@ -1,5 +1,3 @@
-import { nanoid } from "@weldr/shared/nanoid";
-import type { DeclarationMetadata } from "@weldr/shared/types/declarations";
 import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
@@ -12,6 +10,9 @@ import {
   timestamp,
   vector,
 } from "drizzle-orm/pg-core";
+
+import { nanoid } from "@weldr/shared/nanoid";
+import type { DeclarationMetadata } from "@weldr/shared/types/declarations";
 import { users } from "./auth";
 import { dependencies } from "./dependencies";
 import { integrations } from "./integrations";

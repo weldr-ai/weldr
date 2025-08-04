@@ -1,11 +1,13 @@
 import type { WorkflowContext } from "@/workflow/context";
+
 import { db, eq } from "@weldr/db";
 import {
   chats,
   type declarations,
   dependencies,
-  type integrationTemplates,
+  type integrationCategories,
   type integrations,
+  type integrationTemplates,
   taskDependencies,
   tasks,
 } from "@weldr/db/schema";
@@ -17,7 +19,9 @@ export type TaskWithRelations = typeof tasks.$inferSelect & {
     | (typeof declarations.$inferSelect & {
         integrations: {
           integration: typeof integrations.$inferSelect & {
-            integrationTemplate: typeof integrationTemplates.$inferSelect;
+            integrationTemplate: typeof integrationTemplates.$inferSelect & {
+              category: typeof integrationCategories.$inferSelect;
+            };
           };
         }[];
         dependencies: {
@@ -179,7 +183,11 @@ export async function getTasksWithDependencies(
             with: {
               integration: {
                 with: {
-                  integrationTemplate: true,
+                  integrationTemplate: {
+                    with: {
+                      category: true,
+                    },
+                  },
                 },
               },
             },

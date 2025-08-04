@@ -1,8 +1,8 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
+import { headers } from "next/headers";
 
 import { appRouter, createTRPCContext } from "@weldr/api";
 import { auth } from "@weldr/auth";
-import { headers } from "next/headers";
 
 /**
  * Configure basic CORS headers

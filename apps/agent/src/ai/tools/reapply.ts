@@ -1,5 +1,6 @@
-import { Logger } from "@weldr/shared/logger";
 import { z } from "zod";
+
+import { Logger } from "@weldr/shared/logger";
 import { createTool } from "../utils/tools";
 
 export const reapplyTool = createTool({
@@ -39,7 +40,7 @@ export const reapplyTool = createTool({
     logger.info("Reapply operation completed");
 
     return {
-      success: true,
+      success: true as const,
       message: `Re-applying edit to ${input.targetFile}`,
     };
   },

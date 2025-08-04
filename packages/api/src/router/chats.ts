@@ -1,15 +1,15 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
+import { and, eq } from "drizzle-orm";
+import { z } from "zod";
+
 import { chatMessages, chats } from "@weldr/db/schema";
-import { mergeJson } from "@weldr/db/utils";
 import { Tigris } from "@weldr/shared/tigris";
 import type { ChatMessage } from "@weldr/shared/types";
 import {
   addMessagesInputSchema,
   toolResultPartSchema,
 } from "@weldr/shared/validators/chats";
-import { and, eq } from "drizzle-orm";
-import { z } from "zod";
 import { protectedProcedure } from "../init";
 
 export const chatsRouter = {
@@ -46,7 +46,7 @@ export const chatsRouter = {
 
           for (const attachment of message.attachments) {
             const url = await Tigris.object.getSignedUrl(
-              // biome-ignore lint/style/noNonNullAssertion: <explanation>
+              // biome-ignore lint/style/noNonNullAssertion: reason
               process.env.GENERAL_BUCKET!,
               attachment.key,
             );
@@ -116,7 +116,7 @@ export const chatsRouter = {
       const [message] = await ctx.db
         .update(chatMessages)
         .set({
-          content: mergeJson(chatMessages.content, input.data.content),
+          content: input.data.content,
         })
         .where(
           and(

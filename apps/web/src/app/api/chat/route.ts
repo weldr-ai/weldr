@@ -1,9 +1,10 @@
+import { type NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import type { Attachment, UserMessage } from "@weldr/shared/types";
-import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {

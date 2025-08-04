@@ -1,7 +1,9 @@
+import { z } from "zod";
 import {
   formatDeclarationData,
   formatDeclarationSpecs,
-} from "@/ai/utils/formetters";
+} from "@/ai/utils/formatters";
+
 import { db, eq, sql } from "@weldr/db";
 import {
   declarations,
@@ -10,7 +12,6 @@ import {
   versions,
 } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import { z } from "zod";
 import { createTool } from "../utils/tools";
 
 export const queryRelatedDeclarationsTool = createTool({
@@ -69,7 +70,7 @@ export const queryRelatedDeclarationsTool = createTool({
       if (targetDeclaration.length === 0) {
         logger.error("Declaration not found or doesn't belong to project");
         return {
-          success: false,
+          success: false as const,
           error:
             "Declaration not found or doesn't belong to the current project",
         };
@@ -195,7 +196,7 @@ export const queryRelatedDeclarationsTool = createTool({
       logger.info("Query completed successfully");
 
       return {
-        success: true,
+        success: true as const,
         formattedResults,
       };
     } catch (error) {
@@ -206,7 +207,7 @@ export const queryRelatedDeclarationsTool = createTool({
       });
 
       return {
-        success: false,
+        success: false as const,
         error:
           error instanceof Error
             ? error.message

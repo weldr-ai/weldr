@@ -1,6 +1,10 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Laptop, Loader2, Smartphone } from "lucide-react";
+import { useState } from "react";
+import { UAParser } from "ua-parser-js";
+
 import type { auth } from "@weldr/auth";
 import { authClient } from "@weldr/auth/client";
 import { Button } from "@weldr/ui/components/button";
@@ -12,9 +16,6 @@ import {
   CardTitle,
 } from "@weldr/ui/components/card";
 import { toast } from "@weldr/ui/hooks/use-toast";
-import { Laptop, Loader2, Smartphone } from "lucide-react";
-import { useState } from "react";
-import { UAParser } from "ua-parser-js";
 
 export function SessionsList({
   sessions: initialSessions,

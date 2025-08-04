@@ -1,13 +1,15 @@
 import { stripe } from "@better-auth/stripe";
-import { db } from "@weldr/db";
-import ResetPasswordEmail from "@weldr/emails/reset-password";
-import VerificationEmail from "@weldr/emails/verification-email";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin, oAuthProxy, openAPI, organization } from "better-auth/plugins";
 import { Resend } from "resend";
 import Stripe from "stripe";
+
+import { db } from "@weldr/db";
+import ResetPasswordEmail from "@weldr/emails/reset-password";
+import VerificationEmail from "@weldr/emails/verification-email";
+import { nanoid } from "@weldr/shared/nanoid";
 
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2025-02-24.acacia",
@@ -18,6 +20,9 @@ const resend = new Resend(process.env.RESEND_API_KEY ?? "");
 export const auth = betterAuth({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL,
   advanced: {
+    database: {
+      generateId: () => nanoid(),
+    },
     cookiePrefix: "weldr",
   },
   trustedOrigins: ["https://weldr.ai", "http://localhost:3000"],
@@ -44,7 +49,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
-    async sendResetPassword({ user, url, token }, request) {
+    async sendResetPassword({ user, url }, _request) {
       await resend.emails.send({
         from: "Weldr <noreply@weldr.ai>",
         to: user.email,

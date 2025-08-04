@@ -14,7 +14,7 @@ export const imagePartSchema = z.object({
   image: z
     .string()
     .describe("Base64 encoded content, base64 data URL, or http(s) URL"),
-  mimeType: z.string().optional(),
+  mediaType: z.string().optional(),
 });
 
 export const filePartSchema = z.object({
@@ -22,7 +22,7 @@ export const filePartSchema = z.object({
   data: z
     .string()
     .describe("Base64 encoded content, base64 data URL, or http(s) URL"),
-  mimeType: z.string(),
+  mediaType: z.string(),
 });
 
 export const dbModelReferencePartSchema = z.object({
@@ -53,26 +53,21 @@ export const referencePartSchema = z.discriminatedUnion("type", [
 export const reasoningPartSchema = z.object({
   type: z.literal("reasoning"),
   text: z.string(),
-  signature: z.string().optional(),
-});
-
-export const redactedReasoningPartSchema = z.object({
-  type: z.literal("redacted-reasoning"),
-  data: z.string(),
 });
 
 export const toolCallPartSchema = z.object({
   type: z.literal("tool-call"),
   toolCallId: z.string(),
   toolName: z.string(),
-  args: z.record(z.unknown()),
+  input: z.unknown(),
 });
 
 export const toolResultPartSchema = z.object({
   type: z.literal("tool-result"),
   toolCallId: z.string(),
   toolName: z.string(),
-  result: z.unknown(),
+  input: z.unknown(),
+  output: z.unknown(),
   isError: z.boolean().optional(),
 });
 
@@ -92,7 +87,6 @@ export const userMessageContentSchema = z.discriminatedUnion("type", [
 export const assistantMessageContentSchema = z.discriminatedUnion("type", [
   textPartSchema,
   reasoningPartSchema,
-  redactedReasoningPartSchema,
   toolCallPartSchema,
 ]);
 
@@ -101,15 +95,15 @@ export const assistantMessageContentSchema = z.discriminatedUnion("type", [
 // ===========================================================================
 
 export const baseAiMetadataSchema = z.object({
-  inputTokens: z.number(),
-  outputTokens: z.number(),
-  totalTokens: z.number(),
-  inputCost: z.number(),
-  outputCost: z.number(),
-  totalCost: z.number(),
-  inputTokensPrice: z.number(),
-  outputTokensPrice: z.number(),
-  inputImagesPrice: z.number().nullable(),
+  inputTokens: z.number().optional(),
+  outputTokens: z.number().optional(),
+  totalTokens: z.number().optional(),
+  inputCost: z.number().optional(),
+  outputCost: z.number().optional(),
+  totalCost: z.number().optional(),
+  inputTokensPrice: z.number().optional(),
+  outputTokensPrice: z.number().optional(),
+  inputImagesPrice: z.number().optional(),
   finishReason: z.enum([
     "stop",
     "length",
@@ -150,7 +144,7 @@ export const attachmentSchema = z.object({
 });
 
 const baseMessageSchema = z.object({
-  id: z.string().optional(),
+  id: z.string(),
   visibility: z.enum(["public", "internal"]),
   createdAt: z.date(),
   chatId: z.string().optional(),
@@ -177,13 +171,6 @@ export const assistantMessageSchema = baseMessageSchema.extend({
   role: z.literal("assistant"),
   content: assistantMessageContentSchema.array(),
   metadata: aiMetadataSchema.optional(),
-  version: z
-    .object({
-      id: z.string(),
-      versionName: z.string(),
-      versionNumber: z.number(),
-    })
-    .optional(),
 });
 
 export const toolMessageSchema = baseMessageSchema.extend({
@@ -208,7 +195,7 @@ export const addMessageItemSchema = z.discriminatedUnion("role", [
     visibility: z.enum(["public", "internal"]),
     role: z.literal("assistant"),
     content: assistantMessageContentSchema.array(),
-    metadata: aiMetadataSchema,
+    metadata: aiMetadataSchema.optional(),
     createdAt: z.date().optional(),
   }),
   z.object({

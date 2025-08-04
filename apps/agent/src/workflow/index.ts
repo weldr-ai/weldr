@@ -1,3 +1,5 @@
+import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
+
 import { and, db, eq, or } from "@weldr/db";
 import { projects, users, versions } from "@weldr/db/schema";
 import { WorkflowContext } from "./context";
@@ -5,6 +7,7 @@ import { createStep, createWorkflow } from "./engine";
 import { codeStep } from "./steps/code";
 import { deployStep } from "./steps/deploy";
 import { planStep } from "./steps/plan";
+import { requirementsStep } from "./steps/requirements";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -14,6 +17,7 @@ export const workflow = createWorkflow({
     delay: 1000,
   },
 })
+  .onStatus("pending", requirementsStep)
   .onStatus("planning", planStep)
   .onStatus("coding", codeStep)
   .onStatus(
@@ -35,13 +39,26 @@ export const workflow = createWorkflow({
 
 export async function recoverWorkflow() {
   const project = await db.query.projects.findFirst({
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    // biome-ignore lint/style/noNonNullAssertion: reason
     where: eq(projects.id, process.env.PROJECT_ID!),
+    with: {
+      integrations: {
+        with: {
+          integrationTemplate: {
+            with: {
+              category: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!project) {
     throw new Error("Project not found");
   }
+
+  const installedCategories = await getInstalledCategories(project.id);
 
   const user = await db.query.users.findFirst({
     where: eq(users.id, project.userId),
@@ -67,7 +84,10 @@ export async function recoverWorkflow() {
   }
 
   const context = new WorkflowContext();
-  context.set("project", project);
+  context.set("project", {
+    ...project,
+    integrationCategories: new Set(installedCategories),
+  });
   context.set("version", version);
   context.set("user", user);
   context.set("isXML", true);

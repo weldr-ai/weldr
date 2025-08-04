@@ -1,18 +1,14 @@
-import { runCommand } from "@/ai/utils/commands";
+import { z } from "zod";
+import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
+
 import { db } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
-import { OpenAI } from "openai";
-import { z } from "zod";
+import { applyEdit } from "../utils/apply-edit";
 import { extractAndSaveDeclarations } from "../utils/declarations";
 import { createTool } from "../utils/tools";
-
-const morphClient = new OpenAI({
-  apiKey: process.env.MORPH_API_KEY,
-  baseURL: "https://api.morphllm.com/v1",
-});
 
 export const editFileTool = createTool({
   name: "edit_file",
@@ -36,7 +32,7 @@ export const editFileTool = createTool({
     z.object({
       success: z.literal(true),
       message: z.string(),
-      changes_applied: z.string(),
+      changesApplied: z.string(),
     }),
     z.object({
       success: z.literal(false),
@@ -63,29 +59,22 @@ export const editFileTool = createTool({
     if (!readResult.success) {
       const errorMsg = `Failed to read file: ${readResult.stderr}`;
       logger.error(errorMsg);
-      return { success: false, error: errorMsg };
+      return { success: false as const, error: errorMsg };
     }
 
     const originalCode = readResult.stdout;
 
-    // Use Morph's fast apply API to generate the updated code
-    const response = await morphClient.chat.completions.create({
-      model: "morph-v2",
-      messages: [
-        {
-          role: "user",
-          content: `<code>${originalCode}</code>\n<update>${input.codeEdit}</update>`,
-        },
-      ],
-      stream: false, // set to true if you want to stream the response
-    });
-
-    const updatedCode = response.choices[0]?.message.content;
-
-    if (!updatedCode) {
-      const errorMsg = "Failed to get updated code from the edit operation.";
+    // Use the apply-edit utility to generate the updated code
+    let updatedCode: string;
+    try {
+      updatedCode = await applyEdit({
+        originalCode,
+        editInstructions: input.codeEdit,
+      });
+    } catch (error) {
+      const errorMsg = `Failed to apply edit: ${error instanceof Error ? error.message : JSON.stringify(error, null, 2)}`;
       logger.error(errorMsg);
-      return { success: false, error: errorMsg };
+      return { success: false as const, error: errorMsg };
     }
 
     // Write the updated content back to the file
@@ -97,7 +86,7 @@ export const editFileTool = createTool({
     if (!writeResult.success) {
       const errorMsg = `Failed to write file: ${writeResult.stderr}`;
       logger.error(errorMsg);
-      return { success: false, error: errorMsg };
+      return { success: false as const, error: errorMsg };
     }
 
     logger.info(
@@ -120,9 +109,9 @@ export const editFileTool = createTool({
     });
 
     return {
-      success: true,
+      success: true as const,
       message: `Successfully edited ${input.targetFile}`,
-      changes_applied: updatedCode,
+      changesApplied: updatedCode,
     };
   },
 });

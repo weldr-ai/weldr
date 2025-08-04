@@ -9,18 +9,19 @@
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
-    "check-types": "tsc --noEmit --emitDeclarationOnly false"
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
     "@better-auth/stripe": "^1.2.7",
     "@weldr/db": "workspace:*",
     "@weldr/emails": "workspace:*",
+    "@weldr/shared": "workspace:*",
     "better-auth": "1.2.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "resend": "^3.5.0",
     "stripe": "17.7.0",
-    "zod": "^3.25.67"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/react": "^18.3.20",

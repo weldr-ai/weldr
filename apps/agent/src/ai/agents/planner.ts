@@ -1,29 +1,25 @@
+import { streamText } from "ai";
+import type { z } from "zod";
 import { prompts } from "@/ai/prompts";
 import {
   callCoderTool,
   findTool,
   fzfTool,
   grepTool,
-  initProjectTool,
   listDirTool,
-  promptIntegrationConfigurationTool,
   readFileTool,
   searchCodebaseTool,
-  upgradeProjectTool,
 } from "@/ai/tools";
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import type { WorkflowContext } from "@/workflow/context";
-import { db, eq } from "@weldr/db";
-import { versions } from "@weldr/db/schema";
+
 import { Logger } from "@weldr/shared/logger";
 import type {
   addMessageItemSchema,
   assistantMessageContentSchema,
 } from "@weldr/shared/validators/chats";
-import { streamText } from "ai";
-import type { z } from "zod";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
 import { calculateModelCost } from "../utils/providers-pricing";
 import { XMLProvider } from "../utils/xml-provider";
@@ -34,7 +30,7 @@ export async function plannerAgent({
 }: {
   context: WorkflowContext;
   coolDownPeriod?: number;
-}) {
+}): Promise<"suspend" | undefined> {
   const project = context.get("project");
   const user = context.get("user");
   const version = context.get("version");
@@ -53,10 +49,6 @@ export async function plannerAgent({
 
   const xmlProvider = new XMLProvider(
     [
-      initProjectTool.getXML(),
-      upgradeProjectTool.getXML(),
-      promptIntegrationConfigurationTool.getXML(),
-      callCoderTool.getXML(),
       listDirTool.getXML(),
       readFileTool.getXML(),
       searchCodebaseTool.getXML(),
@@ -64,6 +56,7 @@ export async function plannerAgent({
       fzfTool.getXML(),
       grepTool.getXML(),
       findTool.getXML(),
+      callCoderTool.getXML(),
     ],
     context,
   );
@@ -97,18 +90,14 @@ export async function plannerAgent({
           system,
           messages: promptMessages,
           tools: {
-            init_project: initProjectTool(context),
-            upgrade_project: upgradeProjectTool(context),
-            prompt_integration_configuration:
-              promptIntegrationConfigurationTool(context),
             list_dir: listDirTool(context),
             read_file: readFileTool(context),
-            call_coder: callCoderTool(context),
             search_codebase: searchCodebaseTool(context),
             query_related_declarations: queryRelatedDeclarationsTool(context),
             fzf: fzfTool(context),
             grep: grepTool(context),
             find: findTool(context),
+            call_coder: callCoderTool(context),
           },
           onError: (error) => {
             logger.error("Error in planner agent", {
@@ -123,80 +112,94 @@ export async function plannerAgent({
     const assistantContent: z.infer<typeof assistantMessageContentSchema>[] =
       [];
 
-    for await (const delta of result.fullStream) {
-      if (delta.type === "text-delta") {
-        // Stream text content to SSE
-        await streamWriter.write({
-          type: "text",
-          text: delta.textDelta,
-        });
-
-        // Add text content immediately to maintain proper order
-        const lastItem = assistantContent[assistantContent.length - 1];
-        if (lastItem && lastItem.type === "text") {
-          // Append to existing text item
-          lastItem.text += delta.textDelta;
-        } else {
-          // Create new text item
-          assistantContent.push({
-            type: "text",
-            text: delta.textDelta,
-          });
-        }
-      } else if (delta.type === "tool-call") {
-        // Handle tool calls - add them as they come in to maintain order
-        assistantContent.push({
-          type: "tool-call",
-          toolCallId: delta.toolCallId,
-          toolName: delta.toolName,
-          args: delta.args,
-        });
-        if (
-          delta.toolName === "init_project" ||
-          delta.toolName === "upgrade_project" ||
-          delta.toolName === "list_dir" ||
-          delta.toolName === "read_file" ||
-          delta.toolName === "search_codebase" ||
-          delta.toolName === "query_related_declarations" ||
-          delta.toolName === "fzf" ||
-          delta.toolName === "grep" ||
-          delta.toolName === "find"
-        ) {
-          await db
-            .update(versions)
-            .set({ status: "planning" })
-            .where(eq(versions.id, version.id));
+    for await (const part of result.fullStream) {
+      switch (part.type) {
+        case "text-delta": {
+          // Stream text content to SSE
           await streamWriter.write({
-            type: "update_project",
-            data: { currentVersion: { status: "planning" } },
+            type: "text",
+            text: part.text,
+          });
+
+          // Add text content immediately to maintain proper order
+          const lastItem = assistantContent[assistantContent.length - 1];
+          if (lastItem && lastItem.type === "text") {
+            lastItem.text += part.text;
+          } else {
+            assistantContent.push({
+              type: "text",
+              text: part.text,
+            });
+          }
+          break;
+        }
+        case "reasoning-delta": {
+          const lastItem = assistantContent[assistantContent.length - 1];
+          if (lastItem && lastItem.type === "reasoning") {
+            lastItem.text += part.text;
+          } else {
+            assistantContent.push({
+              type: "reasoning",
+              text: part.text,
+            });
+          }
+          break;
+        }
+        case "tool-call": {
+          assistantContent.push({
+            type: "tool-call",
+            toolCallId: part.toolCallId,
+            toolName: part.toolName,
+            input: part.input,
+          });
+          break;
+        }
+        case "tool-result": {
+          toolResultMessages.push({
+            visibility: "internal",
+            role: "tool",
+            content: [
+              {
+                type: "tool-result",
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                input: part.input,
+                output: part.output,
+              },
+            ],
+          });
+
+          if (
+            part.toolName === "list_dir" ||
+            part.toolName === "read_file" ||
+            part.toolName === "search_codebase" ||
+            part.toolName === "query_related_declarations" ||
+            part.toolName === "fzf" ||
+            part.toolName === "grep" ||
+            part.toolName === "find"
+          ) {
+            shouldRecur = true;
+          }
+          break;
+        }
+        case "tool-error": {
+          toolResultMessages.push({
+            visibility: "internal",
+            role: "tool",
+            content: [
+              {
+                type: "tool-result",
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                input: part.input,
+                output: part.error,
+                isError: true,
+              },
+            ],
           });
           shouldRecur = true;
+          break;
         }
-      } else if (delta.type === "tool-result") {
-        if (delta.toolName === "prompt_integration_configuration") {
-          await streamWriter.write({
-            type: "tool",
-            toolName: delta.toolName,
-            toolCallId: delta.toolCallId,
-            toolArgs: delta.args,
-            toolResult: delta.result,
-          });
-        }
-        toolResultMessages.push({
-          visibility:
-            delta.toolName === "prompt_integration_configuration"
-              ? "public"
-              : "internal",
-          role: "tool",
-          content: [
-            {
-              type: "tool-result",
-              toolCallId: delta.toolCallId,
-              toolName: delta.toolName,
-              result: delta.result,
-            },
-          ],
-        });
       }
     }
 
@@ -204,13 +207,12 @@ export async function plannerAgent({
 
     const cost = await calculateModelCost(
       "google:gemini-2.5-pro",
-      usage.promptTokens,
-      usage.completionTokens,
+      usage?.inputTokens ?? 0,
+      usage?.outputTokens ?? 0,
     );
 
     const finishReason = await result.finishReason;
 
-    // Add assistant message
     if (assistantContent.length > 0) {
       messagesToSave.push({
         visibility: "public",
@@ -219,15 +221,15 @@ export async function plannerAgent({
         metadata: {
           provider: "google",
           model: "gemini-2.5-pro",
-          inputTokens: usage.promptTokens,
-          outputTokens: usage.completionTokens,
-          totalTokens: usage.totalTokens,
-          inputCost: cost?.inputCost ?? 0,
-          outputCost: cost?.outputCost ?? 0,
-          totalCost: cost?.totalCost ?? 0,
-          inputTokensPrice: cost?.inputTokensPrice ?? 0,
-          outputTokensPrice: cost?.outputTokensPrice ?? 0,
-          inputImagesPrice: cost?.inputImagesPrice ?? null,
+          inputTokens: usage?.inputTokens,
+          outputTokens: usage?.outputTokens,
+          totalTokens: usage?.totalTokens,
+          inputCost: cost?.inputCost,
+          outputCost: cost?.outputCost,
+          totalCost: cost?.totalCost,
+          inputTokensPrice: cost?.inputTokensPrice,
+          outputTokensPrice: cost?.outputTokensPrice,
+          inputImagesPrice: cost?.inputImagesPrice,
           finishReason,
         },
       });
@@ -235,7 +237,6 @@ export async function plannerAgent({
 
     messagesToSave.push(...toolResultMessages);
 
-    // Store messages if any
     if (messagesToSave.length > 0) {
       await insertMessages({
         input: {
@@ -260,6 +261,12 @@ export async function plannerAgent({
       logger.info(`Recurring in ${coolDownPeriod}ms...`);
       await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
     }
+  }
+
+  if (version.status === "pending") {
+    logger.info("Version status is still pending, stopping planner agent");
+    await streamWriter.write({ type: "end" });
+    return "suspend";
   }
 
   logger.info("Planner agent completed");

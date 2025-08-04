@@ -1,7 +1,8 @@
-import { runCommand } from "@/ai/utils/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
-import { Logger } from "@weldr/shared/logger";
 import { z } from "zod";
+import { runCommand } from "@/lib/commands";
+import { WORKSPACE_DIR } from "@/lib/constants";
+
+import { Logger } from "@weldr/shared/logger";
 import { createTool } from "../utils/tools";
 
 const grepMatchSchema = z.object({
@@ -108,7 +109,7 @@ export const grepTool = createTool({
         },
       });
       return {
-        success: false,
+        success: false as const,
         error: stderr || "Failed to execute ripgrep search",
       };
     }
@@ -148,7 +149,7 @@ export const grepTool = createTool({
               });
             }
           }
-        } catch (e) {
+        } catch {
           // Ignore lines that are not valid JSON
         }
       }
@@ -166,7 +167,7 @@ export const grepTool = createTool({
     });
 
     return {
-      success: true,
+      success: true as const,
       results,
       summary: {
         totalMatches,

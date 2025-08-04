@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { openApiEndpointSpecSchema } from "../openapi";
 
 export const endpointDeclarationSpecsSchema = openApiEndpointSpecSchema.extend({
