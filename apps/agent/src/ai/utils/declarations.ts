@@ -295,12 +295,15 @@ export async function extractAndSaveDeclarations({
   try {
     const pathAliases: Record<string, string> = {};
 
-    if (project.config.has("frontend") && project.config.has("backend")) {
+    if (
+      project.integrationCategories.has("frontend") &&
+      project.integrationCategories.has("backend")
+    ) {
       pathAliases["@repo/web/*"] = "./src/*";
       pathAliases["@repo/server/*"] = "../server/src/*";
-    } else if (project.config.has("backend")) {
+    } else if (project.integrationCategories.has("backend")) {
       pathAliases["@repo/server/*"] = "./src/*";
-    } else if (project.config.has("frontend")) {
+    } else if (project.integrationCategories.has("frontend")) {
       pathAliases["@repo/web/*"] = "./src/*";
     }
 

@@ -1,47 +1,27 @@
 import { z } from "zod";
-import { createIntegrations } from "@/integrations/utils/create-integrations";
-import { installQueuedIntegrations } from "@/integrations/utils/queue-installer";
-import { validateDependencies } from "@/integrations/utils/validate-dependencies";
 
+import { db } from "@weldr/db";
 import { Logger } from "@weldr/shared/logger";
-import type { IntegrationKey, IntegrationStatus } from "@weldr/shared/types";
-import {
-  integrationKeySchema,
-  integrationStatusSchema,
-} from "@weldr/shared/validators/integrations";
+import { integrationCategoryKeySchema } from "@weldr/shared/validators/integration-categories";
 import { createTool } from "../utils/tools";
 
 export const addIntegrationsTool = createTool({
   name: "add_integrations",
-  description: "Adds integrations to an existing initialized project.",
+  description:
+    "Shows available integration categories that can be added to an existing initialized project.",
   whenToUse:
-    "Use this tool when you need to add integrations to an already initialized project. The project must be initialized first using the init_project tool.",
+    "Use this tool when you need to add more integration categories to an already initialized project. It will return available categories.",
   inputSchema: z.object({
-    keys: z
-      .array(integrationKeySchema)
-      .describe("The integration keys to add."),
+    categories: z
+      .array(integrationCategoryKeySchema)
+      .describe(
+        "Integration categories to add to the project (e.g., 'database', 'auth', 'email').",
+      ),
   }),
   outputSchema: z.discriminatedUnion("status", [
     z.object({
       status: z.literal("awaiting_config"),
-      integrations: z
-        .object({
-          id: z.string(),
-          key: integrationKeySchema,
-          status: integrationStatusSchema,
-        })
-        .array(),
-    }),
-
-    z.object({
-      status: z.literal("completed"),
-      integrations: z
-        .object({
-          id: z.string(),
-          key: integrationKeySchema,
-          status: integrationStatusSchema,
-        })
-        .array(),
+      categories: z.array(integrationCategoryKeySchema),
     }),
     z.object({
       status: z.literal("failed"),
@@ -51,11 +31,6 @@ export const addIntegrationsTool = createTool({
   execute: async ({ input, context }) => {
     const project = context.get("project");
     const version = context.get("version");
-    const streamWriter = global.sseConnections?.get(version.chatId);
-
-    if (!streamWriter) {
-      throw new Error("Stream writer not found");
-    }
 
     const logger = Logger.get({
       projectId: project.id,
@@ -63,7 +38,7 @@ export const addIntegrationsTool = createTool({
       input,
     });
 
-    logger.info(`Processing integrations: ${input.keys.join(", ")}`);
+    logger.info(`Adding categories: ${input.categories.join(", ")}`);
 
     if (!project.initiatedAt) {
       const error =
@@ -72,52 +47,48 @@ export const addIntegrationsTool = createTool({
       return { status: "failed" as const, error };
     }
 
-    const dependencyValidation = await validateDependencies(
-      input.keys,
-      context,
-    );
+    const requestedCategories = await db.query.integrationCategories.findMany({
+      where: (table, { inArray }) => inArray(table.key, input.categories),
+    });
 
-    if (!dependencyValidation.isValid) {
-      const error = `Dependency validation failed: ${dependencyValidation.errors.join(", ")}`;
+    if (requestedCategories.length === 0) {
+      const error = "No valid categories found";
       logger.error(error);
       return { status: "failed" as const, error };
     }
 
-    const createdIntegrations = await createIntegrations(input.keys, context);
+    const existingIntegrations = await db.query.integrations.findMany({
+      where: (table, { eq }) => eq(table.projectId, project.id),
+      with: {
+        integrationTemplate: {
+          with: {
+            category: {
+              columns: {
+                key: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
-    if (createdIntegrations.some((i) => i.status === "awaiting_config")) {
-      return {
-        status: "awaiting_config" as const,
-        integrations: createdIntegrations.map((i) => ({
-          id: i.id,
-          key: i.key,
-          status: i.status,
-        })),
-      };
-    }
+    const existingCategoryKeys = new Set(
+      existingIntegrations.map(
+        (integration) => integration.integrationTemplate.category.key,
+      ),
+    );
 
-    const installationResult = await installQueuedIntegrations(context);
+    const availableCategories = requestedCategories.filter(
+      (category) => !existingCategoryKeys.has(category.key),
+    );
 
-    if (installationResult.status === "error") {
-      return {
-        status: "failed" as const,
-        error: installationResult.error,
-      };
-    }
+    logger.info(
+      `Found ${availableCategories.length} available categories for user selection`,
+    );
 
     return {
-      status: "completed" as const,
-      integrations: installationResult.installedIntegrations.map(
-        (i: {
-          id: string;
-          key: IntegrationKey;
-          status: IntegrationStatus;
-        }) => ({
-          id: i.id,
-          key: i.key,
-          status: i.status,
-        }),
-      ),
+      status: "awaiting_config" as const,
+      categories: availableCategories.map((category) => category.key),
     };
   },
 });

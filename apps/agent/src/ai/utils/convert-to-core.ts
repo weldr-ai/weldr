@@ -3,7 +3,7 @@ import type { ModelMessage, ToolContent } from "ai";
 import { db, eq } from "@weldr/db";
 import { declarations } from "@weldr/db/schema";
 import type { ChatMessage } from "@weldr/shared/types";
-import { formatDeclarationSpecs } from "./formetters";
+import { formatDeclarationSpecs } from "./formatters";
 
 export async function convertMessagesToCore(messages: ChatMessage[]) {
   const result: ModelMessage[] = [];

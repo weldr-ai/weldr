@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   formatDeclarationData,
   formatDeclarationSpecs,
-} from "@/ai/utils/formetters";
+} from "@/ai/utils/formatters";
 import { registry } from "@/ai/utils/registry";
 
 import { cosineDistance, db, desc, getTableColumns, gt, sql } from "@weldr/db";

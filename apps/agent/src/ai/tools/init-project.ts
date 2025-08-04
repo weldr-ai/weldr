@@ -1,49 +1,29 @@
 import { z } from "zod";
-import { createIntegrations } from "@/integrations/utils/create-integrations";
-import { installQueuedIntegrations } from "@/integrations/utils/queue-installer";
-import { validateDependencies } from "@/integrations/utils/validate-dependencies";
 
 import { db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import {
-  integrationKeySchema,
-  integrationStatusSchema,
-} from "@weldr/shared/validators/integrations";
+import { integrationCategoryKeySchema } from "@weldr/shared/validators/integration-categories";
 import { createTool } from "../utils/tools";
 
 export const initProjectTool = createTool({
   name: "init_project",
   description:
-    "Initializes a new project with the specified title and integrations.",
+    "Initializes a new project with the specified title and integration categories.",
   whenToUse:
-    "Use this tool when you need to initialize a new project from scratch. This should be done before adding any integrations to the project.",
+    "Use this tool when you need to initialize a new project from scratch. Specify the categories of integrations needed and the system will present recommended integrations for each category.",
   inputSchema: z.object({
     title: z.string().describe("The title/name of the project"),
-    keys: z
-      .array(integrationKeySchema)
-      .describe("Integrations to install in the project."),
+    categories: z
+      .array(integrationCategoryKeySchema)
+      .describe(
+        "Integration categories needed for the project (e.g., 'database', 'auth', 'email').",
+      ),
   }),
   outputSchema: z.discriminatedUnion("status", [
     z.object({
       status: z.literal("awaiting_config"),
-      integrations: z
-        .object({
-          id: z.string(),
-          key: integrationKeySchema,
-          status: integrationStatusSchema,
-        })
-        .array(),
-    }),
-    z.object({
-      status: z.literal("completed"),
-      integrations: z
-        .object({
-          id: z.string(),
-          key: integrationKeySchema,
-          status: integrationStatusSchema,
-        })
-        .array(),
+      categories: z.array(integrationCategoryKeySchema),
     }),
     z.object({
       status: z.literal("failed"),
@@ -70,16 +50,6 @@ export const initProjectTool = createTool({
 
     logger.info(`Initializing project: ${input.title}`);
 
-    const dependencyValidation = await validateDependencies(
-      input.keys,
-      context,
-    );
-    if (!dependencyValidation.isValid) {
-      const error = `Dependency validation failed: ${dependencyValidation.errors.join(", ")}`;
-      logger.error(error);
-      return { status: "failed" as const, error };
-    }
-
     const [updatedProject] = await db
       .update(projects)
       .set({
@@ -97,7 +67,7 @@ export const initProjectTool = createTool({
 
     context.set("project", {
       ...updatedProject,
-      config: new Set(),
+      integrationCategories: new Set(),
     });
 
     await streamWriter.write({
@@ -108,38 +78,23 @@ export const initProjectTool = createTool({
       },
     });
 
-    const createdIntegrations = await createIntegrations(input.keys, context);
+    const requestedCategories = await db.query.integrationCategories.findMany({
+      where: (table, { inArray }) => inArray(table.key, input.categories),
+    });
 
-    if (createdIntegrations.some((i) => i.status === "awaiting_config")) {
-      return {
-        status: "awaiting_config" as const,
-        integrations: createdIntegrations.map((i) => ({
-          id: i.id,
-          key: i.key,
-          status: i.status,
-        })),
-      };
+    if (requestedCategories.length === 0) {
+      const error = "No valid categories found";
+      logger.error(error);
+      return { status: "failed" as const, error };
     }
 
-    const installationResult = await installQueuedIntegrations(context);
-
-    if (installationResult.status === "error") {
-      return {
-        status: "failed" as const,
-        error: installationResult.error,
-      };
-    }
-
-    logger.info("Project initialized successfully");
+    logger.info(
+      `Found ${requestedCategories.length} categories for user selection`,
+    );
 
     return {
-      status: "completed" as const,
-      integrations:
-        installationResult.installedIntegrations?.map((i) => ({
-          id: i.id,
-          key: i.key,
-          status: i.status,
-        })) ?? [],
+      status: "awaiting_config" as const,
+      categories: requestedCategories.map((category) => category.key),
     };
   },
 });

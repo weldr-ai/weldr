@@ -1,4 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
+import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
 import { installQueuedIntegrations } from "@/integrations/utils/queue-installer";
 import { processIntegrationQueue } from "@/integrations/utils/queue-manager";
 import { createRouter } from "@/lib/utils";
@@ -91,7 +92,11 @@ router.openapi(route, async (c) => {
       with: {
         integrations: {
           with: {
-            integrationTemplate: true,
+            integrationTemplate: {
+              with: {
+                category: true,
+              },
+            },
           },
         },
       },
@@ -101,21 +106,7 @@ router.openapi(route, async (c) => {
       return c.json({ error: "Project not found" }, 404);
     }
 
-    const integrations = project.integrations.reduce((acc, integration) => {
-      if (integration.integrationTemplate.category === "backend") {
-        acc.add("backend");
-      }
-      if (integration.integrationTemplate.category === "frontend") {
-        acc.add("frontend");
-      }
-      if (integration.integrationTemplate.category === "authentication") {
-        acc.add("authentication");
-      }
-      if (integration.integrationTemplate.category === "database") {
-        acc.add("database");
-      }
-      return acc;
-    }, new Set<"backend" | "frontend" | "authentication" | "database">());
+    const installedCategories = await getInstalledCategories(projectId);
 
     const activeVersion = await db.query.versions.findFirst({
       where: and(
@@ -133,7 +124,10 @@ router.openapi(route, async (c) => {
     }
 
     const workflowContext = c.get("workflowContext");
-    workflowContext.set("project", { ...project, config: integrations });
+    workflowContext.set("project", {
+      ...project,
+      integrationCategories: new Set(installedCategories),
+    });
     workflowContext.set("version", activeVersion);
     workflowContext.set("user", session.user);
     workflowContext.set("isXML", true);

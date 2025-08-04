@@ -27,7 +27,7 @@ import type {
 } from "@weldr/shared/validators/chats";
 import { prompts } from "../prompts";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
-import { formatTaskDeclarationToMarkdown } from "../utils/formetters";
+import { formatTaskDeclarationToMarkdown } from "../utils/formatters";
 import { calculateModelCost } from "../utils/providers-pricing";
 import { XMLProvider } from "../utils/xml-provider";
 

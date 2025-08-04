@@ -10,6 +10,7 @@ export default {
     "./src/schema/declarations.ts",
     "./src/schema/dependencies.ts",
     "./src/schema/environment-variables.ts",
+    "./src/schema/integration-categories.ts",
     "./src/schema/integration-templates.ts",
     "./src/schema/integrations.ts",
     "./src/schema/nodes.ts",

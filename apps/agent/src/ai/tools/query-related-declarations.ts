@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   formatDeclarationData,
   formatDeclarationSpecs,
-} from "@/ai/utils/formetters";
+} from "@/ai/utils/formatters";
 
 import { db, eq, sql } from "@weldr/db";
 import {

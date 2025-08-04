@@ -41,17 +41,18 @@ export async function processIntegrationQueue(
   });
 
   const completedCategories = completedIntegrations
-    .map((i) => integrationRegistry.get(i.key)?.category)
+    .map((i) => integrationRegistry.getIntegration(i.key)?.category)
     .filter(Boolean);
 
   for (const integration of queuedIntegrations) {
-    const integrationDefinition = integrationRegistry.get(integration.key);
-    if (!integrationDefinition) {
+    const category = integrationRegistry.getIntegrationCategory(
+      integration.key,
+    );
+    if (!category) {
       logger.error(`Integration definition not found: ${integration.key}`);
-      continue;
+      throw new Error(`Integration definition not found: ${integration.key}`);
     }
-
-    const dependencies = integrationDefinition.dependencies || [];
+    const dependencies = category.dependencies || [];
     const missingDependencies = dependencies.filter(
       (dep) => !completedCategories.includes(dep),
     );
@@ -96,14 +97,14 @@ export async function unblockIntegrations(
   });
 
   const completedCategories = completedIntegrations
-    .map((i) => integrationRegistry.get(i.key)?.category)
+    .map((i) => integrationRegistry.getIntegration(i.key)?.category)
     .filter(Boolean);
 
   for (const integration of blockedIntegrations) {
-    const integrationDefinition = integrationRegistry.get(integration.key);
-    if (!integrationDefinition) continue;
-
-    const dependencies = integrationDefinition.dependencies || [];
+    const category = integrationRegistry.getIntegrationCategory(
+      integration.key,
+    );
+    const dependencies = category.dependencies || [];
     const missingDependencies = dependencies.filter(
       (dep) => !completedCategories.includes(dep),
     );

@@ -180,20 +180,30 @@ CREATE TABLE "environment_variables" (
 	CONSTRAINT "unique_key" UNIQUE("project_id","key")
 );
 --> statement-breakpoint
+CREATE TABLE "integration_categories" (
+	"id" text PRIMARY KEY NOT NULL,
+	"key" text NOT NULL,
+	"description" text NOT NULL,
+	"recommended_integrations" jsonb NOT NULL,
+	"dependencies" jsonb,
+	"priority" integer DEFAULT 100 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "integration_templates" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text NOT NULL,
-	"category" text NOT NULL,
 	"key" text NOT NULL,
 	"version" text NOT NULL,
-	"dependencies" jsonb,
 	"variables" jsonb,
 	"options" jsonb,
 	"recommended_options" jsonb,
-	"allow_multiple" boolean DEFAULT true NOT NULL,
+	"is_recommended" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"category_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "integration_environment_variables" (
@@ -206,7 +216,6 @@ CREATE TABLE "integration_environment_variables" (
 CREATE TABLE "integrations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"key" text NOT NULL,
-	"category" text NOT NULL,
 	"name" text,
 	"options" jsonb,
 	"status" text NOT NULL,
@@ -307,6 +316,7 @@ ALTER TABLE "dependencies" ADD CONSTRAINT "dependencies_dependency_id_declaratio
 ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_secret_id_secrets_id_fk" FOREIGN KEY ("secret_id") REFERENCES "vault"."secrets"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "environment_variables" ADD CONSTRAINT "environment_variables_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "integration_templates" ADD CONSTRAINT "integration_templates_category_id_integration_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."integration_categories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integration_environment_variables" ADD CONSTRAINT "integration_environment_variables_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integration_environment_variables" ADD CONSTRAINT "integration_environment_variables_environment_variable_id_environment_variables_id_fk" FOREIGN KEY ("environment_variable_id") REFERENCES "public"."environment_variables"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integrations" ADD CONSTRAINT "integrations_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -331,8 +341,10 @@ CREATE INDEX "chat_messages_created_at_idx" ON "chat_messages" USING btree ("cre
 CREATE INDEX "chats_created_at_idx" ON "chats" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "declaration_created_at_idx" ON "declarations" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "embeddingIndex" ON "declarations" USING hnsw ("embedding" vector_cosine_ops);--> statement-breakpoint
+CREATE INDEX "integration_categories_created_at_idx" ON "integration_categories" USING btree ("created_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "integration_categories_key_idx" ON "integration_categories" USING btree ("key");--> statement-breakpoint
 CREATE INDEX "integration_templates_created_at_idx" ON "integration_templates" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX "integration_templates_category_idx" ON "integration_templates" USING btree ("category");--> statement-breakpoint
+CREATE INDEX "integration_templates_category_id_idx" ON "integration_templates" USING btree ("category_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "integration_templates_key_version_idx" ON "integration_templates" USING btree ("key","version");--> statement-breakpoint
 CREATE INDEX "integrations_created_at_idx" ON "integrations" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "nodes_created_at_idx" ON "nodes" USING btree ("created_at");--> statement-breakpoint

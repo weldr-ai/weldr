@@ -43,11 +43,13 @@ export function Canvas({
   initialEdges,
   project,
   environmentVariables,
+  integrationTemplates,
 }: {
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
   project: RouterOutputs["projects"]["byId"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const viewPort = useViewport();
@@ -327,6 +329,7 @@ export function Canvas({
           project={project}
           version={project.currentVersion}
           environmentVariables={environmentVariables}
+          integrationTemplates={integrationTemplates}
         />
       </Panel>
 

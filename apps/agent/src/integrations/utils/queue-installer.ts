@@ -1,9 +1,10 @@
 import type { WorkflowContext } from "@/workflow/context";
 
 import { and, db, eq } from "@weldr/db";
-import { chatMessages } from "@weldr/db/schema";
+import { chatMessages, integrations } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import type {
+  IntegrationCategoryKey,
   IntegrationKey,
   IntegrationStatus,
   ToolMessage,
@@ -34,6 +35,14 @@ async function streamToolMessageUpdate({
     return;
   }
 
+  const integration = await db.query.integrations.findFirst({
+    where: eq(integrations.id, integrationId),
+  });
+
+  if (!integration) {
+    return;
+  }
+
   const message = await db.query.chatMessages.findFirst({
     where: and(
       eq(chatMessages.chatId, version.chatId),
@@ -51,24 +60,27 @@ async function streamToolMessageUpdate({
   const toolContent = toolMessage.content[0] as ToolResultPartMessage;
 
   const toolOutput = toolContent.output as {
-    status: "awaiting_config" | "completed" | "failed";
-    integrations: {
-      id: string;
+    status: "awaiting_config" | "success" | "cancelled" | "failed";
+    categories: IntegrationCategoryKey[];
+    integrations?: {
+      category: IntegrationCategoryKey;
       key: IntegrationKey;
+      name: string;
       status: IntegrationStatus;
     }[];
   };
 
   const existingIntegrations = toolOutput.integrations || [];
   const updatedIntegrations = existingIntegrations.map(
-    (integration: {
-      id: string;
+    (existingIntegration: {
+      category: IntegrationCategoryKey;
       key: IntegrationKey;
+      name: string;
       status: IntegrationStatus;
     }) =>
-      integration.id === integrationId
-        ? { ...integration, status }
-        : integration,
+      existingIntegration.key === integration.key
+        ? { ...existingIntegration, status }
+        : existingIntegration,
   );
 
   const updatedContent = [
@@ -83,8 +95,6 @@ async function streamToolMessageUpdate({
       },
     } satisfies ToolResultPartMessage,
   ];
-
-  console.log("updatedContent", JSON.stringify(updatedContent, null, 2));
 
   await db
     .update(chatMessages)

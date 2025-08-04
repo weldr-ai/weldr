@@ -10,7 +10,6 @@ export const integrationKeySchema = z.enum([
 ]);
 
 export const integrationStatusSchema = z.enum([
-  "awaiting_config",
   "queued",
   "blocked",
   "installing",
@@ -40,19 +39,16 @@ const baseIntegrationSchema = z.object({
 
 export const honoIntegrationSchema = baseIntegrationSchema.extend({
   key: z.literal("orpc"),
-  category: z.literal("backend"),
   options: z.null(),
 });
 
 export const tanstackStartIntegrationSchema = baseIntegrationSchema.extend({
   key: z.literal("tanstack-start"),
-  category: z.literal("frontend"),
   options: z.null(),
 });
 
 export const postgresqlIntegrationSchema = baseIntegrationSchema.extend({
   key: z.literal("postgresql"),
-  category: z.literal("database"),
   options: z.object({
     orm: z.enum(["drizzle", "prisma"]).default("drizzle"),
   }),
@@ -60,13 +56,12 @@ export const postgresqlIntegrationSchema = baseIntegrationSchema.extend({
 
 export const betterAuthIntegrationSchema = baseIntegrationSchema.extend({
   key: z.literal("better-auth"),
-  category: z.literal("authentication"),
   options: z.object({
     socialProviders: z.enum(["github", "google", "microsoft"]).array(),
     plugins: z
       .enum(["admin", "oAuthProxy", "openAPI", "organization", "stripe"])
       .array(),
-    emailVerification: z.boolean().default(false),
+    emailVerifiion: z.boolean().default(false),
     emailAndPassword: z.boolean().default(true),
     stripeIntegration: z.boolean().default(false),
   }),
@@ -104,4 +99,20 @@ export const updateIntegrationSchema = z.object({
       .array(integrationEnvironmentVariableMappingSchema)
       .optional(),
   }),
+});
+
+export const createBatchIntegrationsSchema = z.object({
+  projectId: z.string().min(1),
+  triggerWorkflow: z.boolean().optional().default(false),
+  integrations: z
+    .array(
+      z.object({
+        name: z.string().min(1).optional(),
+        integrationTemplateId: z.string().min(1),
+        environmentVariableMappings: z.array(
+          integrationEnvironmentVariableMappingSchema,
+        ),
+      }),
+    )
+    .min(1),
 });

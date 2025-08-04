@@ -35,10 +35,10 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
       isRequired: true,
     },
   ],
-  dependencies: ["backend", "database"],
+  isRecommended: true,
   packages: async (context) => {
     const project = context.get("project");
-    const hasFrontend = project.config.has("frontend");
+    const hasFrontend = project.integrationCategories.has("frontend");
 
     const packages: IntegrationPackageSets = [
       {

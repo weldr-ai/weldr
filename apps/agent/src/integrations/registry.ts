@@ -4,52 +4,64 @@ import { db, eq } from "@weldr/db";
 import { integrations } from "@weldr/db/schema";
 import type {
   Integration,
-  IntegrationCategory,
+  IntegrationCategoryKey,
   IntegrationKey,
 } from "@weldr/shared/types";
-import { betterAuthIntegration } from "./authentication/better-auth";
-import { orpcIntegration } from "./backend/orpc";
-import { postgresqlIntegration } from "./database/postgresql";
-import { tanstackStartIntegration } from "./frontend/tanstack-start";
-import type { IntegrationDefinition } from "./types";
+import { authenticationIntegrationCategory } from "./authentication";
+import { backendIntegrationCategory } from "./backend";
+import { databaseIntegrationCategory } from "./database";
+import { frontendIntegrationCategory } from "./frontend";
+import type {
+  IntegrationCategoryDefinition,
+  IntegrationDefinition,
+} from "./types";
 import { applyFiles } from "./utils/apply-files";
 
-function getIntegrationKeyFromCategory(
-  category: IntegrationCategory,
-): IntegrationKey[] {
-  switch (category) {
-    case "backend":
-      return ["orpc"];
-    case "frontend":
-      return ["tanstack-start"];
-    case "database":
-      return ["postgresql"];
-    case "authentication":
-      return ["better-auth"];
-    default:
-      return [];
-  }
-}
-
 class IntegrationRegistry {
-  private integrationDefinitions = new Map<
-    IntegrationKey,
-    IntegrationDefinition<IntegrationKey>
+  private integrationCategories = new Map<
+    IntegrationCategoryKey,
+    IntegrationCategoryDefinition<IntegrationKey[]>
   >();
 
-  async register<K extends IntegrationKey>(
-    integration: IntegrationDefinition<K>,
+  async registerCategory<K extends IntegrationKey[]>(
+    category: IntegrationCategoryDefinition<K>,
   ): Promise<void> {
-    // biome-ignore lint/suspicious/noExplicitAny: reason
-    this.integrationDefinitions.set(integration.key, integration as any);
+    // Type assertion needed due to the generic constraint
+    this.integrationCategories.set(
+      category.key,
+      category as IntegrationCategoryDefinition<IntegrationKey[]>,
+    );
   }
 
-  get<K extends IntegrationKey>(key: K): IntegrationDefinition<K> {
-    const integrationDefinition = this.integrationDefinitions.get(key);
-    if (!integrationDefinition) {
-      throw new Error(`Integration ${key} not found`);
+  listCategories(): IntegrationCategoryDefinition<IntegrationKey[]>[] {
+    return Array.from(this.integrationCategories.values());
+  }
+
+  getCategory(
+    key: IntegrationCategoryKey,
+  ): IntegrationCategoryDefinition<IntegrationKey[]> {
+    const category = this.integrationCategories.get(key);
+    if (!category) {
+      throw new Error(`Category ${key} not found`);
     }
-    return integrationDefinition as IntegrationDefinition<K>;
+    return category;
+  }
+
+  getIntegration<K extends IntegrationKey>(key: K): IntegrationDefinition<K> {
+    // Find the integration by searching through all categories
+    for (const category of this.integrationCategories.values()) {
+      const integration = category.integrations[key];
+      if (integration) {
+        return integration;
+      }
+    }
+    throw new Error(`Integration ${key} not found`);
+  }
+
+  getIntegrationCategory(
+    key: IntegrationKey,
+  ): IntegrationCategoryDefinition<IntegrationKey[]> {
+    return this.getCategory(this.getIntegration(key).category);
   }
 
   async install({
@@ -59,7 +71,8 @@ class IntegrationRegistry {
     integration: Integration;
     context: WorkflowContext;
   }): Promise<void> {
-    const integrationDefinition = this.get(integration.key);
+    const integrationDefinition = this.getIntegration(integration.key);
+
     if (!integrationDefinition) {
       throw new Error(`Integration ${integration.key} not found`);
     }
@@ -86,78 +99,79 @@ class IntegrationRegistry {
   }
 
   getInstallationOrder(integrationKeys: IntegrationKey[]): IntegrationKey[] {
-    const visited = new Set<IntegrationKey>();
-    const resolved: IntegrationKey[] = [];
-    const frontendKeys: IntegrationKey[] = [];
-    const nonFrontendKeys: IntegrationKey[] = [];
+    // First, resolve at the category level
+    const requiredCategories = new Set<IntegrationCategoryKey>();
+    const visitedCategories = new Set<IntegrationCategoryKey>();
+    const categoryOrder: IntegrationCategoryKey[] = [];
 
-    // Separate frontend and non-frontend integrations
+    // Get all categories from the requested integrations
     for (const key of integrationKeys) {
-      const integrationDefinition = this.get(key);
-      if (integrationDefinition?.category === "frontend") {
-        frontendKeys.push(key);
-      } else {
-        nonFrontendKeys.push(key);
-      }
+      const integrationDefinition = this.getIntegration(key);
+      requiredCategories.add(integrationDefinition.category);
     }
 
-    const resolveDependencies = (key: IntegrationKey) => {
-      if (visited.has(key)) {
+    const resolveCategoryDependencies = (
+      categoryKey: IntegrationCategoryKey,
+    ) => {
+      if (visitedCategories.has(categoryKey)) {
         return;
       }
 
-      visited.add(key);
+      visitedCategories.add(categoryKey);
 
-      const integrationDefinition = this.get(key);
-      if (!integrationDefinition) {
-        return;
+      const category = this.getCategory(categoryKey);
+      const dependencies = category.dependencies || [];
+
+      // First resolve all category dependencies
+      for (const depCategoryKey of dependencies) {
+        requiredCategories.add(depCategoryKey);
+        resolveCategoryDependencies(depCategoryKey);
       }
 
-      const dependencies = integrationDefinition.dependencies || [];
-
-      const dependencyKeys: IntegrationKey[] = [];
-      for (const category of dependencies) {
-        const categoryKeys = getIntegrationKeyFromCategory(category);
-        dependencyKeys.push(...categoryKeys);
-      }
-
-      for (const depKey of dependencyKeys) {
-        resolveDependencies(depKey);
-      }
-
-      if (!resolved.includes(key)) {
-        resolved.push(key);
+      // Add this category to the order if not already present
+      if (!categoryOrder.includes(categoryKey)) {
+        categoryOrder.push(categoryKey);
       }
     };
 
-    // Process frontend integrations first
-    for (const key of frontendKeys) {
-      resolveDependencies(key);
+    // Resolve dependencies for all required categories
+    for (const categoryKey of requiredCategories) {
+      resolveCategoryDependencies(categoryKey);
     }
 
-    // Then process non-frontend integrations
-    for (const key of nonFrontendKeys) {
-      resolveDependencies(key);
+    // Sort categories by installation priority for cases where dependencies don't dictate order
+    categoryOrder.sort((a, b) => {
+      const categoryA = this.getCategory(a);
+      const categoryB = this.getCategory(b);
+      const priorityA = categoryA.priority;
+      const priorityB = categoryB.priority;
+      return priorityA - priorityB;
+    });
+
+    // Now order the originally requested integrations based on category order
+    const resolved: IntegrationKey[] = [];
+    const processedIntegrations = new Set<IntegrationKey>();
+
+    for (const categoryKey of categoryOrder) {
+      for (const integrationKey of integrationKeys) {
+        if (processedIntegrations.has(integrationKey)) {
+          continue;
+        }
+
+        const integrationDefinition = this.getIntegration(integrationKey);
+        if (integrationDefinition.category === categoryKey) {
+          resolved.push(integrationKey);
+          processedIntegrations.add(integrationKey);
+        }
+      }
     }
 
     return resolved;
   }
-
-  getAll(): IntegrationDefinition<IntegrationKey>[] {
-    return Array.from(this.integrationDefinitions.values());
-  }
-
-  has(key: IntegrationKey): boolean {
-    return this.integrationDefinitions.has(key);
-  }
-
-  list(): IntegrationKey[] {
-    return Array.from(this.integrationDefinitions.keys());
-  }
 }
 
 export const integrationRegistry = new IntegrationRegistry();
-integrationRegistry.register(orpcIntegration);
-integrationRegistry.register(tanstackStartIntegration);
-integrationRegistry.register(postgresqlIntegration);
-integrationRegistry.register(betterAuthIntegration);
+integrationRegistry.registerCategory(backendIntegrationCategory);
+integrationRegistry.registerCategory(frontendIntegrationCategory);
+integrationRegistry.registerCategory(databaseIntegrationCategory);
+integrationRegistry.registerCategory(authenticationIntegrationCategory);

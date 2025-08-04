@@ -143,7 +143,7 @@ export const attachmentSchema = z.object({
 });
 
 const baseMessageSchema = z.object({
-  id: z.string().optional(),
+  id: z.string(),
   visibility: z.enum(["public", "internal"]),
   createdAt: z.date(),
   chatId: z.string().optional(),

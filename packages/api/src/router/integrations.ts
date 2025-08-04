@@ -12,6 +12,7 @@ import {
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import {
+  createBatchIntegrationsSchema,
   createIntegrationSchema,
   updateIntegrationSchema,
 } from "@weldr/shared/validators/integrations";
@@ -127,13 +128,13 @@ export const integrationsRouter = createTRPCRouter({
         const [integration] = await tx
           .insert(integrations)
           .values({
-            category: integrationTemplate.category,
             key: integrationTemplate.key,
             name,
             projectId,
             userId: ctx.session.user.id,
             integrationTemplateId,
-            status: "queued", // User has provided config via API, ready for queue processing
+            status: "queued",
+            options: integrationTemplate.recommendedOptions,
           })
           .returning();
 
@@ -216,7 +217,6 @@ export const integrationsRouter = createTRPCRouter({
         columns: {
           id: true,
           name: true,
-          category: true,
           key: true,
           status: true,
         },
@@ -232,8 +232,8 @@ export const integrationsRouter = createTRPCRouter({
               id: true,
               name: true,
               description: true,
-              category: true,
               key: true,
+              variables: true,
             },
           },
         },
@@ -280,8 +280,8 @@ export const integrationsRouter = createTRPCRouter({
               id: true,
               name: true,
               description: true,
-              category: true,
               key: true,
+              variables: true,
             },
           },
         },
@@ -362,5 +362,117 @@ export const integrationsRouter = createTRPCRouter({
 
         return updatedIntegration;
       });
+    }),
+  createBatch: protectedProcedure
+    .input(createBatchIntegrationsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const createdIntegrations = await db.transaction(async (tx) => {
+        const results = [];
+
+        for (const integrationData of input.integrations) {
+          const { name, integrationTemplateId, environmentVariableMappings } =
+            integrationData;
+
+          const existingIntegration = await tx.query.integrations.findFirst({
+            where: and(
+              eq(integrations.projectId, input.projectId),
+              eq(integrations.userId, ctx.session.user.id),
+              eq(integrations.integrationTemplateId, integrationTemplateId),
+            ),
+          });
+
+          if (existingIntegration) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Integration with template ${integrationTemplateId} already exists`,
+            });
+          }
+
+          const integrationTemplate =
+            await tx.query.integrationTemplates.findFirst({
+              where: eq(integrationTemplates.id, integrationTemplateId),
+            });
+
+          if (!integrationTemplate) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: `Integration template ${integrationTemplateId} not found`,
+            });
+          }
+
+          const [integration] = await tx
+            .insert(integrations)
+            .values({
+              key: integrationTemplate.key,
+              name,
+              projectId: input.projectId,
+              userId: ctx.session.user.id,
+              integrationTemplateId,
+              status: "queued",
+              options: integrationTemplate.recommendedOptions,
+            })
+            .returning();
+
+          if (!integration) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create integration",
+            });
+          }
+
+          // Create environment variable mappings
+          const integrationVariables = (
+            integrationTemplate.variables ?? []
+          ).map((v) => v.name);
+
+          for (const mapping of environmentVariableMappings) {
+            const envVar = await tx.query.environmentVariables.findFirst({
+              where: eq(environmentVariables.id, mapping.envVarId),
+            });
+
+            if (!envVar) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: `Environment variable ${mapping.envVarId} not found`,
+              });
+            }
+
+            const isValidVariable = integrationVariables.some(
+              (variable) => variable === envVar.key,
+            );
+
+            if (!isValidVariable) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Environment variable ${envVar.key} not valid for this integration`,
+              });
+            }
+
+            await tx.insert(integrationEnvironmentVariables).values({
+              integrationId: integration.id,
+              mapTo: mapping.configKey,
+              environmentVariableId: envVar.id,
+            });
+          }
+
+          results.push(integration);
+        }
+
+        return results;
+      });
+
+      try {
+        await integrationsRouter.createCaller(ctx).install({
+          projectId: input.projectId,
+          triggerWorkflow: input.triggerWorkflow ?? false,
+        });
+      } catch (error) {
+        console.error(
+          `[integrations.createBatch:${input.projectId}] Failed to trigger installation:`,
+          error,
+        );
+      }
+
+      return createdIntegrations;
     }),
 });

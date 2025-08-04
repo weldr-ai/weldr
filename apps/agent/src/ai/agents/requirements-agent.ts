@@ -206,7 +206,7 @@ export async function requirementsAgent({
                 ],
               },
             });
-            if (delta.output.status === "awaiting_config") {
+            if (delta.output.status === "success") {
               shouldRecur = false;
             } else {
               shouldRecur = true;

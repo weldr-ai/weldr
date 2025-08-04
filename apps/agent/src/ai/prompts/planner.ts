@@ -1,25 +1,11 @@
 import { getProjectContext } from "@/ai/utils/get-project-context";
 
-import { db } from "@weldr/db";
 import type { projects } from "@weldr/db/schema";
 
 export const planner = async (
   project: typeof projects.$inferSelect,
   toolSetMarkdown?: string,
 ) => {
-  const allIntegrationTemplates =
-    await db.query.integrationTemplates.findMany();
-
-  const integrationTemplatesList = allIntegrationTemplates
-    .map(
-      (integrationTemplate) =>
-        `- ${integrationTemplate.name} (key: ${integrationTemplate.key}):
-Category: ${integrationTemplate.category}
-Description: ${integrationTemplate.description}
-${integrationTemplate.dependencies ? `Dependencies: ${integrationTemplate.dependencies.join(", ")}` : ""}`,
-    )
-    .join("\n\n");
-
   const projectContext = await getProjectContext(project);
 
   return `<role>
@@ -33,10 +19,6 @@ ${integrationTemplate.dependencies ? `Dependencies: ${integrationTemplate.depend
   4. **Generate detailed tasks** - Create comprehensive, well-structured tasks with proper dependencies
   5. **Call the coder** - Pass the generated tasks to the coder agent for implementation
 </process>
-
-<integrations>
-${integrationTemplatesList}
-</integrations>
 
 <context>
 ${projectContext}

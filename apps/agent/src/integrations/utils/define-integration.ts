@@ -34,7 +34,10 @@ export function defineIntegration<K extends IntegrationKey>(
 
       context.set("project", {
         ...project,
-        config: new Set([...project.config, integration.category]),
+        integrationCategories: new Set([
+          ...project.integrationCategories,
+          props.category,
+        ]),
       });
 
       return combineResults(results.filter((r) => r !== undefined));

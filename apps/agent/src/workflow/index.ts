@@ -1,3 +1,5 @@
+import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
+
 import { and, db, eq, or } from "@weldr/db";
 import { projects, users, versions } from "@weldr/db/schema";
 import { WorkflowContext } from "./context";
@@ -42,7 +44,11 @@ export async function recoverWorkflow() {
     with: {
       integrations: {
         with: {
-          integrationTemplate: true,
+          integrationTemplate: {
+            with: {
+              category: true,
+            },
+          },
         },
       },
     },
@@ -52,21 +58,8 @@ export async function recoverWorkflow() {
     throw new Error("Project not found");
   }
 
-  const config = project.integrations.reduce((acc, integration) => {
-    if (integration.integrationTemplate.category === "backend") {
-      acc.add("backend");
-    }
-    if (integration.integrationTemplate.category === "frontend") {
-      acc.add("frontend");
-    }
-    if (integration.integrationTemplate.category === "database") {
-      acc.add("database");
-    }
-    if (integration.integrationTemplate.category === "authentication") {
-      acc.add("authentication");
-    }
-    return acc;
-  }, new Set<"database" | "authentication" | "backend" | "frontend">());
+  const installedCategories = await getInstalledCategories(project.id);
+
   const user = await db.query.users.findFirst({
     where: eq(users.id, project.userId),
   });
@@ -91,7 +84,10 @@ export async function recoverWorkflow() {
   }
 
   const context = new WorkflowContext();
-  context.set("project", { ...project, config });
+  context.set("project", {
+    ...project,
+    integrationCategories: new Set(installedCategories),
+  });
   context.set("version", version);
   context.set("user", user);
   context.set("isXML", true);

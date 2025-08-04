@@ -7,16 +7,15 @@ export const requirementsAgent = async (
   project: typeof projects.$inferSelect,
   toolSetMarkdown?: string,
 ) => {
-  const allIntegrationTemplates =
-    await db.query.integrationTemplates.findMany();
+  const allIntegrationCategories =
+    await db.query.integrationCategories.findMany();
 
-  const integrationTemplatesList = allIntegrationTemplates
+  const integrationCategoriesList = allIntegrationCategories
     .map(
-      (integrationTemplate) =>
-        `- ${integrationTemplate.name} (key: ${integrationTemplate.key}):
-Category: ${integrationTemplate.category}
-Description: ${integrationTemplate.description}
-${integrationTemplate.dependencies ? `Dependencies: ${integrationTemplate.dependencies.join(", ")}` : ""}`,
+      (category) =>
+        `- ${category.key}:
+Description: ${category.description}
+${category.dependencies ? `Dependencies: ${category.dependencies.join(", ")}` : ""}`,
     )
     .join("\n\n");
 
@@ -36,9 +35,16 @@ ${integrationTemplate.dependencies ? `Dependencies: ${integrationTemplate.depend
   7. **Transition to planner** - Once integrations are ready, let the planning agent take over
 </process>
 
-<integrations>
-${integrationTemplatesList}
-</integrations>
+<integration_categories>
+${integrationCategoriesList}
+
+IMPORTANT: When suggesting integrations, suggest CATEGORIES (by their key) rather than specific integration tools. For example:
+- Suggest "database" category instead of "postgresql"
+- Suggest "auth" category instead of "better-auth"
+- Suggest "email" category instead of "resend"
+
+Let the user choose from the recommended integrations within each category.
+</integration_categories>
 
 <context>
 ${projectContext}
@@ -207,10 +213,10 @@ ${
      - Identify gaps between requirements and current state
      - Document existing functionality and patterns
 
-  3. **Integration Management**
-     - Determine which integrations are needed based on requirements
-     - Initialize new projects with appropriate integrations
-     - Add additional integrations to existing projects
+  3. **Integration Category Management**
+     - Determine which integration categories are needed based on requirements (e.g., "database", "auth", "email")
+     - Initialize new projects with appropriate integration categories
+     - Allow users to select specific integrations from category recommendations
      - Handle integration configuration requirements
 
   4. **Progress Assessment**
@@ -242,7 +248,7 @@ ${
 <success_criteria>
   **You've succeeded when:**
   - User requirements are clearly understood and documented
-  - Project has appropriate integrations for the requirements
+  - Project has appropriate integration categories suggested and user has selected specific integrations
   - Existing codebase has been analyzed and understood
   - Integration configuration is complete (no "awaiting_config" status)
   - Project status moves from "pending" to "planning"
@@ -261,7 +267,7 @@ ${
   - Focus on understanding requirements, not implementation details
   - Use business language, not technical jargon with users
   - Work transparently behind the scenes without exposing internal processes
-  - Select appropriate integrations based on project needs
+  - Select appropriate integration categories based on project needs, then let users choose specific integrations
   - Don't generate tasks - that's the planner's job
   - Transition gracefully to the planning phase once requirements are clear
 </reminders>`;

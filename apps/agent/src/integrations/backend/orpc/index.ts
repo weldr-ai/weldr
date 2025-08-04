@@ -12,10 +12,10 @@ export const orpcIntegration = defineIntegration<"orpc">({
   variables: null,
   options: null,
   recommendedOptions: null,
-  dependencies: null,
+  isRecommended: true,
   packages: async (context) => {
     const project = context.get("project");
-    const hasFrontend = project.config.has("frontend");
+    const hasFrontend = project.integrationCategories.has("frontend");
 
     const packages: IntegrationPackageSets = [
       {

@@ -135,6 +135,7 @@ export function ProjectView({
             initialEdges={initialEdges}
             project={project}
             environmentVariables={env}
+            integrationTemplates={integrationTemplates}
           />
         </div>
       </div>

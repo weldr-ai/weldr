@@ -12,31 +12,27 @@ const baseIntegrationTemplateSchema = z.object({
 export const orpcIntegrationTemplateSchema =
   baseIntegrationTemplateSchema.extend({
     key: z.literal("orpc"),
-    category: z.literal("backend"),
     allowMultiple: z.literal(false),
-    dependencies: z.null(),
     variables: z.null(),
     options: z.null(),
     recommendedOptions: z.null(),
+    isRecommended: z.literal(true),
   });
 
 export const tanstackStartIntegrationTemplateSchema =
   baseIntegrationTemplateSchema.extend({
     key: z.literal("tanstack-start"),
-    category: z.literal("frontend"),
     allowMultiple: z.literal(false),
-    dependencies: z.null(),
     variables: z.null(),
     options: z.null(),
     recommendedOptions: z.null(),
+    isRecommended: z.literal(true),
   });
 
 export const postgresqlIntegrationTemplateSchema =
   baseIntegrationTemplateSchema.extend({
     key: z.literal("postgresql"),
-    category: z.literal("database"),
     allowMultiple: z.literal(false),
-    dependencies: z.tuple([z.literal("backend")]),
     variables: z.tuple([
       z.object({
         name: z.literal("DATABASE_URL"),
@@ -50,12 +46,12 @@ export const postgresqlIntegrationTemplateSchema =
     recommendedOptions: z.object({
       orm: z.literal("drizzle"),
     }),
+    isRecommended: z.literal(true),
   });
 
 export const betterAuthIntegrationTemplateSchema =
   baseIntegrationTemplateSchema.extend({
     key: z.literal("better-auth"),
-    category: z.literal("authentication"),
     variables: z.array(
       z.object({
         name: z.literal("BETTER_AUTH_SECRET"),
@@ -64,7 +60,6 @@ export const betterAuthIntegrationTemplateSchema =
       }),
     ),
     allowMultiple: z.literal(false),
-    dependencies: z.tuple([z.literal("backend"), z.literal("database")]),
     options: z.object({
       socialProviders: z.tuple([
         z.literal("github"),
@@ -83,6 +78,7 @@ export const betterAuthIntegrationTemplateSchema =
       stripeIntegration: z.boolean().default(false),
     }),
     recommendedOptions: z.null(),
+    isRecommended: z.literal(true),
   });
 
 export const integrationTemplateSchema = z.discriminatedUnion("key", [

@@ -13,6 +13,10 @@ import type {
   userMessageSchema,
 } from "../validators/chats";
 import type { environmentVariableSchema } from "../validators/environment-variables";
+import type {
+  integrationCategoryKeySchema,
+  integrationCategorySchema,
+} from "../validators/integration-categories";
 import type { integrationTemplateSchema } from "../validators/integration-templates";
 import type {
   integrationEnvironmentVariableMappingSchema,
@@ -107,27 +111,16 @@ export type ProjectStreamableValue = {
   data: Partial<Project & { currentVersion: Partial<Version> }>;
 };
 
-// SSE-specific event types
-export type SSEConnectionEvent = {
-  type: "connected";
-  clientId: string;
-  streamId: string;
-  workflowRunning?: boolean;
-};
-
-export type SSEWorkflowCompleteEvent = {
-  type: "workflow_complete";
-};
-
-export type SSEErrorEvent = {
-  type: "error";
-  error: string;
+export type IntegrationStreamableValue = {
+  type: "integration";
+  data: {
+    id: string;
+    key: IntegrationKey;
+    status: "installing" | "completed" | "failed";
+  };
 };
 
 export type SSEEvent =
-  | SSEConnectionEvent
-  | SSEWorkflowCompleteEvent
-  | SSEErrorEvent
   | TextStreamableValue
   | ToolStreamableValue
   | NodeStreamableValue
@@ -142,22 +135,21 @@ export type TriggerWorkflowResponse = {
   message?: string;
 };
 
+export type IntegrationCategory = z.infer<typeof integrationCategorySchema>;
+export type IntegrationCategoryKey = z.infer<
+  typeof integrationCategoryKeySchema
+>;
+
 export type IntegrationTemplateOptions = z.infer<
   typeof integrationTemplateSchema
 >["options"];
 export type IntegrationTemplateRecommendedOptions = z.infer<
   typeof integrationTemplateSchema
 >["recommendedOptions"];
-export type IntegrationTemplateDependencies = z.infer<
-  typeof integrationTemplateSchema
->["dependencies"];
 export type IntegrationTemplateVariable = z.infer<
   typeof integrationTemplateSchema
 >["variables"];
 export type IntegrationTemplate = z.infer<typeof integrationTemplateSchema>;
-export type IntegrationCategory = z.infer<
-  typeof integrationTemplateSchema
->["category"];
 
 export type IntegrationKey = z.infer<typeof integrationKeySchema>;
 export type IntegrationOptions = z.infer<typeof integrationSchema>["options"];

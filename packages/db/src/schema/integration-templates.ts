@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -10,13 +11,12 @@ import {
 
 import { nanoid } from "@weldr/shared/nanoid";
 import type {
-  IntegrationCategory,
   IntegrationKey,
-  IntegrationTemplateDependencies,
   IntegrationTemplateOptions,
   IntegrationTemplateRecommendedOptions,
   IntegrationTemplateVariable,
 } from "@weldr/shared/types";
+import { integrationCategories } from "./integration-categories";
 
 export const integrationTemplates = pgTable(
   "integration_templates",
@@ -24,26 +24,36 @@ export const integrationTemplates = pgTable(
     id: text("id").primaryKey().$defaultFn(nanoid),
     name: text("name").notNull(),
     description: text("description").notNull(),
-    category: text("category").$type<IntegrationCategory>().notNull(),
     key: text("key").$type<IntegrationKey>().notNull(),
     version: text("version").notNull(),
-    dependencies:
-      jsonb("dependencies").$type<IntegrationTemplateDependencies>(),
     variables: jsonb("variables").$type<IntegrationTemplateVariable>(),
     options: jsonb("options").$type<IntegrationTemplateOptions>(),
     recommendedOptions: jsonb(
       "recommended_options",
     ).$type<IntegrationTemplateRecommendedOptions>(),
-    allowMultiple: boolean("allow_multiple").notNull().default(true),
+    isRecommended: boolean("is_recommended").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")
       .notNull()
       .defaultNow()
       .$onUpdate(() => new Date()),
+    categoryId: text("category_id")
+      .references(() => integrationCategories.id)
+      .notNull(),
   },
   (t) => [
     index("integration_templates_created_at_idx").on(t.createdAt),
-    index("integration_templates_category_idx").on(t.category),
+    index("integration_templates_category_id_idx").on(t.categoryId),
     uniqueIndex("integration_templates_key_version_idx").on(t.key, t.version),
   ],
+);
+
+export const integrationTemplatesRelations = relations(
+  integrationTemplates,
+  ({ one }) => ({
+    category: one(integrationCategories, {
+      fields: [integrationTemplates.categoryId],
+      references: [integrationCategories.id],
+    }),
+  }),
 );

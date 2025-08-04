@@ -9,14 +9,15 @@ export const tanstackStartIntegration = defineIntegration<"tanstack-start">({
     "Modern React framework that provides server-side rendering, routing, and data fetching for building high-performance web applications.",
   version: "1.0.0",
   allowMultiple: false,
-  dependencies: null,
   options: null,
   recommendedOptions: null,
   variables: null,
+  isRecommended: true,
   packages: async (context) => {
     const project = context.get("project");
-    const hasBackend = project.config.has("backend");
-    const hasAuthentication = project.config.has("authentication");
+    const hasBackend = project.integrationCategories.has("backend");
+    const hasAuthentication =
+      project.integrationCategories.has("authentication");
 
     const packages: IntegrationPackageSets[number] = {
       target: "web",

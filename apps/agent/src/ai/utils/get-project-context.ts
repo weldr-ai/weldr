@@ -6,7 +6,11 @@ export async function getProjectContext(project: typeof projects.$inferSelect) {
   const projectIntegrationsList = await db.query.integrations.findMany({
     where: eq(integrations.projectId, project.id),
     with: {
-      integrationTemplate: true,
+      integrationTemplate: {
+        with: {
+          category: true,
+        },
+      },
     },
   });
 
@@ -23,9 +27,12 @@ export async function getProjectContext(project: typeof projects.$inferSelect) {
   });
 
   return project.initiatedAt
-    ? `You are working on an app called ${project.title} with the following configurations:
+    ? `You are working on an app called ${project.title} with the following integrations:
 ${projectIntegrationsList
-  .map((integration) => `- ${integration.integrationTemplate.name}`)
+  .map(
+    (integration) =>
+      `- ${integration.integrationTemplate.name} (${integration.integrationTemplate.category.key})`,
+  )
   .join(", ")}${
   projectVersionsList.length > 0
     ? `\nLast 5 versions:

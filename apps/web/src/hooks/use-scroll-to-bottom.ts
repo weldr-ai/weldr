@@ -7,13 +7,23 @@ export function useScrollToBottom<T extends HTMLElement>(): [
   const containerRef = useRef<T>(null);
   const endRef = useRef<T>(null);
 
+  const scrollToBottom = () => {
+    const end = endRef.current;
+    if (end) {
+      end.scrollIntoView({ behavior: "instant", block: "end" });
+    }
+  };
+
   useEffect(() => {
     const container = containerRef.current;
     const end = endRef.current;
 
     if (container && end) {
+      // Initial scroll to bottom when the hook is first set up
+      scrollToBottom();
+
       const observer = new MutationObserver(() => {
-        end.scrollIntoView({ behavior: "instant", block: "end" });
+        scrollToBottom();
       });
 
       observer.observe(container, {

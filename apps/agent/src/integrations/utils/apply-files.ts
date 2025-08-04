@@ -8,6 +8,7 @@ import type { WorkflowContext } from "@/workflow/context";
 
 import { Logger } from "@weldr/shared/logger";
 import type { Integration } from "@weldr/shared/types";
+import { integrationRegistry } from "../registry";
 import type { FileItem } from "../types";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -172,14 +173,16 @@ async function generateFiles({
   context: WorkflowContext;
 }): Promise<FileItem[]> {
   const project = context.get("project");
-  const hasFrontend = project.config.has("frontend");
-  const hasBackend = project.config.has("backend");
+  const hasFrontend = project.integrationCategories.has("frontend");
+  const hasBackend = project.integrationCategories.has("backend");
 
   const logger = Logger.get({ projectId: integration.projectId });
 
+  const category = integrationRegistry.getIntegrationCategory(integration.key);
+
   let baseDataDir = path.join(
     path.resolve(__dirname, "../.."),
-    `integrations/${integration.category}/${integration.key}`,
+    `integrations/${category.key}/${integration.key}`,
   );
 
   if (

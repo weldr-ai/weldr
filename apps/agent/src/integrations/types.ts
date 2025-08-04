@@ -2,6 +2,8 @@ import type { WorkflowContext } from "@/workflow/context";
 
 import type {
   Integration,
+  IntegrationCategory,
+  IntegrationCategoryKey,
   IntegrationKey,
   IntegrationTemplate,
 } from "@weldr/shared/types";
@@ -55,6 +57,7 @@ export type IntegrationScriptSets = {
 }[];
 
 interface IntegrationDefinitionExtension<K extends IntegrationKey> {
+  category: IntegrationCategoryKey;
   packages?: (
     context: WorkflowContext,
     options?: ExtractOptionsForKey<K>,
@@ -77,3 +80,10 @@ export type IntegrationDefinition<K extends IntegrationKey> = DistributiveOmit<
   "id" | "createdAt" | "updatedAt"
 > &
   IntegrationDefinitionExtension<K>;
+
+export type IntegrationCategoryDefinition<K extends IntegrationKey[]> =
+  DistributiveOmit<IntegrationCategory, "id"> & {
+    integrations: {
+      [key in K[number]]: IntegrationDefinition<key>;
+    };
+  };

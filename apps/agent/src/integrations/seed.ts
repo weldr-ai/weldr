@@ -1,5 +1,5 @@
 import { db } from "@weldr/db";
-import { integrationTemplates } from "@weldr/db/schema";
+import { integrationCategories, integrationTemplates } from "@weldr/db/schema";
 import type { IntegrationKey } from "@weldr/shared/types";
 import { integrationRegistry } from "./registry";
 
@@ -10,73 +10,98 @@ export async function seedIntegrationTemplates(): Promise<void> {
     let inserted = 0;
     let updated = 0;
 
-    const registeredIntegrations = integrationRegistry.getAll();
+    const registeredCategories = integrationRegistry.listCategories();
 
-    console.log(
-      `Found ${registeredIntegrations.length} registered integrations`,
-    );
+    console.log(`Found ${registeredCategories.length} registered categories`);
 
     await db.transaction(async (tx) => {
-      for (const integration of registeredIntegrations) {
-        const templateData = {
-          name: integration.name,
-          description: integration.description,
-          category: integration.category,
-          key: integration.key as IntegrationKey,
-          version: integration.version,
-          dependencies: integration.dependencies,
-          variables: integration.variables,
-          options: integration.options,
-          allowMultiple: integration.allowMultiple,
-          recommendedOptions: integration.recommendedOptions,
-        };
-
-        const result = await tx
-          .insert(integrationTemplates)
-          .values(templateData)
-          .onConflictDoUpdate({
-            target: [integrationTemplates.key, integrationTemplates.version],
-            set: {
-              name: templateData.name,
-              description: templateData.description,
-              category: templateData.category,
-              dependencies: templateData.dependencies,
-              variables: templateData.variables,
-              options: templateData.options,
-              allowMultiple: templateData.allowMultiple,
-              recommendedOptions: templateData.recommendedOptions,
-            },
+      for (const category of registeredCategories) {
+        const [insertCategory] = await tx
+          .insert(integrationCategories)
+          .values({
+            key: category.key,
+            description: category.description,
+            recommendedIntegrations: category.recommendedIntegrations,
+            priority: category.priority,
+            dependencies: category.dependencies,
           })
           .returning({
-            id: integrationTemplates.id,
-            key: integrationTemplates.key,
-            version: integrationTemplates.version,
+            id: integrationCategories.id,
+          })
+          .onConflictDoUpdate({
+            target: [integrationCategories.key],
+            set: {
+              description: category.description,
+              recommendedIntegrations: category.recommendedIntegrations,
+              priority: category.priority,
+              dependencies: category.dependencies,
+            },
           });
 
-        if (result.length > 0) {
-          const templateRecord = await tx.query.integrationTemplates.findFirst({
-            where: (templates, { eq, and }) =>
-              and(
-                eq(templates.key, integration.key as IntegrationKey),
-                eq(templates.version, integration.version),
-              ),
-          });
+        if (!insertCategory) {
+          throw new Error(`Failed to insert category ${category.key}`);
+        }
 
-          if (templateRecord) {
-            const isNewRecord =
-              templateRecord.createdAt.getTime() ===
-              templateRecord.updatedAt.getTime();
+        for (const integration of Object.values(category.integrations)) {
+          const templateData = {
+            name: integration.name,
+            description: integration.description,
+            categoryId: insertCategory.id,
+            key: integration.key as IntegrationKey,
+            version: integration.version,
+            variables: integration.variables,
+            options: integration.options,
+            allowMultiple: integration.allowMultiple,
+            recommendedOptions: integration.recommendedOptions,
+            isRecommended: integration.isRecommended,
+          };
 
-            if (isNewRecord) {
-              inserted++;
-              console.log(
-                `  ✅ Inserted: ${integration.key} v${integration.version}`,
-              );
-            } else {
-              updated++;
-              console.log(
-                `  🔄 Updated: ${integration.key} v${integration.version}`,
-              );
+          const result = await tx
+            .insert(integrationTemplates)
+            .values(templateData)
+            .onConflictDoUpdate({
+              target: [integrationTemplates.key, integrationTemplates.version],
+              set: {
+                name: templateData.name,
+                description: templateData.description,
+                categoryId: insertCategory.id,
+                variables: templateData.variables,
+                options: templateData.options,
+                recommendedOptions: templateData.recommendedOptions,
+              },
+            })
+            .returning({
+              id: integrationTemplates.id,
+              key: integrationTemplates.key,
+              version: integrationTemplates.version,
+            });
+
+          if (result.length > 0) {
+            const templateRecord =
+              await tx.query.integrationTemplates.findFirst({
+                where: (templates, { eq, and }) =>
+                  and(
+                    eq(templates.key, integration.key as IntegrationKey),
+                    eq(templates.version, integration.version),
+                  ),
+              });
+
+            if (templateRecord) {
+              const isNewRecord =
+                templateRecord.createdAt.getTime() ===
+                templateRecord.updatedAt.getTime();
+
+              if (isNewRecord) {
+                inserted++;
+                console.log(
+                  `  ✅ Inserted: ${integration.key} v${integration.version}`,
+                );
+              } else {
+                updated++;
+                console.log(
+                  `  🔄 Updated: ${integration.key} v${integration.version}`,
+                );
+              }
             }
           }
         }

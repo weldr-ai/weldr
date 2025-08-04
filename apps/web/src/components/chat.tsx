@@ -15,8 +15,7 @@ import type {
   AssistantMessage,
   Attachment,
   ChatMessage,
-  IntegrationKey,
-  IntegrationStatus,
+  IntegrationCategoryKey,
   SSEEvent,
   ToolResultPartMessage,
   TPendingMessage,
@@ -34,14 +33,21 @@ import { cn } from "@weldr/ui/lib/utils";
 import { CommitTypeBadge } from "./commit-type-badge";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
+import { SetupIntegration } from "./setup-integrations";
 
 interface ChatProps {
   version: RouterOutputs["projects"]["byId"]["currentVersion"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   project: RouterOutputs["projects"]["byId"];
 }
 
-export function Chat({ version, environmentVariables, project }: ChatProps) {
+export function Chat({
+  version,
+  environmentVariables,
+  integrationTemplates,
+  project,
+}: ChatProps) {
   const router = useRouter();
 
   const { data: session } = authClient.useSession();
@@ -213,40 +219,6 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
     eventSource.onmessage = (event) => {
       try {
         const chunk: SSEEvent = JSON.parse(event.data);
-
-        if (chunk.type === "connected") {
-          // Reset reconnection attempts on successful connection
-          reconnectAttempts.current = 0;
-          // Clear connecting flag
-          isConnectingRef.current = false;
-          return;
-        }
-
-        if (chunk.type === "workflow_complete") {
-          setPendingMessage(null);
-          if (eventSource.readyState !== EventSource.CLOSED) {
-            eventSource.close();
-          }
-          setEventSourceRef(null);
-          // Clear reconnection attempts and connecting flag since workflow is complete
-          reconnectAttempts.current = 0;
-          isConnectingRef.current = false;
-          return;
-        }
-
-        if (chunk.type === "error") {
-          console.error("Workflow error:", chunk.error);
-          setPendingMessage(null);
-          if (eventSource.readyState !== EventSource.CLOSED) {
-            eventSource.close();
-          }
-          setEventSourceRef(null);
-          // Clear reconnection attempts and connecting flag on error
-          reconnectAttempts.current = 0;
-          isConnectingRef.current = false;
-          return;
-        }
-
         if (pendingMessage === null || pendingMessage === "thinking") {
           setPendingMessage("responding");
         }
@@ -294,7 +266,6 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
           case "tool": {
             setMessages((prevMessages) => {
               const lastMessage = prevMessages[prevMessages.length - 1];
-
               if (lastMessage?.role === "tool") {
                 const integrationToolResult = chunk.message.content.find(
                   (content) =>
@@ -310,7 +281,6 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
                   return [...chatWithLastMessage, chunk.message as ChatMessage];
                 }
               }
-
               return [...prevMessages, chunk.message as ChatMessage];
             });
             break;
@@ -488,6 +458,10 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage?.role === "tool") {
+      const installedCategories = project.integrations.map(
+        (integration) => integration.integrationTemplate.category.key,
+      );
+
       const toolResult = lastMessage.content.find(
         (content) =>
           content.type === "tool-result" &&
@@ -495,26 +469,21 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
             content.toolName === "init_project"),
       ) as ToolResultPartMessage & {
         output: {
-          status: "awaiting_config" | "completed" | "failed";
-          integrations: {
-            id: string;
-            key: IntegrationKey;
-            status: IntegrationStatus;
-          }[];
+          status: "awaiting_config";
+          categories: IntegrationCategoryKey[];
         };
       };
 
       if (
-        toolResult?.output?.integrations.some(
-          (integration) =>
-            integration.status !== "completed" &&
-            integration.status !== "failed",
+        toolResult?.output?.status === "awaiting_config" &&
+        toolResult?.output?.categories.some(
+          (category) => !installedCategories.includes(category),
         )
       ) {
         setPendingMessage("waiting");
       }
     }
-  }, [messages]);
+  }, [messages, project.integrations]);
 
   const handleSubmit = async () => {
     if (userMessageContent.length === 0) {
@@ -601,110 +570,132 @@ export function Chat({ version, environmentVariables, project }: ChatProps) {
         },
       )}
     >
-      <div
-        className={cn(
-          "overflow-hidden transition-all duration-300 ease-in-out",
-          {
-            "h-0":
-              !isChatVisible &&
-              pendingMessage !== "thinking" &&
-              pendingMessage !== "responding" &&
-              pendingMessage !== "waiting",
-            "h-[300px]":
-              isChatVisible ||
-              pendingMessage === "thinking" ||
-              pendingMessage === "responding" ||
-              pendingMessage === "waiting",
-          },
-        )}
-      >
-        <div className="flex items-center justify-between gap-1 border-b p-1">
-          <span className="flex items-center gap-1 truncate font-medium text-xs">
-            <span className="text-muted-foreground">{`#${version.number}`}</span>
-            <span className="flex items-center gap-1 truncate">
-              {conventionalCommit.type && (
-                <CommitTypeBadge type={conventionalCommit.type} />
-              )}
-              <span className="truncate">
-                {conventionalCommit.message ?? "Chat Title"}
+      {messages[messages.length - 1]?.role === "tool" &&
+      messages[messages.length - 1]?.content.some(
+        (content) =>
+          content.type === "tool-result" &&
+          (content.toolName === "add_integrations" ||
+            content.toolName === "init_project") &&
+          (
+            content as ToolResultPartMessage & {
+              output: {
+                status: "awaiting_config";
+                categories: IntegrationCategoryKey[];
+              };
+            }
+          ).output.status === "awaiting_config",
+      ) ? (
+        <SetupIntegration
+          // biome-ignore lint/style/noNonNullAssertion: reason
+          message={messages[messages.length - 1]!}
+          setMessages={setMessages}
+          setPendingMessage={setPendingMessage}
+          integrationTemplates={integrationTemplates}
+          environmentVariables={environmentVariables}
+        />
+      ) : (
+        <>
+          <div
+            className={cn(
+              "overflow-hidden transition-all duration-300 ease-in-out",
+              {
+                "h-0":
+                  !isChatVisible &&
+                  pendingMessage !== "thinking" &&
+                  pendingMessage !== "responding" &&
+                  pendingMessage !== "waiting",
+                "h-[300px]":
+                  isChatVisible ||
+                  pendingMessage === "thinking" ||
+                  pendingMessage === "responding" ||
+                  pendingMessage === "waiting",
+              },
+            )}
+          >
+            <div className="flex items-center justify-between gap-1 border-b p-1">
+              <span className="flex items-center gap-1 truncate font-medium text-xs">
+                <span className="text-muted-foreground">{`#${version.number}`}</span>
+                <span className="flex items-center gap-1 truncate">
+                  {conventionalCommit.type && (
+                    <CommitTypeBadge type={conventionalCommit.type} />
+                  )}
+                  <span className="truncate">
+                    {conventionalCommit.message ?? "Chat Title"}
+                  </span>
+                </span>
               </span>
-            </span>
-          </span>
-          <div className="flex items-center gap-0.5">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="size-5 rounded-sm shadow-none"
-                  size="icon"
-                  disabled={!version.previousVersionId}
-                  onClick={() => {
-                    if (version.previousVersionId) {
-                      router.push(
-                        `/projects/${project.id}?versionId=${version.previousVersionId}`,
-                      );
-                    }
-                  }}
-                >
-                  <ChevronLeftIcon className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
-                <p>View Previous Version</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="size-5 rounded-sm shadow-none"
-                  size="icon"
-                  disabled={!version.nextVersionId}
-                  onClick={() => {
-                    if (version.nextVersionId) {
-                      router.push(
-                        `/projects/${project.id}?versionId=${version.nextVersionId}`,
-                      );
-                    }
-                  }}
-                >
-                  <ChevronRightIcon className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
-                <p>View Next Version</p>
-              </TooltipContent>
-            </Tooltip>
+              <div className="flex items-center gap-0.5">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="size-5 rounded-sm shadow-none"
+                      size="icon"
+                      disabled={!version.previousVersionId}
+                      onClick={() => {
+                        if (version.previousVersionId) {
+                          router.push(
+                            `/projects/${project.id}?versionId=${version.previousVersionId}`,
+                          );
+                        }
+                      }}
+                    >
+                      <ChevronLeftIcon className="size-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
+                    <p>View Previous Version</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="size-5 rounded-sm shadow-none"
+                      size="icon"
+                      disabled={!version.nextVersionId}
+                      onClick={() => {
+                        if (version.nextVersionId) {
+                          router.push(
+                            `/projects/${project.id}?versionId=${version.nextVersionId}`,
+                          );
+                        }
+                      }}
+                    >
+                      <ChevronRightIcon className="size-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
+                    <p>View Next Version</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+            <div
+              ref={messagesContainerRef}
+              className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-[calc(100%-33px)] flex-col gap-2 overflow-y-auto border-b p-2"
+            >
+              <Messages messages={messages} />
+              <div ref={messagesEndRef} />
+            </div>
           </div>
-        </div>
-        <div
-          ref={messagesContainerRef}
-          className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-[calc(100%-33px)] flex-col gap-2 overflow-y-auto border-b p-2"
-        >
-          <Messages
-            messages={messages}
-            environmentVariables={environmentVariables}
-            setMessages={setMessages}
-            setPendingMessage={setPendingMessage}
-          />
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
 
-      <MultimodalInput
-        type="editor"
-        chatId={version.chat.id}
-        message={userMessageContent}
-        setMessage={setUserMessageContent}
-        attachments={attachments}
-        setAttachments={setAttachments}
-        pendingMessage={pendingMessage}
-        handleSubmit={handleSubmit}
-        placeholder="Build with Weldr..."
-        references={editorReferences}
-        onFocus={handleInputFocus}
-        isVisible={isChatVisible}
-      />
+          <MultimodalInput
+            type="editor"
+            chatId={version.chat.id}
+            message={userMessageContent}
+            setMessage={setUserMessageContent}
+            attachments={attachments}
+            setAttachments={setAttachments}
+            pendingMessage={pendingMessage}
+            handleSubmit={handleSubmit}
+            placeholder="Build with Weldr..."
+            references={editorReferences}
+            onFocus={handleInputFocus}
+            isVisible={isChatVisible}
+          />
+        </>
+      )}
     </div>
   );
 }

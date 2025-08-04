@@ -10,7 +10,6 @@ import {
 
 import { nanoid } from "@weldr/shared/nanoid";
 import type {
-  IntegrationCategory,
   IntegrationKey,
   IntegrationOptions,
   IntegrationStatus,
@@ -26,7 +25,6 @@ export const integrations = pgTable(
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
     key: text("key").$type<IntegrationKey>().notNull(),
-    category: text("category").$type<IntegrationCategory>().notNull(),
     name: text("name"),
     options: jsonb("options").$type<IntegrationOptions>(),
     status: text("status").$type<IntegrationStatus>().notNull(),

@@ -7,15 +7,30 @@ import { createTRPCRouter, publicProcedure } from "../init";
 export const integrationTemplatesRouter = createTRPCRouter({
   list: publicProcedure.query(async () => {
     return await db.query.integrationTemplates.findMany({
-      where: (templates, { eq }) => eq(templates.category, "database"),
       columns: {
         id: true,
         name: true,
         description: true,
-        category: true,
         key: true,
+        version: true,
+        variables: true,
+        options: true,
+        recommendedOptions: true,
+        isRecommended: true,
       },
-      orderBy: (templates, { asc }) => [asc(templates.category)],
+      with: {
+        category: {
+          columns: {
+            id: true,
+            key: true,
+            description: true,
+            priority: true,
+            recommendedIntegrations: true,
+            dependencies: true,
+          },
+        },
+      },
+      orderBy: (templates, { asc }) => [asc(templates.key)],
     });
   }),
   byId: publicProcedure
@@ -28,8 +43,15 @@ export const integrationTemplatesRouter = createTRPCRouter({
             id: true,
             name: true,
             description: true,
-            category: true,
             key: true,
+            isRecommended: true,
+            version: true,
+            variables: true,
+            options: true,
+            recommendedOptions: true,
+          },
+          with: {
+            category: true,
           },
         },
       );

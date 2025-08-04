@@ -12,7 +12,6 @@ export const postgresqlIntegration = defineIntegration<"postgresql">({
     "Powerful relational database that stores, organizes, and retrieves data with support for complex queries, transactions, and scalable performance.",
   version: "1.0.0",
   allowMultiple: false,
-  dependencies: ["backend"],
   variables: [
     {
       name: "DATABASE_URL",
@@ -26,6 +25,7 @@ export const postgresqlIntegration = defineIntegration<"postgresql">({
   recommendedOptions: {
     orm: "drizzle",
   },
+  isRecommended: true,
   packages: async (_, options) => {
     if (options?.orm === "drizzle") {
       const packages: IntegrationPackageSets = [

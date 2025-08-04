@@ -50,7 +50,9 @@ export function IntegrationsSection({
             {integrationTemplates.map((integrationTemplate) => (
               <AddIntegrationDialog
                 key={integrationTemplate.id}
-                integrationTemplate={integrationTemplate}
+                integrationTemplate={
+                  integrationTemplate as RouterOutputs["integrationTemplates"]["byId"]
+                }
                 integration={integrations?.find(
                   (integration) =>
                     integration.integrationTemplate.id ===
