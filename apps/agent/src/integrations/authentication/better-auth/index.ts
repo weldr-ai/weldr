@@ -62,9 +62,10 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
 
     return packages;
   },
-  preInstall: async ({ context, integration }) => {
-    const user = context.get("user");
+
+  postInstall: async ({ context, integration }) => {
     const project = context.get("project");
+    const user = context.get("user");
 
     try {
       // Store secret in database

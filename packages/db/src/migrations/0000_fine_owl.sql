@@ -238,7 +238,6 @@ CREATE TABLE "projects" (
 	"id" text PRIMARY KEY NOT NULL,
 	"title" text,
 	"subdomain" text NOT NULL,
-	"initiated_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"user_id" text NOT NULL,

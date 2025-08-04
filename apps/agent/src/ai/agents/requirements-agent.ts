@@ -6,7 +6,6 @@ import {
   findTool,
   fzfTool,
   grepTool,
-  initProjectTool,
   listDirTool,
   readFileTool,
   searchCodebaseTool,
@@ -16,6 +15,8 @@ import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import type { WorkflowContext } from "@/workflow/context";
 
+import { db, eq } from "@weldr/db";
+import { projects } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
 import type {
@@ -24,6 +25,7 @@ import type {
 } from "@weldr/shared/validators/chats";
 import { callPlannerTool } from "../tools/call-planner";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
+import { generateProjectTitle } from "../utils/generate-title";
 import { calculateModelCost } from "../utils/providers-pricing";
 import { XMLProvider } from "../utils/xml-provider";
 
@@ -53,7 +55,6 @@ export async function requirementsAgent({
   const xmlProvider = new XMLProvider(
     [
       addIntegrationsTool.getXML(),
-      initProjectTool.getXML(),
       listDirTool.getXML(),
       readFileTool.getXML(),
       searchCodebaseTool.getXML(),
@@ -73,6 +74,27 @@ export async function requirementsAgent({
   const executeRequirementsAgent = async (): Promise<boolean> => {
     let shouldRecur = false;
     const promptMessages = await getMessages(version.chatId);
+
+    // Generate project title if it's the first version and the project title is not set
+    if (version.number === 1 && project.title === null) {
+      const title = await generateProjectTitle(
+        promptMessages.map((msg) => msg.content).join("\n"),
+      );
+
+      await db
+        .update(projects)
+        .set({
+          title,
+        })
+        .where(eq(projects.id, project.id));
+
+      await streamWriter.write({
+        type: "update_project",
+        data: {
+          title,
+        },
+      });
+    }
 
     logger.info("promptMessages", {
       extra: { promptMessages },
@@ -95,7 +117,6 @@ export async function requirementsAgent({
           messages: promptMessages,
           tools: {
             add_integrations: addIntegrationsTool(context),
-            init_project: initProjectTool(context),
             list_dir: listDirTool(context),
             read_file: readFileTool(context),
             search_codebase: searchCodebaseTool(context),
@@ -163,10 +184,7 @@ export async function requirementsAgent({
         case "tool-result": {
           toolResultMessages.push({
             visibility:
-              part.toolName === "add_integrations" ||
-              part.toolName === "init_project"
-                ? "public"
-                : "internal",
+              part.toolName === "add_integrations" ? "public" : "internal",
             role: "tool",
             content: [
               {
@@ -178,10 +196,7 @@ export async function requirementsAgent({
             ],
           });
 
-          if (
-            part.toolName === "add_integrations" ||
-            part.toolName === "init_project"
-          ) {
+          if (part.toolName === "add_integrations") {
             await streamWriter.write({
               type: "tool",
               message: {

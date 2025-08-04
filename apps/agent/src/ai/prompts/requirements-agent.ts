@@ -105,8 +105,7 @@ ${
 
   ## Tool Sequencing Logic
 
-  **Project initialization**: \`init_project\` (for new projects with title and frontend/backend integrations)
-  **Integration setup**: \`add_integrations\` (for additional integrations after initialization)
+  **Integration setup**: \`add_integrations\` (for setting up project integrations including frontend/backend)
   **Exploration phase**: \`list_dir\` → \`search_codebase\` → \`query_related_declarations\` → \`read_file\` → targeted searches with \`fzf\`/\`grep\`/\`find\`
   **Planning completion**: \`call_coder\` (always last, only after thorough exploration and task generation)
 

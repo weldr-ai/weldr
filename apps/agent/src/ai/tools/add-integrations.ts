@@ -40,13 +40,6 @@ export const addIntegrationsTool = createTool({
 
     logger.info(`Adding categories: ${input.categories.join(", ")}`);
 
-    if (!project.initiatedAt) {
-      const error =
-        "Cannot add integrations to an uninitialized project. Use the init_project tool first.";
-      logger.error(error);
-      return { status: "failed" as const, error };
-    }
-
     const requestedCategories = await db.query.integrationCategories.findMany({
       where: (table, { inArray }) => inArray(table.key, input.categories),
     });

@@ -43,9 +43,7 @@ const PureMessageItem = ({ message }: { message: ChatMessage }) => {
 
         {message.role === "tool" &&
           message.content.some(
-            (content) =>
-              content.toolName === "add_integrations" ||
-              content.toolName === "init_project",
+            (content) => content.toolName === "add_integrations",
           ) && (
             <IntegrationsSetupStatus
               message={message as IntegrationToolMessage}
