@@ -171,7 +171,7 @@ function ProjectsContent({
             {projects.map((project) => (
               <CommandItem
                 key={project.id}
-                value={project.title ?? "Untitled Project"}
+                value={project.id}
                 className={cn("flex items-center gap-3 rounded-none p-2", {
                   "bg-accent": selectedProject?.id === project.id,
                 })}
@@ -215,44 +215,49 @@ function ProjectsContent({
               </div>
             </Link>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <h2 className="font-semibold text-xl">
-                  {selectedProject.title ?? "Untitled Project"}
-                </h2>
-                <Link
-                  href={`/projects/${selectedProject.id}`}
-                  onClick={() => {
-                    setCommandCenterOpen(false);
-                  }}
-                  className={cn(
-                    buttonVariants({
-                      variant: "ghost",
-                      size: "icon",
-                    }),
-                    "size-7",
-                  )}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <h2 className="font-semibold text-xl">
+                    {selectedProject.title ?? "Untitled Project"}
+                  </h2>
+                  <Link
+                    href={`/projects/${selectedProject.id}`}
+                    onClick={() => {
+                      setCommandCenterOpen(false);
+                    }}
+                    className={cn(
+                      buttonVariants({
+                        variant: "ghost",
+                        size: "icon",
+                      }),
+                      "size-7",
+                    )}
+                  >
+                    <ExternalLinkIcon className="size-3" />
+                  </Link>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 text-destructive hover:text-destructive"
+                  onClick={() => setDeleteProjectOpen(true)}
                 >
-                  <ExternalLinkIcon className="size-3" />
-                </Link>
+                  <TrashIcon className="size-3.5" />
+                </Button>
+                <DeleteAlertDialog
+                  open={deleteProjectOpen}
+                  setOpen={setDeleteProjectOpen}
+                  onDelete={() => {
+                    deleteProject.mutate({ id: selectedProject.id });
+                  }}
+                  confirmText={selectedProject.title ?? "delete"}
+                  isPending={deleteProject.isPending}
+                />
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 text-destructive hover:text-destructive"
-                onClick={() => setDeleteProjectOpen(true)}
-              >
-                <TrashIcon className="size-3.5" />
-              </Button>
-              <DeleteAlertDialog
-                open={deleteProjectOpen}
-                setOpen={setDeleteProjectOpen}
-                onDelete={() => {
-                  deleteProject.mutate({ id: selectedProject.id });
-                }}
-                confirmText={selectedProject.title ?? "delete"}
-                isPending={deleteProject.isPending}
-              />
+              <p className="text-muted-foreground text-sm">
+                {selectedProject.description ?? "No description"}
+              </p>
             </div>
           </div>
         ) : (

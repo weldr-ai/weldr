@@ -5,6 +5,7 @@ import {
   ExternalLinkIcon,
   FileTextIcon,
   HelpCircleIcon,
+  LayoutDashboardIcon,
   LogOutIcon,
   MonitorIcon,
   MoonIcon,
@@ -62,6 +63,12 @@ export function MainDropdownMenu({
         {session && (
           <>
             <DropdownMenuLabel>Projects</DropdownMenuLabel>
+            <Link href="/">
+              <DropdownMenuItem>
+                <LayoutDashboardIcon className="mr-2 size-3.5 text-muted-foreground" />
+                Home
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuItem
               onClick={() => {
                 setCommandCenterView("create");

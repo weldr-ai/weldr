@@ -113,7 +113,6 @@ export function CreateProjectForm({ session }: { session: Session | null }) {
           </p>
         </div>
         <div className="relative w-full max-w-3xl">
-          <div className="absolute inset-1 animate-pulse bg-gradient-to-r from-orange-500 via-amber-200 to-100% to-blue-500 blur-lg" />
           <MultimodalInput
             type="textarea"
             chatId={projectChatId}

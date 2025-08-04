@@ -237,6 +237,7 @@ CREATE TABLE "nodes" (
 CREATE TABLE "projects" (
 	"id" text PRIMARY KEY NOT NULL,
 	"title" text,
+	"description" text,
 	"subdomain" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,

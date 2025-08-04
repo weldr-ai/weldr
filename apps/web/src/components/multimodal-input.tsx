@@ -399,7 +399,6 @@ function PureMultimodalInput({
               onFocus={onFocus}
             />
           )}
-
           {type === "textarea" && (
             <Textarea
               ref={textareaRef}
@@ -407,7 +406,7 @@ function PureMultimodalInput({
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               className={cn(
-                "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl border-none bg-background pb-10 focus-visible:ring-0 dark:bg-background",
+                "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl pb-10 focus-visible:ring-0",
                 textareaClassName,
               )}
               rows={2}

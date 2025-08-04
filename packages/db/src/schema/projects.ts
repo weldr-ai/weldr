@@ -12,6 +12,7 @@ export const projects = pgTable(
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
     title: text("title"),
+    description: text("description"),
     subdomain: text("subdomain").unique().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

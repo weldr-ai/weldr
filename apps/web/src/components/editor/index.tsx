@@ -43,7 +43,13 @@ export function Editor({ ...props }: EditorProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && props.onSubmit) {
+      const editorContainer = document.getElementById(`editor-${props.id}`);
+      if (
+        e.key === "Enter" &&
+        props.onSubmit &&
+        editorContainer &&
+        editorContainer.contains(e.target as Node)
+      ) {
         e.preventDefault();
         props.onSubmit();
       }
@@ -51,11 +57,11 @@ export function Editor({ ...props }: EditorProps) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [props.onSubmit]);
+  }, [props.onSubmit, props.id]);
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <div className="flex size-full">
+      <div id={`editor-${props.id}`} className="flex size-full">
         <ReferencesPlugin
           references={props.references ?? []}
           position={props.typeaheadPosition}

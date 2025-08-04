@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 import { db, eq } from "@weldr/db";
-import { versions } from "@weldr/db/schema";
+import { projects, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
+import { generateProjectInfo } from "../utils/generate-project-info";
 import { createTool } from "../utils/tools";
 
 export const callPlannerTool = createTool({
@@ -33,6 +34,32 @@ export const callPlannerTool = createTool({
       input,
     });
 
+    const streamWriter = global.sseConnections?.get(version.chatId);
+    if (!streamWriter) {
+      throw new Error("Stream writer not found");
+    }
+
+    // Generate project title and description if it's the first version and the project title is not set
+    if (version.number === 1 && project.title === null) {
+      const data = await generateProjectInfo(input.requirements);
+
+      await db
+        .update(projects)
+        .set({
+          title: data.title,
+          description: data.description,
+        })
+        .where(eq(projects.id, project.id));
+
+      await streamWriter.write({
+        type: "update_project",
+        data: {
+          title: data.title,
+          description: data.description,
+        },
+      });
+    }
+
     const [updatedVersion] = await db
       .update(versions)
       .set({
@@ -50,12 +77,6 @@ export const callPlannerTool = createTool({
     }
 
     context.set("version", updatedVersion);
-
-    const streamWriter = global.sseConnections?.get(updatedVersion.chatId);
-
-    if (!streamWriter) {
-      throw new Error("Stream writer not found");
-    }
 
     await streamWriter.write({
       type: "update_project",
