@@ -5,6 +5,7 @@ import {
   DeleteAccessKeyCommand,
   DeletePolicyCommand,
   IAMClient,
+  ListAccessKeysCommand,
   ListPoliciesCommand,
 } from "@aws-sdk/client-iam";
 import {
@@ -142,16 +143,44 @@ async function createAccessKey(
   }
 }
 
+async function findAccessKey(projectId: string): Promise<string | undefined> {
+  try {
+    const response = await iamClient.send(
+      new ListAccessKeysCommand({
+        UserName: projectId,
+      }),
+    );
+    const accessKey = response.AccessKeyMetadata?.[0];
+    return accessKey?.AccessKeyId;
+  } catch (error) {
+    Logger.error("Find access key error", {
+      projectId,
+      error,
+    });
+    return undefined;
+  }
+}
+
 async function deleteAccessKey(projectId: string): Promise<Error | undefined> {
   try {
+    const accessKeyId = await findAccessKey(projectId);
+
+    if (!accessKeyId) {
+      Logger.info("Access key not found", {
+        projectId,
+      });
+      return undefined;
+    }
+
     const response = await iamClient.send(
       new DeleteAccessKeyCommand({
         UserName: projectId,
-        AccessKeyId: projectId,
+        AccessKeyId: accessKeyId,
       }),
     );
     Logger.info("Delete access key response", {
       projectId,
+      accessKeyId,
       response,
     });
     return undefined;
@@ -324,9 +353,9 @@ async function createTigrisBucket(projectId: string): Promise<Credentials> {
 
 async function deleteTigrisBucket(projectId: string): Promise<void> {
   await Promise.all([
+    deleteAccessKey(projectId),
     deleteBucket(projectId),
     deletePolicy(projectId),
-    deleteAccessKey(projectId),
   ]);
 }
 
