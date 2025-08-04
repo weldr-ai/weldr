@@ -270,8 +270,7 @@ export function Chat({
                 const integrationToolResult = chunk.message.content.find(
                   (content) =>
                     content.type === "tool-result" &&
-                    (content.toolName === "add_integrations" ||
-                      content.toolName === "init_project"),
+                    content.toolName === "add_integrations",
                 );
                 if (
                   integrationToolResult?.toolCallId ===
@@ -465,8 +464,7 @@ export function Chat({
       const toolResult = lastMessage.content.find(
         (content) =>
           content.type === "tool-result" &&
-          (content.toolName === "add_integrations" ||
-            content.toolName === "init_project"),
+          content.toolName === "add_integrations",
       ) as ToolResultPartMessage & {
         output: {
           status: "awaiting_config";
@@ -574,8 +572,7 @@ export function Chat({
       messages[messages.length - 1]?.content.some(
         (content) =>
           content.type === "tool-result" &&
-          (content.toolName === "add_integrations" ||
-            content.toolName === "init_project") &&
+          content.toolName === "add_integrations" &&
           (
             content as ToolResultPartMessage & {
               output: {

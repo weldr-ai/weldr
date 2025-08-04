@@ -26,7 +26,7 @@ export async function getProjectContext(project: typeof projects.$inferSelect) {
     },
   });
 
-  return project.initiatedAt
+  return projectVersionsList.length > 0
     ? `You are working on an app called ${project.title} with the following integrations:
 ${projectIntegrationsList
   .map(

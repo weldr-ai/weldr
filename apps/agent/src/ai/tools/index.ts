@@ -6,7 +6,6 @@ export * from "./edit-files";
 export * from "./find";
 export * from "./fzf";
 export * from "./grep";
-export * from "./init-project";
 export * from "./install-packages";
 export * from "./list-dir";
 export * from "./read-file";

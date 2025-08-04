@@ -67,10 +67,6 @@ ${
 </tools>
 
 <tool_usage_guide>
-  **Integration Management**
-  - **\`init_project\`**: Use to initialize a new project from scratch. This tool accepts a project title and any integration keys that are appropriate for the project requirements. Choose integrations based on what the user needs to build. Project type is automatically determined based on integrations provided.
-  - **\`add_integrations\`**: Use to add integrations to an existing initialized project. Automatically resolves and installs dependencies before installing requested integrations. The project must be initialized first using the init_project tool.
-
   **Exploration Tools:**
   - **\`list_dir\`**: Start here to understand project structure
   - **\`search_codebase\`**: Find existing functionality related to user requirements

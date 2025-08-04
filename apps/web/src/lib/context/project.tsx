@@ -46,8 +46,6 @@ export function ProjectProvider({
 
             // Update simple fields
             if (data.title !== undefined) updated.title = data.title;
-            if (data.initiatedAt !== undefined)
-              updated.initiatedAt = data.initiatedAt;
 
             // Handle currentVersion updates separately
             if (data.currentVersion) {
