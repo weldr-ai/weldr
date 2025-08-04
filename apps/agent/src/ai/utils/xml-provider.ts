@@ -35,7 +35,7 @@ type ExtractZodSchema<T> = T extends ZodXml<infer U> ? U : never;
 
 // Stream part definitions
 export type XMLTextDelta = {
-  type: "text";
+  type: "text-delta";
   text: string;
 };
 
@@ -52,7 +52,14 @@ export type XMLToolResult<TTool extends XMLToolSpec> = {
   toolName: TTool["name"];
   input: z.infer<ExtractZodSchema<TTool["parameters"]>>;
   output: Awaited<ReturnType<TTool["execute"]>>;
-  isError?: boolean;
+};
+
+export type XMLToolError<TTool extends XMLToolSpec> = {
+  type: "tool-error";
+  toolCallId: string;
+  toolName: TTool["name"];
+  input: z.infer<ExtractZodSchema<TTool["parameters"]>>;
+  error: unknown;
 };
 
 /**
@@ -76,10 +83,21 @@ type AnyXMLToolResult<TTools extends readonly XMLToolSpec[]> = {
     : never;
 }[number];
 
+/**
+ * Similar to AnyXMLToolResult but for tool errors. This ensures type safety across
+ * all possible tool execution errors while maintaining the relationship between calls and errors.
+ */
+type AnyXMLToolError<TTools extends readonly XMLToolSpec[]> = {
+  [K in keyof TTools]: TTools[K] extends XMLToolSpec
+    ? XMLToolError<TTools[K]>
+    : never;
+}[number];
+
 export type XMLStreamDelta<TTools extends readonly XMLToolSpec[]> =
   | XMLTextDelta
   | AnyXMLToolCall<TTools>
-  | AnyXMLToolResult<TTools>;
+  | AnyXMLToolResult<TTools>
+  | AnyXMLToolError<TTools>;
 
 export interface XMLStreamResult<TTools extends readonly XMLToolSpec[]>
   extends Omit<
@@ -145,9 +163,9 @@ export class XMLProvider<const TTools extends readonly XMLToolSpec[]> {
 
     try {
       for await (const delta of baseFullStream) {
-        if (delta.type === "text") {
+        if (delta.type === "text-delta") {
           textChunkCount++;
-          yield { type: "text", text: delta.text };
+          yield { type: "text-delta", text: delta.text };
           for await (const toolDelta of processor.processChunk(delta.text)) {
             toolDeltaCount++;
             yield toolDelta;
@@ -236,7 +254,9 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
    */
   async *processChunk(
     chunk: string,
-  ): AsyncGenerator<AnyXMLToolCall<TTools> | AnyXMLToolResult<TTools>> {
+  ): AsyncGenerator<
+    AnyXMLToolCall<TTools> | AnyXMLToolResult<TTools> | AnyXMLToolError<TTools>
+  > {
     this.buffer += chunk;
     this.logger.debug("Processing chunk", {
       chunkLength: chunk.length,
@@ -305,7 +325,15 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
             error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
           });
-          throw error;
+
+          const toolError: XMLToolError<typeof tool> = {
+            type: "tool-error",
+            toolCallId,
+            toolName: tool.name,
+            input: toolCall.input,
+            error,
+          };
+          yield toolError as AnyXMLToolError<TTools>;
         }
       } else {
         this.logger.error("XML parameter validation failed", {
@@ -756,7 +784,6 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
         toolName: tool.name,
         input: toolCall.input,
         output: result as Awaited<ReturnType<TCurrentTool["execute"]>>,
-        isError: false,
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -777,13 +804,12 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
           : { message: JSON.stringify(error) }) as Awaited<
           ReturnType<TCurrentTool["execute"]>
         >,
-        isError: true,
       };
     }
   }
 
   async *finalize(): AsyncGenerator<
-    AnyXMLToolCall<TTools> | AnyXMLToolResult<TTools>
+    AnyXMLToolCall<TTools> | AnyXMLToolResult<TTools> | AnyXMLToolError<TTools>
   > {
     // In this implementation, finalize doesn't need to do anything with the buffer
     // as it is processed greedily. Can be extended for more complex scenarios.

@@ -118,35 +118,35 @@ export async function requirementsAgent({
     const assistantContent: z.infer<typeof assistantMessageContentSchema>[] =
       [];
 
-    for await (const delta of result.fullStream) {
-      switch (delta.type) {
-        case "text": {
+    for await (const part of result.fullStream) {
+      switch (part.type) {
+        case "text-delta": {
           // Stream text content to SSE
           await streamWriter.write({
             type: "text",
-            text: delta.text,
+            text: part.text,
           });
 
           // Add text content immediately to maintain proper order
           const lastItem = assistantContent[assistantContent.length - 1];
           if (lastItem && lastItem.type === "text") {
-            lastItem.text += delta.text;
+            lastItem.text += part.text;
           } else {
             assistantContent.push({
               type: "text",
-              text: delta.text,
+              text: part.text,
             });
           }
           break;
         }
-        case "reasoning": {
+        case "reasoning-delta": {
           const lastItem = assistantContent[assistantContent.length - 1];
           if (lastItem && lastItem.type === "reasoning") {
-            lastItem.text += delta.text;
+            lastItem.text += part.text;
           } else {
             assistantContent.push({
               type: "reasoning",
-              text: delta.text,
+              text: part.text,
             });
           }
           break;
@@ -154,39 +154,33 @@ export async function requirementsAgent({
         case "tool-call": {
           assistantContent.push({
             type: "tool-call",
-            toolCallId: delta.toolCallId,
-            toolName: delta.toolName,
-            input: delta.input,
+            toolCallId: part.toolCallId,
+            toolName: part.toolName,
+            input: part.input,
           });
           break;
         }
         case "tool-result": {
           toolResultMessages.push({
             visibility:
-              delta.toolName === "add_integrations" ||
-              delta.toolName === "init_project"
+              part.toolName === "add_integrations" ||
+              part.toolName === "init_project"
                 ? "public"
                 : "internal",
             role: "tool",
             content: [
               {
                 type: "tool-result",
-                toolCallId: delta.toolCallId,
-                toolName: delta.toolName,
-                output: delta.output,
-                isError: "isError" in delta && delta.isError,
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                output: part.output,
               },
             ],
           });
 
-          if ("isError" in delta && delta.isError) {
-            shouldRecur = true;
-            break;
-          }
-
           if (
-            delta.toolName === "add_integrations" ||
-            delta.toolName === "init_project"
+            part.toolName === "add_integrations" ||
+            part.toolName === "init_project"
           ) {
             await streamWriter.write({
               type: "tool",
@@ -199,14 +193,18 @@ export async function requirementsAgent({
                 content: [
                   {
                     type: "tool-result",
-                    toolCallId: delta.toolCallId,
-                    toolName: delta.toolName,
-                    output: delta.output,
+                    toolCallId: part.toolCallId,
+                    toolName: part.toolName,
+                    input: part.input,
+                    output: part.output,
                   },
                 ],
               },
             });
-            if (delta.output.status === "success") {
+            if (
+              (part.output as { status: "awaiting_config" }).status ===
+              "awaiting_config"
+            ) {
               shouldRecur = false;
             } else {
               shouldRecur = true;
@@ -214,16 +212,34 @@ export async function requirementsAgent({
           }
 
           if (
-            delta.toolName === "list_dir" ||
-            delta.toolName === "read_file" ||
-            delta.toolName === "search_codebase" ||
-            delta.toolName === "query_related_declarations" ||
-            delta.toolName === "fzf" ||
-            delta.toolName === "grep" ||
-            delta.toolName === "find"
+            part.toolName === "list_dir" ||
+            part.toolName === "read_file" ||
+            part.toolName === "search_codebase" ||
+            part.toolName === "query_related_declarations" ||
+            part.toolName === "fzf" ||
+            part.toolName === "grep" ||
+            part.toolName === "find"
           ) {
             shouldRecur = true;
           }
+          break;
+        }
+        case "tool-error": {
+          toolResultMessages.push({
+            visibility: "internal",
+            role: "tool",
+            content: [
+              {
+                type: "tool-result",
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                input: part.input,
+                output: part.error,
+                isError: true,
+              },
+            ],
+          });
+          shouldRecur = true;
           break;
         }
       }

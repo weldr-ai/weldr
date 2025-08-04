@@ -235,53 +235,59 @@ async function executeTaskCoder({
     const messagesToSave: z.infer<typeof addMessageItemSchema>[] = [];
     const toolResultMessages: z.infer<typeof addMessageItemSchema>[] = [];
 
-    // Process the stream and handle tool calls
-    for await (const delta of result.fullStream) {
-      if (delta.type === "text") {
-        // Add text content immediately to maintain proper order
+    for await (const part of result.fullStream) {
+      if (part.type === "text-delta") {
         const lastItem = assistantContent[assistantContent.length - 1];
         if (lastItem && lastItem.type === "text") {
-          // Append to existing text item
-          lastItem.text += delta.text;
+          lastItem.text += part.text;
         } else {
-          // Create new text item
           assistantContent.push({
             type: "text",
-            text: delta.text,
+            text: part.text,
           });
         }
-      } else if (delta.type === "tool-call") {
+      } else if (part.type === "tool-call") {
         assistantContent.push({
           type: "tool-call",
-          toolCallId: delta.toolCallId,
-          toolName: delta.toolName,
-          input: delta.input,
+          toolCallId: part.toolCallId,
+          toolName: part.toolName,
+          input: part.input,
         });
-      } else if (delta.type === "tool-result") {
+      } else if (part.type === "tool-result") {
         toolResultMessages.push({
           visibility: "internal",
           role: "tool",
           content: [
             {
               type: "tool-result",
-              toolCallId: delta.toolCallId,
-              toolName: delta.toolName,
-              output: delta.output,
-              isError: "isError" in delta && delta.isError,
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              output: part.output,
             },
           ],
         });
 
-        if ("isError" in delta && delta.isError) {
-          shouldRecur = true;
-          break;
-        }
-
-        if (delta.toolName === "done") {
+        if (part.toolName === "done") {
           shouldRecur = false;
         } else {
           shouldRecur = true;
         }
+      } else if (part.type === "tool-error") {
+        toolResultMessages.push({
+          visibility: "internal",
+          role: "tool",
+          content: [
+            {
+              type: "tool-result",
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              input: part.input,
+              output: part.error,
+              isError: true,
+            },
+          ],
+        });
+        shouldRecur = true;
       }
     }
 

@@ -59,13 +59,14 @@ export const toolCallPartSchema = z.object({
   type: z.literal("tool-call"),
   toolCallId: z.string(),
   toolName: z.string(),
-  input: z.record(z.unknown()),
+  input: z.unknown(),
 });
 
 export const toolResultPartSchema = z.object({
   type: z.literal("tool-result"),
   toolCallId: z.string(),
   toolName: z.string(),
+  input: z.unknown(),
   output: z.unknown(),
   isError: z.boolean().optional(),
 });
