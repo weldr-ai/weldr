@@ -94,7 +94,7 @@ function createBucketPolicyDocument(projectId: string): string {
       {
         Sid: "ListObjectsInBucket",
         Effect: "Allow",
-        Action: ["s3:ListObjects", "s3:ListObjectsV2"],
+        Action: ["s3:ListBucket"],
         Resource: [`arn:aws:s3:::${projectId}`],
       },
       {

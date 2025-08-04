@@ -1,4 +1,4 @@
-import { requirementsAgent } from "@/ai/agents/requirements-agent";
+import { requirementsAgent } from "@/ai/agents/requirements";
 
 import { createStep } from "../engine";
 

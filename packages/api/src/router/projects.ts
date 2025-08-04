@@ -10,7 +10,6 @@ import {
   versions,
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
-import { machineLookupStore } from "@weldr/shared/machine-lookup-store";
 import { nanoid } from "@weldr/shared/nanoid";
 import { Tigris } from "@weldr/shared/tigris";
 import type { ChatMessage } from "@weldr/shared/types";
@@ -24,72 +23,21 @@ export const projectsRouter = {
   create: protectedProcedure
     .input(insertProjectSchema)
     .mutation(async ({ ctx, input }) => {
-      let devMachineId: string | null = null;
-      let developmentAppId: string | null = null;
-      let productionAppId: string | null = null;
-      let bucketCredentials: {
-        accessKeyId: string;
-        secretAccessKey: string;
-      } | null = null;
       const projectId = nanoid();
 
       try {
         return await ctx.db.transaction(async (tx) => {
           // Create development app
-          developmentAppId = await Fly.app.create({
+          await Fly.app.create({
             type: "development",
             projectId,
           });
 
-          productionAppId = await Fly.app.create({
+          // Create production app
+          await Fly.app.create({
             type: "production",
             projectId,
           });
-
-          // Create Tigris bucket
-          bucketCredentials = await Tigris.bucket.create(projectId);
-
-          // Create secrets
-          await Promise.all([
-            Fly.secret.create({
-              type: "development",
-              projectId,
-              key: "AWS_ACCESS_KEY_ID",
-              value: bucketCredentials.accessKeyId,
-            }),
-            Fly.secret.create({
-              type: "development",
-              projectId,
-              key: "AWS_SECRET_ACCESS_KEY",
-              value: bucketCredentials.secretAccessKey,
-            }),
-            Fly.secret.create({
-              type: "development",
-              projectId,
-              key: "FLY_API_TOKEN",
-              // biome-ignore lint/style/noNonNullAssertion: reason
-              value: process.env.FLY_API_TOKEN!,
-            }),
-          ]);
-
-          // Create development node
-          devMachineId = await Fly.machine.create({
-            type: "development",
-            projectId,
-            config: Fly.machine.presets.development,
-          });
-
-          if (!devMachineId) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create project",
-            });
-          }
-
-          await machineLookupStore.set(
-            `${projectId}:dev-machine-id`,
-            devMachineId,
-          );
 
           const [project] = await tx
             .insert(projects)
@@ -171,43 +119,6 @@ export const projectsRouter = {
         if (error instanceof TRPCError) {
           throw error;
         }
-
-        const cleanupPromises = [];
-
-        if (devMachineId) {
-          cleanupPromises.push(
-            Fly.machine.destroy({
-              type: "development",
-              projectId,
-              machineId: devMachineId,
-            }),
-          );
-        }
-
-        if (developmentAppId) {
-          cleanupPromises.push(
-            Fly.app.destroy({
-              type: "development",
-              projectId,
-            }),
-          );
-        }
-
-        if (productionAppId) {
-          cleanupPromises.push(
-            Fly.app.destroy({
-              type: "production",
-              projectId,
-            }),
-          );
-        }
-
-        if (bucketCredentials) {
-          cleanupPromises.push(Tigris.bucket.delete(projectId));
-        }
-
-        await Promise.all(cleanupPromises);
-
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create project",

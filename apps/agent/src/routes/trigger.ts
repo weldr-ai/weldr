@@ -1,6 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { initVersion } from "@/ai/utils/init-version";
-import { insertMessages } from "@/ai/utils/insert-messages";
 import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
 import { createRouter } from "@/lib/utils";
 import { workflow } from "@/workflow";
@@ -8,44 +7,17 @@ import { workflow } from "@/workflow";
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
-import {
-  attachmentSchema,
-  userMessageContentSchema,
-} from "@weldr/shared/validators/chats";
 
 const route = createRoute({
   method: "post",
-  path: "/trigger",
+  path: "/trigger/{projectId}",
   summary: "Trigger workflow with user message",
   description: "Trigger workflow with user message",
   tags: ["Agent"],
   request: {
-    body: {
-      content: {
-        "application/json": {
-          schema: z.object({
-            projectId: z
-              .string()
-              .openapi({ description: "Project ID", example: "123abc" }),
-            message: z.object({
-              content: userMessageContentSchema.array().openapi({
-                description: "Message content",
-                example: [
-                  {
-                    type: "text",
-                    text: "Hello, Weldr!",
-                  },
-                ],
-              }),
-              attachments: attachmentSchema
-                .array()
-                .optional()
-                .openapi({ description: "Message attachments", example: [] }),
-            }),
-          }),
-        },
-      },
-    },
+    params: z.object({
+      projectId: z.string().openapi({ description: "Project ID" }),
+    }),
   },
   responses: {
     200: {
@@ -75,7 +47,7 @@ const route = createRoute({
 const router = createRouter();
 
 router.openapi(route, async (c) => {
-  const { projectId, message } = c.req.valid("json");
+  const { projectId } = c.req.valid("param");
 
   const session = await auth.api.getSession({
     headers: c.req.raw.headers,
@@ -123,22 +95,6 @@ router.openapi(route, async (c) => {
     });
   }
 
-  // Save the user message to database first
-  const newMessage = {
-    visibility: "public" as const,
-    role: "user" as const,
-    content: message.content,
-    attachments: message.attachments,
-  };
-
-  await insertMessages({
-    input: {
-      chatId: activeVersion.chatId,
-      userId: session.user.id,
-      messages: [newMessage],
-    },
-  });
-
   // Store the context we need for the workflow
   const workflowContext = c.get("workflowContext");
   workflowContext.set("project", {
@@ -147,6 +103,7 @@ router.openapi(route, async (c) => {
   });
   workflowContext.set("version", activeVersion);
   workflowContext.set("isXML", true);
+  workflowContext.set("user", session.user);
 
   if (
     activeVersion.status !== "completed" &&

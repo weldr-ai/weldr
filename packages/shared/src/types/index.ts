@@ -120,12 +120,25 @@ export type IntegrationStreamableValue = {
   };
 };
 
+export type SSEConnectionEvent = {
+  type: "connected";
+  clientId: string;
+  chatId: string;
+};
+
+export type SSEErrorEvent = {
+  type: "error";
+  error: string;
+};
+
 export type SSEEvent =
   | TextStreamableValue
   | ToolStreamableValue
   | NodeStreamableValue
   | ProjectStreamableValue
-  | EndStreamableValue;
+  | EndStreamableValue
+  | SSEConnectionEvent
+  | SSEErrorEvent;
 
 // Trigger API response type
 export type TriggerWorkflowResponse = {

@@ -1,12 +1,7 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import pino from "pino";
-import pinoCaller from "pino-caller";
 import pretty from "pino-pretty";
 
 const isDevelopment = process.env.NODE_ENV === "development";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export namespace Logger {
   const baseLogger = pino(
@@ -16,9 +11,7 @@ export namespace Logger {
     isDevelopment ? pretty({ colorize: true, singleLine: true }) : undefined,
   );
 
-  export const instance = isDevelopment
-    ? pinoCaller(baseLogger, { relativeTo: __dirname })
-    : pinoCaller(baseLogger, { relativeTo: process.cwd() });
+  export const instance = baseLogger;
 
   export const debug = (message: string, data?: Record<string, unknown>) =>
     instance.debug(data || {}, message);

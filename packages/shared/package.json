@@ -27,7 +27,6 @@
     "nanoid": "^5.1.5",
     "ofetch": "^1.4.1",
     "pino": "^9.7.0",
-    "pino-caller": "^4.0.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

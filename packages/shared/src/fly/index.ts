@@ -1,9 +1,9 @@
-import * as app from "./app";
-import * as machine from "./machine";
-import * as secret from "./secret";
+import { App } from "./app";
+import { Machine } from "./machine";
+import { Secret } from "./secret";
 
 export const Fly = {
-  app,
-  machine,
-  secret,
+  app: App,
+  machine: Machine,
+  secret: Secret,
 };

@@ -1,5 +1,3 @@
-import { db, eq } from "@weldr/db";
-import { versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import type { WorkflowContext } from "./context";
 
@@ -127,13 +125,6 @@ export function createWorkflow(
         logger.error("Workflow failed", {
           extra: { error },
         });
-
-        // Mark version as failed
-        await db
-          .update(versions)
-          .set({ status: "failed" })
-          .where(eq(versions.id, version.id));
-
         throw error;
       }
     },
