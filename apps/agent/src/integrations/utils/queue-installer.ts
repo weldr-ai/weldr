@@ -1,3 +1,4 @@
+import { getSSEConnection } from "@/lib/utils";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { and, db, eq } from "@weldr/db";
@@ -13,9 +14,7 @@ import type {
 import { integrationRegistry } from "../registry";
 import {
   getQueuedIntegrations,
-  markIntegrationAsCompleted,
-  markIntegrationAsFailed,
-  markIntegrationAsInstalling,
+  updateIntegrationStatus,
 } from "./queue-manager";
 
 async function streamToolMessageUpdate({
@@ -29,11 +28,7 @@ async function streamToolMessageUpdate({
 }) {
   const version = context.get("version");
 
-  const streamWriter = global.sseConnections?.get(version.chatId);
-
-  if (!streamWriter) {
-    return;
-  }
+  const streamWriter = getSSEConnection(version.chatId);
 
   const integration = await db.query.integrations.findFirst({
     where: eq(integrations.id, integrationId),
@@ -88,7 +83,6 @@ async function streamToolMessageUpdate({
       type: "tool-result",
       toolCallId: toolContent.toolCallId,
       toolName: toolContent.toolName,
-      isError: false,
       output: {
         ...toolOutput,
         integrations: updatedIntegrations,
@@ -159,7 +153,7 @@ export async function installQueuedIntegrations(
 
     for (const integration of queuedIntegrations) {
       try {
-        await markIntegrationAsInstalling(integration.id);
+        await updateIntegrationStatus(integration.id, "installing");
         logger.info(`Started installing ${integration.key}`);
 
         await streamToolMessageUpdate({
@@ -173,7 +167,7 @@ export async function installQueuedIntegrations(
           context,
         });
 
-        await markIntegrationAsCompleted(integration.id, context);
+        await updateIntegrationStatus(integration.id, "completed");
         logger.info(`Successfully installed ${integration.key}`);
 
         allInstalledIntegrations.push({
@@ -196,7 +190,7 @@ export async function installQueuedIntegrations(
 
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
-        await markIntegrationAsFailed(integration.id);
+        await updateIntegrationStatus(integration.id, "failed");
 
         await streamToolMessageUpdate({
           context,

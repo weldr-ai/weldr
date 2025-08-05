@@ -14,6 +14,20 @@ import type { FileItem } from "../types";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+async function createWorkspaceDir(): Promise<void> {
+  const checkResult = await runCommand("test", ["-d", WORKSPACE_DIR]);
+
+  if (!checkResult.success) {
+    const mkdirResult = await runCommand("mkdir", ["-p", WORKSPACE_DIR]);
+
+    if (!mkdirResult.success) {
+      throw new Error(
+        `Failed to create workspace directory ${WORKSPACE_DIR}: ${mkdirResult.stderr}`,
+      );
+    }
+  }
+}
+
 export async function applyFiles({
   integration,
   context,
@@ -21,6 +35,10 @@ export async function applyFiles({
   integration: Integration;
   context: WorkflowContext;
 }): Promise<void> {
+  if (process.env.NODE_ENV === "development") {
+    await createWorkspaceDir();
+  }
+
   const files = await generateFiles({
     integration,
     context,
@@ -29,9 +47,7 @@ export async function applyFiles({
   const logger = Logger.get({ projectId: integration.projectId });
 
   for (const file of files) {
-    const readResult = await runCommand("cat", [file.sourcePath], {
-      cwd: WORKSPACE_DIR,
-    });
+    const readResult = await runCommand("cat", [file.sourcePath]);
 
     if (!readResult.success) {
       logger.error(
@@ -175,6 +191,7 @@ async function generateFiles({
   const project = context.get("project");
   const hasFrontend = project.integrationCategories.has("frontend");
   const hasBackend = project.integrationCategories.has("backend");
+  const hasNothing = !hasFrontend && !hasBackend;
 
   const logger = Logger.get({ projectId: integration.projectId });
 
@@ -206,13 +223,19 @@ async function generateFiles({
 
   const files: FileItem[] = [];
 
-  if (hasBackend) {
+  // Add base files when there's absolutely nothing in the project yet
+  if (hasNothing) {
+    const baseFiles = await processBaseFiles();
+    files.push(...baseFiles);
+  }
+
+  if (hasBackend || hasNothing) {
     const serverPath = path.join(baseDataDir, "server");
     const serverFiles = await processDirectoryFiles(serverPath, "server");
     files.push(...serverFiles);
   }
 
-  if (hasFrontend) {
+  if (hasFrontend || hasNothing) {
     const webPath = path.join(baseDataDir, "web");
     const webFiles = await processDirectoryFiles(webPath, "web");
     files.push(...webFiles);
@@ -288,6 +311,38 @@ async function processFile(
       targetPath: targetPathWithoutExtension,
       content: readResult.stdout,
     });
+  }
+
+  return files;
+}
+
+async function processBaseFiles(): Promise<FileItem[]> {
+  const baseDir = path.resolve(__dirname, "../base");
+
+  const checkResult = await runCommand("test", ["-d", baseDir]);
+
+  if (!checkResult.success) {
+    Logger.error(`No base directory found at ${baseDir}`);
+    throw new Error(`No base directory found at ${baseDir}`);
+  }
+
+  const files: FileItem[] = [];
+
+  const baseFiles = [
+    ".gitignore",
+    ".npmrc",
+    "biome.json",
+    "pnpm-workspace.yaml",
+    "package.json",
+    "turbo.json",
+  ];
+
+  for (const fileName of baseFiles) {
+    const sourcePath = path.join(baseDir, fileName);
+    const targetPath = path.join(WORKSPACE_DIR, fileName);
+
+    const file = await processFile(sourcePath, targetPath);
+    files.push(...file);
   }
 
   return files;

@@ -13,6 +13,7 @@
       "!**/temp/**",
       "!**/.temp/**",
       "!**/data/**",
+      "!**/integrations/base/**",
       "!**/build/**"
     ]
   },

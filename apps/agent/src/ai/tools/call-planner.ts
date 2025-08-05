@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { getSSEConnection } from "@/lib/utils";
 
 import { db, eq } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import { generateProjectInfo } from "../utils/generate-project-info";
-import { createTool } from "../utils/tools";
+import { createTool } from "./utils";
 
 export const callPlannerTool = createTool({
   name: "call_planner",
@@ -34,10 +35,7 @@ export const callPlannerTool = createTool({
       input,
     });
 
-    const streamWriter = global.sseConnections?.get(version.chatId);
-    if (!streamWriter) {
-      throw new Error("Stream writer not found");
-    }
+    const streamWriter = getSSEConnection(version.chatId);
 
     // Generate project title and description if it's the first version and the project title is not set
     if (version.number === 1 && project.title === null) {

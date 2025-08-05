@@ -1,6 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { useTRPC } from "@/lib/trpc/react";
 
 import { nanoid } from "@weldr/shared/nanoid";
 import type { Attachment, ChatMessage, UserMessage } from "@weldr/shared/types";
@@ -23,17 +21,11 @@ export function useMessages({
   chatId,
   session,
 }: UseMessagesOptions) {
-  const trpc = useTRPC();
-
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [userMessageContent, setUserMessageContent] = useState<
     UserMessage["content"]
   >([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
-
-  const addMessageMutation = useMutation(
-    trpc.chats.addMessage.mutationOptions(),
-  );
 
   const handleSubmit = async () => {
     if (userMessageContent.length === 0) {
@@ -65,12 +57,6 @@ export function useMessages({
     // Clear the input
     setUserMessageContent([]);
     setAttachments([]);
-
-    // Add to database
-    addMessageMutation.mutate({
-      chatId,
-      messages: [newMessageUser],
-    });
   };
 
   return {

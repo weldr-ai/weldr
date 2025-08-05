@@ -4,14 +4,18 @@ import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
+import type { Attachment, UserMessage } from "@weldr/shared/types";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { projectId: string } },
-) {
+export async function POST(request: NextRequest) {
+  const body = (await request.json()) as {
+    projectId: string;
+    message: {
+      content: UserMessage["content"];
+      attachments: Attachment[];
+    };
+  };
+
   try {
-    const { projectId } = await params;
-
     const session = await auth.api.getSession({
       headers: request.headers,
     });
@@ -22,7 +26,7 @@ export async function GET(
 
     const project = await db.query.projects.findFirst({
       where: and(
-        eq(projects.id, projectId),
+        eq(projects.id, body.projectId),
         eq(projects.userId, session.user.id),
       ),
     });
@@ -35,9 +39,9 @@ export async function GET(
 
     if (process.env.NODE_ENV === "production") {
       const devMachineId = await Fly.machine.getDevMachineId({
-        projectId,
+        projectId: body.projectId,
       });
-      url = `http://${devMachineId}.vm.development-app-${projectId}.internal:8080`;
+      url = `http://${devMachineId}.vm.development-app-${body.projectId}.internal:8080`;
     }
 
     // Create headers object, preserving original headers but updating origin-related ones
@@ -55,21 +59,18 @@ export async function GET(
     headers.set("origin", url);
     headers.set("content-type", "application/json");
 
-    // Make the proxy request to the agent service
-    const response = await fetch(`${url}/events/${projectId}`, {
-      method: "GET",
+    const response = await fetch(`${url}/trigger`, {
+      method: "POST",
       headers,
+      body: JSON.stringify(body),
     });
 
-    // Stream the SSE response
     return new NextResponse(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers: {
         "Content-Type":
-          response.headers.get("content-type") || "text/event-stream",
-        "Cache-Control": response.headers.get("Cache-Control") || "no-cache",
-        Connection: response.headers.get("Connection") || "keep-alive",
+          response.headers.get("content-type") || "application/json",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Cache-Control",
       },

@@ -3,14 +3,14 @@ import { z } from "zod";
 import { db } from "@weldr/db";
 import { Logger } from "@weldr/shared/logger";
 import { integrationCategoryKeySchema } from "@weldr/shared/validators/integration-categories";
-import { createTool } from "../utils/tools";
+import { createTool } from "./utils";
 
 export const addIntegrationsTool = createTool({
   name: "add_integrations",
   description:
-    "Shows available integration categories that can be added to an existing initialized project.",
+    "Shows available integration categories that can be added to a project.",
   whenToUse:
-    "Use this tool when you need to add more integration categories to an already initialized project. It will return available categories.",
+    "Use this tool when you need to add more integration categories to a project. It will return available categories.",
   inputSchema: z.object({
     categories: z
       .array(integrationCategoryKeySchema)
@@ -73,10 +73,6 @@ export const addIntegrationsTool = createTool({
 
     const availableCategories = requestedCategories.filter(
       (category) => !existingCategoryKeys.has(category.key),
-    );
-
-    logger.info(
-      `Found ${availableCategories.length} available categories for user selection`,
     );
 
     return {

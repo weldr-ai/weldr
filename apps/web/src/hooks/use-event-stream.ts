@@ -58,7 +58,7 @@ export function useEventStream({
       reconnectTimeoutRef.current = null;
     }
 
-    const eventSource = new EventSource(`/api/events/${projectId}`);
+    const eventSource = new EventSource(`/api/chat/${projectId}`);
     setEventSourceRef(eventSource);
 
     eventSource.onmessage = (event) => {

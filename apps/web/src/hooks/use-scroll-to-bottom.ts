@@ -1,9 +1,10 @@
 import { type RefObject, useEffect, useRef } from "react";
 
-export function useScrollToBottom<T extends HTMLElement>(): [
-  RefObject<T>,
-  RefObject<T>,
-] {
+import type { ChatMessage } from "@weldr/shared/types";
+
+export function useScrollToBottom<T extends HTMLElement>(
+  messages: ChatMessage[],
+): [RefObject<T>, RefObject<T>] {
   const containerRef = useRef<T>(null);
   const endRef = useRef<T>(null);
 
@@ -35,7 +36,7 @@ export function useScrollToBottom<T extends HTMLElement>(): [
 
       return () => observer.disconnect();
     }
-  }, []);
+  }, [messages]);
 
   return [containerRef, endRef];
 }

@@ -12,7 +12,7 @@ import {
   versions,
 } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import { createTool } from "../utils/tools";
+import { createTool } from "./utils";
 
 export const queryRelatedDeclarationsTool = createTool({
   name: "query_related_declarations",

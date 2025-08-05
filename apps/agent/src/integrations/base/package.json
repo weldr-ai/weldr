@@ -1,0 +1,22 @@
+{
+  "name": "my-app",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "turbo typecheck",
+    "check": "biome check --diagnostic-level=warn",
+    "check:fix": "biome check --diagnostic-level=warn --write",
+    "clean": "turbo clean && rm -rf node_modules .turbo",
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "start": "turbo start"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.1.2",
+    "turbo": "^2.4.2"
+  },
+  "packageManager": "pnpm@10.10.0"
+}

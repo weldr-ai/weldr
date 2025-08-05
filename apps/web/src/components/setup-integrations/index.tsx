@@ -41,12 +41,18 @@ const PureSetupIntegration = ({
   const { project } = useProject();
   const trpc = useTRPC();
 
+  const requiredCategories = (message.content[0] as IntegrationToolResultPart)
+    .output.categories;
+
   const [selectedIntegrations, setSelectedIntegrations] = useState<
     Record<string, RouterOutputs["integrationTemplates"]["list"][0] | null>
   >(
     integrationTemplates.reduce(
       (acc, template) => {
-        if (template.isRecommended) {
+        if (
+          template.isRecommended &&
+          requiredCategories.includes(template.category.key)
+        ) {
           acc[template.category.key] = template;
         }
         return acc;
@@ -73,9 +79,6 @@ const PureSetupIntegration = ({
       }
     >
   >({});
-
-  const requiredCategories = (message.content[0] as IntegrationToolResultPart)
-    .output.categories;
 
   const filteredIntegrationTemplates = integrationTemplates.filter(
     (template) =>
@@ -351,14 +354,14 @@ const PureSetupIntegration = ({
   }, [setMessages, setPendingMessage, updateMessageMutation, message]);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-[300px] flex-col">
       <div className="flex flex-col items-center border-b p-1.5">
         <h3 className="font-medium">Setup Integrations</h3>
         <p className="text-muted-foreground text-xs">
           Select and configure integrations for your project
         </p>
       </div>
-      <div className="flex flex-col gap-2 p-1.5">
+      <div className="flex flex-1 flex-col justify-between gap-2 p-1.5">
         {Object.entries(groupedTemplates)
           .sort(([, a], [, b]) => {
             const aNeedsConfig = needsUserConfig(a.category.key);

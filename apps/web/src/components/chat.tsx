@@ -43,8 +43,6 @@ export function Chat({
 }: ChatProps) {
   const router = useRouter();
   const { data: session } = authClient.useSession();
-  const [messagesContainerRef, messagesEndRef] =
-    useScrollToBottom<HTMLDivElement>();
 
   const latestVersion = project.versions[project.versions.length - 1];
 
@@ -62,6 +60,9 @@ export function Chat({
     chatId: version.chat.id,
     session,
   });
+
+  const [messagesContainerRef, messagesEndRef] =
+    useScrollToBottom<HTMLDivElement>(messages);
 
   const { pendingMessage, setPendingMessage } = usePendingMessageStatus({
     version,
@@ -95,7 +96,10 @@ export function Chat({
 
   const handleSubmit = async () => {
     await handleMessageSubmit();
-    await triggerGeneration();
+    await triggerGeneration({
+      content: userMessageContent,
+      attachments,
+    });
   };
 
   const editorReferences = useEditorReferences({ latestVersion });

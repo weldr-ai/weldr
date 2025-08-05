@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { createTool } from "../utils/tools";
+import { createTool } from "./utils";
 
 export const doneTool = createTool({
   name: "done",

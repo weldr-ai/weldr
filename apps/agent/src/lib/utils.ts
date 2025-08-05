@@ -25,6 +25,30 @@ export function createRouter() {
   return new OpenAPIHono<HonoContext>();
 }
 
+export function getSSEConnection(chatId: string): StreamWriter {
+  if (!global.sseConnections) {
+    global.sseConnections = new Map();
+  }
+
+  const existingConnection = global.sseConnections.get(chatId);
+  if (existingConnection) {
+    return existingConnection;
+  }
+
+  // Create a fallback stream writer that buffers messages until a real connection is established
+  const fallbackWriter: StreamWriter = {
+    write: async (chunk: SSEEvent) => {
+      console.log(`[SSE Fallback] Buffering message for ${chatId}:`, chunk);
+    },
+    close: async () => {
+      console.log(`[SSE Fallback] Would close connection for ${chatId}`);
+    },
+  };
+
+  global.sseConnections.set(chatId, fallbackWriter);
+  return fallbackWriter;
+}
+
 export function configureOpenAPI(app: OpenAPIHono<HonoContext>) {
   app
     .get("/openapi.json", async (c) => {

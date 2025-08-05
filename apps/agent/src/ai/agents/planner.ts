@@ -13,6 +13,7 @@ import {
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
+import { getSSEConnection } from "@/lib/utils";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { Logger } from "@weldr/shared/logger";
@@ -21,8 +22,8 @@ import type {
   assistantMessageContentSchema,
 } from "@weldr/shared/validators/chats";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
+import { XMLProvider } from "../tools/xml/provider";
 import { calculateModelCost } from "../utils/providers-pricing";
-import { XMLProvider } from "../utils/xml-provider";
 
 export async function plannerAgent({
   context,
@@ -36,10 +37,7 @@ export async function plannerAgent({
   const version = context.get("version");
   const isXML = context.get("isXML");
 
-  const streamWriter = global.sseConnections?.get(version.chatId);
-  if (!streamWriter) {
-    throw new Error("Stream writer not found");
-  }
+  const streamWriter = getSSEConnection(version.chatId);
 
   const logger = Logger.get({
     projectId: project.id,
@@ -47,22 +45,21 @@ export async function plannerAgent({
     mode: isXML ? "xml" : "ai-sdk",
   });
 
-  const xmlProvider = new XMLProvider(
-    [
-      listDirTool.getXML(),
-      readFileTool.getXML(),
-      searchCodebaseTool.getXML(),
-      queryRelatedDeclarationsTool.getXML(),
-      fzfTool.getXML(),
-      grepTool.getXML(),
-      findTool.getXML(),
-      callCoderTool.getXML(),
-    ],
-    context,
-  );
+  const tools = {
+    list_dir: listDirTool,
+    read_file: readFileTool,
+    search_codebase: searchCodebaseTool,
+    query_related_declarations: queryRelatedDeclarationsTool,
+    fzf: fzfTool,
+    grep: grepTool,
+    find: findTool,
+    call_coder: callCoderTool,
+  } as const;
+
+  const xmlProvider = new XMLProvider(tools, context);
 
   const system = isXML
-    ? await prompts.planner(project, xmlProvider.getSpecsMarkdown())
+    ? await prompts.planner(project, tools)
     : await prompts.planner(project);
 
   // Local function to execute planner agent and handle tool calls

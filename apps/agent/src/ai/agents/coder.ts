@@ -16,6 +16,7 @@ import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import { getTaskExecutionPlan, type TaskWithRelations } from "@/ai/utils/tasks";
+import { getSSEConnection } from "@/lib/utils";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { db, eq } from "@weldr/db";
@@ -27,9 +28,9 @@ import type {
 } from "@weldr/shared/validators/chats";
 import { prompts } from "../prompts";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
+import { XMLProvider } from "../tools/xml/provider";
 import { formatTaskDeclarationToMarkdown } from "../utils/formatters";
 import { calculateModelCost } from "../utils/providers-pricing";
-import { XMLProvider } from "../utils/xml-provider";
 
 export async function coderAgent({
   context,
@@ -46,12 +47,7 @@ export async function coderAgent({
     versionId: version.id,
   });
 
-  const streamWriter = global.sseConnections?.get(
-    context.get("version").chatId,
-  );
-  if (!streamWriter) {
-    throw new Error("Stream writer not found");
-  }
+  const streamWriter = getSSEConnection(context.get("version").chatId);
 
   logger.info("Starting coder agent");
 
@@ -154,22 +150,21 @@ async function executeTaskCoder({
 
   logger.info("Starting task coder");
 
-  const xmlProvider = new XMLProvider(
-    [
-      listDirTool.getXML(),
-      readFileTool.getXML(),
-      writeFileTool.getXML(),
-      deleteFileTool.getXML(),
-      editFileTool.getXML(),
-      searchCodebaseTool.getXML(),
-      queryRelatedDeclarationsTool.getXML(),
-      fzfTool.getXML(),
-      grepTool.getXML(),
-      findTool.getXML(),
-      doneTool.getXML(),
-    ],
-    context,
-  );
+  const tools = {
+    list_dir: listDirTool,
+    read_file: readFileTool,
+    write_file: writeFileTool,
+    delete_file: deleteFileTool,
+    edit_file: editFileTool,
+    search_codebase: searchCodebaseTool,
+    query_related_declarations: queryRelatedDeclarationsTool,
+    fzf: fzfTool,
+    grep: grepTool,
+    find: findTool,
+    done: doneTool,
+  } as const;
+
+  const xmlProvider = new XMLProvider(tools, context);
 
   const versionContext = `${version.message}
   Description: ${version.description}
@@ -180,11 +175,7 @@ async function executeTaskCoder({
     .join("\n")}`;
 
   const system = isXML
-    ? await prompts.generalCoder(
-        project,
-        xmlProvider.getSpecsMarkdown(),
-        versionContext,
-      )
+    ? await prompts.generalCoder(project, versionContext, tools)
     : await prompts.generalCoder(project, versionContext);
 
   // Local function to execute coder agent and handle tool calls
@@ -382,13 +373,7 @@ async function updateCanvasNode({
   const project = context.get("project");
   const version = context.get("version");
 
-  const streamWriter = global.sseConnections?.get(
-    context.get("version").chatId,
-  );
-
-  if (!streamWriter) {
-    throw new Error("Stream writer not found");
-  }
+  const streamWriter = getSSEConnection(context.get("version").chatId);
 
   const logger = Logger.get({
     projectId: project.id,

@@ -3,7 +3,7 @@ import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 
 import { Logger } from "@weldr/shared/logger";
-import { createTool } from "../utils/tools";
+import { createTool } from "./utils";
 
 const grepMatchSchema = z.object({
   filePath: z.string(),

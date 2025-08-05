@@ -8,7 +8,7 @@ import { versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 import { extractAndSaveDeclarations } from "../utils/declarations";
-import { createTool } from "../utils/tools";
+import { createTool } from "./utils";
 
 export const writeFileTool = createTool({
   name: "write_file",

@@ -5,13 +5,13 @@ import { and, db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 
-export async function POST(
+export async function GET(
   request: NextRequest,
   { params }: { params: { projectId: string } },
 ) {
-  const { projectId } = await params;
-
   try {
+    const { projectId } = await params;
+
     const session = await auth.api.getSession({
       headers: request.headers,
     });
@@ -55,17 +55,21 @@ export async function POST(
     headers.set("origin", url);
     headers.set("content-type", "application/json");
 
-    const response = await fetch(`${url}/trigger/${projectId}`, {
-      method: "POST",
+    // Make the proxy request to the agent service
+    const response = await fetch(`${url}/events/${projectId}`, {
+      method: "GET",
       headers,
     });
 
+    // Stream the SSE response
     return new NextResponse(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers: {
         "Content-Type":
-          response.headers.get("content-type") || "application/json",
+          response.headers.get("content-type") || "text/event-stream",
+        "Cache-Control": response.headers.get("Cache-Control") || "no-cache",
+        Connection: response.headers.get("Connection") || "keep-alive",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Cache-Control",
       },

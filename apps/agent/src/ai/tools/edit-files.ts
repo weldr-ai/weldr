@@ -8,7 +8,7 @@ import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 import { applyEdit } from "../utils/apply-edit";
 import { extractAndSaveDeclarations } from "../utils/declarations";
-import { createTool } from "../utils/tools";
+import { createTool } from "./utils";
 
 export const editFileTool = createTool({
   name: "edit_file",

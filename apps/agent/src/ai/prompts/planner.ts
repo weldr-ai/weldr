@@ -1,10 +1,11 @@
 import { getProjectContext } from "@/ai/utils/get-project-context";
 
 import type { projects } from "@weldr/db/schema";
+import type { MyToolSet } from "../tools/types";
 
 export const planner = async (
   project: typeof projects.$inferSelect,
-  toolSetMarkdown?: string,
+  toolSet?: MyToolSet,
 ) => {
   const projectContext = await getProjectContext(project);
 
@@ -27,7 +28,7 @@ ${projectContext}
 <tools>
   You have access to a suite of powerful tools to assist you. Use them when necessary.
 ${
-  toolSetMarkdown &&
+  toolSet &&
   `To use a tool, you must respond with an XML block like this:
   <tool_call>
     <tool_name>tool_name</tool_name>
@@ -51,9 +52,11 @@ ${
     - Handle any errors that occurred during tool execution
     - Complete the task if all necessary tools have been executed successfully
 ${
-  toolSetMarkdown &&
+  toolSet &&
   `Here are the available tools:
-  ${toolSetMarkdown}`
+  ${Object.values(toolSet)
+    .map((tool) => tool.toMarkdown())
+    .join("\n\n")}`
 }
 </tools>
 

@@ -4,7 +4,7 @@ import { runCommand, runShell } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 
 import { Logger } from "@weldr/shared/logger";
-import { createTool } from "../utils/tools";
+import { createTool } from "./utils";
 
 export const readFileTool = createTool({
   name: "read_file",

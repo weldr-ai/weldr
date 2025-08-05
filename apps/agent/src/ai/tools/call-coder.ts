@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { getSSEConnection } from "@/lib/utils";
 
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import { planSchema, taskSchema } from "@weldr/shared/validators/plans";
 import { createTasks } from "../utils/tasks";
-import { createTool } from "../utils/tools";
+import { createTool } from "./utils";
 
 export const callCoderTool = createTool({
   name: "call_coder",
@@ -62,11 +63,7 @@ export const callCoderTool = createTool({
 
     context.set("version", updatedVersion);
 
-    const streamWriter = global.sseConnections?.get(updatedVersion.chatId);
-
-    if (!streamWriter) {
-      throw new Error("Stream writer not found");
-    }
+    const streamWriter = getSSEConnection(updatedVersion.chatId);
 
     await streamWriter.write({
       type: "update_project",

@@ -6,7 +6,7 @@ import { and, db, eq, inArray } from "@weldr/db";
 import { declarations, versionDeclarations, versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
-import { createTool } from "../utils/tools";
+import { createTool } from "./utils";
 
 export const deleteFileTool = createTool({
   name: "delete_file",

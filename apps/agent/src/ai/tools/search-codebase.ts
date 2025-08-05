@@ -9,7 +9,7 @@ import { registry } from "@/ai/utils/registry";
 import { cosineDistance, db, desc, getTableColumns, gt, sql } from "@weldr/db";
 import { declarations, versionDeclarations, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import { createTool } from "../utils/tools";
+import { createTool } from "./utils";
 
 export const searchCodebaseTool = createTool({
   name: "search_codebase",

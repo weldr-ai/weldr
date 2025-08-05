@@ -34,12 +34,6 @@ app.use(async (c, next) => {
   await next();
 });
 
-app.post("/listen", async (c) => {
-  return c.json({
-    message: "Hello World",
-  });
-});
-
 for (const route of routes) {
   app.route("/", route);
 }

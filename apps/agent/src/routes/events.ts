@@ -115,7 +115,10 @@ router.openapi(route, async (c) => {
           write: async (chunk: SSEEvent) => {
             const message = JSON.stringify(chunk);
             try {
-              controller.enqueue(encoder.encode(`data: ${message}\n\n`));
+              const data = `data: ${message}\n\n`;
+              controller.enqueue(encoder.encode(data));
+              // Force flush the stream to ensure immediate delivery
+              await new Promise((resolve) => setImmediate(resolve));
             } catch (error) {
               logger.error(`Client ${clientId} disconnected`, {
                 extra: { error },
@@ -149,8 +152,6 @@ router.openapi(route, async (c) => {
             connections: global.sseConnections.size,
           },
         });
-
-        // Note: Cleanup happens in cancel() method below
       },
 
       cancel() {

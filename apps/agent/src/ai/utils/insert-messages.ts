@@ -23,25 +23,29 @@ export async function insertMessages({
     throw new Error("Chat not found");
   }
 
-  const messages: (typeof chatMessages.$inferInsert)[] = [];
+  const insertedMessages = await db.transaction(async (tx) => {
+    const insertedMessages: (typeof chatMessages.$inferInsert)[] = [];
 
-  for (const item of input.messages) {
-    messages.push({
-      visibility: item.visibility,
-      role: item.role,
-      content: item.content,
-      metadata: item.role === "assistant" ? item.metadata : undefined,
-      userId: input.userId,
-      chatId: input.chatId,
-    });
-  }
+    for (const item of input.messages) {
+      const [insertedMessage] = await tx
+        .insert(chatMessages)
+        .values({
+          visibility: item.visibility,
+          role: item.role,
+          content: item.content,
+          metadata: item.role === "assistant" ? item.metadata : undefined,
+          userId: input.userId,
+          chatId: input.chatId,
+        })
+        .returning();
 
-  const insertedMessages = await db
-    .insert(chatMessages)
-    .values(messages)
-    .returning({
-      id: chatMessages.id,
-    });
+      if (insertedMessage) {
+        insertedMessages.push(insertedMessage);
+      }
+    }
+
+    return insertedMessages;
+  });
 
   return insertedMessages.map((message) => message.id);
 }

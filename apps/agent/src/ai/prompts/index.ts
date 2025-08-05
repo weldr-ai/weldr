@@ -1,11 +1,9 @@
-import { enricher } from "./enricher";
 import { generalCoder } from "./general-coder";
 import { planner } from "./planner";
-import { requirementsAgent } from "./requirements-agent";
+import { requirements } from "./requirements";
 
 export const prompts = {
-  enricher,
   generalCoder,
   planner,
-  requirementsAgent,
+  requirements,
 };

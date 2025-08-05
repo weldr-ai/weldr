@@ -1,244 +1,34 @@
-import {
-  type StreamTextResult,
-  streamText,
-  type TextStreamPart,
-  type ToolSet,
-} from "ai";
-import type { z } from "zod";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
-import type { ZodXml } from "./zod-xml";
+import type {
+  AnyXMLToolCall,
+  AnyXMLToolError,
+  AnyXMLToolResult,
+  MyToolSet,
+  XMLTool,
+  XMLToolCall,
+  XMLToolError,
+  XMLToolResult,
+} from "../types";
 
-export interface XMLToolSpec<
-  TName extends string = string,
-  TParameters extends z.ZodSchema = z.ZodSchema,
-  TResult = unknown,
-> {
-  name: TName;
-  description: string;
-  parameters: ZodXml<TParameters>;
-  execute: (params: {
-    input: z.infer<TParameters>;
-    context: WorkflowContext;
-  }) => Promise<TResult> | TResult;
-  whenToUse: string;
-}
-
-/**
- * Advanced type utility that extracts the underlying Zod schema from a ZodXml wrapper.
- * This is crucial for maintaining type safety when working with XML-wrapped schemas,
- * allowing us to infer the correct TypeScript types from the nested schema structure.
- */
-type ExtractZodSchema<T> = T extends ZodXml<infer U> ? U : never;
-
-// Stream part definitions
-export type XMLTextDelta = {
-  type: "text-delta";
-  text: string;
-};
-
-export type XMLToolCall<TTool extends XMLToolSpec> = {
-  type: "tool-call";
-  toolCallId: string;
-  toolName: TTool["name"];
-  input: z.infer<ExtractZodSchema<TTool["parameters"]>>;
-};
-
-export type XMLToolResult<TTool extends XMLToolSpec> = {
-  type: "tool-result";
-  toolCallId: string;
-  toolName: TTool["name"];
-  input: z.infer<ExtractZodSchema<TTool["parameters"]>>;
-  output: Awaited<ReturnType<TTool["execute"]>>;
-};
-
-export type XMLToolError<TTool extends XMLToolSpec> = {
-  type: "tool-error";
-  toolCallId: string;
-  toolName: TTool["name"];
-  input: z.infer<ExtractZodSchema<TTool["parameters"]>>;
-  error: unknown;
-};
-
-/**
- * Complex mapped type that creates a union of all possible tool calls from a readonly array of XMLToolSpec.
- * This uses conditional types and mapped types to iterate over each tool in the array and create
- * the appropriate XMLToolCall type, then creates a union of all possibilities.
- */
-type AnyXMLToolCall<TTools extends readonly XMLToolSpec[]> = {
-  [K in keyof TTools]: TTools[K] extends XMLToolSpec
-    ? XMLToolCall<TTools[K]>
-    : never;
-}[number];
-
-/**
- * Similar to AnyXMLToolCall but for tool results. This ensures type safety across
- * all possible tool executions while maintaining the relationship between calls and results.
- */
-type AnyXMLToolResult<TTools extends readonly XMLToolSpec[]> = {
-  [K in keyof TTools]: TTools[K] extends XMLToolSpec
-    ? XMLToolResult<TTools[K]>
-    : never;
-}[number];
-
-/**
- * Similar to AnyXMLToolResult but for tool errors. This ensures type safety across
- * all possible tool execution errors while maintaining the relationship between calls and errors.
- */
-type AnyXMLToolError<TTools extends readonly XMLToolSpec[]> = {
-  [K in keyof TTools]: TTools[K] extends XMLToolSpec
-    ? XMLToolError<TTools[K]>
-    : never;
-}[number];
-
-export type XMLStreamDelta<TTools extends readonly XMLToolSpec[]> =
-  | XMLTextDelta
-  | AnyXMLToolCall<TTools>
-  | AnyXMLToolResult<TTools>
-  | AnyXMLToolError<TTools>;
-
-export interface XMLStreamResult<TTools extends readonly XMLToolSpec[]>
-  extends Omit<
-    StreamTextResult<ToolSet, unknown>,
-    "fullStream" | "toolCalls" | "toolResults"
-  > {
-  fullStream: AsyncIterable<XMLStreamDelta<TTools>>;
-  toolCalls: Promise<AnyXMLToolCall<TTools>[]>;
-  toolResults: Promise<AnyXMLToolResult<TTools>[]>;
-}
-
-export class XMLProvider<const TTools extends readonly XMLToolSpec[]> {
-  private toolMap: Map<string, TTools[number]>;
-  private logger: ReturnType<typeof Logger.get>;
-
-  constructor(
-    private tools: TTools,
-    private context: WorkflowContext,
-  ) {
-    this.toolMap = new Map(tools.map((tool) => [tool.name, tool]));
-    this.logger = Logger.get({ component: "XMLProvider" });
-    this.logger.info(`Initialized XML provider with ${tools.length} tools`, {
-      toolNames: tools.map((tool) => tool.name),
-    });
-  }
-
-  streamText(
-    parameters: Omit<Parameters<typeof streamText>[0], "tools">,
-  ): XMLStreamResult<TTools> {
-    this.logger.info("Starting XML stream text processing");
-
-    const baseResult = streamText(parameters);
-    const processor = new XMLStreamProcessor(this.toolMap, this.context);
-
-    const fullStream = this.createFullStream(baseResult.fullStream, processor);
-
-    this.logger.debug("XML stream text processing initialized");
-
-    return {
-      ...baseResult,
-      fullStream,
-      toolCalls: processor.getToolCalls(),
-      toolResults: processor.getToolResults(),
-    };
-  }
-
-  /**
-   * Creates a full stream that processes both text deltas and XML tool calls in real-time.
-   * This is a complex async generator that:
-   * 1. Processes incoming text chunks from the base AI stream
-   * 2. Parses XML tool calls as they appear in the stream
-   * 3. Executes tools immediately when complete XML is detected
-   * 4. Yields both text deltas and tool call/result events
-   * 5. Handles errors gracefully while maintaining stream continuity
-   */
-  private async *createFullStream(
-    baseFullStream: AsyncIterable<TextStreamPart<ToolSet>>,
-    processor: XMLStreamProcessor<TTools>,
-  ): AsyncGenerator<XMLStreamDelta<TTools>> {
-    this.logger.debug("Starting full stream processing");
-    let textChunkCount = 0;
-    let toolDeltaCount = 0;
-
-    try {
-      for await (const delta of baseFullStream) {
-        if (delta.type === "text-delta") {
-          textChunkCount++;
-          yield { type: "text-delta", text: delta.text };
-          for await (const toolDelta of processor.processChunk(delta.text)) {
-            toolDeltaCount++;
-            yield toolDelta;
-          }
-        }
-      }
-
-      this.logger.debug("Processing final deltas");
-      for await (const finalDelta of processor.finalize()) {
-        toolDeltaCount++;
-        yield finalDelta;
-      }
-
-      this.logger.info("Full stream processing completed", {
-        textChunkCount,
-        toolDeltaCount,
-      });
-    } catch (error) {
-      this.logger.error("Full stream processing failed", {
-        error: error instanceof Error ? error.message : String(error),
-        textChunkCount,
-        toolDeltaCount,
-      });
-      throw error;
-    }
-  }
-
-  getSpecsMarkdown(): string {
-    this.logger.debug("Generating tool specifications markdown", {
-      toolCount: this.tools.length,
-    });
-
-    const specs = this.tools
-      .map((tool, index) => {
-        const { name, description } = tool;
-        const parametersStructure = tool.parameters.describe("");
-        const structure = `<tool_call>
-<tool_name>${name}</tool_name>
-<parameters>
-${parametersStructure
-  .split("\n")
-  .map((line) => (line ? `  ${line}` : line))
-  .join("\n")}
-</parameters>
-</tool_call>`;
-        return `${index + 1}.  **\`${name}\`**: ${description}\n    -   **When to use:** ${tool.whenToUse}\n    -   **Structure:**\n\`\`\`xml\n${structure}\n\`\`\``;
-      })
-      .join("\n\n");
-
-    this.logger.debug("Generated tool specifications markdown", {
-      markdownLength: specs.length,
-    });
-
-    return specs;
-  }
-}
-
-class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
+export class XMLStreamProcessor<const TOOL_SET extends MyToolSet> {
   private buffer = "";
-  private toolCalls: AnyXMLToolCall<TTools>[] = [];
-  private toolResults: AnyXMLToolResult<TTools>[] = [];
+  private toolCalls: AnyXMLToolCall<TOOL_SET>[] = [];
+  private toolResults: AnyXMLToolResult<TOOL_SET>[] = [];
   private completedCallSignatures: Set<string> = new Set();
-  private toolMap: Map<string, TTools[number]>;
+  private toolSet: TOOL_SET;
   private logger: ReturnType<typeof Logger.get>;
 
   constructor(
-    toolMap: Map<string, TTools[number]>,
+    toolSet: TOOL_SET,
     private context: WorkflowContext,
   ) {
-    this.toolMap = toolMap;
+    this.toolSet = toolSet;
     this.logger = Logger.get({ component: "XMLStreamProcessor" });
     this.logger.debug("Initialized XML stream processor", {
-      availableTools: Array.from(toolMap.keys()),
+      availableTools: Object.keys(this.toolSet),
     });
   }
 
@@ -255,7 +45,9 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
   async *processChunk(
     chunk: string,
   ): AsyncGenerator<
-    AnyXMLToolCall<TTools> | AnyXMLToolResult<TTools> | AnyXMLToolError<TTools>
+    | AnyXMLToolCall<TOOL_SET>
+    | AnyXMLToolResult<TOOL_SET>
+    | AnyXMLToolError<TOOL_SET>
   > {
     this.buffer += chunk;
     this.logger.debug("Processing chunk", {
@@ -279,7 +71,7 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
       }
       this.completedCallSignatures.add(callSignature);
 
-      const tool = this.toolMap.get(rawCall.name);
+      const tool = this.toolSet[rawCall.name]?.asXML(this.context);
       if (!tool) {
         this.logger.warn("Unknown tool requested", { toolName: rawCall.name });
         continue;
@@ -291,7 +83,7 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
         toolCallId,
       });
 
-      const parsedParams = tool.parameters.zSchema.safeParse(
+      const parsedParams = tool.inputSchema.zSchema.safeParse(
         rawCall.parameters,
       );
 
@@ -302,22 +94,22 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
           toolName: tool.name,
           input: parsedParams.data,
         };
-        this.toolCalls.push(toolCall as AnyXMLToolCall<TTools>);
+        this.toolCalls.push(toolCall as AnyXMLToolCall<TOOL_SET>);
         this.logger.info("Tool call validated successfully", {
           toolName: tool.name,
           toolCallId,
           input: parsedParams.data,
         });
-        yield toolCall as AnyXMLToolCall<TTools>;
+        yield toolCall as AnyXMLToolCall<TOOL_SET>;
 
         try {
           const result = await this.executeTool(tool, toolCall);
-          this.toolResults.push(result as AnyXMLToolResult<TTools>);
+          this.toolResults.push(result as AnyXMLToolResult<TOOL_SET>);
           this.logger.info("Tool executed successfully", {
             toolName: tool.name,
             toolCallId,
           });
-          yield result as AnyXMLToolResult<TTools>;
+          yield result as AnyXMLToolResult<TOOL_SET>;
         } catch (error) {
           this.logger.error("Tool execution failed", {
             toolName: tool.name,
@@ -333,7 +125,7 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
             input: toolCall.input,
             error,
           };
-          yield toolError as AnyXMLToolError<TTools>;
+          yield toolError as AnyXMLToolError<TOOL_SET>;
         }
       } else {
         this.logger.error("XML parameter validation failed", {
@@ -355,7 +147,7 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
             validationError: parsedParams.error.format(),
             rawParameters: rawCall.parameters,
           },
-        } as AnyXMLToolResult<TTools>;
+        } as AnyXMLToolResult<TOOL_SET>;
       }
     }
   }
@@ -442,7 +234,7 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
       const toolName = toolNameMatch[1].trim();
 
       // Validate that this tool exists
-      if (!this.toolMap.has(toolName)) continue;
+      if (!this.toolSet[toolName]) continue;
 
       // Extract parameters
       const parametersMatch = /<parameters\s*>(.*?)<\/parameters\s*>/is.exec(
@@ -513,7 +305,7 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
           }
         }
 
-        if (!toolName || !this.toolMap.has(toolName)) continue;
+        if (!toolName || !this.toolSet[toolName]) continue;
 
         // Extract parameters with fallback patterns
         let parameters: Record<string, unknown> = {};
@@ -754,7 +546,7 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
     return str.replace(/[-_]([a-z])/g, (_, letter) => letter.toUpperCase());
   }
 
-  private async executeTool<TCurrentTool extends TTools[number]>(
+  private async executeTool<TCurrentTool extends XMLTool>(
     tool: TCurrentTool,
     toolCall: XMLToolCall<TCurrentTool>,
   ): Promise<XMLToolResult<TCurrentTool>> {
@@ -766,10 +558,7 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
     });
 
     try {
-      const result = await tool.execute({
-        input: toolCall.input,
-        context: this.context,
-      });
+      const result = await tool.execute(toolCall.input);
 
       const executionTime = Date.now() - startTime;
       this.logger.info("Tool execution completed", {
@@ -809,17 +598,19 @@ class XMLStreamProcessor<const TTools extends readonly XMLToolSpec[]> {
   }
 
   async *finalize(): AsyncGenerator<
-    AnyXMLToolCall<TTools> | AnyXMLToolResult<TTools> | AnyXMLToolError<TTools>
+    | AnyXMLToolCall<TOOL_SET>
+    | AnyXMLToolResult<TOOL_SET>
+    | AnyXMLToolError<TOOL_SET>
   > {
     // In this implementation, finalize doesn't need to do anything with the buffer
     // as it is processed greedily. Can be extended for more complex scenarios.
   }
 
-  getToolCalls(): Promise<AnyXMLToolCall<TTools>[]> {
+  getToolCalls(): Promise<AnyXMLToolCall<TOOL_SET>[]> {
     return Promise.resolve(this.toolCalls);
   }
 
-  getToolResults(): Promise<AnyXMLToolResult<TTools>[]> {
+  getToolResults(): Promise<AnyXMLToolResult<TOOL_SET>[]> {
     return Promise.resolve(this.toolResults);
   }
 }

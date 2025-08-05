@@ -91,6 +91,5 @@ export async function recoverWorkflow() {
   context.set("version", version);
   context.set("user", user);
   context.set("isXML", true);
-
   await workflow.execute({ context });
 }

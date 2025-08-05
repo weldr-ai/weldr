@@ -3,8 +3,7 @@ export const codingGuidelines = `<tech_stack>
   - React (UI library)
   - Tanstack Router (Routing library)
   - Tanstack Start (Used for SSR only)
-  - Hono (HTTP server)
-  - oRPC (OpenAPI REST APIs that can be called as RPCs on the client)
+  - oRPC (All server routes and APIs - OpenAPI REST APIs that can be called as RPCs on the client)
   - shadcn/ui (UI library)
   - Lucide Icons (Icon library)
   - Tailwind CSS (CSS framework)
@@ -16,164 +15,118 @@ export const codingGuidelines = `<tech_stack>
   - react-hook-form (Form library)
 </tech_stack>
 
+<monorepo_architecture>
+  This is a monorepo using Turborepo. The agent MUST NEVER create new packages at any time.
+
+  There are three types of projects:
+
+  1. **Backend-only project**:
+     - Contains only \`apps/server\` directory
+     - Runs on Node.js runtime using \`apps/server/src/server.ts\` file
+     - No web application
+
+  2. **Client-only project**:
+     - Contains only \`apps/web\` directory
+     - Uses TanStack Start ONLY for SSR (Server-Side Rendering)
+     - No separate backend server
+
+  3. **Full-stack project**:
+     - Contains both \`apps/server\` and \`apps/web\` directories
+     - The server runs FROM the TanStack Start app (not standalone)
+     - TanStack Start consumes the server via a fetch function at \`apps/server/src/index.ts\`
+     - The server does NOT run independently - it's integrated into the web app
+</monorepo_architecture>
+
 <full_stack_structure_guidelines>
   The project MUST follow this file structure:
 
   Project root directory:
-  ├── public                        # Folder containing the static assets (images, fonts, etc.)
-  ├── server                        # Folder containing the server-side code
-  │   ├── db                        # Folder containing the database (Drizzle ORM)
-  │   │   ├── schema                # Folder containing the database schema
-  │   │   │   ├── [table-name].ts   # Database table file
-  │   │   │   └── index.ts          # Database schema index file (Re-exports all the files in the schema folder)
-  │   │   └── index.ts              # Database index file
-  │   ├── lib                       # Folder containing the utility functions
-  │   │   ├── utils.ts              # Utility functions
-  │   │   ├── context.ts            # Hono context type
-  │   │   ├── auth.ts               # Initialize authentication
-  │   │   └── ...                   # Other utility functions
-  │   ├── middlewares               # Folder containing the middlewares
-  │   │   ├── auth.ts               # Authentication middleware
-  │   │   ├── logger.ts             # Logger middleware
-  │   │   └── ...                   # Other middlewares
-  │   ├── orpc                      # Folder containing the oRPC utilities
-  │   │   ├── routes                # Folder containing the oRPC API routes
-  │   │   │   ├── root.ts           # oRPC API index file (Register all the routes here)
-  │   │   │   ├── [route-name].ts   # oRPC API route file
-  │   │   │   └── ...               # Other oRPC API route files
-  │   │   ├── index.ts              # Contains the publicProcedure and protectedProcedure utilities
-  │   │   ├── router.ts             # oRPC server-side router file
-  │   │   └── utils.ts              # oRPC server-side utilities file
-  │   ├── routes                    # Folder containing Hono routes
-  │   │   ├── [route-name].ts       # Hono route file
-  │   │   └── index.ts              # Export the list of Hono routes
-  │   ├── api.ts                    # Hono API
-  │   └── index.ts                  # Runs a Hono server (READ ONLY)
-  ├── web                           # Tanstack Router client app
-  │   ├── components                # Folder containing the shared components
-  │   │   ├── ui                    # Folder containing the UI components (includes all shadcn/ui components)
-  │   │   │   ├── button.tsx        # Button component
-  │   │   │   └── ...               # Other UI components
-  │   │   ├── error-boundary.tsx    # Error boundary component
-  │   │   ├── mode-toggle.tsx       # Theme toggle dropdown component
-  │   │   └── not-found.tsx         # Not found component
-  │   ├── hooks                     # Folder containing the shared hooks
-  │   │   ├── use-mobile.ts         # shadcn/ui useMobile hook
-  │   │   └── ...                   # Other shared hooks
-  │   ├── lib                       # Folder containing the utility functions
-  │   │   ├── auth.ts               # Authentication client
-  │   │   ├── orpc.ts               # oRPC client
-  │   │   ├── seo.ts                # SEO utilities
-  │   │   ├── utils.ts              # Utility functions
-  │   │   └── ...                   # Other utility functions
-  │   ├── routes                    # Folder containing the routes
-  │   │   ├── [route-name].ts       # Route file
-  │   │   ├── api.$.ts              # API entry file (READ ONLY)
-  │   │   └── __root.ts             # Tanstack Router Root route file (READ ONLY)
-  │   ├── styles                    # Styles folder
-  │   │   └── app.css               # App styles contains shadcn/ui global styles
-  │   ├── router.tsx                # Tanstack Router Main router file (READ ONLY)
-  ├── .dockerignore
+  ├── apps                                      # Folder containing the apps
+  │   ├── server                                # Folder containing the server-side code
+  │   │   ├── src                               # Server-side source code
+  │   │   │   ├── db                            # Folder containing the database (Drizzle ORM)
+  │   │   │   │   ├── schema                    # Folder containing the database schema
+  │   │   │   │   │   ├── [table-name].ts       # Database table file
+  │   │   │   │   │   └── index.ts              # Database schema index file (Re-exports all the files in the schema folder)
+  │   │   │   │   └── index.ts                  # Database index file
+  │   │   │   ├── lib                           # Folder containing the utility functions
+  │   │   │   │   ├── validators                # Folder containing the validators
+  │   │   │   │   │   ├── [validator-name].ts   # Validator file
+  │   │   │   │   │   └── index.ts              # Validator index file (Re-exports all the files in the validators folder)
+  │   │   │   │   ├── utils.ts                  # Utility functions
+  │   │   │   │   ├── context.ts                # oRPC context type
+  │   │   │   │   ├── auth.ts                   # Initialize authentication
+  │   │   │   │   └── ...                       # Other utility functions
+  │   │   │   ├── middlewares                   # Folder containing the middlewares
+  │   │   │   │   ├── auth.ts                   # Authentication middleware
+  │   │   │   │   ├── logger.ts                 # Logger middleware
+  │   │   │   │   └── retry.ts                  # Retries failed oRPC calls
+  │   │   │   │   └── ...                       # Other middlewares
+  │   │   │   ├── routes                        # Folder containing ALL oRPC routes
+  │   │   │   │   ├── [group-name]              # Folder containing the oRPC routes by feature/domain
+  │   │   │   │   │   ├── [route-name].ts       # Individual oRPC route file
+  │   │   │   │   │   └── index.ts              # Defines the oRPC group/router
+  │   │   │   │   └── index.ts                  # Export the list of all oRPC groups
+  │   │   │   ├── index.ts                      # oRPC server-side entry file (fetch function for full-stack projects)
+  │   │   │   ├── router.ts                     # oRPC server-side router file
+  │   │   │   └── server.ts                     # Standalone server runner (ONLY for backend-only projects)
+  │   │   ├── drizzle.config.ts
+  │   │   ├── package.json
+  │   │   ├── tsconfig.json
+  │   │   └── tsdown.config.ts
+  │   └── web                                  # Tanstack Start app
+  │       ├── src                              # Folder containing the client-side code
+  │       │   ├── components                   # Folder containing the shared components
+  │       │   │   ├── ui                       # Folder containing the UI components (includes all shadcn/ui components)
+  │       │   │   │   ├── button.tsx           # Button component
+  │       │   │   │   └── ...                  # Other UI components
+  │       │   │   ├── error-boundary.tsx       # Error boundary component
+  │       │   │   ├── mode-toggle.tsx          # Theme toggle dropdown component
+  │       │   │   └── not-found.tsx            # Not found component
+  │       │   ├── hooks                        # Folder containing the shared hooks
+  │       │   │   ├── use-mobile.ts            # shadcn/ui useMobile hook
+  │       │   │   └── ...                      # Other shared hooks
+  │       │   ├── lib                          # Folder containing the utility functions
+  │       │   │   ├── auth                     # Authentication client
+  │       │   │   │   ├── get-session-fn.ts    # Get session function
+  │       │   │   │   └── index.ts             # Authentication client index file
+  │       │   │   ├── orpc.ts                  # oRPC client
+  │       │   │   ├── seo.ts                   # SEO utilities
+  │       │   │   └── utils.ts                 # Utility functions
+  │       │   ├── routes                       # Folder containing the routes
+  │       │   │   ├── __root.ts                # Tanstack Start Root route file (READ ONLY)
+  │       │   │   ├── [route-name].ts          # Route file
+  │       │   │   ├── api.$.ts                 # API entry file (READ ONLY)
+  │       │   │   ├── rpc.$.ts                 # RPC entry file (READ ONLY)
+  │       │   │   └── ...                      # Other route files/folders
+  │       │   ├── styles                       # Styles folder
+  │       │   │   └── app.css                  # App styles contains shadcn/ui global styles
+  │       │   ├── logo.svg                     # Logo SVG file
+  │       │   └── router.tsx                   # Tanstack Start Main router file (READ ONLY)
+  │       ├── biome.json
+  │       ├── components.json
+  │       ├── package.json
+  │       ├── tsconfig.json
+  │       └── vite.config.ts
   ├── .gitignore
+  ├── .npmrc
   ├── biome.json
-  ├── bun.lock
-  ├── components.json
-  ├── drizzle.config.ts
-  ├── Dockerfile
-  ├── fly.toml
   ├── package.json
-  ├── tsconfig.json
-  └── vite.config.ts
+  ├── pnpm-lock.yaml
+  ├── pnpm-workspace.yaml
+  └── turbo.json
 </full_stack_structure_guidelines>
-
-<web_only_structure_guidelines>
-  The project MUST follow this file structure:
-
-  Project root directory:
-  ├── public                        # Folder containing the static assets (images, fonts, etc.)
-  ├── src                           # Folder containing the client-side code
-  │   ├── components                # Folder containing the shared components
-  │   │   ├── ui                    # Folder containing the UI components (includes all shadcn/ui components)
-  │   │   │   ├── button.tsx        # Button component
-  │   │   │   └── ...               # Other UI components
-  │   │   ├── error-boundary.tsx    # Error boundary component
-  │   │   ├── mode-toggle.tsx       # Theme toggle dropdown component
-  │   │   └── not-found.tsx         # Not found component
-  │   ├── hooks                     # Folder containing the shared hooks
-  │   │   ├── use-mobile.ts         # shadcn/ui useMobile hook
-  │   │   └── ...                   # Other shared hooks
-  │   ├── lib                       # Folder containing the utility functions
-  │   │   ├── auth.ts               # Authentication client
-  │   │   ├── orpc.ts               # oRPC client
-  │   │   ├── seo.ts                # SEO utilities
-  │   │   ├── utils.ts              # Utility functions
-  │   │   └── ...                   # Other utility functions
-  │   ├── routes                    # Folder containing the routes
-  │   │   ├── [route-name].ts       # Route file
-  │   │   └── __root.ts             # Tanstack Router Root route file (READ ONLY)
-  │   ├── styles                    # Styles folder
-  │   │   └── app.css               # App styles contains shadcn/ui global styles
-  │   └── router.tsx                # Tanstack Router Main router file (READ ONLY)
-  ├── .dockerignore
-  ├── .gitignore
-  ├── biome.json
-  ├── bun.lock
-  ├── components.json
-  ├── Dockerfile
-  ├── fly.toml
-  ├── package.json
-  ├── tsconfig.json
-  └── vite.config.ts
-</web_only_structure_guidelines>
-
-<server_only_structure_guidelines>
-  Project root directory:
-  ├── public                        # Folder containing the static assets (images, fonts, etc.)
-  ├── src                           # Folder containing the server-side code
-  │   ├── db                        # Folder containing the database (Drizzle ORM)
-  │   │   ├── schema                # Folder containing the database schema
-  │   │   │   ├── [table-name].ts   # Database table file
-  │   │   │   └── index.ts          # Database schema index file (Re-exports all the files in the schema folder)
-  │   │   └── index.ts              # Database index file
-  │   ├── lib                       # Folder containing the utility functions
-  │   │   ├── utils.ts              # Utility functions
-  │   │   ├── context.ts            # Hono context type
-  │   │   ├── auth.ts               # Initialize authentication
-  │   │   └── ...                   # Other utility functions
-  │   ├── middlewares               # Folder containing the middlewares
-  │   │   ├── auth.ts               # Authentication middleware
-  │   │   ├── logger.ts             # Logger middleware
-  │   │   └── ...                   # Other middlewares
-  │   ├── orpc                      # Folder containing the oRPC utilities
-  │   │   ├── routes                # Folder containing the oRPC API routes
-  │   │   │   ├── root.ts           # oRPC API index file (Register all the routes here)
-  │   │   │   ├── [route-name].ts   # oRPC API route file
-  │   │   │   └── ...               # Other oRPC API route files
-  │   │   ├── index.ts              # Contains the publicProcedure and protectedProcedure utilities
-  │   │   ├── router.ts             # oRPC server-side router file
-  │   │   └── utils.ts              # oRPC server-side utilities file
-  │   ├── routes                    # Folder containing Hono routes
-  │   │   ├── [route-name].ts       # Hono route file
-  │   │   └── index.ts              # Export the list of Hono routes
-  │   ├── api.ts                    # Hono API
-  │   └── index.ts                  # Runs a Hono server (READ ONLY)
-  ├── .dockerignore
-  ├── .gitignore
-  ├── biome.json
-  ├── bun.lock
-  ├── drizzle.config.ts
-  ├── Dockerfile
-  ├── fly.toml
-  ├── package.json
-  └── tsconfig.json
-</server_only_structure_guidelines>
 
 <coding_style_guidelines>
   - MUST NOT use OOP concepts like classes, inheritance, etc.
   - MUST use functions and modules to implement the code.
   - MUST use named exports for utilities and sub-components
   - MUST use default exports for pages and layouts only
-  - MUST use path aliases for imports with @/ prefix for client files at /web/**/* and @server/ prefix for server files at /server/**/*
+  - MUST use path aliases for imports with @repo/web/* prefix for client files and @repo/server/* prefix for server files
+  - Path alias configuration:
+    - @repo/web/* maps to ./src/* for web/frontend projects
+    - @repo/server/* maps to ../server/src/* when both frontend and backend exist
+    - @repo/server/* maps to ./src/* for backend-only projects
   - SHOULD avoid imperative programming as much as possible.
   - SHOULD use declarative programming instead.
   - SHOULD use functional programming concepts like immutability, higher-order functions, etc.
@@ -183,30 +136,42 @@ export const codingGuidelines = `<tech_stack>
   - Prefer using try/catch over .then().catch().
 
   <server_architecture_guidelines>
-    - ALL server-related code MUST be written in the \`/server\` directory
-    - MOST server functionality MUST be implemented as oRPC procedures
+    - ALL server-related code MUST be written in the \`apps/server\` directory
+    - ALL server functionality MUST be implemented as oRPC procedures defined in \`apps/server/src/routes\`
     - Database operations MUST be encapsulated within oRPC procedures
     - Business logic MUST reside in oRPC handlers
-    - You can define Hono OpenAPI routes only for streaming endpoints like AI chat, otherwise use oRPC procedures.
-    - File uploads, data processing, and API integrations MUST be oRPC procedures
+    - ALL routes including streaming endpoints, file uploads, data processing, and API integrations MUST be oRPC procedures
     - Client-side code MUST communicate with the server exclusively through oRPC calls using Tanstack Query
+
+    **Server Deployment Patterns**:
+    - **Backend-only**: Server runs independently using \`apps/server/src/server.ts\` on Node.js runtime
+    - **Full-stack**: Server is consumed by TanStack Start app via fetch function at \`apps/server/src/index.ts\`
+    - **Client-only**: No server code, TanStack Start handles SSR only
   </server_architecture_guidelines>
 
   <example_code_style>
     \`\`\`
-    // CORRECT: Type imports
-    import type { User } from '@/types'
-    import { type Config } from '@/config'
+    // CORRECT: Type imports (web project)
+    import type { User } from '@repo/web/types'
+    import { type Config } from '@repo/web/config'
+
+    // CORRECT: Cross-project imports (web importing from server)
+    import { auth } from '@repo/server/lib/auth'
+    import type { router } from '@repo/server/router'
 
     // INCORRECT: Runtime type imports
-    import { User } from '@/types'  // Wrong if User is only a type
+    import { User } from '@repo/web/types'  // Wrong if User is only a type
 
-    // CORRECT: Component imports
-    import { Button } from '@/components/ui/button'
+    // CORRECT: Component imports (web project)
+    import { Button } from '@repo/web/components/ui/button'
     import { ChevronRight } from 'lucide-react'
 
-    // CORRECT: Utility imports
-    import { cn } from '@/lib/utils'
+    // CORRECT: Utility imports (web project)
+    import { cn } from '@repo/web/lib/utils'
+
+    // CORRECT: Server-side imports (server project)
+    import { db } from '@repo/server/db'
+    import { publicProcedure } from '@repo/server/lib/utils'
     \`\`\`
   </example_code_style>
 </coding_style_guidelines>
@@ -415,9 +380,9 @@ export const codingGuidelines = `<tech_stack>
     - Routes are organized by resource with nested structure
 
     Example structure:
-    /server/orpc/routes/todos/index.ts
+    apps/server/src/routes/todos/index.ts
     \`\`\`typescript
-    import { base } from "@server/orpc";
+    import { base } from "@repo/server/lib/utils";
     import create from "./create";
     import deleteRoute from "./delete";
     import find from "./find";
@@ -433,14 +398,16 @@ export const codingGuidelines = `<tech_stack>
     });
     \`\`\`
 
-    /server/orpc/router.ts
+    apps/server/src/router.ts
     \`\`\`typescript
-    import health from "./routes/health";
-    import todos from "./routes/todos";
+    import chat from "@repo/server/routes/chat";
+    import health from "@repo/server/routes/health";
+    import todos from "@repo/server/routes/todos";
 
     export const router = {
       health,
       todos,
+      chat,
     };
     \`\`\`
 
@@ -459,14 +426,29 @@ export const codingGuidelines = `<tech_stack>
     - Show visual feedback for optimistic items (e.g., opacity, disabled state)
   </optimistic_updates_guidelines>
 
+  <oRPC_endpoint_patterns>
+    - MUST import ORPCError for error handling from "@orpc/server"
+    - MUST use proper middlewares: useDb for database access, retry for retries
+    - MUST access database through context.db (from useDb middleware) NOT direct db import
+    - MUST use Drizzle query builder with context.db.query for complex queries
+    - MUST use proper Zod validators from @repo/server/lib/validators
+    - MUST include proper OpenAPI specification with method, tags, path, successStatus
+    - MUST use protectedProcedure for authenticated routes, publicProcedure for public routes
+    - MUST omit auto-generated fields (id, userId, createdAt, updatedAt) from input schemas
+    - MUST use proper error handling with ORPCError for not found, validation errors, etc.
+  </oRPC_endpoint_patterns>
+
   <example_oRPC_router>
-    /server/orpc/routes/blogs/list.ts
+    apps/server/src/routes/blogs/list.ts
     \`\`\`
-    import type { Route } from "@orpc/server";
-    import { db } from "@server/db";
-    import { blogs, selectBlogSchema } from "@server/db/schema";
-    import { publicProcedure } from "@server/orpc";
+    import { type Route } from "@orpc/server";
     import { z } from "zod";
+
+    import { blogs } from "@repo/server/db/schema";
+    import { publicProcedure } from "@repo/server/lib/utils";
+    import { selectBlogSchema } from "@repo/server/lib/validators/blogs";
+    import { useDb } from "@repo/server/middlewares/db";
+    import { retry } from "@repo/server/middlewares/retry";
 
     const openAPI = {
       method: "GET",
@@ -479,18 +461,26 @@ export const codingGuidelines = `<tech_stack>
 
     export default publicProcedure
       .route(openAPI)
+      .use(useDb)
+      .use(retry({ times: 3 }))
       .output(z.array(selectBlogSchema))
-      .handler(async () => {
-        return await db.select().from(blogs);
+      .handler(async ({ context }) => {
+        return await context.db.query.blogs.findMany({
+          orderBy: (blogs, { desc }) => [desc(blogs.createdAt)],
+        });
       });
     \`\`\`
 
-    /server/orpc/routes/blogs/create.ts
+    apps/server/src/routes/blogs/create.ts
     \`\`\`
-    import type { Route } from "@orpc/server";
-    import { db } from "@server/db";
-    import { blogs, insertBlogSchema, selectBlogSchema } from "@server/db/schema";
-    import { protectedProcedure } from "@server/orpc";
+    import { type Route } from "@orpc/server";
+    import { z } from "zod";
+
+    import { blogs } from "@repo/server/db/schema";
+    import { protectedProcedure } from "@repo/server/lib/utils";
+    import { insertBlogSchema, selectBlogSchema } from "@repo/server/lib/validators/blogs";
+    import { useDb } from "@repo/server/middlewares/db";
+    import { retry } from "@repo/server/middlewares/retry";
 
     const openAPI = {
       method: "POST",
@@ -503,13 +493,19 @@ export const codingGuidelines = `<tech_stack>
 
     export default protectedProcedure
       .route(openAPI)
-      .input(insertBlogSchema)
+      .use(useDb)
+      .use(retry({ times: 3 }))
+      .input(insertBlogSchema.omit({ id: true, userId: true, createdAt: true, updatedAt: true }))
       .output(selectBlogSchema)
       .handler(async ({ context, input }) => {
-        const [blog] = await db
+        const [blog] = await context.db
           .insert(blogs)
-          .values({ ...input, userId: context.user.id })
+          .values({
+            ...input,
+            userId: context.user.id,
+          })
           .returning();
+
         return blog;
       });
     \`\`\`
@@ -520,13 +516,13 @@ export const codingGuidelines = `<tech_stack>
     - MUST implement optimistic updates for better user experience whenever possible.
     - SHOULD use \`onMutate\`, \`onError\`, and \`onSettled\` callbacks for proper state management.
 
-    /web/routes/todos/index.tsx
+    apps/web/src/routes/todos/index.tsx
     \`\`\`
-    import { Button } from "@/components/ui/button";
-    import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-    import { Checkbox } from "@/components/ui/checkbox";
-    import { Input } from "@/components/ui/input";
-    import { orpc } from "@/lib/orpc";
+    import { Button } from "@repo/web/components/ui/button";
+    import { Card, CardContent, CardHeader, CardTitle } from "@repo/web/components/ui/card";
+    import { Checkbox } from "@repo/web/components/ui/checkbox";
+    import { Input } from "@repo/web/components/ui/input";
+    import { orpc } from "@repo/web/lib/orpc";
     import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
     import { createFileRoute } from "@tanstack/react-router";
     import { Loader2 } from "lucide-react";
@@ -712,7 +708,7 @@ export const codingGuidelines = `<tech_stack>
     - Parametrized example:
     /web/routes/todos/$id.tsx
     \`\`\`
-    import { orpc } from "@/lib/orpc";
+    import { orpc } from "@repo/web/lib/orpc";
     import { useQuery } from "@tanstack/react-query";
     import { createFileRoute } from "@tanstack/react-router";
     import { z } from "zod";
@@ -752,9 +748,9 @@ export const codingGuidelines = `<tech_stack>
   - SHOULD implement optimistic updates for form submissions
 
   <example_building_forms>
-    /web/components/create-bookmark-form.tsx
+    apps/web/src/components/create-bookmark-form.tsx
     \`\`\`
-    import { Button } from "@/components/ui/button";
+            import { Button } from "@repo/web/components/ui/button";
     import {
       Form,
       FormControl,
@@ -762,9 +758,9 @@ export const codingGuidelines = `<tech_stack>
       FormItem,
       FormLabel,
       FormMessage,
-    } from "@/components/ui/form";
-    import { Input } from "@/components/ui/input";
-    import { orpc } from "@/lib/orpc";
+    } from "@repo/web/components/ui/form";
+    import { Input } from "@repo/web/components/ui/input";
+    import { orpc } from "@repo/web/lib/orpc";
     import { zodResolver } from "@hookform/resolvers/zod";
     import { useMutation, useQueryClient } from "@tanstack/react-query";
     import { Loader2 } from "lucide-react";
@@ -1028,46 +1024,52 @@ export const codingGuidelines = `<tech_stack>
 <final_reminders>
   Remember these critical guidelines when building the application:
 
-  1. **Server Architecture**:
-     - ALL server code goes in /server directory
-     - Use oRPC procedures for all server functionality (except streaming AI endpoints)
+  1. **Monorepo Architecture**:
+     - This is a Turborepo monorepo - NEVER create new packages
+     - Backend-only: Only apps/server, runs via server.ts on Node.js
+     - Client-only: Only apps/web, TanStack Start for SSR only
+     - Full-stack: Both apps, server consumed by TanStack Start via index.ts fetch function
+
+  2. **Server Architecture**:
+     - ALL server code goes in apps/server directory
+     - Use oRPC procedures for ALL server functionality including streaming endpoints
      - Client communicates with server ONLY through oRPC + TanStack Query
 
-  2. **oRPC Requirements**:
+  3. **oRPC Requirements**:
      - Define OpenAPI specs for ALL routes with .route() method
      - Use publicProcedure or protectedProcedure appropriately
      - Create group index files with base.router()
      - Register routes in main router.ts manually
 
-  3. **Optimistic Updates**:
+  4. **Optimistic Updates**:
      - ALWAYS implement optimistic updates for mutations
      - Use onMutate, onError, onSuccess, onSettled callbacks
      - Use negative IDs for temporary items
      - Show visual feedback for optimistic states
 
-  4. **Forms & Validation**:
+  5. **Forms & Validation**:
      - Use shadcn/ui Form components exclusively
      - Use react-hook-form with zodResolver
      - Define separate Zod schemas with descriptive names
      - Implement optimistic updates for form submissions
 
-  5. **Database with Drizzle**:
+  6. **Database with Drizzle**:
      - One table per file in /server/db/schema
      - Export everything in schema/index.ts
      - Define relations in same file as table
      - Use proper TypeScript inference
 
-  6. **File Structure**:
+  7. **File Structure**:
      - Follow the exact folder structure specified
-     - Use @/ prefix for web imports, @server/ for server imports
+     - Use @repo/web/* prefix for web imports, @repo/server/* for server imports
      - Default exports only for pages/layouts, named exports otherwise
 
-  7. **Styling**:
+  8. **Styling**:
      - Use shadcn/ui components and color variables
      - Use Lucide React for icons
      - Follow accessibility guidelines with semantic HTML
 
-  8. **TanStack Router**:
+  9. **TanStack Router**:
      - Use createFileRoute for all routes
      - Validate params and search with Zod
      - Prefetch data in loaders
@@ -1077,7 +1079,7 @@ export const codingGuidelines = `<tech_stack>
   - Creating server utilities outside of oRPC procedures
   - Forgetting OpenAPI specifications
   - Not implementing optimistic updates
-  - Using incorrect import paths or prefixes
+  - Using incorrect import paths or prefixes (use @repo/web/* and @repo/server/*)
   - Missing form validation or using wrong form libraries
   - Creating files in wrong directories
 </final_reminders>`;

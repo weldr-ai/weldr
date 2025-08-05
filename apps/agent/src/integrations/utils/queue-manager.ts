@@ -3,7 +3,7 @@ import type { WorkflowContext } from "@/workflow/context";
 import { and, db, eq } from "@weldr/db";
 import { integrations } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import type { Integration } from "@weldr/shared/types";
+import type { Integration, IntegrationStatus } from "@weldr/shared/types";
 import { integrationRegistry } from "../registry";
 
 export async function processIntegrationQueue(
@@ -147,32 +147,12 @@ export async function getQueuedIntegrations(
     .filter(Boolean) as Integration[];
 }
 
-export async function markIntegrationAsInstalling(
+export async function updateIntegrationStatus(
   integrationId: string,
+  status: IntegrationStatus,
 ): Promise<void> {
   await db
     .update(integrations)
-    .set({ status: "installing" })
-    .where(eq(integrations.id, integrationId));
-}
-
-export async function markIntegrationAsCompleted(
-  integrationId: string,
-  context: WorkflowContext,
-): Promise<void> {
-  await db
-    .update(integrations)
-    .set({ status: "completed" })
-    .where(eq(integrations.id, integrationId));
-
-  await unblockIntegrations(context);
-}
-
-export async function markIntegrationAsFailed(
-  integrationId: string,
-): Promise<void> {
-  await db
-    .update(integrations)
-    .set({ status: "failed" })
+    .set({ status })
     .where(eq(integrations.id, integrationId));
 }

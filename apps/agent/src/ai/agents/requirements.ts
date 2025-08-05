@@ -1,4 +1,3 @@
-import { streamText } from "ai";
 import type { z } from "zod";
 import { prompts } from "@/ai/prompts";
 import {
@@ -13,6 +12,7 @@ import {
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
+import { getSSEConnection } from "@/lib/utils";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { Logger } from "@weldr/shared/logger";
@@ -23,8 +23,8 @@ import type {
 } from "@weldr/shared/validators/chats";
 import { callPlannerTool } from "../tools/call-planner";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
+import { XMLProvider } from "../tools/xml/provider";
 import { calculateModelCost } from "../utils/providers-pricing";
-import { XMLProvider } from "../utils/xml-provider";
 
 export async function requirementsAgent({
   context,
@@ -38,10 +38,7 @@ export async function requirementsAgent({
   const version = context.get("version");
   const isXML = context.get("isXML");
 
-  const streamWriter = global.sseConnections?.get(version.chatId);
-  if (!streamWriter) {
-    throw new Error("Stream writer not found");
-  }
+  const streamWriter = getSSEConnection(version.chatId);
 
   const logger = Logger.get({
     projectId: project.id,
@@ -49,24 +46,23 @@ export async function requirementsAgent({
     mode: isXML ? "xml" : "ai-sdk",
   });
 
-  const xmlProvider = new XMLProvider(
-    [
-      addIntegrationsTool.getXML(),
-      listDirTool.getXML(),
-      readFileTool.getXML(),
-      searchCodebaseTool.getXML(),
-      queryRelatedDeclarationsTool.getXML(),
-      fzfTool.getXML(),
-      grepTool.getXML(),
-      findTool.getXML(),
-      callPlannerTool.getXML(),
-    ],
-    context,
-  );
+  const toolSet = {
+    add_integrations: addIntegrationsTool,
+    list_dir: listDirTool,
+    read_file: readFileTool,
+    search_codebase: searchCodebaseTool,
+    query_related_declarations: queryRelatedDeclarationsTool,
+    fzf: fzfTool,
+    grep: grepTool,
+    find: findTool,
+    call_planner: callPlannerTool,
+  } as const;
+
+  const xmlProvider = new XMLProvider(toolSet, context);
 
   const system = isXML
-    ? await prompts.requirementsAgent(project, xmlProvider.getSpecsMarkdown())
-    : await prompts.requirementsAgent(project);
+    ? await prompts.requirements(project, toolSet)
+    : await prompts.requirements(project);
 
   const executeRequirementsAgent = async (): Promise<boolean> => {
     let shouldRecur = false;
@@ -76,38 +72,16 @@ export async function requirementsAgent({
       extra: { promptMessages },
     });
 
-    const result = isXML
-      ? xmlProvider.streamText({
-          model: registry.languageModel("google:gemini-2.5-pro"),
-          system,
-          messages: promptMessages,
-          onError: (error) => {
-            logger.error("Error in requirements agent", {
-              extra: { error },
-            });
-          },
-        })
-      : streamText({
-          model: registry.languageModel("google:gemini-2.5-pro"),
-          system,
-          messages: promptMessages,
-          tools: {
-            add_integrations: addIntegrationsTool(context),
-            list_dir: listDirTool(context),
-            read_file: readFileTool(context),
-            search_codebase: searchCodebaseTool(context),
-            query_related_declarations: queryRelatedDeclarationsTool(context),
-            fzf: fzfTool(context),
-            grep: grepTool(context),
-            find: findTool(context),
-            call_planner: callPlannerTool(context),
-          },
-          onError: (error) => {
-            logger.error("Error in requirements agent", {
-              extra: { error },
-            });
-          },
+    const result = xmlProvider.streamText({
+      model: registry.languageModel("google:gemini-2.5-pro"),
+      system,
+      messages: promptMessages,
+      onError: (error) => {
+        logger.error("Error in requirements agent", {
+          extra: { error },
         });
+      },
+    });
 
     // Prepare messages to store
     const messagesToSave: z.infer<typeof addMessageItemSchema>[] = [];
@@ -192,10 +166,7 @@ export async function requirementsAgent({
                 ],
               },
             });
-            if (
-              (part.output as { status: "awaiting_config" }).status ===
-              "awaiting_config"
-            ) {
+            if (part.output.status === "awaiting_config") {
               shouldRecur = false;
             } else {
               shouldRecur = true;
