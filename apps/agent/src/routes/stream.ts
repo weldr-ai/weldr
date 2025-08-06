@@ -92,8 +92,8 @@ router.openapi(route, async (c) => {
     ),
   });
 
-  if (!activeVersion || activeVersion.status === "completed") {
-    return c.json({ error: "Stream is already completed" }, 422);
+  if (!activeVersion) {
+    return c.json({ message: "Stream is already completed" }, 422);
   }
 
   const logger = Logger.get({

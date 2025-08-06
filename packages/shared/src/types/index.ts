@@ -131,6 +131,10 @@ export type SSEErrorEvent = {
   error: string;
 };
 
+export type SSERespondingEvent = {
+  type: "responding";
+};
+
 export type SSEEvent =
   | TextStreamableValue
   | ToolStreamableValue
@@ -138,7 +142,8 @@ export type SSEEvent =
   | ProjectStreamableValue
   | EndStreamableValue
   | SSEConnectionEvent
-  | SSEErrorEvent;
+  | SSEErrorEvent
+  | SSERespondingEvent;
 
 // Trigger API response type
 export type TriggerWorkflowResponse = {

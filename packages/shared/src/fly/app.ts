@@ -140,10 +140,7 @@ export namespace App {
         });
 
         // Store the machine ID in the lookup store
-        await machineLookupStore.set(
-          `${projectId}:dev-machine-id`,
-          devMachineId,
-        );
+        await machineLookupStore.set(`dev-machine:${projectId}`, devMachineId);
       }
 
       return app.id;

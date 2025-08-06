@@ -37,6 +37,7 @@ export async function insertMessages({
           metadata: item.role === "assistant" ? item.metadata : undefined,
           userId: input.userId,
           chatId: input.chatId,
+          createdAt: item.createdAt,
         })
         .returning();
 

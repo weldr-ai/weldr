@@ -258,6 +258,40 @@ export async function unregisterStreamWriter(streamId: string): Promise<void> {
 }
 
 /**
+ * Clear the event buffer for a chat
+ */
+export async function clearChatBuffer(chatId: string): Promise<void> {
+  try {
+    const redis = await getRedisClient();
+    const channelName = `chat:${chatId}:events`;
+    const bufferKey = `${channelName}:buffer`;
+
+    await redis.del(bufferKey);
+    Logger.info(`Cleared buffer for chat ${chatId}`);
+  } catch (error) {
+    Logger.error("Failed to clear chat buffer", { error, chatId });
+  }
+}
+
+/**
+ * Clear all chat buffers
+ */
+export async function clearAllChatBuffers(): Promise<void> {
+  try {
+    const redis = await getRedisClient();
+    const pattern = "chat:*:events:buffer";
+    const keys = await redis.keys(pattern);
+
+    if (keys.length > 0) {
+      await redis.del(keys);
+      Logger.info(`Cleared ${keys.length} chat buffers`);
+    }
+  } catch (error) {
+    Logger.error("Failed to clear all chat buffers", { error });
+  }
+}
+
+/**
  * Stream data to active streams for a chat using Redis pub/sub or in-memory fallback
  */
 export async function stream(chatId: string, chunk: SSEEvent): Promise<void> {
@@ -269,11 +303,21 @@ export async function stream(chatId: string, chunk: SSEEvent): Promise<void> {
     // Publish to Redis channel
     await redis.publish(channelName, eventStr);
 
-    // Buffer the event for late joiners (keep last 100 events)
     const bufferKey = `${channelName}:buffer`;
     await redis.lPush(bufferKey, eventStr);
-    await redis.lTrim(bufferKey, 0, 99); // Keep only last 100 events
-    await redis.expire(bufferKey, 3600); // Expire buffer after 1 hour
+
+    await redis.expire(bufferKey, 900);
+
+    if (chunk.type === "end") {
+      try {
+        await clearChatBuffer(chatId);
+      } catch (error) {
+        Logger.error("Failed to clear buffer after end event", {
+          error,
+          chatId,
+        });
+      }
+    }
 
     Logger.debug(`Sent ${chunk.type} via Redis to chat ${chatId}`);
   } catch (error) {

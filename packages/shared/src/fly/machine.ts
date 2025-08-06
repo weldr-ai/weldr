@@ -45,7 +45,7 @@ export namespace Machine {
   }: {
     projectId: string;
   }) => {
-    let machineId = await machineLookupStore.get(`${projectId}:dev-machine-id`);
+    let machineId = await machineLookupStore.get(`dev-machine:${projectId}`);
 
     if (!machineId) {
       machineId = await create({
@@ -54,7 +54,7 @@ export namespace Machine {
         config: presets.development,
       });
 
-      await machineLookupStore.set(`${projectId}:dev-machine-id`, machineId);
+      await machineLookupStore.set(`dev-machine:${projectId}`, machineId);
 
       return machineId;
     }

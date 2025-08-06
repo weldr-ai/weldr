@@ -1,3 +1,5 @@
+import { stream } from "@/lib/stream-utils";
+
 import { Logger } from "@weldr/shared/logger";
 import type { WorkflowContext } from "./context";
 
@@ -8,7 +10,7 @@ export type Step = {
     context,
   }: {
     context: WorkflowContext;
-  }) => Promise<unknown | "suspend"> | unknown | "suspend";
+  }) => Promise<unknown> | unknown;
   timeout?: number; // timeout in milliseconds
 };
 
@@ -53,6 +55,14 @@ export function createWorkflow(
   const stepMapping: StatusStepMapping = {} as StatusStepMapping;
 
   const api = {
+    status: "idle" as "idle" | "executing" | "suspended",
+    suspend() {
+      if (api.status === "executing") {
+        api.status = "suspended";
+        return true;
+      }
+      return false;
+    },
     onStatus<T extends "pending" | "planning" | "coding" | "deploying">(
       status: T | T[],
       step: Step,
@@ -75,8 +85,39 @@ export function createWorkflow(
         versionId: version.id,
       });
 
+      // Check if workflow is already executing
+      if (api.status === "executing") {
+        logger.warn("Workflow already executing", {
+          extra: {
+            requestedVersionId: version.id,
+          },
+        });
+        return;
+      }
+
+      // Check if workflow is suspended
+      if (api.status === "suspended") {
+        await stream(version.chatId, {
+          type: "end",
+        });
+        logger.warn("Workflow is suspended - cannot execute", {
+          extra: {
+            requestedVersionId: version.id,
+          },
+        });
+        return;
+      }
+
+      // Mark workflow as executing
+      api.status = "executing";
+
+      await stream(version.chatId, {
+        type: "responding",
+      });
+
       try {
         logger.info(`Current version status: ${version.status}`);
+        logger.info(`Workflow execution started for version ${version.id}`);
 
         // Check if workflow is already completed or failed
         if (version.status === "completed") {
@@ -101,31 +142,26 @@ export function createWorkflow(
 
         logger.info(`Executing step: ${step.id} for status: ${version.status}`);
 
-        // Execute the step (with its own retry logic)
-        // The step is responsible for updating the version status
-        const output = await executeWithRetry({
+        await executeWithRetry({
           step,
           retryConfig,
           context,
         });
 
-        console.log("output", output);
-
-        if (output === "suspend") {
-          logger.info(`Step ${step.id} suspended`);
-          return;
-        }
-
-        logger.info(`Step ${step.id} completed successfully`);
-
-        // Continue to next step by recursively calling execute
-        // (the step should have updated the version status)
         await api.execute({ context });
       } catch (error) {
         logger.error("Workflow failed", {
           extra: { error },
         });
         throw error;
+      } finally {
+        if (api.status === "executing") {
+          await stream(version.chatId, {
+            type: "end",
+          });
+          api.status = "idle";
+        }
+        logger.info(`Workflow execution finished for version ${version.id}`);
       }
     },
   };

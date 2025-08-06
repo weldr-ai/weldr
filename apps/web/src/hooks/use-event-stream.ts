@@ -87,6 +87,10 @@ export function useEventStream({
         setPendingMessage("responding");
 
         switch (chunk.type) {
+          case "responding": {
+            setPendingMessage("responding");
+            break;
+          }
           case "text": {
             setMessages((prevMessages) => {
               const lastMessage = prevMessages[prevMessages.length - 1];

@@ -13,6 +13,7 @@ import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import { stream } from "@/lib/stream-utils";
+import { workflow } from "@/workflow";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { Logger } from "@weldr/shared/logger";
@@ -32,7 +33,7 @@ export async function requirementsAgent({
 }: {
   context: WorkflowContext;
   coolDownPeriod?: number;
-}): Promise<"suspend" | undefined> {
+}) {
   const project = context.get("project");
   const user = context.get("user");
   const version = context.get("version");
@@ -280,7 +281,7 @@ export async function requirementsAgent({
   if (currentVersion.status === "pending") {
     logger.info("Version status is still pending, stopping requirements agent");
     await stream(version.chatId, { type: "end" });
-    return "suspend";
+    workflow.suspend();
   }
 
   logger.info("Requirements agent completed");
