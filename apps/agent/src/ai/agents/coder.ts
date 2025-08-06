@@ -1,4 +1,3 @@
-import { streamText } from "ai";
 import type { z } from "zod";
 import {
   deleteFileTool,
@@ -16,7 +15,7 @@ import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import { getTaskExecutionPlan, type TaskWithRelations } from "@/ai/utils/tasks";
-import { getSSEConnection } from "@/lib/utils";
+import { stream } from "@/lib/stream-utils";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { db, eq } from "@weldr/db";
@@ -46,8 +45,6 @@ export async function coderAgent({
     projectId: project.id,
     versionId: version.id,
   });
-
-  const streamWriter = getSSEConnection(context.get("version").chatId);
 
   logger.info("Starting coder agent");
 
@@ -106,16 +103,30 @@ export async function coderAgent({
     });
   }
 
-  logger.info("All tasks processed. Updating version progress to 'completed'.");
+  logger.info("All tasks processed. Updating version progress to 'deploying'.");
   await db
     .update(versions)
-    .set({ status: "completed" })
+    .set({ status: "deploying" })
     .where(eq(versions.id, version.id));
+
+  // Update context with the new version status
+  const updatedVersion = { ...version, status: "deploying" as const };
+  context.set("version", updatedVersion);
+
+  // Notify the stream about the status change
+  await stream(version.chatId, {
+    type: "update_project",
+    data: {
+      currentVersion: {
+        status: "deploying",
+      },
+    },
+  });
 
   logger.info("Coder agent completed");
 
   // End the stream
-  await streamWriter.write({ type: "end" });
+  await stream(version.chatId, { type: "end" });
 }
 
 async function executeTaskCoder({
@@ -184,42 +195,17 @@ async function executeTaskCoder({
     const hasToolErrors = false;
     const promptMessages = await getMessages(loopChatId);
 
-    const result = isXML
-      ? xmlProvider.streamText({
-          model: registry.languageModel("google:gemini-2.5-pro"),
-          system,
-          messages: promptMessages,
-          onError: (error) => {
-            logger.error("Error in coder agent", {
-              extra: { error },
-            });
-          },
-        })
-      : streamText({
-          model: registry.languageModel("google:gemini-2.5-pro"),
-          system,
-          tools: {
-            list_dir: listDirTool(context),
-            read_file: readFileTool(context),
-            edit_file: editFileTool(context),
-            write_file: writeFileTool(context),
-            delete_file: deleteFileTool(context),
-            search_codebase: searchCodebaseTool(context),
-            query_related_declarations: queryRelatedDeclarationsTool(context),
-            fzf: fzfTool(context),
-            grep: grepTool(context),
-            find: findTool(context),
-            done: doneTool(context),
-          },
-          messages: promptMessages,
-          onError: (error) => {
-            logger.error("Error in coder agent", {
-              extra: { error },
-            });
-          },
+    const result = xmlProvider.streamText({
+      model: registry.languageModel("google:gemini-2.5-pro"),
+      system,
+      messages: promptMessages,
+      onError: (error) => {
+        logger.error("Error in coder agent", {
+          extra: { error },
         });
+      },
+    });
 
-    // Assistant message content
     const assistantContent: z.infer<typeof assistantMessageContentSchema>[] =
       [];
     // Messages to save
@@ -373,8 +359,6 @@ async function updateCanvasNode({
   const project = context.get("project");
   const version = context.get("version");
 
-  const streamWriter = getSSEConnection(context.get("version").chatId);
-
   const logger = Logger.get({
     projectId: project.id,
     versionId: version.id,
@@ -392,7 +376,7 @@ async function updateCanvasNode({
     }
 
     if (updatedDeclaration.node && updatedDeclaration.metadata?.specs) {
-      await streamWriter.write({
+      await stream(version.chatId, {
         type: "node",
         nodeId: updatedDeclaration.node.id,
         position: updatedDeclaration.node.position,

@@ -29,14 +29,18 @@ ${projectContext}
   You have access to a suite of powerful tools to assist you. Use them when necessary.
 ${
   toolSet &&
-  `To use a tool, you must respond with an XML block like this:
+  `To use a tool, you can respond with either:
+
+  1. XML format:
   <tool_call>
     <tool_name>tool_name</tool_name>
     <parameters>
       <parameter_name>parameter_value</parameter_name>
       ...
     </parameters>
-  </tool_call>`
+  </tool_call>
+
+  2. Or use your native tool calling format if available (JSON tool calls are also supported)`
 }
   **CRITICAL TOOL CALLING RULE:**
   - **PROVIDE REASONING FIRST**: Before making any tool call, always provide a brief 1-2 sentence explanation of why you're calling this specific tool and what you expect to achieve

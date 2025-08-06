@@ -6,7 +6,7 @@ import { createRouter } from "@/lib/utils";
 import { workflow } from "@/workflow";
 
 import { auth } from "@weldr/auth";
-import { and, db, eq, isNotNull } from "@weldr/db";
+import { and, db, eq, isNotNull, not } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
 import {
   attachmentSchema,
@@ -113,6 +113,7 @@ router.openapi(route, async (c) => {
     where: and(
       eq(versions.projectId, projectId),
       isNotNull(versions.activatedAt),
+      not(eq(versions.status, "completed")),
     ),
   });
 

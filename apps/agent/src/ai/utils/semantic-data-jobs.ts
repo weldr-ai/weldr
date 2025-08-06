@@ -77,10 +77,18 @@ export async function queueDeclarationSemanticDataGeneration(
 }
 
 export async function recoverSemanticDataJobs(): Promise<void> {
-  const project = await db.query.projects.findFirst({
-    // biome-ignore lint/style/noNonNullAssertion: reason
-    where: eq(projects.id, process.env.PROJECT_ID!),
-  });
+  let project: typeof projects.$inferSelect | undefined;
+
+  if (process.env.NODE_ENV === "development") {
+    project = await db.query.projects.findFirst({
+      orderBy: (projects, { desc }) => [desc(projects.createdAt)],
+    });
+  } else if (process.env.NODE_ENV === "production") {
+    project = await db.query.projects.findFirst({
+      // biome-ignore lint/style/noNonNullAssertion: reason
+      where: eq(projects.id, process.env.PROJECT_ID!),
+    });
+  }
 
   if (!project) {
     throw new Error("Project not found");

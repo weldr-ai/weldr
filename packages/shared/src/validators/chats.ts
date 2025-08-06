@@ -192,6 +192,7 @@ export const chatSchema = z.object({
 
 export const addMessageItemSchema = z.discriminatedUnion("role", [
   z.object({
+    id: z.string().nanoid().optional(),
     visibility: z.enum(["public", "internal"]),
     role: z.literal("assistant"),
     content: assistantMessageContentSchema.array(),
@@ -199,6 +200,7 @@ export const addMessageItemSchema = z.discriminatedUnion("role", [
     createdAt: z.date().optional(),
   }),
   z.object({
+    id: z.string().nanoid().optional(),
     visibility: z.enum(["public", "internal"]),
     role: z.literal("user"),
     content: userMessageContentSchema.array(),
@@ -206,6 +208,7 @@ export const addMessageItemSchema = z.discriminatedUnion("role", [
     createdAt: z.date().optional(),
   }),
   z.object({
+    id: z.string().nanoid().optional(),
     visibility: z.enum(["public", "internal"]),
     role: z.literal("tool"),
     content: toolResultPartSchema.array(),

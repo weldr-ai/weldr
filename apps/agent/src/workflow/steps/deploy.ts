@@ -1,6 +1,6 @@
 import { runCommand } from "@/lib/commands";
 import { SCRIPTS_DIR } from "@/lib/constants";
-import { getSSEConnection } from "@/lib/utils";
+import { stream } from "@/lib/stream-utils";
 
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
@@ -85,8 +85,7 @@ export const deployStep = createStep({
         .where(eq(versions.id, version.id));
 
       // Send SSE notification of completion
-      const streamWriter = getSSEConnection(version.chatId);
-      await streamWriter.write({
+      await stream(version.chatId, {
         type: "update_project",
         data: { currentVersion: { status: "completed" } },
       });

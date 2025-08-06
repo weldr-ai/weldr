@@ -224,7 +224,7 @@ export const VersionNode = memo(({ data }: NodeProps<TVersionNode>) => {
             )}
           </div>
         </div>
-        {isCompleted ? (
+        {data.status === "coding" ? (
           <div className="flex flex-col gap-2">
             <span className="font-medium text-xs capitalize">
               {parsed.message}

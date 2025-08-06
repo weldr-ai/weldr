@@ -53,10 +53,9 @@ export async function GET(
     // Set the new origin and host for the destination
     headers.set("host", "localhost:8080");
     headers.set("origin", url);
-    headers.set("content-type", "application/json");
 
     // Make the proxy request to the agent service
-    const response = await fetch(`${url}/events/${projectId}`, {
+    const response = await fetch(`${url}/stream/${projectId}`, {
       method: "GET",
       headers,
     });
@@ -66,12 +65,12 @@ export async function GET(
       status: response.status,
       statusText: response.statusText,
       headers: {
-        "Content-Type":
-          response.headers.get("content-type") || "text/event-stream",
-        "Cache-Control": response.headers.get("Cache-Control") || "no-cache",
-        Connection: response.headers.get("Connection") || "keep-alive",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Cache-Control",
+        "Access-Control-Allow-Headers": "Cache-Control, Last-Event-ID",
+        "Access-Control-Expose-Headers": "Last-Event-ID",
       },
     });
   } catch (error) {

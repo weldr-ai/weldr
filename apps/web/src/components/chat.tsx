@@ -82,7 +82,6 @@ export function Chat({
       project,
       setPendingMessage,
       setMessages,
-      pendingMessage,
     });
 
   const { triggerGeneration } = useWorkflowTrigger({
@@ -90,8 +89,6 @@ export function Chat({
     setPendingMessage,
     eventSourceRef,
     connectToEventStream,
-    messages,
-    pendingMessage,
   });
 
   const handleSubmit = async () => {

@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback } from "react";
 
 import type {
   Attachment,
-  ChatMessage,
   TPendingMessage,
   TriggerWorkflowResponse,
   UserMessage,
@@ -13,8 +12,6 @@ interface UseWorkflowTriggerOptions {
   setPendingMessage: (message: TPendingMessage) => void;
   eventSourceRef: EventSource | null;
   connectToEventStream: () => EventSource | null;
-  messages: ChatMessage[];
-  pendingMessage: TPendingMessage;
 }
 
 export function useWorkflowTrigger({
@@ -22,8 +19,6 @@ export function useWorkflowTrigger({
   setPendingMessage,
   eventSourceRef,
   connectToEventStream,
-  messages,
-  pendingMessage,
 }: UseWorkflowTriggerOptions) {
   const triggerWorkflow = useCallback(
     async (message?: {
@@ -79,24 +74,6 @@ export function useWorkflowTrigger({
     },
     [triggerWorkflow, eventSourceRef, connectToEventStream, setPendingMessage],
   );
-
-  // Track if we've already triggered on mount to prevent multiple triggers
-  const hasTriggeredOnMount = useRef(false);
-
-  // Auto-trigger workflow on mount if last message is from user
-  useEffect(() => {
-    // Only trigger once on mount
-    if (hasTriggeredOnMount.current) {
-      return;
-    }
-
-    // Check if there are messages and the last one is from a user
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.role === "user" && !pendingMessage) {
-      hasTriggeredOnMount.current = true;
-      triggerGeneration();
-    }
-  }, [messages, pendingMessage, triggerGeneration]);
 
   return {
     triggerWorkflow,

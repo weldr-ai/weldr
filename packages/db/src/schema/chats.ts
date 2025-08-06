@@ -48,6 +48,7 @@ export const chats = pgTable(
 
 export const chatRelations = relations(chats, ({ one, many }) => ({
   messages: many(chatMessages),
+  streams: many(streams),
   version: one(versions),
   user: one(users, {
     fields: [chats.userId],
@@ -120,5 +121,26 @@ export const attachmentsRelations = relations(attachments, ({ one }) => ({
   message: one(chatMessages, {
     fields: [attachments.messageId],
     references: [chatMessages.id],
+  }),
+}));
+
+export const streams = pgTable(
+  "streams",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => nanoid()),
+    chatId: text("chat_id")
+      .references(() => chats.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("streams_chat_id_idx").on(t.chatId)],
+);
+
+export const streamRelations = relations(streams, ({ one }) => ({
+  chat: one(chats, {
+    fields: [streams.chatId],
+    references: [chats.id],
   }),
 }));

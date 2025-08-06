@@ -24,11 +24,17 @@ export class XMLProvider<const TOOL_SET extends MyToolSet> {
   }
 
   streamText(
-    parameters: Omit<Parameters<typeof streamText>[0], "tools">,
+    parameters: Parameters<typeof streamText>[0],
   ): XMLStreamResult<TOOL_SET> {
     this.logger.info("Starting XML stream text processing");
 
-    const baseResult = streamText(parameters);
+    const baseResult = streamText({
+      ...parameters,
+      tools: Object.entries(this.toolSet).reduce((acc, [name, tool]) => {
+        acc[name] = tool(this.context);
+        return acc;
+      }, {} as ToolSet),
+    });
     const processor = new XMLStreamProcessor(this.toolSet, this.context);
 
     const fullStream = this.createFullStream(baseResult.fullStream, processor);
@@ -59,6 +65,7 @@ export class XMLProvider<const TOOL_SET extends MyToolSet> {
     this.logger.debug("Starting full stream processing");
     let textChunkCount = 0;
     let toolDeltaCount = 0;
+    let otherDeltaCount = 0;
 
     try {
       for await (const delta of baseFullStream) {
@@ -69,6 +76,9 @@ export class XMLProvider<const TOOL_SET extends MyToolSet> {
             toolDeltaCount++;
             yield toolDelta;
           }
+        } else {
+          otherDeltaCount++;
+          yield delta as XMLStreamDelta<TOOL_SET>;
         }
       }
 
@@ -81,12 +91,14 @@ export class XMLProvider<const TOOL_SET extends MyToolSet> {
       this.logger.info("Full stream processing completed", {
         textChunkCount,
         toolDeltaCount,
+        otherDeltaCount,
       });
     } catch (error) {
       this.logger.error("Full stream processing failed", {
         error: error instanceof Error ? error.message : String(error),
         textChunkCount,
         toolDeltaCount,
+        otherDeltaCount,
       });
       throw error;
     }

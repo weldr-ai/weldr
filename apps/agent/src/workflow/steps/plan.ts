@@ -4,7 +4,7 @@ import { createStep } from "../engine";
 
 export const planStep = createStep({
   id: "plan",
-  execute: async ({ context }): Promise<"suspend" | undefined> => {
-    return await plannerAgent({ context });
+  execute: async ({ context }) => {
+    await plannerAgent({ context });
   },
 });

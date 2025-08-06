@@ -1,4 +1,3 @@
-import { streamText } from "ai";
 import type { z } from "zod";
 import { prompts } from "@/ai/prompts";
 import {
@@ -13,7 +12,6 @@ import {
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
-import { getSSEConnection } from "@/lib/utils";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { Logger } from "@weldr/shared/logger";
@@ -31,13 +29,11 @@ export async function plannerAgent({
 }: {
   context: WorkflowContext;
   coolDownPeriod?: number;
-}): Promise<"suspend" | undefined> {
+}): Promise<void> {
   const project = context.get("project");
   const user = context.get("user");
   const version = context.get("version");
   const isXML = context.get("isXML");
-
-  const streamWriter = getSSEConnection(version.chatId);
 
   const logger = Logger.get({
     projectId: project.id,
@@ -71,39 +67,17 @@ export async function plannerAgent({
       extra: { promptMessages },
     });
 
-    const result = isXML
-      ? xmlProvider.streamText({
-          model: registry.languageModel("google:gemini-2.5-pro"),
-          system,
-          messages: promptMessages,
-          onError: (error) => {
-            logger.error("Error in planner agent", {
-              extra: { error },
-            });
-          },
-        })
-      : streamText({
-          model: registry.languageModel("google:gemini-2.5-pro"),
-          system,
-          messages: promptMessages,
-          tools: {
-            list_dir: listDirTool(context),
-            read_file: readFileTool(context),
-            search_codebase: searchCodebaseTool(context),
-            query_related_declarations: queryRelatedDeclarationsTool(context),
-            fzf: fzfTool(context),
-            grep: grepTool(context),
-            find: findTool(context),
-            call_coder: callCoderTool(context),
-          },
-          onError: (error) => {
-            logger.error("Error in planner agent", {
-              extra: { error },
-            });
-          },
+    const result = xmlProvider.streamText({
+      model: registry.languageModel("google:gemini-2.5-pro"),
+      system,
+      messages: promptMessages,
+      onError: (error) => {
+        logger.error("Error in planner agent", {
+          extra: { error },
         });
+      },
+    });
 
-    // Prepare messages to store
     const messagesToSave: z.infer<typeof addMessageItemSchema>[] = [];
     const toolResultMessages: z.infer<typeof addMessageItemSchema>[] = [];
     const assistantContent: z.infer<typeof assistantMessageContentSchema>[] =
@@ -112,13 +86,6 @@ export async function plannerAgent({
     for await (const part of result.fullStream) {
       switch (part.type) {
         case "text-delta": {
-          // Stream text content to SSE
-          await streamWriter.write({
-            type: "text",
-            text: part.text,
-          });
-
-          // Add text content immediately to maintain proper order
           const lastItem = assistantContent[assistantContent.length - 1];
           if (lastItem && lastItem.type === "text") {
             lastItem.text += part.text;
@@ -258,12 +225,6 @@ export async function plannerAgent({
       logger.info(`Recurring in ${coolDownPeriod}ms...`);
       await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
     }
-  }
-
-  if (version.status === "pending") {
-    logger.info("Version status is still pending, stopping planner agent");
-    await streamWriter.write({ type: "end" });
-    return "suspend";
   }
 
   logger.info("Planner agent completed");

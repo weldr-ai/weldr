@@ -1,4 +1,4 @@
-import { db, eq } from "@weldr/db";
+import { and, db, eq, isNull } from "@weldr/db";
 import type { projects } from "@weldr/db/schema";
 import { integrations, versions } from "@weldr/db/schema";
 
@@ -15,7 +15,11 @@ export async function getProjectContext(project: typeof projects.$inferSelect) {
   });
 
   const projectVersionsList = await db.query.versions.findMany({
-    where: eq(versions.projectId, project.id),
+    where: and(
+      eq(versions.projectId, project.id),
+      isNull(versions.activatedAt),
+      eq(versions.status, "completed"),
+    ),
     orderBy: (versions, { desc }) => [desc(versions.number)],
     limit: 5,
     columns: {

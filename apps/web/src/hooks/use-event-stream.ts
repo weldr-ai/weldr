@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useProject } from "@/lib/context/project";
 import type { CanvasNode } from "@/types";
 
-import { nanoid } from "@weldr/shared/nanoid";
 import type {
   AssistantMessage,
   ChatMessage,
@@ -20,7 +19,6 @@ interface UseEventStreamOptions {
   };
   setPendingMessage: (message: TPendingMessage) => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
-  pendingMessage: TPendingMessage;
 }
 
 export function useEventStream({
@@ -28,7 +26,6 @@ export function useEventStream({
   project,
   setPendingMessage,
   setMessages,
-  pendingMessage,
 }: UseEventStreamOptions) {
   const { updateProjectData } = useProject();
   const { getNodes, setNodes, updateNodeData } = useReactFlow<CanvasNode>();
@@ -58,16 +55,21 @@ export function useEventStream({
       reconnectTimeoutRef.current = null;
     }
 
-    const eventSource = new EventSource(`/api/chat/${projectId}`);
+    const eventSource = new EventSource(`/api/chat/${projectId}/stream`, {
+      withCredentials: true,
+    });
     setEventSourceRef(eventSource);
 
     eventSource.onmessage = (event) => {
       try {
+        // EventSource API should give us clean JSON data directly
         const chunk: SSEEvent = JSON.parse(event.data);
+        console.log("Parsed chunk:", chunk);
 
         if (chunk.type === "connected") {
           reconnectAttempts.current = 0;
           isConnectingRef.current = false;
+          console.log(`[SSE] Connected to stream for project ${projectId}`);
           return;
         }
 
@@ -82,54 +84,58 @@ export function useEventStream({
           return;
         }
 
-        if (pendingMessage === null || pendingMessage === "thinking") {
-          setPendingMessage("responding");
-        }
+        setPendingMessage("responding");
 
         switch (chunk.type) {
           case "text": {
             setMessages((prevMessages) => {
               const lastMessage = prevMessages[prevMessages.length - 1];
 
-              if (lastMessage?.role !== "assistant") {
-                return [
-                  ...prevMessages,
-                  {
-                    id: nanoid(),
-                    visibility: "public",
-                    role: "assistant",
-                    createdAt: new Date(),
-                    content: [
-                      {
-                        type: "text",
-                        text: chunk.text,
-                      },
-                    ],
-                  },
-                ];
-              }
+              // Only append to the last message if it's an assistant message with the same ID
+              if (
+                lastMessage?.role === "assistant" &&
+                lastMessage.id === chunk.id
+              ) {
+                const messagesWithoutLast = prevMessages.slice(0, -1);
+                const updatedContent = [...lastMessage.content];
+                const lastContentItem =
+                  updatedContent[updatedContent.length - 1];
 
-              const messagesWithoutLast = prevMessages.slice(0, -1);
-              const updatedContent = [...lastMessage.content];
-              const lastContentItem = updatedContent[updatedContent.length - 1];
+                if (lastContentItem && lastContentItem.type === "text") {
+                  updatedContent[updatedContent.length - 1] = {
+                    ...lastContentItem,
+                    text: lastContentItem.text + chunk.text,
+                  };
+                } else {
+                  updatedContent.push({
+                    type: "text",
+                    text: chunk.text,
+                  });
+                }
 
-              if (lastContentItem && lastContentItem.type === "text") {
-                updatedContent[updatedContent.length - 1] = {
-                  ...lastContentItem,
-                  text: lastContentItem.text + chunk.text,
+                const updatedLastMessage = {
+                  ...lastMessage,
+                  content: updatedContent as AssistantMessage["content"],
                 };
-              } else {
-                updatedContent.push({
-                  type: "text",
-                  text: chunk.text,
-                });
+                return [...messagesWithoutLast, updatedLastMessage];
               }
 
-              const updatedLastMessage = {
-                ...lastMessage,
-                content: updatedContent as AssistantMessage["content"],
-              };
-              return [...messagesWithoutLast, updatedLastMessage];
+              // Create a new assistant message if no matching message exists
+              return [
+                ...prevMessages,
+                {
+                  id: chunk.id,
+                  visibility: "public",
+                  role: "assistant",
+                  createdAt: new Date(),
+                  content: [
+                    {
+                      type: "text",
+                      text: chunk.text,
+                    },
+                  ],
+                },
+              ];
             });
             break;
           }
@@ -249,6 +255,7 @@ export function useEventStream({
       // Only retry if workflow is still active and we haven't exceeded max attempts
       if (
         project.currentVersion.status !== "completed" &&
+        project.currentVersion.status !== "failed" &&
         reconnectAttempts.current < maxReconnectAttempts
       ) {
         reconnectAttempts.current += 1;
@@ -257,6 +264,8 @@ export function useEventStream({
         reconnectTimeoutRef.current = setTimeout(() => {
           connectToEventStream();
         }, delay);
+      } else {
+        setPendingMessage(null);
       }
     };
 
@@ -266,7 +275,6 @@ export function useEventStream({
     project.currentVersion.status,
     setPendingMessage,
     setMessages,
-    pendingMessage,
     updateProjectData,
     getNodes,
     setNodes,
@@ -304,6 +312,13 @@ export function useEventStream({
       connectToEventStream();
     }
   }, [eventSourceRef, project.currentVersion.status, connectToEventStream]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      closeEventStream();
+    };
+  }, [closeEventStream]);
 
   return {
     eventSourceRef,

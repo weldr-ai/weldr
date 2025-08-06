@@ -30,6 +30,7 @@ export async function insertMessages({
       const [insertedMessage] = await tx
         .insert(chatMessages)
         .values({
+          id: item.id,
           visibility: item.visibility,
           role: item.role,
           content: item.content,

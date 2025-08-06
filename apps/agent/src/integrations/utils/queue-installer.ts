@@ -1,4 +1,4 @@
-import { getSSEConnection } from "@/lib/utils";
+import { stream } from "@/lib/stream-utils";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { and, db, eq } from "@weldr/db";
@@ -27,8 +27,6 @@ async function streamToolMessageUpdate({
   status: "installing" | "completed" | "failed";
 }) {
   const version = context.get("version");
-
-  const streamWriter = getSSEConnection(version.chatId);
 
   const integration = await db.query.integrations.findFirst({
     where: eq(integrations.id, integrationId),
@@ -97,7 +95,7 @@ async function streamToolMessageUpdate({
     })
     .where(eq(chatMessages.id, message.id));
 
-  await streamWriter.write({
+  await stream(version.chatId, {
     type: "tool",
     message: {
       ...toolMessage,

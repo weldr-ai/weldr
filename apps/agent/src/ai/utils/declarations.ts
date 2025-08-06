@@ -1,5 +1,5 @@
 import { inArray } from "drizzle-orm";
-import { getSSEConnection } from "@/lib/utils";
+import { stream } from "@/lib/stream-utils";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { and, db, eq } from "@weldr/db";
@@ -231,9 +231,8 @@ export const createDeclarationFromTask = async ({
     }
 
     try {
-      const streamWriter = getSSEConnection(version.chatId);
       if (createdDeclaration.metadata?.specs && node) {
-        await streamWriter.write({
+        await stream(version.chatId, {
           type: "node",
           nodeId: node.id,
           position: node.position,

@@ -2,18 +2,6 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import type { PinoLogger } from "hono-pino";
 import type { WorkflowContext } from "@/workflow/context";
 
-import type { SSEEvent } from "@weldr/shared/types";
-
-export interface StreamWriter {
-  write(chunk: SSEEvent): Promise<void>;
-  close(): Promise<void>;
-}
-
-// Global type declarations
-declare global {
-  var sseConnections: Map<string, StreamWriter>;
-}
-
 export type HonoContext = {
   Variables: {
     logger: PinoLogger;
@@ -23,30 +11,6 @@ export type HonoContext = {
 
 export function createRouter() {
   return new OpenAPIHono<HonoContext>();
-}
-
-export function getSSEConnection(chatId: string): StreamWriter {
-  if (!global.sseConnections) {
-    global.sseConnections = new Map();
-  }
-
-  const existingConnection = global.sseConnections.get(chatId);
-  if (existingConnection) {
-    return existingConnection;
-  }
-
-  // Create a fallback stream writer that buffers messages until a real connection is established
-  const fallbackWriter: StreamWriter = {
-    write: async (chunk: SSEEvent) => {
-      console.log(`[SSE Fallback] Buffering message for ${chatId}:`, chunk);
-    },
-    close: async () => {
-      console.log(`[SSE Fallback] Would close connection for ${chatId}`);
-    },
-  };
-
-  global.sseConnections.set(chatId, fallbackWriter);
-  return fallbackWriter;
 }
 
 export function configureOpenAPI(app: OpenAPIHono<HonoContext>) {

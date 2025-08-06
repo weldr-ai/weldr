@@ -253,6 +253,9 @@ export const planSchema = z.object({
     - Overall scope and boundaries
     - Integration requirements
 
+    Should start with present tense verbs (e.g., "Creates", "Builds", "Implements") rather than "This plan".
+    Example: "Creates a simple, single-page web application where users can manage a to-do list..."
+
     This should provide the big picture context for all subtasks.
   `),
   acceptanceCriteria: z

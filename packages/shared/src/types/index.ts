@@ -84,6 +84,7 @@ export type TPendingMessage =
   | null;
 
 export type TextStreamableValue = {
+  id: string;
   type: "text";
   text: string;
 };
@@ -122,8 +123,7 @@ export type IntegrationStreamableValue = {
 
 export type SSEConnectionEvent = {
   type: "connected";
-  clientId: string;
-  chatId: string;
+  streamId: string;
 };
 
 export type SSEErrorEvent = {

@@ -141,6 +141,12 @@ CREATE TABLE "chats" (
 	"user_id" text NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "streams" (
+	"id" text PRIMARY KEY NOT NULL,
+	"chat_id" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "declaration_integrations" (
 	"declaration_id" text NOT NULL,
 	"integration_id" text NOT NULL,
@@ -304,6 +310,7 @@ ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_chat_id_chats_id_fk" F
 ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chats" ADD CONSTRAINT "chats_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "streams" ADD CONSTRAINT "streams_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_declaration_id_declarations_id_fk" FOREIGN KEY ("declaration_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_previous_id_declarations_id_fk" FOREIGN KEY ("previous_id") REFERENCES "public"."declarations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -339,6 +346,7 @@ ALTER TABLE "versions" ADD CONSTRAINT "versions_project_id_projects_id_fk" FOREI
 CREATE INDEX "attachments_created_at_idx" ON "attachments" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "chat_messages_created_at_idx" ON "chat_messages" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "chats_created_at_idx" ON "chats" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "streams_chat_id_idx" ON "streams" USING btree ("chat_id");--> statement-breakpoint
 CREATE INDEX "declaration_created_at_idx" ON "declarations" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "embeddingIndex" ON "declarations" USING hnsw ("embedding" vector_cosine_ops);--> statement-breakpoint
 CREATE INDEX "integration_categories_created_at_idx" ON "integration_categories" USING btree ("created_at");--> statement-breakpoint

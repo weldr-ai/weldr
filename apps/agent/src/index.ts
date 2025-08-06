@@ -4,6 +4,7 @@ import { requestId } from "hono/request-id";
 
 import { Logger } from "@weldr/shared/logger";
 import { recoverSemanticDataJobs } from "./ai/utils/semantic-data-jobs";
+import { closeRedisConnections } from "./lib/stream-utils";
 import { configureOpenAPI, createRouter } from "./lib/utils";
 import { loggerMiddleware } from "./middlewares/logger";
 import { routes } from "./routes";
@@ -59,6 +60,19 @@ app.onError((err, c) => {
 
 const port = process.env.PORT ? Number.parseInt(process.env.PORT) : 8080;
 
+// Graceful shutdown
+process.on("SIGINT", async () => {
+  Logger.info("Received SIGINT, shutting down gracefully...");
+  await closeRedisConnections();
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  Logger.info("Received SIGTERM, shutting down gracefully...");
+  await closeRedisConnections();
+  process.exit(0);
+});
+
 serve(
   {
     fetch: app.fetch,
@@ -66,9 +80,7 @@ serve(
   },
   async (info) => {
     Logger.info(`Server is running on http://localhost:${info.port}`);
-    if (process.env.PROJECT_ID) {
-      await recoverWorkflow();
-      await recoverSemanticDataJobs();
-    }
+    await recoverWorkflow();
+    await recoverSemanticDataJobs();
   },
 );

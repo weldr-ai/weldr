@@ -10,6 +10,18 @@ export const WORKSPACE_DIR = isDev
   ? path.resolve(__dirname, "../../.temp")
   : "/workspace";
 
+/**
+ * Get workspace directory for a specific project.
+ * In development, creates project-specific workspace directories.
+ * In production, returns the standard workspace directory.
+ */
+export function getProjectWorkspaceDir(projectId: string): string {
+  if (isDev) {
+    return path.resolve(__dirname, "../../.temp", projectId);
+  }
+  return "/workspace";
+}
+
 export const BOILERPLATES_DIR = isDev
   ? path.resolve(__dirname, "../../data/boilerplates")
   : "/.weldr/data/boilerplates";

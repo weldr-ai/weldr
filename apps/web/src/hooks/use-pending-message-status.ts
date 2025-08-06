@@ -94,17 +94,6 @@ export function usePendingMessageStatus({
     }
   }, [messages, project.integrations]);
 
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (
-      lastMessage?.role === "user" &&
-      version.status === "pending" &&
-      !pendingMessage
-    ) {
-      setPendingMessage("thinking");
-    }
-  }, [messages, version.status, pendingMessage]);
-
   return {
     pendingMessage,
     setPendingMessage,

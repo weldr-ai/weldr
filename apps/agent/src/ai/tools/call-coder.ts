@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getSSEConnection } from "@/lib/utils";
+import { stream } from "@/lib/stream-utils";
 
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
@@ -27,7 +27,6 @@ export const callCoderTool = createTool({
     const version = context.get("version");
     const project = context.get("project");
 
-    // Create contextual logger with base tags and extras
     const logger = Logger.get({
       projectId: project.id,
       versionId: version.id,
@@ -63,9 +62,7 @@ export const callCoderTool = createTool({
 
     context.set("version", updatedVersion);
 
-    const streamWriter = getSSEConnection(updatedVersion.chatId);
-
-    await streamWriter.write({
+    await stream(updatedVersion.chatId, {
       type: "update_project",
       data: {
         currentVersion: {

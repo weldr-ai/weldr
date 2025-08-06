@@ -12,7 +12,7 @@ import {
 import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
-import { getSSEConnection } from "@/lib/utils";
+import { stream } from "@/lib/stream-utils";
 import type { WorkflowContext } from "@/workflow/context";
 
 import { Logger } from "@weldr/shared/logger";
@@ -37,8 +37,6 @@ export async function requirementsAgent({
   const user = context.get("user");
   const version = context.get("version");
   const isXML = context.get("isXML");
-
-  const streamWriter = getSSEConnection(version.chatId);
 
   const logger = Logger.get({
     projectId: project.id,
@@ -89,11 +87,15 @@ export async function requirementsAgent({
     const assistantContent: z.infer<typeof assistantMessageContentSchema>[] =
       [];
 
+    const assistantMessageId = nanoid();
+    const assistantMessageCreatedAt = new Date();
+
     for await (const part of result.fullStream) {
       switch (part.type) {
         case "text-delta": {
           // Stream text content to SSE
-          await streamWriter.write({
+          await stream(version.chatId, {
+            id: assistantMessageId,
             type: "text",
             text: part.text,
           });
@@ -132,10 +134,15 @@ export async function requirementsAgent({
           break;
         }
         case "tool-result": {
+          const messageId = nanoid();
+          const messageCreatedAt = new Date();
+
           toolResultMessages.push({
+            id: messageId,
             visibility:
               part.toolName === "add_integrations" ? "public" : "internal",
             role: "tool",
+            createdAt: messageCreatedAt,
             content: [
               {
                 type: "tool-result",
@@ -147,12 +154,12 @@ export async function requirementsAgent({
           });
 
           if (part.toolName === "add_integrations") {
-            await streamWriter.write({
+            await stream(version.chatId, {
               type: "tool",
               message: {
-                id: nanoid(),
+                id: messageId,
                 visibility: "public",
-                createdAt: new Date(),
+                createdAt: messageCreatedAt,
                 chatId: version.chatId,
                 role: "tool",
                 content: [
@@ -188,6 +195,7 @@ export async function requirementsAgent({
         }
         case "tool-error": {
           toolResultMessages.push({
+            id: nanoid(),
             visibility: "internal",
             role: "tool",
             content: [
@@ -219,7 +227,9 @@ export async function requirementsAgent({
 
     if (assistantContent.length > 0) {
       messagesToSave.push({
+        id: assistantMessageId,
         visibility: "public",
+        createdAt: assistantMessageCreatedAt,
         role: "assistant",
         content: assistantContent,
         metadata: {
@@ -266,9 +276,10 @@ export async function requirementsAgent({
     }
   }
 
-  if (version.status === "pending") {
+  const currentVersion = context.get("version");
+  if (currentVersion.status === "pending") {
     logger.info("Version status is still pending, stopping requirements agent");
-    await streamWriter.write({ type: "end" });
+    await stream(version.chatId, { type: "end" });
     return "suspend";
   }
 

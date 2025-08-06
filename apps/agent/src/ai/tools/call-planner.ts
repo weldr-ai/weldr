@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getSSEConnection } from "@/lib/utils";
+import { stream } from "@/lib/stream-utils";
 
 import { db, eq } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
@@ -35,8 +35,6 @@ export const callPlannerTool = createTool({
       input,
     });
 
-    const streamWriter = getSSEConnection(version.chatId);
-
     // Generate project title and description if it's the first version and the project title is not set
     if (version.number === 1 && project.title === null) {
       const data = await generateProjectInfo(input.requirements);
@@ -49,7 +47,7 @@ export const callPlannerTool = createTool({
         })
         .where(eq(projects.id, project.id));
 
-      await streamWriter.write({
+      await stream(version.chatId, {
         type: "update_project",
         data: {
           title: data.title,
@@ -76,7 +74,7 @@ export const callPlannerTool = createTool({
 
     context.set("version", updatedVersion);
 
-    await streamWriter.write({
+    await stream(version.chatId, {
       type: "update_project",
       data: {
         currentVersion: {
