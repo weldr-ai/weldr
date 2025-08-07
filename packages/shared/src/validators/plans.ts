@@ -176,10 +176,9 @@ const updateTaskDeclarationSchema = baseTaskDeclarationSchema
       Consist of file path and declaration name.
 
       Examples:
-      - src/db/schema/user.ts#User
-      - src/orpc/routes/users/create.ts#CreateUser
-      - src/routes/dashboard.tsx#Dashboard
-      - server/db/schema/user.ts#User
+      - apps/server/src/db/schema/user.ts#User
+      - apps/server/src/orpc/routes/users/create.ts#createUser
+      - apps/web/src/routes/dashboard.tsx#DashboardPage
     `),
     specs: z
       .discriminatedUnion("type", [

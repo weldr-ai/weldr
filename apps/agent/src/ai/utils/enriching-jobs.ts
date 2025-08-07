@@ -20,7 +20,7 @@ import { declarationSemanticDataSchema } from "@weldr/shared/validators/declarat
 import { runCommand } from "../../lib/commands";
 import { registry } from "./registry";
 
-export interface SemanticDataJobData {
+export interface EnrichingJobData {
   declarationId: string;
   codeMetadata: DeclarationCodeMetadata;
   filePath: string;
@@ -30,12 +30,12 @@ export interface SemanticDataJobData {
 }
 
 // Simple queue for semantic data jobs
-const jobQueue: SemanticDataJobData[] = [];
+const jobQueue: EnrichingJobData[] = [];
 let isProcessing = false;
 const MAX_RETRIES = 3;
 
-export async function queueDeclarationSemanticDataGeneration(
-  jobData: SemanticDataJobData,
+export async function queueEnrichingJob(
+  jobData: EnrichingJobData,
 ): Promise<void> {
   const logger = Logger.get({
     declarationId: jobData.declarationId,
@@ -186,7 +186,7 @@ export async function recoverSemanticDataJobs(): Promise<void> {
   }
 }
 
-async function processDeclaration(jobData: SemanticDataJobData): Promise<void> {
+async function enrichDeclaration(jobData: EnrichingJobData): Promise<void> {
   const logger = Logger.get({
     declarationId: jobData.declarationId,
     declarationName: jobData.codeMetadata.name,
@@ -258,7 +258,7 @@ async function processDeclarationsQueue(): Promise<void> {
     await Promise.allSettled(
       batch.map(async (jobData) => {
         try {
-          await processDeclaration(jobData);
+          await enrichDeclaration(jobData);
         } catch (error) {
           Logger.error("Failed to process semantic data job", {
             extra: {
@@ -276,7 +276,7 @@ async function processDeclarationsQueue(): Promise<void> {
 }
 
 function handleJobRetry(
-  jobData: SemanticDataJobData,
+  jobData: EnrichingJobData,
   reason: string,
   error?: Error,
 ): boolean {

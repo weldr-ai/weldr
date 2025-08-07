@@ -362,13 +362,14 @@ export const codingGuidelines = `<tech_stack>
   <openapi_requirements>
     All oRPC routes MUST include OpenAPI specifications:
     - Import \`Route\` type from "@orpc/server"
-    - Define an \`openAPI\` object with \`satisfies Route\`
+    - Define a \`route\` const object with \`satisfies Route\`
     - Include: method, tags, path, successStatus, description, summary
     - Use appropriate HTTP methods (GET for queries, POST for mutations)
     - Use appropriate status codes (200 for queries, 201 for creation)
     - Group related routes with consistent tags
     - Provide clear descriptions and summaries
-    - Use \`.route(openAPI)\` before \`.input()\` and \`.output()\`
+    - Use \`.route(route)\` before \`.input()\` and \`.output()\`
+    - Define the procedure as a const and export as default
     - Define separate files for each route operation
   </openapi_requirements>
 
@@ -450,7 +451,7 @@ export const codingGuidelines = `<tech_stack>
     import { useDb } from "@repo/server/middlewares/db";
     import { retry } from "@repo/server/middlewares/retry";
 
-    const openAPI = {
+    const route = {
       method: "GET",
       tags: ["Blogs"],
       path: "/blogs",
@@ -459,8 +460,8 @@ export const codingGuidelines = `<tech_stack>
       summary: "Get blogs",
     } satisfies Route;
 
-    export default publicProcedure
-      .route(openAPI)
+    const listBlogs = publicProcedure
+      .route(route)
       .use(useDb)
       .use(retry({ times: 3 }))
       .output(z.array(selectBlogSchema))
@@ -469,6 +470,8 @@ export const codingGuidelines = `<tech_stack>
           orderBy: (blogs, { desc }) => [desc(blogs.createdAt)],
         });
       });
+
+    export default listBlogs;
     \`\`\`
 
     apps/server/src/routes/blogs/create.ts
@@ -482,7 +485,7 @@ export const codingGuidelines = `<tech_stack>
     import { useDb } from "@repo/server/middlewares/db";
     import { retry } from "@repo/server/middlewares/retry";
 
-    const openAPI = {
+    const route = {
       method: "POST",
       tags: ["Blogs"],
       path: "/blogs",
@@ -491,8 +494,8 @@ export const codingGuidelines = `<tech_stack>
       summary: "Create blog",
     } satisfies Route;
 
-    export default protectedProcedure
-      .route(openAPI)
+    const createBlog = protectedProcedure
+      .route(route)
       .use(useDb)
       .use(retry({ times: 3 }))
       .input(insertBlogSchema.omit({ id: true, userId: true, createdAt: true, updatedAt: true }))
@@ -508,6 +511,8 @@ export const codingGuidelines = `<tech_stack>
 
         return blog;
       });
+
+    export default createBlog;
     \`\`\`
   </example_oRPC_router>
 

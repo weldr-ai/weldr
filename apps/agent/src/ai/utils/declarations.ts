@@ -15,8 +15,8 @@ import {
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
+import { queueEnrichingJob } from "./enriching-jobs";
 import { extractDeclarations } from "./extract-declarations";
-import { queueDeclarationSemanticDataGeneration } from "./semantic-data-jobs";
 
 const NODE_DIMENSIONS = {
   page: { width: 400, height: 300 },
@@ -299,12 +299,12 @@ export async function extractAndSaveDeclarations({
       project.integrationCategories.has("frontend") &&
       project.integrationCategories.has("backend")
     ) {
-      pathAliases["@repo/web/*"] = "./src/*";
-      pathAliases["@repo/server/*"] = "../server/src/*";
+      pathAliases["@repo/web/*"] = "apps/web/src/*";
+      pathAliases["@repo/server/*"] = "apps/server/src/*";
     } else if (project.integrationCategories.has("backend")) {
-      pathAliases["@repo/server/*"] = "./src/*";
+      pathAliases["@repo/server/*"] = "apps/server/src/*";
     } else if (project.integrationCategories.has("frontend")) {
-      pathAliases["@repo/web/*"] = "./src/*";
+      pathAliases["@repo/web/*"] = "apps/web/src/*";
     }
 
     const extracted = await extractDeclarations({
@@ -316,7 +316,9 @@ export async function extractAndSaveDeclarations({
     logger.info(`Extracted ${extracted.length} declarations.`);
 
     if (extracted.length > 0) {
+      // Process all declarations and dependencies within a database transaction for consistency
       await db.transaction(async (tx) => {
+        // Fetch all declarations currently linked to this version with their completion status
         const activeVersionDeclarations =
           await tx.query.versionDeclarations.findMany({
             where: and(eq(versionDeclarations.versionId, version.id)),
@@ -327,15 +329,18 @@ export async function extractAndSaveDeclarations({
                   path: true,
                   uri: true,
                   progress: true,
+                  metadata: true,
                 },
               },
             },
           });
 
+        // Filter to get only completed declarations for cleanup
         const existingDeclarations = activeVersionDeclarations
           .filter((d) => d.declaration?.progress === "completed")
           .map((d) => d.declaration);
 
+        // Remove existing completed declarations to avoid duplicates
         if (existingDeclarations.length > 0) {
           const idsToDelete = existingDeclarations.map((d) => d.id);
           await tx
@@ -348,17 +353,62 @@ export async function extractAndSaveDeclarations({
             );
         }
 
+        // Map to track new declaration URIs to their generated IDs for dependency linking
         const newDeclarationUriToId = new Map<string, string>();
 
+        // Process each extracted declaration and create or update database records
         for (const data of extracted) {
           const declarationId = nanoid();
           newDeclarationUriToId.set(data.uri, declarationId);
 
+          // Check if this declaration already exists in the database
           const doesDeclarationExist = existingDeclarations.find(
-            (d) => d.path === filePath,
+            (d) => data.uri === d.uri,
           );
 
+          // Check if this declaration is a endpoint, page, or db-model that matches the code declaration
+          const isHighLevelDeclaration = existingDeclarations.find((d) => {
+            if (!d || d.uri || d.progress === "completed" || !d.metadata?.specs)
+              return false;
+
+            const specs = d.metadata.specs;
+
+            if (d.path !== filePath) return false;
+
+            if (
+              data.type === "method" ||
+              data.type === "property" ||
+              data.type === "constructor" ||
+              data.type === "getter" ||
+              data.type === "setter"
+            ) {
+              return false;
+            }
+
+            switch (specs.type) {
+              case "endpoint":
+              case "page": {
+                return Boolean(data.isDefault);
+              }
+              case "db-model": {
+                const specName = specs.name.toLowerCase();
+                const codeName = data.name.toLowerCase();
+                return (
+                  codeName === specName || // exact match
+                  codeName === specName.slice(0, -1) || // plural to singular: "users" -> "user"
+                  codeName === `${specName}s` || // singular to plural: "user" -> "users"
+                  codeName.includes(specName) || // contains: "userSchema" contains "user"
+                  specName.includes(codeName)
+                );
+              }
+              default: {
+                return false;
+              }
+            }
+          });
+
           if (doesDeclarationExist) {
+            // Update existing declaration with new metadata and set to enriching status
             await tx
               .update(declarations)
               .set({
@@ -369,7 +419,24 @@ export async function extractAndSaveDeclarations({
               })
               .where(eq(declarations.id, doesDeclarationExist.id))
               .returning();
+          } else if (isHighLevelDeclaration) {
+            await tx
+              .update(declarations)
+              .set({
+                uri: data.uri,
+                metadata: mergeJson(declarations.metadata, {
+                  codeMetadata: data,
+                }),
+              })
+              .where(eq(declarations.id, isHighLevelDeclaration.id));
+
+            newDeclarationUriToId.set(data.uri, isHighLevelDeclaration.id);
+
+            logger.info(
+              `Linked task declaration ${isHighLevelDeclaration.id} to code declaration ${data.uri}`,
+            );
           } else {
+            // Create new declaration record with initial metadata
             await tx.insert(declarations).values({
               id: declarationId,
               uri: data.uri,
@@ -384,7 +451,8 @@ export async function extractAndSaveDeclarations({
             });
           }
 
-          await queueDeclarationSemanticDataGeneration({
+          // Queue background job to enrich this declaration with AI analysis
+          await queueEnrichingJob({
             declarationId,
             codeMetadata: data,
             filePath,
@@ -392,24 +460,30 @@ export async function extractAndSaveDeclarations({
             projectId: project.id,
           });
 
+          // Link the declaration to the current version
           await tx.insert(versionDeclarations).values({
             versionId: version.id,
             declarationId,
           });
         }
 
+        // Second pass: establish dependency relationships between declarations
         for (const data of extracted) {
           const dependentUri = data.uri;
           const dependentId = newDeclarationUriToId.get(dependentUri);
           if (!dependentId) continue;
 
+          // Process each dependency group (internal, external, etc.)
           for (const dep of data.dependencies) {
             if (dep.type === "internal") {
+              // Link internal dependencies within the same project
               for (const depName of dep.dependsOn) {
                 const dependencyUri = `${project.id}:${dep.filePath}:${depName}`;
 
+                // Try to find dependency ID in new declarations first
                 let dependencyId = newDeclarationUriToId.get(dependencyUri);
 
+                // Fall back to existing declarations if not found in new ones
                 if (!dependencyId) {
                   dependencyId = activeVersionDeclarations.find(
                     (d) => d.declaration?.uri === dependencyUri,
@@ -417,6 +491,7 @@ export async function extractAndSaveDeclarations({
                 }
 
                 if (dependencyId) {
+                  // Create dependency relationship, ignoring conflicts for idempotency
                   await tx
                     .insert(dependencies)
                     .values({
@@ -425,6 +500,7 @@ export async function extractAndSaveDeclarations({
                     })
                     .onConflictDoNothing();
                 } else {
+                  // Log warning for unresolved dependencies for debugging
                   logger.warn(
                     `Could not find dependency for URI: ${dependencyUri}`,
                     { extra: { dependentUri } },

@@ -92,8 +92,18 @@ async function processStatement({
     return;
   }
 
-  // Individual type checks will handle export detection
-  const actuallyExported = isExported;
+  // Check for export modifiers on the statement itself
+  const hasExportModifier =
+    ("modifiers" in statement &&
+      Array.isArray(statement.modifiers) &&
+      statement.modifiers.some(
+        (m: ts.Modifier) =>
+          m.kind === ts.SyntaxKind.ExportKeyword ||
+          m.kind === ts.SyntaxKind.DefaultKeyword,
+      )) ||
+    false;
+
+  const actuallyExported = isExported || hasExportModifier;
 
   // Handle different types of declarations
   if (ts.isFunctionDeclaration(statement)) {
@@ -258,9 +268,8 @@ async function processFunctionDeclaration({
   isExported: boolean;
   importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
 }): Promise<DeclarationCodeMetadata | null> {
-  if (!funcDecl.name) return null;
-
-  const name = funcDecl.name.text;
+  // Handle anonymous functions (export default function() {})
+  const name = funcDecl.name ? funcDecl.name.text : "default";
   const position = getNodePosition(funcDecl, sourceFile);
 
   const typeParameters = funcDecl.typeParameters
@@ -294,10 +303,15 @@ async function processFunctionDeclaration({
   const raw = extractRawCode(funcDecl, sourceCode);
   const dependencies = findDependencies({ code: raw, importedIdentifiers });
 
+  const isDefault =
+    funcDecl.modifiers?.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword) ||
+    false;
+
   return {
     name,
     type: "function",
     isExported,
+    isDefault,
     position,
     dependencies,
     uri: generateDeclarationUri({ filename, name }),
@@ -330,9 +344,8 @@ async function processClassDeclaration({
   importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
   declarations: DeclarationCodeMetadata[];
 }): Promise<DeclarationCodeMetadata | null> {
-  if (!classDecl.name) return null;
-
-  const name = classDecl.name.text;
+  // Handle anonymous classes (export default class extends ...)
+  const name = classDecl.name ? classDecl.name.text : "default";
   const position = getNodePosition(classDecl, sourceFile);
 
   const typeParameters = classDecl.typeParameters
@@ -591,10 +604,15 @@ async function processClassDeclaration({
     }
   }
 
+  const isDefault =
+    classDecl.modifiers?.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword) ||
+    false;
+
   return {
     name,
     type: "class",
     isExported,
+    isDefault,
     position,
     dependencies,
     uri: generateDeclarationUri({ filename, name }),
@@ -638,10 +656,16 @@ async function processInterfaceDeclaration({
     : "";
   const typeSignature = `interface${typeParams}${extendsStr}`;
 
+  const isDefault =
+    interfaceDecl.modifiers?.some(
+      (m) => m.kind === ts.SyntaxKind.DefaultKeyword,
+    ) || false;
+
   return {
     name,
     type: "interface",
     isExported,
+    isDefault,
     position,
     dependencies: [], // Interfaces don't have runtime dependencies in the same way
     uri: generateDeclarationUri({ filename, name }),
@@ -673,10 +697,16 @@ async function processTypeAliasDeclaration({
   const typeParams = typeParameters ? `<${typeParameters.join(", ")}>` : "";
   const typeSignature = `type${typeParams} = ${aliasedType}`;
 
+  const isDefault =
+    typeAliasDecl.modifiers?.some(
+      (m) => m.kind === ts.SyntaxKind.DefaultKeyword,
+    ) || false;
+
   return {
     name,
     type: "type",
     isExported,
+    isDefault,
     position,
     dependencies: [],
     uri: generateDeclarationUri({ filename, name }),
@@ -713,10 +743,15 @@ async function processEnumDeclaration({
     return enumMember;
   });
 
+  const isDefault =
+    enumDecl.modifiers?.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword) ||
+    false;
+
   return {
     name,
     type: "enum",
     isExported,
+    isDefault,
     position,
     dependencies: [],
     uri: generateDeclarationUri({ filename, name }),
@@ -767,11 +802,16 @@ async function processVariableStatement({
 
       const raw = extractRawCode(varStatement, sourceCode);
       const dependencies = findDependencies({ code: raw, importedIdentifiers });
+      const isDefault =
+        varStatement.modifiers?.some(
+          (m) => m.kind === ts.SyntaxKind.DefaultKeyword,
+        ) || false;
 
       declarations.push({
         name,
         type: varKind as "const" | "let" | "var",
         isExported,
+        isDefault,
         position,
         dependencies,
         uri: generateDeclarationUri({ filename, name }),
@@ -838,10 +878,16 @@ async function processModuleDeclaration({
     }
   }
 
+  const isDefault =
+    moduleDecl.modifiers?.some(
+      (m) => m.kind === ts.SyntaxKind.DefaultKeyword,
+    ) || false;
+
   return {
     name,
     type: "namespace",
     isExported,
+    isDefault,
     position,
     dependencies: [],
     uri: generateDeclarationUri({ filename, name }),
@@ -896,7 +942,23 @@ async function processExportAssignment({
   declarations: DeclarationCodeMetadata[];
   importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
 }): Promise<void> {
-  // Handle export default - simplified for now
+  // Handle export default - check if it's referencing an existing declaration
+  if (ts.isIdentifier(exportAssignment.expression)) {
+    const referencedName = exportAssignment.expression.text;
+
+    // Find the existing declaration and mark it as default
+    const existingDeclaration = declarations.find(
+      (d) => d.name === referencedName,
+    );
+
+    if (existingDeclaration && "isDefault" in existingDeclaration) {
+      existingDeclaration.isDefault = true;
+      existingDeclaration.isExported = true;
+      return;
+    }
+  }
+
+  // Fallback: create a generic default export declaration
   const position = getNodePosition(exportAssignment, sourceFile);
   const raw = extractRawCode(exportAssignment, sourceCode);
   const dependencies = findDependencies({ code: raw, importedIdentifiers });
