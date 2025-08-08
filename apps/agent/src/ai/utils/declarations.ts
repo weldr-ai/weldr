@@ -1,4 +1,5 @@
 import { inArray } from "drizzle-orm";
+import { extractDeclarations } from "@/lib/extract-declarations";
 import { stream } from "@/lib/stream-utils";
 import type { WorkflowContext } from "@/workflow/context";
 
@@ -16,7 +17,6 @@ import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
 import { queueEnrichingJob } from "./enriching-jobs";
-import { extractDeclarations } from "./extract-declarations";
 
 const NODE_DIMENSIONS = {
   page: { width: 400, height: 300 },

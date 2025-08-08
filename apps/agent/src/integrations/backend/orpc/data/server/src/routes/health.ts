@@ -3,7 +3,7 @@ import z from "zod";
 
 import { base } from "@repo/server/lib/utils";
 
-const openAPI = {
+const route = {
   method: "GET",
   tags: ["Health"],
   path: "/health",
@@ -16,9 +16,11 @@ const outputSchema = z.object({
   ok: z.boolean(),
 });
 
-export default base
-  .route(openAPI)
+const health = base
+  .route(route)
   .output(outputSchema)
   .handler(async () => {
     return { ok: true };
   });
+
+export default health;

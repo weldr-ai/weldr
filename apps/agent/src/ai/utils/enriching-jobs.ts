@@ -1,4 +1,4 @@
-import { embedMany, generateObject } from "ai";
+import { embedMany } from "ai";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { WORKSPACE_DIR } from "@/lib/constants";
 
@@ -16,8 +16,8 @@ import type {
   DeclarationSemanticData,
   DeclarationSpecs,
 } from "@weldr/shared/types/declarations";
-import { declarationSemanticDataSchema } from "@weldr/shared/validators/declarations/index";
 import { runCommand } from "../../lib/commands";
+import { enrichDeclaration } from "./enrich";
 import { registry } from "./registry";
 
 export interface EnrichingJobData {
@@ -76,7 +76,7 @@ export async function queueEnrichingJob(
   }
 }
 
-export async function recoverSemanticDataJobs(): Promise<void> {
+export async function recoverEnrichingJobs(): Promise<void> {
   let project: typeof projects.$inferSelect | undefined;
 
   if (process.env.NODE_ENV === "development") {
@@ -186,7 +186,7 @@ export async function recoverSemanticDataJobs(): Promise<void> {
   }
 }
 
-async function enrichDeclaration(jobData: EnrichingJobData): Promise<void> {
+async function enrichDeclarationJob(jobData: EnrichingJobData): Promise<void> {
   const logger = Logger.get({
     declarationId: jobData.declarationId,
     declarationName: jobData.codeMetadata.name,
@@ -202,7 +202,7 @@ async function enrichDeclaration(jobData: EnrichingJobData): Promise<void> {
       },
     });
 
-    const semanticData = await generateDeclarationSemanticData(
+    const semanticData = await enrichDeclaration(
       jobData.codeMetadata,
       jobData.filePath,
       jobData.sourceCode,
@@ -258,7 +258,7 @@ async function processDeclarationsQueue(): Promise<void> {
     await Promise.allSettled(
       batch.map(async (jobData) => {
         try {
-          await enrichDeclaration(jobData);
+          await enrichDeclarationJob(jobData);
         } catch (error) {
           Logger.error("Failed to process semantic data job", {
             extra: {
@@ -312,69 +312,6 @@ function handleJobRetry(
   });
 
   return true;
-}
-
-async function generateDeclarationSemanticData(
-  declaration: DeclarationCodeMetadata,
-  filePath: string,
-  sourceCode: string,
-): Promise<DeclarationSemanticData | null> {
-  const logger = Logger.get({
-    declarationName: declaration.name,
-    declarationType: declaration.type,
-  });
-
-  try {
-    const prompt = `Analyze this ${declaration.type} declaration and generate comprehensive semantic data for it.
-
-Declaration Details:
-- Name: ${declaration.name}
-- Type: ${declaration.type}
-${declaration.typeSignature ? `- Type Signature: ${declaration.typeSignature}` : ""}
-
-Source Code Context:
-${filePath}
-\`\`\`typescript
-${sourceCode}
-\`\`\`
-
-Generate semantic data that includes:
-1. A concise technical summary (one line)
-2. A clear 2-3 sentence description explaining purpose and key features
-3. Relevant technical tags (lowercase, hyphenated)
-4. Usage patterns including:
-   - Common use cases (1-5 specific scenarios)
-   - Code examples with descriptions (if applicable)
-   - Limitations (if any)
-   - Best practices (if applicable)
-   - Anti-patterns to avoid (if applicable)
-
-Focus on being practical and helpful for developers who need to understand when and how to use this declaration.`;
-
-    const result = await generateObject({
-      model: registry.languageModel("google:gemini-2.5-flash"),
-      schema: declarationSemanticDataSchema,
-      prompt,
-    });
-
-    logger.info("Generated semantic data successfully", {
-      extra: {
-        declarationName: declaration.name,
-        tagsCount: result.object.tags.length,
-        useCasesCount: result.object.usagePattern.commonUseCases.length,
-      },
-    });
-
-    return result.object as DeclarationSemanticData;
-  } catch (error) {
-    logger.error("Failed to generate semantic data", {
-      extra: {
-        error: error instanceof Error ? error.message : String(error),
-        declarationName: declaration.name,
-      },
-    });
-    return null;
-  }
 }
 
 async function generateAndStoreEmbedding(declarationId: string) {
