@@ -70,6 +70,7 @@ export interface PropertyMemberMetadata extends BaseClassMemberMetadata {
 export interface MethodMemberMetadata extends BaseClassMemberMetadata {
   type: "method";
   isAsync: boolean;
+  isAbstract: boolean;
   isGenerator: boolean;
   parameters: Array<{
     name: string;

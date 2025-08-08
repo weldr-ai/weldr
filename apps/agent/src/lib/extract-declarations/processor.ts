@@ -394,6 +394,23 @@ async function processClassDeclaration({
     );
   };
 
+  // Helper function to extract member name (handles computed properties)
+  const extractMemberName = (name: ts.PropertyName | undefined): string => {
+    if (!name) return "anonymous";
+    
+    if (ts.isIdentifier(name)) {
+      return name.text;
+    }
+    if (ts.isStringLiteral(name) || ts.isNumericLiteral(name)) {
+      return name.text;
+    }
+    if (ts.isComputedPropertyName(name)) {
+      // For computed properties like [Symbol.iterator], return the full expression
+      return `[${name.expression.getText()}]`;
+    }
+    return name.getText();
+  };
+
   for (const member of classDecl.members) {
     const isStatic = hasModifier(member, ts.SyntaxKind.StaticKeyword);
     const isPrivate = hasModifier(member, ts.SyntaxKind.PrivateKeyword);
@@ -424,9 +441,7 @@ async function processClassDeclaration({
         typeSignature: `constructor(${parameters.map((p) => `${p.isRest ? "..." : ""}${p.name}${p.isOptional ? "?" : ""}: ${p.type}`).join(", ")})`,
       };
     } else if (ts.isMethodDeclaration(member) && member.name) {
-      const memberName = ts.isIdentifier(member.name)
-        ? member.name.text
-        : member.name.getText();
+      const memberName = extractMemberName(member.name);
       const memberPosition = getNodePosition(member, sourceFile);
 
       const parameters = member.parameters.map((param) =>
@@ -438,6 +453,7 @@ async function processClassDeclaration({
         : inferReturnTypeFromFunctionBody(member, parameters);
 
       const isAsync = hasModifier(member, ts.SyntaxKind.AsyncKeyword);
+      const isAbstract = hasModifier(member, ts.SyntaxKind.AbstractKeyword);
       const isGenerator = !!member.asteriskToken;
 
       const memberRaw = extractRawCode(member, sourceCode);
@@ -445,6 +461,10 @@ async function processClassDeclaration({
         code: memberRaw,
         importedIdentifiers,
       });
+
+      const asyncPrefix = isAsync ? "async " : "";
+      const abstractPrefix = isAbstract ? "abstract " : "";
+      const generatorSuffix = isGenerator ? "*" : "";
 
       methods.push({
         name: memberName,
@@ -459,15 +479,14 @@ async function processClassDeclaration({
         isPrivate,
         isProtected,
         isAsync,
+        isAbstract,
         isGenerator,
         parameters,
         returnType,
-        typeSignature: `${isAsync ? "async " : ""}${isGenerator ? "*" : ""}${memberName}(${parameters.map((p) => `${p.isRest ? "..." : ""}${p.name}${p.isOptional ? "?" : ""}: ${p.type}`).join(", ")}): ${returnType}`,
+        typeSignature: `${abstractPrefix}${asyncPrefix}${generatorSuffix}${memberName}(${parameters.map((p) => `${p.isRest ? "..." : ""}${p.name}${p.isOptional ? "?" : ""}: ${p.type}`).join(", ")}): ${returnType}`,
       });
     } else if (ts.isPropertyDeclaration(member) && member.name) {
-      const memberName = ts.isIdentifier(member.name)
-        ? member.name.text
-        : member.name.getText();
+      const memberName = extractMemberName(member.name);
       const memberPosition = getNodePosition(member, sourceFile);
       const propType = member.type
         ? extractTypeAnnotation(member.type)
@@ -504,9 +523,7 @@ async function processClassDeclaration({
         typeSignature: `${isReadonly ? "readonly " : ""}${memberName}${isOptional ? "?" : ""}: ${propType}${initializer ? ` = ${initializer}` : ""}`,
       });
     } else if (ts.isGetAccessorDeclaration(member) && member.name) {
-      const memberName = ts.isIdentifier(member.name)
-        ? member.name.text
-        : member.name.getText();
+      const memberName = extractMemberName(member.name);
       const memberPosition = getNodePosition(member, sourceFile);
       const returnType = member.type
         ? extractTypeAnnotation(member.type)
@@ -534,9 +551,7 @@ async function processClassDeclaration({
         typeSignature: `get ${memberName}(): ${returnType}`,
       });
     } else if (ts.isSetAccessorDeclaration(member) && member.name) {
-      const memberName = ts.isIdentifier(member.name)
-        ? member.name.text
-        : member.name.getText();
+      const memberName = extractMemberName(member.name);
       const memberPosition = getNodePosition(member, sourceFile);
       const parameter = member.parameters[0];
       const parameterInfo = parameter

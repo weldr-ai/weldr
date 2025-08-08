@@ -478,7 +478,7 @@ export async function extractAndSaveDeclarations({
             if (dep.type === "internal") {
               // Link internal dependencies within the same project
               for (const depName of dep.dependsOn) {
-                const dependencyUri = `${project.id}:${dep.filePath}:${depName}`;
+                const dependencyUri = `${dep.filePath}:${depName}`;
 
                 // Try to find dependency ID in new declarations first
                 let dependencyId = newDeclarationUriToId.get(dependencyUri);

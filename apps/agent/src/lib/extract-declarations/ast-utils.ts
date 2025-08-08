@@ -189,6 +189,60 @@ export function extractType(type: ts.TypeNode): string {
       return `(${extractType(parenthesized.type)})`;
     }
 
+    case ts.SyntaxKind.MappedType: {
+      const mappedType = type as ts.MappedTypeNode;
+      const typeParam = mappedType.typeParameter;
+      const nameType = mappedType.nameType
+        ? ` as ${extractType(mappedType.nameType)}`
+        : "";
+      const questionToken = mappedType.questionToken ? "?" : "";
+      const readonlyToken = mappedType.readonlyToken ? "readonly " : "";
+      const constraint = typeParam.constraint
+        ? ` in ${extractType(typeParam.constraint)}`
+        : "";
+      const mappedTypeResult = mappedType.type
+        ? extractType(mappedType.type)
+        : "any";
+      return `{ ${readonlyToken}[${typeParam.name.text}${constraint}]${nameType}${questionToken}: ${mappedTypeResult} }`;
+    }
+
+    case ts.SyntaxKind.TemplateLiteralType: {
+      const templateType = type as ts.TemplateLiteralTypeNode;
+      let result = `\`${templateType.head.text}`;
+      for (let i = 0; i < templateType.templateSpans.length; i++) {
+        const span = templateType.templateSpans[i];
+        if (span) {
+          result += `\${${extractType(span.type)}${span.literal.text}`;
+        }
+      }
+      result += "`}";
+      return result;
+    }
+
+    case ts.SyntaxKind.ImportType: {
+      const importType = type as ts.ImportTypeNode;
+      const moduleSpecifier = importType.argument.getText();
+      const qualifier = importType.qualifier
+        ? `.${importType.qualifier.getText()}`
+        : "";
+      const typeArgs = importType.typeArguments
+        ? `<${importType.typeArguments.map((arg) => extractType(arg)).join(", ")}>`
+        : "";
+      return `import(${moduleSpecifier})${qualifier}${typeArgs}`;
+    }
+
+    case ts.SyntaxKind.RestType: {
+      const restType = type as ts.RestTypeNode;
+      return `...${extractType(restType.type)}`;
+    }
+
+    case ts.SyntaxKind.NamedTupleMember: {
+      const namedTuple = type as ts.NamedTupleMember;
+      const optional = namedTuple.questionToken ? "?" : "";
+      const dotDotDot = namedTuple.dotDotDotToken ? "..." : "";
+      return `${dotDotDot}${namedTuple.name.getText()}${optional}: ${extractType(namedTuple.type)}`;
+    }
+
     default:
       return type.getText() || "any";
   }
