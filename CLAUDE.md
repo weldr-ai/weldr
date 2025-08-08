@@ -1,119 +1,267 @@
-# Weldr Monorepo - Cursor Rules
+# Weldr Monorepo Development Guidelines
 
 ## Project Overview
-This is Weldr, a TypeScript monorepo for building AI-powered development tools and platforms. The project includes AI agents, web interfaces, APIs, and supporting packages.
+Weldr is a TypeScript-based monorepo using pnpm workspaces, Turbo, and modern web technologies. The project consists of AI-powered web applications with a focus on code generation, project management, and integrations.
+
+## Core Principles
+
+### 1. Type Safety is Non-Negotiable
+- **ALWAYS** use TypeScript with strict mode enabled
+- **NEVER** use `any` type - use `unknown` and proper type guards instead
+- **ALWAYS** define explicit return types for functions
+- **ALWAYS** use Zod schemas for runtime validation of external data
+- **PREFER** type inference where it maintains clarity
+- **ALWAYS** use `satisfies` operator for const assertions with type checking
+- **ALWAYS** use branded types for IDs and sensitive data
+- **PREFER** union types over enums for better type safety
+- **USE** `as const` assertions for immutable data structures
+
+### 2. Code Organization & Architecture
+- Follow the existing monorepo structure strictly
+- Apps in `/apps`, shared packages in `/packages`
+- Use workspace protocol for internal dependencies: `workspace:*`
+- Maintain clear separation of concerns between packages
+- **APPLY** single responsibility principle when functions or components become very complicated
+- **GROUP** related functionality into cohesive modules
+- **AVOID** circular dependencies between packages
+- **USE** barrel exports (`index.ts`) for clean public APIs
+- **ORGANIZE** files by feature, not by type
+
+### 3. Import Organization & Dependencies
+- Follow Biome import organization rules (already configured)
+- Order: Node builtins → External packages → @weldr packages → Relative imports
+- Use blank lines to separate import groups
+- **PREFER** named imports over default imports for better tree-shaking
+- **AVOID** importing entire libraries when only specific functions are needed
+- **USE** type-only imports for TypeScript types: `import type { ... }`
+- **KEEP** dependencies minimal - question every new dependency
+
+### 4. Error Handling & Resilience
+- **ALWAYS** use try-catch blocks for async operations
+- **ALWAYS** handle errors explicitly - no silent failures
+- Use TRPCError for API errors with appropriate codes
+- Log errors before re-throwing or handling
+- **NEVER** expose sensitive information in error messages
+- **IMPLEMENT** circuit breakers for external service calls
+- **USE** Result types for operations that can fail gracefully
+- **PROVIDE** meaningful error messages that help users understand what went wrong
+- **IMPLEMENT** retry logic with exponential backoff for transient failures
+- **VALIDATE** error boundaries in React components
+
+### 5. Database & Data Access Excellence
+- Use Drizzle ORM for all database operations
+- **ALWAYS** use transactions for multi-step operations
+- **ALWAYS** validate input with Zod schemas before database operations
+- Use prepared statements and parameterized queries
+- **NEVER** concatenate SQL strings directly
+- **INDEX** foreign keys and frequently queried columns
+- **USE** connection pooling with appropriate limits
+- **IMPLEMENT** database migrations with rollback strategies
+- **MONITOR** query performance and optimize slow queries
+- **CACHE** expensive queries appropriately
+- **USE** read replicas for read-heavy operations when available
+
+### 6. Performance & Optimization
+- **IMPLEMENT** lazy loading for large components and routes
+- **USE** React.memo, useMemo, and useCallback judiciously
+- **OPTIMIZE** bundle size with code splitting
+- **IMPLEMENT** efficient pagination for large datasets
+- **USE** streaming for real-time data updates
+- **CACHE** API responses with appropriate TTL
+- **MINIMIZE** re-renders through proper state management
+- **PROFILE** performance bottlenecks regularly
+- **OPTIMIZE** images with proper formats and sizes
+- **USE** CDN for static assets
+
+### 7. Security Best Practices
+- **NEVER** commit secrets, API keys, or credentials
+- Use environment variables for configuration
+- **ALWAYS** validate and sanitize user input
+- Use proper authentication checks (protectedProcedure)
+- Implement rate limiting for public endpoints
+- **ENCRYPT** sensitive data at rest
+- **USE** HTTPS for all communications
+- **IMPLEMENT** CORS policies appropriately
+- **VALIDATE** file uploads for type and size
+- **ESCAPE** user input to prevent XSS
+- **USE** parameterized queries to prevent SQL injection
+- **IMPLEMENT** proper session management
+- **AUDIT** dependencies for security vulnerabilities regularly
+
+### 8. Code Quality & Maintainability
+- **WRITE** self-documenting code with clear variable and function names
+- **KEEP** functions small and focused (max 20-30 lines)
+- **AVOID** deep nesting (max 3 levels)
+- **USE** early returns to reduce complexity
+- **EXTRACT** magic numbers and strings into named constants
+- **PREFER** composition over inheritance
+- **IMPLEMENT** consistent naming conventions across the codebase
+- **REFACTOR** code regularly to reduce technical debt
+- **REMOVE** dead code and unused imports regularly
+
+### 9. Monitoring & Observability
+- **IMPLEMENT** structured logging with appropriate log levels
+- **TRACK** key business metrics and KPIs
+- **MONITOR** application performance and errors
+- **SET UP** alerts for critical failures
+- **USE** distributed tracing for complex operations
+- **MEASURE** user experience metrics
+- **IMPLEMENT** health checks for all services
+- **LOG** user actions for analytics and debugging
+- **MONITOR** resource usage and scaling metrics
 
 ## Technology Stack
-- **Language**: TypeScript 5.x
-- **Package Manager**: pnpm (v10.4.1)
+
+### Core Technologies
+- **Runtime**: Node.js >= 20
+- **Package Manager**: pnpm 10.4.1
 - **Build System**: Turbo
-- **Linting**: Biome
-- **Git**: Conventional commits with commitizen
-- **Architecture**: Modular monorepo with apps and packages
+- **Language**: TypeScript 5.7.2
+- **Linter/Formatter**: Biome 2.1.1
 
-## Code Standards
+### Backend
+- **API**: tRPC with type-safe routers
+- **Database**: PostgreSQL with Drizzle ORM
+- **Authentication**: Better Auth
+- **Validation**: Zod schemas
 
-### TypeScript
-- Use strict TypeScript configuration
-- Prefer type-safe approaches over `any`
-- Use proper type definitions for all functions and components
-- Leverage TypeScript's utility types when appropriate
-- Export types from dedicated files when shared across packages
-- Prefer functions over classes
+### Frontend
+- **Framework**: Next.js (web app), TanStack Start
+- **UI Components**: Custom UI package with shadcn/ui
+- **Styling**: Tailwind CSS
+- **State Management**: React Query (TanStack Query)
 
-### Code Style
-- Use Biome for linting and formatting (configured in biome.json)
-- Follow conventional commit format
-- Use descriptive variable and function names
-- Prefer functional programming patterns where appropriate
-- **NEVER use `any` type** - always provide proper TypeScript types
-- **ALWAYS follow Biome linting rules** - fix all linting errors immediately
-- Template literals are preferred over string concatenation
+### AI/Agent System
+- **LLM Integration**: Custom AI agents for code generation
+- **Tools**: File operations, code search, package management
+- **Streaming**: Server-sent events for real-time updates
 
-### Import/Export Patterns
-- Use workspace protocol for internal packages (`workspace:*`)
-- Organize imports: external libraries, internal packages, relative imports
-- Use barrel exports in package index files
-- Prefer named exports over default exports
+## Package-Specific Guidelines
 
-### Error Handling
-- Use type-safe error handling with Result types or proper Error classes
-- Avoid throwing errors in library code, return error objects instead
-- Use Zod for runtime validation with proper error messages
+### @weldr/db
+- Define all schemas with proper TypeScript types
+- Use Zod for runtime validation
+- Export both schema and validator from same module
+- Maintain migration files properly
 
-## Monorepo Structure
+### @weldr/api
+- Each router should have dedicated file
+- Use protectedProcedure for authenticated routes
+- Return consistent error responses
+- Implement proper pagination where needed
 
-### Apps (`/apps`)
-- `agent`: AI development environment with command execution API
-- `web`: Next.js web application for the platform
+### @weldr/ui
+- Components must be fully typed with proper props interfaces
+- Use forwardRef for components that need ref forwarding
+- Maintain consistent styling with Tailwind classes
+- Export all icons from central index
 
-### Packages (`/packages`)
-- `api`: tRPC API layer with type-safe endpoints
-- `auth`: Better Auth integration with Stripe subscriptions
-- `db`: Drizzle ORM with PostgreSQL schemas
-- `emails`: React email templates with Resend
-- `presets`: Project templates and code generation
-- `shared`: Shared utilities, types, and configurations
-- `ui`: shadcn/ui based component library
+### @weldr/shared
+- Place all shared types, validators, and utilities here
+- No UI code in shared package
+- Keep dependencies minimal
 
-## Development Guidelines
+### @weldr/auth
+- Centralize all authentication logic
+- Use secure session management
+- Implement proper token refresh logic
 
-### Adding New Features
-1. Determine which package/app the feature belongs to
-2. Create types in appropriate schema files
-3. Implement with proper error handling
-4. Add tests where applicable
-5. Update documentation
+## Code Style Rules
 
-### Cross-Package Dependencies
-- Minimize dependencies between packages
-- Use the `shared` package for common utilities
-- Keep API interfaces stable to avoid breaking changes
-- Version packages appropriately when making breaking changes
+### **Comments Policy**
+- **ONLY add comments for very complex work** that requires explanation
+- **NEVER ADD** explanatory comments for simple operations:
+  - ❌ `// Delete this because user requested`
+  - ❌ `// Making this true because user asked`  
+  - ❌ `// Process the request here`
+  - ❌ `// Handle user input`
+  - ❌ `// Implementation details`
+- Write self-documenting code with clear naming instead
 
-### Performance Considerations
-- Use lazy loading for heavy components
-- Implement proper caching strategies
-- Optimize database queries with proper indexing
-- Consider bundle size when adding dependencies
+## File Naming Conventions
+- Use kebab-case for file names: `user-profile.tsx`
+- Use PascalCase for component files that export components
+- Use camelCase for utility files
+- Test files: `*.test.ts` or `*.spec.ts`
+- Type definition files: `*.d.ts` or `types.ts`
 
-## Available Commands
+## Git Workflow
+- Use conventional commits (enforced by commitizen)
+- Format: `type(scope): description`
+- Types: feat, fix, docs, style, refactor, test, chore
+- Run `pnpm commit` for guided commit creation
 
-### Commands
-- Type check: `pnpm run typecheck`
-- Lint and Format: `pnpm run check:fix`
-- Clean: `pnpm run clean`
+## Common Commands
+```bash
+# Development
+pnpm dev          # Start all dev servers
+pnpm build        # Build all packages
+pnpm typecheck    # Run TypeScript type checking
+pnpm check:fix    # Fix linting issues
 
-### Database Commands
-- Generate: `pnpm db:generate`
-- Migrate: `pnpm db:migrate`
-- Push: `pnpm db:push`
-- Studio: `pnpm db:studio`
+# Database
+pnpm db:push      # Push schema changes
+pnpm db:generate  # Generate migrations
+pnpm db:migrate   # Run migrations
+pnpm db:studio    # Open Drizzle Studio
 
-## Package-Specific Notes
+# Code Quality
+pnpm lint:staged  # Run linter on staged files
+pnpm commit       # Create conventional commit
+```
 
-### Database (`@weldr/db`)
-- Use Drizzle ORM for all database operations
-- Define schemas in separate files by domain
-- Use proper TypeScript types generated from schemas
-- Run migrations before deploying
+## Anti-Patterns to Avoid
+- ❌ Using `any` type
+- ❌ Ignoring TypeScript errors with @ts-ignore
+- ❌ Direct DOM manipulation in React components
+- ❌ Synchronous operations in async contexts
+- ❌ Hardcoded configuration values
+- ❌ Console.log in production code (use proper logging)
+- ❌ Uncommitted generated files
+- ❌ Mixed import styles (require/import)
+- ❌ Non-validated external data
+- ❌ SQL injection vulnerabilities
 
-### UI (`@weldr/ui`)
-- Build on top of shadcn/ui and Radix primitives
-- Use Tailwind CSS for styling
-- Ensure components are accessible
-- Export components with proper TypeScript types
+## Performance Guidelines
+- Use React.memo for expensive components
+- Implement proper loading states
+- Use pagination for large data sets
+- Optimize bundle size with dynamic imports
+- Cache expensive computations
+- Use database indexes appropriately
 
-### API (`@weldr/api`)
-- Use tRPC for type-safe API endpoints
-- Implement proper validation with Zod
-- Use proper error handling and status codes
+## AI Agent Development
+- Tools must have clear, single responsibilities
+- Validate all tool inputs with Zod schemas
+- Stream responses for better UX
+- Handle tool errors gracefully
+- Maintain tool registry with proper types
+- Use XML parsing for structured LLM responses
 
-## AI Assistant Guidelines
-When working on this codebase:
-- Understand the monorepo structure before making changes
-- Use the appropriate package for new functionality
-- Follow the established patterns in each package
-- Consider cross-package implications of changes
-- Write type-safe, well-documented code
-- Use the established tooling (turbo, pnpm, biome)
+## Deployment & Infrastructure
+- Use Fly.io for deployment
+- Implement health check endpoints
+- Use proper environment variable management
+- Set up monitoring and logging
+- Implement graceful shutdown handlers
+
+## When Adding New Features
+1. Define types and schemas first
+2. Implement database schema if needed
+3. Create API endpoints with proper validation
+4. Build UI components with full type safety
+5. Add proper error handling
+6. Write documentation
+7. Test edge cases
+8. Ensure backward compatibility
+
+## Code Review Checklist
+- [ ] All TypeScript errors resolved
+- [ ] Proper error handling implemented
+- [ ] Input validation with Zod
+- [ ] No hardcoded values
+- [ ] Consistent code style
+- [ ] No security vulnerabilities
+- [ ] Database transactions used appropriately
+- [ ] Performance considerations addressed
+- [ ] Documentation updated
