@@ -8,6 +8,7 @@ Weldr is a TypeScript-based monorepo using pnpm workspaces, Turbo, and modern we
 ### 1. Type Safety is Non-Negotiable
 - **ALWAYS** use TypeScript with strict mode enabled
 - **NEVER** use `any` type - use `unknown` and proper type guards instead
+- **NEVER** use non-null assertions (`!`) - handle null/undefined cases explicitly
 - **ALWAYS** define explicit return types for functions
 - **ALWAYS** use Zod schemas for runtime validation of external data
 - **PREFER** type inference where it maintains clarity
@@ -212,6 +213,7 @@ pnpm commit       # Create conventional commit
 
 ## Anti-Patterns to Avoid
 - ❌ Using `any` type
+- ❌ Using non-null assertions (`!`) - handle undefined/null explicitly
 - ❌ Ignoring TypeScript errors with @ts-ignore
 - ❌ Direct DOM manipulation in React components
 - ❌ Synchronous operations in async contexts

@@ -397,7 +397,7 @@ async function processClassDeclaration({
   // Helper function to extract member name (handles computed properties)
   const extractMemberName = (name: ts.PropertyName | undefined): string => {
     if (!name) return "anonymous";
-    
+
     if (ts.isIdentifier(name)) {
       return name.text;
     }

@@ -8,193 +8,120 @@ import { extractDeclarations } from "../lib/extract-declarations";
 
 const logger = Logger.get({ module: "generate-enriched-declarations" });
 
-interface EnrichedDeclarationsOutput {
-  declarations: Array<{
-    codeMetadata: DeclarationCodeMetadata;
-    semanticData: Awaited<ReturnType<typeof enrichDeclaration>>;
-  }>;
-  generatedAt: string;
-  sourceFilePath: string;
+interface EnrichedDeclaration {
+  codeMetadata: DeclarationCodeMetadata;
+  semanticData: Awaited<ReturnType<typeof enrichDeclaration>>;
 }
 
-/**
- * Recursively finds all TypeScript files in data folders within the integrations directory
- */
-async function findTsFiles(
-  dir: string,
-  inDataFolder = false,
-): Promise<string[]> {
+async function findTsFiles(dir: string): Promise<string[]> {
   const tsFiles: string[] = [];
-
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
 
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
-
       if (entry.isDirectory()) {
-        // Check if this is a data folder
-        const isDataFolder = entry.name === "data" || inDataFolder;
-
-        // Recursively search subdirectories
-        const subFiles = await findTsFiles(fullPath, isDataFolder);
-        tsFiles.push(...subFiles);
+        tsFiles.push(...(await findTsFiles(fullPath)));
       } else if (
         entry.isFile() &&
         entry.name.endsWith(".ts") &&
-        !entry.name.endsWith(".d.ts") &&
-        inDataFolder // Only include files if we're inside a data folder
+        !entry.name.endsWith(".d.ts")
       ) {
         tsFiles.push(fullPath);
       }
     }
-  } catch (error) {
-    logger.warn(`Failed to read directory: ${dir}`, {
-      extra: { error: error instanceof Error ? error.message : String(error) },
-    });
+  } catch (error: unknown) {
+    logger.error(`Failed to read directory: ${dir}`, { error });
   }
 
   return tsFiles;
 }
 
-/**
- * Determines the output path for the declarations.json file based on the integration structure
- */
-function getDeclarationsOutputPath(
-  tsFilePath: string,
-  integrationsBaseDir: string,
-): string {
-  // Find the data folder in the path and put declarations.json at its root
-  const relativePath = path.relative(integrationsBaseDir, tsFilePath);
-  const pathParts = relativePath.split(path.sep);
-
-  // Find the index of 'data' folder
-  const dataIndex = pathParts.indexOf("data");
-
-  if (dataIndex === -1) {
-    logger.warn(`File ${tsFilePath} is not in a data folder`);
-    return path.join(path.dirname(tsFilePath), "declarations.json");
-  }
-
-  // Build path up to and including the data folder
-  const dataFolderPath = path.join(
-    integrationsBaseDir,
-    ...pathParts.slice(0, dataIndex + 1),
-  );
-
-  // Place declarations.json at the root of the data folder
-  return path.join(dataFolderPath, "declarations.json");
+function getDataFolderPath(filePath: string): string | null {
+  const dataIndex = filePath.lastIndexOf("/data/");
+  if (dataIndex === -1) return null;
+  return filePath.substring(0, dataIndex + 5); // Include "/data"
 }
 
-/**
- * Groups TypeScript files by their target declarations.json output path
- */
-function groupFilesByOutputPath(
-  tsFiles: string[],
-  integrationsBaseDir: string,
-): Map<string, string[]> {
-  const grouped = new Map<string, string[]>();
+function createFileKey(filePath: string): string {
+  // Extract everything after /data/
+  const dataIndex = filePath.lastIndexOf("/data/");
+  if (dataIndex === -1) return filePath;
 
-  for (const tsFile of tsFiles) {
-    const outputPath = getDeclarationsOutputPath(tsFile, integrationsBaseDir);
+  let afterData = filePath.substring(dataIndex + 6);
 
-    if (!grouped.has(outputPath)) {
-      grouped.set(outputPath, []);
+  // Find which app this belongs to by looking at the integration path
+  if (filePath.includes("/frontend/tanstack-start/")) {
+    // Remove 'web/' prefix if it exists since we'll add 'apps/web/'
+    if (afterData.startsWith("web/")) {
+      afterData = afterData.substring(4);
     }
-
-    const fileGroup = grouped.get(outputPath);
-    if (fileGroup) {
-      fileGroup.push(tsFile);
+    return `apps/web/${afterData}`;
+  } else if (filePath.includes("/backend/") || filePath.includes("/server/")) {
+    // Remove 'server/' prefix if it exists
+    if (afterData.startsWith("server/")) {
+      afterData = afterData.substring(7);
     }
+    return `apps/server/${afterData}`;
+  } else if (filePath.includes("/agent/")) {
+    // Remove 'agent/' prefix if it exists
+    if (afterData.startsWith("agent/")) {
+      afterData = afterData.substring(6);
+    }
+    return `apps/agent/${afterData}`;
   }
 
-  return grouped;
+  // Default: try to detect from the file path itself
+  return `apps/${afterData}`;
 }
 
-/**
- * Determines path aliases based on the file path
- */
-function getPathAliases(filePath: string): Record<string, string> | undefined {
-  // Check if the file is in a server or web directory
-  if (filePath.includes("/server/")) {
-    return {
-      "@repo/server/*": "./src/*",
-    };
-  } else if (filePath.includes("/web/")) {
-    return {
-      "@repo/web/*": "./src/*",
-    };
-  }
-
-  // No aliases for other locations
-  return undefined;
-}
-
-/**
- * Processes a single TypeScript file to extract and enrich its declarations
- */
-async function processTypeScriptFile(
+async function processFile(
   filePath: string,
-): Promise<EnrichedDeclarationsOutput["declarations"]> {
-  try {
-    logger.info(`Processing file: ${filePath}`);
+  existingDeclarations: Record<string, EnrichedDeclaration[]>,
+): Promise<{
+  outputPath: string;
+  declarations: Record<string, EnrichedDeclaration[]>;
+} | null> {
+  logger.info(`Processing: ${filePath}`);
 
-    // Read the source code
+  try {
     const sourceCode = await fs.readFile(filePath, "utf-8");
 
-    // Determine path aliases based on file location
-    const pathAliases = getPathAliases(filePath);
+    // Create the filename that will be used in URI generation
+    // This should match the key we create (apps/web/src/lib/seo.ts)
+    const uriFilename = createFileKey(filePath);
 
-    // Extract declarations using the existing utility
     const declarations = await extractDeclarations({
       sourceCode,
-      filename: filePath,
-      pathAliases,
+      filename: uriFilename, // Use the transformed filename for URI generation
+      pathAliases: filePath.includes("/server/")
+        ? { "@repo/server/*": "apps/server/src/*" }
+        : filePath.includes("/web/")
+          ? { "@repo/web/*": "apps/web/src/*" }
+          : undefined,
     });
 
-    logger.info(
-      `Extracted ${declarations.length} declarations from ${filePath}`,
-    );
+    if (declarations.length === 0) {
+      logger.info(`  No declarations found`);
+      return null;
+    }
 
-    // Enrich each declaration
-    const enrichedDeclarations: EnrichedDeclarationsOutput["declarations"] = [];
+    const enrichedDeclarations: EnrichedDeclaration[] = [];
 
     for (const declaration of declarations) {
+      logger.info(`  Enriching: ${declaration.name} (${declaration.type})`);
       try {
-        logger.info(
-          `Enriching declaration: ${declaration.name} (${declaration.type})`,
-        );
-
         const semanticData = await enrichDeclaration(
           declaration,
-          filePath,
+          uriFilename, // Use the transformed filename for consistency
           sourceCode,
         );
-
         enrichedDeclarations.push({
           codeMetadata: declaration,
           semanticData,
         });
-
-        if (semanticData) {
-          logger.info(`Successfully enriched ${declaration.name}`, {
-            extra: {
-              tags: semanticData.tags,
-              useCases: semanticData.usagePattern.commonUseCases.length,
-            },
-          });
-        } else {
-          logger.warn(`Failed to enrich ${declaration.name}`);
-        }
       } catch (error) {
-        logger.error(`Failed to enrich declaration ${declaration.name}`, {
-          extra: {
-            error: error instanceof Error ? error.message : String(error),
-            declarationType: declaration.type,
-          },
-        });
-
-        // Still include the declaration without semantic data
+        logger.error(`  Failed to enrich ${declaration.name}: ${error}`);
         enrichedDeclarations.push({
           codeMetadata: declaration,
           semanticData: null,
@@ -202,105 +129,154 @@ async function processTypeScriptFile(
       }
     }
 
-    return enrichedDeclarations;
+    const key = createFileKey(filePath);
+    existingDeclarations[key] = enrichedDeclarations;
+
+    logger.info(
+      `  Added ${enrichedDeclarations.length} declarations for ${key}`,
+    );
+
+    // Get the data folder path for this file
+    const dataFolder = getDataFolderPath(filePath);
+    if (!dataFolder) {
+      logger.error(`Could not find data folder for ${filePath}`);
+      return null;
+    }
+
+    const outputPath = path.join(dataFolder, "declarations.json");
+    return { outputPath, declarations: existingDeclarations };
   } catch (error) {
-    logger.error(`Failed to process file: ${filePath}`, {
-      extra: { error: error instanceof Error ? error.message : String(error) },
-    });
-    return [];
+    logger.error(`Failed to process ${filePath}: ${error}`);
+    return null;
   }
 }
 
-/**
- * Main function to generate enriched declarations for all integrations
- */
-export async function generateEnrichedDeclarations(
-  integrationsDir?: string,
-): Promise<void> {
-  const integrationsBaseDir = integrationsDir || path.join(__dirname, ".");
-
-  logger.info(
-    `Starting enriched declarations generation for: ${integrationsBaseDir}`,
-  );
-
+async function loadExistingDeclarations(
+  outputPath: string,
+): Promise<Record<string, EnrichedDeclaration[]>> {
   try {
-    // Find all TypeScript files in the integrations directory
-    const tsFiles = await findTsFiles(integrationsBaseDir);
+    const existing = await fs.readFile(outputPath, "utf-8");
+    return JSON.parse(existing);
+  } catch {
+    return {};
+  }
+}
 
-    if (tsFiles.length === 0) {
-      logger.info("No TypeScript files found in integrations directory");
+export async function generateEnrichedDeclarations(
+  targetPath?: string,
+): Promise<void> {
+  const baseDir = path.join(__dirname, ".");
+
+  // Check if a specific file was provided
+  if (targetPath) {
+    const absolutePath = path.isAbsolute(targetPath)
+      ? targetPath
+      : path.resolve(process.cwd(), targetPath);
+
+    // Verify it's a TypeScript file in a data folder
+    if (!absolutePath.includes("/data/")) {
+      logger.error("File must be in a data/ folder");
       return;
     }
 
-    logger.info(`Found ${tsFiles.length} TypeScript files to process`);
-
-    // Group files by their target output path
-    const groupedFiles = groupFilesByOutputPath(tsFiles, integrationsBaseDir);
-
-    logger.info(`Will generate ${groupedFiles.size} declarations.json files`);
-
-    // Process each group
-    for (const [outputPath, files] of groupedFiles) {
-      logger.info(`Processing ${files.length} files for output: ${outputPath}`);
-
-      const allDeclarations: EnrichedDeclarationsOutput["declarations"] = [];
-
-      // Process all files in this group
-      for (const filePath of files) {
-        const fileDeclarations = await processTypeScriptFile(filePath);
-        allDeclarations.push(...fileDeclarations);
-      }
-
-      if (allDeclarations.length === 0) {
-        logger.info(`No declarations found for ${outputPath}, skipping`);
-        continue;
-      }
-
-      // Create the output structure
-      const output: EnrichedDeclarationsOutput = {
-        declarations: allDeclarations,
-        generatedAt: new Date().toISOString(),
-        sourceFilePath:
-          files.length === 1 && files[0]
-            ? files[0]
-            : `Multiple files: ${files.length} files`,
-      };
-
-      // Ensure the output directory exists
-      await fs.mkdir(path.dirname(outputPath), { recursive: true });
-
-      // Write the enriched declarations
-      await fs.writeFile(outputPath, JSON.stringify(output, null, 2), "utf-8");
-
-      logger.info(`Generated enriched declarations: ${outputPath}`, {
-        extra: {
-          declarationsCount: allDeclarations.length,
-          filesProcessed: files.length,
-          enrichedCount: allDeclarations.filter((d) => d.semanticData !== null)
-            .length,
-        },
-      });
+    if (!absolutePath.endsWith(".ts") || absolutePath.endsWith(".d.ts")) {
+      logger.error("File must be a TypeScript file (not .d.ts)");
+      return;
     }
 
-    logger.info("Successfully completed enriched declarations generation");
-  } catch (error) {
-    logger.error("Failed to generate enriched declarations", {
-      extra: { error: error instanceof Error ? error.message : String(error) },
-    });
-    throw error;
+    // Check file exists
+    try {
+      await fs.access(absolutePath);
+    } catch {
+      logger.error(`File not found: ${absolutePath}`);
+      return;
+    }
+
+    logger.info(`Processing single file: ${absolutePath}`);
+
+    // Get output path for this file's data folder
+    const dataFolder = getDataFolderPath(absolutePath);
+    if (!dataFolder) {
+      logger.error(`Could not find data folder for ${absolutePath}`);
+      return;
+    }
+
+    const outputPath = path.join(dataFolder, "declarations.json");
+    const existingDeclarations = await loadExistingDeclarations(outputPath);
+
+    const result = await processFile(absolutePath, existingDeclarations);
+    if (result) {
+      await fs.writeFile(
+        result.outputPath,
+        JSON.stringify(result.declarations, null, 2),
+        "utf-8",
+      );
+      logger.info(`Written to ${result.outputPath}`);
+    }
+  } else {
+    // Process all files grouped by data folder
+    logger.info(`Starting generation for all files in: ${baseDir}`);
+
+    const tsFiles = await findTsFiles(baseDir);
+    const dataFiles = tsFiles.filter((f) => f.includes("/data/"));
+
+    logger.info(`Found ${dataFiles.length} TypeScript files in data folders`);
+
+    if (dataFiles.length === 0) {
+      logger.info("No TypeScript files found in data folders");
+      return;
+    }
+
+    // Group files by their data folder
+    const filesByDataFolder = new Map<string, string[]>();
+
+    for (const filePath of dataFiles) {
+      const dataFolder = getDataFolderPath(filePath);
+      if (dataFolder) {
+        if (!filesByDataFolder.has(dataFolder)) {
+          filesByDataFolder.set(dataFolder, []);
+        }
+        const files = filesByDataFolder.get(dataFolder);
+        if (files) {
+          files.push(filePath);
+        }
+      }
+    }
+
+    logger.info(`Found ${filesByDataFolder.size} data folders to process`);
+
+    // Process each data folder
+    for (const [dataFolder, files] of filesByDataFolder) {
+      logger.info(`Processing data folder: ${dataFolder}`);
+
+      const outputPath = path.join(dataFolder, "declarations.json");
+      const existingDeclarations = await loadExistingDeclarations(outputPath);
+
+      for (const filePath of files) {
+        await processFile(filePath, existingDeclarations);
+      }
+
+      if (Object.keys(existingDeclarations).length > 0) {
+        await fs.writeFile(
+          outputPath,
+          JSON.stringify(existingDeclarations, null, 2),
+          "utf-8",
+        );
+        logger.info(
+          `  Written ${Object.keys(existingDeclarations).length} file entries to ${outputPath}`,
+        );
+      }
+    }
   }
+
+  logger.info(`Completed processing`);
 }
 
-// CLI interface when running this file directly
 if (require.main === module) {
-  const integrationsDir = process.argv[2];
-  generateEnrichedDeclarations(integrationsDir)
-    .then(() => {
-      console.log(" Enriched declarations generation completed successfully");
-      process.exit(0);
-    })
+  generateEnrichedDeclarations(process.argv[2])
+    .then(() => process.exit(0))
     .catch((error) => {
-      console.error("L Failed to generate enriched declarations:", error);
+      console.error("Failed:", error);
       process.exit(1);
     });
 }

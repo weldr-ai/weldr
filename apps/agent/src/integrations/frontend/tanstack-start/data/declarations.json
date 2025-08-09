@@ -1,0 +1,74 @@
+{
+  "apps/web/src/lib/seo.ts": [
+    {
+      "codeMetadata": {
+        "name": "seo",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 1,
+            "column": 1
+          },
+          "end": {
+            "line": 33,
+            "column": 3
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/web/src/lib/seo.ts#seo",
+        "typeSignature": "const seo: (_complex_param: { title: string; description?: string; image?: string; keywords?: string }) => any"
+      },
+      "semanticData": {
+        "summary": "Generates an array of SEO-optimized meta tags for a given page's content, including Open Graph and Twitter Card tags.",
+        "description": "This declaration is a utility function designed to streamline the creation of SEO-related meta tags for web pages. It takes essential content like title, description, keywords, and an optional image URL, and produces a structured array of objects. These objects can then be used by web frameworks (e.g., SvelteKit, Next.js) to dynamically inject appropriate meta tags into the document's HTML <head>, significantly enhancing search engine visibility and improving social media sharing previews.",
+        "tags": [
+          "seo",
+          "meta-tags",
+          "utility",
+          "frontend",
+          "web-development"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Dynamically setting page titles and meta descriptions for individual routes.",
+            "Optimizing web pages for search engine ranking and visibility.",
+            "Improving social media sharing previews for platforms like Twitter and Facebook.",
+            "Creating reusable SEO configurations for different content types (e.g., articles, products, landing pages)."
+          ],
+          "examples": [
+            {
+              "code": "import { seo } from './seo';\n\nconst pageSeoTags = seo({\n  title: \"My Awesome Product Page\",\n  description: \"Discover our innovative new product that solves your daily challenges.\",\n  keywords: \"product, innovation, solution, new\",\n});\n\n// In a typical web framework, you would then render these tags:\n// Example for SvelteKit:\n// <script lang=\"ts\">\n//   import { seo } from '$lib/seo';\n//   const pageMetaTags = seo({ title: \"Home\", description: \"Welcome to our site\" });\n// </script>\n// <svelte:head>\n//   {#each pageMetaTags as tag}\n//     {#if tag.title}<title>{tag.title}</title>{:else}<meta name=\"{tag.name}\" content=\"{tag.content}\" />{/if}\n//   {/each}\n// </svelte:head>",
+              "description": "Demonstrates how to generate basic SEO meta tags for a page, including title, description, and keywords. The output array can be easily iterated to render `<meta>` tags in the HTML head of a web application."
+            },
+            {
+              "code": "import { seo } from './seo';\n\nconst articleSeoTags = seo({\n  title: \"Latest Article on AI Advancements\",\n  description: \"Explore the groundbreaking progress in artificial intelligence and its impact on the future.\",\n  image: \"https://example.com/images/ai-article-banner.jpg\",\n});\n\n// In a framework, these would be rendered in the <head>\n// E.g., for social media sharing:\n// <meta property=\"og:image\" content=\"https://example.com/images/ai-article-banner.jpg\">\n// <meta name=\"twitter:image\" content=\"https://example.com/images/ai-article-banner.jpg\">",
+              "description": "Shows how to include an 'image' property to automatically generate Open Graph and Twitter Card image tags. These are crucial for visually rich social media previews, ensuring better engagement when content is shared."
+            }
+          ],
+          "limitations": [
+            "This utility does not handle structured data (Schema.org JSON-LD), which requires a separate implementation for advanced SEO needs.",
+            "It relies entirely on the consuming web framework or application to actually render the generated tags into the HTML `<head>` element.",
+            "The Twitter creator and site handles (`@weldr_ai`) are hardcoded, which limits its reusability for projects not affiliated with this specific handle without modification.",
+            "Only supports the `summary_large_image` Twitter card type when an image is provided; other Twitter card types are not configurable through this function."
+          ],
+          "bestPractices": [
+            "Always provide a 'title' as it is the most critical SEO element for search engines and user experience.",
+            "Ensure 'description' is concise and accurately summarizes the page content, ideally between 150-160 characters for optimal display.",
+            "Utilize meaningful 'keywords' sparingly, as their direct SEO impact is minimal, but they can aid in internal content categorization.",
+            "Always provide an 'image' for shareable content to enhance social media previews and improve click-through rates.",
+            "Integrate this function with your web framework's head management system (e.g., SvelteKit's svelte:head, Next.js's Head component) to ensure tags are correctly rendered server-side and client-side.",
+            "Consider externalizing or making the hardcoded Twitter creator/site handles (@weldr_ai) configurable if this utility is to be used across different projects or contexts."
+          ],
+          "antiPatterns": [
+            "Passing empty or generic descriptions/keywords that do not accurately reflect the page's unique content.",
+            "Hardcoding SEO values directly within components or pages instead of utilizing this centralized utility, leading to inconsistent tag generation and difficult maintenance.",
+            "Using extremely long titles or descriptions that will be truncated by search engines or social media platforms.",
+            "Not providing an 'image' for content that is intended to be shared on social media, resulting in a less engaging preview without a visual element."
+          ]
+        }
+      }
+    }
+  ]
+}
