@@ -8,7 +8,7 @@ import { logger } from "./lib/logger";
 import { nanoid } from "./lib/nanoid";
 import { router } from "./router";
 
-const httLogger = pinoHttp({
+const httpLogger = pinoHttp({
   logger,
   genReqId: (req) => req.headers["x-request-id"] || nanoid(),
 });
@@ -17,7 +17,7 @@ const openApiHandler = new OpenAPIHandler(router, openApiHandlerOptions);
 const rpcHandler = new RPCHandler(router, rpcHandlerOptions);
 
 const server = createServer(async (req, res) => {
-  httLogger(req, res);
+  httpLogger(req, res);
 
   if (req.url?.startsWith("/rpc")) {
     const result = await rpcHandler.handle(req, res, {

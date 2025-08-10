@@ -147,6 +147,19 @@ CREATE TABLE "streams" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "declaration_templates" (
+	"id" text PRIMARY KEY NOT NULL,
+	"version" text DEFAULT 'v1' NOT NULL,
+	"uri" text,
+	"path" text,
+	"metadata" jsonb,
+	"embedding" vector(1536),
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"integration_template_id" text NOT NULL,
+	CONSTRAINT "declaration_template_uri_unique" UNIQUE("uri")
+);
+--> statement-breakpoint
 CREATE TABLE "declaration_integrations" (
 	"declaration_id" text NOT NULL,
 	"integration_id" text NOT NULL,
@@ -166,7 +179,8 @@ CREATE TABLE "declarations" (
 	"task_id" text,
 	"project_id" text NOT NULL,
 	"node_id" text,
-	"user_id" text NOT NULL
+	"user_id" text NOT NULL,
+	CONSTRAINT "declaration_uri_unique" UNIQUE("uri")
 );
 --> statement-breakpoint
 CREATE TABLE "dependencies" (
@@ -311,6 +325,7 @@ ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_user_id_users_id_fk" F
 ALTER TABLE "chats" ADD CONSTRAINT "chats_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "streams" ADD CONSTRAINT "streams_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "declaration_templates" ADD CONSTRAINT "declaration_templates_integration_template_id_integration_templates_id_fk" FOREIGN KEY ("integration_template_id") REFERENCES "public"."integration_templates"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_declaration_id_declarations_id_fk" FOREIGN KEY ("declaration_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_previous_id_declarations_id_fk" FOREIGN KEY ("previous_id") REFERENCES "public"."declarations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -347,6 +362,8 @@ CREATE INDEX "attachments_created_at_idx" ON "attachments" USING btree ("created
 CREATE INDEX "chat_messages_created_at_idx" ON "chat_messages" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "chats_created_at_idx" ON "chats" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "streams_chat_id_idx" ON "streams" USING btree ("chat_id");--> statement-breakpoint
+CREATE INDEX "declaration_template_created_at_idx" ON "declaration_templates" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "declaration_template_embedding_idx" ON "declaration_templates" USING hnsw ("embedding" vector_cosine_ops);--> statement-breakpoint
 CREATE INDEX "declaration_created_at_idx" ON "declarations" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "embeddingIndex" ON "declarations" USING hnsw ("embedding" vector_cosine_ops);--> statement-breakpoint
 CREATE INDEX "integration_categories_created_at_idx" ON "integration_categories" USING btree ("created_at");--> statement-breakpoint

@@ -1,10 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { Logger } from "@weldr/shared/logger";
 import type { DeclarationCodeMetadata } from "@weldr/shared/types/declarations";
-import { enrichDeclaration } from "../ai/utils/enrich";
-import { extractDeclarations } from "../lib/extract-declarations";
+
+import { enrichDeclaration } from "@/ai/utils/enrich";
+import { extractDeclarations } from "@/lib/extract-declarations";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const logger = Logger.get({ module: "generate-enriched-declarations" });
 
@@ -20,12 +25,21 @@ async function findTsFiles(dir: string): Promise<string[]> {
 
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
+      if (
+        entry.name.endsWith(".d.ts") ||
+        entry.name.endsWith(".gen.ts") ||
+        entry.name.endsWith("vite.config.ts") ||
+        entry.name.endsWith("tailwind.config.ts") ||
+        entry.name.endsWith("tsdown.config.ts")
+      ) {
+        continue;
+      }
+
       if (entry.isDirectory()) {
         tsFiles.push(...(await findTsFiles(fullPath)));
       } else if (
         entry.isFile() &&
-        entry.name.endsWith(".ts") &&
-        !entry.name.endsWith(".d.ts")
+        (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx"))
       ) {
         tsFiles.push(fullPath);
       }
@@ -48,26 +62,21 @@ function createFileKey(filePath: string): string {
   const dataIndex = filePath.lastIndexOf("/data/");
   if (dataIndex === -1) return filePath;
 
-  let afterData = filePath.substring(dataIndex + 6);
+  const afterData = filePath.substring(dataIndex + 6);
 
-  // Find which app this belongs to by looking at the integration path
+  // Check what app folder is in the data path
+  if (afterData.startsWith("web/")) {
+    // Web app files
+    return `apps/web/${afterData.substring(4)}`;
+  } else if (afterData.startsWith("server/")) {
+    // Server app files
+    return `apps/server/${afterData.substring(7)}`;
+  }
+
+  // Fallback: Check the integration type for hints
   if (filePath.includes("/frontend/tanstack-start/")) {
-    // Remove 'web/' prefix if it exists since we'll add 'apps/web/'
-    if (afterData.startsWith("web/")) {
-      afterData = afterData.substring(4);
-    }
     return `apps/web/${afterData}`;
-  } else if (filePath.includes("/backend/") || filePath.includes("/server/")) {
-    // Remove 'server/' prefix if it exists
-    if (afterData.startsWith("server/")) {
-      afterData = afterData.substring(7);
-    }
-    return `apps/server/${afterData}`;
   } else if (filePath.includes("/agent/")) {
-    // Remove 'agent/' prefix if it exists
-    if (afterData.startsWith("agent/")) {
-      afterData = afterData.substring(6);
-    }
     return `apps/agent/${afterData}`;
   }
 
@@ -77,11 +86,9 @@ function createFileKey(filePath: string): string {
 
 async function processFile(
   filePath: string,
+  outputPath: string,
   existingDeclarations: Record<string, EnrichedDeclaration[]>,
-): Promise<{
-  outputPath: string;
-  declarations: Record<string, EnrichedDeclaration[]>;
-} | null> {
+): Promise<void> {
   logger.info(`Processing: ${filePath}`);
 
   try {
@@ -103,12 +110,30 @@ async function processFile(
 
     if (declarations.length === 0) {
       logger.info(`  No declarations found`);
-      return null;
+      return;
     }
 
-    const enrichedDeclarations: EnrichedDeclaration[] = [];
+    const key = createFileKey(filePath);
+    const existingFileDeclarations = existingDeclarations[key] || [];
+
+    // Create a set of existing declaration URIs for quick lookup
+    const existingURIs = new Set(
+      existingFileDeclarations.map((d) => d.codeMetadata.uri),
+    );
+
+    let skippedCount = 0;
+    let addedCount = 0;
 
     for (const declaration of declarations) {
+      // Check if this declaration already exists in the output
+      if (existingURIs.has(declaration.uri)) {
+        logger.info(
+          `  Skipping existing: ${declaration.name} (${declaration.type})`,
+        );
+        skippedCount++;
+        continue;
+      }
+
       logger.info(`  Enriching: ${declaration.name} (${declaration.type})`);
       try {
         const semanticData = await enrichDeclaration(
@@ -116,38 +141,68 @@ async function processFile(
           uriFilename, // Use the transformed filename for consistency
           sourceCode,
         );
-        enrichedDeclarations.push({
+
+        const enrichedDeclaration = {
           codeMetadata: declaration,
           semanticData,
-        });
+        };
+
+        // Add to existing declarations and write immediately
+        if (!existingDeclarations[key]) {
+          existingDeclarations[key] = [];
+        }
+        existingDeclarations[key].push(enrichedDeclaration);
+        existingURIs.add(declaration.uri);
+        addedCount++;
+
+        // Write to file immediately
+        await fs.writeFile(
+          outputPath,
+          JSON.stringify(existingDeclarations, null, 2),
+          "utf-8",
+        );
+
+        logger.info(`  Added ${declaration.name} and updated ${outputPath}`);
       } catch (error) {
         logger.error(`  Failed to enrich ${declaration.name}: ${error}`);
-        enrichedDeclarations.push({
+
+        const failedDeclaration = {
           codeMetadata: declaration,
           semanticData: null,
-        });
+        };
+
+        // Add failed declaration and write immediately
+        if (!existingDeclarations[key]) {
+          existingDeclarations[key] = [];
+        }
+        existingDeclarations[key].push(failedDeclaration);
+        existingURIs.add(declaration.uri);
+        addedCount++;
+
+        // Write to file immediately
+        await fs.writeFile(
+          outputPath,
+          JSON.stringify(existingDeclarations, null, 2),
+          "utf-8",
+        );
+
+        logger.info(
+          `  Added ${declaration.name} (failed) and updated ${outputPath}`,
+        );
       }
     }
 
-    const key = createFileKey(filePath);
-    existingDeclarations[key] = enrichedDeclarations;
-
-    logger.info(
-      `  Added ${enrichedDeclarations.length} declarations for ${key}`,
-    );
-
-    // Get the data folder path for this file
-    const dataFolder = getDataFolderPath(filePath);
-    if (!dataFolder) {
-      logger.error(`Could not find data folder for ${filePath}`);
-      return null;
+    if (addedCount > 0) {
+      logger.info(
+        `  Completed ${key}: added ${addedCount} declarations (skipped ${skippedCount} existing)`,
+      );
+    } else if (skippedCount > 0) {
+      logger.info(
+        `  All ${skippedCount} declarations already exist for ${key}, skipping`,
+      );
     }
-
-    const outputPath = path.join(dataFolder, "declarations.json");
-    return { outputPath, declarations: existingDeclarations };
   } catch (error) {
     logger.error(`Failed to process ${filePath}: ${error}`);
-    return null;
   }
 }
 
@@ -165,7 +220,7 @@ async function loadExistingDeclarations(
 export async function generateEnrichedDeclarations(
   targetPath?: string,
 ): Promise<void> {
-  const baseDir = path.join(__dirname, ".");
+  const baseDir = __dirname;
 
   // Check if a specific file was provided
   if (targetPath) {
@@ -204,15 +259,8 @@ export async function generateEnrichedDeclarations(
     const outputPath = path.join(dataFolder, "declarations.json");
     const existingDeclarations = await loadExistingDeclarations(outputPath);
 
-    const result = await processFile(absolutePath, existingDeclarations);
-    if (result) {
-      await fs.writeFile(
-        result.outputPath,
-        JSON.stringify(result.declarations, null, 2),
-        "utf-8",
-      );
-      logger.info(`Written to ${result.outputPath}`);
-    }
+    await processFile(absolutePath, outputPath, existingDeclarations);
+    logger.info(`Completed processing ${absolutePath}`);
   } else {
     // Process all files grouped by data folder
     logger.info(`Starting generation for all files in: ${baseDir}`);
@@ -253,26 +301,19 @@ export async function generateEnrichedDeclarations(
       const existingDeclarations = await loadExistingDeclarations(outputPath);
 
       for (const filePath of files) {
-        await processFile(filePath, existingDeclarations);
+        await processFile(filePath, outputPath, existingDeclarations);
       }
 
-      if (Object.keys(existingDeclarations).length > 0) {
-        await fs.writeFile(
-          outputPath,
-          JSON.stringify(existingDeclarations, null, 2),
-          "utf-8",
-        );
-        logger.info(
-          `  Written ${Object.keys(existingDeclarations).length} file entries to ${outputPath}`,
-        );
-      }
+      logger.info(
+        `  Completed processing ${files.length} files in ${dataFolder}`,
+      );
     }
   }
 
   logger.info(`Completed processing`);
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   generateEnrichedDeclarations(process.argv[2])
     .then(() => process.exit(0))
     .catch((error) => {

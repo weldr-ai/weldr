@@ -1,5 +1,5 @@
 {
-  "id": "1a3271d3-3489-4952-a5f0-28410c9bb643",
+  "id": "b04d5c65-c85e-40d9-a3ad-404cc21172a4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1012,6 +1012,124 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.declaration_templates": {
+      "name": "declaration_templates",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'v1'"
+        },
+        "uri": {
+          "name": "uri",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "path": {
+          "name": "path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "embedding": {
+          "name": "embedding",
+          "type": "vector(1536)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "integration_template_id": {
+          "name": "integration_template_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "declaration_template_created_at_idx": {
+          "name": "declaration_template_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "declaration_template_embedding_idx": {
+          "name": "declaration_template_embedding_idx",
+          "columns": [
+            {
+              "expression": "embedding",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "vector_cosine_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "hnsw",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "declaration_templates_integration_template_id_integration_templates_id_fk": {
+          "name": "declaration_templates_integration_template_id_integration_templates_id_fk",
+          "tableFrom": "declaration_templates",
+          "tableTo": "integration_templates",
+          "columnsFrom": ["integration_template_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "declaration_template_uri_unique": {
+          "name": "declaration_template_uri_unique",
+          "nullsNotDistinct": false,
+          "columns": ["uri"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.declaration_integrations": {
       "name": "declaration_integrations",
       "schema": "",
@@ -1228,7 +1346,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "declaration_uri_unique": {
+          "name": "declaration_uri_unique",
+          "nullsNotDistinct": false,
+          "columns": ["uri"]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

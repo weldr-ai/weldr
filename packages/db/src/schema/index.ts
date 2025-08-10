@@ -1,6 +1,7 @@
 export * from "./ai-models";
 export * from "./auth";
 export * from "./chats";
+export * from "./declaration-templates";
 export * from "./declarations";
 export * from "./dependencies";
 export * from "./environment-variables";

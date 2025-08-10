@@ -8,11 +8,13 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   vector,
 } from "drizzle-orm/pg-core";
 
 import { nanoid } from "@weldr/shared/nanoid";
 import type { DeclarationMetadata } from "@weldr/shared/types/declarations";
+
 import { users } from "./auth";
 import { dependencies } from "./dependencies";
 import { integrations } from "./integrations";
@@ -61,6 +63,7 @@ export const declarations = pgTable(
       "hnsw",
       table.embedding.op("vector_cosine_ops"),
     ),
+    unique("declaration_uri_unique").on(table.uri),
   ],
 );
 

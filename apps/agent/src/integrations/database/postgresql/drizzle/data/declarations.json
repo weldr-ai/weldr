@@ -1,0 +1,78 @@
+{
+  "apps/server/src/middlewares/db.ts": [
+    {
+      "codeMetadata": {
+        "name": "useDb",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 4,
+            "column": 1
+          },
+          "end": {
+            "line": 10,
+            "column": 4
+          }
+        },
+        "dependencies": [
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/utils",
+            "dependsOn": [
+              "apps/server/src/lib/utils#base"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/db",
+            "dependsOn": [
+              "apps/server/src/db#db"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/middlewares/db.ts#useDb",
+        "typeSignature": "const useDb: any"
+      },
+      "semanticData": {
+        "summary": "Injects a database client (`db`) into the middleware context, making it accessible to subsequent handlers.",
+        "description": "useDb is a middleware designed to inject a database client into the request context, making it readily available for subsequent handlers. It ensures that a database client, either a default global instance or an optionally provided one, is accessible via `context.db`. This pattern centralizes database client provision, simplifying access in route handlers and supporting dependency injection for testing or specialized use cases.",
+        "tags": [
+          "middleware",
+          "database",
+          "context-management",
+          "dependency-injection",
+          "utility"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Providing a database instance to all API route handlers",
+            "Ensuring consistent database access across different server functionalities",
+            "Facilitating dependency injection of a mock or specific database client for testing"
+          ],
+          "examples": [
+            {
+              "code": "import { app } from '@repo/server/app'; // Assuming 'app' is your base application instance\nimport { useDb } from '@repo/server/middlewares/db';\n\n// Apply the useDb middleware globally to all routes\napp.use(useDb);\n\napp.get('/users', async ({ context }) => {\n  // The db client is now available via context.db\n  const users = await context.db.user.findMany();\n  return { users };\n});\n\n// Example: Overriding db in a test setup for a specific handler or sub-app\n// import { createTestApp } from './test-utils';\n// import { mockDb } from './mock-db';\n// const testApp = createTestApp();\n// testApp.get('/test-route', async ({ context, next }) => {\n//   return next({ context: { ...context, db: mockDb } });\n// });",
+              "description": "This example demonstrates how to integrate `useDb` into a typical server application. By applying it globally with `app.use(useDb)`, all subsequent route handlers will have convenient access to the database client via `context.db`. The commented section illustrates how one might override the default `db` in `context` for testing purposes, allowing for flexible dependency injection."
+            }
+          ],
+          "limitations": [
+            "The `db` instance is globally imported; careful consideration is needed if multiple, distinct database connections (e.g., to different databases) are required within the same application instance without explicit context overriding.",
+            "The `any` type signature indicates a lack of strong typing for `context.db` unless the underlying `base.middleware` provides specific context generics, potentially leading to runtime errors if `db`'s shape is misunderstood.",
+            "It doesn't handle database connection pooling, ORM initialization, or advanced database features (like transactions) directly; it expects `db` to be a pre-configured and ready-to-use client."
+          ],
+          "bestPractices": [
+            "Apply `useDb` early in your middleware chain to ensure `db` is available for all dependent downstream handlers.",
+            "Leverage `context.db` for overriding the default `db` instance in specific scenarios, especially useful for unit/integration testing with in-memory or mock databases.",
+            "Ensure the global `db` instance is properly initialized and configured before this middleware is applied."
+          ],
+          "antiPatterns": [
+            "Using it as a transaction manager; it only provides the client, not transaction scope or atomicity.",
+            "Placing it after handlers that require `db` access, as the context won't be populated in time for those specific handlers."
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -48,6 +48,7 @@ Focus on being practical and helpful for developers who need to understand when 
     const result = await generateObject({
       model: registry.languageModel("google:gemini-2.5-flash"),
       schema: declarationSemanticDataSchema,
+      maxOutputTokens: 65536,
       prompt,
     });
 

@@ -84,18 +84,18 @@ export const myTool = createTool({
     // Get context data
     const project = context.get("project");
     const version = context.get("version");
-    
+
     // Initialize logger with context
     const logger = Logger.get({
       projectId: project.id,
       versionId: version.id,
       input,
     });
-    
+
     try {
       // Tool implementation
       const result = await performAction(input);
-      
+
       return {
         success: true as const,
         data: result,
@@ -152,6 +152,157 @@ stream.on('error', (error: Error) => {
 });
 ```
 
+## Logging Standards
+
+### Mandatory Logger Usage
+- **NEVER** use `console.log`, `console.error`, `console.warn`, or any console methods
+- **ALWAYS** use the Logger from `@weldr/shared` package for all logging needs
+- **USE** structured logging with appropriate context data
+- **IMPLEMENT** proper log levels: debug, info, warn, error, fatal, trace
+
+### Logger Import and Basic Usage
+```typescript
+import { Logger } from "@weldr/shared";
+
+// Direct logger usage for simple operations
+Logger.info("User authentication successful");
+Logger.error("Database connection failed", { 
+  error: err.message,
+  connectionString: safeConnectionString 
+});
+Logger.warn("High memory usage detected", { memoryUsage: process.memoryUsage() });
+```
+
+### Contextual Logger for Tools and Operations
+```typescript
+// In tool implementations - always use Logger.get() for context
+export const myTool = createTool({
+  // ... tool definition
+  execute: async ({ input, context }) => {
+    const project = context.get("project");
+    const version = context.get("version");
+    
+    const logger = Logger.get({
+      projectId: project.id,
+      versionId: version.id,
+      toolName: "myTool",
+      input: input.someId, // Safe contextual data only
+    });
+    
+    logger.info("Tool execution started");
+    
+    try {
+      const result = await performAction(input);
+      logger.info("Tool execution completed", { 
+        extra: { 
+          resultSize: result.length,
+          duration: Date.now() - startTime 
+        } 
+      });
+      return { success: true as const, data: result };
+    } catch (error) {
+      logger.error("Tool execution failed", { 
+        extra: { 
+          error: error.message,
+          stack: error.stack 
+        } 
+      });
+      return { success: false as const, error: error.message };
+    }
+  },
+});
+```
+
+### Route-Level Logging
+```typescript
+router.openapi(route, async (c) => {
+  const logger = Logger.get({
+    method: c.req.method,
+    path: c.req.path,
+    requestId: crypto.randomUUID(),
+  });
+  
+  logger.info("Request started");
+  
+  try {
+    const result = await someOperation();
+    logger.info("Request completed successfully");
+    return c.json(result);
+  } catch (error) {
+    logger.error("Request failed", { extra: { error: error.message } });
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+```
+
+### Stream and Workflow Logging
+```typescript
+// In workflow steps
+const logger = Logger.get({
+  projectId,
+  versionId,
+  chatId,
+  stepName: "codeGeneration",
+});
+
+logger.info("Workflow step started");
+
+// In stream processing
+const logger = Logger.get({
+  streamId,
+  chatId,
+  operation: "sse-streaming",
+});
+
+stream.on('data', (chunk) => {
+  logger.debug("Stream chunk processed", { chunkSize: chunk.length });
+});
+
+stream.on('error', (error) => {
+  logger.error("Stream error occurred", { extra: { error: error.message } });
+});
+```
+
+### Security-Conscious Logging
+```typescript
+// DO NOT log sensitive information
+const logger = Logger.get({ userId, operation: "payment" });
+
+// ❌ BAD - exposes sensitive data
+logger.info("Processing payment", { 
+  creditCard: "4111-1111-1111-1111",
+  password: userInput.password 
+});
+
+// ✅ GOOD - logs safe contextual data
+logger.info("Processing payment", { 
+  paymentMethod: "credit_card",
+  amount: 100,
+  currency: "USD" 
+});
+```
+
+### Performance and Debug Logging
+```typescript
+const logger = Logger.get({
+  operation: "declaration-extraction",
+  fileCount: files.length,
+});
+
+const startTime = Date.now();
+logger.debug("Starting declaration extraction");
+
+const result = await extractDeclarations(files);
+
+logger.info("Declaration extraction completed", {
+  extra: {
+    duration: Date.now() - startTime,
+    declarationCount: result.length,
+    filesProcessed: files.length,
+  },
+});
+```
+
 ## Hono-Specific Patterns
 
 ### Route Organization
@@ -190,19 +341,34 @@ router.openapi(route, async (c) => {
 
 ### Error Handling in Hono
 ```typescript
+import { Logger } from "@weldr/shared";
+
 router.openapi(route, async (c) => {
+  const logger = Logger.get({
+    method: c.req.method,
+    path: c.req.path,
+    requestId: crypto.randomUUID(),
+  });
+  
   try {
     const result = await someOperation();
     return c.json(result);
   } catch (error) {
     if (error instanceof ValidationError) {
+      logger.warn("Validation error occurred", { extra: { error: error.message } });
       return c.json({ error: error.message }, 400);
     }
     if (error instanceof NotFoundError) {
+      logger.info("Resource not found", { extra: { error: error.message } });
       return c.json({ error: "Not found" }, 404);
     }
-    // Log unexpected errors
-    console.error(error);
+    // Log unexpected errors with full context
+    logger.error("Unexpected server error", { 
+      extra: { 
+        error: error.message, 
+        stack: error.stack 
+      } 
+    });
     return c.json({ error: "Internal server error" }, 500);
   }
 });
@@ -212,7 +378,7 @@ router.openapi(route, async (c) => {
 ```typescript
 router.openapi(streamRoute, async (c) => {
   const stream = await createSSEStream(streamId, chatId);
-  
+
   return new Response(stream as ReadableStream, {
     headers: {
       "Content-Type": "text/event-stream",
@@ -340,7 +506,7 @@ const route = createRoute({
   tags: ["Category"],
   request: {
     params: z.object({
-      id: z.string().openapi({ 
+      id: z.string().openapi({
         description: "Resource identifier",
         example: "res_123"
       }),
@@ -382,13 +548,13 @@ describe('ToolName', () => {
     project: { id: "test" },
     version: { id: "v1" },
   });
-  
+
   it('should validate input schema', () => {
     const tool = myTool(mockContext);
     const result = tool.inputSchema.safeParse(invalidInput);
     expect(result.success).toBe(false);
   });
-  
+
   it('should execute successfully', async () => {
     const tool = myTool(mockContext);
     const result = await tool.execute(validInput);
@@ -494,12 +660,26 @@ async function performOperation(
 ### Custom Middleware
 ```typescript
 import { MiddlewareHandler } from "hono";
+import { Logger } from "@weldr/shared";
 
 const loggingMiddleware: MiddlewareHandler = async (c, next) => {
   const start = Date.now();
+  const logger = Logger.get({
+    method: c.req.method,
+    path: c.req.path,
+    requestId: crypto.randomUUID(),
+  });
+  
   await next();
   const duration = Date.now() - start;
-  console.log(`${c.req.method} ${c.req.path} - ${duration}ms`);
+  
+  logger.info("Request completed", {
+    extra: {
+      duration,
+      statusCode: c.res.status,
+      userAgent: c.req.header("user-agent"),
+    },
+  });
 };
 
 router.use(loggingMiddleware);
@@ -541,6 +721,6 @@ router.use(loggingMiddleware);
 ❌ Block event loop with sync operations
 ❌ Store secrets in code
 ❌ Trust user input without validation
-❌ Leave console.log in production code
+❌ Use console.log, console.error, console.warn, or any console methods (use Logger from @weldr/shared)
 ❌ Skip OpenAPI documentation
 ❌ Access files outside WORKSPACE_DIR

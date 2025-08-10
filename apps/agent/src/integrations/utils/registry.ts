@@ -1,5 +1,3 @@
-import type { WorkflowContext } from "@/workflow/context";
-
 import { db, eq } from "@weldr/db";
 import { integrations } from "@weldr/db/schema";
 import type {
@@ -7,15 +5,17 @@ import type {
   IntegrationCategoryKey,
   IntegrationKey,
 } from "@weldr/shared/types";
-import { authenticationIntegrationCategory } from "./authentication";
-import { backendIntegrationCategory } from "./backend";
-import { databaseIntegrationCategory } from "./database";
-import { frontendIntegrationCategory } from "./frontend";
+
+import { authenticationIntegrationCategory } from "@/integrations/authentication";
+import { backendIntegrationCategory } from "@/integrations/backend";
+import { databaseIntegrationCategory } from "@/integrations/database";
+import { frontendIntegrationCategory } from "@/integrations/frontend";
 import type {
   IntegrationCategoryDefinition,
   IntegrationDefinition,
-} from "./types";
-import { applyFiles } from "./utils/apply-files";
+} from "@/integrations/types";
+import { applyFiles } from "@/integrations/utils/apply-files";
+import type { WorkflowContext } from "@/workflow/context";
 
 class IntegrationRegistry {
   private integrationCategories = new Map<

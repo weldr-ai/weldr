@@ -20,7 +20,7 @@ export const postgresqlIntegration = defineIntegration<"postgresql">({
     },
   ],
   options: {
-    orm: ["drizzle", "prisma"],
+    orm: ["drizzle"],
   },
   recommendedOptions: {
     orm: "drizzle",

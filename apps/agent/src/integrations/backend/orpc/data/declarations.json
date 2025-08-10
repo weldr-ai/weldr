@@ -1,0 +1,2897 @@
+{
+  "apps/server/src/router.ts": [
+    {
+      "codeMetadata": {
+        "name": "router",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 5,
+            "column": 3
+          }
+        },
+        "dependencies": [
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/routes/health",
+            "dependsOn": [
+              "apps/server/src/routes/health#health"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/router.ts#router",
+        "typeSignature": "const router: object"
+      },
+      "semanticData": {
+        "summary": "Aggregates and exports top-level route definitions for server-side consumption.",
+        "description": "This \"router\" constant serves as a central hub for exporting various route modules defined elsewhere in the application. Its purpose is to provide a single, organized object containing all primary route entry points, making it easy for a server framework to consume and register them. This approach promotes modularity by keeping individual route logic separate while offering a unified interface for the server.",
+        "tags": [
+          "routing",
+          "server",
+          "api-gateway",
+          "configuration",
+          "module-aggregation"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Centralizing all top-level API routes for a backend server.",
+            "Exporting a collection of route handlers for use with an HTTP framework like Express.js or Koa.js.",
+            "Organizing different service endpoints (e.g., health checks, user management, product APIs) into a single, accessible object."
+          ],
+          "examples": [
+            {
+              "code": "import health from \"@repo/server/routes/health\";\nimport users from \"@repo/server/routes/users\";\n\nexport const router = {\n  health,\n  users\n};\n\n// In your server entry point (e.g., app.ts)\n// import { router } from \"./router\";\n// import express from \"express\";\n\n// const app = express();\n// app.use(\"/api/users\", router.users);\n// app.use(\"/health\", router.health);\n\n// Note: 'health' and 'users' here are expected to be Express.Router() instances\n// from their respective modules.",
+              "description": "Demonstrates how \"router\" aggregates different route modules (\"health\", \"users\") and how a server application (like Express) would typically import and mount these aggregated routes. This highlights its role as a central export point for server-side routing."
+            }
+          ],
+          "limitations": [
+            "This router object itself is a static JavaScript object and does not provide dynamic routing capabilities (e.g., path matching, middleware execution). These functionalities must be provided by the imported route modules or the consuming server framework.",
+            "It assumes that the imported properties (e.g., health) are valid, callable route handlers or middleware-like objects compatible with the server framework."
+          ],
+          "bestPractices": [
+            "Structure route modules as self-contained Express Router instances (or similar for other frameworks) and import them here.",
+            "Keep this router.ts file lean, focusing solely on importing and aggregating, not on complex logic.",
+            "Use descriptive keys (e.g., health, users, products) that clearly indicate the purpose of each aggregated route."
+          ],
+          "antiPatterns": [
+            "Defining route handling logic directly within this router object instead of importing separate route modules, leading to a monolithic and hard-to-maintain file.",
+            "Exporting an empty router object without any imported route modules, which serves no functional purpose."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/server/src/middlewares/retry.ts": [
+    {
+      "codeMetadata": {
+        "name": "retry",
+        "type": "function",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 30,
+            "column": 2
+          }
+        },
+        "dependencies": [
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/utils",
+            "dependsOn": [
+              "apps/server/src/lib/utils#base"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/middlewares/retry.ts#retry",
+        "typeSignature": "function(options: { times: number }): any",
+        "isAsync": false,
+        "isGenerator": false,
+        "parameters": [
+          {
+            "name": "options",
+            "type": "{ times: number }",
+            "isOptional": false,
+            "isRest": false
+          }
+        ],
+        "returnType": "any"
+      },
+      "semanticData": {
+        "summary": "Creates a middleware that retries the execution of subsequent middleware/handlers a specified number of times upon encountering an error, while preventing nested retries.",
+        "description": "This function generates a middleware designed to enhance the robustness of execution pipelines, such as server request processing or command chains. It automatically retries the downstream operations (accessed via the 'next' function) up to a configurable number of 'times' if an error occurs. The middleware also sets a 'canRetry: false' flag in the context for the subsequent call, preventing nested retries within the same retry attempt and ensuring controlled execution flow.",
+        "tags": [
+          "middleware",
+          "error-handling",
+          "resilience",
+          "retry",
+          "server",
+          "utility"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Making idempotent API calls to external services that might transiently fail due to network issues or temporary service unavailability.",
+            "Executing database write operations that can sometimes experience temporary lock contention or connection drops.",
+            "Processing messages from a queue where transient network issues or remote service hiccups might occur during processing.",
+            "Improving reliability of specific handlers in a serverless function where environment-related transient errors are common."
+          ],
+          "examples": [
+            {
+              "code": "import { base } from \"@repo/server/lib/utils\";\nimport { retry } from './middlewares/retry';\n\nconst protectedApiEndpoint = base\n  .use(retry({ times: 3 }))\n  .use(async ({ req, res, next }) => {\n    try {\n      // This 'next' section is what 'retry' wraps and will re-execute.\n      // Simulate an external API call that might transiently fail.\n      const response = await fetch('https://api.external.com/data');\n      if (!response.ok) {\n        throw new Error(`API error: ${response.statusText}`);\n      }\n      const data = await response.json();\n      res.json({ status: 'success', data });\n    } catch (error) {\n      // This block is only reached if all 3 retries fail.\n      console.error('API call failed after all retries:', error);\n      next(error); // Propagate the error to the global error handler\n    }\n  });\n\n// Conceptual usage in an application (e.g., Express-like framework):\n// app.get('/my-data', protectedApiEndpoint.handler);",
+              "description": "This example demonstrates how to apply the 'retry' middleware to an API endpoint handler. If the `fetch` call to the external API throws an error (e.g., due to a network glitch or a 5xx response), the entire subsequent handler block will be re-executed up to 3 times. The error will only be caught by the outer `catch` block and propagated further if all retry attempts are exhausted."
+            }
+          ],
+          "limitations": [
+            "The current implementation does not include an exponential backoff strategy, meaning retries happen immediately after a failure, which can overwhelm a failing service.",
+            "It retries on *any* thrown JavaScript error; it does not differentiate between transient errors (e.g., network issues) and permanent errors (e.g., invalid input, authentication failures that won't resolve with retries).",
+            "The 'canRetry' context flag only prevents inner 'next()' calls that *also* use this specific 'retry' middleware from creating infinite retry loops. It does not interact with or prevent other, unrelated retry mechanisms.",
+            "If the operation being retried is long-running and fails repeatedly, it can block the execution thread for the cumulative duration of all retries."
+          ],
+          "bestPractices": [
+            "Only apply the 'retry' middleware to operations that are genuinely idempotent or have built-in duplicate detection mechanisms.",
+            "Configure the 'times' option carefully, balancing the need for resilience with acceptable latency and resource usage for your application.",
+            "Combine this retry mechanism with an external rate limiter or circuit breaker if you are retrying calls to an external service to prevent overwhelming it during failures.",
+            "Ensure proper logging for both successful retries and eventual failures after all attempts are exhausted, to aid in debugging and monitoring."
+          ],
+          "antiPatterns": [
+            "Using 'retry' with non-idempotent operations (e.g., creating a new user without checking for existence) without compensating logic, as retries could lead to duplicate actions or unintended side effects.",
+            "Setting 'times' to a very high number, which can lead to excessive delays or resource consumption during prolonged outages, rather than failing fast.",
+            "Applying this middleware globally without careful consideration of which operations are safe to retry, potentially masking critical, persistent errors or causing unexpected behavior.",
+            "Not having a final error handler after all retries are exhausted, leading to unhandled exceptions cascading up the call stack."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/server/src/lib/context.ts": [
+    {
+      "codeMetadata": {
+        "name": "ORPCContext",
+        "type": "interface",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 4,
+            "column": 1
+          },
+          "end": {
+            "line": 7,
+            "column": 2
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/server/src/lib/context.ts#ORPCContext",
+        "typeSignature": "interface extends ResponseHeadersPluginContext",
+        "extends": [
+          "ResponseHeadersPluginContext"
+        ]
+      },
+      "semanticData": {
+        "summary": "Defines a server-side operational context for ORPC plugins, providing access to a logger and HTTP headers, extending core response header capabilities.",
+        "description": "The ORPCContext interface defines a comprehensive context object available within ORPC server plugins and handlers. It extends ResponseHeadersPluginContext to inherently manage response headers, while additionally providing a pino logger for structured logging of server-side operations and direct access to Headers for inspecting or modifying HTTP headers. This interface centralizes common utilities needed for robust server-side logic, enabling plugins to perform logging, manipulate headers, and interact with the ORPC framework's response mechanisms.",
+        "tags": [
+          "server",
+          "plugin",
+          "context",
+          "logging",
+          "http",
+          "middleware",
+          "api-server"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Logging incoming requests or outgoing responses within an ORPC handler",
+            "Adding or modifying HTTP response headers (e.g., security, caching headers)",
+            "Debugging server-side logic by injecting log statements with contextual information",
+            "Accessing request headers for authentication or content negotiation within a plugin",
+            "Implementing custom server middleware that requires logging and header manipulation"
+          ],
+          "examples": [
+            {
+              "code": "import { ORPCContext } from \"./context\";\nimport { ORPCServer } from \"@orpc/server\";\n\ninterface MyService {\n  greet(name: string): string;\n}\n\nconst server = new ORPCServer<ORPCContext>();\n\nserver.addMethod(\"greet\", {\n  handler: async (context, name: string) => {\n    context.logger.info({ name }, \"Handling greet request.\");\n    context.headers.set(\"X-Custom-Greeting\", \"true\");\n    return `Hello, ${name}!`;\n  }\n});",
+              "description": "This example demonstrates how to access the logger to log an incoming request and use context.headers to set a custom response header within an ORPC method handler. It showcases the immediate utility of ORPCContext for typical server-side operations."
+            },
+            {
+              "code": "import { ORPCContext } from \"./context\";\n\ninterface AuthService {\n  checkAuth(token: string): boolean;\n}\n\nconst authServiceHandler = async (context: ORPCContext, token: string) => {\n  const userAgent = context.headers.get(\"User-Agent\");\n  if (!userAgent) {\n    context.logger.warn(\"Request missing User-Agent header.\");\n  }\n\n  if (token === \"valid-token-123\") {\n    context.logger.info(\"Authentication successful.\");\n    return true;\n  } else {\n    context.logger.warn(\"Authentication failed for token: %s\", token);\n    context.headers.set(\"WWW-Authenticate\", \"Bearer error='invalid_token'\");\n    return false;\n  }\n};",
+              "description": "This example illustrates checking an incoming request header (`User-Agent`) and conditionally logging based on its presence. It also shows logging different outcomes (success/failure) and setting a response header based on the processing result, highlighting the context's utility for conditional logic and HTTP feedback."
+            }
+          ],
+          "limitations": [
+            "The Headers object provided is a snapshot or specific instance related to the current context (e.g., request headers for input, response headers for output); direct modification might only affect response headers, depending on where the context is used within the ORPC request lifecycle.",
+            "The logger instance is pre-configured by the ORPC server; its configuration (e.g., log level, transport) cannot be changed directly via ORPCContext, requiring server-level configuration.",
+            "As an interface, ORPCContext defines structure but not implementation; its practical usage depends entirely on how the underlying ORPC server framework populates and passes instances to handlers and plugins."
+          ],
+          "bestPractices": [
+            "Always use context.logger for all logging within handlers and plugins for consistent, structured logs and easier debugging.",
+            "Leverage context.headers for direct header inspection or manipulation, especially for non-response headers or custom header logic.",
+            "Ensure that header modifications through ResponseHeadersPluginContext methods and direct context.headers access are consistent and do not conflict.",
+            "Pass this context object or relevant parts of it down to helper functions or services if they need access to logging or header manipulation capabilities, rather than creating new instances."
+          ],
+          "antiPatterns": [
+            "Directly mutating global logger instances instead of using the provided context.logger, leading to inconsistent logging practices.",
+            "Bypassing the ResponseHeadersPluginContext mechanisms for header manipulation when specific plugin-driven header management is expected, potentially causing conflicts.",
+            "Overusing the context for unrelated data storage, leading to a 'god object' context that couples unrelated concerns."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/server/src/lib/utils.ts": [
+    {
+      "codeMetadata": {
+        "name": "base",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 5,
+            "column": 1
+          },
+          "end": {
+            "line": 5,
+            "column": 48
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/server",
+            "dependsOn": [
+              "os"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/context",
+            "dependsOn": [
+              "apps/server/src/lib/context#ORPCContext"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/lib/utils.ts#base",
+        "typeSignature": "const base: any"
+      },
+      "semanticData": {
+        "summary": "Initializes a base ORPC context builder for defining public server-side procedures.",
+        "description": "The \"base\" constant serves as the foundational element for defining server-side procedures within the ORPC framework. It encapsulates the core context-management capabilities provided by \"os.$context\", allowing subsequent procedures to inherit and operate within a shared, type-safe \"ORPCContext\". This design provides a clear, consistent entry point for building robust and maintainable RPC APIs.",
+        "tags": [
+          "rpc",
+          "server",
+          "context",
+          "api",
+          "framework",
+          "utility"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Defining the root context for all public ORPC procedures",
+            "Establishing a shared, type-safe context (e.g., for database access, authentication) across RPC endpoints",
+            "Simplifying the creation of new public API endpoints by providing a pre-configured base"
+          ],
+          "examples": [
+            {
+              "code": "import { os } from \"@orpc/server\";\nimport type { ORPCContext } from \"./context\";\n\n// 1. Define the base context\nexport const base = os.$context<ORPCContext>();\n\n// 2. Export a procedure type derived from base\nexport const publicProcedure = base;\n\n// 3. Use publicProcedure to define an actual RPC endpoint\n// In a separate file, e.g., 'src/procedures/user.ts'\n// import { publicProcedure } from \"../lib/utils\";\n\n// export const getUserProfile = publicProcedure.query(async (ctx, input: { userId: string }) => {\n//   // 'ctx' here will be of type ORPCContext, thanks to 'base'\n//   // Example: const user = await ctx.db.users.findById(input.userId);\n//   return { id: input.userId, name: \"John Doe\" };\n// });",
+              "description": "This example illustrates how 'base' is initialized once to set up the ORPC context. It is then re-exported as 'publicProcedure', serving as the starting point for defining individual RPC query or mutation endpoints. Each procedure defined using 'publicProcedure' will automatically have access to the 'ORPCContext' defined by 'base', ensuring type-safe and consistent context propagation."
+            }
+          ],
+          "limitations": [
+            "This declaration is specific to the '@orpc/server' framework and its context management pattern.",
+            "The 'base' type signature 'any' can obscure the actual builder methods and properties it provides; full understanding requires familiarity with the '@orpc/server' documentation.",
+            "Performance considerations may arise if the 'ORPCContext' itself is excessively large or requires heavy initialization per request, though 'base' itself is a compile-time constant."
+          ],
+          "bestPractices": [
+            "Define 'base' once in a central utility file (e.g., 'src/lib/utils.ts') to ensure a single source of truth for the RPC context.",
+            "Ensure 'ORPCContext' is narrowly defined with only the essential, context-specific data needed for RPCs.",
+            "Always derive specific procedure types (like 'publicProcedure') directly from 'base' to maintain consistency and leverage its context capabilities.",
+            "Treat 'base' as an immutable configuration once initialized, avoiding runtime modifications."
+          ],
+          "antiPatterns": [
+            "Re-initializing 'base' multiple times in different files, leading to inconsistent context handling",
+            "Using 'base' for non-RPC-related context management, outside the scope of procedure definitions",
+            "Exposing overly broad or sensitive data within the 'ORPCContext' itself if the context is intended for public procedures"
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "publicProcedure",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 7,
+            "column": 1
+          },
+          "end": {
+            "line": 7,
+            "column": 37
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/server/src/lib/utils.ts#publicProcedure",
+        "typeSignature": "const publicProcedure: any"
+      },
+      "semanticData": {
+        "summary": "A base ORPC procedure factory for defining publicly accessible, unauthenticated API endpoints.",
+        "description": "The publicProcedure constant serves as the foundation for defining ORPC server endpoints that do not require any authentication or authorization. It's built upon the os.$context<ORPCContext>() type, meaning any procedure derived from it will automatically have access to the ORPCContext object. This simplifies the creation of APIs intended for public consumption, such as health checks, registration flows, or unauthenticated data retrieval.",
+        "tags": [
+          "rpc",
+          "server",
+          "api",
+          "unauthenticated",
+          "procedure",
+          "context"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Defining API endpoints accessible without user authentication",
+            "Exposing public health or status checks for load balancers",
+            "Creating user registration or login endpoints",
+            "Providing public data retrieval without specific user context"
+          ],
+          "examples": [
+            {
+              "code": "import { publicProcedure } from './utils';\n\nexport const helloProcedure = publicProcedure.query(() => {\n  return 'Hello from public API!';\n});\n\n// In your ORPC router:\n// const appRouter = os.router({\n//   hello: helloProcedure,\n// });",
+              "description": "Demonstrates how to define a simple public query procedure using publicProcedure that returns a string, ideal for unauthenticated greeting messages or basic checks."
+            },
+            {
+              "code": "import { publicProcedure } from './utils';\nimport { z } from 'zod'; // Assuming Zod is used for validation\n\nexport const healthCheckProcedure = publicProcedure\n  .input(z.object({\n    detail: z.boolean().optional()\n  }))\n  .query(({ input }) => {\n    if (input.detail) {\n      return { status: 'healthy', timestamp: new Date().toISOString(), version: '1.0.0' };\n    }\n    return { status: 'ok' };\n  });",
+              "description": "Shows a public query procedure for a health check, optionally returning detailed status information based on input, suitable for load balancer health probes."
+            }
+          ],
+          "limitations": [
+            "Does not inherently provide any authentication or authorization mechanisms; these must be added explicitly as middleware if required.",
+            "Relies on the ORPCContext type for any context-related functionality, which must be correctly defined and provided.",
+            "Not suitable for endpoints that require user-specific data or actions unless authentication/authorization is added on top."
+          ],
+          "bestPractices": [
+            "Strictly limit publicProcedure usage to genuinely public-facing endpoints.",
+            "For any endpoint requiring authentication or authorization, build upon this procedure and add appropriate middleware, or use a distinct, pre-authorized base procedure.",
+            "Keep public endpoints lean and focused, avoiding complex logic that might benefit from authenticated context."
+          ],
+          "antiPatterns": [
+            "Using publicProcedure for sensitive operations that should be authenticated or authorized without adding explicit middleware.",
+            "Exposing administrative or privileged functions through publicProcedure.",
+            "Assuming publicProcedure provides any implicit security or access control."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/server/src/lib/nanoid.ts": [
+    {
+      "codeMetadata": {
+        "name": "alphabet",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 3,
+            "column": 57
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/server/src/lib/nanoid.ts#alphabet",
+        "typeSignature": "const alphabet: string"
+      },
+      "semanticData": {
+        "summary": "Defines the default character set for `nanoid` ID generation within the application.",
+        "description": "The \"alphabet\" constant defines the precise set of characters (0-9, a-z) from which unique identifiers are generated by the `nanoid` library within the application. Its primary purpose is to provide a standardized, readable, and URL-friendly character pool. This ensures consistency and predictability in generated IDs, allowing developers to easily configure `nanoid` instances with a known character set for various system needs.",
+        "tags": [
+          "utility",
+          "configuration",
+          "identifier-generation",
+          "string-manipulation"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Defining a reusable standard character set for `nanoid` instances.",
+            "Configuring `customAlphabet` to generate IDs using a specific alphanumeric range.",
+            "Ensuring generated IDs are composed of predictable, common characters."
+          ],
+          "examples": [
+            {
+              "code": "import { customAlphabet } from \"nanoid\";const alphabet = \"0123456789abcdefghijklmnopqrstuvwxyz\";export const nanoid = customAlphabet(alphabet, 16);const newId = nanoid();console.log(newId);",
+              "description": "This example demonstrates how the `alphabet` constant is utilized by `customAlphabet` to configure the `nanoid` function, serving as the character source for generated unique IDs. The `nanoid` function then produces IDs using only the characters defined in `alphabet`."
+            }
+          ],
+          "limitations": [
+            "This `alphabet` solely defines the available characters; it does not control the length or uniqueness guarantee of the generated IDs, which are managed by the `customAlphabet` function and the `nanoid` algorithm.",
+            "It does not include uppercase letters or common special characters, making it unsuitable for scenarios requiring such characters in generated IDs without modification or defining a new constant.",
+            "Not suitable for situations demanding highly specific character sets (e.g., only hexadecimal, or only base64 characters) without explicitly defining a new constant."
+          ],
+          "bestPractices": [
+            "Use this `alphabet` as a good default for standard alphanumeric IDs where uppercase or special characters are not required.",
+            "For stricter requirements, such as URL-safe IDs with fewer characters, consider defining a new `const` with a more restricted subset of this alphabet.",
+            "Define a separate `const` if uppercase letters or specific special characters are needed in generated IDs."
+          ],
+          "antiPatterns": [
+            "Attempting to modify this constant at runtime, as it's a fixed string literal.",
+            "Using the `alphabet` constant directly as an ID; it must be passed to `customAlphabet` to generate an ID."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "nanoid",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 5,
+            "column": 1
+          },
+          "end": {
+            "line": 5,
+            "column": 52
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "nanoid",
+            "importPath": "nanoid",
+            "dependsOn": [
+              "customAlphabet"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/lib/nanoid.ts#nanoid",
+        "typeSignature": "const nanoid: any"
+      },
+      "semanticData": {
+        "summary": "Generates cryptographically strong, unique IDs using a custom alphabet and a fixed length of 16 characters.",
+        "description": "This declaration provides a pre-configured nanoid function, specifically designed to generate short, unique, and URL-friendly identifiers. It leverages the nanoid library's customAlphabet function, using a base-36 alphabet (digits and lowercase Latin letters) and a fixed length of 16 characters. This is ideal for scenarios requiring unique string IDs that are compact and easy to handle in URLs or database keys, without relying on sequential IDs.",
+        "tags": [
+          "utility",
+          "id-generation",
+          "unique-id",
+          "cryptography"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Generating unique primary keys for database records",
+            "Creating short, unique URLs or slugs",
+            "Assigning unique identifiers to sessions or temporary files",
+            "Generating unique tokens for password resets or email verification",
+            "Providing unique IDs for frontend components"
+          ],
+          "examples": [
+            {
+              "code": "import { nanoid } from './lib/nanoid';\n\nconst userId = nanoid();\nconsole.log(userId); // e.g., \"g8h7j9k2l1m4n3p6\"",
+              "description": "Demonstrates the basic usage of the pre-configured nanoid function to generate a 16-character unique ID for typical scenarios like user IDs."
+            }
+          ],
+          "limitations": [
+            "The length of the generated ID is fixed at 16 characters and cannot be changed via this specific nanoid export. For different lengths, customAlphabet needs to be used directly.",
+            "While highly collision-resistant for typical use cases, it's not suitable for cryptographic applications requiring absolute non-predictability or extreme security (e.g., encryption keys).",
+            "Relies on a specific alphabet; if characters outside '0-9a-z' are needed, customAlphabet must be used directly with a different alphabet."
+          ],
+          "bestPractices": [
+            "Use this nanoid export when a consistent, short, URL-friendly 16-character ID is required across the application.",
+            "Store generated IDs in database columns that support variable-length strings (e.g., VARCHAR(16) or CHAR(16)).",
+            "Consider the collision probability for your specific application's scale; while extremely low, for systems generating billions of IDs, a different strategy might be considered.",
+            "Avoid using these IDs for sensitive data where their predictability, however low, could be exploited (e.g., direct lookup of confidential records without additional authentication)."
+          ],
+          "antiPatterns": [
+            "Do not try to pass a length argument to this nanoid function, as it's pre-configured and will ignore it or cause a type error. Instead, use customAlphabet directly if a custom length is needed.",
+            "Avoid using nanoid for generating large sequences of strictly sequential or easily guessable IDs, as its strength lies in randomness, not order.",
+            "Do not use nanoid for generating cryptographic keys or seeds where high entropy and specific bit-length requirements are critical, as it's optimized for ID generation, not general-purpose cryptography."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/server/src/lib/logger.ts": [
+    {
+      "codeMetadata": {
+        "name": "isDevelopment",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 6,
+            "column": 1
+          },
+          "end": {
+            "line": 6,
+            "column": 62
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/server/src/lib/logger.ts#isDevelopment",
+        "typeSignature": "const isDevelopment: any"
+      },
+      "semanticData": {
+        "summary": "A boolean constant indicating if the application's `NODE_ENV` is set to 'development'.",
+        "description": "The `isDevelopment` constant is a boolean flag that indicates whether the application is running in a development environment. It determines this by checking if the `NODE_ENV` environment variable is set to 'development'. This constant is primarily used to enable or disable development-specific features, configurations, or debugging tools, ensuring that certain behaviors, like log pretty-printing, are only active during local development.",
+        "tags": [
+          "environment-variable",
+          "configuration",
+          "development-mode",
+          "utility"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Conditionally enabling verbose logging or debugging tools",
+            "Applying development-specific middleware or routes in web applications",
+            "Disabling performance optimizations or caching during local development",
+            "Loading different configuration files based on the environment"
+          ],
+          "examples": [
+            {
+              "code": "const isDevelopment = process.env.NODE_ENV === \"development\";\n\nexport const logger = pino(\n  {\n    level: process.env.LOG_LEVEL || \"info\",\n  },\n  isDevelopment ? pretty({ colorize: true, singleLine: true }) : undefined,\n);",
+              "description": "This example shows how `isDevelopment` is used to conditionally apply a pretty-printing formatter to a Pino logger, making logs more readable in development but keeping them as JSON in production."
+            },
+            {
+              "code": "const isDevelopment = process.env.NODE_ENV === \"development\";\n\nif (isDevelopment) {\n  app.use(morgan('dev')); // Use verbose HTTP request logging in development\n} else {\n  app.use(morgan('combined')); // Use a more concise format in production\n}",
+              "description": "Demonstrates using `isDevelopment` to apply different HTTP request logging middleware (e.g., `morgan` for Express/Koa) based on the environment, providing more detail during development."
+            }
+          ],
+          "limitations": [
+            "Only distinguishes between 'development' and other environments based on a single environment variable, which may not be granular enough for complex staging/testing scenarios.",
+            "Requires the `NODE_ENV` environment variable to be correctly set for its intended behavior."
+          ],
+          "bestPractices": [
+            "Always explicitly set `NODE_ENV` to 'development' for development builds and 'production' for production deployments.",
+            "Centralize environment checks into constants like `isDevelopment` for better readability and maintainability.",
+            "Use this constant to toggle features that are purely for developer convenience or debugging, not critical production logic."
+          ],
+          "antiPatterns": [
+            "Relying solely on `isDevelopment` for security-sensitive feature toggles; environment variables can be manipulated.",
+            "Hardcoding development-specific logic across many files instead of centralizing checks through this constant.",
+            "Failing to explicitly set `NODE_ENV` in production, potentially leaving development features enabled."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "logger",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 8,
+            "column": 1
+          },
+          "end": {
+            "line": 14,
+            "column": 3
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "pino",
+            "importPath": "pino",
+            "dependsOn": [
+              "pino"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "pino-pretty",
+            "importPath": "pino-pretty",
+            "dependsOn": [
+              "pretty"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/lib/logger.ts#logger",
+        "typeSignature": "const logger: any"
+      },
+      "semanticData": {
+        "summary": "Initializes a pre-configured Pino logger instance for structured, high-performance application logging with environment-dependent formatting.",
+        "description": "This `logger` constant initializes a Pino logging instance, optimized for server-side applications. It provides structured logging capabilities, automatically includes standard fields, and can be configured with a dynamic log level via environment variables. In development environments, it enhances readability with `pino-pretty`, making log output more human-friendly, while maintaining raw JSON output for production environments, which is ideal for log aggregation systems.",
+        "tags": [
+          "logging",
+          "server-side",
+          "utility",
+          "configuration",
+          "development-tool"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Logging application events, information, and errors",
+            "Debugging server-side code during development",
+            "Integrating with HTTP request/response logging middleware",
+            "Emitting structured logs for external log analysis and aggregation systems"
+          ],
+          "examples": [
+            {
+              "code": "import { logger } from './lib/logger';\n\nfunction processData(dataId: string, value: number) {\n  logger.info({ dataId, value }, 'Processing data item');\n  try {\n    // Simulate some data processing logic\n    if (value < 0) {\n      throw new Error('Negative value not allowed');\n    }\n    logger.debug({ dataId }, 'Data item processed successfully');\n  } catch (error) {\n    logger.error({ dataId, error: error.message, stack: error.stack }, 'Failed to process data item');\n  }\n}\n\nprocessData('item-1', 100);\nprocessData('item-2', -5);",
+              "description": "Demonstrates direct usage of the `logger` instance for general application logging, including different log levels (info, debug, error) and the inclusion of structured data for better context and traceability."
+            },
+            {
+              "code": "import { logRequest, logger } from './lib/logger';\n\n// Example handler for a web framework (e.g., Express-like or Workers)\nasync function apiEndpointHandler(request: Request): Promise<Response> {\n  // Simulate an async operation\n  await new Promise(resolve => setTimeout(resolve, 50));\n  logger.info({ path: request.url, method: request.method }, 'Received API request');\n\n  if (request.url.includes('/error')) {\n    throw new Error('Simulated API endpoint error');\n  }\n  return new Response('API response', { status: 200 });\n}\n\n// How it's typically used in a server's request handling loop:\n// (This assumes you receive a WHATWG `Request` object)\nasync function handleIncomingWebRequest(request: Request): Promise<Response> {\n  return logRequest(request, apiEndpointHandler);\n}\n\n// Example invocation (for demonstration purposes):\n// const req1 = new Request('http://example.com/data', { method: 'GET' });\n// handleIncomingWebRequest(req1).then(res => console.log(`Response 1 Status: ${res.status}`));\n\n// const req2 = new Request('http://example.com/error', { method: 'POST' });\n// handleIncomingWebRequest(req2).catch(err => console.error(`Error handling req 2: ${err.message}`));",
+              "description": "Illustrates how the `logger` is integrated indirectly through the `logRequest` utility function. This pattern provides automatic, structured logging for incoming HTTP requests, their responses, and any errors that occur during processing, enhancing observability of web traffic."
+            }
+          ],
+          "limitations": [
+            "The `any` type signature provided for `logger` might obscure specific `PinoLogger` methods, potentially requiring developers to infer them or refer directly to Pino's documentation.",
+            "The `pino-pretty` formatter is conditionally enabled only in the `development` environment, meaning production logs will be raw JSON, which is by design for machine readability but may require external tools for human review.",
+            "The `extractConnectionInfo` and `createRequestLogger` helper functions are specifically tailored for WHATWG `Request` objects, which may require adaptation if integrating directly with Node.js's native `http.IncomingMessage` without a compatible wrapper."
+          ],
+          "bestPractices": [
+            "Use `logger.child()` to create contextual loggers within specific modules or request scopes, automatically adding relevant metadata to all subsequent logs from that child instance.",
+            "Ensure the `LOG_LEVEL` environment variable is correctly set in all environments (e.g., 'info' for production, 'debug' for development) to control log verbosity effectively.",
+            "Leverage structured logging by passing objects as the first argument to logger methods (e.g., `logger.info({ userId: '123' }, 'User logged in')`) for easier parsing, filtering, and analysis by log aggregation tools.",
+            "Implement log redaction for sensitive fields (e.g., passwords, API keys) when logging request bodies or headers to prevent data leakage."
+          ],
+          "antiPatterns": [
+            "Using `console.log` or other non-Pino logging methods alongside `logger`, leading to inconsistent log formats and loss of structured data.",
+            "Logging excessively verbose messages (e.g., 'debug' level) in production, which can incur significant performance overhead and disk usage.",
+            "Logging sensitive data directly without proper redaction or omitting it from log payloads.",
+            "Not setting the `LOG_LEVEL` environment variable in production, potentially defaulting to a suboptimal verbosity level."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "RequestLogContext",
+        "type": "interface",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 16,
+            "column": 1
+          },
+          "end": {
+            "line": 26,
+            "column": 2
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/server/src/lib/logger.ts#RequestLogContext",
+        "typeSignature": "interface"
+      },
+      "semanticData": {
+        "summary": "Defines the structure for contextual information used to log an individual HTTP request's lifecycle.",
+        "description": "The RequestLogContext interface provides a standardized structure for capturing key details of an incoming HTTP request. It includes a unique request ID, the start time, and comprehensive request information like method, URL, headers, and remote client details. This interface is crucial for maintaining consistent, traceable logs across a server application, enabling developers to monitor and debug request flows effectively by associating all related log entries with a specific request context.",
+        "tags": [
+          "logging",
+          "http",
+          "request-handling",
+          "middleware",
+          "context",
+          "server"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Providing a consistent logging context for an individual HTTP request in a server application",
+            "Correlating multiple log entries (e.g., request start, database query, response end) to a single request lifecycle",
+            "Capturing essential request metadata for debugging and monitoring purposes",
+            "Implementing a custom HTTP request logging middleware"
+          ],
+          "examples": [
+            {
+              "code": "function createRequestLogger() {  return {    logRequest: (request: Request): RequestLogContext => {      const id = nanoid();      const startTime = Date.now();      const { remoteAddress, remotePort } = extractConnectionInfo(request);      const headers: Record<string, string> = {};      request.headers.forEach((value, key) => {        headers[key] = value;      });      const logContext: RequestLogContext = {        id,        startTime,        request: {          method: request.method,          url: new URL(request.url).pathname + new URL(request.url).search,          headers,          remoteAddress,          remotePort,        },      };      return logContext;    }  };}",
+              "description": "This example shows how a RequestLogContext object is initialized with essential data extracted from an incoming Request object. It includes a unique ID, start timestamp, HTTP method, URL, headers, and derived remote connection details, forming a complete snapshot for logging."
+            },
+            {
+              "code": "export async function logRequest(  request: Request,  handler: (request: Request) => Promise<Response>,): Promise<Response> {  const requestLogger = createRequestLogger();  const context = requestLogger.logRequest(request);  try {    const response = await handler(request);    requestLogger.logResponse(context, response);    return response;  } catch (error) {    const errorResponse = new Response(\"Internal Server Error\", {      status: 500,    });    requestLogger.logResponse(context, errorResponse, error as Error);    throw error;  }}",
+              "description": "This example illustrates how RequestLogContext is passed through a request handling wrapper. The 'context' object, once created at the start, is then utilized by 'logResponse' to emit consistent logs upon successful completion or error, ensuring all log entries for a given request share the same identifier and initial details."
+            }
+          ],
+          "limitations": [
+            "Server-side specific: Primarily designed for server-side HTTP request processing environments and may not be directly applicable in client-side contexts.",
+            "Snapshot at creation: The context captures request details at the moment of its creation. Any changes to the original Request object (if mutable) after context creation will not be reflected in the context itself.",
+            "No built-in sensitive data redaction: Does not automatically redact sensitive information (e.g., authorization headers, cookies) from the 'headers' field; this needs to be handled by the context creation logic or the logging library."
+          ],
+          "bestPractices": [
+            "Initialize RequestLogContext at the very beginning of your request handling pipeline to ensure all relevant initial details are captured.",
+            "Pass the RequestLogContext instance consistently through functions that perform operations related to the request (e.g., database calls, external API requests) so they can enrich logs with this context.",
+            "Generate a unique 'id' for each request to allow for easy correlation of log entries across distributed systems or different log files.",
+            "Utilize this context object with a structured logging library (like Pino) to emit machine-readable logs, enhancing their searchability and analysis."
+          ],
+          "antiPatterns": [
+            "Mutating RequestLogContext fields after creation: The context should ideally be immutable once initialized for a request; modifying its fields mid-request can lead to inconsistent log data and make debugging harder.",
+            "Using RequestLogContext for general application state: This interface is strictly for request-specific logging data. It should not be overloaded to store application state or unrelated transient data.",
+            "Omitting crucial request details: Failing to consistently populate fields like 'remoteAddress' or 'headers' reduces the effectiveness of the log context for debugging."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "extractConnectionInfo",
+        "type": "function",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 28,
+            "column": 1
+          },
+          "end": {
+            "line": 67,
+            "column": 2
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/server/src/lib/logger.ts#extractConnectionInfo",
+        "typeSignature": "function(request: Request): { remoteAddress: string; remotePort?: number }",
+        "isAsync": false,
+        "isGenerator": false,
+        "parameters": [
+          {
+            "name": "request",
+            "type": "Request",
+            "isOptional": false,
+            "isRest": false
+          }
+        ],
+        "returnType": "{ remoteAddress: string; remotePort?: number }"
+      },
+      "semanticData": {
+        "summary": "Extracts the client's remote IP address and port from a Request object, prioritizing various proxy and forwarded-for headers.",
+        "description": "This function is designed to robustly determine the originating client's IP address and port from an incoming Request. It intelligently checks a sequence of common HTTP headers, such as \"cf-connecting-ip\" and \"x-forwarded-for\", which are typically set by proxies or CDNs, before falling back to the \"host\" header or inferring from the URL protocol. This is crucial for accurate logging, analytics, and security measures in server applications operating behind proxies.",
+        "tags": [
+          "networking",
+          "http",
+          "request-processing",
+          "utility",
+          "security",
+          "logging"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Retrieving client IP for request logging and analytics",
+            "Implementing IP-based access control or rate limiting",
+            "Debugging network issues by identifying the true client origin",
+            "Populating request context for backend services"
+          ],
+          "examples": [
+            {
+              "code": "import { extractConnectionInfo } from \"./logger\";\n\nasync function handleRequest(request: Request) {\n  const { remoteAddress, remotePort } = extractConnectionInfo(request);\n  console.log(`Incoming request from: ${remoteAddress}:${remotePort || 'N/A'}`);\n\n  // Further processing...\n  return new Response(`Hello from ${remoteAddress}`);\n}\n\n// Example with headers (simulated)\nconst mockRequestWithProxy = new Request(\"http://example.com/api/data\", {\n  headers: {\n    \"cf-connecting-ip\": \"203.0.113.45\",\n    \"x-forwarded-for\": \"192.168.1.1, 10.0.0.1\",\n    \"host\": \"example.com:8080\"\n  }\n});\nconst info1 = extractConnectionInfo(mockRequestWithProxy);\n// info1.remoteAddress will be \"203.0.113.45\"\n// info1.remotePort will be 8080\n\nconst mockRequestNoProxy = new Request(\"https://localhost:3000/status\");\nconst info2 = extractConnectionInfo(mockRequestNoProxy);\n// info2.remoteAddress will be \"127.0.0.1\" (fallback)\n// info2.remotePort will be 443 (inferred from https)",
+              "description": "This example demonstrates how to use \"extractConnectionInfo\" to obtain the client's IP address and port from an incoming Request object. It shows how the function prioritizes various proxy headers and falls back to default values or URL-derived ports when specific headers are absent, making it suitable for server-side request processing."
+            }
+          ],
+          "limitations": [
+            "The accuracy of the extracted IP and port heavily relies on the upstream proxies (e.g., load balancers, CDNs) correctly setting the X-Forwarded-For or other proxy headers. If these are misconfigured or absent, the function might return a proxy's IP or the default 127.0.0.1.",
+            "Does not perform any validation to ensure the extracted IP address is a valid public IP or belongs to a specific range. It simply extracts the string.",
+            "The port inference from the host header or URL protocol is a best-effort approach and might not always reflect the true client-side port, especially in complex network topologies or when non-standard ports are used without X-Forwarded-Port."
+          ],
+          "bestPractices": [
+            "Ensure your reverse proxy (e.g., Nginx, Cloudflare) is configured to correctly set headers like X-Forwarded-For or CF-Connecting-IP.",
+            "Consider adding a whitelist of trusted proxy IPs if your application directly consumes headers like X-Forwarded-For to prevent spoofing.",
+            "Always sanitize and validate any extracted network information before using it in sensitive operations.",
+            "Log the extracted connection info along with other request details for better debugging and auditing."
+          ],
+          "antiPatterns": [
+            "Relying solely on request.headers.get('x-forwarded-for') without considering other proxy headers, which might lead to incorrect IP detection in complex proxy setups.",
+            "Using the extracted IP directly for critical security decisions without additional validation or trust checks, as X-Forwarded-For headers can be spoofed if not properly handled by your proxy infrastructure."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "createRequestLogger",
+        "type": "function",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 69,
+            "column": 1
+          },
+          "end": {
+            "line": 153,
+            "column": 2
+          }
+        },
+        "dependencies": [
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/nanoid",
+            "dependsOn": [
+              "apps/server/src/lib/nanoid#nanoid"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "pino",
+            "importPath": "pino",
+            "dependsOn": [
+              "pino"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/lib/logger.ts#createRequestLogger",
+        "typeSignature": "function(): object | any",
+        "isAsync": false,
+        "isGenerator": false,
+        "parameters": [],
+        "returnType": "object | any"
+      },
+      "semanticData": {
+        "summary": "Creates a pair of functions to capture and log structured details of HTTP requests and responses, including timing and errors, using a Pino logger.",
+        "description": "The `createRequestLogger` function provides a structured way to log details about incoming HTTP requests and their corresponding responses. It returns an object with two methods, `logRequest` and `logResponse`, which capture request metadata, timing, and response status, integrating with a global Pino logger. This helps standardize request logging across an application, making it easier to monitor, debug, and trace API interactions by providing a consistent log format for each request lifecycle.",
+        "tags": [
+          "logging",
+          "http",
+          "middleware",
+          "utility",
+          "server"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Implementing centralized HTTP request logging in a server application",
+            "Tracing request lifecycles from start to finish, including error handling",
+            "Standardizing log formats for API endpoints for easier analysis",
+            "Monitoring response times and status codes for performance and health checks"
+          ],
+          "examples": [
+            {
+              "code": "import { logRequest } from './lib/logger';\n\n// Example of using logRequest as a middleware in a server\n// Assuming 'handler' is your main request processing function\n\nasync function handleIncomingRequest(request: Request): Promise<Response> {\n  // Your application's request routing and processing logic here\n  // For demonstration, let's say it returns a simple response.\n  const url = new URL(request.url);\n  if (url.pathname === '/error') {\n    throw new Error('Simulated internal server error');\n  }\n  return new Response(`Hello from ${url.pathname}!`, { status: 200 });\n}\n\n// This function demonstrates how createRequestLogger is consumed\n// by the higher-level logRequest wrapper.\nasync function main() {\n  // Simulate an incoming request\n  const mockRequest = new Request('http://localhost:3000/api/users', {\n    method: 'GET',\n    headers: { 'User-Agent': 'TestClient/1.0', 'CF-Connecting-IP': '192.168.1.1' }\n  });\n\n  console.log('--- Logging successful request ---');\n  try {\n    const response = await logRequest(mockRequest, handleIncomingRequest);\n    console.log(`Response Status: ${response.status}`);\n  } catch (e) {\n    console.error(`Request failed: ${e.message}`);\n  }\n\n  // Simulate an error request\n  const errorMockRequest = new Request('http://localhost:3000/error', {\n    method: 'GET'\n  });\n\n  console.log('\\n--- Logging errored request ---');\n  try {\n    const errorResponse = await logRequest(errorMockRequest, handleIncomingRequest);\n    console.log(`Response Status: ${errorResponse.status}`);\n  } catch (e) {\n    console.error(`Request failed as expected: ${e.message}`);\n  }\n}\n\n// In a real application, 'main' would be your server's entry point\n// or a request handler for a web framework.\n// main();",
+              "description": "This example demonstrates how the `createRequestLogger` is utilized by the `logRequest` higher-order function, which acts as a middleware. It wraps a handler function to automatically log the request start and end (or error) using the logger context. This pattern ensures consistent logging for all requests passing through this wrapper, showcasing how to capture details, handle errors, and provide a comprehensive log entry."
+            }
+          ],
+          "limitations": [
+            "The `extractConnectionInfo` function relies on specific headers (`cf-connecting-ip`, `x-forwarded-for`, etc.) for identifying the client's IP and port, which might not be present or accurate in all proxy/load balancer setups. It falls back to internal headers or `127.0.0.1` if not found.",
+            "It assumes the global `logger` (Pino) is already initialized and configured. Its functionality is tightly coupled to the existence and behavior of this `logger` instance.",
+            "The current implementation logs request headers entirely, which might include sensitive information like Authorization tokens if not explicitly redacted upstream before being passed to the request logger."
+          ],
+          "bestPractices": [
+            "Integrate `createRequestLogger` into a global request handling middleware or interceptor to ensure all requests are consistently logged.",
+            "Always call `logResponse` after the request has been processed (or errored) to ensure accurate timing and status logging.",
+            "Pass the `RequestLogContext` from `logRequest` to `logResponse` to maintain the context for the entire request lifecycle.",
+            "Ensure the global `logger` (Pino) is configured appropriately for production (e.g., without `pretty` formatting) for efficient log ingestion."
+          ],
+          "antiPatterns": [
+            "Creating a new `createRequestLogger` instance for every single request within a tight loop; the returned object should ideally be instantiated once per request lifecycle or reused if the context is passed appropriately.",
+            "Logging sensitive data (e.g., full request headers with auth tokens, full request/response bodies) without redaction, as the `headers` are captured directly."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "logRequest",
+        "type": "function",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 155,
+            "column": 1
+          },
+          "end": {
+            "line": 173,
+            "column": 2
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/server/src/lib/logger.ts#logRequest",
+        "typeSignature": "async function(request: Request, handler: (request: Request) => Promise<Response>): Promise<Response>",
+        "isAsync": true,
+        "isGenerator": false,
+        "parameters": [
+          {
+            "name": "request",
+            "type": "Request",
+            "isOptional": false,
+            "isRest": false
+          },
+          {
+            "name": "handler",
+            "type": "(request: Request) => Promise<Response>",
+            "isOptional": false,
+            "isRest": false
+          }
+        ],
+        "returnType": "Promise<Response>"
+      },
+      "semanticData": {
+        "summary": "Wraps an HTTP request handler to log incoming requests, outgoing responses, and errors with detailed contextual information.",
+        "description": "The `logRequest` function acts as an asynchronous middleware or wrapper for HTTP request handlers. It centralizes and standardizes the logging of incoming requests and their corresponding responses or errors. By capturing request details, timing the operation, and logging success or failure with contextual information, it provides critical visibility into the server's operation and aids in debugging and monitoring.",
+        "tags": [
+          "logging",
+          "middleware",
+          "http",
+          "server",
+          "utility",
+          "monitoring"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Implementing a top-level request logging middleware for an HTTP server (e.g., Cloudflare Workers, Node.js HTTP server)",
+            "Adding standardized logging to individual API routes or handlers",
+            "Monitoring request performance and response times",
+            "Debugging request/response flows and identifying error sources"
+          ],
+          "examples": [
+            {
+              "code": "import { logRequest } from './lib/logger';\n\nasync function handleRequest(request: Request): Promise<Response> {\n  // Your application logic here\n  if (request.url.includes('/api/health')) {\n    return new Response('OK', { status: 200 });\n  }\n  if (request.url.includes('/api/data')) {\n    // Simulate some work\n    await new Promise(resolve => setTimeout(resolve, 100));\n    return new Response('Data fetched!', { status: 200 });\n  }\n  return new Response('Not Found', { status: 404 });\n}\n\n// Example usage in an HTTP server context (e.g., Cloudflare Workers fetch event)\nasync function mainHandler(request: Request): Promise<Response> {\n  return logRequest(request, handleRequest);\n}\n\n// In a real application, you'd typically export mainHandler for your server framework\n// For example, for Cloudflare Workers:\n// addEventListener('fetch', event => {\n//   event.respondWith(mainHandler(event.request));\n// });",
+              "description": "This example demonstrates how to use `logRequest` to wrap a primary request handler (`handleRequest`). The `mainHandler` function acts as the entry point, ensuring that every incoming request is logged before and after `handleRequest` processes it, covering both successful responses and any errors that might occur within `handleRequest`."
+            }
+          ],
+          "limitations": [
+            "Requires `Request` and `Response` Web API objects, making it most suitable for environments like Cloudflare Workers, Deno, or Node.js with a Fetch API polyfill.",
+            "The `extractConnectionInfo` function relies on common HTTP headers (`cf-connecting-ip`, `x-forwarded-for`, etc.) for remote address and port, which might not be present or accurate in all environments without a proxy.",
+            "Logs basic request/response headers; sensitive headers should be redacted at the `pino` logger configuration level to prevent accidental exposure in logs.",
+            "The logging is done at the request/response boundary; finer-grained internal operation logging within the `handler` itself would require additional logging calls."
+          ],
+          "bestPractices": [
+            "Place `logRequest` as early as possible in your request handling chain to ensure all requests are captured, including those that might fail early.",
+            "Ensure the `logger` instance (from pino) is properly configured for your environment (e.g., `LOG_LEVEL` for production, pretty printing for development).",
+            "Integrate the output of this logger with a centralized logging system (e.g., ELK stack, Splunk, DataDog) for effective monitoring and alerting.",
+            "Consider customizing `RequestLogContext` or the `logResponse` function to include additional relevant details specific to your application, such as user IDs or tenant information."
+          ],
+          "antiPatterns": [
+            "Using `logRequest` for non-HTTP operations: This function is specifically designed for `Request` and `Response` objects; applying it to other types of operations will lead to errors.",
+            "Nesting `logRequest` multiple times within a single request chain: This can lead to redundant logs and increased overhead without providing additional value.",
+            "Suppressing errors caught by `logRequest`: The function is designed to re-throw errors after logging; suppressing them would hide critical issues from upstream error handling mechanisms."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/server/src/lib/handlers.ts": [
+    {
+      "codeMetadata": {
+        "name": "sharedPlugins",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 14,
+            "column": 1
+          },
+          "end": {
+            "line": 28,
+            "column": 3
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/server/plugins",
+            "dependsOn": [
+              "BatchHandlerPlugin",
+              "ResponseHeadersPlugin",
+              "CORSPlugin"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/json-schema",
+            "dependsOn": [
+              "SmartCoercionPlugin"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/zod/zod4",
+            "dependsOn": [
+              "ZodToJsonSchemaConverter"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/lib/handlers.ts#sharedPlugins",
+        "typeSignature": "const sharedPlugins: any[]"
+      },
+      "semanticData": {
+        "summary": "An array of reusable ORPC server plugins for consistent API behavior across multiple handlers.",
+        "description": "The \"sharedPlugins\" constant provides a centralized collection of common ORPC server plugins designed for reuse across multiple API handlers. It includes essential functionalities like batch request handling, response header management, Cross-Origin Resource Sharing (CORS) configuration, and smart data coercion. This promotes consistency, reduces boilerplate, and simplifies the management of foundational API behaviors across different exposure mechanisms like OpenAPI and standard RPC.",
+        "tags": [
+          "rpc",
+          "api-gateway",
+          "middleware",
+          "configuration",
+          "plugins"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Applying consistent CORS policies and response headers across all API endpoints.",
+            "Enabling batch request processing for both OpenAPI and RPC handlers.",
+            "Centralizing common data coercion logic to handle incoming request payloads.",
+            "Ensuring a base set of middleware is always active for server-side API interactions."
+          ],
+          "examples": [
+            {
+              "code": "import { OpenAPIHandler } from \"@orpc/openapi/fetch\";\nimport { OpenAPIReferencePlugin } from \"@orpc/openapi/plugins\";\nimport { RPCHandler } from \"@orpc/server/fetch\";\nimport { router } from \"@repo/server/router\";\n\n// ... sharedPlugins declaration as provided in context ...\n\nexport const openApiHandlerOptions = {\n  plugins: [\n    ...sharedPlugins,\n    new OpenAPIReferencePlugin({\n      docsPath: \"/reference\",\n      // ... other OpenAPI specific configs ...\n    }),\n  ],\n};\n\nexport const openApiHandler = new OpenAPIHandler(router, openApiHandlerOptions);\n\nexport const rpcHandlerOptions = {\n  plugins: [...sharedPlugins],\n};\n\nexport const rpcHandler = new RPCHandler(router, rpcHandlerOptions);",
+              "description": "This example demonstrates how 'sharedPlugins' is used by spreading its contents into the 'plugins' array for both OpenAPI and RPC handlers. This ensures that batching, CORS, response headers, and smart coercion are consistently applied to both types of API interfaces, while allowing additional handler-specific plugins to be added as needed."
+            }
+          ],
+          "limitations": [
+            "The `any[]` type signature is generic; while implicitly understood to contain ORPC plugins, the type system does not enforce specific plugin interfaces for elements within this array at the declaration point.",
+            "This constant is best suited for plugins that have a consistent configuration or can derive their configuration from environment variables. Plugins requiring highly dynamic or handler-specific runtime configuration might need to be instantiated directly within their respective handler options."
+          ],
+          "bestPractices": [
+            "Always use the spread operator (`...sharedPlugins`) when incorporating these plugins into handler configurations to maintain immutability and prevent accidental shared state issues.",
+            "Keep 'sharedPlugins' focused on truly generic and universally applicable middleware that benefits all or most API handlers.",
+            "Define specific configurations for plugins (like CORS origins) using environment variables or a dedicated configuration module for easier management and deployment."
+          ],
+          "antiPatterns": [
+            "Modifying the 'sharedPlugins' array directly after declaration, which could lead to unintended side effects for all handlers consuming it. Always use the spread operator (...) to create new arrays.",
+            "Including handler-specific plugins in 'sharedPlugins' that are only relevant to a single handler type (e.g., an OpenAPI-specific plugin), leading to unnecessary overhead for other handlers."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "openApiHandlerOptions",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 30,
+            "column": 1
+          },
+          "end": {
+            "line": 44,
+            "column": 3
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/openapi/plugins",
+            "dependsOn": [
+              "OpenAPIReferencePlugin"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/zod/zod4",
+            "dependsOn": [
+              "ZodToJsonSchemaConverter"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/lib/handlers.ts#openApiHandlerOptions",
+        "typeSignature": "const openApiHandlerOptions: object"
+      },
+      "semanticData": {
+        "summary": "Configures options for an OpenAPI handler, including plugins for documentation generation, request coercion, and shared server behaviors.",
+        "description": "This `openApiHandlerOptions` constant defines the configuration object for an `@orpc/openapi/fetch` OpenAPIHandler instance. It bundles a set of reusable `sharedPlugins` along with an `OpenAPIReferencePlugin` to enable the dynamic generation and serving of OpenAPI documentation (Swagger/Redoc) at a specified path. Additionally, it includes a `SmartCoercionPlugin` to handle schema validation and type coercion based on Zod, ensuring robust request and response handling. This centralizes configuration for the API's documentation and runtime behavior.",
+        "tags": [
+          "openapi",
+          "api-gateway",
+          "documentation",
+          "configuration",
+          "middleware",
+          "api-reference"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Setting up an API endpoint to serve interactive OpenAPI documentation",
+            "Configuring an `@orpc` server to automatically generate and validate API schemas",
+            "Integrating Swagger UI or Redoc for API exploration",
+            "Applying consistent CORS policies and response headers across API documentation and RPC handlers"
+          ],
+          "examples": [
+            {
+              "code": "import { experimental_SmartCoercionPlugin as SmartCoercionPlugin } from \"@orpc/json-schema\";\nimport { OpenAPIHandler } from \"@orpc/openapi/fetch\";\nimport { OpenAPIReferencePlugin } from \"@orpc/openapi/plugins\";\nimport {\n  BatchHandlerPlugin,\n  CORSPlugin,\n  ResponseHeadersPlugin\n} from \"@orpc/server/plugins\";\nimport { ZodToJsonSchemaConverter } from \"@orpc/zod/zod4\";\n\n// Assume router is defined elsewhere\n// import { router } from \"@repo/server/router\";\n\nconst sharedPlugins = [\n  new BatchHandlerPlugin(),\n  new ResponseHeadersPlugin(),\n  new CORSPlugin({\n    origin: process.env.CORS_ORIGIN?.split(\",\"),\n    allowHeaders: [\"Content-Type\", \"Authorization\"],\n    allowMethods: [\"POST\", \"GET\", \"PUT\", \"DELETE\", \"OPTIONS\"],\n    exposeHeaders: [\"Content-Length\"],\n    maxAge: 600,\n    credentials: true\n  }),\n  new SmartCoercionPlugin({\n    schemaConverters: [new ZodToJsonSchemaConverter()]\n  })\n];\n\nexport const openApiHandlerOptions = {\n  plugins: [\n    ...sharedPlugins,\n    new OpenAPIReferencePlugin({\n      docsPath: \"/reference\",\n      schemaConverters: [new ZodToJsonSchemaConverter()],\n      specGenerateOptions: {\n        info: {\n          title: \"API Reference\",\n          version: \"1.0.0\"\n        }\n      }\n    })\n  ]\n};\n\n// Example of how it's used\n// export const openApiHandler = new OpenAPIHandler(router, openApiHandlerOptions);",
+              "description": "This example demonstrates the definition of `openApiHandlerOptions`, showcasing how `sharedPlugins` are combined with an `OpenAPIReferencePlugin`. It highlights the configuration of the OpenAPI documentation path (`/reference`) and the use of `ZodToJsonSchemaConverter` for schema generation, which is crucial for the API documentation to reflect the Zod schemas used in the API definition."
+            }
+          ],
+          "limitations": [
+            "Relies heavily on the `@orpc` ecosystem and its specific plugin architecture, making it less portable to other server frameworks directly",
+            "The `SmartCoercionPlugin` and `OpenAPIReferencePlugin` depend on compatible schema converters (e.g., `ZodToJsonSchemaConverter`), limiting flexibility if other schema definition libraries are used without a corresponding converter",
+            "Generating large OpenAPI specifications might impact server startup time or memory usage, though typically not a major concern for average APIs"
+          ],
+          "bestPractices": [
+            "Centralize shared plugins (like `BatchHandlerPlugin`, `CORSPlugin`) to ensure consistent behavior across different handler types",
+            "Ensure the `schemaConverters` used (e.g., `ZodToJsonSchemaConverter`) are consistent with the data validation library used throughout your API definitions",
+            "Configure `CORSPlugin` with the most restrictive `origin` possible to enhance security",
+            "Provide meaningful `info` for the OpenAPI spec (title, version) for better documentation"
+          ],
+          "antiPatterns": [
+            "Omitting `schemaConverters` for plugins like `OpenAPIReferencePlugin` or `SmartCoercionPlugin`, leading to schema generation or coercion failures",
+            "Setting `docsPath` to a commonly used application route, causing conflicts or overwriting existing endpoints",
+            "Insecurely configuring CORS, e.g., `origin: \"*\"`, allowing requests from any domain when a specific set of origins is intended"
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "openApiHandler",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 46,
+            "column": 1
+          },
+          "end": {
+            "line": 46,
+            "column": 81
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/openapi/fetch",
+            "dependsOn": [
+              "OpenAPIHandler"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/router",
+            "dependsOn": [
+              "apps/server/src/router#router"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/lib/handlers.ts#openApiHandler",
+        "typeSignature": "const openApiHandler: any"
+      },
+      "semanticData": {
+        "summary": "Creates an OpenAPI specification handler that serves API documentation and manages API requests based on an ORPC router with integrated server and OpenAPI plugins.",
+        "description": "This `openApiHandler` declaration instantiates an `OpenAPIHandler` designed to serve an OpenAPI specification and interactive API documentation for a given router. It incorporates a suite of plugins, including batch request handling, CORS, response headers, and smart schema coercion, to provide a robust and well-documented API endpoint. Developers use this to automatically generate, serve, and manage API requests based on a dynamically created OpenAPI specification, simplifying API discoverability and consumption.",
+        "tags": [
+          "openapi",
+          "api-server",
+          "documentation",
+          "middleware",
+          "configuration",
+          "router"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Exposing a RESTful or RPC API with automatically generated OpenAPI documentation",
+            "Serving an interactive API reference UI (e.g., Swagger UI, Redoc) for developers and clients",
+            "Integrating common server-side concerns like CORS, batching, and schema validation with an OpenAPI-compliant API",
+            "Providing a self-documenting API where the specification is derived directly from the application's router definitions"
+          ],
+          "examples": [
+            {
+              "code": "import http from 'node:http';\nimport { openApiHandler } from './lib/handlers';\n\nconst server = http.createServer(async (req, res) => {\n  // Route all requests to the OpenAPI handler\n  await openApiHandler(req, res);\n});\n\nconst PORT = process.env.PORT || 3000;\nserver.listen(PORT, () => {\n  console.log(`OpenAPI server listening on http://localhost:${PORT}`);\n  console.log(`API Docs available at http://localhost:${PORT}/reference`);\n});",
+              "description": "This example demonstrates how to integrate the `openApiHandler` into a basic Node.js HTTP server. All incoming requests are delegated to the `openApiHandler`, which then serves the OpenAPI specification, documentation UI (if configured to do so by the `OpenAPIReferencePlugin`), and handles API requests according to the router. This sets up a complete API endpoint with self-documenting capabilities."
+            }
+          ],
+          "limitations": [
+            "Requires a compatible ORPC router to define API endpoints and their associated schemas; it cannot generate an OpenAPI spec from arbitrary functions.",
+            "The accuracy and completeness of the generated OpenAPI specification are directly dependent on how well the router's endpoints and their input/output schemas are defined.",
+            "Performance implications for very large APIs: dynamic schema generation and processing by plugins might introduce overhead, though generally optimized for common use cases.",
+            "The `OpenAPIReferencePlugin` needs to be explicitly configured with `docsPath` for the documentation UI to be served; otherwise, only the raw OpenAPI JSON spec might be available."
+          ],
+          "bestPractices": [
+            "Configure CORS settings precisely for production, specifying allowed origins, methods, and headers to enhance security.",
+            "Ensure your router's endpoint definitions include clear, accurate, and validated schemas (e.g., using Zod) to generate a comprehensive and correct OpenAPI specification.",
+            "Consider securing or restricting access to the `/reference` documentation path in production environments if your API design exposes sensitive internal logic or endpoints that shouldn't be publicly discoverable.",
+            "Leverage the `SmartCoercionPlugin` for automatic type conversion and validation, reducing boilerplate and improving data integrity."
+          ],
+          "antiPatterns": [
+            "Using overly permissive CORS settings in production environments (e.g., `origin: '*'`) if not strictly necessary, which can expose your API to cross-site request forgery (CSRF) attacks.",
+            "Exposing sensitive internal API details or unfiltered error messages in the public OpenAPI spec, potentially leaking information to unauthorized users.",
+            "Disabling smart schema coercion without understanding the implications, which might lead to less robust input validation and potential runtime errors."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "rpcHandlerOptions",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 48,
+            "column": 1
+          },
+          "end": {
+            "line": 50,
+            "column": 3
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/server/src/lib/handlers.ts#rpcHandlerOptions",
+        "typeSignature": "const rpcHandlerOptions: object"
+      },
+      "semanticData": {
+        "summary": "Configuration object for the `RPCHandler`, specifying its middleware plugins and their settings.",
+        "description": "The 'rpcHandlerOptions' object serves as the central configuration for the `RPCHandler` instance. It bundles a set of pre-defined server-side plugins, including `BatchHandlerPlugin`, `ResponseHeadersPlugin`, `CORSPlugin`, and `SmartCoercionPlugin`, which are essential for handling typical RPC request concerns like batching, cross-origin resource sharing, and data type coercion. This structure provides a consistent and extensible way to apply core functionalities to the RPC endpoint, ensuring robust and compliant API behavior.",
+        "tags": [
+          "rpc",
+          "configuration",
+          "middleware",
+          "server-side",
+          "api-handler"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Initializing the main RPC endpoint for a server application.",
+            "Applying standard server-side concerns such as CORS, batching, and response headers to RPC requests.",
+            "Enabling automatic data type coercion and schema validation for incoming RPC payloads.",
+            "Centralizing common plugin configurations for reusability across different handlers."
+          ],
+          "examples": [
+            {
+              "code": "import { experimental_SmartCoercionPlugin as SmartCoercionPlugin } from \"@orpc/json-schema\";\nimport { RPCHandler } from \"@orpc/server/fetch\";\nimport {\n  BatchHandlerPlugin,\n  CORSPlugin,\n  ResponseHeadersPlugin\n} from \"@orpc/server/plugins\";\nimport { ZodToJsonSchemaConverter } from \"@orpc/zod/zod4\";\n\nimport { router } from \"@repo/server/router\";\n\nconst sharedPlugins = [\n  new BatchHandlerPlugin(),\n  new ResponseHeadersPlugin(),\n  new CORSPlugin({\n    origin: process.env.CORS_ORIGIN?.split(\",\"),\n    allowHeaders: [\"Content-Type\", \"Authorization\"],\n    allowMethods: [\"POST\", \"GET\", \"PUT\", \"DELETE\", \"OPTIONS\"],\n    exposeHeaders: [\"Content-Length\"],\n    maxAge: 600,\n    credentials: true\n  }),\n  new SmartCoercionPlugin({\n    schemaConverters: [new ZodToJsonSchemaConverter()]\n  })\n];\n\nexport const rpcHandlerOptions = {\n  plugins: [...sharedPlugins]\n};\n\nexport const rpcHandler = new RPCHandler(router, rpcHandlerOptions);\n",
+              "description": "This example demonstrates the declaration of 'rpcHandlerOptions' by composing a 'sharedPlugins' array, which includes batching, CORS, response headers, and smart coercion plugins. It then shows how these options are passed directly to the `RPCHandler` constructor, configuring the main RPC server instance with all necessary middleware."
+            }
+          ],
+          "limitations": [
+            "These options are specific to the `RPCHandler` and do not apply to other handlers like `OpenAPIHandler`, even if they share some plugins.",
+            "Plugins configured via these options are instantiated once at server startup; dynamic changes to plugin configurations after handler creation are generally not supported without re-initializing the handler."
+          ],
+          "bestPractices": [
+            "Centralize common and reusable plugins into a 'sharedPlugins' array to promote code reuse and maintainability.",
+            "Ensure all necessary plugins for security, performance, and data handling (e.g., CORS, batching, smart coercion) are included in the options.",
+            "Utilize environment variables for configuring sensitive or environment-specific plugin parameters, such as 'CORS_ORIGIN', for flexible deployment.",
+            "Keep the 'rpcHandlerOptions' immutable once passed to the 'RPCHandler' to avoid unexpected behavior."
+          ],
+          "antiPatterns": [
+            "Modifying 'rpcHandlerOptions' directly after 'RPCHandler' initialization, as the handler consumes options at creation and won't reflect subsequent changes.",
+            "Omitting essential shared plugins (e.g., CORS) when needed, leading to functional issues like cross-origin request failures or missing expected behaviors."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "rpcHandler",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 52,
+            "column": 1
+          },
+          "end": {
+            "line": 52,
+            "column": 69
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/server/fetch",
+            "dependsOn": [
+              "RPCHandler"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/router",
+            "dependsOn": [
+              "apps/server/src/router#router"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/lib/handlers.ts#rpcHandler",
+        "typeSignature": "const rpcHandler: any"
+      },
+      "semanticData": {
+        "summary": "Handles incoming ORPC requests, applying batching, CORS, response headers, and smart coercion for server-side RPC endpoints.",
+        "description": "The rpcHandler is a pre-configured instance of ORPC's RPCHandler, designed to serve remote procedure calls (RPC) defined by the application's router. It integrates essential server-side functionalities like request batching, custom response headers, Cross-Origin Resource Sharing (CORS) management, and smart input coercion. This handler centralizes RPC request processing, ensuring consistent behavior and simplifying the exposure of backend services over HTTP.",
+        "tags": [
+          "rpc",
+          "api-handler",
+          "server",
+          "middleware",
+          "backend",
+          "http-handler"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Exposing application business logic as RPC endpoints via HTTP",
+            "Building a robust backend API for client-server communication",
+            "Centralizing request processing for ORPC services with common features like batching and CORS",
+            "Integrating with a web server framework (e.g., Node.js http, Express, Fastify) to handle specific RPC routes"
+          ],
+          "examples": [
+            {
+              "code": "import http from 'http';\nimport { rpcHandler } from './apps/server/src/lib/handlers';\n\nconst server = http.createServer(async (req, res) => {\n  if (req.url === '/rpc' && req.method === 'POST') {\n    await rpcHandler.handle(req, res);\n  } else {\n    res.writeHead(404, { 'Content-Type': 'text/plain' });\n    res.end('Not Found');\n  }\n});\n\nserver.listen(3000, () => {\n  console.log('RPC server listening on http://localhost:3000');\n});",
+              "description": "Demonstrates integrating `rpcHandler` with a basic Node.js HTTP server. It routes all POST requests to '/rpc' to the `rpcHandler` for processing. This is a common pattern for exposing ORPC endpoints."
+            }
+          ],
+          "limitations": [
+            "Primarily designed for HTTP-based RPC communication; not suitable for other protocols like WebSockets without additional setup.",
+            "Relies heavily on the `@orpc/server` ecosystem, making it tightly coupled to that framework.",
+            "The global nature of `sharedPlugins` means all RPC endpoints managed by this handler will inherit the same plugin configurations, which might require more granular control for specific endpoints if needed.",
+            "Error handling and logging capabilities are dependent on the integrated plugins; custom error formatting or advanced logging might require additional configuration or custom plugins."
+          ],
+          "bestPractices": [
+            "Ensure `CORS_ORIGIN` environment variable is correctly set for production to specify allowed origins, enhancing security.",
+            "Log RPC requests and responses (especially errors) for debugging and monitoring purposes, potentially using additional plugins.",
+            "Keep RPC methods in the router concise and focused on single responsibilities.",
+            "Implement robust input validation within your router methods, leveraging the SmartCoercionPlugin where applicable but also validating business logic inputs."
+          ],
+          "antiPatterns": [
+            "Not configuring CORS origin correctly, leading to security vulnerabilities or blocking legitimate cross-origin requests.",
+            "Overloading the `router` with too many unrelated concerns, making the RPC API difficult to manage and understand.",
+            "Omitting error handling within the router methods, leading to unhandled exceptions and poor client experience.",
+            "Exposing sensitive RPC methods without proper authentication and authorization checks within the router logic."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/server/src/db/index.ts": [
+    {
+      "codeMetadata": {
+        "name": "globalForDb",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 10,
+            "column": 1
+          },
+          "end": {
+            "line": 12,
+            "column": 3
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "postgres",
+            "importPath": "postgres",
+            "dependsOn": [
+              "postgres"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/db/index.ts#globalForDb",
+        "typeSignature": "const globalForDb: any"
+      },
+      "semanticData": {
+        "summary": "Caches a PostgreSQL database connection globally during development to prevent repeated connections on HMR updates.",
+        "description": "The \"globalForDb\" constant provides a mechanism to cache a PostgreSQL database connection across Hot Module Replacement (HMR) updates during development. This significantly reduces the overhead of establishing new database connections on every code change, thereby accelerating development iteration speeds. It ensures that the database connection is reused in development while allowing a fresh connection on process restarts, without affecting production behavior.",
+        "tags": [
+          "database",
+          "connection-pooling",
+          "development-utility",
+          "hot-module-replacement",
+          "performance",
+          "configuration"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Optimizing database connection handling in a development environment for faster feedback loops.",
+            "Preventing 'too many connections' errors or resource exhaustion during rapid development with HMR.",
+            "Setting up Drizzle ORM with a persistent connection in development.",
+            "Ensuring consistent database state across multiple HMR reloads."
+          ],
+          "examples": [
+            {
+              "code": "import { drizzle } from \"drizzle-orm/postgres-js\";\nimport postgres from \"postgres\";\n\nimport * as schema from \"./schema\";\n\n/**\n * Cache the database connection in development. This avoids creating a new connection on every HMR\n * update.\n */\nconst globalForDb = globalThis as unknown as {\n  conn: postgres.Sql | undefined;\n};\n\n// biome-ignore lint/style/noNonNullAssertion: reason\nconst conn = globalForDb.conn ?? postgres(process.env.DATABASE_URL!);\nif (process.env.NODE_ENV !== \"production\") globalForDb.conn = conn;\n\nexport const db = drizzle(conn, { schema });",
+              "description": "This example demonstrates how 'globalForDb' is used to cache a 'postgres' connection in development. The connection is then passed to the 'drizzle' ORM, ensuring connection reuse during Hot Module Replacement (HMR) cycles without affecting production behavior where the connection is not globally cached."
+            }
+          ],
+          "limitations": [
+            "This caching mechanism is explicitly designed for development environments and should not be relied upon for production database connection management.",
+            "It only caches a single connection; it's not suitable for applications requiring multiple distinct database connections or connection sharding.",
+            "It does not inherently handle connection re-establishment if the database server becomes unavailable during the development process; it assumes the initial connection is stable."
+          ],
+          "bestPractices": [
+            "Always use 'process.env.NODE_ENV' checks to conditionally apply development-specific optimizations like connection caching.",
+            "Ensure the 'DATABASE_URL' environment variable is correctly configured and accessible.",
+            "For production environments, rely on robust database connection pooling solutions or serverless-specific connection handling.",
+            "Combine with ORMs like Drizzle to leverage the cached connection efficiently."
+          ],
+          "antiPatterns": [
+            "Attempting to use 'globalForDb' as a general-purpose global state container for non-database related objects or configurations.",
+            "Directly reassigning 'globalForDb.conn' outside of the intended initialization logic, which could disrupt the connection caching.",
+            "Relying on this development-specific caching mechanism for production database connection pooling strategies."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "conn",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 15,
+            "column": 1
+          },
+          "end": {
+            "line": 15,
+            "column": 70
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "postgres",
+            "importPath": "postgres",
+            "dependsOn": [
+              "postgres"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/db/index.ts#conn",
+        "typeSignature": "const conn: any"
+      },
+      "semanticData": {
+        "summary": "Initializes and caches a PostgreSQL database connection using the 'postgres' driver.",
+        "description": "This conn constant establishes a PostgreSQL database connection using the 'postgres' client library. It implements a caching mechanism, storing the connection globally in non-production environments to prevent repeated connection instantiations during development HMR cycles. This ensures a single, persistent database connection throughout the application's lifecycle, especially beneficial for ORM integration like Drizzle.",
+        "tags": [
+          "database",
+          "postgresql",
+          "connection-management",
+          "caching",
+          "environment-configuration"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Establishing a single, reusable database connection for an application.",
+            "Integrating with an ORM like Drizzle for database operations.",
+            "Optimizing database connection handling in development environments with HMR."
+          ],
+          "examples": [
+            {
+              "code": "import { drizzle } from \"drizzle-orm/postgres-js\";\nimport postgres from \"postgres\";\n\nimport * as schema from \"./schema\";\n\nconst globalForDb = globalThis as unknown as {\n  conn: postgres.Sql | undefined;\n};\n\nconst conn = globalForDb.conn ?? postgres(process.env.DATABASE_URL!); \nif (process.env.NODE_ENV !== \"production\") globalForDb.conn = conn;\n\nexport const db = drizzle(conn, { schema });",
+              "description": "This example demonstrates how 'conn' is initialized, cached globally for development HMR purposes, and then used as the underlying connection for creating the Drizzle ORM instance ('db'), which is subsequently exported for application-wide database interactions."
+            }
+          ],
+          "limitations": [
+            "The caching mechanism primarily benefits development environments with HMR; in production, a fresh connection (or pool) is typically established on application start without the need for global caching.",
+            "Requires 'DATABASE_URL' to be present in environment variables; otherwise, the non-null assertion will cause an error at runtime.",
+            "While the 'postgres' library provides default connection pooling, explicit control over pooling parameters (e.g., min/max connections) is not directly exposed by this 'conn' variable, requiring direct configuration of the 'postgres' client if advanced pooling is needed."
+          ],
+          "bestPractices": [
+            "Always use 'process.env.DATABASE_URL' to configure the database connection string.",
+            "Ensure the 'DATABASE_URL' environment variable is correctly set in all deployment environments.",
+            "Leverage the ORM (e.g., Drizzle) abstraction built on top of this connection for all database interactions.",
+            "Monitor database connection pool metrics in production environments to ensure optimal performance, especially under high load."
+          ],
+          "antiPatterns": [
+            "Hardcoding the database URL instead of using 'process.env.DATABASE_URL', which compromises security and flexibility.",
+            "Attempting to manage the connection lifecycle (e.g., closing 'conn') manually after it has been passed to the ORM, as the ORM handles its underlying connection management.",
+            "Overwriting 'globalForDb.conn' manually outside of the initial setup logic, which can lead to unpredictable connection states."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "db",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 18,
+            "column": 1
+          },
+          "end": {
+            "line": 18,
+            "column": 45
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "drizzle-orm",
+            "importPath": "drizzle-orm/postgres-js",
+            "dependsOn": [
+              "drizzle"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/db/schema",
+            "dependsOn": [
+              "apps/server/src/db/schema#schema"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/db/index.ts#db",
+        "typeSignature": "const db: any"
+      },
+      "semanticData": {
+        "summary": "Initializes and exports a Drizzle ORM database instance for PostgreSQL, with connection caching for development environments.",
+        "description": "This declaration provides a robust Drizzle ORM client pre-configured to connect to a PostgreSQL database. It elegantly solves the common development problem of excessive database connections during Hot Module Reload (HMR) by caching the connection globally. Developers should use this \"db\" instance for all their database interactions, ensuring efficient resource usage and type-safe queries through the integrated schema.",
+        "tags": [
+          "database",
+          "orm",
+          "postgresql",
+          "drizzle",
+          "connection-management",
+          "configuration"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Executing CRUD operations (Create, Read, Update, Delete) on database tables",
+            "Performing complex SQL queries with Drizzle's query builder",
+            "Managing database transactions to ensure data consistency",
+            "Integrating with API routes or server-side logic requiring data persistence",
+            "Running database migrations or seeding data"
+          ],
+          "examples": [
+            {
+              "code": "import { db } from \"./db\";\nimport { users } from \"./db/schema\";\n\nasync function createUser(name: string, email: string) {\n  const result = await db.insert(users).values({ name, email }).returning();\n  console.log(\"Created user:\", result[0]);\n}\n\ncreateUser(\"John Doe\", \"john.doe@example.com\");",
+              "description": "Demonstrates a basic insert operation using the \"db\" instance with the \"users\" schema. It showcases how to import and use the \"db\" client to add new records to the database and retrieve the inserted data."
+            },
+            {
+              "code": "import { db } from \"./db\";\nimport { users } from \"./db/schema\";\nimport { eq } from \"drizzle-orm\";\n\nasync function findUserById(id: number) {\n  const user = await db.select().from(users).where(eq(users.id, id));\n  console.log(\"Found user:\", user[0]);\n}\n\nfindUserById(1);",
+              "description": "Shows how to perform a select query to retrieve a user by their ID. This example highlights the use of Drizzle's \"eq\" helper for building type-safe WHERE clauses and accessing the queried data."
+            }
+          ],
+          "limitations": [
+            "The global connection caching is specifically designed for \"development\" mode to handle HMR; it's not intended for general-purpose connection pooling in production environments (which \"postgres-js\" handles internally).",
+            "Relies on the \"DATABASE_URL\" environment variable being correctly set at runtime; misconfiguration will lead to connection errors.",
+            "The effectiveness of Drizzle's type safety depends entirely on the accuracy and completeness of the defined database \"schema\"."
+          ],
+          "bestPractices": [
+            "Always import the \"db\" instance from this module for all database operations to ensure connection reuse and consistency",
+            "Ensure \"DATABASE_URL\" environment variable is securely managed and correctly configured for development, staging, and production environments",
+            "Leverage Drizzle's integrated schema for type-safe queries and to prevent common SQL injection vulnerabilities",
+            "Use \"async/await\" when interacting with the \"db\" instance to handle asynchronous operations gracefully and prevent blocking the event loop",
+            "Implement proper error handling for all database operations to gracefully manage connection issues or query failures"
+          ],
+          "antiPatterns": [
+            "Creating new \"drizzle\" instances directly in other files instead of importing the exported \"db\"",
+            "Hardcoding database connection strings or credentials directly in code instead of using environment variables",
+            "Attempting to manually close the \"db\" connection if using the cached development instance, as it's managed by the module's lifecycle",
+            "Modifying the global \"conn\" object directly outside of this module, which could disrupt connection caching"
+          ]
+        }
+      }
+    }
+  ],
+  "apps/server/src/index.ts": [
+    {
+      "codeMetadata": {
+        "name": "default",
+        "type": "const",
+        "isExported": true,
+        "isDefault": true,
+        "position": {
+          "start": {
+            "line": 4,
+            "column": 1
+          },
+          "end": {
+            "line": 44,
+            "column": 3
+          }
+        },
+        "dependencies": [
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/logger",
+            "dependsOn": [
+              "apps/server/src/lib/logger#logRequest",
+              "apps/server/src/lib/logger#logger"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/handlers",
+            "dependsOn": [
+              "apps/server/src/lib/handlers#rpcHandler",
+              "apps/server/src/lib/handlers#openApiHandler"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/index.ts#default",
+        "typeSignature": "export default"
+      },
+      "semanticData": {
+        "summary": "Implements an HTTP request router for an edge function, dispatching requests to RPC or OpenAPI handlers with integrated logging and context passing.",
+        "description": "This default export defines the main entry point for an edge-based server application, typically used in environments like Cloudflare Workers. It acts as a central request router, directing incoming HTTP requests to either an RPC handler or an OpenAPI handler based on the URL pathname. It also incorporates a logging mechanism to record requests and passes common context like logger instances and request headers to the respective handlers, providing a foundational structure for serving different API types from a single endpoint.",
+        "tags": [
+          "edge-function",
+          "request-routing",
+          "api-gateway",
+          "middleware",
+          "server"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Building a unified API gateway for microservices or different API types (e.g., RPC and REST)",
+            "Deploying serverless functions that need to handle distinct request patterns",
+            "Implementing custom routing logic for edge computing applications",
+            "Creating a single entry point for a polyglot backend serving multiple protocols"
+          ],
+          "examples": [
+            {
+              "code": "import { openApiHandler, rpcHandler } from './lib/handlers';\nimport { logger, logRequest } from './lib/logger';\n\nexport default {\n  async fetch(request: Request): Promise<Response> {\n    return logRequest(request, async (req) => {\n      const url = new URL(req.url);\n\n      if (url.pathname.startsWith('/rpc')) {\n        const result = await rpcHandler.handle(req, {\n          prefix: '/rpc',\n          context: {\n            logger,\n            headers: new Headers(req.headers as HeadersInit),\n          },\n        });\n\n        if (result.matched) {\n          return result.response;\n        }\n\n        return new Response('RPC Not found', { status: 404 });\n      }\n\n      if (url.pathname.startsWith('/api')) {\n        const result = await openApiHandler.handle(req, {\n          prefix: '/api',\n          context: {\n            logger,\n            headers: new Headers(req.headers as HeadersInit),\n          },\n        });\n\n        if (result.matched) {\n          return result.response;\n        }\n\n        return new Response('API Not found', { status: 404 });\n      }\n\n      return new Response('Global Not found', { status: 404 });\n    });\n  },\n};",
+              "description": "This example demonstrates the core routing logic, showing how incoming requests are directed based on their URL path. Requests starting with '/rpc' are sent to `rpcHandler`, and those with '/api' to `openApiHandler`. The `logRequest` utility wraps the entire process for consistent request logging, and common context is passed to the handlers."
+            }
+          ],
+          "limitations": [
+            "The routing is based on simple `startsWith` checks, which may not be flexible enough for complex routing patterns requiring regex or advanced matching.",
+            "The `context` object passed to handlers is manually constructed; for more complex applications, a dependency injection framework might be preferred.",
+            "Error handling for unmatched routes currently returns a generic 'Not found' response; more specific error messages or custom error pages might be required for production systems.",
+            "Scalability of the `fetch` function itself is dependent on the underlying edge platform's execution model and resource limits."
+          ],
+          "bestPractices": [
+            "Ensure `rpcHandler` and `openApiHandler` are well-defined modules encapsulating their specific logic, keeping the main `fetch` handler lean and focused on routing.",
+            "Implement comprehensive error handling within `rpcHandler` and `openApiHandler` to return appropriate HTTP status codes and error messages.",
+            "Use structured logging via the `logger` instance to enable easier debugging and monitoring of request flows and handler outcomes.",
+            "Consider using a router library if the number of path prefixes or routing rules grows, to simplify maintenance and improve readability."
+          ],
+          "antiPatterns": [
+            "Embedding complex business logic directly within the `fetch` handler; this should be delegated to specialized handlers to maintain separation of concerns.",
+            "Returning generic 'Not found' responses without specific error details or status codes when handlers fail, making debugging difficult.",
+            "Omitting robust error handling within the handler logic, which can lead to unhandled exceptions and service interruptions."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/server/src/server.ts": [
+    {
+      "codeMetadata": {
+        "name": "httpLogger",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 11,
+            "column": 1
+          },
+          "end": {
+            "line": 14,
+            "column": 4
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "pino-http",
+            "importPath": "pino-http",
+            "dependsOn": [
+              "pinoHttp"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/logger",
+            "dependsOn": [
+              "apps/server/src/lib/logger#logger"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/nanoid",
+            "dependsOn": [
+              "apps/server/src/lib/nanoid#nanoid"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/server.ts#httpLogger",
+        "typeSignature": "const httpLogger: any"
+      },
+      "semanticData": {
+        "summary": "Initializes a Pino-based HTTP request logging middleware for structured logging with automatic request ID generation.",
+        "description": "The httpLogger constant initializes a pino-http middleware designed for structured logging of incoming HTTP requests. It automatically attaches a pre-configured Pino logger instance to the request and response objects, and generates unique request IDs by prioritizing the 'x-request-id' header or falling back to nanoid. This solves the problem of consistently capturing critical HTTP request metadata and facilitates debugging, tracing, and monitoring of server traffic by integrating seamlessly into the request handling flow.",
+        "tags": [
+          "logging",
+          "http",
+          "middleware",
+          "server",
+          "nodejs"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Logging all incoming HTTP requests in a Node.js server for debugging and monitoring.",
+            "Capturing request IDs for distributed tracing and correlation of logs across services.",
+            "Implementing structured access logs for easy aggregation and analysis in log management systems.",
+            "Observing request latency and status codes for performance monitoring."
+          ],
+          "examples": [
+            {
+              "code": "import { createServer } from \"node:http\";\nimport pinoHttp from \"pino-http\";\nimport { logger } from \"./lib/logger\";\nimport { nanoid } from \"./lib/nanoid\";\n\nconst httpLogger = pinoHttp({\n  logger,\n  genReqId: (req) => req.headers[\"x-request-id\"] || nanoid(),\n});\n\nconst server = createServer(async (req, res) => {\n  httpLogger(req, res);\n\n  // ... rest of your request handling logic (e.g., routing, RPC calls)\n\n  res.statusCode = 200;\n  res.end(\"Hello World!\");\n});\n\nserver.listen(3000);",
+              "description": "This example demonstrates how `httpLogger` is initialized with a shared `logger` instance and a custom request ID generation function, then integrated as a middleware within a Node.js HTTP server's request handler. Calling `httpLogger(req, res)` ensures that every incoming request is logged with structured data, including a unique request ID, before any further application logic is executed."
+            }
+          ],
+          "limitations": [
+            "Primarily designed for Node.js's native `http` module; integration with other HTTP frameworks (e.g., Express, Koa) might require framework-specific wrappers or different middleware approaches.",
+            "While `pino` is highly performant, excessive logging or very high traffic volumes can still introduce a minimal overhead.",
+            "The middleware logs request and response metadata but does not automatically log request or response bodies; custom logic is needed for that.",
+            "Relies on `pino` for its core logging capabilities; developers unfamiliar with `pino` might need to learn its configuration patterns."
+          ],
+          "bestPractices": [
+            "Always provide a configured `pino` logger instance to `pino-http` for consistent log levels, destinations, and formatting.",
+            "Ensure the `httpLogger` middleware is called at the very beginning of your HTTP server's request handling logic to capture all requests, including those that might error out early.",
+            "Leverage the `x-request-id` header for request ID generation to support distributed tracing across microservices.",
+            "Consider configuring `pino-http` to redact sensitive information from logs, such as headers or query parameters, to prevent data leakage."
+          ],
+          "antiPatterns": [
+            "Not invoking `httpLogger(req, res)` early in the request handler, which can lead to missed log entries for errors or early exits.",
+            "Using a default `pino-http` instance without providing a pre-configured Pino logger, which might result in inconsistent logging outputs or missing specific log destinations.",
+            "Generating request IDs using a method that is not globally unique or difficult to trace, hindering effective distributed tracing."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "openApiHandler",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 16,
+            "column": 1
+          },
+          "end": {
+            "line": 16,
+            "column": 74
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/openapi/node",
+            "dependsOn": [
+              "OpenAPIHandler"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/router",
+            "dependsOn": [
+              "apps/server/src/router#router"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/handlers",
+            "dependsOn": [
+              "apps/server/src/lib/handlers#openApiHandlerOptions"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/server.ts#openApiHandler",
+        "typeSignature": "const openApiHandler: any"
+      },
+      "semanticData": {
+        "summary": "Initializes an OpenAPI handler to serve an API specification and process HTTP requests based on an ORPC router's definitions.",
+        "description": "The openApiHandler constant creates an instance of @orpc/openapi/node.OpenAPIHandler. This handler is responsible for serving the OpenAPI specification (Swagger/OAS) generated from the ORPC router and processing incoming HTTP requests against the defined API routes under a specified prefix. It solves the problem of exposing ORPC services as a traditional RESTful API interface, enabling broader integration with clients or systems that expect standard REST APIs, while coexisting with the ORPC interface on the same server.",
+        "tags": [
+          "api-gateway",
+          "openapi",
+          "rest-api",
+          "http-handler",
+          "server-middleware",
+          "orpc"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Exposing an ORPC server's services as a standard RESTful API endpoint.",
+            "Providing an auto-generated OpenAPI specification for client consumption and documentation.",
+            "Integrating ORPC-based backends with frontends or third-party systems that expect REST APIs.",
+            "Serving both RPC and RESTful API interfaces from a single HTTP server instance."
+          ],
+          "examples": [
+            {
+              "code": "import { createServer } from \"node:http\";\nimport { OpenAPIHandler } from \"@orpc/openapi/node\";\nimport { RPCHandler } from \"@orpc/server/node\";\nimport pinoHttp from \"pino-http\";\n\nimport { openApiHandlerOptions, rpcHandlerOptions } from \"./lib/handlers\";\nimport { logger } from \"./lib/logger\";\nimport { nanoid } => \"./lib/nanoid\";\nimport { router } from \"./router\";\n\nconst httpLogger = pinoHttp({\n  logger,\n  genReqId: (req) => req.headers[\"x-request-id\"] || nanoid(),\n});\n\nconst openApiHandler = new OpenAPIHandler(router, openApiHandlerOptions);\nconst rpcHandler = new RPCHandler(router, rpcHandlerOptions);\n\nconst server = createServer(async (req, res) => {\n  httpLogger(req, res);\n\n  if (req.url?.startsWith(\"/rpc\")) {\n    const result = await rpcHandler.handle(req, res, {\n      prefix: \"/rpc\",\n      context: {\n        logger,\n        headers: new Headers(req.headers as HeadersInit),\n      },\n    });\n\n    if (result.matched) {\n      return;\n    }\n  }\n\n  if (req.url?.startsWith(\"/api\")) {\n    const result = await openApiHandler.handle(req, res, {\n      prefix: \"/api\",\n      context: {\n        logger,\n        headers: new Headers(req.headers as HeadersInit),\n      },\n    });\n\n    if (result.matched) {\n      return;\n    }\n  }\n\n  res.statusCode = 404;\n  res.end(\"Not found\");\n});\n\nconst port = Number(process.env.PORT ?? 3000);\n\nserver.listen(port, \"0.0.0.0\", () =>\n  console.log(`Listening on http://localhost:${port}`),\n);\n",
+              "description": "This example demonstrates how openApiHandler is instantiated with an ORPC router and specific options. It then shows its integration into a Node.js HTTP server. The handler is invoked for requests prefixed with '/api', allowing it to serve the OpenAPI spec and process RESTful API calls, while coexisting with an RPC handler on the same server."
+            }
+          ],
+          "limitations": [
+            "This handler is specifically designed for the @orpc ecosystem; it cannot be used as a general-purpose OpenAPI server for non-ORPC applications.",
+            "It relies on the ORPC 'router' for defining API services and generating the OpenAPI specification, meaning services must be structured within that framework.",
+            "Extensive customization of the generated OpenAPI specification beyond what 'openApiHandlerOptions' provides may require manual intervention or a different approach.",
+            "Performance might be impacted by very large OpenAPI specifications or extremely high request volumes if not properly scaled or cached."
+          ],
+          "bestPractices": [
+            "Ensure openApiHandlerOptions are properly configured to customize the generated OpenAPI specification (e.g., version, security schemes, server URLs).",
+            "Place the openApiHandler.handle check after any RPC-specific handlers if both are served on the same HTTP server, ensuring correct routing priority and that RPC calls are handled first.",
+            "Leverage the generated OpenAPI spec for client code generation or documentation tools to streamline frontend or integration development.",
+            "Define clear and distinct URL prefixes for OpenAPI/REST APIs and RPC endpoints to avoid routing conflicts.",
+            "Implement proper error handling and logging within the context passed to the handler."
+          ],
+          "antiPatterns": [
+            "Using openApiHandler for routes not defined or intended to be exposed via the OpenAPI specification, leading to unhandled requests or 404s.",
+            "Failing to correctly specify the 'prefix' in the handle method, causing the handler to not match incoming requests.",
+            "Not providing a valid ORPC router instance that the OpenAPIHandler can introspect for API definitions, resulting in an empty or incorrect spec.",
+            "Placing the openApiHandler.handle call before other more specific or critical handlers (e.g., static file servers) if paths could overlap, potentially blocking access to those resources."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "rpcHandler",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 17,
+            "column": 1
+          },
+          "end": {
+            "line": 17,
+            "column": 62
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/server/node",
+            "dependsOn": [
+              "RPCHandler"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/router",
+            "dependsOn": [
+              "apps/server/src/router#router"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/handlers",
+            "dependsOn": [
+              "apps/server/src/lib/handlers#rpcHandlerOptions"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/server.ts#rpcHandler",
+        "typeSignature": "const rpcHandler: any"
+      },
+      "semanticData": {
+        "summary": "Initializes and configures an ORPC server handler to process incoming RPC requests based on a defined router.",
+        "description": "The \"rpcHandler\" constant is an instance of the `RPCHandler` class from the `@orpc/server/node` library, designed to process incoming Remote Procedure Call (RPC) requests. It uses a defined router to dispatch requests to appropriate backend functions and provides a structured way to pass context (like logger and headers) to RPC methods. This centralizes RPC request handling within a Node.js HTTP server, streamlining API development and ensuring consistent request processing.",
+        "tags": [
+          "rpc",
+          "server",
+          "api-handler",
+          "backend",
+          "networking",
+          "http-server"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Building a backend service that exposes RPC endpoints",
+            "Handling structured API calls using the ORPC framework",
+            "Routing incoming HTTP requests to specific RPC methods",
+            "Integrating RPC capabilities into an existing Node.js HTTP server"
+          ],
+          "examples": [
+            {
+              "code": "import { createServer } from \"node:http\";\nimport { RPCHandler } from \"@orpc/server/node\";\nimport pinoHttp from \"pino-http\";\n\nimport { rpcHandlerOptions } from \"./lib/handlers\";\nimport { logger } from \"./lib/logger\";\nimport { nanoid } from \"./lib/nanoid\";\nimport { router } from \"./router\";\n\nconst httpLogger = pinoHttp({\n  logger,\n  genReqId: (req) => req.headers[\"x-request-id\"] || nanoid(),\n});\n\nconst rpcHandler = new RPCHandler(router, rpcHandlerOptions);\n\nconst server = createServer(async (req, res) => {\n  httpLogger(req, res);\n\n  if (req.url?.startsWith(\"/rpc\")) {\n    const result = await rpcHandler.handle(req, res, {\n      prefix: \"/rpc\",\n      context: {\n        logger,\n        headers: new Headers(req.headers as HeadersInit),\n      },\n    });\n\n    if (result.matched) {\n      return;\n    }\n  }\n\n  // ... other handlers or 404\n  res.statusCode = 404;\n  res.end(\"Not found\");\n});\n\nconst port = Number(process.env.PORT ?? 3000);\nserver.listen(port, \"0.0.0.0\", () =>\n  console.log(`Listening on http://localhost:${port}`),\n);",
+              "description": "This example demonstrates how `rpcHandler` is initialized with a router and options, then integrated into a standard Node.js HTTP server. It shows conditional handling for RPC requests based on their URL prefix, passing a logger and request headers as context to the RPC methods, and using `result.matched` to efficiently terminate request processing once an RPC call is handled."
+            }
+          ],
+          "limitations": [
+            "Dependent on the `@orpc/server/node` library for its functionality, meaning it's tied to that framework's conventions and design patterns.",
+            "Requires a `router` object (likely from `@orpc/core`) to map incoming RPC requests to specific backend functions.",
+            "Primarily designed for Node.js environments and direct HTTP server integration, not client-side usage or other server platforms without specific adapters."
+          ],
+          "bestPractices": [
+            "Always prefix RPC routes (e.g., `/rpc`) to clearly distinguish them from other API endpoints.",
+            "Ensure proper error handling within your RPC methods and the overall `rpcHandler.handle` call to gracefully manage failures.",
+            "Pass relevant context (logger, authentication details, etc.) through the `context` object to make it available to your RPC functions.",
+            "Use `result.matched` to determine if the handler successfully processed a request and terminate the request handling chain accordingly."
+          ],
+          "antiPatterns": [
+            "Not returning from the request handler after `rpcHandler.handle` successfully processes a request, which could lead to multiple responses or unexpected behavior.",
+            "Using the RPC handler for non-RPC routes without proper conditional checks, leading to unnecessary processing or 404s.",
+            "Failing to provide essential context (like `logger` or `headers`) to `rpcHandler.handle`, potentially causing issues within the RPC methods that rely on them."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "server",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 19,
+            "column": 1
+          },
+          "end": {
+            "line": 52,
+            "column": 4
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "node:http",
+            "importPath": "node:http",
+            "dependsOn": [
+              "createServer"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/logger",
+            "dependsOn": [
+              "apps/server/src/lib/logger#logger"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/server.ts#server",
+        "typeSignature": "const server: any"
+      },
+      "semanticData": {
+        "summary": "Configures and starts a Node.js HTTP server to route requests to ORPC and OpenAPI handlers with integrated logging.",
+        "description": "This `server` constant defines and configures a Node.js HTTP server. It serves as the primary entry point for an application, routing incoming requests based on their URL paths to either an ORPC (RPC) handler or an OpenAPI (REST) handler. It integrates a request logger (pino-http) and handles unmatched routes with a 404 response, providing a foundational structure for a backend API.",
+        "tags": [
+          "http-server",
+          "node-js",
+          "api-gateway",
+          "rpc",
+          "openapi",
+          "routing",
+          "logging"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Building a unified API backend serving both RPC and REST interfaces",
+            "Creating a single entry point for a microservice or monolithic application",
+            "Setting up a robust server with integrated request logging and health checks (if extended)",
+            "Serving API documentation alongside the API endpoints"
+          ],
+          "examples": [
+            {
+              "code": "import { createServer } from \"node:http\";\nimport { OpenAPIHandler } from \"@orpc/openapi/node\";\nimport { RPCHandler } from \"@orpc/server/node\";\nimport pinoHttp from \"pino-http\";\n\nimport { openApiHandlerOptions, rpcHandlerOptions } from \"./lib/handlers\";\nimport { logger } from \"./lib/logger\";\nimport { nanoid } from \"./lib/nanoid\";\nimport { router } from \"./router\";\n\nconst httpLogger = pinoHttp({\n  logger,\n  genReqId: (req) => req.headers[\"x-request-id\"] || nanoid(),\n});\n\nconst openApiHandler = new OpenAPIHandler(router, openApiHandlerOptions);\nconst rpcHandler = new RPCHandler(router, rpcHandlerOptions);\n\nconst server = createServer(async (req, res) => {\n  httpLogger(req, res);\n\n  if (req.url?.startsWith(\"/rpc\")) {\n    const result = await rpcHandler.handle(req, res, {\n      prefix: \"/rpc\",\n      context: {\n        logger,\n        headers: new Headers(req.headers as HeadersInit),\n      },\n    });\n\n    if (result.matched) {\n      return;\n    }\n  }\n\n  if (req.url?.startsWith(\"/api\")) {\n    const result = await openApiHandler.handle(req, res, {\n      prefix: \"/api\",\n      context: {\n        logger,\n        headers: new Headers(req.headers as HeadersInit),\n      },\n    });\n\n    if (result.matched) {\n      return;\n    }\n  }\n\n  res.statusCode = 404;\n  res.end(\"Not found\");\n});\n\nconst port = Number(process.env.PORT ?? 3000);\n\nserver.listen(port, \"0.0.0.0\", () =>\n  console.log(`Listening on http://localhost:${port}`),\n);\n",
+              "description": "This example demonstrates the full setup and initialization of the Node.js HTTP server. It shows how requests are routed to specific handlers based on URL prefixes ('/rpc' for RPC, '/api' for OpenAPI), how logging is integrated, and how the server is started on a configurable port."
+            }
+          ],
+          "limitations": [
+            "The current routing logic only supports `/rpc` and `/api` prefixes; all other paths will result in a 404 Not Found response.",
+            "Error handling for exceptions thrown within `rpcHandler.handle` or `openApiHandler.handle` is not explicitly shown, which might lead to unhandled promise rejections if not addressed by the handlers themselves.",
+            "The server configuration does not include built-in support for HTTPS, requiring an external proxy (e.g., Nginx, Caddy) for production-grade secure communication.",
+            "Scalability beyond a single process instance requires external load balancing and potentially a process manager like PM2 or Kubernetes."
+          ],
+          "bestPractices": [
+            "Implement global error handling middleware or try-catch blocks around handler calls to catch exceptions and return appropriate HTTP 5xx responses.",
+            "Ensure all external configurations (ports, API prefixes) are managed via environment variables.",
+            "Integrate security middleware for authentication, authorization, CORS, and rate limiting before the RPC/OpenAPI handlers.",
+            "Add a health check endpoint (e.g., `/health`) to monitor server status for orchestration systems.",
+            "Configure the logger (pino-http) for production environments, including log levels, redaction of sensitive data, and structured logging formats."
+          ],
+          "antiPatterns": [
+            "Performing CPU-intensive or blocking operations directly within the request handler without awaiting, leading to performance bottlenecks.",
+            "Hardcoding sensitive information (e.g., API keys) directly in the server configuration instead of using environment variables.",
+            "Omitting comprehensive error handling within the handler calls, which could lead to uncaught exceptions crashing the server or returning uninformative errors to clients.",
+            "Exposing the server directly to the internet without proper security measures like firewalls, reverse proxies, or rate limiting."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "port",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 54,
+            "column": 1
+          },
+          "end": {
+            "line": 54,
+            "column": 47
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/server/src/server.ts#port",
+        "typeSignature": "const port: any"
+      },
+      "semanticData": {
+        "summary": "Configures the HTTP server's listening port, prioritizing the 'PORT' environment variable with a default fallback to 3000.",
+        "description": "This constant defines the network port on which the HTTP server will listen for incoming requests. It leverages the `PORT` environment variable for flexible deployment across different environments, providing a default value of `3000` for local development or if the environment variable is not explicitly set. This ensures the application can easily adapt to various hosting setups without requiring code modifications.",
+        "tags": [
+          "configuration",
+          "networking",
+          "environment-variables",
+          "server"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Defining the network port for a Node.js HTTP server to accept connections.",
+            "Allowing dynamic port assignment for server applications deployed in containerized or cloud environments.",
+            "Providing a consistent default port for local development while enabling custom overrides."
+          ],
+          "examples": [
+            {
+              "code": "const port = Number(process.env.PORT ?? 3000);\nserver.listen(port, \"0.0.0.0\", () =>\n  console.log(`Listening on http://localhost:${port}`),\n);",
+              "description": "This example demonstrates how the `port` constant is initialized from the `PORT` environment variable, defaulting to 3000, and subsequently used to bind the HTTP server. It also shows logging the server's listening address upon successful startup."
+            }
+          ],
+          "limitations": [
+            "If `process.env.PORT` is set to a non-numeric string (e.g., 'abc'), `Number()` will result in `NaN`, causing `server.listen` to throw an error.",
+            "If `port` is set to a privileged port (e.g., < 1024) without sufficient OS permissions, the server will fail to start.",
+            "The `any` type signature provided can obscure potential type errors if not handled carefully, though the `Number()` conversion typically results in a `number` type."
+          ],
+          "bestPractices": [
+            "Always convert environment variable strings to numbers using `Number()` or `parseInt()` to ensure correct type usage.",
+            "Provide a sensible default port (e.g., 3000, 8080) for development purposes to make local setup easier.",
+            "Consider adding validation for the `port` value if it comes from untrusted sources, ensuring it's within a valid port range (1-65535)."
+          ],
+          "antiPatterns": [
+            "Hardcoding the port number directly in the application without using environment variables, which limits deployment flexibility.",
+            "Omitting a default port value, which could lead to server startup failures if the `PORT` environment variable is not set.",
+            "Using `process.env.PORT` directly without converting it to a number, as environment variables are always strings and can cause type mismatches."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/server/src/routes/health.ts": [
+    {
+      "codeMetadata": {
+        "name": "route",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 6,
+            "column": 1
+          },
+          "end": {
+            "line": 13,
+            "column": 19
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/server",
+            "dependsOn": [
+              "Route"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/routes/health.ts#route",
+        "typeSignature": "const route: any"
+      },
+      "semanticData": {
+        "summary": "Defines core metadata for an API endpoint, including HTTP method, path, and documentation details.",
+        "description": "The \"route\" constant is a configuration object that encapsulates the essential characteristics of a single RESTful API endpoint. It defines the HTTP method (e.g., GET, POST), the URL path, expected success status, and human-readable summary/description for API documentation. This allows for a declarative way to define endpoint behavior before associating it with a specific handler and data schemas.",
+        "tags": [
+          "api-definition",
+          "http",
+          "routing",
+          "configuration"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Defining a new REST API endpoint",
+            "Configuring an HTTP GET endpoint for a health check",
+            "Setting up endpoint metadata for automatic API documentation generation (e.g., OpenAPI)"
+          ],
+          "examples": [
+            {
+              "code": "import type { Route } from \"@orpc/server\";\n\nconst route = {\n  method: \"GET\",\n  tags: [\"Health\"],\n  path: \"/health\",\n  successStatus: 200,\n  description: \"Checks the server's operational status.\",\n  summary: \"Server Health Check\"\n} satisfies Route;",
+              "description": "This example demonstrates how to define a basic GET route for a health check endpoint. It specifies the HTTP method, path, expected success status, and includes documentation fields like 'description' and 'summary' for API clients."
+            }
+          ],
+          "limitations": [
+            "This 'route' constant only defines endpoint metadata; it does not implement the actual business logic or schema validation, which must be provided separately via '.handler()' and '.output()'/.input().",
+            "Does not directly support dynamic path segments (e.g., '/users/:id') within the 'path' string itself; such dynamic segments are typically parsed by the underlying routing framework when matching the path."
+          ],
+          "bestPractices": [
+            "Always use 'satisfies Route' to ensure type safety and leverage intellisense for required properties.",
+            "Ensure 'path' values are unique across your API and follow a consistent naming convention (e.g., kebab-case).",
+            "Provide meaningful 'description' and 'summary' fields for clear and helpful API documentation.",
+            "Match the 'method' to the intended RESTful operation (e.g., GET for fetching, POST for creating, PUT for updating, DELETE for removing)."
+          ],
+          "antiPatterns": [
+            "Defining a 'route' object with a path that conflicts with another already defined route, leading to routing ambiguity or errors.",
+            "Using an incorrect HTTP method for the intended operation (e.g., GET for state-changing operations like creating data)."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "outputSchema",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 15,
+            "column": 1
+          },
+          "end": {
+            "line": 17,
+            "column": 4
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "zod",
+            "importPath": "zod",
+            "dependsOn": [
+              "z"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/routes/health.ts#outputSchema",
+        "typeSignature": "const outputSchema: any"
+      },
+      "semanticData": {
+        "summary": "Defines a Zod schema for an API response indicating operational status with a boolean \"ok\" property.",
+        "description": "This \"outputSchema\" constant defines the data structure for the response payload of an API endpoint using Zod. It specifies that the response must be an object containing a single boolean field named \"ok\". This schema is typically used to validate the output of a health check or status endpoint, ensuring consistent and predictable API responses for consumers.",
+        "tags": [
+          "schema-definition",
+          "validation",
+          "api",
+          "data-structure",
+          "health-check"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Defining the response shape for a health check endpoint.",
+            "Ensuring consistent boolean status indicators in API responses.",
+            "Specifying the output contract for simple operational status checks."
+          ],
+          "examples": [
+            {
+              "code": "import z from \"zod\";\nimport type { Route } from \"@orpc/server\";\n\n// The declaration itself\nconst outputSchema = z.object({\n  ok: z.boolean()\n});\n\n// How it's used in the context of an API route\nconst routeDefinition = {\n  method: \"GET\",\n  path: \"/status\",\n  description: \"Service status check\",\n  summary: \"Service status\"\n} satisfies Route;\n\n// Placeholder for an actual route builder (e.g., from @orpc/server)\ndeclare const base: any; \n\nconst statusEndpoint = base\n  .route(routeDefinition)\n  .output(outputSchema) // Using the defined schema here\n  .handler(async () => {\n    // Simulate some logic to determine health status\n    const isServiceHealthy = true;\n    return { ok: isServiceHealthy };\n  });",
+              "description": "This example demonstrates how \"outputSchema\" is integrated into a route definition using a framework like `@orpc/server`. It clearly shows `outputSchema` being passed to the `.output()` method, which applies the defined validation to the handler's return value, ensuring the API response conforms to the expected structure."
+            }
+          ],
+          "limitations": [
+            "Only defines the schema; does not perform the actual validation or serialization itself (relies on the consuming framework).",
+            "Limited to Zod's capabilities for schema definition, requiring familiarity with Zod syntax and features."
+          ],
+          "bestPractices": [
+            "Keep health check schemas minimal and focused on essential status indicators.",
+            "Leverage Zod for both input and output validation to maintain end-to-end type safety.",
+            "Reuse common schema components for consistent patterns across multiple endpoints."
+          ],
+          "antiPatterns": [
+            "Using \"any\" or \"unknown\" instead of a specific Zod schema for API outputs, which negates type safety and runtime validation benefits.",
+            "Defining overly complex nested objects in a simple health check schema, unnecessarily over-complicating it."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "health",
+        "type": "const",
+        "isExported": true,
+        "isDefault": true,
+        "position": {
+          "start": {
+            "line": 19,
+            "column": 1
+          },
+          "end": {
+            "line": 24,
+            "column": 6
+          }
+        },
+        "dependencies": [
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/utils",
+            "dependsOn": [
+              "apps/server/src/lib/utils#base"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/routes/health.ts#health",
+        "typeSignature": "const health: any"
+      },
+      "semanticData": {
+        "summary": "Defines a basic HTTP GET endpoint for application health checks, returning {\"ok\": true}.",
+        "description": "This declaration defines a \"/health\" GET endpoint, designed for basic application health checks. It provides a simple HTTP 200 response with a JSON body {\"ok\": true}, indicating the server is operational and responsive. This endpoint is crucial for load balancers, container orchestration systems (like Kubernetes for readiness/liveness probes), and monitoring tools to determine the application's availability and operational status.",
+        "tags": [
+          "api",
+          "health-check",
+          "http",
+          "server",
+          "utility"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Configuring load balancer health checks to route traffic to healthy instances",
+            "Implementing Kubernetes readiness and liveness probes for container orchestration",
+            "Monitoring server availability and uptime with external monitoring tools",
+            "Verifying basic server operational status in CI/CD pipelines or deployment scripts"
+          ],
+          "examples": [
+            {
+              "code": "import { ORPCServer } from \"@orpc/server\";\nimport health from \"./routes/health\"; // Assuming the path to your health route definition\n\nconst server = new ORPCServer({\n  // ... server configuration\n});\n\n// Register the health route with the server instance\nserver.register(health);\n\n// Example of starting the server (contextual)\n// server.listen(3000, () => {\n//   console.log('Server listening on port 3000');\n// });",
+              "description": "This example demonstrates how the `health` route declaration, once defined, is typically registered with an `@orpc/server` instance. Registering the route makes the `/health` endpoint available for incoming HTTP GET requests, enabling external systems to perform health checks against your application."
+            }
+          ],
+          "limitations": [
+            "This health check only verifies that the server process is running and able to respond to HTTP requests; it does not check the status of underlying dependencies like databases, message queues, or external APIs.",
+            "It may report 'healthy' even if critical services the application relies on are down, potentially misleading monitoring systems about the true overall application health."
+          ],
+          "bestPractices": [
+            "Keep the health check endpoint as lightweight and fast as possible to avoid introducing bottlenecks for monitoring systems and ensure rapid response.",
+            "Consider implementing a separate 'deep health check' endpoint (e.g., /health/deep) for more thorough dependency checks (e.g., database, external services) if specific monitoring of these is required.",
+            "Ensure proper firewall rules or rate limiting are in place if exposing this endpoint directly to the public internet to prevent potential abuse while still allowing legitimate monitoring."
+          ],
+          "antiPatterns": [
+            "Adding complex business logic, heavy database queries, or external API calls to this endpoint, which can slow down the health check and defeat its purpose of quick operational status updates.",
+            "Relying solely on this simple health check for deep application health without implementing separate, more comprehensive dependency checks if required."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/web/src/lib/orpc.ts": [
+    {
+      "codeMetadata": {
+        "name": "ORPCReactUtils",
+        "type": "type",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 14,
+            "column": 1
+          },
+          "end": {
+            "line": 14,
+            "column": 71
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/web/src/lib/orpc.ts#ORPCReactUtils",
+        "typeSignature": "type = RouterUtils<RouterClient<typeof router>>"
+      },
+      "semanticData": {
+        "summary": "Defines the type for Tanstack Query utilities generated from an ORPC router, enabling type-safe RPC client-side operations.",
+        "description": "The ORPCReactUtils type is an alias that represents the collection of type-safe utilities and hooks provided by @orpc/tanstack-query for interacting with an ORPC backend. It encapsulates the RouterUtils type, parameterized by the specific RouterClient inferred from the application's router definition. This type is crucial for leveraging automatic type inference and autocompletion for RPC queries, mutations, and subscriptions within React applications using Tanstack Query, ensuring strong type-safety between frontend and backend API calls.",
+        "tags": [
+          "api-client",
+          "react",
+          "tanstack-query",
+          "rpc",
+          "type-safety",
+          "data-fetching"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Type-safe data fetching from ORPC endpoints in React components.",
+            "Generating Tanstack Query hooks (e.g., useQuery, useMutation) for ORPC procedures.",
+            "Ensuring type consistency between frontend API calls and backend ORPC definitions.",
+            "Refetching ORPC data and invalidating caches using generated utilities."
+          ],
+          "examples": [
+            {
+              "code": "import { orpc } from \"../lib/orpc\";\n\nfunction UserProfile({ userId }: { userId: string }) {\n  const { data: user, isLoading, error } = orpc.users.get.useQuery({ id: userId });\n\n  if (isLoading) return \"Loading...\";\n  if (error) return `Error: ${error.message}`;\n  if (!user) return \"No user found.\";\n\n  return (\n    <div>\n      <h1>{user.name}</h1>\n      <p>{user.email}</p>\n    </div>\n  );\n}",
+              "description": "Demonstrates using a generated useQuery hook (e.g., orpc.users.get.useQuery) derived from the ORPCReactUtils type to fetch data from an ORPC endpoint in a React component, leveraging Tanstack Query's state management."
+            },
+            {
+              "code": "import { orpc } from \"../lib/orpc\";\n\nfunction CreateUserForm() {\n  const createUserMutation = orpc.users.create.useMutation();\n\n  const handleSubmit = async (event: React.FormEvent) => {\n    event.preventDefault();\n    const formData = new FormData(event.currentTarget as HTMLFormElement);\n    const name = formData.get('name') as string;\n    const email = formData.get('email') as string;\n\n    try {\n      const newUser = await createUserMutation.mutateAsync({ name, email });\n      alert(`User created: ${newUser.name}`);\n    } catch (error: any) {\n      alert(`Error creating user: ${error.message}`);\n    }\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <input name=\"name\" placeholder=\"Name\" />\n      <input name=\"email\" type=\"email\" placeholder=\"Email\" />\n      <button type=\"submit\" disabled={createUserMutation.isLoading}>\n        {createUserMutation.isLoading ? 'Creating...' : 'Create User'}\n      </button>\n    </form>\n  );\n}",
+              "description": "Illustrates the usage of a generated useMutation hook (e.g., orpc.users.create.useMutation) to perform a write operation to an ORPC endpoint. This leverages the type safety provided by ORPCReactUtils for mutation arguments and return types."
+            }
+          ],
+          "limitations": [
+            "Relies heavily on the @orpc/tanstack-query library; not suitable for applications not using Tanstack Query.",
+            "Requires a well-defined and exported ORPC server router to generate accurate client-side types.",
+            "Does not directly provide runtime functionality; it's purely a type definition that enables type-safe usage of the 'orpc' client instance."
+          ],
+          "bestPractices": [
+            "Always use the 'orpc' object (typed by ORPCReactUtils) for all RPC data operations within React components to leverage Tanstack Query's features.",
+            "Ensure your server-side 'router' definition is correctly typed and exported for ORPCReactUtils to accurately infer client-side types.",
+            "Use 'orpc.useQuery' for read operations and 'orpc.useMutation' for write operations to benefit from caching, optimistic updates, and automatic refetches."
+          ],
+          "antiPatterns": [
+            "Manually defining RPC client types instead of relying on ORPCReactUtils to lose type-safety benefits.",
+            "Ignoring the type and directly calling 'client' methods for data fetching in React, bypassing Tanstack Query's caching and reactivity."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "getORPCClient",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 16,
+            "column": 1
+          },
+          "end": {
+            "line": 51,
+            "column": 3
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/server",
+            "dependsOn": [
+              "RouterClient"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@repo",
+            "importPath": "@repo/server/router",
+            "dependsOn": [
+              "router"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/client/fetch",
+            "dependsOn": [
+              "RPCLink"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@tanstack",
+            "importPath": "@tanstack/react-start",
+            "dependsOn": [
+              "createIsomorphicFn"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@tanstack",
+            "importPath": "@tanstack/react-start/server",
+            "dependsOn": [
+              "getHeaders"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/client/plugins",
+            "dependsOn": [
+              "BatchLinkPlugin",
+              "DedupeRequestsPlugin"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/client",
+            "dependsOn": [
+              "createORPCClient"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/lib/orpc.ts#getORPCClient",
+        "typeSignature": "const getORPCClient: () => RouterClient<typeof router>"
+      },
+      "semanticData": {
+        "summary": "Configures and initializes an isomorphic ORPC client with automatic URL resolution, header management, request batching, and deduplication.",
+        "description": "The `getORPCClient` declaration provides a robust, pre-configured instance of an ORPC client designed for isomorphic applications. It automatically determines the correct RPC endpoint based on whether it's running in a browser or on a server, ensures appropriate request headers are included, and optimizes network performance through request batching and deduplication. This declaration simplifies the integration with a backend ORPC router, offering a type-safe and efficient way to make remote procedure calls.",
+        "tags": [
+          "rpc-client",
+          "api-client",
+          "networking",
+          "isomorphic",
+          "performance",
+          "configuration"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Making type-safe RPC calls from frontend components or server-side rendering logic to a backend ORPC router",
+            "Integrating ORPC API endpoints with Tanstack Query for declarative data fetching and mutations",
+            "Establishing a single, shared ORPC client instance across an entire application for consistent communication"
+          ],
+          "examples": [
+            {
+              "code": "import { client } from \"@/lib/orpc\";\n\nasync function fetchUser() {\n  try {\n    const user = await client.users.getById.query({ id: \"123\" });\n    console.log(user);\n  } catch (error) {\n    console.error(\"Failed to fetch user:\", error);\n  }\n}",
+              "description": "Demonstrates direct usage of the pre-configured `client` export to make a type-safe RPC query. This is suitable for one-off calls or when Tanstack Query is not desired."
+            },
+            {
+              "code": "import { orpc } from \"@/lib/orpc\";\nimport { useQuery } from \"@tanstack/react-query\";\n\nfunction UserProfile({ userId }: { userId: string }) {\n  const { data: user, isLoading, error } = orpc.users.getById.useQuery({\n    id: userId,\n  });\n\n  if (isLoading) return <div>Loading user...</div>;\n  if (error) return <div>Error: {error.message}</div>;\n\n  return (\n    <div>\n      <h1>{user?.name}</h1>\n      <p>Email: {user?.email}</p>\n    </div>\n  );\n}",
+              "description": "Illustrates the more common usage pattern with Tanstack Query integration via the `orpc` export. This leverages React hooks for declarative data fetching, caching, and state management, providing a highly efficient and developer-friendly experience."
+            }
+          ],
+          "limitations": [
+            "The server-side URL (`http://localhost:3000`) is hardcoded; it must be externalized (e.g., via environment variables) for deployment to production or different environments.",
+            "The `createIsomorphicFn` and `getHeaders` utilities are specific to `@tanstack/react-start`; if using a different isomorphic framework or a pure Node.js environment, the header fetching logic might need adjustment.",
+            "While it provides batching and deduplication, it does not include built-in retry mechanisms or advanced error handling strategies, which might need to be added as additional plugins or wrappers around the client."
+          ],
+          "bestPractices": [
+            "Always use the already exported `client` (for direct ORPC calls) or `orpc` (for Tanstack Query integration) variables instead of re-invoking `getORPCClient()`.",
+            "Ensure the `router` type definition (`@repo/server/router`) accurately reflects your backend RPC router to maintain full type-safety throughout the client-server interaction.",
+            "For production deployments, replace the hardcoded `http://localhost:3000` in the `RPCLink` URL with an environment variable or a configuration mechanism to point to your actual backend service URL."
+          ],
+          "antiPatterns": [
+            "Calling `getORPCClient()` multiple times: The `client` and `orpc` exports already provide pre-initialized singleton instances. Repeated calls will create unnecessary new client instances, potentially leading to resource waste and inconsistent behavior.",
+            "Manually creating `RPCLink` or `ORPCClient` instances when `getORPCClient` (or its exported `client`/`orpc` wrappers) is available, as it bypasses the built-in optimizations and isomorphic logic."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "client",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 53,
+            "column": 1
+          },
+          "end": {
+            "line": 53,
+            "column": 68
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/server",
+            "dependsOn": [
+              "RouterClient"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@repo",
+            "importPath": "@repo/server/router",
+            "dependsOn": [
+              "router"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/lib/orpc.ts#client",
+        "typeSignature": "const client: RouterClient<typeof router>"
+      },
+      "semanticData": {
+        "summary": "An initialized ORPC client for making type-safe RPC calls to the backend `router`.",
+        "description": "This `client` constant provides a pre-configured, type-safe RPC client for interacting with the backend ORPC router. It's designed to streamline communication by encapsulating an `RPCLink` with built-in `BatchLinkPlugin` and `DedupeRequestsPlugin`, automatically optimizing network requests. This solves the problem of manual request management and ensures consistent, efficient API interactions across the application, serving as the foundation for data fetching utilities like those provided by Tanstack Query.",
+        "tags": [
+          "api-client",
+          "rpc",
+          "http",
+          "configuration",
+          "isomorphic"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Making type-safe RPC calls from client or server-side code",
+            "Integrating with data fetching libraries like Tanstack Query",
+            "Communicating with a backend ORPC server",
+            "Sharing a pre-configured ORPC client instance across an application"
+          ],
+          "examples": [
+            {
+              "code": "import { client } from './lib/orpc';\n\nasync function fetchUserProfile(userId: string) {\n  try {\n    // Directly using the client to make a type-safe RPC query\n    const userProfile = await client.users.getProfile.query({ userId });\n    console.log('User Profile:', userProfile);\n    return userProfile;\n  } catch (error) {\n    console.error('Failed to fetch user profile:', error);\n    throw error;\n  }\n}",
+              "description": "Demonstrates direct usage of the `client` instance to invoke a type-safe RPC query (`users.getProfile`) to the backend. This illustrates how the `client` object is used as the entry point for all ORPC calls, benefiting from the configured links and plugins."
+            },
+            {
+              "code": "import { orpc } from './lib/orpc';\nimport { useQuery } from '@tanstack/react-query';\n\nfunction UserProfileComponent({ userId }: { userId: string }) {\n  // Leveraging the `orpc` utilities (which uses the `client`) with Tanstack Query\n  const { data: userProfile, isLoading, error } = orpc.users.getProfile.useQuery({ userId });\n\n  if (isLoading) return <div>Loading profile...</div>;\n  if (error) return <div>Error: {error.message}</div>;\n\n  return (\n    <div>\n      <h1>{userProfile?.name}</h1>\n      <p>Email: {userProfile?.email}</p>\n    </div>\n  );\n}",
+              "description": "This example shows the more common approach of using the `orpc` utilities, which are built upon the `client` instance, integrated with Tanstack Query. It highlights how the `client` indirectly powers reactive data fetching and caching in UI components."
+            }
+          ],
+          "limitations": [
+            "The client is strictly bound to the `/rpc` endpoint as defined in its `RPCLink` configuration; changing the backend RPC path requires updating the client's URL.",
+            "Its isomorphic header handling relies on `getHeaders()` being correctly implemented and available in server-side rendering environments (e.g., Next.js, Remix) to pass request-specific headers.",
+            "This client is specific to the `@orpc` ecosystem and cannot be directly used with other RPC frameworks or traditional REST APIs without additional adapters."
+          ],
+          "bestPractices": [
+            "Always reuse this singleton `client` instance for all ORPC communications to leverage its built-in optimizations (request batching and deduplication).",
+            "Prefer using the `orpc` utilities (created from this `client`) with Tanstack Query for reactive data fetching, caching, and state management.",
+            "Ensure the imported `router` type from `@repo/server/router` precisely matches the actual backend router definition to maintain end-to-end type safety."
+          ],
+          "antiPatterns": [
+            "Creating multiple `ORPCClient` instances unnecessarily; this `client` is a singleton designed for reuse and performance benefits like batching and deduplication.",
+            "Bypassing the `client`'s built-in batching and deduplication by manually bundling or de-duping requests externally, as this duplicates functionality and can lead to inefficiencies."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "orpc",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 55,
+            "column": 1
+          },
+          "end": {
+            "line": 55,
+            "column": 54
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@orpc",
+            "importPath": "@orpc/tanstack-query",
+            "dependsOn": [
+              "createTanstackQueryUtils"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/lib/orpc.ts#orpc",
+        "typeSignature": "const orpc: any"
+      },
+      "semanticData": {
+        "summary": "Provides a type-safe, TanStack Query-integrated client for interacting with an ORPC server, enabling efficient and declarative data fetching and mutations.",
+        "description": "The `orpc` constant provides a type-safe, TanStack Query-integrated client for interacting with an ORPC (Object RPC) server router. It encapsulates the underlying RPC communication, managing features like request batching, deduplication, and isomorphic header handling for client and server environments. Developers utilize this constant to seamlessly perform remote procedure calls, benefiting from automatic caching, re-fetching, and advanced state management provided by TanStack Query.",
+        "tags": [
+          "rpc",
+          "api-client",
+          "tanstack-query",
+          "data-fetching",
+          "isomorphic",
+          "client-server",
+          "utility"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Fetching data from the backend using defined ORPC procedures",
+            "Executing mutations on the server via ORPC",
+            "Integrating ORPC calls into React components with automatic caching, loading, and error states",
+            "Building full-stack web applications where ORPC defines the API layer"
+          ],
+          "examples": [
+            {
+              "code": "import { orpc } from '~/lib/orpc';\n\nfunction UserProfile({ userId }: { userId: string }) {\n  const { data: user, isLoading, error } = orpc.users.getById.useQuery({ id: userId });\n\n  if (isLoading) return <div>Loading user...</div>;\n  if (error) return <div>Error: {error.message}</div>;\n  if (!user) return <div>No user found.</div>;\n\n  return (\n    <div>\n      <h1>{user.name}</h1>\n      <p>Email: {user.email}</p>\n    </div>\n  );\n}",
+              "description": "This example demonstrates how to fetch user data using `orpc.users.getById.useQuery()`. It showcases the typical pattern of handling loading, error, and data states in a React component, leveraging TanStack Query for data management."
+            },
+            {
+              "code": "import { orpc } from '~/lib/orpc';\nimport React from 'react';\n\nfunction CreatePostForm() {\n  const mutation = orpc.posts.create.useMutation();\n\n  const handleSubmit = (event: React.FormEvent) => {\n    event.preventDefault();\n    const formData = new FormData(event.currentTarget as HTMLFormElement);\n    const title = formData.get('title') as string;\n    const content = formData.get('content') as string;\n    \n    mutation.mutate({ title, content });\n  };\n\n  if (mutation.isPending) return <div>Creating post...</div>;\n  if (mutation.isError) return <div>Error creating post: {mutation.error.message}</div>;\n  if (mutation.isSuccess) return <div>Post created successfully!</div>;\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <input name=\"title\" placeholder=\"Title\" />\n      <textarea name=\"content\" placeholder=\"Content\"></textarea>\n      <button type=\"submit\">Create Post</button>\n    </form>\n  );\n}",
+              "description": "This example illustrates performing a mutation (creating a post) using `orpc.posts.create.useMutation()`. It shows how to trigger the mutation, handle its pending, error, and success states, and integrate it with a form submission."
+            }
+          ],
+          "limitations": [
+            "Requires a server-side ORPC router implementation to function correctly.",
+            "Tight coupling with `@orpc` and `@tanstack/react-query` ecosystems, making it less suitable for projects not using these libraries.",
+            "The isomorphic `getHeaders` logic relies on `@tanstack/react-start/server`, which is specific to TanStack Start applications."
+          ],
+          "bestPractices": [
+            "Always leverage TanStack Query's powerful features like caching, retries, and optimistic updates for a robust UI.",
+            "Ensure the server-side `router` type definition is correctly imported and inferred to maintain end-to-end type safety.",
+            "Use `orpc`'s hooks (e.g., `useQuery`, `useMutation`) within React components for declarative data management.",
+            "Properly configure batching and deduplication plugins if your application makes many similar requests."
+          ],
+          "antiPatterns": [
+            "Making direct HTTP requests to ORPC endpoints instead of using the `orpc` client, which forfeits type safety, batching, deduplication, and TanStack Query benefits.",
+            "Ignoring loading, error, and data states returned by TanStack Query hooks, leading to poor user experience."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/web/src/routes/api.$.ts": [
+    {
+      "codeMetadata": {
+        "name": "handle",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 5,
+            "column": 1
+          },
+          "end": {
+            "line": 5,
+            "column": 77
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@repo",
+            "importPath": "@repo/server/index",
+            "dependsOn": [
+              "server"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/routes/api.$.ts#handle",
+        "typeSignature": "const handle: (_complex_param: { request: Request }) => any"
+      },
+      "semanticData": {
+        "summary": "Acts as a universal HTTP request handler, forwarding `Request` objects to a backend server's `fetch` method.",
+        "description": "This `handle` constant defines a generic request handler for server-side routes within a `@tanstack/react-start` application. It accepts an object containing a `Request` object and proxies it directly to a backend `server.fetch` method. This centralizes the routing logic, allowing a single handler to serve all HTTP methods (GET, POST, PUT, etc.) for a dynamic API route, abstracting away the underlying server framework details and simplifying API routing.",
+        "tags": [
+          "api-server",
+          "routing",
+          "http-handling",
+          "server-side",
+          "react-start"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Implementing dynamic catch-all API routes in `@tanstack/react-start`",
+            "Centralizing request processing for all HTTP methods on a single endpoint",
+            "Integrating a backend server exposing a Web Fetch API compatible `fetch` method"
+          ],
+          "examples": [
+            {
+              "code": "import { createServerFileRoute } from \"@tanstack/react-start/server\";\n\nimport server from \"@repo/server/index\";\n\nconst handle = ({ request }: { request: Request }) => server.fetch(request);\n\nexport const ServerRoute = createServerFileRoute(\"/api/$\").methods({\n  GET: handle,\n  POST: handle,\n  PUT: handle,\n  DELETE: handle,\n  OPTIONS: handle,\n  HEAD: handle,\n});",
+              "description": "This example demonstrates how `handle` is used with `@tanstack/react-start`'s `createServerFileRoute` to define a dynamic API route (`/api/$`). By assigning `handle` to all HTTP methods, it ensures that every incoming request to `/api/*` is processed uniformly by the `server.fetch` function, centralizing API routing logic."
+            }
+          ],
+          "limitations": [
+            "This setup provides generic routing for all HTTP methods; fine-grained, method-specific logic must be handled by the underlying `server.fetch` implementation or by defining separate handlers within `ServerRoute.methods`.",
+            "The effectiveness is highly dependent on the `server.fetch` function's ability to correctly process and respond to Web Fetch API `Request` objects."
+          ],
+          "bestPractices": [
+            "Ensure the `server.fetch` function is robust, handling errors, logging, and performance considerations appropriately.",
+            "Keep the `handle` function itself as thin as possible, acting purely as a passthrough to delegate request processing.",
+            "Implement consistent error handling and response formatting between the `@tanstack/react-start` route and the underlying `server`."
+          ],
+          "antiPatterns": [
+            "Embedding complex business logic directly within `handle`: This handler should primarily delegate to the backend, not contain extensive application logic, to maintain separation of concerns.",
+            "Modifying the incoming `Request` object significantly before passing it to `server.fetch` without careful consideration of the backend's expectations."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "ServerRoute",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 7,
+            "column": 1
+          },
+          "end": {
+            "line": 14,
+            "column": 4
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@tanstack",
+            "importPath": "@tanstack/react-start/server",
+            "dependsOn": [
+              "createServerFileRoute"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/routes/api.$.ts#ServerRoute",
+        "typeSignature": "const ServerRoute: any"
+      },
+      "semanticData": {
+        "summary": "Defines a catch-all server-side API route that proxies all HTTP method requests to an external server instance.",
+        "description": "The \"ServerRoute\" constant defines a dynamic, catch-all server route (\"/api/$\") within a TanStack Start application. It routes all standard HTTP methods (GET, POST, PUT, DELETE, OPTIONS, HEAD) through a single \"handle\" function, which in turn forwards the Request object to an imported \"server\" instance's \"fetch\" method. This centralizes API request processing, allowing a separate backend server or API handler to manage all incoming requests to the \"/api\" path, solving the problem of repetitive route definitions for each method and dynamic segment.",
+        "tags": [
+          "server-routing",
+          "api",
+          "http",
+          "tanstack-start",
+          "proxy",
+          "backend-integration"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Proxying all incoming API requests to a separate microservice or backend application.",
+            "Creating a unified gateway for an API served by a different framework or library.",
+            "Setting up a flexible API endpoint that handles various operations based on method and path within the \"$\" segment."
+          ],
+          "examples": [
+            {
+              "code": "import { createServerFileRoute } from \"@tanstack/react-start/server\";\nimport server from \"@repo/server/index\";\n\nconst handle = ({ request }: { request: Request }) => server.fetch(request);\n\nexport const ServerRoute = createServerFileRoute(\"/api/$\").methods({\n  GET: handle,\n  POST: handle,\n  PUT: handle,\n  DELETE: handle,\n  OPTIONS: handle,\n  HEAD: handle\n});",
+              "description": "This example demonstrates how \"ServerRoute\" is declared to create a catch-all route for \"/api/*\" paths. All incoming HTTP methods are directed to a single \"handle\" function, which then delegates the request to an external \"server\" instance. This pattern is ideal for integrating a pre-existing backend API handler into a TanStack Start application's routing system."
+            }
+          ],
+          "limitations": [
+            "All mapped HTTP methods share the same underlying \"handle\" function, requiring method-specific logic to be implemented within the \"server.fetch\" method.",
+            "Debugging can be less straightforward if all API requests flow through a single, generic route handler, unless the \"server\" instance provides detailed internal logging."
+          ],
+          "bestPractices": [
+            "Ensure the \"server.fetch\" implementation robustly handles different HTTP methods, request bodies, and headers.",
+            "Implement comprehensive error handling and logging within the \"server\" instance to track request processing.",
+            "Apply authentication and authorization logic either before calling \"server.fetch\" or within the \"server\" itself.",
+            "For complex APIs, consider combining this catch-all with more specific routes for clarity and maintainability."
+          ],
+          "antiPatterns": [
+            "Using this for distinct, static API endpoints that have specific, unrelated logic, as it centralizes all handling, potentially reducing clarity.",
+            "Bypassing security or validation by directly proxying requests without intermediate checks within \"server.fetch\" or before."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/web/src/routes/rpc.$.ts": [
+    {
+      "codeMetadata": {
+        "name": "handle",
+        "type": "const",
+        "isExported": false,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 5,
+            "column": 1
+          },
+          "end": {
+            "line": 5,
+            "column": 77
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@repo",
+            "importPath": "@repo/server/index",
+            "dependsOn": [
+              "server"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/routes/rpc.$.ts#handle",
+        "typeSignature": "const handle: (_complex_param: { request: Request }) => any"
+      },
+      "semanticData": {
+        "summary": "Forwards incoming HTTP requests to a backend server's `fetch` handler for unified processing.",
+        "description": "The \"handle\" constant defines a generic request handler function designed to act as a passthrough. It accepts an incoming standard Web `Request` object and directly delegates its processing to a `server.fetch` method, which is presumed to be the entry point for a backend server or RPC service. This pattern simplifies routing by allowing a single function to forward various HTTP method requests to a centralized backend handler, effectively creating a lightweight API proxy or gateway.",
+        "tags": [
+          "http-handler",
+          "api-proxy",
+          "rpc",
+          "server-side",
+          "routing"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Creating a unified RPC endpoint that proxies all requests to a shared backend service logic.",
+            "Implementing a server-side route that forwards client-side requests to a backend API.",
+            "Consolidating request handling logic by delegating to a more comprehensive `server.fetch` method.",
+            "Setting up a simple API gateway within a full-stack application framework."
+          ],
+          "examples": [
+            {
+              "code": "import { createServerFileRoute } from \"@tanstack/react-start/server\";\nimport server from \"@repo/server/index\";\n\nconst handle = ({ request }: { request: Request }) => server.fetch(request);\n\nexport const ServerRoute = createServerFileRoute(\"/rpc/$\").methods({\n  HEAD: handle,\n  GET: handle,\n  POST: handle,\n  PUT: handle,\n  PATCH: handle,\n  DELETE: handle\n});",
+              "description": "This example demonstrates how `handle` is used within a `@tanstack/react-start` server file route. It registers the `handle` function as the processor for all common HTTP methods (HEAD, GET, POST, PUT, PATCH, DELETE) for the `/rpc/$` route. This effectively turns the route into a generic RPC endpoint, forwarding all incoming requests to the `server.fetch` method, which would typically contain the core logic of an RPC server or API gateway."
+            }
+          ],
+          "limitations": [
+            "The functionality and performance of `handle` are entirely dependent on the underlying `server.fetch` implementation. Any bottlenecks or issues in `server.fetch` will directly impact the `handle` function.",
+            "It provides no inherent request validation, transformation, or error handling beyond what `server.fetch` itself implements.",
+            "May not be suitable for routes requiring unique, complex preprocessing or postprocessing logic per HTTP method or path segment, unless such logic is dynamically managed by the `server.fetch` system.",
+            "This pattern assumes `server.fetch` is capable of processing a standard Web `Request` object and returning a `Response` (or a Promise resolving to one)."
+          ],
+          "bestPractices": [
+            "Keep the `handle` function as a thin wrapper to maintain a clear separation of concerns and maximize its reusability across different HTTP methods.",
+            "Ensure that the `server.fetch` method comprehensively handles all necessary backend logic, including request parsing, routing, authentication, authorization, and response generation.",
+            "Utilize this pattern when `server.fetch` encapsulates a robust and centralized mechanism for processing various types of backend requests.",
+            "Pair `handle` with framework routing mechanisms that allow mapping multiple HTTP methods to a single handler for cleaner code."
+          ],
+          "antiPatterns": [
+            "Adding complex, method-specific logic directly within the `handle` function itself; this function is designed for simple passthrough. Such logic should reside within the `server.fetch` implementation or a more specific handler.",
+            "Using `handle` where fine-grained control over request transformation (e.g., header modification, body parsing specific to a route) is needed before delegation, without `server.fetch` providing such capabilities.",
+            "Calling `server.fetch` directly from client-side code if the intent is to use the `handle` function as a server-side proxy; `handle` is meant for server-to-server forwarding."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "ServerRoute",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 7,
+            "column": 1
+          },
+          "end": {
+            "line": 14,
+            "column": 4
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@tanstack",
+            "importPath": "@tanstack/react-start/server",
+            "dependsOn": [
+              "createServerFileRoute"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/routes/rpc.$.ts#ServerRoute",
+        "typeSignature": "const ServerRoute: any"
+      },
+      "semanticData": {
+        "summary": "Defines a catch-all server-side route to proxy all HTTP methods at '/rpc/*' to an external backend server instance.",
+        "description": "This `ServerRoute` declaration establishes a catch-all server-side route for all HTTP methods under the `/rpc/` path within a TanStack Start application. It acts as a universal proxy, forwarding all incoming requests to an external `server` instance (likely a dedicated backend API server like Hono or tRPC). This solves the problem of integrating a separate backend API into the frontend framework's server layer, allowing the frontend application to serve its own pages and assets while seamlessly routing API calls to the appropriate backend service.",
+        "tags": [
+          "routing",
+          "api",
+          "server",
+          "rpc",
+          "web-framework",
+          "proxy"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Integrating a separate backend API (e.g., Hono, Express, tRPC) into a TanStack Start application's server-side rendering context.",
+            "Creating a single, flexible RPC endpoint for various backend operations.",
+            "Proxying all API calls from the frontend to a unified backend service.",
+            "Centralizing API request handling in a hybrid full-stack application."
+          ],
+          "examples": [
+            {
+              "code": "import { createServerFileRoute } from \"@tanstack/react-start/server\";\nimport server from \"@repo/server/index\";\n\nconst handle = ({ request }: { request: Request }) => server.fetch(request);\n\nexport const ServerRoute = createServerFileRoute(\"/rpc/$\").methods({\n  HEAD: handle,\n  GET: handle,\n  POST: handle,\n  PUT: handle,\n  PATCH: handle,\n  DELETE: handle\n});",
+              "description": "This example demonstrates the typical setup of the `ServerRoute`. It defines a `handle` function that simply forwards the incoming request to a pre-configured `server` instance. The `createServerFileRoute` then registers this `handle` function for all common HTTP methods under the `/rpc/$` catch-all path, effectively creating a proxy for all RPC calls to the external `server`."
+            }
+          ],
+          "limitations": [
+            "The functionality and robustness of this route are entirely dependent on the implementation of the `server.fetch` method; it offers no built-in logic beyond request forwarding.",
+            "It does not provide fine-grained control or pre-processing for specific RPC endpoints at the `ServerRoute` level; all distinctions must be handled by the underlying `server` instance.",
+            "Error handling and response formatting are delegated to the `server` instance; the `ServerRoute` merely passes through the response."
+          ],
+          "bestPractices": [
+            "Ensure the `server` instance handles robust routing, validation, authentication, and error handling for all incoming requests.",
+            "Implement comprehensive logging and monitoring within the `server` instance to track RPC call performance and errors.",
+            "Utilize appropriate HTTP methods (GET for data retrieval, POST/PUT/PATCH for data modification, DELETE for resource removal) within your RPC calls.",
+            "Consider adding middleware (e.g., for rate-limiting, CORS) within the `server` instance to enhance security and control."
+          ],
+          "antiPatterns": [
+            "Using this route for serving static files; it's designed for dynamic API or RPC calls.",
+            "Exposing sensitive internal server logic directly through `server.fetch` without proper authentication and authorization handled by the `server` instance.",
+            "Overloading a single `server.fetch` implementation with vastly different responsibilities, leading to a monolithic and hard-to-maintain backend logic."
+          ]
+        }
+      }
+    }
+  ]
+}

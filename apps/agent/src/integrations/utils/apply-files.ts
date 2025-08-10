@@ -1,15 +1,16 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Handlebars from "handlebars";
-import { applyEdit } from "@/ai/utils/apply-edit";
-import { runCommand } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
-import type { WorkflowContext } from "@/workflow/context";
 
 import { Logger } from "@weldr/shared/logger";
 import type { Integration } from "@weldr/shared/types";
-import { integrationRegistry } from "../registry";
-import type { FileItem } from "../types";
+
+import { applyEdit } from "@/ai/utils/apply-edit";
+import type { FileItem } from "@/integrations/types";
+import { integrationRegistry } from "@/integrations/utils/registry";
+import { runCommand } from "@/lib/commands";
+import { WORKSPACE_DIR } from "@/lib/constants";
+import type { WorkflowContext } from "@/workflow/context";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

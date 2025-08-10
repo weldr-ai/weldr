@@ -1,10 +1,10 @@
-import type { WorkflowContext } from "@/workflow/context";
-
 import { and, db, eq } from "@weldr/db";
 import { integrations } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import type { Integration, IntegrationStatus } from "@weldr/shared/types";
-import { integrationRegistry } from "../registry";
+
+import { integrationRegistry } from "@/integrations/utils/registry";
+import type { WorkflowContext } from "@/workflow/context";
 
 export async function processIntegrationQueue(
   context: WorkflowContext,

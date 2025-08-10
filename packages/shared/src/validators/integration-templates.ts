@@ -41,7 +41,7 @@ export const postgresqlIntegrationTemplateSchema =
       }),
     ]),
     options: z.object({
-      orm: z.tuple([z.literal("drizzle"), z.literal("prisma")]),
+      orm: z.tuple([z.literal("drizzle")]),
     }),
     recommendedOptions: z.object({
       orm: z.literal("drizzle"),

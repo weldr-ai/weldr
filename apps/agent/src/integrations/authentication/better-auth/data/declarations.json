@@ -1,0 +1,1374 @@
+{
+  "apps/agent/web/src/lib/auth/get-session-fn.ts": [
+    {
+      "codeMetadata": {
+        "name": "getSessionFn",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 6,
+            "column": 1
+          },
+          "end": {
+            "line": 13,
+            "column": 3
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@tanstack",
+            "importPath": "@tanstack/react-start",
+            "dependsOn": [
+              "createServerFn"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@repo",
+            "importPath": "@repo/server/lib/auth",
+            "dependsOn": [
+              "auth"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@tanstack",
+            "importPath": "@tanstack/react-start/server",
+            "dependsOn": [
+              "getHeaders"
+            ]
+          }
+        ],
+        "uri": "apps/agent/web/src/lib/auth/get-session-fn.ts#getSessionFn",
+        "typeSignature": "const getSessionFn: any"
+      },
+      "semanticData": {
+        "summary": "A server-side function to securely retrieve the current user session using HTTP headers.",
+        "description": "The \"getSessionFn\" constant defines a server-side function designed to fetch the active user's authenticated session. It leverages \"@tanstack/react-start\"'s \"createServerFn\" to enable secure invocation from client-side components. By capturing and forwarding incoming HTTP headers, it accurately communicates with the underlying authentication service to determine the user's authentication status, solving the problem of consistently checking user sessions across server-rendered and client-hydrated application parts.",
+        "tags": [
+          "authentication",
+          "session-management",
+          "server-functions",
+          "api-client",
+          "utility"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Verifying user authentication state for protected server-rendered pages",
+            "Fetching user-specific data from an API after successful authentication",
+            "Client-side routing guards that depend on login status",
+            "Populating initial state for authenticated UI components"
+          ],
+          "examples": [
+            {
+              "code": "import { getSessionFn } from './lib/auth/get-session-fn';\n\n// Example in a server-rendered page component (React Server Component concept)\nexport default async function ProtectedPage() {\n  const session = await getSessionFn();\n\n  if (!session) {\n    // Redirect or show a login message\n    return \"Please log in to view this page.\";\n  }\n\n  return (\n    <div>\n      <h1>Welcome, {session.user.name}!</h1>\n      <p>Your session ID: {session.id}</p>\n    </div>\n  );\n}",
+              "description": "This example demonstrates how \"getSessionFn\" can be awaited directly in a server component (or a similar server-side context provided by \"@tanstack/react-start\") to retrieve the user's session before rendering. It shows handling both authenticated and unauthenticated states."
+            }
+          ],
+          "limitations": [
+            "Requires the \"@tanstack/react-start\" framework and its server environment to function correctly.",
+            "The \"getSessionFn\" relies on \"getHeaders()\" which must accurately capture and provide the necessary HTTP headers (e.g., cookie, authorization header) for the underlying \"auth.api.getSession\" call to succeed.",
+            "The \"any\" type signature for \"getSessionFn\" indicates a lack of explicit type safety in its return value, requiring developers to handle the session object defensively or cast it if its structure is known."
+          ],
+          "bestPractices": [
+            "Always handle the \"null\" return gracefully, indicating an unauthenticated user, and redirect or render appropriate UI.",
+            "Integrate \"getSessionFn\" into a robust authentication flow that includes login, logout, and token refresh mechanisms.",
+            "Consider memoizing or caching the session result within a single request context to avoid redundant calls to the auth service.",
+            "Ensure the auth service's \"getSession\" endpoint is properly secured and optimized for performance."
+          ],
+          "antiPatterns": [
+            "Calling \"getSessionFn\" without ensuring \"getHeaders()\" accurately provides session-identifying headers, which will lead to incorrect or no session being returned.",
+            "Using this function for arbitrary data fetching unrelated to the user session, as it's specifically tailored for \"auth.api.getSession\".",
+            "Relying solely on client-side calls for critical security checks; always validate sessions on the server for sensitive operations."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/agent/web/src/lib/auth/index.ts": [
+    {
+      "codeMetadata": {
+        "name": "authClient",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 3,
+            "column": 46
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "better-auth",
+            "importPath": "better-auth/react",
+            "dependsOn": [
+              "createAuthClient"
+            ]
+          }
+        ],
+        "uri": "apps/agent/web/src/lib/auth/index.ts#authClient",
+        "typeSignature": "const authClient: any"
+      },
+      "semanticData": {
+        "summary": "Provides a pre-configured, singleton instance of an authentication client from the 'better-auth/react' library.",
+        "description": "The `authClient` constant exports a singleton instance of an authentication client, configured via the `better-auth/react` library. Its primary purpose is to centralize and manage authentication state, user sessions, and related operations across the application. This setup simplifies integrating secure user authentication by providing a consistent API for login, logout, session management, and accessing user information, enabling developers to build secure authentication flows without re-initializing the client repeatedly.",
+        "tags": [
+          "authentication",
+          "react",
+          "client",
+          "security",
+          "state-management",
+          "utility"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Implementing user login and logout flows",
+            "Protecting application routes or components based on authentication status",
+            "Accessing the current user's profile and session data",
+            "Making authenticated API requests",
+            "Handling authentication callbacks from external identity providers"
+          ],
+          "examples": [
+            {
+              "code": "import { authClient, type User } from '@/lib/auth';\nimport { useSession } from 'better-auth/react'; // Assuming this hook exists\n\nfunction UserProfile() {\n  const { session, user, isLoading } = useSession(authClient); // Use the client instance with a hook\n\n  if (isLoading) {\n    return <p>Loading user data...</p>;\n  }\n\n  if (!session) {\n    return <p>Please log in to view your profile.</p>;\n  }\n\n  return (\n    <div>\n      <h1>Welcome, {user?.name || 'Guest'}!</h1>\n      <p>Email: {user?.email}</p>\n      {/* Render other user-specific information */}\n    </div>\n  );\n}",
+              "description": "This example demonstrates how to use the `authClient` instance with a hypothetical `useSession` hook from `better-auth/react` to access the current user's session and profile data within a React component. It shows conditional rendering based on authentication status and accessing typed user properties."
+            },
+            {
+              "code": "import { authClient } from '@/lib/auth';\n\nasync function handleLogin() {\n  try {\n    // Assuming authClient provides methods like signInWithRedirect or login\n    await authClient.signInWithRedirect(); // Or authClient.login({ email, password });\n    console.log('User initiated login flow.');\n  } catch (error) {\n    console.error('Login failed:', error);\n  }\n}\n\nasync function handleLogout() {\n  try {\n    await authClient.logout();\n    console.log('User logged out successfully.');\n  } catch (error) {\n    console.error('Logout failed:', error);\n  }\n}\n\nfunction AuthControls() {\n  // In a real app, you'd check authClient.session or a hook result\n  const isLoggedIn = false; // Placeholder for actual auth state\n\n  return (\n    <div>\n      {isLoggedIn ? (\n        <button onClick={handleLogout}>Logout</button>\n      ) : (\n        <button onClick={handleLogin}>Login</button>\n      )}\n    </div>\n  );\n}",
+              "description": "This example illustrates how to use `authClient` to trigger authentication actions like login and logout. It demonstrates calling methods directly on the `authClient` instance, which encapsulates the logic for interacting with the authentication service, such as redirecting for OAuth or clearing session data."
+            }
+          ],
+          "limitations": [
+            "The `authClient` is a singleton, meaning it provides a single, global authentication context. This design might not be suitable for applications requiring multiple, isolated authentication clients or sessions simultaneously.",
+            "Its functionality is tightly coupled to the capabilities and configuration of the `better-auth/react` library, limiting custom authentication logic outside of the library's provided abstractions.",
+            "The initial configuration of `createAuthClient()` (not shown in this snippet) is critical. Misconfiguration can lead to security vulnerabilities or functional issues that are not immediately apparent from the `authClient` declaration itself."
+          ],
+          "bestPractices": [
+            "Ensure `authClient` is initialized only once at the application's entry point to maintain a single source of truth for authentication state.",
+            "Properly configure the underlying `createAuthClient()` with environment-specific details (e.g., API endpoints, client IDs) for production deployments.",
+            "Leverage the inferred types (`Session`, `User`) provided by the client for strong type safety in your application's components and logic.",
+            "Wrap your application or relevant component trees with the `better-auth/react` context provider (if applicable) to ensure the `authClient` and its state are accessible via hooks."
+          ],
+          "antiPatterns": [
+            "Initializing multiple `authClient` instances within the application, as it should be a single global instance for consistent state management.",
+            "Bypassing the `authClient` for direct authentication logic, which defeats the purpose of centralized authentication management.",
+            "Not handling loading, error, or unauthenticated states when consuming auth-related hooks or methods provided by the client."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "Session",
+        "type": "type",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 5,
+            "column": 1
+          },
+          "end": {
+            "line": 5,
+            "column": 64
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/agent/web/src/lib/auth/index.ts#Session",
+        "typeSignature": "type = typeof authClient.$Infer.Session.session"
+      },
+      "semanticData": {
+        "summary": "Represents the type structure of an authenticated user session, inferred directly from the auth client.",
+        "description": "The 'Session' type declaration provides a robust and type-safe representation of an authenticated user's session, automatically inferred from the 'better-auth/react' client. It defines the precise structure of session data, including details like tokens, expiration times, and potentially associated user information. This type ensures consistency and prevents runtime errors when handling session-related operations, making it essential for building reliable authentication flows.",
+        "tags": [
+          "authentication",
+          "session-management",
+          "type-definition",
+          "react",
+          "utility"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Accessing current user session details (e.g., tokens, session ID)",
+            "Storing session data in application state management (e.g., Redux, React Context)",
+            "Typing function parameters or return values that handle session objects",
+            "Displaying user-specific information derived from the active session",
+            "Implementing session-based access control in UI components"
+          ],
+          "examples": [
+            {
+              "code": "import { Session, authClient } from \"./auth\"; // Adjust path as needed\nimport React from \"react\";\n\nfunction UserDashboard() {\n  const { session } = authClient.useSession(); // Assuming authClient provides a useSession hook\n\n  if (!session) {\n    return <p>Please log in to view your dashboard.</p>;\n  }\n\n  // 'session' is now fully type-checked as 'Session'\n  return (\n    <div>\n      <h1>Welcome, {session.user?.name || 'User'}!</h1>\n      <p>Session ID: {session.id}</p>\n      <p>Session expires at: {new Date(session.expiresAt).toLocaleString()}</p>\n      {/* Further session-dependent UI logic */}\n    </div>\n  );\n}",
+              "description": "This example demonstrates how to consume session data in a React component. By using the 'Session' type inferred from 'authClient', developers get full type-checking when accessing properties like 'id', 'expiresAt', or nested 'user' details, ensuring robust and error-free development."
+            }
+          ],
+          "limitations": [
+            "The specific properties available on the 'Session' type are entirely dependent on the internal structure and version of the 'better-auth/react' library.",
+            "This type cannot be instantiated directly; it serves as a type definition for data provided by the 'better-auth/react' client.",
+            "Its direct applicability is limited to projects that integrate with the 'better-auth/react' authentication client."
+          ],
+          "bestPractices": [
+            "Always use the inferred 'Session' type for variables, state, and function parameters that hold or process session data to leverage full type safety.",
+            "Destructure properties directly from objects typed as 'Session' to ensure correct and type-checked access.",
+            "Combine 'Session' with the inferred 'User' type (if available from 'better-auth/react') for comprehensive user-specific data handling.",
+            "Utilize the properties within the 'Session' type, such as 'expiresAt', to implement proactive session expiry notifications or automatic logout logic."
+          ],
+          "antiPatterns": [
+            "Manually redefining the session type, which can lead to type mismatches if 'better-auth/react' updates its internal session structure",
+            "Using 'any' or 'object' for session variables, losing type safety and increasing the risk of runtime errors when accessing properties",
+            "Ignoring session expiration or validity checks based on the data provided by the 'Session' type"
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "User",
+        "type": "type",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 6,
+            "column": 1
+          },
+          "end": {
+            "line": 6,
+            "column": 58
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/agent/web/src/lib/auth/index.ts#User",
+        "typeSignature": "type = typeof authClient.$Infer.Session.user"
+      },
+      "semanticData": {
+        "summary": "Type definition for the authenticated user's profile object, inferred from the authentication client's session.",
+        "description": "The `User` type declaration provides a type-safe representation of an authenticated user's profile information within the application. It is automatically inferred from the `better-auth` client's session data, ensuring that developer code interacting with user details benefits from strong typing. This solves the problem of ambiguous user data structures by providing a consistent and well-defined interface for user attributes like ID, email, and roles, fitting seamlessly into the application's authentication and authorization flows.",
+        "tags": [
+          "authentication",
+          "type-definition",
+          "user-management",
+          "security"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Displaying user-specific information in UI components (e.g., welcome message, profile page).",
+            "Accessing unique user identifiers for API requests or data fetching.",
+            "Checking user roles or permissions to conditionally render UI elements or features.",
+            "Personalizing application content based on user preferences or attributes.",
+            "Integrating with analytics or logging systems to associate actions with a specific user."
+          ],
+          "examples": [
+            {
+              "code": "import { useSession } from \"better-auth/react\";\nimport type { User } from \"./auth\"; // Assuming auth.ts exports User\n\nfunction UserProfile() {\n  const { data: session } = useSession(); // session.user will be of type User\n\n  if (!session?.user) {\n    return <p>Please log in to view your profile.</p>;\n  }\n\n  return (\n    <div>\n      <h1>Welcome, {session.user.name || session.user.email}!</h1>\n      <p>User ID: {session.user.id}</p>\n      {session.user.roles?.includes(\"admin\") && (\n        <p>You have administrative privileges.</p>\n      )}\n    </div>\n  );\n}",
+              "description": "This example demonstrates how to safely access and display user information within a React component. It uses `useSession` to retrieve the current session, then conditionally renders user details, including a check for an 'admin' role, ensuring that `session.user` is present before accessing its properties, leveraging the `User` type for compile-time safety."
+            }
+          ],
+          "limitations": [
+            "The exact structure and available fields of the `User` type are determined by the `better-auth` client's configuration and the underlying authentication provider, meaning it's not arbitrarily extensible from the application side.",
+            "This type represents the *authenticated* user's session data; it is not suitable for modeling user data stored in a backend database that might contain more extensive or sensitive information not exposed in the session.",
+            "Changes to the `better-auth` library or its configuration that affect the session payload could implicitly change the `User` type's structure, requiring code adjustments even if the type declaration itself doesn't change."
+          ],
+          "bestPractices": [
+            "Always conditionally render or access `User` properties after verifying that `session?.user` is not null or undefined.",
+            "Leverage the inferred `User` type for all interactions with authenticated user data to ensure type safety and consistency across the codebase.",
+            "If extending user data, use `better-auth`'s mechanisms for custom claims or metadata rather than directly augmenting the inferred type if possible, to maintain compatibility.",
+            "Use `User` for presentation and client-side logic; rely on server-side validation for critical security checks involving user identity or permissions."
+          ],
+          "antiPatterns": [
+            "Accessing properties of `session.user` without first checking if `session` and `session.user` exist, leading to runtime errors for unauthenticated users.",
+            "Manually redefining the structure of the `User` type, which can cause type mismatches or desynchronization if the underlying `better-auth` client's user object changes.",
+            "Using the `User` type for storing sensitive data directly in client-side state that is not intended for UI display or immediate functional use."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/agent/web/src/lib/validators/auth.ts": [
+    {
+      "codeMetadata": {
+        "name": "signInSchema",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 7,
+            "column": 4
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "zod",
+            "importPath": "zod",
+            "dependsOn": [
+              "z"
+            ]
+          }
+        ],
+        "uri": "apps/agent/web/src/lib/validators/auth.ts#signInSchema",
+        "typeSignature": "const signInSchema: any"
+      },
+      "semanticData": {
+        "summary": "Defines a Zod schema for validating user sign-in input fields like email, password, and rememberMe.",
+        "description": "This signInSchema constant defines the validation rules for user sign-in forms using the Zod library. It ensures that the email field is a valid email format, the password field is not empty, and rememberMe (if present) is either 'true' or 'false'. This schema is crucial for both frontend form validation and backend API request validation, ensuring data integrity before processing authentication requests.",
+        "tags": [
+          "zod",
+          "validation",
+          "authentication",
+          "form-validation",
+          "schema"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Validating user input for a sign-in form on the client-side.",
+            "Sanitizing and validating sign-in request bodies on the server-side.",
+            "Integrating with form libraries like React Hook Form for type-safe form management."
+          ],
+          "examples": [
+            {
+              "code": "import { useForm } from \"react-hook-form\";import { zodResolver } from \"@hookform/resolvers/zod\";import { signInSchema } from \"../lib/validators/auth\";function SignInForm() {  const { register, handleSubmit, formState: { errors } } = useForm({    resolver: zodResolver(signInSchema)  });  const onSubmit = (data) => console.log(data);  return (    <form onSubmit={handleSubmit(onSubmit)}>      <input {...register(\"email\")} placeholder=\"Email\" />      {errors.email && <span>{errors.email.message}</span>}      <input type=\"password\" {...register(\"password\")} placeholder=\"Password\" />      {errors.password && <span>{errors.password.message}</span>}      <label>        <input type=\"checkbox\" {...register(\"rememberMe\")} value=\"true\" /> Remember Me      </label>      <button type=\"submit\">Sign In</button>    </form>  );} ",
+              "description": "This example demonstrates how to integrate signInSchema with React Hook Form for client-side validation, providing immediate feedback to the user and ensuring form data conforms to the schema before submission."
+            },
+            {
+              "code": "import { signInSchema } from \"../lib/validators/auth\";const validateSignIn = (req, res, next) => {  const result = signInSchema.safeParse(req.body);  if (!result.success) {    return res.status(400).json({ errors: result.error.formErrors.fieldErrors });  }  req.validatedData = result.data;  next();};",
+              "description": "This example shows how signInSchema can be used on the server-side (e.g., in an Express middleware) to validate incoming request bodies from a login API endpoint, returning specific error messages if validation fails and preventing malformed data from reaching core logic."
+            }
+          ],
+          "limitations": [
+            "Does not handle complex authentication logic such as brute-force protection, account lockout, or multi-factor authentication; these require additional backend implementation.",
+            "Only validates the format and presence of fields, not the actual existence of an email or correctness of a password against a database."
+          ],
+          "bestPractices": [
+            "Apply this schema consistently across both frontend and backend for robust input validation.",
+            "Use the 'safeParse' method in Zod for graceful error handling during validation.",
+            "Combine with a form library (e.g., React Hook Form, Formik) for seamless UI integration and error display.",
+            "Ensure that the 'rememberMe' field is handled securely on the backend, for instance, by setting appropriate cookie expiration."
+          ],
+          "antiPatterns": [
+            "Not using this schema for both client-side and server-side validation, leading to potential security vulnerabilities or inconsistent validation logic.",
+            "Modifying the schema dynamically based on user input, which can lead to unpredictable validation behavior.",
+            "Exposing detailed validation error messages directly to end-users without proper sanitization, potentially revealing backend logic or increasing attack surface."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "signUpSchema",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 9,
+            "column": 1
+          },
+          "end": {
+            "line": 29,
+            "column": 6
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "zod",
+            "importPath": "zod",
+            "dependsOn": [
+              "z"
+            ]
+          }
+        ],
+        "uri": "apps/agent/web/src/lib/validators/auth.ts#signUpSchema",
+        "typeSignature": "const signUpSchema: any"
+      },
+      "semanticData": {
+        "summary": "Defines and enforces validation rules for user registration data, including name, email, and complex password requirements, using Zod.",
+        "description": "This Zod schema is designed to validate user input for a sign-up or registration process. It ensures that essential fields like first name, last name, email, and password meet specific criteria, including email format, password complexity rules (length, case, numbers, special characters), and confirmation password matching. It solves the problem of unreliable or insecure user data by providing robust frontend and backend validation for new user accounts.",
+        "tags": [
+          "validation",
+          "schema",
+          "auth",
+          "zod",
+          "user-management"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Validating user registration forms on the frontend (e.g., with React Hook Form)",
+            "Validating incoming new user data on a backend API endpoint",
+            "Ensuring data integrity before storing new user information in a database"
+          ],
+          "examples": [
+            {
+              "code": "import { signUpSchema } from './auth';\n\n// Example 1: Successful validation\ntry {\n  const validUserData = signUpSchema.parse({\n    firstName: 'John',\n    lastName: 'Doe',\n    email: 'john.doe@example.com',\n    password: 'Password123!',\n    confirmPassword: 'Password123!'\n  });\n  console.log('User data is valid:', validUserData);\n} catch (error) {\n  console.error('Validation error:', error.errors);\n}\n\n// Example 2: Failed validation - password mismatch\ntry {\n  signUpSchema.parse({\n    firstName: 'Jane',\n    lastName: 'Smith',\n    email: 'jane.smith@example.com',\n    password: 'Password123!',\n    confirmPassword: 'WrongPassword'\n  });\n} catch (error) {\n  console.error('Validation failed (password mismatch):', error.errors);\n}\n\n// Example 3: Failed validation - weak password\ntry {\n  signUpSchema.parse({\n    firstName: 'Alice',\n    lastName: 'Johnson',\n    email: 'alice@example.com',\n    password: 'weak',\n    confirmPassword: 'weak'\n  });\n} catch (error) {\n  console.error('Validation failed (weak password):', error.errors);\n}",
+              "description": "This example demonstrates how to use `signUpSchema.parse()` to validate user data. It shows both successful validation and scenarios where validation fails due to password mismatch or insufficient password complexity, logging the validation errors."
+            }
+          ],
+          "limitations": [
+            "This schema performs format and content validation but does not check for uniqueness (e.g., if an email address already exists in the database). Uniqueness checks must be performed separately, typically on the backend.",
+            "While robust, it does not prevent all possible forms of attack; additional security measures like rate limiting, CAPTCHA, and secure password hashing are still necessary."
+          ],
+          "bestPractices": [
+            "Integrate this schema with form libraries (e.g., React Hook Form, Formik) for seamless client-side validation and error display.",
+            "Apply this schema to your backend API route handlers to validate incoming signup requests before processing and storing data.",
+            "Provide clear, user-friendly error messages based on the schema's validation failures to guide users in correcting their input.",
+            "Ensure consistent validation rules between frontend and backend by sharing this schema definition across layers."
+          ],
+          "antiPatterns": [
+            "Skipping validation for user signup data, leading to incomplete or invalid entries",
+            "Relying solely on frontend validation without server-side re-validation",
+            "Implementing custom password complexity logic instead of leveraging the schema's built-in rules, leading to inconsistencies"
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "forgotPasswordSchema",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 31,
+            "column": 1
+          },
+          "end": {
+            "line": 33,
+            "column": 4
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "zod",
+            "importPath": "zod",
+            "dependsOn": [
+              "z"
+            ]
+          }
+        ],
+        "uri": "apps/agent/web/src/lib/validators/auth.ts#forgotPasswordSchema",
+        "typeSignature": "const forgotPasswordSchema: any"
+      },
+      "semanticData": {
+        "summary": "Defines a Zod schema for validating email input during a forgotten password request.",
+        "description": "This \"forgotPasswordSchema\" uses Zod to define and validate the input for a \"forgot password\" flow. It specifically ensures that the provided input is a valid email address. This schema helps in standardizing and validating user input on both the client-side and server-side before initiating a password reset process, thereby preventing malformed requests and improving data integrity.",
+        "tags": [
+          "validation",
+          "zod",
+          "auth",
+          "schema"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Validating user input for a 'forgot password' form",
+            "Ensuring correct email format for password reset requests",
+            "Processing password reset requests on a backend service"
+          ],
+          "examples": [
+            {
+              "code": "import { forgotPasswordSchema } from './auth';\nimport { z } from 'zod';\n\n// Example of successful validation\ntry {\n  const userInput = { email: 'user@example.com' };\n  const validatedData = forgotPasswordSchema.parse(userInput);\n  console.log('Email is valid:', validatedData.email);\n  // Proceed to send password reset email\n} catch (error) {\n  if (error instanceof z.ZodError) {\n    console.error('Validation errors:', error.errors);\n  } else {\n    console.error('An unexpected error occurred:', error);\n  }\n}\n\n// Example of failed validation\ntry {\n  const invalidInput = { email: 'invalid-email' };\n  forgotPasswordSchema.parse(invalidInput);\n} catch (error) {\n  if (error instanceof z.ZodError) {\n    console.error('Validation failed for invalid email:', error.errors[0].message);\n  }\n}",
+              "description": "This example demonstrates how to use the `forgotPasswordSchema` to validate an email address. It shows both a successful validation scenario and how to catch and handle `ZodError` when the input is invalid, providing user-friendly error messages."
+            }
+          ],
+          "limitations": [
+            "This schema only validates the format of an email address; it does not check if the email actually exists in the user database.",
+            "It is solely for the email input in a 'forgot password' context; it does not handle any other fields or the new password input required for a 'reset password' action."
+          ],
+          "bestPractices": [
+            "Apply this schema on both client-side and server-side to ensure robust validation and security",
+            "Provide clear and actionable error messages to users based on validation failures",
+            "Integrate this schema with form libraries to streamline UI validation and feedback"
+          ],
+          "antiPatterns": [
+            "Using this schema for full user registration where additional fields like password or name are required",
+            "Ignoring the validation result and attempting to process an invalid email, leading to backend errors",
+            "Extending this schema directly for reset password (which requires new password fields), rather than creating a separate, more specific schema."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "resetPasswordSchema",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 35,
+            "column": 1
+          },
+          "end": {
+            "line": 52,
+            "column": 6
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "zod",
+            "importPath": "zod",
+            "dependsOn": [
+              "z"
+            ]
+          }
+        ],
+        "uri": "apps/agent/web/src/lib/validators/auth.ts#resetPasswordSchema",
+        "typeSignature": "const resetPasswordSchema: any"
+      },
+      "semanticData": {
+        "summary": "Zod schema for validating password reset forms, ensuring strong password policies and matching confirmation.",
+        "description": "This Zod schema defines the validation rules for a user's new password during a password reset process. It enforces strong password requirements, including minimum length, character types (uppercase, lowercase, number, and special character), and ensures that the new password matches its confirmation. It solves the problem of securely handling password input and preventing common weak password patterns on the client-side.",
+        "tags": [
+          "validation",
+          "authentication",
+          "zod",
+          "security",
+          "form-validation"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Validating user input when a user resets their account password",
+            "Ensuring new passwords meet security policies during account recovery flows",
+            "Integrating with form libraries (e.g., React Hook Form) for client-side password reset validation"
+          ],
+          "examples": [
+            {
+              "code": "import { resetPasswordSchema } from './lib/validators/auth';\n\n// Example of valid input\ntry {\n  const validData = resetPasswordSchema.parse({\n    password: 'StrongPassword1!',\n    confirmPassword: 'StrongPassword1!'\n  });\n  console.log('Password successfully validated:', validData);\n} catch (error) {\n  console.error('Validation failed for valid input:', error.errors);\n}\n\n// Example of invalid input (passwords don't match)\ntry {\n  resetPasswordSchema.parse({\n    password: 'StrongPassword1!',\n    confirmPassword: 'StrongPassword2!'\n  });\n} catch (error) {\n  console.error('Validation failed for mismatched passwords:', error.errors);\n}\n\n// Example of invalid input (weak password)\ntry {\n  resetPasswordSchema.parse({\n    password: 'weak',\n    confirmPassword: 'weak'\n  });\n} catch (error) {\n  console.error('Validation failed for weak password:', error.errors);\n}",
+              "description": "This example demonstrates how to use the `resetPasswordSchema` to validate both valid and invalid password inputs. It shows how Zod's `parse` method throws an error for invalid data, which can be caught to access detailed validation errors for each field, including custom refinement errors like mismatched passwords."
+            }
+          ],
+          "limitations": [
+            "This schema solely validates the password and confirmation fields; it does not handle the associated password reset token or its validity.",
+            "The password policy (e.g., min length, character requirements) is hardcoded within the schema; for dynamic or configurable policies, a different approach or runtime schema generation would be needed.",
+            "Client-side validation using this schema is not a substitute for robust server-side security measures, as client-side checks can be bypassed."
+          ],
+          "bestPractices": [
+            "Always combine this client-side validation with identical server-side validation to prevent malicious bypasses and ensure data integrity.",
+            "Provide clear, user-friendly error messages based on the schema's validation failures to guide users.",
+            "Integrate this schema with form management libraries for seamless form state management and error handling."
+          ],
+          "antiPatterns": [
+            "Not using server-side validation in addition to this client-side schema; client-side validation is for UX, server-side is for security and integrity.",
+            "Modifying the schema to have weaker password requirements without a strong justification, compromising security.",
+            "Storing plain text passwords after validation; always hash passwords before storage."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/server/src/lib/auth.ts": [
+    {
+      "codeMetadata": {
+        "name": "auth",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 9,
+            "column": 1
+          },
+          "end": {
+            "line": 24,
+            "column": 4
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "better-auth",
+            "importPath": "better-auth",
+            "dependsOn": [
+              "betterAuth"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "better-auth",
+            "importPath": "better-auth/adapters/drizzle",
+            "dependsOn": [
+              "drizzleAdapter"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/db",
+            "dependsOn": [
+              "apps/server/src/db#db"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "better-auth",
+            "importPath": "better-auth/react-start",
+            "dependsOn": [
+              "reactStartCookies"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "better-auth",
+            "importPath": "better-auth/plugins",
+            "dependsOn": [
+              "openAPI"
+            ]
+          },
+          {
+            "type": "internal",
+            "filePath": "apps/server/src/lib/nanoid",
+            "dependsOn": [
+              "apps/server/src/lib/nanoid#nanoid"
+            ]
+          }
+        ],
+        "uri": "apps/server/src/lib/auth.ts#auth",
+        "typeSignature": "const auth: any"
+      },
+      "semanticData": {
+        "summary": "Initializes and configures the 'better-auth' authentication system with Drizzle ORM, email/password support, and specific plugins.",
+        "description": "The `auth` constant initializes and configures the `better-auth` authentication system for the server. It integrates with a Drizzle ORM database for persistent storage, enables email and password authentication, and secures cross-origin requests via trusted origins. This setup provides a robust foundation for handling user authentication, sessions, and potentially exposing API endpoints.",
+        "tags": [
+          "authentication",
+          "security",
+          "configuration",
+          "database",
+          "api"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Setting up a robust authentication backend for a web application",
+            "Managing user registration and login flows",
+            "Handling persistent user sessions in a database",
+            "Securing API routes with authenticated users",
+            "Integrating with frontend frameworks like React for cookie-based authentication"
+          ],
+          "examples": [
+            {
+              "code": "import { betterAuth } from \"better-auth\";\nimport { drizzleAdapter } from \"better-auth/adapters/drizzle\";\nimport { openAPI } from \"better-auth/plugins\";\nimport { reactStartCookies } from \"better-auth/react-start\";\n\nimport { db } from \"@repo/server/db\";\nimport { nanoid } from \"@repo/server/lib/nanoid\";\n\nexport const auth = betterAuth({\n  database: drizzleAdapter(db, {\n    provider: \"pg\",\n    usePlural: true,\n  }),\n  emailAndPassword: {\n    enabled: true,\n  },\n  trustedOrigins: process.env.CORS_HOST?.split(\",\") ?? [],\n  plugins: [reactStartCookies(), openAPI()],\n  advanced: {\n    database: {\n      generateId: () => nanoid(),\n    },\n  },\n});\n\nexport type Session = typeof auth.$Infer.Session.session;\nexport type User = typeof auth.$Infer.Session.user;",
+              "description": "This example demonstrates the complete setup of the `auth` constant, configuring `better-auth` with a Drizzle PostgreSQL database, enabling email/password login, securing trusted origins from environment variables, and including essential plugins for React frontend integration and OpenAPI documentation. It also shows how to derive TypeScript types for `Session` and `User` from the configured auth instance."
+            }
+          ],
+          "limitations": [
+            "This configuration is tightly coupled to the Drizzle ORM and a PostgreSQL database setup. Migrating to a different ORM or database type would require reconfiguring the `database` adapter.",
+            "Relies on `process.env.CORS_HOST` for trusted origins, meaning proper environment variable management is crucial for correct CORS behavior.",
+            "The `any` type signature on `auth` might obscure specific type errors or provide less strong typing than ideal without further type inference from `better-auth`.",
+            "The `better-auth` library and its plugins may have their own specific limitations or dependencies not immediately apparent from this configuration."
+          ],
+          "bestPractices": [
+            "Always configure `trustedOrigins` using secure environment variables (`process.env.CORS_HOST`) to prevent unauthorized cross-origin requests.",
+            "Ensure the Drizzle adapter is correctly configured with the database instance (`db`) and the correct provider (`pg` for PostgreSQL).",
+            "Utilize strong, unique ID generation functions like `nanoid()` for database entries to maintain data integrity and security.",
+            "Leverage included plugins like `reactStartCookies()` for seamless integration with modern React frameworks and `openAPI()` for API documentation.",
+            "Carefully manage `process.env.CORS_HOST` in different environments (development, staging, production) to reflect allowed origins accurately."
+          ],
+          "antiPatterns": [
+            "Hardcoding `trustedOrigins` in production instead of using environment variables, which can lead to security vulnerabilities.",
+            "Disabling `emailAndPassword` without providing an alternative authentication method, making user login impossible.",
+            "Using a weak or non-unique ID generation function for `advanced.database.generateId`, potentially leading to collisions or security issues."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "Session",
+        "type": "type",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 26,
+            "column": 1
+          },
+          "end": {
+            "line": 26,
+            "column": 58
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/server/src/lib/auth.ts#Session",
+        "typeSignature": "type = typeof auth.$Infer.Session.session"
+      },
+      "semanticData": {
+        "summary": "Represents the type of an authenticated user's session object, containing user and session-specific data managed by 'better-auth'.",
+        "description": "This Session type defines the structure of the object representing an authenticated user's active session, as managed by the 'better-auth' library. It typically includes properties like 'user' (containing user details) and 'userId', providing a standardized way to access authenticated state across an application. It solves the problem of safely and consistently accessing current user information and authentication status within server-side logic, allowing developers to implement authorization and personalize user experiences.",
+        "tags": [
+          "authentication",
+          "auth-library",
+          "session-management",
+          "types",
+          "security"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Accessing the currently logged-in user's details in API routes or server-side functions",
+            "Implementing server-side authorization checks based on user ID or roles derived from the session",
+            "Displaying personalized content for authenticated users based on their session data",
+            "Determining if a user is authenticated to protect sensitive endpoints or resources"
+          ],
+          "examples": [
+            {
+              "code": "import { auth } from './auth'; // Assuming 'auth' is exported from this file\n\nexport async function getProtectedUserData(request: Request) {\n  const session = await auth.getSession(request); // Method to retrieve session from request\n\n  if (!session) {\n    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });\n  }\n\n  console.log('Logged in user ID:', session.userId);\n\n  // Accessing user details if present\n  if (session.user) {\n    console.log('User email:', session.user.email);\n    return new Response(JSON.stringify({ userData: session.user }), { status: 200 });\n  } else {\n    return new Response(JSON.stringify({ error: 'User data not found in session' }), { status: 404 });\n  }\n}",
+              "description": "This example demonstrates how to retrieve and utilize the 'Session' object within a server-side route handler. It shows how to check for session existence, access the user ID, and conditionally retrieve other user details for a protected API endpoint. It's crucial to handle the 'no session' case for unauthorized requests."
+            }
+          ],
+          "limitations": [
+            "The exact properties available on the 'Session' object are determined by the 'better-auth' library's internal '$Infer' mechanism and its configuration, meaning direct extensibility of this type is not straightforward.",
+            "The 'Session' object type itself does not inherently manage its lifecycle (e.g., expiration, invalidation); that functionality is handled by the underlying 'better-auth' library configuration and its chosen session store."
+          ],
+          "bestPractices": [
+            "Always use optional chaining ('session?.user') or type guards when accessing properties of a potentially null or undefined session object to prevent runtime errors",
+            "For authorization, prefer checking 'session.userId' or specific user roles/permissions derived from 'session.user' rather than just the session's existence",
+            "Leverage 'better-auth's provided mechanisms for session management (e.g., 'getSignOutUrl', 'refreshSession') instead of manual manipulation for consistency and security"
+          ],
+          "antiPatterns": [
+            "Assuming 'session' or 'session.user' will always be defined without proper null/undefined checks, which can lead to runtime errors",
+            "Attempting to directly modify 'session' properties with the expectation that changes will persist, without using 'better-auth's API for session updates",
+            "Storing excessively large, frequently changing, or highly sensitive data directly within the session object if the underlying session store is not designed for it, which can impact performance and security"
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "User",
+        "type": "type",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 27,
+            "column": 1
+          },
+          "end": {
+            "line": 27,
+            "column": 52
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/server/src/lib/auth.ts#User",
+        "typeSignature": "type = typeof auth.$Infer.Session.user"
+      },
+      "semanticData": {
+        "summary": "Represents the inferred type of an authenticated user's data within a session from the `better-auth` library.",
+        "description": "The \"User\" type provides a strongly typed representation of the authenticated user's data as managed by the \"better-auth\" library. It enables developers to safely access user-specific properties like `id` and `email` within the application, ensuring type consistency and reducing potential runtime errors. This declaration simplifies working with user identity information after successful authentication.",
+        "tags": [
+          "authentication",
+          "user-management",
+          "type-inference",
+          "backend",
+          "security"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Accessing the currently logged-in user's profile information in API routes or server-side functions",
+            "Storing and retrieving user-specific data associated with the user's ID in a database",
+            "Implementing authorization checks based on the authenticated user's identity",
+            "Populating UI components with user details (e.g., welcome messages, profile displays)"
+          ],
+          "examples": [
+            {
+              "code": "import type { User } from \"./auth\";\nimport { auth } from \"./auth\";\n\n// Example API route handler or server-side function\nexport async function getUserProfile(request: Request) {\n  const session = await auth.validateRequest(request);\n\n  if (!session.session) {\n    return new Response(\"Unauthorized\", { status: 401 });\n  }\n\n  const user: User = session.session.user; // 'user' is now strongly typed as 'User'\n\n  return new Response(JSON.stringify({\n    id: user.id,\n    email: user.email, // Access type-safe properties\n    // ... other user properties inferred by better-auth\n  }), { headers: { 'Content-Type': 'application/json' } });\n}",
+              "description": "This example demonstrates how to retrieve the `User` object from a validated `better-auth` session in a typical server-side context (e.g., an API route). It shows how the `User` type provides type-safe access to user properties like `id` and `email` after successful authentication."
+            }
+          ],
+          "limitations": [
+            "This type is specifically derived from `better-auth`'s internal session structure and is not intended for standalone use or manual instantiation outside the context of `better-auth`'s session management.",
+            "The exact properties available on the `User` object depend entirely on the `better-auth` configuration, the chosen database adapter, and the database schema; custom fields added to user profiles via other means might not be automatically included unless explicitly configured within `better-auth`.",
+            "This type represents the user's static profile data as stored, not dynamic session-specific data like roles or permissions that might change based on a user's active session state (though roles could be part of the user profile)."
+          ],
+          "bestPractices": [
+            "Always use this type when passing user session data between functions or components to maintain strong type safety.",
+            "Destructure specific properties (e.g., `id`, `email`) from the `User` object only when needed to improve code readability and prevent accidental property access.",
+            "Utilize optional chaining (`?.`) when accessing properties that might be undefined, such as an email address if `better-auth` is configured to allow users without emails.",
+            "Ensure your database schema and `better-auth` adapter configuration align with the expected properties of the `User` type for seamless data mapping."
+          ],
+          "antiPatterns": [
+            "Manually constructing instances of `User` instead of relying on `better-auth` to provide them, which can lead to invalid session states or type mismatches.",
+            "Assuming all properties within the `User` object are always present without proper null or undefined checks, especially for optional fields or properties that might be conditionally present based on the `better-auth` configuration."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/web/src/lib/auth/get-session-fn.ts": [
+    {
+      "codeMetadata": {
+        "name": "getSessionFn",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 6,
+            "column": 1
+          },
+          "end": {
+            "line": 13,
+            "column": 3
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "@tanstack",
+            "importPath": "@tanstack/react-start",
+            "dependsOn": [
+              "createServerFn"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@repo",
+            "importPath": "@repo/server/lib/auth",
+            "dependsOn": [
+              "auth"
+            ]
+          },
+          {
+            "type": "external",
+            "packageName": "@tanstack",
+            "importPath": "@tanstack/react-start/server",
+            "dependsOn": [
+              "getHeaders"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/lib/auth/get-session-fn.ts#getSessionFn",
+        "typeSignature": "const getSessionFn: any"
+      },
+      "semanticData": {
+        "summary": "Creates a server-side function to retrieve the current user's authentication session, utilizing request headers and a backend auth service.",
+        "description": "The \"getSessionFn\" declaration defines a server-side function to securely retrieve the current user's authentication session. It leverages @tanstack/react-start's server function capabilities to expose a POST endpoint that fetches session details using the internal 'auth' library and request headers. This function is crucial for server-rendered applications needing to access authenticated user data, ensuring session validity and providing a unified approach to session management.",
+        "tags": [
+          "authentication",
+          "server-function",
+          "api",
+          "session-management",
+          "react-start"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Hydrating user authentication state during server-side rendering (SSR)",
+            "Protecting server-rendered routes by checking for an authenticated session",
+            "Fetching user-specific data that requires an active session",
+            "Displaying user-dependent UI components based on authentication status"
+          ],
+          "examples": [
+            {
+              "code": "import { getSessionFn } from '~/lib/auth/get-session-fn';\n\nasync function UserProfile() {\n  const session = await getSessionFn();\n\n  if (!session) {\n    return <p>Please log in to view your profile.</p>;\n  }\n\n  return (\n    <div>\n      <h1>Welcome, {session.user.name}</h1>\n      <p>Your email: {session.user.email}</p>\n      {/* Render authenticated content */}\n    </div>\n  );\n}",
+              "description": "This example demonstrates how to use `getSessionFn` within a React component (e.g., a server component or a client component using `useEffect` for data fetching) to retrieve the current user's session. It includes a basic check for an existing session to conditionally render content or prompt the user to log in."
+            }
+          ],
+          "limitations": [
+            "The function is configured as a POST request, which might be less semantically aligned for a read-only operation compared to a GET request in traditional REST, though common for server actions in frameworks.",
+            "It relies on the specific 'auth' library and `@tanstack/react-start` ecosystem, limiting its portability to other environments without these dependencies.",
+            "Error handling from 'auth.api.getSession' is minimal; failures in fetching the session will result in 'null' without more granular error information."
+          ],
+          "bestPractices": [
+            "Always handle the 'null' case for the returned session explicitly, redirecting unauthenticated users or showing a fallback UI.",
+            "Cache the session data on the client-side (e.g., using React Query or a global state manager) if it's frequently accessed and changes infrequently.",
+            "Wrap components that depend on this function with Suspense boundaries to provide loading states during data fetching."
+          ],
+          "antiPatterns": [
+            "Calling getSessionFn on every render or in a loop without proper memoization or caching, leading to excessive network requests.",
+            "Accessing properties of the returned 'session' without first checking if 'session' is not null, leading to runtime errors for unauthenticated users.",
+            "Using this function for publicly accessible routes where no authentication is required, adding unnecessary overhead."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/web/src/lib/auth/index.ts": [
+    {
+      "codeMetadata": {
+        "name": "authClient",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 3,
+            "column": 46
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "better-auth",
+            "importPath": "better-auth/react",
+            "dependsOn": [
+              "createAuthClient"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/lib/auth/index.ts#authClient",
+        "typeSignature": "const authClient: any"
+      },
+      "semanticData": {
+        "summary": "Initializes and exports a React-specific authentication client instance.",
+        "description": "The \"authClient\" constant is an instance of an authentication client, created using \"createAuthClient\" from \"better-auth/react\". It serves as the central object for managing user authentication states, sessions, and related operations within a React application. This declaration provides a single, globally accessible client for interacting with the authentication system, simplifying integration across components.",
+        "tags": [
+          "authentication",
+          "react",
+          "api-client",
+          "session-management"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Initializing a global authentication client for a React application.",
+            "Accessing user session data across different components.",
+            "Performing login and logout operations.",
+            "Protecting routes or components based on authentication status."
+          ],
+          "examples": [
+            {
+              "code": "// apps/web/src/lib/auth/index.ts\nimport { createAuthClient } from \"better-auth/react\";\nexport const authClient = createAuthClient();\n\n// apps/web/src/components/AuthStatus.tsx\nimport { authClient } from '../lib/auth';\nimport { useState, useEffect } from 'react';\n\nfunction AuthStatus() {\n  const [user, setUser] = useState(null);\n  const [loading, setLoading] = useState(true);\n\n  useEffect(() => {\n    const fetchUser = async () => {\n      setLoading(true);\n      const { user } = await authClient.getSession();\n      setUser(user);\n      setLoading(false);\n    };\n    fetchUser();\n\n    const unsubscribe = authClient.onAuthChange((newUser) => {\n      setUser(newUser);\n    });\n\n    return () => unsubscribe();\n  }, []);\n\n  if (loading) return <div>Loading authentication status...</div>;\n  if (user) return <div>Welcome, {user.name}!</div>;\n  return <div>Please log in.</div>;\n}",
+              "description": "This example demonstrates how \"authClient\" is initialized in a central file and then imported and used within a React component to fetch and display the current user's authentication status. It shows how to access session data and subscribe to authentication state changes, illustrating typical client-side interaction patterns."
+            }
+          ],
+          "limitations": [
+            "The \"authClient\" is global; re-initializing it or creating multiple instances might lead to inconsistent state or unexpected behavior, especially in server-side rendering (SSR) environments if not handled carefully.",
+            "Its functionality is dependent on the \"better-auth/react\" library, and its methods/properties are dictated by that library's API."
+          ],
+          "bestPractices": [
+            "Initialize \"authClient\" once per application to ensure a single source of truth for authentication state.",
+            "Use the provided type inference (\"$Infer\") to ensure type safety when working with session and user data.",
+            "Leverage React Context or state management libraries to provide \"authClient\" or its derived state to deeply nested components, avoiding prop drilling.",
+            "Ensure proper cleanup of any listeners subscribed to \"authClient\" events in React components (e.g., using \"useEffect\" return functions)."
+          ],
+          "antiPatterns": [
+            "Do not create multiple \"authClient\" instances throughout your application; this can lead to race conditions, inconsistent session data, or unnecessary network requests.",
+            "Avoid directly modifying the internal state of \"authClient\" unless explicitly supported by the \"better-auth/react\" library; always use the provided public methods.",
+            "Do not expose sensitive authentication tokens or credentials directly from \"authClient\" in your UI, as this could lead to security vulnerabilities. Access data through the client's provided secure methods."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "Session",
+        "type": "type",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 5,
+            "column": 1
+          },
+          "end": {
+            "line": 5,
+            "column": 64
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/web/src/lib/auth/index.ts#Session",
+        "typeSignature": "type = typeof authClient.$Infer.Session.session"
+      },
+      "semanticData": {
+        "summary": "Type definition for an authenticated user session object, inferred from the `better-auth` client.",
+        "description": "The `Session` type declaration provides a type-safe representation of an authenticated user's session object, automatically inferred from the `better-auth/react` client. It defines the exact structure of session data, including user information and potentially tokens or expiry details, solving the problem of knowing the precise shape of authentication state. Developers can use this type throughout their application to ensure consistency and prevent errors when accessing and manipulating session-related data provided by the authentication library.",
+        "tags": [
+          "authentication",
+          "session-management",
+          "type-definition",
+          "security"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Displaying user-specific content (e.g., username, profile picture) in UI components.",
+            "Conditionally rendering UI elements or routes based on a user's authentication status.",
+            "Type-checking session data when passed as props or context throughout the application.",
+            "Accessing authentication tokens (e.g., access token) for making secure API requests."
+          ],
+          "examples": [
+            {
+              "code": "import React from 'react';\nimport { authClient, type Session, type User } from '../lib/auth';\n// Assuming better-auth provides a hook or method to get the current session\n// For demonstration, we'll simulate a common pattern.\n\ninterface ExampleSession extends Session {\n  user: User & { name: string; email: string; }; // Assume user has name/email\n  accessToken: string;\n  refreshToken: string;\n  expiresAt: number;\n}\n\n// Simulate a hook that would return the current session from better-auth\nconst useCurrentSession = (): { data: ExampleSession | null; isLoading: boolean } => {\n  const [session, setSession] = React.useState<ExampleSession | null>(null);\n  const [isLoading, setIsLoading] = React.useState(true);\n\n  React.useEffect(() => {\n    const fetchSession = async () => {\n      setIsLoading(true);\n      // In a real app, this would be authClient.getSession() or similar.\n      // Mocking a session for the example:\n      const fetchedSession: ExampleSession = {\n        user: { id: 'user-xyz', name: 'Jane Doe', email: 'jane.doe@example.com' },\n        accessToken: 'dummy-access-token-123',\n        refreshToken: 'dummy-refresh-token-456',\n        expiresAt: Date.now() + 3600 * 1000 // Valid for 1 hour\n      };\n      setSession(fetchedSession);\n      setIsLoading(false);\n    };\n    fetchSession();\n  }, []);\n\n  return { data: session, isLoading };\n};\n\nfunction UserDashboard() {\n  const { data: session, isLoading } = useCurrentSession();\n\n  if (isLoading) {\n    return <div>Loading user session...</div>;\n  }\n\n  if (!session) {\n    return (\n      <div>\n        <p>You are not logged in.</p>\n        <button onClick={() => authClient.signInWithRedirect()}>Log In</button>\n      </div>\n    );\n  }\n\n  // 'session' is now type-safe according to the Session type\n  return (\n    <div>\n      <h1>Welcome, {session.user.name}!</h1>\n      <p>Your Email: {session.user.email}</p>\n      <p>Access Token (for APIs): {session.accessToken.substring(0, 10)}...</p>\n      <button onClick={() => authClient.signOut()}>Log Out</button>\n    </div>\n  );\n}",
+              "description": "This example demonstrates how to use the inferred `Session` type within a React component. It showcases how to access type-safe properties like `session.user.name` and `session.user.email`, conditionally render UI based on authentication status, and interact with the `authClient` for login/logout actions. It assumes a common pattern where `better-auth` exposes a way to retrieve the current session data (e.g., via a hook)."
+            }
+          ],
+          "limitations": [
+            "The exact structure and available properties of the `Session` type are entirely determined by the `better-auth` library's internal implementation; developers cannot directly modify its shape.",
+            "This type declaration solely defines the data structure for a session; it does not encapsulate any active methods or logic for session management (e.g., login, logout, token refresh, or expiry handling), which are handled by the `authClient`."
+          ],
+          "bestPractices": [
+            "Always use the `Session` type when defining state, props, or function arguments that will hold session data for robust type safety.",
+            "Leverage the `better-auth` client's provided methods or hooks (e.g., `useSession` if available) to retrieve session data.",
+            "Implement null or undefined checks for `Session` objects or their properties, as a user might not be logged in or session data could be loading."
+          ],
+          "antiPatterns": [
+            "Attempting to manually construct `Session` objects; it's an inferred type for data provided by `better-auth` and should not be created directly.",
+            "Directly modifying properties of a `Session` object; treat it as an immutable snapshot of the current session state provided by the authentication client."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "User",
+        "type": "type",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 6,
+            "column": 1
+          },
+          "end": {
+            "line": 6,
+            "column": 58
+          }
+        },
+        "dependencies": [],
+        "uri": "apps/web/src/lib/auth/index.ts#User",
+        "typeSignature": "type = typeof authClient.$Infer.Session.user"
+      },
+      "semanticData": {
+        "summary": "Defines the inferred type for an authenticated user's data from the better-auth client's session.",
+        "description": "The `User` type declaration defines the shape of an authenticated user's data as inferred from the `better-auth/react` client's session. It provides type safety for accessing user-specific properties, ensuring that developers interact with user objects consistently across the application. This type is crucial for securely handling and displaying user information after successful authentication.",
+        "tags": [
+          "authentication",
+          "user-management",
+          "type-definition",
+          "security"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Displaying logged-in user's profile information in UI components",
+            "Type-checking user objects retrieved from authentication contexts or hooks",
+            "Passing authenticated user data to backend API calls for authorization",
+            "Conditional rendering based on user properties (e.g., user's name, ID)"
+          ],
+          "examples": [
+            {
+              "code": "import { type User } from \"./lib/auth\";\n\ninterface UserProfileProps {\n  user: User | null;\n}\n\nfunction UserProfile({ user }: UserProfileProps) {\n  if (!user) {\n    return <p>Please log in.</p>;\n  }\n  return (\n    <div>\n      <h1>Welcome, {user.name || user.email}!</h1>\n      <p>Your ID: {user.id}</p>\n      {user.role === 'admin' && <p>You are an administrator.</p>}\n    </div>\n  );\n}",
+              "description": "This example demonstrates using the `User` type to define the shape of a user prop in a React functional component. It ensures type safety when accessing user properties and handles the case where the user might not be logged in (user is null)."
+            }
+          ],
+          "limitations": [
+            "The exact shape of the `User` type is entirely dependent on the configuration of the `better-auth` client; it's not a fixed schema.",
+            "This type is primarily for compile-time type checking and doesn't enforce runtime validation of user data.",
+            "It represents the `user` object within the current session and does not inherently include methods for user management (e.g., updating user profiles, changing passwords) which would be handled by `authClient` methods."
+          ],
+          "bestPractices": [
+            "Always import `User` directly from the `authClient`'s module (e.g., `src/lib/auth/index.ts`) to ensure type consistency across the application.",
+            "Use this `User` type when defining props for components that display user information or when typing variables holding user data.",
+            "Leverage destructuring with this type to safely access user properties, like `{ id, email, name }: User`.",
+            "Combine with optional chaining (`user?.email`) or null checks when dealing with potentially unauthenticated states or partial user objects."
+          ],
+          "antiPatterns": [
+            "Manually defining a `User` interface when `authClient.$Infer.Session.user` is available, leading to type inconsistencies if the `better-auth` configuration changes.",
+            "Attempting to mutate properties of an inferred `User` object directly, as it's typically a read-only representation of the session state and should be updated via `better-auth` client methods.",
+            "Assuming specific user properties without verifying them against the `better-auth` client's configuration, which can lead to runtime errors if the inferred schema differs."
+          ]
+        }
+      }
+    }
+  ],
+  "apps/web/src/lib/validators/auth.ts": [
+    {
+      "codeMetadata": {
+        "name": "signInSchema",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 7,
+            "column": 4
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "zod",
+            "importPath": "zod",
+            "dependsOn": [
+              "z"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/lib/validators/auth.ts#signInSchema",
+        "typeSignature": "const signInSchema: any"
+      },
+      "semanticData": {
+        "summary": "Validates user sign-in input for email, password, and an optional 'rememberMe' flag using Zod.",
+        "description": "This Zod schema defines the validation rules for user sign-in forms, ensuring data integrity for authentication requests. It validates that the provided email adheres to a valid format, the password field is not empty, and an optional 'rememberMe' field, if present, is either 'true' or 'false'. This helps enforce correct input types and presence before processing credentials.",
+        "tags": [
+          "validation",
+          "authentication",
+          "zod",
+          "schema",
+          "form-validation"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Validating user credentials submitted through a sign-in form on the client-side.",
+            "Ensuring proper data structure and types for an authentication API endpoint's request body.",
+            "Providing immediate feedback to users regarding input errors in sign-in fields."
+          ],
+          "examples": [
+            {
+              "code": "import { z } from \"zod\";\nimport { signInSchema } from \"./auth\";\n\n// Example usage in a form submission handler\nconst handleSubmit = (formData) => {\n  try {\n    const validatedData = signInSchema.parse(formData);\n    console.log(\"Form data is valid:\", validatedData);\n    // Proceed with authentication API call\n  } catch (error) {\n    console.error(\"Validation error:\", error.errors);\n    // Display validation errors to the user\n  }\n};\n\n// Sample invalid form data\nconst invalidData = {\n  email: \"invalid-email\",\n  password: \"\",\n  rememberMe: \"yes\"\n};\n\n// Sample valid form data\nconst validData = {\n  email: \"test@example.com\",\n  password: \"myPassword123\",\n  rememberMe: \"true\"\n};\n\nhandleSubmit(invalidData);\nhandleSubmit(validData);",
+              "description": "This example demonstrates how to use `signInSchema.parse()` to validate form data in a submission handler. It shows catching validation errors and accessing the `errors` array for user feedback, as well as successfully validating correct data."
+            }
+          ],
+          "limitations": [
+            "This schema only validates the format and presence of inputs; it does not perform server-side checks like verifying if the email exists or if the credentials are correct.",
+            "The 'password' field only checks for non-emptiness; it does not enforce complexity requirements (e.g., minimum length, special characters, uppercase) which should be handled by the 'signUpSchema' or additional logic if needed for sign-in updates."
+          ],
+          "bestPractices": [
+            "Integrate this schema with a form management library (e.g., React Hook Form, Formik) for streamlined state management and error display.",
+            "Combine this client-side validation with robust server-side validation to ensure security and data integrity regardless of client behavior.",
+            "Utilize the schema's error messages to provide clear and actionable feedback to users, guiding them to correct invalid inputs."
+          ],
+          "antiPatterns": [
+            "Implementing custom validation logic for sign-in fields when this pre-defined schema already covers the requirements, leading to redundant code.",
+            "Using this schema for password complexity validation; it only checks for non-empty, not character requirements.",
+            "Bypassing client-side validation, which can lead to a poor user experience due to delayed feedback or unnecessary server requests for invalid inputs."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "signUpSchema",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 9,
+            "column": 1
+          },
+          "end": {
+            "line": 29,
+            "column": 6
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "zod",
+            "importPath": "zod",
+            "dependsOn": [
+              "z"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/lib/validators/auth.ts#signUpSchema",
+        "typeSignature": "const signUpSchema: any"
+      },
+      "semanticData": {
+        "summary": "Defines a Zod schema for validating user registration data including name, email, and strong password requirements with confirmation.",
+        "description": "This signUpSchema is a Zod object schema designed to validate user input during a sign-up process. It enforces stringent validation rules for firstName, lastName, and email, and robust security requirements for password, including length, case, numeric, and special character presence. Additionally, it ensures that password and confirmPassword fields match, providing a complete and secure validation mechanism for new user registrations.",
+        "tags": [
+          "zod",
+          "validation",
+          "schema",
+          "authentication",
+          "form-validation"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Validating user input on a registration form",
+            "Ensuring data integrity for new user accounts before persistence",
+            "Generating derived TypeScript types for sign-up data structures",
+            "Implementing server-side input validation for user registration API endpoints"
+          ],
+          "examples": [
+            {
+              "code": "import { useForm } from \"react-hook-form\";\nimport { zodResolver } from \"@hookform/resolvers/zod\";\nimport { signUpSchema } from \"../../lib/validators/auth\"; // Adjust path as needed\n\ntype SignUpFormInputs = z.infer<typeof signUpSchema>;\n\nfunction SignUpForm() {\n  const { register, handleSubmit, formState: { errors } } = useForm<SignUpFormInputs>({\n    resolver: zodResolver(signUpSchema),\n  });\n\n  const onSubmit = (data: SignUpFormInputs) => console.log(data);\n\n  return (\n    <form onSubmit={handleSubmit(onSubmit)}>\n      <input {...register(\"firstName\")} placeholder=\"First Name\" />\n      {errors.firstName && <span>{errors.firstName.message}</span>}\n\n      <input {...register(\"lastName\")} placeholder=\"Last Name\" />\n      {errors.lastName && <span>{errors.lastName.message}</span>}\n\n      <input {...register(\"email\")} placeholder=\"Email\" />\n      {errors.email && <span>{errors.email.message}</span>}\n\n      <input type=\"password\" {...register(\"password\")} placeholder=\"Password\" />\n      {errors.password && <span>{errors.password.message}</span>}\n\n      <input type=\"password\" {...register(\"confirmPassword\")} placeholder=\"Confirm Password\" />\n      {errors.confirmPassword && <span>{errors.confirmPassword.message}</span>}\n\n      <button type=\"submit\">Sign Up</button>\n    </form>\n  );\n}",
+              "description": "This example demonstrates how to integrate signUpSchema with React Hook Form and Zod resolver for client-side form validation, displaying real-time error messages."
+            },
+            {
+              "code": "import { signUpSchema } from \"./auth\"; // Assuming auth.ts is in the same directory\nimport { z } from \"zod\";\n\n// In an API route or controller function:\nfunction handleSignUp(req, res) {\n  try {\n    const userData = signUpSchema.parse(req.body);\n    // If parsing succeeds, userData is validated and type-safe\n    // Proceed with user creation, e.g., hashing password and saving to DB\n    console.log(\"Validated user data:\", userData);\n    res.status(200).json({ message: \"User data valid\" });\n  } catch (error) {\n    if (error instanceof z.ZodError) {\n      return res.status(400).json({ errors: error.errors });\n    }\n    res.status(500).json({ message: \"Internal server error\" });\n  }\n}",
+              "description": "This example shows how to use signUpSchema.parse() on the server-side to validate incoming request bodies, catching ZodError for invalid input and returning appropriate error responses."
+            }
+          ],
+          "limitations": [
+            "This schema only validates the format and match of passwords; it does not check for password strength against common weak passwords or compromised lists",
+            "It does not handle unique email checks, which typically requires a database query",
+            "Does not include any specific handling for user roles or other complex registration-time metadata"
+          ],
+          "bestPractices": [
+            "Apply this schema for both client-side (e.g., React Hook Form) and server-side (e.g., Express middleware) validation to ensure data consistency and security",
+            "Derive a TypeScript type from this schema using z.infer<typeof signUpSchema> for type-safe handling of sign-up data",
+            "Provide clear error messages to users based on the schema's validation failures",
+            "Keep password validation rules up-to-date with current security recommendations"
+          ],
+          "antiPatterns": [
+            "Using this schema for login or password reset forms (use signInSchema or resetPasswordSchema instead)",
+            "Storing passwords directly without hashing after validation (validation is for input format, not secure storage)",
+            "Ignoring the refine check for password matching, as it's a crucial part of user experience and security",
+            "Relying solely on client-side validation without server-side re-validation using this schema"
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "forgotPasswordSchema",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 31,
+            "column": 1
+          },
+          "end": {
+            "line": 33,
+            "column": 4
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "zod",
+            "importPath": "zod",
+            "dependsOn": [
+              "z"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/lib/validators/auth.ts#forgotPasswordSchema",
+        "typeSignature": "const forgotPasswordSchema: any"
+      },
+      "semanticData": {
+        "summary": "A Zod schema for validating email input in 'forgot password' requests.",
+        "description": "This `forgotPasswordSchema` is a Zod schema designed to validate user input for 'forgot password' functionality. It ensures that the provided input contains a single, valid email address. This schema is crucial for securely initiating password reset flows by verifying the format of the email before a reset link or code is sent.",
+        "tags": [
+          "validation",
+          "zod",
+          "authentication",
+          "form-validation"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Validating the email field in a 'forgot password' form on the client-side.",
+            "Ensuring a valid email is provided to an API endpoint before initiating a password reset process.",
+            "Standardizing email input validation across different parts of an authentication flow."
+          ],
+          "examples": [
+            {
+              "code": "import { z } from \"zod\";\n\nexport const forgotPasswordSchema = z.object({\n  email: z.string().email(\"Valid email is required\")\n});\n\n// Example usage:\ntry {\n  const validData = forgotPasswordSchema.parse({ email: \"test@example.com\" });\n  console.log(\"Validation successful:\", validData);\n} catch (error) {\n  console.error(\"Validation failed:\", error.errors);\n}\n\ntry {\n  const invalidData = forgotPasswordSchema.parse({ email: \"invalid-email\" });\n} catch (error) {\n  console.error(\"Validation failed for invalid email:\", error.errors);\n}",
+              "description": "This example demonstrates how to use the `forgotPasswordSchema` to parse and validate an email string. It shows both a successful validation case and a failed case for an invalid email format, highlighting how Zod throws an error with detailed validation issues."
+            }
+          ],
+          "limitations": [
+            "This schema only validates the format of an email address; it does not check if the email actually exists or is registered in your system.",
+            "It only expects a single 'email' field; it's not suitable for forms with multiple inputs or more complex 'forgot password' flows (e.g., requiring username too)."
+          ],
+          "bestPractices": [
+            "Apply this schema for both client-side and server-side validation to ensure data integrity and security.",
+            "Integrate with form libraries (e.g., React Hook Form) for seamless UI validation and error handling.",
+            "Provide clear user feedback when validation fails, guiding them to correct their input."
+          ],
+          "antiPatterns": [
+            "Using this schema to validate inputs other than a single email address, as it's specifically designed for that purpose.",
+            "Not using this schema for server-side validation, leading to potential security vulnerabilities or invalid data processing.",
+            "Assuming the email exists in the database just because it passes this schema's format validation; a separate database check is always required."
+          ]
+        }
+      }
+    },
+    {
+      "codeMetadata": {
+        "name": "resetPasswordSchema",
+        "type": "const",
+        "isExported": true,
+        "isDefault": false,
+        "position": {
+          "start": {
+            "line": 35,
+            "column": 1
+          },
+          "end": {
+            "line": 52,
+            "column": 6
+          }
+        },
+        "dependencies": [
+          {
+            "type": "external",
+            "packageName": "zod",
+            "importPath": "zod",
+            "dependsOn": [
+              "z"
+            ]
+          }
+        ],
+        "uri": "apps/web/src/lib/validators/auth.ts#resetPasswordSchema",
+        "typeSignature": "const resetPasswordSchema: any"
+      },
+      "semanticData": {
+        "summary": "Defines a Zod schema for validating password reset form data, ensuring strong password requirements and matching confirmation.",
+        "description": "The resetPasswordSchema is a Zod object schema designed to validate user input for password reset operations. It enforces strong password policies, requiring a minimum length, and the presence of uppercase, lowercase, numeric, and special characters. Furthermore, it includes a refinement to ensure that the provided password and its confirmation match, preventing user input errors during the reset process.",
+        "tags": [
+          "validation",
+          "zod",
+          "authentication",
+          "security",
+          "forms"
+        ],
+        "usagePattern": {
+          "commonUseCases": [
+            "Validating password fields in a 'reset password' form on the client-side.",
+            "Sanitizing and validating password reset requests sent to a backend API.",
+            "Ensuring consistency of password complexity rules across the application for password resets."
+          ],
+          "examples": [
+            {
+              "code": "import { useForm } from \"react-hook-form\";\nimport { zodResolver } from \"@hookform/resolvers/zod\";\nimport { z } from \"zod\";\nimport { resetPasswordSchema } from \"@/lib/validators/auth\"; // Assuming the path\n\ntype ResetPasswordFormInputs = z.infer<typeof resetPasswordSchema>;\n\nfunction ResetPasswordForm() {\n  const {\n    register,\n    handleSubmit,\n    formState: { errors },\n  } = useForm<ResetPasswordFormInputs>({\n    resolver: zodResolver(resetPasswordSchema),\n  });\n\n  const onSubmit = (data: ResetPasswordFormInputs) => {\n    console.log(\"Password reset data:\", data);\n    // Call API to reset password\n  };\n\n  return (\n    <form onSubmit={handleSubmit(onSubmit)}>\n      <div>\n        <label htmlFor=\"password\">New Password</label>\n        <input id=\"password\" type=\"password\" {...register(\"password\")} />\n        {errors.password && <span>{errors.password.message}</span>}\n      </div>\n      <div>\n        <label htmlFor=\"confirmPassword\">Confirm New Password</label>\n        <input id=\"confirmPassword\" type=\"password\" {...register(\"confirmPassword\")} />\n        {errors.confirmPassword && <span>{errors.confirmPassword.message}</span>}\n      </div>\n      <button type=\"submit\">Reset Password</button>\n    </form>\n  );\n}",
+              "description": "This example demonstrates how to integrate resetPasswordSchema with React Hook Form for client-side validation in a password reset form. It shows how to use zodResolver to connect the schema to the form, handle input registration, and display validation errors for both password fields."
+            },
+            {
+              "code": "import { NextApiRequest, NextApiResponse } from \"next\";\nimport { resetPasswordSchema } from \"@/lib/validators/auth\"; // Assuming the path\n\nexport default async function handler(req: NextApiRequest, res: NextApiResponse) {\n  if (req.method !== \"POST\") {\n    return res.status(405).json({ message: \"Method Not Allowed\" });\n  }\n\n  try {\n    const validatedData = resetPasswordSchema.parse(req.body);\n    // In a real application, you would:\n    // 1. Verify the reset token (from query params or body)\n    // 2. Hash the new password (validatedData.password)\n    // 3. Update the user's password in the database\n    // 4. Invalidate the reset token\n    console.log(\"Server received and validated password data:\", validatedData);\n\n    res.status(200).json({ message: \"Password reset successful!\" });\n  } catch (error: any) {\n    if (error.issues) {\n      return res.status(400).json({ errors: error.issues });\n    }\n    res.status(500).json({ message: \"Internal server error\" });\n  }\n}",
+              "description": "This example illustrates how to use resetPasswordSchema for server-side validation within a Next.js API route. It demonstrates parsing the request body against the schema and handling potential validation errors, ensuring that only valid password reset data proceeds to further processing."
+            }
+          ],
+          "limitations": [
+            "This schema does not include validation for the password reset token itself (e.g., JWT, UUID), which would typically be part of the request for a password reset. A separate validation step or schema would be needed for the token.",
+            "The strong password requirements are hardcoded within the schema; if flexibility for different password policies (e.g., configurable minimum length) is needed, the schema would require dynamic construction or abstraction.",
+            "It doesn't handle rate limiting or brute-force protection for password reset attempts, which are crucial security measures to be implemented at the API level."
+          ],
+          "bestPractices": [
+            "Always use this schema for both client-side and server-side (if applicable, e.g., in a Next.js API route or an RPC endpoint) validation to ensure data integrity and security.",
+            "Provide clear, user-friendly error messages based on the schema's validation failures to guide users in creating strong passwords.",
+            "Integrate this schema with form libraries (e.g., React Hook Form) to streamline form state management and error display."
+          ],
+          "antiPatterns": [
+            "Using this schema for initial password creation during user sign-up without considering additional requirements (e.g., username, email, etc.), as it's specifically for reset context.",
+            "Relying solely on client-side validation using this schema without re-validating the data on the server, compromising security.",
+            "Modifying the schema's password requirements directly in client-side code without corresponding backend updates, leading to validation discrepancies."
+          ]
+        }
+      }
+    }
+  ]
+}

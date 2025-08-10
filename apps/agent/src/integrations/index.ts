@@ -1,5 +1,5 @@
 // Export main registry and types
-export { integrationRegistry } from "./registry";
+export { integrationRegistry } from "@/integrations/utils/registry";
 export type {
   IntegrationCallback,
   IntegrationCallbackResult,

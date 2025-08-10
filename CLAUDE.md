@@ -28,6 +28,18 @@ Weldr is a TypeScript-based monorepo using pnpm workspaces, Turbo, and modern we
 - **USE** barrel exports (`index.ts`) for clean public APIs
 - **ORGANIZE** files by feature, not by type
 
+### 2.1. Code Reusability & Inspection Before Implementation
+- **ALWAYS** search and inspect existing code before implementing new functionality
+- **NEVER** assume functions, utilities, or components don't exist - always check first
+- **REUSE** existing functions, utilities, and components whenever possible
+- **READ** function signatures and parameters carefully before using any existing code
+- **INSPECT** how existing similar functionality is implemented and follow the same patterns
+- **CHECK** the codebase for existing solutions before writing new code
+- **EXTRACT** common functionality into reusable utilities when patterns emerge
+- **CONSOLIDATE** duplicate code by creating shared functions or components
+- **PREFER** extending existing functionality over creating parallel implementations
+- **VALIDATE** that your implementation follows existing architectural patterns
+
 ### 3. Import Organization & Dependencies
 - Follow Biome import organization rules (already configured)
 - Order: Node builtins → External packages → @weldr packages → Relative imports
@@ -89,7 +101,37 @@ Weldr is a TypeScript-based monorepo using pnpm workspaces, Turbo, and modern we
 - **IMPLEMENT** proper session management
 - **AUDIT** dependencies for security vulnerabilities regularly
 
-### 8. Code Quality & Maintainability
+### 8. Logging Standards
+- **NEVER** use `console.log`, `console.error`, or any console methods in backend code
+- **ALWAYS** use the Logger from `@weldr/shared` package for all logging needs
+- **USE** structured logging with appropriate context data
+- **IMPLEMENT** proper log levels: debug, info, warn, error, fatal, trace
+
+#### Logger Usage Examples:
+```typescript
+// Import the Logger namespace from shared package
+import { Logger } from "@weldr/shared";
+
+// Direct logger usage for simple logging
+Logger.info("User authenticated successfully");
+Logger.error("Database connection failed", { userId: "123", error: err.message });
+
+// Get contextual logger instance for operations requiring extra metadata
+const logger = Logger.get({ userId: "123", operation: "payment-processing" });
+logger.info("Payment initiated", { amount: 100, currency: "USD" });
+logger.error("Payment failed", { reason: "insufficient-funds" });
+```
+
+#### Logging Best Practices:
+- **INCLUDE** relevant context data as second parameter
+- **USE** descriptive log messages that explain what happened
+- **AVOID** logging sensitive information (passwords, tokens, personal data)
+- **PREFER** Logger.get() for operations requiring consistent context
+- **USE** appropriate log levels based on severity
+- **LOG** errors before re-throwing them
+- **INCLUDE** operation identifiers for traceability
+
+### 9. Code Quality & Maintainability
 - **WRITE** self-documenting code with clear variable and function names
 - **KEEP** functions small and focused (max 20-30 lines)
 - **AVOID** deep nesting (max 3 levels)
@@ -100,7 +142,19 @@ Weldr is a TypeScript-based monorepo using pnpm workspaces, Turbo, and modern we
 - **REFACTOR** code regularly to reduce technical debt
 - **REMOVE** dead code and unused imports regularly
 
-### 9. Monitoring & Observability
+### 9.1. Style Consistency & Pattern Matching
+- **MIMIC** existing code style and patterns when implementing new features
+- **OBSERVE** how similar functionality is structured in the codebase
+- **FOLLOW** existing naming conventions for variables, functions, and files
+- **MATCH** the code organization patterns used in similar modules
+- **ADOPT** the same error handling patterns used throughout the codebase
+- **REPLICATE** existing import/export patterns and file structure
+- **MAINTAIN** consistency with existing utility function signatures and usage
+- **PRESERVE** the architectural patterns established in each package
+- **STUDY** existing implementations to understand the preferred approach
+- **ALIGN** with established patterns for API design, component structure, and data flow
+
+### 10. Monitoring & Observability
 - **IMPLEMENT** structured logging with appropriate log levels
 - **TRACK** key business metrics and KPIs
 - **MONITOR** application performance and errors
@@ -179,6 +233,12 @@ Weldr is a TypeScript-based monorepo using pnpm workspaces, Turbo, and modern we
   - ❌ `// Implementation details`
 - Write self-documenting code with clear naming instead
 
+### **Emoji Policy**
+- **NEVER** use emojis in code, comments, commit messages, or any file content
+- **AVOID** emojis in function names, variable names, file names, or documentation
+- **KEEP** code professional and text-based only
+- **REMOVE** any existing emojis when editing files
+
 ## File Naming Conventions
 - Use kebab-case for file names: `user-profile.tsx`
 - Use PascalCase for component files that export components
@@ -218,11 +278,16 @@ pnpm commit       # Create conventional commit
 - ❌ Direct DOM manipulation in React components
 - ❌ Synchronous operations in async contexts
 - ❌ Hardcoded configuration values
-- ❌ Console.log in production code (use proper logging)
+- ❌ Using console.log, console.error, or any console methods in backend code (use Logger from @weldr/shared)
 - ❌ Uncommitted generated files
 - ❌ Mixed import styles (require/import)
 - ❌ Non-validated external data
 - ❌ SQL injection vulnerabilities
+- ❌ **Implementing functionality without first checking if it already exists**
+- ❌ **Using functions without reading their parameters and signatures first**
+- ❌ **Creating duplicate utilities when existing ones could be reused**
+- ❌ **Ignoring existing coding patterns and architectural style**
+- ❌ **Assuming function behavior without inspecting the implementation**
 
 ## Performance Guidelines
 - Use React.memo for expensive components
@@ -248,16 +313,23 @@ pnpm commit       # Create conventional commit
 - Implement graceful shutdown handlers
 
 ## When Adding New Features
-1. Define types and schemas first
-2. Implement database schema if needed
-3. Create API endpoints with proper validation
-4. Build UI components with full type safety
-5. Add proper error handling
-6. Write documentation
-7. Test edge cases
-8. Ensure backward compatibility
+1. **SEARCH** the codebase thoroughly for existing similar functionality
+2. **READ** and understand existing patterns, function signatures, and implementations
+3. **REUSE** existing utilities, functions, and components where applicable
+4. Define types and schemas first (following existing patterns)
+5. Implement database schema if needed (using existing migration patterns)
+6. Create API endpoints with proper validation (mimicking existing router structure)
+7. Build UI components with full type safety (following existing component patterns)
+8. Add proper error handling (using existing error handling utilities)
+9. Write documentation (following existing documentation style)
+10. Test edge cases (using existing testing patterns)
+11. Ensure backward compatibility
 
 ## Code Review Checklist
+- [ ] Searched codebase for existing similar functionality before implementing
+- [ ] Reused existing utilities, functions, and components where possible
+- [ ] Function signatures and parameters read and understood correctly
+- [ ] Implementation follows existing coding patterns and architectural style
 - [ ] All TypeScript errors resolved
 - [ ] Proper error handling implemented
 - [ ] Input validation with Zod
