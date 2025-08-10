@@ -1,6 +1,7 @@
 import { LoaderIcon } from "lucide-react";
 
 import { cn } from "@weldr/ui/lib/utils";
+
 import type {
   IntegrationToolMessage,
   IntegrationToolResultPart,

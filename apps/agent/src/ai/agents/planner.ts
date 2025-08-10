@@ -1,4 +1,11 @@
 import type { z } from "zod";
+
+import { Logger } from "@weldr/shared/logger";
+import type {
+  addMessageItemSchema,
+  assistantMessageContentSchema,
+} from "@weldr/shared/validators/chats";
+
 import { prompts } from "@/ai/prompts";
 import {
   callCoderTool,
@@ -13,12 +20,6 @@ import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import type { WorkflowContext } from "@/workflow/context";
-
-import { Logger } from "@weldr/shared/logger";
-import type {
-  addMessageItemSchema,
-  assistantMessageContentSchema,
-} from "@weldr/shared/validators/chats";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
 import { XMLProvider } from "../tools/xml/provider";
 import { calculateModelCost } from "../utils/providers-pricing";

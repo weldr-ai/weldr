@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { auth } from "@weldr/auth";
+
 import { AdminView } from "./_view";
 
 export default async function AdminPage() {

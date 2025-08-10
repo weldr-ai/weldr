@@ -30,6 +30,7 @@ import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
+
 import { SupportLinks } from "./support-links";
 
 export function ResetPasswordForm({ className }: { className?: string }) {

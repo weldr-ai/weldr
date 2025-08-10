@@ -1,5 +1,10 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+
+import { auth } from "@weldr/auth";
+import { buttonVariants } from "@weldr/ui/components/button";
+import { cn } from "@weldr/ui/lib/utils";
+
 import { AccountSettings } from "@/components/account-settings";
 import { AuthDialog } from "@/components/auth/auth-dialog";
 import { CommandCenter } from "@/components/command-center";
@@ -8,10 +13,6 @@ import { MainDropdownMenu } from "@/components/main-dropdown-menu";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { getActiveSubscription } from "@/lib/actions/get-active-subscription";
 import { api } from "@/lib/trpc/server";
-
-import { auth } from "@weldr/auth";
-import { buttonVariants } from "@weldr/ui/components/button";
-import { cn } from "@weldr/ui/lib/utils";
 
 export default async function Home(): Promise<JSX.Element> {
   const session = await auth.api.getSession({ headers: await headers() });

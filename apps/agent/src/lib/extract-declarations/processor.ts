@@ -9,6 +9,7 @@ import type {
   PropertyMemberMetadata,
   SetterMemberMetadata,
 } from "@weldr/shared/types/declarations";
+
 import {
   extractExpressionType,
   extractParameterInfo,

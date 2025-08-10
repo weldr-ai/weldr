@@ -13,6 +13,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { nanoid } from "@weldr/shared/nanoid";
+
 import { users } from "./auth";
 import { chats } from "./chats";
 import { declarations } from "./declarations";

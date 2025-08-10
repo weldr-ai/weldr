@@ -6,6 +6,7 @@ import { memo } from "react";
 import type { ChatMessage } from "@weldr/shared/types";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
+
 import { CustomMarkdown } from "./custom-markdown";
 import { IntegrationsSetupStatus } from "./setup-integrations/integrations-setup-status";
 import type { IntegrationToolMessage } from "./setup-integrations/types";

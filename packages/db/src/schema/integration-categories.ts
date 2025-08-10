@@ -14,6 +14,7 @@ import type {
   IntegrationCategoryKey,
   IntegrationKey,
 } from "@weldr/shared/types";
+
 import { integrationTemplates } from "./integration-templates";
 
 export const integrationCategories = pgTable(

@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { runCommand } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
 
 import { Logger } from "@weldr/shared/logger";
+
+import { runCommand } from "@/lib/commands";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
 export const installPackagesTool = createTool({

@@ -1,7 +1,8 @@
 import { streamText, type TextStreamPart, type ToolSet } from "ai";
-import type { WorkflowContext } from "@/workflow/context";
 
 import { Logger } from "@weldr/shared/logger";
+
+import type { WorkflowContext } from "@/workflow/context";
 import type { MyToolSet, XMLStreamDelta, XMLStreamResult } from "../types";
 import { XMLStreamProcessor } from "./stream-processor";
 

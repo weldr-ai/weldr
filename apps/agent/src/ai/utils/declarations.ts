@@ -1,7 +1,4 @@
 import { inArray } from "drizzle-orm";
-import { extractDeclarations } from "@/lib/extract-declarations";
-import { stream } from "@/lib/stream-utils";
-import type { WorkflowContext } from "@/workflow/context";
 
 import { and, db, eq } from "@weldr/db";
 import {
@@ -16,6 +13,10 @@ import {
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
+
+import { extractDeclarations } from "@/lib/extract-declarations";
+import { stream } from "@/lib/stream-utils";
+import type { WorkflowContext } from "@/workflow/context";
 import { queueEnrichingJob } from "./enriching-jobs";
 
 const NODE_DIMENSIONS = {

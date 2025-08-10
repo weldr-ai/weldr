@@ -20,7 +20,6 @@ import {
   useState,
 } from "react";
 import type { z } from "zod";
-import { useUIStore } from "@/lib/context/ui-store";
 
 import { authClient } from "@weldr/auth/client";
 import type {
@@ -34,6 +33,8 @@ import { Textarea } from "@weldr/ui/components/textarea";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
+
+import { useUIStore } from "@/lib/context/ui-store";
 import { Editor } from "./editor";
 import type { ReferenceNode } from "./editor/plugins/reference/node";
 import { PreviewAttachment } from "./preview-attachment";

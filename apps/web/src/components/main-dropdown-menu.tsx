@@ -18,7 +18,6 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useUIStore } from "@/lib/context/ui-store";
 
 import { authClient } from "@weldr/auth/client";
 import { Button } from "@weldr/ui/components/button";
@@ -37,6 +36,8 @@ import {
 } from "@weldr/ui/components/dropdown-menu";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
+
+import { useUIStore } from "@/lib/context/ui-store";
 
 export function MainDropdownMenu({
   side = "bottom",

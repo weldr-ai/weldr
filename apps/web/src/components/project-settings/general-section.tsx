@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { getProjectDownloadUrl } from "@/lib/actions/get-project-download-url";
-import { useTRPC } from "@/lib/trpc/react";
 
 import type { RouterOutputs } from "@weldr/api";
 import { updateProjectSchema } from "@weldr/shared/validators/projects";
@@ -28,6 +26,9 @@ import {
 } from "@weldr/ui/components/form";
 import { Input } from "@weldr/ui/components/input";
 import { toast } from "@weldr/ui/hooks/use-toast";
+
+import { getProjectDownloadUrl } from "@/lib/actions/get-project-download-url";
+import { useTRPC } from "@/lib/trpc/react";
 import { DeleteAlertDialog } from "../delete-alert-dialog";
 
 export function GeneralSection({

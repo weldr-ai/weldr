@@ -1,14 +1,15 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
-import { installQueuedIntegrations } from "@/integrations/utils/queue-installer";
-import { processIntegrationQueue } from "@/integrations/utils/queue-manager";
-import { createRouter } from "@/lib/utils";
-import { workflow } from "@/workflow";
 
 import { auth } from "@weldr/auth";
 import { and, db, desc, eq, isNotNull } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
+
+import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
+import { installQueuedIntegrations } from "@/integrations/utils/queue-installer";
+import { processIntegrationQueue } from "@/integrations/utils/queue-manager";
+import { createRouter } from "@/lib/utils";
+import { workflow } from "@/workflow";
 
 const route = createRoute({
   method: "post",

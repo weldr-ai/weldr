@@ -1,7 +1,7 @@
 import type { Tool } from "ai";
 import type { z } from "zod";
-import type { WorkflowContext } from "@/workflow/context";
 
+import type { WorkflowContext } from "@/workflow/context";
 import type { ToolConfig } from "./types";
 import { ZodXML } from "./xml/zod";
 

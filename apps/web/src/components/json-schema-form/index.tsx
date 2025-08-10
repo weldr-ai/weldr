@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { JsonSchema } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/components/button";
 import { Card } from "@weldr/ui/components/card";
+
 import { FieldWrapper } from "./field-wrapper";
 import type { RecordValue, ValidationError } from "./types";
 import { hasProperties, isJsonSchema } from "./utils";

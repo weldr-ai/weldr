@@ -1,7 +1,7 @@
-import { getProjectContext } from "@/ai/utils/get-project-context";
-
 import { db } from "@weldr/db";
 import type { projects } from "@weldr/db/schema";
+
+import { getProjectContext } from "@/ai/utils/get-project-context";
 import type { MyToolSet } from "../tools/types";
 
 export const requirements = async (

@@ -12,7 +12,6 @@ import {
   SmartphoneIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useProject } from "@/lib/context/project";
 
 import { Badge } from "@weldr/ui/components/badge";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
@@ -27,6 +26,8 @@ import {
   ToggleGroupItem,
 } from "@weldr/ui/components/toggle-group";
 import { cn } from "@weldr/ui/lib/utils";
+
+import { useProject } from "@/lib/context/project";
 
 interface SitePreviewDialogProps {
   open: boolean;

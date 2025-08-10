@@ -13,11 +13,12 @@ import {
 } from "@xyflow/react";
 import { ArrowUpDownIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { useTRPC } from "@/lib/trpc/react";
-import type { CanvasNode } from "@/types";
 
 import { Button } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
+
+import { useTRPC } from "@/lib/trpc/react";
+import type { CanvasNode } from "@/types";
 import { DbModelNode } from "./nodes/declaration/db-model";
 import { EndpointNode } from "./nodes/declaration/endpoint";
 import { PageNode } from "./nodes/declaration/page";

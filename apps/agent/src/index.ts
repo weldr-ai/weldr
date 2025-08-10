@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 
 import { Logger } from "@weldr/shared/logger";
+
 import { recoverEnrichingJobs } from "./ai/utils/enriching-jobs";
 import { closeRedisConnections } from "./lib/stream-utils";
 import { configureOpenAPI, createRouter } from "./lib/utils";

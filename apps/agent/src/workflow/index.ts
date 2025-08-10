@@ -1,7 +1,7 @@
-import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
-
 import { and, db, eq, isNotNull, or } from "@weldr/db";
 import { type chatMessages, projects, users, versions } from "@weldr/db/schema";
+
+import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
 import { WorkflowContext } from "./context";
 import { createStep, createWorkflow } from "./engine";
 import { codeStep } from "./steps/code";

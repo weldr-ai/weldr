@@ -1,14 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useChatVisibility } from "@/hooks/use-chat-visibility";
-import { useEditorReferences } from "@/hooks/use-editor-references";
-import { useEventStream } from "@/hooks/use-event-stream";
-import { useMessages } from "@/hooks/use-messages";
-import { usePendingMessageStatus } from "@/hooks/use-pending-message-status";
-import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
-import { useWorkflowTrigger } from "@/hooks/use-workflow-trigger";
-import { parseConventionalCommit } from "@/lib/utils";
 
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
@@ -23,6 +15,15 @@ import {
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
+
+import { useChatVisibility } from "@/hooks/use-chat-visibility";
+import { useEditorReferences } from "@/hooks/use-editor-references";
+import { useEventStream } from "@/hooks/use-event-stream";
+import { useMessages } from "@/hooks/use-messages";
+import { usePendingMessageStatus } from "@/hooks/use-pending-message-status";
+import { useScrollToBottom } from "@/hooks/use-scroll-to-bottom";
+import { useWorkflowTrigger } from "@/hooks/use-workflow-trigger";
+import { parseConventionalCommit } from "@/lib/utils";
 import { CommitTypeBadge } from "./commit-type-badge";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";

@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 
 import { Logger } from "@weldr/shared/logger";
+
 import { registry } from "./registry";
 
 const projectSchema = z.object({

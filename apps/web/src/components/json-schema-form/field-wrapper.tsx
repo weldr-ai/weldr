@@ -2,6 +2,7 @@ import type { JsonSchema } from "@weldr/shared/types";
 import { Alert, AlertDescription } from "@weldr/ui/components/alert";
 import { Label } from "@weldr/ui/components/label";
 import { Switch } from "@weldr/ui/components/switch";
+
 import { FormField } from "./form-field";
 import type { ValidationError } from "./types";
 

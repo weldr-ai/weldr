@@ -10,10 +10,6 @@ import {
   ShieldXIcon,
 } from "lucide-react";
 import { memo, useMemo, useState } from "react";
-import { SitePreviewDialog } from "@/components/site-preview-dialog";
-import { useProject } from "@/lib/context/project";
-import { useTRPC } from "@/lib/trpc/react";
-import type { CanvasNodeProps } from "@/types";
 
 import { Badge } from "@weldr/ui/components/badge";
 import { Button } from "@weldr/ui/components/button";
@@ -21,6 +17,11 @@ import { Card, CardContent } from "@weldr/ui/components/card";
 import { Input } from "@weldr/ui/components/input";
 import { Label } from "@weldr/ui/components/label";
 import { cn } from "@weldr/ui/lib/utils";
+
+import { SitePreviewDialog } from "@/components/site-preview-dialog";
+import { useProject } from "@/lib/context/project";
+import { useTRPC } from "@/lib/trpc/react";
+import type { CanvasNodeProps } from "@/types";
 import { ProtectedBadge } from "../components/protected-badge";
 
 interface PageNodeHeaderProps {

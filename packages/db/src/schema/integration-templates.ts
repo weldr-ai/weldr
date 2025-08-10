@@ -16,6 +16,7 @@ import type {
   IntegrationTemplateRecommendedOptions,
   IntegrationTemplateVariable,
 } from "@weldr/shared/types";
+
 import { integrationCategories } from "./integration-categories";
 
 export const integrationTemplates = pgTable(

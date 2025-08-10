@@ -1,9 +1,10 @@
 import { z } from "zod";
-import { stream } from "@/lib/stream-utils";
 
 import { db, eq } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
+
+import { stream } from "@/lib/stream-utils";
 import { generateProjectInfo } from "../utils/generate-project-info";
 import { createTool } from "./utils";
 

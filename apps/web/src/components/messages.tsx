@@ -3,6 +3,7 @@ import { memo } from "react";
 
 import { nanoid } from "@weldr/shared/nanoid";
 import type { ChatMessage } from "@weldr/shared/types";
+
 import { MessageItem } from "./message-item";
 
 interface MessagesProps {

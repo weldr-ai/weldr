@@ -14,6 +14,7 @@ import type {
   AiMessageMetadata,
   ChatMessageContent,
 } from "@weldr/shared/types";
+
 import { users } from "./auth";
 import { projects } from "./projects";
 import { versions } from "./versions";

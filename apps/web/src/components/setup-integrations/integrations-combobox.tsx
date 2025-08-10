@@ -19,6 +19,7 @@ import {
   PopoverTrigger,
 } from "@weldr/ui/components/popover";
 import { cn } from "@weldr/ui/lib/utils";
+
 import { getIntegrationIcon } from "./utils";
 
 type IntegrationTemplate = RouterOutputs["integrationTemplates"]["list"][0];

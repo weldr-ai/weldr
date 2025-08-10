@@ -7,7 +7,6 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useTRPC } from "@/lib/trpc/react";
 
 import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/components/button";
@@ -35,6 +34,8 @@ import {
 } from "@weldr/ui/components/popover";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { cn } from "@weldr/ui/lib/utils";
+
+import { useTRPC } from "@/lib/trpc/react";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 
 const validationSchema = z.object({

@@ -1,5 +1,4 @@
 import { and, eq, isNotNull } from "drizzle-orm";
-import { WORKSPACE_DIR } from "@/lib/constants";
 
 import { db } from "@weldr/db";
 import {
@@ -11,6 +10,8 @@ import {
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 import type { DeclarationCodeMetadata } from "@weldr/shared/types/declarations";
+
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { runCommand } from "../../lib/commands";
 import { embedDeclaration } from "./embed-declarations";
 import { enrichDeclaration } from "./enrich";

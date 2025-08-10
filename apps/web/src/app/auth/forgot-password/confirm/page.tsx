@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { SupportLinks } from "@/components/auth/support-links";
 
 import { auth } from "@weldr/auth";
 import {
@@ -12,6 +11,8 @@ import {
   CardTitle,
 } from "@weldr/ui/components/card";
 import { LogoIcon } from "@weldr/ui/icons";
+
+import { SupportLinks } from "@/components/auth/support-links";
 
 export default async function ForgotPasswordConfirmPage() {
   const session = await auth.api.getSession({ headers: await headers() });

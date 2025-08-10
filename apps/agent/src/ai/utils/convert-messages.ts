@@ -15,6 +15,7 @@ import type {
 import { db, eq } from "@weldr/db";
 import { declarations } from "@weldr/db/schema";
 import type { ChatMessage } from "@weldr/shared/types";
+
 import { formatDeclarationSpecs } from "./formatters";
 
 export async function convertMessages(messages: ChatMessage[]) {

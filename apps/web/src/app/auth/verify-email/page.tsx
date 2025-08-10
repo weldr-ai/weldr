@@ -1,8 +1,9 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { VerifyEmailForm } from "@/components/auth/verify-email-form";
 
 import { auth } from "@weldr/auth";
+
+import { VerifyEmailForm } from "@/components/auth/verify-email-form";
 
 export default async function VerifyEmailPage() {
   const session = await auth.api.getSession({ headers: await headers() });

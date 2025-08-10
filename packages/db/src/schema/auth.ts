@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { nanoid } from "@weldr/shared/nanoid";
+
 import { chatMessages, chats } from "./chats";
 import { environmentVariables } from "./environment-variables";
 import { projects } from "./projects";

@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { nanoid } from "@weldr/shared/nanoid";
+
 import { users } from "./auth";
 import { integrationEnvironmentVariables } from "./integrations";
 import { projects } from "./projects";

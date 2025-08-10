@@ -2,7 +2,6 @@
 
 import { CheckIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
-import { useProject } from "@/lib/context/project";
 
 import type { RouterOutputs } from "@weldr/api";
 import { Button } from "@weldr/ui/components/button";
@@ -28,6 +27,8 @@ import {
   PopoverTrigger,
 } from "@weldr/ui/components/popover";
 import { cn } from "@weldr/ui/lib/utils";
+
+import { useProject } from "@/lib/context/project";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 import { getIntegrationIcon } from "./utils";
 

@@ -1,7 +1,7 @@
 import type { StreamTextResult, Tool, ToolSet } from "ai";
 import type { z } from "zod";
-import type { WorkflowContext } from "@/workflow/context";
 
+import type { WorkflowContext } from "@/workflow/context";
 import type { ZodXML } from "./xml/zod";
 
 export type ToolConfig<

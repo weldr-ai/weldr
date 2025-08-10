@@ -2,14 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import type { OpenAPIV3 } from "openapi-types";
 import { memo, useEffect, useRef, useState } from "react";
-import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
-import { useTRPC } from "@/lib/trpc/react";
-import type { CanvasNodeProps } from "@/types";
 
 import { Badge } from "@weldr/ui/components/badge";
 import { Card } from "@weldr/ui/components/card";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import { cn } from "@weldr/ui/lib/utils";
+
+import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
+import { useTRPC } from "@/lib/trpc/react";
+import type { CanvasNodeProps } from "@/types";
 import { ProtectedBadge } from "../components/protected-badge";
 import { Status } from "../components/status";
 

@@ -7,6 +7,7 @@ import type {
   DeclarationSemanticData,
   DeclarationSpecs,
 } from "@weldr/shared/types/declarations";
+
 import { registry } from "./registry";
 
 export async function embedDeclaration(

@@ -7,6 +7,7 @@ import { nanoid } from "@weldr/shared/nanoid";
 import type { ChatMessageContent } from "@weldr/shared/types";
 import type { referencePartSchema } from "@weldr/shared/validators/chats";
 import { cn } from "@weldr/ui/lib/utils";
+
 import { ReferenceBadge } from "./editor/reference-badge";
 
 type ReferencePart = z.infer<typeof referencePartSchema>;

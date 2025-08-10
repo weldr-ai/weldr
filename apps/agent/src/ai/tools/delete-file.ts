@@ -1,11 +1,12 @@
 import { z } from "zod";
-import { runCommand } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
 
 import { and, db, eq, inArray } from "@weldr/db";
 import { declarations, versionDeclarations, versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
+
+import { runCommand } from "@/lib/commands";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
 export const deleteFileTool = createTool({

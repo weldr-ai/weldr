@@ -11,12 +11,13 @@ import {
   Undo2Icon,
 } from "lucide-react";
 import { memo } from "react";
-import { useTRPC } from "@/lib/trpc/react";
-import { parseConventionalCommit } from "@/lib/utils";
 
 import type { RouterOutputs } from "@weldr/api";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
+
+import { useTRPC } from "@/lib/trpc/react";
+import { parseConventionalCommit } from "@/lib/utils";
 
 import "@xyflow/react/dist/base.css";
 

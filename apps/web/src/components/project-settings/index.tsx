@@ -23,6 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
+
 import { EnvSection } from "./env-section";
 import { GeneralSection } from "./general-section";
 import { IntegrationsSection } from "./integrations-section";

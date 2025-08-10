@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+
 import { VersionsCanvas } from "@/components/versions/canvas";
 import { api } from "@/lib/trpc/server";
 

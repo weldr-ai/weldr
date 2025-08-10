@@ -1,4 +1,12 @@
 import type { z } from "zod";
+
+import { Logger } from "@weldr/shared/logger";
+import { nanoid } from "@weldr/shared/nanoid";
+import type {
+  addMessageItemSchema,
+  assistantMessageContentSchema,
+} from "@weldr/shared/validators/chats";
+
 import { prompts } from "@/ai/prompts";
 import {
   addIntegrationsTool,
@@ -15,13 +23,6 @@ import { registry } from "@/ai/utils/registry";
 import { stream } from "@/lib/stream-utils";
 import { workflow } from "@/workflow";
 import type { WorkflowContext } from "@/workflow/context";
-
-import { Logger } from "@weldr/shared/logger";
-import { nanoid } from "@weldr/shared/nanoid";
-import type {
-  addMessageItemSchema,
-  assistantMessageContentSchema,
-} from "@weldr/shared/validators/chats";
 import { callPlannerTool } from "../tools/call-planner";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
 import { XMLProvider } from "../tools/xml/provider";

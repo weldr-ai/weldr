@@ -1,4 +1,5 @@
 import type { Dependency } from "@weldr/shared/types/declarations";
+
 import { generateDeclarationUri } from "./path-utils";
 
 function isBuiltinIdentifier(identifier: string): boolean {

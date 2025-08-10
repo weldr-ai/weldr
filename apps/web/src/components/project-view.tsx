@@ -6,10 +6,6 @@ import { Badge, EyeIcon, GitGraphIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Canvas } from "@/components/canvas";
-import { useProject } from "@/lib/context/project";
-import { useTRPC } from "@/lib/trpc/react";
-import type { CanvasNode } from "@/types";
 
 import type { RouterOutputs } from "@weldr/api";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
@@ -19,6 +15,11 @@ import {
   TooltipTrigger,
 } from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
+
+import { Canvas } from "@/components/canvas";
+import { useProject } from "@/lib/context/project";
+import { useTRPC } from "@/lib/trpc/react";
+import type { CanvasNode } from "@/types";
 import { MainDropdownMenu } from "./main-dropdown-menu";
 import { ProjectSettings } from "./project-settings";
 import { SitePreviewDialog } from "./site-preview-dialog";

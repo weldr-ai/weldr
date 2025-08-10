@@ -1,7 +1,5 @@
 import { useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useProject } from "@/lib/context/project";
-import type { CanvasNode } from "@/types";
 
 import type {
   AssistantMessage,
@@ -9,6 +7,9 @@ import type {
   SSEEvent,
   TPendingMessage,
 } from "@weldr/shared/types";
+
+import { useProject } from "@/lib/context/project";
+import type { CanvasNode } from "@/types";
 
 interface UseEventStreamOptions {
   projectId: string;

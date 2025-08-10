@@ -3,6 +3,7 @@ import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { nanoid } from "@weldr/shared/nanoid";
 import type { Theme } from "@weldr/shared/types";
+
 import { users } from "./auth";
 import { projects } from "./projects";
 

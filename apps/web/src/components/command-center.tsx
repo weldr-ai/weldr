@@ -3,8 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BoxesIcon, ExternalLinkIcon, PlusIcon, TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { type CommandCenterView, useUIStore } from "@/lib/context/ui-store";
-import { useTRPC } from "@/lib/trpc/react";
 
 import type { RouterOutputs } from "@weldr/api";
 import type { Session } from "@weldr/auth";
@@ -21,6 +19,9 @@ import {
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
+
+import { type CommandCenterView, useUIStore } from "@/lib/context/ui-store";
+import { useTRPC } from "@/lib/trpc/react";
 import { CreateProjectForm } from "./create-project-form";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 

@@ -2,9 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
-import { useTRPC } from "@/lib/trpc/react";
 
 import type { RouterOutputs } from "@weldr/api";
+
+import { useTRPC } from "@/lib/trpc/react";
 import { AddPostgresIntegrationForm } from "./add-postgres-integration-form";
 
 export function AddIntegrationsForm({

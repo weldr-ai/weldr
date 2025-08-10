@@ -3,12 +3,13 @@
 import { LoaderIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
-import { useUIStore } from "@/lib/context/ui-store";
 
 import { authClient } from "@weldr/auth/client";
 import { Button } from "@weldr/ui/components/button";
 import { toast } from "@weldr/ui/hooks/use-toast";
 import { GithubIcon, GoogleIcon } from "@weldr/ui/icons";
+
+import { useUIStore } from "@/lib/context/ui-store";
 
 export function Socials({ asDialog }: { asDialog: boolean }) {
   const { resolvedTheme } = useTheme();

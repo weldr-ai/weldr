@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 
 import type { DeclarationCodeMetadata } from "@weldr/shared/types/declarations";
+
 import { processSourceFile } from "./processor";
 
 export async function extractDeclarations({

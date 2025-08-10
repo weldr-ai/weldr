@@ -1,7 +1,5 @@
 "use client";
 
-import { useUIStore } from "@/lib/context/ui-store";
-
 import type { auth, Session, Subscription } from "@weldr/auth";
 import {
   Dialog,
@@ -15,6 +13,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@weldr/ui/components/tabs";
+
+import { useUIStore } from "@/lib/context/ui-store";
 import { SubscriptionPlans } from "../subscription-plans";
 import { ChangePasswordForm } from "./change-password-form";
 import { SessionsList } from "./sessions-list";

@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { runShell } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
 
 import { Logger } from "@weldr/shared/logger";
+
+import { runShell } from "@/lib/commands";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
 export const fzfTool = createTool({

@@ -8,8 +8,6 @@ import {
   useCallback,
   useState,
 } from "react";
-import { useProject } from "@/lib/context/project";
-import { useTRPC } from "@/lib/trpc/react";
 
 import type { RouterOutputs } from "@weldr/api";
 import type {
@@ -18,6 +16,9 @@ import type {
   TPendingMessage,
 } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/components/button";
+
+import { useProject } from "@/lib/context/project";
+import { useTRPC } from "@/lib/trpc/react";
 import { ConfigurationDialog } from "./configuration-dialog";
 import { IntegrationsCombobox } from "./integrations-combobox";
 import type {

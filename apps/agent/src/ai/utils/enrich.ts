@@ -6,6 +6,7 @@ import type {
   DeclarationSemanticData,
 } from "@weldr/shared/types/declarations";
 import { declarationSemanticDataSchema } from "@weldr/shared/validators/declarations/index";
+
 import { registry } from "./registry";
 
 export async function enrichDeclaration(
