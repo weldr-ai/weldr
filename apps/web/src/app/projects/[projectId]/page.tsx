@@ -5,7 +5,6 @@ import { notFound, redirect } from "next/navigation";
 import type { NodeType } from "@weldr/shared/types";
 
 import { ProjectView } from "@/components/project-view";
-import { ProjectProvider } from "@/lib/context/project";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
 
@@ -47,14 +46,12 @@ export default async function ProjectPage({
       })) ?? [];
 
     return (
-      <ProjectProvider project={project}>
-        <ProjectView
-          project={project}
-          initialNodes={initialNodes}
-          initialEdges={initialEdges}
-          integrationTemplates={integrationTemplates}
-        />
-      </ProjectProvider>
+      <ProjectView
+        project={project}
+        initialNodes={initialNodes}
+        initialEdges={initialEdges}
+        integrationTemplates={integrationTemplates}
+      />
     );
   } catch (error) {
     console.error(error);

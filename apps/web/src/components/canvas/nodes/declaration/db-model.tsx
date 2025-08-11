@@ -33,11 +33,6 @@ export const DbModelNode = memo(
     positionAbsoluteX,
     positionAbsoluteY,
   }: CanvasNodeProps) => {
-    // Only handle db-model declarations
-    if (_data.metadata?.specs?.type !== "db-model") {
-      return null;
-    }
-
     const trpc = useTRPC();
 
     const { data: declaration } = useQuery(
@@ -119,7 +114,7 @@ export const DbModelNode = memo(
         }
         document.removeEventListener("click", handleDocumentClick);
       };
-    }, [isExpanded]);
+    }, [isExpanded, _data]);
 
     if (!specs || specs.type !== "db-model") {
       return null;

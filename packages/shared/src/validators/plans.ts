@@ -59,31 +59,42 @@ const baseTaskSchema = z.object({
     .describe(`
     Specific conditions that must be met for this task to be considered complete.
     Each criterion should be testable and verifiable.
-
-    Use pipe-separated format for token efficiency.
+    Each array item is a separate acceptance criterion.
 
     Examples for declarations:
-    Model includes id, email, name, createdAt, updatedAt fields|Email field has unique constraint and validation|Passwords are properly hashed using bcrypt|Model exports proper TypeScript types
+    [
+      "Model includes id, email, name, createdAt, updatedAt fields",
+      "Email field has unique constraint and validation", 
+      "Passwords are properly hashed using bcrypt",
+      "Model exports proper TypeScript types"
+    ]
 
     Examples for generic tasks:
-    Session timeout is set to 2 hours|Active users have their sessions automatically renewed|Session renewal works without interrupting user workflow|All existing authentication tests pass|Session timeout is configurable via environment variable
+    [
+      "Session timeout is set to 2 hours",
+      "Active users have their sessions automatically renewed", 
+      "Session renewal works without interrupting user workflow",
+      "All existing authentication tests pass",
+      "Session timeout is configurable via environment variable"
+    ]
   `),
   dependencies: z
     .number()
     .array()
     .optional()
     .describe(`
-  Array of other task IDs that this task depends on.
-  These are the direct dependencies that must be completed before this task can be started.
+    Array of other task IDs that this task depends on.
+    These are the direct dependencies that must be completed before this task can be started.
 
-  For declarations: Usually references other declarations that provide required data models, API endpoints, or pages.
-  For generic tasks: May reference other bug fixes, infrastructure changes, or feature implementations that are prerequisites.
+    For declarations: Usually references other declarations that provide required data models, API endpoints, or pages.
+    For generic tasks: May reference other bug fixes, infrastructure changes, or feature implementations that are prerequisites.
 
-  Use pipe-separated format for token efficiency:
-  Examples:
-  - 1 (depends on task 1 to complete first)
-  - 1|3 (depends on both tasks 1 and 3 to complete first)
-`),
+    Examples:
+    [] (no dependencies)
+    [1] (depends on task 1 to complete first)
+    [1, 3] (depends on both tasks 1 and 3 to complete first)
+    [2, 4, 5] (depends on tasks 2, 4, and 5 to complete first)
+  `),
   implementationNotes: z
     .string()
     .array()
@@ -91,30 +102,57 @@ const baseTaskSchema = z.object({
     .describe(`
     Technical implementation guidance specific to this task.
     Should include patterns, conventions, libraries, or architectural decisions to follow.
-
-    Use pipe-separated format for token efficiency.
+    Each array item is a separate implementation note.
 
     Examples for declarations:
-    Use Drizzle ORM schema definition in src/db/schema/|Follow existing API endpoint patterns in src/api/routes/|Use shadcn/ui components for consistent styling
+    [
+      "Use Drizzle ORM schema definition in src/db/schema/",
+      "Follow existing API endpoint patterns in src/api/routes/",
+      "Use shadcn/ui components for consistent styling"
+    ]
 
     Examples for generic tasks:
-    Use express-rate-limit middleware for implementation|Follow existing error handling patterns in src/lib/errors|Update both client and server-side session management|Add comprehensive logging using the existing logger utility|Ensure backward compatibility with existing session tokens
+    [
+      "Use express-rate-limit middleware for implementation",
+      "Follow existing error handling patterns in src/lib/errors", 
+      "Update both client and server-side session management",
+      "Add comprehensive logging using the existing logger utility",
+      "Ensure backward compatibility with existing session tokens"
+    ]
   `),
   subTasks: z
     .string()
     .array()
     .describe(`
-  Implementation guidance broken into specific, actionable pieces for THIS task only.
-  Each subtask should be a clear, concrete action that moves toward completing the overall task.
+    Implementation guidance broken into specific, actionable pieces for THIS task only.
+    Each subtask should be a clear, concrete action that moves toward completing the overall task.
+    Each array item is a separate subtask.
 
-  Use pipe-separated format for token efficiency.
+    Examples for declarations:
+    [
+      "Create form validation schema using Zod for blog post fields",
+      "Build basic BlogPostForm component structure with react-hook-form + shadcn/ui inputs",
+      "Integrate rich text editor with proper toolbar and formatting options",
+      "Add image upload dropzone component with file validation and preview functionality",
+      "Implement form field validation with real-time error feedback and styling",
+      "Connect form submission to oRPC mutation with proper error handling",
+      "Add loading states, disabled states, and loading indicators during submission",
+      "Implement success/error toast notifications with appropriate messaging",
+      "Create the page route and integrate the BlogPostForm component"
+    ]
 
-  Examples for declarations:
-  Create form validation schema using Zod for blog post fields|Build basic BlogPostForm component structure with react-hook-form + shadcn/ui inputs|Integrate rich text editor with proper toolbar and formatting options|Add image upload dropzone component with file validation and preview functionality|Implement form field validation with real-time error feedback and styling|Connect form submission to oRPC mutation with proper error handling|Add loading states, disabled states, and loading indicators during submission|Implement success/error toast notifications with appropriate messaging|Create the page route and integrate the BlogPostForm component
-
-  Examples for generic tasks:
-  Update session configuration in authentication middleware|Implement sliding session renewal logic|Add session timeout environment variable|Update client-side session handling to respect new timeout|Add tests for session renewal functionality|Update authentication documentation with new session behavior|Test session timeout with different user activity patterns|Deploy and monitor session timeout changes
-`),
+    Examples for generic tasks:
+    [
+      "Update session configuration in authentication middleware",
+      "Implement sliding session renewal logic",
+      "Add session timeout environment variable", 
+      "Update client-side session handling to respect new timeout",
+      "Add tests for session renewal functionality",
+      "Update authentication documentation with new session behavior",
+      "Test session timeout with different user activity patterns",
+      "Deploy and monitor session timeout changes"
+    ]
+  `),
 });
 
 const baseTaskDeclarationSchema = baseTaskSchema.extend({
@@ -135,13 +173,16 @@ const baseTaskDeclarationSchema = baseTaskSchema.extend({
     .array()
     .optional()
     .describe(`
-  Integration IDs that this entire declaration requires to function.
-  These are external services or databases this declaration depends on.
+    Integration IDs that this entire declaration requires to function.
+    These are external services or databases this declaration depends on.
+    Each array item is a separate integration ID.
 
-  Use pipe-separated format for token efficiency:
-  Examples:
-  - abc123def456|xyz789uvw012
-`),
+    Examples:
+    [] (no integrations required)
+    ["abc123def456"] (single integration)
+    ["abc123def456", "xyz789uvw012"] (multiple integrations)
+    ["stripe_payments", "sendgrid_email", "aws_s3"] (named integrations)
+  `),
 });
 
 const createTaskDeclarationSchema = baseTaskDeclarationSchema
@@ -262,9 +303,25 @@ export const planSchema = z.object({
     .array()
     .describe(`
       Plan-level acceptance criteria that validate the entire plan is complete.
+      Each array item is a separate acceptance criterion for the overall plan.
 
-      Use pipe-separated format for token efficiency:
-      Users can register with email and password|Users can log in and access protected pages|Password reset functionality works via email|User sessions persist across browser restarts|Admin can view and manage user accounts
+      Examples:
+      [
+        "Users can register with email and password",
+        "Users can log in and access protected pages",
+        "Password reset functionality works via email", 
+        "User sessions persist across browser restarts",
+        "Admin can view and manage user accounts"
+      ]
+
+      For a todo app:
+      [
+        "Users can add new tasks to their to-do list",
+        "All tasks are displayed in a clean, organized manner", 
+        "The to-do list is saved in local storage and persists after a page refresh",
+        "Users can mark tasks as complete",
+        "Users can delete tasks from the list"
+      ]
     `),
   tasks: z.array(taskSchema).describe(`
       Individual high-level tasks that need to be

@@ -1,5 +1,6 @@
 import { and, db, eq, isNotNull, or } from "@weldr/db";
 import { type chatMessages, projects, users, versions } from "@weldr/db/schema";
+import { Logger } from "@weldr/shared/logger";
 
 import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
 import { WorkflowContext } from "./context";
@@ -50,6 +51,7 @@ export const workflow = createWorkflow({
   );
 
 export async function recoverWorkflow() {
+  Logger.info("Recovering workflow");
   let project: typeof projects.$inferSelect | undefined;
 
   if (process.env.NODE_ENV === "development") {
@@ -141,6 +143,6 @@ export async function recoverWorkflow() {
   });
   context.set("version", version);
   context.set("user", user);
-  context.set("isXML", true);
   await workflow.execute({ context });
+  Logger.info("Recovered workflow");
 }

@@ -18,8 +18,7 @@ export const generalCoder = async (
   - React
   - Tanstack Router
   - Tanstack Query
-  - Hono
-  - Type-safe APIs with oRPC
+  - oRPC for type-safe APIs
   - Database with Drizzle ORM
   - Authentication (better-auth)
   - Building beautiful, responsive, and accessible UI with shadcn/ui and Tailwind CSS

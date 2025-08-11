@@ -1,6 +1,8 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { CheckIcon, PlusIcon } from "lucide-react";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
@@ -28,7 +30,7 @@ import {
 } from "@weldr/ui/components/popover";
 import { cn } from "@weldr/ui/lib/utils";
 
-import { useProject } from "@/lib/context/project";
+import { useTRPC } from "@/lib/trpc/react";
 import AddEnvironmentVariableDialog from "../add-environment-variable-dialog";
 import { getIntegrationIcon } from "./utils";
 
@@ -56,7 +58,13 @@ export function ConfigurationDialog({
   onConfirm,
   onCancel,
 }: ConfigurationDialogProps) {
-  const { project } = useProject();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const { projectId } = useParams<{ projectId: string }>();
+  const project = queryClient.getQueryData(
+    trpc.projects.byId.queryKey({ id: projectId }),
+  );
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [envVarPopoverStates, setEnvVarPopoverStates] = useState<
     Record<string, boolean>
@@ -179,7 +187,8 @@ export function ConfigurationDialog({
                         </CommandGroup>
                       </CommandList>
                     </Command>
-                    <AddEnvironmentVariableDialog projectId={project.id}>
+                    {/** biome-ignore lint/style/noNonNullAssertion: reason */}
+                    <AddEnvironmentVariableDialog projectId={project!.id}>
                       <Button
                         variant="outline"
                         size="sm"

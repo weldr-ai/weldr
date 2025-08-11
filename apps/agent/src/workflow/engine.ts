@@ -85,18 +85,9 @@ export function createWorkflow(
         versionId: version.id,
       });
 
-      // Check if workflow is already executing
-      if (api.status === "executing") {
-        logger.warn("Workflow already executing", {
-          extra: {
-            requestedVersionId: version.id,
-          },
-        });
-        return;
-      }
-
       // Check if workflow is suspended
       if (api.status === "suspended") {
+        api.status = "idle";
         await stream(version.chatId, {
           type: "end",
         });
@@ -111,9 +102,21 @@ export function createWorkflow(
       // Mark workflow as executing
       api.status = "executing";
 
-      await stream(version.chatId, {
-        type: "responding",
-      });
+      // Stream status to the client
+      const currentStep =
+        stepMapping[version.status as keyof StatusStepMapping].step.id;
+
+      switch (currentStep) {
+        case "planning":
+        case "coding":
+        case "deploying": {
+          await stream(version.chatId, {
+            type: "status",
+            status: currentStep,
+          });
+          break;
+        }
+      }
 
       try {
         logger.info(`Current version status: ${version.status}`);

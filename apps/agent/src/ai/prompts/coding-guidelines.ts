@@ -37,7 +37,7 @@ export const codingGuidelines = `<tech_stack>
      - The server does NOT run independently - it's integrated into the web app
 </monorepo_architecture>
 
-<full_stack_structure_guidelines>
+<projects_structure_guidelines>
   The project MUST follow this file structure:
 
   Project root directory:
@@ -115,7 +115,7 @@ export const codingGuidelines = `<tech_stack>
   ├── pnpm-lock.yaml
   ├── pnpm-workspace.yaml
   └── turbo.json
-</full_stack_structure_guidelines>
+</projects_structure_guidelines>
 
 <coding_style_guidelines>
   - MUST NOT use OOP concepts like classes, inheritance, etc.

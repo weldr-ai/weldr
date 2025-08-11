@@ -48,7 +48,10 @@ export const taskRelations = relations(tasks, ({ one, many }) => ({
   dependents: many(taskDependencies, {
     relationName: "taskDependents",
   }),
-  declaration: one(declarations),
+  declaration: one(declarations, {
+    fields: [tasks.id],
+    references: [declarations.taskId],
+  }),
 }));
 
 export const taskDependencies = pgTable(

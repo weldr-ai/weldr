@@ -1,6 +1,7 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import fastDeepEqual from "fast-deep-equal";
 import { CheckIcon, LoaderIcon, PenIcon } from "lucide-react";
+import { useParams } from "next/navigation";
 import {
   type Dispatch,
   memo,
@@ -17,7 +18,6 @@ import type {
 } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/components/button";
 
-import { useProject } from "@/lib/context/project";
 import { useTRPC } from "@/lib/trpc/react";
 import { ConfigurationDialog } from "./configuration-dialog";
 import { IntegrationsCombobox } from "./integrations-combobox";
@@ -32,15 +32,21 @@ const PureSetupIntegration = ({
   integrationTemplates,
   environmentVariables,
   setStatus,
+  setIsChatVisible,
 }: {
   message: ChatMessage;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  setIsChatVisible: Dispatch<SetStateAction<boolean>>;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
   setStatus: Dispatch<SetStateAction<TStatus>>;
 }) => {
-  const { project } = useProject();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const { projectId } = useParams<{ projectId: string }>();
+  const project = queryClient.getQueryData(
+    trpc.projects.byId.queryKey({ id: projectId }),
+  );
 
   const requiredCategories = (message.content[0] as IntegrationToolResultPart)
     .output.categories;
@@ -297,18 +303,22 @@ const PureSetupIntegration = ({
     });
 
     await createBatchIntegrationsMutation.mutateAsync({
-      projectId: project.id,
+      // biome-ignore lint/style/noNonNullAssertion: reason
+      projectId: project!.id,
       triggerWorkflow: true,
       integrations: configurations,
     });
 
     setStatus("thinking");
+
+    setIsChatVisible(true);
   }, [
     project,
     setStatus,
     createBatchIntegrationsMutation,
     configuredIntegrations,
     setMessages,
+    setIsChatVisible,
     updateMessageMutation,
     message,
     selectedIntegrations,
@@ -352,7 +362,15 @@ const PureSetupIntegration = ({
         content: newMessage.content,
       },
     });
-  }, [setMessages, setStatus, updateMessageMutation, message]);
+
+    setIsChatVisible(true);
+  }, [
+    setMessages,
+    setStatus,
+    updateMessageMutation,
+    message,
+    setIsChatVisible,
+  ]);
 
   return (
     <div className="flex min-h-[300px] flex-col">

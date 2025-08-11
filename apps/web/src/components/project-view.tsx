@@ -17,7 +17,6 @@ import {
 import { cn } from "@weldr/ui/lib/utils";
 
 import { Canvas } from "@/components/canvas";
-import { useProject } from "@/lib/context/project";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode } from "@/types";
 import { MainDropdownMenu } from "./main-dropdown-menu";
@@ -37,11 +36,8 @@ export function ProjectView({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-
   const trpc = useTRPC();
   const [sitePreviewDialogOpen, setSitePreviewDialogOpen] = useState(false);
-  const { project: contextProject } = useProject();
-  const currentVersion = contextProject?.currentVersion;
 
   const { data: project } = useQuery(
     trpc.projects.byId.queryOptions(
@@ -74,7 +70,7 @@ export function ProjectView({
             {project.title ?? "Untitled Project"}
           </span>
           <div className="flex items-center gap-1">
-            {!currentVersion?.activatedAt && (
+            {!project.currentVersion?.activatedAt && (
               <>
                 <Badge>Not Active</Badge>
                 <Button
@@ -93,7 +89,7 @@ export function ProjectView({
                   variant="outline"
                   size="icon"
                   className="size-7 dark:bg-muted"
-                  disabled={currentVersion?.status !== "completed"}
+                  disabled={project.currentVersion?.status !== "completed"}
                   onClick={() => setSitePreviewDialogOpen(true)}
                 >
                   <EyeIcon className="size-3.5" />
@@ -135,7 +131,6 @@ export function ProjectView({
             initialNodes={initialNodes}
             initialEdges={initialEdges}
             project={project}
-            environmentVariables={env}
             integrationTemplates={integrationTemplates}
           />
         </div>

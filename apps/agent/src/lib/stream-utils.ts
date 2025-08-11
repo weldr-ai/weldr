@@ -16,7 +16,8 @@ import { createClient, type RedisClientType } from "redis";
 import { db, desc, eq } from "@weldr/db";
 import { streams } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import type { SSEEvent } from "@weldr/shared/types";
+import { nanoid } from "@weldr/shared/nanoid";
+import type { SSEEvent, SSEValue } from "@weldr/shared/types";
 
 let redisClient: RedisClientType | null = null;
 let redisSubscriber: RedisClientType | null = null;
@@ -124,8 +125,11 @@ export async function getStreamIdsByChatId(params: {
 export async function createSSEStream(
   streamId: string,
   chatId: string,
+  lastEventId?: string,
 ): Promise<ReadableStream<string>> {
-  Logger.info("Starting SSE stream", { extra: { streamId, chatId } });
+  Logger.info("Starting SSE stream", {
+    extra: { streamId, chatId, lastEventId },
+  });
 
   const redis = await getRedisClient();
   const subscriber = await getRedisSubscriber();
@@ -136,6 +140,7 @@ export async function createSSEStream(
     async start(controller) {
       // Send connection established event
       const connectedEvent = `data: ${JSON.stringify({
+        id: nanoid(),
         type: "connected",
         streamId: streamId,
       })}\n\n`;
@@ -177,17 +182,36 @@ export async function createSSEStream(
           }
         });
 
-        // Send any buffered events from Redis
+        // Send buffered events from Redis
+        // If lastEventId is provided, only send events after that ID
         const bufferedEvents = await redis.lRange(
           `${channelName}:buffer`,
           0,
           -1,
         );
+
+        let skipRemaining = !!lastEventId; // Skip until we find the lastEventId
+        let foundLastEvent = false;
+
         for (const eventStr of bufferedEvents) {
           if (!isConnected) break;
 
           try {
             const event = JSON.parse(eventStr) as SSEEvent;
+
+            // If we're looking for lastEventId, check if this is it
+            if (skipRemaining && lastEventId) {
+              // Check if this event has an ID and matches our lastEventId
+              if ("id" in event && event.id === lastEventId) {
+                skipRemaining = false; // Found it, send next events
+                foundLastEvent = true;
+                continue; // Skip this event (client already has it)
+              }
+              if (!foundLastEvent) {
+                continue; // Keep skipping until we find the lastEventId
+              }
+            }
+
             const sseData = `data: ${JSON.stringify(event)}\n\n`;
             controller.enqueue(sseData);
           } catch (error) {
@@ -216,6 +240,15 @@ export async function createSSEStream(
               });
             }
           }
+        }
+
+        if (lastEventId && !foundLastEvent) {
+          Logger.warn(
+            "Last event ID not found in buffer, sending all buffered events",
+            {
+              extra: { streamId, chatId, lastEventId },
+            },
+          );
         }
 
         Logger.info("Redis streaming initialized", {
@@ -294,10 +327,13 @@ export async function clearAllChatBuffers(): Promise<void> {
 /**
  * Stream data to active streams for a chat using Redis pub/sub or in-memory fallback
  */
-export async function stream(chatId: string, chunk: SSEEvent): Promise<void> {
+export async function stream(chatId: string, chunk: SSEValue): Promise<void> {
   const redis = await getRedisClient();
   const channelName = `chat:${chatId}:events`;
-  const eventStr = JSON.stringify(chunk);
+  const eventStr = JSON.stringify({
+    id: nanoid(),
+    ...chunk,
+  });
 
   try {
     // Publish to Redis channel
@@ -306,15 +342,18 @@ export async function stream(chatId: string, chunk: SSEEvent): Promise<void> {
     const bufferKey = `${channelName}:buffer`;
     await redis.lPush(bufferKey, eventStr);
 
-    await redis.expire(bufferKey, 900);
+    await redis.expire(bufferKey, 300); // 5 minutes only
 
-    if (chunk.type === "end") {
+    // Clear buffer after streaming any non-text event
+    // Keep buffer only for text events to support resumption
+    if (chunk.type !== "text") {
       try {
         await clearChatBuffer(chatId);
       } catch (error) {
-        Logger.error("Failed to clear buffer after end event", {
+        Logger.error("Failed to clear buffer after non-text event", {
           error,
           chatId,
+          eventType: chunk.type,
         });
       }
     }

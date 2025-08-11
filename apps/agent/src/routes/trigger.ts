@@ -149,7 +149,6 @@ router.openapi(route, async (c) => {
     integrationCategories: new Set(installedCategories),
   });
   workflowContext.set("version", activeVersion);
-  workflowContext.set("isXML", true);
   workflowContext.set("user", session.user);
 
   if (

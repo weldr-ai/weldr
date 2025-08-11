@@ -10,6 +10,7 @@ import {
   type tasks,
   versionDeclarations,
 } from "@weldr/db/schema";
+import type { Tx } from "@weldr/db/types";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
@@ -52,9 +53,11 @@ const intersects = (a: Rect, b: Rect): boolean => {
 export const createDeclarationFromTask = async ({
   context,
   task,
+  tx,
 }: {
   context: WorkflowContext;
   task: typeof tasks.$inferSelect;
+  tx?: Tx;
 }) => {
   const project = context.get("project");
   const version = context.get("version");
@@ -71,7 +74,9 @@ export const createDeclarationFromTask = async ({
     return null;
   }
 
-  return await db.transaction(async (tx) => {
+  const dbInstance = tx ?? db;
+
+  return await dbInstance.transaction(async (tx) => {
     let node: typeof nodes.$inferSelect | undefined;
     let previousDeclarationId: string | null = null;
 

@@ -52,7 +52,7 @@ import { api } from "@/lib/trpc/react";
 export function MyComponent() {
   // Queries with type inference
   const { data, error, isLoading } = api.projects.list.useQuery();
-  
+
   // Mutations with type-safe inputs
   const createProject = api.projects.create.useMutation({
     onSuccess: (data) => {
@@ -62,7 +62,7 @@ export function MyComponent() {
       // Handle typed errors
     },
   });
-  
+
   // Call mutation with validated input
   await createProject.mutateAsync({
     title: "Project",
@@ -93,7 +93,7 @@ export function MyForm() {
       password: "",
     },
   });
-  
+
   const onSubmit = (data: FormData) => {
     // data is validated and typed
   };
@@ -140,7 +140,7 @@ export function MyForm() {
 export default async function Page() {
   // Direct database access in server components
   const data = await fetchData();
-  
+
   return <ClientComponent initialData={data} />;
 }
 ```
@@ -154,7 +154,7 @@ import { useState, useEffect } from "react";
 
 export function InteractiveComponent() {
   const [state, setState] = useState<string>("");
-  
+
   // Client-side logic
   return <div>{state}</div>;
 }
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validated = requestSchema.parse(body);
-    
+
     // Process request
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -189,38 +189,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-```
-
-## State Management
-
-### Context Providers
-```typescript
-// ALWAYS type context values
-interface ProjectContextValue {
-  project: Project;
-  version: Version;
-  updateProject: (updates: Partial<Project>) => void;
-}
-
-const ProjectContext = createContext<ProjectContextValue | undefined>(undefined);
-
-export function useProject() {
-  const context = useContext(ProjectContext);
-  if (!context) {
-    throw new Error("useProject must be used within ProjectProvider");
-  }
-  return context;
-}
-```
-
-### UI Store (Zustand)
-```typescript
-// Global UI state management
-interface UIStore {
-  commandCenterOpen: boolean;
-  setCommandCenterOpen: (open: boolean) => void;
-  // Other UI states
 }
 ```
 
@@ -286,11 +254,11 @@ async function getData(): Promise<DataType> {
     cache: "no-store", // or 'force-cache'
     next: { revalidate: 3600 }, // ISR
   });
-  
+
   if (!res.ok) {
     throw new Error("Failed to fetch data");
   }
-  
+
   return res.json();
 }
 ```
@@ -298,8 +266,8 @@ async function getData(): Promise<DataType> {
 ### Client-Side with tRPC
 ```typescript
 // Use tRPC hooks for type-safe data fetching
-const { data, isLoading, error } = api.projects.byId.useQuery({ 
-  id: projectId 
+const { data, isLoading, error } = api.projects.byId.useQuery({
+  id: projectId
 });
 ```
 
@@ -389,14 +357,14 @@ import { auth } from "@weldr/auth";
 export default auth((req) => {
   const isAuth = !!req.auth;
   const isAuthPage = req.nextUrl.pathname.startsWith("/auth");
-  
+
   if (isAuthPage) {
     if (isAuth) {
       return Response.redirect(new URL("/dashboard", req.url));
     }
     return null;
   }
-  
+
   if (!isAuth) {
     return Response.redirect(new URL("/auth/sign-in", req.url));
   }
@@ -431,11 +399,11 @@ const mutation = api.projects.update.useMutation({
   onMutate: async (newData) => {
     // Cancel outgoing refetches
     await queryClient.cancelQueries({ queryKey: ["projects"] });
-    
+
     // Optimistically update
     const previousData = queryClient.getQueryData(["projects"]);
     queryClient.setQueryData(["projects"], newData);
-    
+
     return { previousData };
   },
   onError: (err, newData, context) => {
@@ -489,14 +457,14 @@ export const ExpensiveComponent = memo<ExpensiveComponentProps>(
       () => expensiveOperation(data),
       [data]
     );
-    
+
     const handleClick = useCallback(
       (id: string) => {
         onUpdate(id);
       },
       [onUpdate]
     );
-    
+
     return <div>{/* Render */}</div>;
   }
 );
@@ -511,9 +479,9 @@ interface AccessibleButtonProps {
   label: string;
 }
 
-export function AccessibleButton({ 
-  isLoading, 
-  label 
+export function AccessibleButton({
+  isLoading,
+  label
 }: AccessibleButtonProps) {
   return (
     <button
@@ -545,7 +513,7 @@ export function KeyboardNavigableList() {
         break;
     }
   };
-  
+
   return (
     <ul role="listbox" onKeyDown={handleKeyDown}>
       {/* Items */}

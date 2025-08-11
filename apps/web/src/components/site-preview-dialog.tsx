@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -11,6 +12,7 @@ import {
   ShieldXIcon,
   SmartphoneIcon,
 } from "lucide-react";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@weldr/ui/components/badge";
@@ -27,7 +29,7 @@ import {
 } from "@weldr/ui/components/toggle-group";
 import { cn } from "@weldr/ui/lib/utils";
 
-import { useProject } from "@/lib/context/project";
+import { useTRPC } from "@/lib/trpc/react";
 
 interface SitePreviewDialogProps {
   open: boolean;
@@ -49,7 +51,14 @@ export function SitePreviewDialog({
   const [iframeKey, setIframeKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { project } = useProject();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const { projectId } = useParams<{ projectId: string }>();
+  const project = queryClient.getQueryData(
+    trpc.projects.byId.queryKey({ id: projectId }),
+  );
+
   const currentVersion = project?.currentVersion;
   const [currentPath, setCurrentPath] = useState("");
 

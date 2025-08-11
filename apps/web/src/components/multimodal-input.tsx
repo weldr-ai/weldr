@@ -7,7 +7,7 @@ import {
   type LexicalEditor,
   type ParagraphNode,
 } from "lexical";
-import { ArrowUpIcon, PaperclipIcon } from "lucide-react";
+import { MicIcon, PlusIcon, SendIcon } from "lucide-react";
 import type React from "react";
 import {
   type ChangeEvent,
@@ -84,7 +84,6 @@ function PureMultimodalInput({
   attachmentsClassName,
   textareaClassName,
   onFocus,
-  isVisible,
 }: MultimodalInputProps) {
   const [currentPlaceholder, setCurrentPlaceholder] = useState(
     placeholder ?? "Send a message...",
@@ -382,7 +381,7 @@ function PureMultimodalInput({
             textareaClassName,
           )}
           editorRef={editorRef}
-          onSubmit={handleSubmit}
+          onSubmit={submitForm}
           references={references}
           typeaheadPosition={"bottom"}
           disabled={!!status}
@@ -423,8 +422,14 @@ function PureMultimodalInput({
         />
       )}
 
-      <div className="absolute right-[6px] bottom-[6px] flex w-fit flex-row justify-end gap-1">
-        <AttachmentsButton fileInputRef={fileInputRef} status={status} />
+      <div className="flex w-full flex-row justify-between gap-1 border-t p-1">
+        <div className="flex flex-row">
+          <AttachmentsButton fileInputRef={fileInputRef} status={status} />
+          {/* TODO: Add voice input */}
+          <Button variant="ghost" size="icon" className="size-8 rounded-md">
+            <MicIcon className="size-3.5" />
+          </Button>
+        </div>
         <SendButton
           message={message}
           submitForm={submitForm}
@@ -459,8 +464,8 @@ function PureAttachmentsButton({
 
   return (
     <Button
-      variant="outline"
-      className="size-8 rounded-lg"
+      variant="ghost"
+      className="size-8 rounded-md"
       onClick={(event) => {
         event.preventDefault();
 
@@ -473,7 +478,7 @@ function PureAttachmentsButton({
       }}
       disabled={!!status}
     >
-      <PaperclipIcon className="size-3.5" />
+      <PlusIcon className="size-3.5" />
     </Button>
   );
 }
@@ -504,7 +509,7 @@ function PureSendButton({
 
   return (
     <Button
-      className="size-8 rounded-lg"
+      className="size-8 rounded-md"
       onClick={(event) => {
         event.preventDefault();
 
@@ -521,7 +526,7 @@ function PureSendButton({
       }}
       disabled={isDisabled}
     >
-      <ArrowUpIcon className="size-3.5" />
+      <SendIcon className="size-3.5" />
     </Button>
   );
 }

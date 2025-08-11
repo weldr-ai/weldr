@@ -131,7 +131,6 @@ router.openapi(route, async (c) => {
     });
     workflowContext.set("version", activeVersion);
     workflowContext.set("user", session.user);
-    workflowContext.set("isXML", true);
 
     await processIntegrationQueue(workflowContext);
 

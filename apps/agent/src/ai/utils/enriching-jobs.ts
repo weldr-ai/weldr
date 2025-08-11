@@ -73,6 +73,7 @@ export async function queueEnrichingJob(
 }
 
 export async function recoverEnrichingJobs(): Promise<void> {
+  Logger.info("Recovering enriching jobs");
   let project: typeof projects.$inferSelect | undefined;
 
   if (process.env.NODE_ENV === "development") {
@@ -180,6 +181,8 @@ export async function recoverEnrichingJobs(): Promise<void> {
       },
     });
   }
+
+  Logger.info("Recovered enriching jobs");
 }
 
 async function enrichDeclarationJob(jobData: EnrichingJobData): Promise<void> {

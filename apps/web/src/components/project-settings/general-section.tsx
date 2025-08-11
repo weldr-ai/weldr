@@ -46,7 +46,9 @@ export function GeneralSection({
   const updateProject = useMutation(
     trpc.projects.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries(trpc.projects.byId.queryFilter());
+        queryClient.invalidateQueries(
+          trpc.projects.byId.queryFilter({ id: project.id }),
+        );
       },
       onError: (error) => {
         toast({

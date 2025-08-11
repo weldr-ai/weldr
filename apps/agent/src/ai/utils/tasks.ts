@@ -59,55 +59,72 @@ export async function createTasks({
       }
     >();
 
-    await Promise.all(
-      taskList.map(async (task) => {
-        const [chat] = await tx
-          .insert(chats)
-          .values({
-            userId: version.userId,
-            projectId: project.id,
-          })
-          .returning();
+    // First pass: Create all tasks sequentially to avoid foreign key constraint issues
+    for (const task of taskList) {
+      const [chat] = await tx
+        .insert(chats)
+        .values({
+          userId: version.userId,
+          projectId: project.id,
+        })
+        .returning();
 
-        if (!chat) {
-          throw new Error("Failed to insert chat");
+      if (!chat) {
+        throw new Error("Failed to insert chat");
+      }
+
+      const [insertedTask] = await tx
+        .insert(tasks)
+        .values({
+          data: task,
+          versionId: version.id,
+          chatId: chat.id,
+          status: "pending",
+        })
+        .returning();
+
+      if (!insertedTask) {
+        throw new Error("Failed to insert task");
+      }
+
+      tasksMap.set(task.id, {
+        numericId: task.id,
+        dbId: insertedTask.id,
+        type: task.type,
+        dependencies: task.dependencies || [],
+      });
+    }
+
+    // Second pass: Create declarations for declaration tasks
+    for (const task of taskList) {
+      if (task.type === "declaration") {
+        const taskInfo = tasksMap.get(task.id);
+        if (!taskInfo) {
+          throw new Error("Task not found in map");
         }
 
-        const [insertedTask] = await tx
-          .insert(tasks)
-          .values({
-            data: task,
-            versionId: version.id,
-            chatId: chat.id,
-            status: "pending",
-          })
-          .returning();
+        const [fullTask] = await tx
+          .select()
+          .from(tasks)
+          .where(eq(tasks.id, taskInfo.dbId));
 
-        if (!insertedTask) {
-          throw new Error("Failed to insert task");
+        if (!fullTask) {
+          throw new Error("Failed to retrieve inserted task");
         }
 
-        if (task.type === "declaration") {
-          const declaration = await createDeclarationFromTask({
-            context,
-            task: insertedTask,
-          });
-
-          if (!declaration) {
-            throw new Error("Failed to create declaration");
-          }
-
-          taskToDeclaration.set(task.id, declaration);
-        }
-
-        tasksMap.set(task.id, {
-          numericId: task.id,
-          dbId: insertedTask.id,
-          type: task.type,
-          dependencies: task.dependencies || [],
+        const declaration = await createDeclarationFromTask({
+          context,
+          task: fullTask,
+          tx,
         });
-      }),
-    );
+
+        if (!declaration) {
+          throw new Error("Failed to create declaration");
+        }
+
+        taskToDeclaration.set(task.id, declaration);
+      }
+    }
 
     const taskDependenciesInserts: Array<{
       dependentId: string;

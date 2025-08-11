@@ -1,3 +1,4 @@
+import { streamText, type ToolSet } from "ai";
 import type { z } from "zod";
 
 import { Logger } from "@weldr/shared/logger";
@@ -21,7 +22,6 @@ import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import type { WorkflowContext } from "@/workflow/context";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
-import { XMLProvider } from "../tools/xml/provider";
 import { calculateModelCost } from "../utils/providers-pricing";
 
 export async function plannerAgent({
@@ -34,30 +34,24 @@ export async function plannerAgent({
   const project = context.get("project");
   const user = context.get("user");
   const version = context.get("version");
-  const isXML = context.get("isXML");
 
   const logger = Logger.get({
     projectId: project.id,
     versionId: version.id,
-    mode: isXML ? "xml" : "ai-sdk",
   });
 
-  const tools = {
-    list_dir: listDirTool,
-    read_file: readFileTool,
-    search_codebase: searchCodebaseTool,
-    query_related_declarations: queryRelatedDeclarationsTool,
-    fzf: fzfTool,
-    grep: grepTool,
-    find: findTool,
-    call_coder: callCoderTool,
-  } as const;
+  const tools: ToolSet = {
+    list_dir: listDirTool(context),
+    read_file: readFileTool(context),
+    search_codebase: searchCodebaseTool(context),
+    query_related_declarations: queryRelatedDeclarationsTool(context),
+    fzf: fzfTool(context),
+    grep: grepTool(context),
+    find: findTool(context),
+    call_coder: callCoderTool(context),
+  };
 
-  const xmlProvider = new XMLProvider(tools, context);
-
-  const system = isXML
-    ? await prompts.planner(project, tools)
-    : await prompts.planner(project);
+  const system = await prompts.planner(project);
 
   // Local function to execute planner agent and handle tool calls
   const executePlannerAgent = async (): Promise<boolean> => {
@@ -68,9 +62,10 @@ export async function plannerAgent({
       extra: { promptMessages },
     });
 
-    const result = xmlProvider.streamText({
+    const result = streamText({
       model: registry.languageModel("google:gemini-2.5-pro"),
       system,
+      tools,
       messages: promptMessages,
       onError: (error) => {
         logger.error("Error in planner agent", {

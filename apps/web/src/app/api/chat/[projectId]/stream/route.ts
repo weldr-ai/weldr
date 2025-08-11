@@ -53,6 +53,13 @@ export async function GET(
     // Set the new origin and host for the destination
     headers.set("host", "localhost:8080");
     headers.set("origin", url);
+    
+    // Check for lastEventId in query params and set as Last-Event-ID header
+    const { searchParams } = new URL(request.url);
+    const lastEventId = searchParams.get("lastEventId");
+    if (lastEventId) {
+      headers.set("Last-Event-ID", lastEventId);
+    }
 
     // Make the proxy request to the agent service
     const response = await fetch(`${url}/stream/${projectId}`, {

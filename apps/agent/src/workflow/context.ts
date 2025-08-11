@@ -9,7 +9,6 @@ export type ProjectWithConfig = typeof projects.$inferSelect & {
 type WorkflowContextStore = {
   project: ProjectWithConfig;
   version: typeof versions.$inferSelect;
-  isXML: boolean;
   user: User;
 };
 

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Handle, Position } from "@xyflow/react";
 import {
   CircleIcon,
@@ -9,7 +9,8 @@ import {
   ShieldCheckIcon,
   ShieldXIcon,
 } from "lucide-react";
-import { memo, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import { memo, useCallback, useState } from "react";
 
 import { Badge } from "@weldr/ui/components/badge";
 import { Button } from "@weldr/ui/components/button";
@@ -19,7 +20,6 @@ import { Label } from "@weldr/ui/components/label";
 import { cn } from "@weldr/ui/lib/utils";
 
 import { SitePreviewDialog } from "@/components/site-preview-dialog";
-import { useProject } from "@/lib/context/project";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
 import { ProtectedBadge } from "../components/protected-badge";
@@ -47,11 +47,16 @@ const PageNodeHeader = memo(
 
 export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   if (_data.metadata?.specs?.type !== "page") {
-    return null;
+    throw new Error("Page node data is not a page");
   }
 
   const trpc = useTRPC();
-  const { project } = useProject();
+  const queryClient = useQueryClient();
+  const { projectId } = useParams<{ projectId: string }>();
+  const project = queryClient.getQueryData(
+    trpc.projects.byId.queryKey({ id: projectId }),
+  );
+
   const currentVersion = project?.currentVersion;
 
   const { data: declaration } = useQuery(
@@ -73,25 +78,30 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   const [showPreview, setShowPreview] = useState(false);
   const [sitePreviewDialogOpen, setSitePreviewDialogOpen] = useState(false);
 
-  if (!specs || specs.type !== "page") {
-    return null;
-  }
-
   // Extract parameters from route (e.g., /users/{id} -> ["id"])
-  const routeParameters = (() => {
+  const getRouteParameters = useCallback(() => {
+    if (!specs || specs.type !== "page") {
+      return [];
+    }
+
     return (
       specs.parameters
         ?.filter((param) => param.in === "path")
         .map((param) => param.name) ?? []
     );
-  })();
-
-  const hasParameters = routeParameters.length > 0;
+  }, [specs]);
 
   // Build preview URL with parameters
-  const previewUrl = useMemo(() => {
+  const getPreviewUrl = useCallback(() => {
+    if (!specs || specs.type !== "page") {
+      return "";
+    }
+
     const baseUrl = `https://${currentVersion?.id}.preview.weldr.app`;
-    let route = specs.route.replace(/^\//, "");
+    let route = specs?.route.replace(/^\//, "");
+
+    const routeParameters = getRouteParameters();
+    const hasParameters = routeParameters.length > 0;
 
     if (!hasParameters) {
       return `${baseUrl}/${route}`;
@@ -104,18 +114,22 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
     }
 
     return `${baseUrl}/${route}`;
-  }, [
-    currentVersion?.id,
-    hasParameters,
-    specs.route,
-    routeParameters,
-    parameterValues,
-  ]);
+  }, [currentVersion?.id, specs, getRouteParameters, parameterValues]);
 
-  const canShowPreview =
-    !hasParameters || routeParameters.every((param) => parameterValues[param]);
+  const canShowPreview = useCallback(() => {
+    const routeParameters = getRouteParameters();
+    return (
+      !routeParameters.length ||
+      routeParameters.every((param) => parameterValues[param])
+    );
+  }, [getRouteParameters, parameterValues]);
 
-  const getResolvedRoute = useMemo(() => {
+  const getResolvedRoute = useCallback(() => {
+    if (!specs || specs.type !== "page") {
+      return "";
+    }
+
+    const routeParameters = getRouteParameters();
     const hasParameters = routeParameters.length > 0;
 
     if (!hasParameters) {
@@ -123,6 +137,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
     }
 
     let resolvedRoute = specs.route;
+
     for (const param of routeParameters) {
       if (parameterValues[param]) {
         resolvedRoute = resolvedRoute.replace(
@@ -142,9 +157,13 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
         {part}
       </span>
     ));
-  }, [specs.route, routeParameters, parameterValues]);
+  }, [specs, getRouteParameters, parameterValues]);
 
-  const colorizedRoute = useMemo(() => {
+  const getColorizedRoute = useCallback(() => {
+    if (!specs || specs.type !== "page") {
+      return "";
+    }
+
     return specs.route.split(/(\{[^}]+\})/).map((part) => (
       <span
         key={part || `path-segment-${Math.random()}`}
@@ -155,14 +174,19 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
         {part}
       </span>
     ));
-  }, [specs.route]);
+  }, [specs]);
 
   // Determine the current state
   const isVersionCompleted = currentVersion?.status === "completed";
   const isDeclarationCompleted = declaration.progress === "completed";
-  const needsParameters = hasParameters && (!showPreview || !canShowPreview);
+  const needsParameters =
+    getRouteParameters().length > 0 && (!showPreview || !canShowPreview());
   const isPreviewReady =
     isDeclarationCompleted && isVersionCompleted && !needsParameters;
+
+  if (!specs || specs.type !== "page") {
+    return null;
+  }
 
   return (
     <>
@@ -191,7 +215,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
         {isPreviewReady ? (
           <div className="relative h-[300px] w-[400px] overflow-hidden rounded-lg">
             <iframe
-              src={previewUrl}
+              src={getPreviewUrl()}
               className="absolute top-0 left-0 h-[600px] w-[800px] origin-top-left scale-[0.5] rounded-lg border-0"
               title={specs.name}
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
@@ -200,7 +224,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
 
             <div className="absolute bottom-4 left-4 opacity-0 transition-opacity group-hover:opacity-100">
               <Badge variant="secondary" className="font-mono text-xs">
-                {getResolvedRoute}
+                {getResolvedRoute()}
               </Badge>
             </div>
           </div>
@@ -240,7 +264,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
                   </span>
                   <span className="text-sm">
                     <span className="text-muted-foreground">Route:</span>{" "}
-                    {colorizedRoute}
+                    {getColorizedRoute()}
                   </span>
                 </div>
                 <Badge variant="secondary" className="text-xs">
@@ -269,7 +293,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
                   </div>
 
                   <div className="w-full max-w-sm space-y-2">
-                    {routeParameters.map((param) => (
+                    {getRouteParameters().map((param) => (
                       <div key={param} className="space-y-2">
                         <Label>{param}</Label>
                         <Input
@@ -297,7 +321,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
                   </div>
                   <span className="text-sm">
                     <span className="text-muted-foreground">Route:</span>{" "}
-                    {colorizedRoute}
+                    {getColorizedRoute()}
                   </span>
                 </>
               )}
@@ -323,7 +347,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
           open={sitePreviewDialogOpen}
           onOpenChange={setSitePreviewDialogOpen}
           title={specs.name}
-          url={previewUrl}
+          url={getPreviewUrl()}
           browserHeader={false}
           isProtected={specs.protected ?? false}
         />

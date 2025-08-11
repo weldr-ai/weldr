@@ -147,7 +147,7 @@ router.openapi(route, async (c) => {
     }
 
     // Create Redis-based SSE stream
-    const stream = await createSSEStream(streamId, chatId);
+    const stream = await createSSEStream(streamId, chatId, lastEventId);
 
     logger.info("Created SSE stream", {
       extra: { streamId, chatId, isResuming },

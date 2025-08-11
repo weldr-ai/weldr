@@ -1,3 +1,4 @@
+import { streamText, type ToolSet } from "ai";
 import type { z } from "zod";
 
 import { db, eq } from "@weldr/db";
@@ -28,7 +29,6 @@ import { stream } from "@/lib/stream-utils";
 import type { WorkflowContext } from "@/workflow/context";
 import { prompts } from "../prompts";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
-import { XMLProvider } from "../tools/xml/provider";
 import { formatTaskDeclarationToMarkdown } from "../utils/formatters";
 import { calculateModelCost } from "../utils/providers-pricing";
 
@@ -152,7 +152,6 @@ async function executeTaskCoder({
   const project = context.get("project");
   const version = context.get("version");
   const user = context.get("user");
-  const isXML = context.get("isXML");
 
   const logger = Logger.get({
     projectId: project.id,
@@ -162,21 +161,19 @@ async function executeTaskCoder({
 
   logger.info("Starting task coder");
 
-  const tools = {
-    list_dir: listDirTool,
-    read_file: readFileTool,
-    write_file: writeFileTool,
-    delete_file: deleteFileTool,
-    edit_file: editFileTool,
-    search_codebase: searchCodebaseTool,
-    query_related_declarations: queryRelatedDeclarationsTool,
-    fzf: fzfTool,
-    grep: grepTool,
-    find: findTool,
-    done: doneTool,
-  } as const;
-
-  const xmlProvider = new XMLProvider(tools, context);
+  const tools: ToolSet = {
+    list_dir: listDirTool(context),
+    read_file: readFileTool(context),
+    write_file: writeFileTool(context),
+    delete_file: deleteFileTool(context),
+    edit_file: editFileTool(context),
+    search_codebase: searchCodebaseTool(context),
+    query_related_declarations: queryRelatedDeclarationsTool(context),
+    fzf: fzfTool(context),
+    grep: grepTool(context),
+    find: findTool(context),
+    done: doneTool(context),
+  };
 
   const versionContext = `${version.message}
   Description: ${version.description}
@@ -186,9 +183,7 @@ async function executeTaskCoder({
     .map(([id, { summary, progress }]) => `${id}: ${summary} - ${progress}`)
     .join("\n")}`;
 
-  const system = isXML
-    ? await prompts.generalCoder(project, versionContext, tools)
-    : await prompts.generalCoder(project, versionContext);
+  const system = await prompts.generalCoder(project, versionContext);
 
   // Local function to execute coder agent and handle tool calls
   const executeCoderLoop = async (): Promise<boolean> => {
@@ -196,9 +191,10 @@ async function executeTaskCoder({
     const hasToolErrors = false;
     const promptMessages = await getMessages(loopChatId);
 
-    const result = xmlProvider.streamText({
+    const result = streamText({
       model: registry.languageModel("google:gemini-2.5-pro"),
       system,
+      tools,
       messages: promptMessages,
       onError: (error) => {
         logger.error("Error in coder agent", {

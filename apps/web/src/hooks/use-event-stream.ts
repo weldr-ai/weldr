@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -8,7 +9,7 @@ import type {
   TStatus,
 } from "@weldr/shared/types";
 
-import { useProject } from "@/lib/context/project";
+import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode } from "@/types";
 
 interface UseEventStreamOptions {
@@ -28,7 +29,8 @@ export function useEventStream({
   setStatus,
   setMessages,
 }: UseEventStreamOptions) {
-  const { updateProjectData } = useProject();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const { getNodes, setNodes, updateNodeData } = useReactFlow<CanvasNode>();
 
   const [eventSourceRef, setEventSourceRef] = useState<EventSource | null>(
@@ -40,6 +42,7 @@ export function useEventStream({
   const maxReconnectAttempts = 5;
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isConnectingRef = useRef(false);
+  const lastEventIdRef = useRef<string | null>(null);
 
   const connectToEventStream = useCallback(() => {
     // Prevent multiple simultaneous connections
@@ -56,7 +59,13 @@ export function useEventStream({
       reconnectTimeoutRef.current = null;
     }
 
-    const eventSource = new EventSource(`/api/chat/${projectId}/stream`, {
+    // Build URL with Last-Event-ID as a query parameter if we have one
+    let url = `/api/chat/${projectId}/stream`;
+    if (lastEventIdRef.current) {
+      url += `?lastEventId=${encodeURIComponent(lastEventIdRef.current)}`;
+    }
+
+    const eventSource = new EventSource(url, {
       withCredentials: true,
     });
     setEventSourceRef(eventSource);
@@ -65,13 +74,17 @@ export function useEventStream({
       try {
         // EventSource API should give us clean JSON data directly
         const chunk: SSEEvent = JSON.parse(event.data);
-        console.log("Parsed chunk:", chunk);
 
         if (chunk.type === "connected") {
           reconnectAttempts.current = 0;
           isConnectingRef.current = false;
           console.log(`[SSE] Connected to stream for project ${projectId}`);
           return;
+        }
+
+        // Track the event ID if present for reconnection
+        if (chunk.id) {
+          lastEventIdRef.current = chunk.id;
         }
 
         if (chunk.type === "error") {
@@ -88,8 +101,8 @@ export function useEventStream({
         setStatus("responding");
 
         switch (chunk.type) {
-          case "responding": {
-            setStatus("responding");
+          case "status": {
+            setStatus(chunk.status);
             break;
           }
           case "text": {
@@ -166,7 +179,31 @@ export function useEventStream({
             break;
           }
           case "update_project": {
-            updateProjectData({ ...chunk.data });
+            // Update the project data in the query cache
+            queryClient.setQueryData(
+              trpc.projects.byId.queryKey({ id: projectId }),
+              // @ts-expect-error
+              (old) => {
+                if (!old) return old;
+                return {
+                  ...old,
+                  title: chunk.data.title,
+                  description: chunk.data.description,
+                  currentVersion: {
+                    ...old.currentVersion,
+                    message: chunk.data.currentVersion?.message ?? null,
+                    description: chunk.data.currentVersion?.description ?? null,
+                    status: chunk.data.currentVersion?.status ?? null,
+                  },
+                };
+              },
+            );
+
+            // Invalidate the query to ensure the data is fresh
+            queryClient.invalidateQueries({
+              queryKey: trpc.projects.byId.queryKey({ id: projectId }),
+            });
+
             const status = chunk.data.currentVersion?.status;
 
             switch (status) {
@@ -280,10 +317,11 @@ export function useEventStream({
     project.currentVersion.status,
     setStatus,
     setMessages,
-    updateProjectData,
     getNodes,
     setNodes,
     updateNodeData,
+    queryClient,
+    trpc,
   ]);
 
   const closeEventStream = useCallback(() => {

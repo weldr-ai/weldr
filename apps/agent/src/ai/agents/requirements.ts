@@ -1,3 +1,4 @@
+import { streamText, type ToolSet } from "ai";
 import type { z } from "zod";
 
 import { Logger } from "@weldr/shared/logger";
@@ -25,7 +26,6 @@ import { workflow } from "@/workflow";
 import type { WorkflowContext } from "@/workflow/context";
 import { callPlannerTool } from "../tools/call-planner";
 import { queryRelatedDeclarationsTool } from "../tools/query-related-declarations";
-import { XMLProvider } from "../tools/xml/provider";
 import { calculateModelCost } from "../utils/providers-pricing";
 
 export async function requirementsAgent({
@@ -38,31 +38,25 @@ export async function requirementsAgent({
   const project = context.get("project");
   const user = context.get("user");
   const version = context.get("version");
-  const isXML = context.get("isXML");
 
   const logger = Logger.get({
     projectId: project.id,
     versionId: version.id,
-    mode: isXML ? "xml" : "ai-sdk",
   });
 
-  const toolSet = {
-    add_integrations: addIntegrationsTool,
-    list_dir: listDirTool,
-    read_file: readFileTool,
-    search_codebase: searchCodebaseTool,
-    query_related_declarations: queryRelatedDeclarationsTool,
-    fzf: fzfTool,
-    grep: grepTool,
-    find: findTool,
-    call_planner: callPlannerTool,
-  } as const;
+  const tools: ToolSet = {
+    add_integrations: addIntegrationsTool(context),
+    list_dir: listDirTool(context),
+    read_file: readFileTool(context),
+    search_codebase: searchCodebaseTool(context),
+    query_related_declarations: queryRelatedDeclarationsTool(context),
+    fzf: fzfTool(context),
+    grep: grepTool(context),
+    find: findTool(context),
+    call_planner: callPlannerTool(context),
+  };
 
-  const xmlProvider = new XMLProvider(toolSet, context);
-
-  const system = isXML
-    ? await prompts.requirements(project, toolSet)
-    : await prompts.requirements(project);
+  const system = await prompts.requirements(project);
 
   const executeRequirementsAgent = async (): Promise<boolean> => {
     let shouldRecur = false;
@@ -72,9 +66,10 @@ export async function requirementsAgent({
       extra: { promptMessages },
     });
 
-    const result = xmlProvider.streamText({
+    const result = streamText({
       model: registry.languageModel("google:gemini-2.5-pro"),
       system,
+      tools,
       messages: promptMessages,
       onError: (error) => {
         logger.error("Error in requirements agent", {
