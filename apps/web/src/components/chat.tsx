@@ -205,9 +205,9 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
               "overflow-hidden transition-all duration-300 ease-in-out",
               {
                 "h-0": !isChatVisible,
-                "h-[calc(100vh-268px)]": isChatVisible,
-                "h-[calc(100vh-292px)]": isChatVisible && status,
-                "h-[calc(100vh-342px)]":
+                "h-[calc(100vh-274px)]": isChatVisible,
+                "h-[calc(100vh-298px)]": isChatVisible && status,
+                "h-[calc(100vh-348px)]":
                   isChatVisible && attachments.length > 0,
               },
             )}

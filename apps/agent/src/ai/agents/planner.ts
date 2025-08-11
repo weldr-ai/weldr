@@ -175,7 +175,7 @@ export async function plannerAgent({
 
     if (assistantContent.length > 0) {
       messagesToSave.push({
-        visibility: "public",
+        visibility: "internal",
         role: "assistant",
         content: assistantContent,
         metadata: {

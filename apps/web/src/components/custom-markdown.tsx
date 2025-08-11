@@ -1,6 +1,20 @@
-import DOMPurify from "dompurify";
-import { type ReactNode, useMemo } from "react";
-import ReactMarkdown from "react-markdown";
+"use client";
+
+import {
+  type ComponentType,
+  createElement,
+  type HTMLAttributes,
+  isValidElement,
+  memo,
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useMemo,
+} from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 import type { z } from "zod";
 
 import { nanoid } from "@weldr/shared/nanoid";
@@ -12,20 +26,30 @@ import { ReferenceBadge } from "./editor/reference-badge";
 
 type ReferencePart = z.infer<typeof referencePartSchema>;
 
-export function CustomMarkdown({
-  content,
-  className,
-}: {
+interface ProcessedContent {
+  markdownText: string;
+  referenceMap: Map<string, ReferencePart>;
+}
+
+interface CustomMarkdownProps {
   content: ChatMessageContent | string;
   className?: string;
-}) {
-  const { markdownText, references } = useMemo(() => {
+}
+
+const REFERENCE_PATTERN = /\[\[(ref-[^\]]+)\]\]/;
+const REFERENCE_SPLIT_PATTERN = /(\[\[ref-[^\]]+\]\])/g;
+
+function CustomMarkdownComponent({
+  content,
+  className,
+}: CustomMarkdownProps): ReactElement {
+  const processedContent = useMemo<ProcessedContent>(() => {
     if (typeof content === "string") {
-      return { markdownText: content, references: [] };
+      return { markdownText: content, referenceMap: new Map() };
     }
 
     let text = "";
-    const references: Array<ReferencePart> = [];
+    const referenceMap = new Map<string, ReferencePart>();
 
     for (const item of content) {
       if (item.type === "text") {
@@ -35,109 +59,173 @@ export function CustomMarkdown({
         item.type === "reference:page" ||
         item.type === "reference:endpoint"
       ) {
-        const placeholder = `:::REF${references.length}:::`;
-        references.push(item);
-        text += placeholder;
+        const refId = `ref-${nanoid()}`;
+        referenceMap.set(refId, item as ReferencePart);
+        text += `[[${refId}]]`;
       }
     }
 
-    return { markdownText: text, references };
+    return { markdownText: text, referenceMap };
   }, [content]);
 
-  const processContent = () => {
-    let processedContent = markdownText;
-    references.forEach((ref, index) => {
-      const placeholder = `:::REF${index}:::`;
-      // Sanitize the reference name to prevent XSS
-      const sanitizedName = DOMPurify.sanitize(
-        ref.type === "reference:endpoint"
-          ? `${ref.method.toUpperCase()} ${ref.path}`
-          : ref.name,
-      );
-      processedContent = processedContent
-        .split(placeholder)
-        .join(`[REF${sanitizedName}]`);
-    });
+  const processTextWithReferences = useCallback(
+    (text: string): ReactNode => {
+      const parts = text.split(REFERENCE_SPLIT_PATTERN);
 
-    const processReferences = (content: ReactNode): ReactNode => {
-      if (typeof content !== "string") return content;
+      if (parts.length === 1) return text;
 
-      const parts = content.split(/(\[REF[^\]]+\])/);
-      if (parts.length === 1) return content;
+      return parts
+        .map((part, index) => {
+          const refMatch = part.match(REFERENCE_PATTERN);
+          if (refMatch?.[1]) {
+            const reference = processedContent.referenceMap.get(refMatch[1]);
+            if (reference) {
+              return (
+                <span
+                  key={`${refMatch[1]}-${index}`}
+                  className="inline-flex items-center"
+                >
+                  <ReferenceBadge reference={reference} />
+                </span>
+              );
+            }
+            return part;
+          }
+          return part || null;
+        })
+        .filter(Boolean);
+    },
+    [processedContent.referenceMap],
+  );
 
-      return parts.map((part) => {
-        const refMatch = part.match(/\[REF([^\]]+)\]/);
-        if (refMatch) {
-          const refName = refMatch[1];
-          const refIndex = references.findIndex(
-            (ref) =>
-              DOMPurify.sanitize(
-                ref.type === "reference:endpoint"
-                  ? `${ref.method.toUpperCase()} ${ref.path}`
-                  : ref.name,
-              ) === refName,
-          );
-          if (refIndex === -1) return part;
+  const processNodeChildren = useCallback(
+    (children: ReactNode): ReactNode => {
+      if (typeof children === "string") {
+        return processTextWithReferences(children);
+      }
 
-          return (
-            <span key={nanoid()} className="inline-flex items-center">
-              <ReferenceBadge
-                reference={references[refIndex] as ReferencePart}
-              />
-            </span>
+      if (Array.isArray(children)) {
+        return children.map((child, index) => {
+          if (typeof child === "string") {
+            return processTextWithReferences(child);
+          }
+          if (isValidElement(child)) {
+            const childElement = child as ReactElement<{
+              children?: ReactNode;
+            }>;
+            const processedChildren = processNodeChildren(
+              childElement.props.children,
+            );
+            if (processedChildren !== childElement.props.children) {
+              return createElement(
+                childElement.type,
+                {
+                  ...childElement.props,
+                  key: childElement.key ?? index,
+                },
+                processedChildren,
+              );
+            }
+          }
+          return child;
+        });
+      }
+
+      if (isValidElement(children)) {
+        const childElement = children as ReactElement<{ children?: ReactNode }>;
+        const processedChildren = processNodeChildren(
+          childElement.props.children,
+        );
+        if (processedChildren !== childElement.props.children) {
+          return createElement(
+            childElement.type,
+            childElement.props,
+            processedChildren,
           );
         }
-        return part;
-      });
-    };
+      }
 
-    return (
-      <span className={cn("inline", className)}>
-        <ReactMarkdown
-          components={{
-            p: ({ children }) => (
-              <p className="my-0">{processReferences(children)}</p>
-            ),
-            li: ({ children }) => (
-              <li className="my-0">{processReferences(children)}</li>
-            ),
-            strong: ({ children }) => (
-              <strong>{processReferences(children)}</strong>
-            ),
-            em: ({ children }) => <em>{processReferences(children)}</em>,
-            h1: ({ children }) => <h1>{processReferences(children)}</h1>,
-            h2: ({ children }) => <h2>{processReferences(children)}</h2>,
-            h3: ({ children }) => <h3>{processReferences(children)}</h3>,
-            h4: ({ children }) => <h4>{processReferences(children)}</h4>,
-            h5: ({ children }) => <h5>{processReferences(children)}</h5>,
-            h6: ({ children }) => <h6>{processReferences(children)}</h6>,
-            a: ({ children, ...props }) => (
-              <a {...props}>{processReferences(children)}</a>
-            ),
-            code: ({ children }) => (
-              <code className="bg-destructive">
-                {processReferences(children)}
-              </code>
-            ),
-            blockquote: ({ children }) => (
-              <blockquote>{processReferences(children)}</blockquote>
-            ),
-          }}
-        >
-          {processedContent}
-        </ReactMarkdown>
-      </span>
-    );
-  };
+      return children;
+    },
+    [processTextWithReferences],
+  );
+
+  const createWrapper = useCallback(
+    (
+      tag: keyof JSX.IntrinsicElements,
+    ): ComponentType<
+      HTMLAttributes<HTMLElement> & { children?: ReactNode }
+    > => {
+      return memo((props) => {
+        const processedChildren = processNodeChildren(props.children);
+        return createElement(tag, props, processedChildren);
+      });
+    },
+    [processNodeChildren],
+  );
+
+  const components: Partial<Components> = useMemo(
+    () => ({
+      p: createWrapper("p"),
+      span: createWrapper("span"),
+      div: createWrapper("div"),
+      li: createWrapper("li"),
+      td: createWrapper("td"),
+      th: createWrapper("th"),
+      h1: createWrapper("h1"),
+      h2: createWrapper("h2"),
+      h3: createWrapper("h3"),
+      h4: createWrapper("h4"),
+      h5: createWrapper("h5"),
+      h6: createWrapper("h6"),
+      strong: createWrapper("strong"),
+      em: createWrapper("em"),
+      del: createWrapper("del"),
+      blockquote: createWrapper("blockquote"),
+      a: memo(
+        (
+          props: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+            children?: ReactNode;
+          },
+        ) => {
+          const processedChildren = processNodeChildren(props.children);
+          return <a {...props}>{processedChildren}</a>;
+        },
+      ),
+      code: memo(
+        (
+          props: React.HTMLAttributes<HTMLElement> & { children?: ReactNode },
+        ) => {
+          const processedChildren = processNodeChildren(props.children);
+          return <code {...props}>{processedChildren}</code>;
+        },
+      ),
+      pre: memo(
+        (
+          props: React.HTMLAttributes<HTMLPreElement> & {
+            children?: ReactNode;
+          },
+        ) => {
+          return <pre {...props}>{props.children}</pre>;
+        },
+      ),
+    }),
+    [createWrapper, processNodeChildren],
+  );
 
   return (
     <div
-      className={cn(
-        "prose prose-headings:my-0 prose-ol:my-0 prose-p:my-0 prose-ul:my-0 cursor-text select-text prose-code:text-foreground prose-headings:text-foreground prose-strong:text-foreground text-foreground text-sm",
-        className,
-      )}
+      className={cn("prose dark:prose-invert prose-sm max-w-none", className)}
     >
-      {processContent()}
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw, rehypeSanitize]}
+        components={components}
+      >
+        {processedContent.markdownText}
+      </ReactMarkdown>
     </div>
   );
 }
+
+export const CustomMarkdown = memo(CustomMarkdownComponent);
