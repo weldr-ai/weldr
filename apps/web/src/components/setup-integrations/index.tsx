@@ -13,7 +13,7 @@ import type { RouterOutputs } from "@weldr/api";
 import type {
   ChatMessage,
   IntegrationCategoryKey,
-  TPendingMessage,
+  TStatus,
 } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/components/button";
 
@@ -31,13 +31,13 @@ const PureSetupIntegration = ({
   setMessages,
   integrationTemplates,
   environmentVariables,
-  setPendingMessage,
+  setStatus,
 }: {
   message: ChatMessage;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
-  setPendingMessage: Dispatch<SetStateAction<TPendingMessage>>;
+  setStatus: Dispatch<SetStateAction<TStatus>>;
 }) => {
   const { project } = useProject();
   const trpc = useTRPC();
@@ -302,10 +302,10 @@ const PureSetupIntegration = ({
       integrations: configurations,
     });
 
-    setPendingMessage("thinking");
+    setStatus("thinking");
   }, [
     project,
-    setPendingMessage,
+    setStatus,
     createBatchIntegrationsMutation,
     configuredIntegrations,
     setMessages,
@@ -316,7 +316,7 @@ const PureSetupIntegration = ({
   ]);
 
   const handleIntegrationCancel = useCallback(() => {
-    setPendingMessage(null);
+    setStatus(null);
     const lastMessage = message as IntegrationToolMessage;
     const newMessage = {
       ...lastMessage,
@@ -352,7 +352,7 @@ const PureSetupIntegration = ({
         content: newMessage.content,
       },
     });
-  }, [setMessages, setPendingMessage, updateMessageMutation, message]);
+  }, [setMessages, setStatus, updateMessageMutation, message]);
 
   return (
     <div className="flex min-h-[300px] flex-col">

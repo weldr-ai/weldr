@@ -51,4 +51,29 @@ export const nodesRouter = {
 
       return canvasNode;
     }),
+  batchUpdatePositions: protectedProcedure
+    .input(
+      z.object({
+        updates: z.array(
+          z.object({
+            id: z.string(),
+            position: z.object({ x: z.number(), y: z.number() }),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const results = await ctx.db.transaction(async (tx) => {
+        const updatePromises = input.updates.map((update) =>
+          tx
+            .update(nodes)
+            .set({ position: update.position })
+            .where(eq(nodes.id, update.id))
+            .returning(),
+        );
+        return await Promise.all(updatePromises);
+      });
+
+      return results;
+    }),
 };

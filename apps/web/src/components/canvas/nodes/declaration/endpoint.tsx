@@ -138,7 +138,7 @@ export const EndpointNode = memo(
             "drag-handle origin-center cursor-pointer p-0 transition-all duration-300 ease-in-out dark:bg-muted",
             {
               "border-primary": selected,
-              "max-h-[400px] w-[256px]": !isExpanded,
+              "max-h-[400px] w-[300px]": !isExpanded,
               "-translate-x-[72px] -translate-y-[108px] h-[400px] w-[500px]":
                 isExpanded,
             },

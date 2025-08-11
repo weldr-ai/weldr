@@ -21,7 +21,7 @@ export const PreviewAttachment = ({
   const formattedSize = filesize(size);
 
   return (
-    <div className="group relative flex h-10 w-[150px] shrink-0 items-center justify-center gap-1 rounded-lg border bg-background py-1 pr-3 pl-1">
+    <div className="group relative flex w-[180px] shrink-0 items-center justify-center gap-2 rounded-lg border bg-background p-1.5">
       <Button
         variant="outline"
         size="icon"
@@ -36,10 +36,16 @@ export const PreviewAttachment = ({
           key={url}
           src={url}
           alt={name ?? "An image attachment"}
-          className="size-8 rounded-sm border object-cover"
+          className="size-12 rounded-sm border object-cover"
           width={40}
           height={40}
         />
+      )}
+
+      {isUploading && (
+        <div className="flex size-12 items-center justify-center rounded-sm border bg-background">
+          <LoaderIcon className="size-3.5 animate-spin" />
+        </div>
       )}
 
       <div className="grid h-full flex-1 gap-1 text-muted-foreground text-xs leading-none">
@@ -48,12 +54,6 @@ export const PreviewAttachment = ({
         </span>
         <span className="line-clamp-1 font-normal">{formattedSize}</span>
       </div>
-
-      {isUploading && (
-        <div className="absolute animate-spin bg-background">
-          <LoaderIcon className="size-3.5" />
-        </div>
-      )}
     </div>
   );
 };

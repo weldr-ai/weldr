@@ -72,7 +72,7 @@ export function Editor({ ...props }: EditorProps) {
             <div className="size-full">
               <ContentEditable
                 className={cn(
-                  "flex size-full min-h-9 cursor-text flex-col justify-center overflow-y-auto bg-background px-3 py-1 text-sm focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                  "flex size-full min-h-[120px] cursor-text flex-col overflow-y-auto bg-background px-3 py-2 text-sm focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
                   !props.className &&
                     "rounded-lg border focus-visible:ring-1 focus-visible:ring-ring",
                   props.className,

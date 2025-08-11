@@ -74,7 +74,7 @@ export type Task = z.infer<typeof taskSchema>;
 export type GenericTask = z.infer<typeof genericTaskSchema>;
 export type DeclarationTask = z.infer<typeof declarationTaskSchema>;
 
-export type TPendingMessage =
+export type TStatus =
   | "thinking"
   | "responding"
   | "waiting"

@@ -2,21 +2,21 @@ import { useCallback } from "react";
 
 import type {
   Attachment,
-  TPendingMessage,
   TriggerWorkflowResponse,
+  TStatus,
   UserMessage,
 } from "@weldr/shared/types";
 
 interface UseWorkflowTriggerOptions {
   projectId: string;
-  setPendingMessage: (message: TPendingMessage) => void;
+  setStatus: (status: TStatus) => void;
   eventSourceRef: EventSource | null;
   connectToEventStream: () => EventSource | null;
 }
 
 export function useWorkflowTrigger({
   projectId,
-  setPendingMessage,
+  setStatus,
   eventSourceRef,
   connectToEventStream,
 }: UseWorkflowTriggerOptions) {
@@ -57,7 +57,7 @@ export function useWorkflowTrigger({
       content: UserMessage["content"];
       attachments: Attachment[];
     }) => {
-      setPendingMessage("thinking");
+      setStatus("thinking");
 
       try {
         // First trigger the workflow
@@ -69,10 +69,10 @@ export function useWorkflowTrigger({
         }
       } catch (error) {
         console.error("Failed to start generation:", error);
-        setPendingMessage(null);
+        setStatus(null);
       }
     },
-    [triggerWorkflow, eventSourceRef, connectToEventStream, setPendingMessage],
+    [triggerWorkflow, eventSourceRef, connectToEventStream, setStatus],
   );
 
   return {

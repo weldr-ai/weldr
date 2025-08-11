@@ -75,8 +75,20 @@ export function Canvas({
     }),
   );
 
+  const batchUpdateNodePositions = useMutation(
+    trpc.nodes.batchUpdatePositions.mutationOptions({
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      },
+    }),
+  );
+
   // Arrange nodes function
-  const arrangeNodes = useCallback(() => {
+  const arrangeNodes = useCallback(async () => {
     if (nodes.length === 0) return;
 
     // Group nodes by type
@@ -204,13 +216,24 @@ export function Canvas({
 
     setNodes(animatedNodes);
 
+    // Save all node positions to database
+    const updates = [...arrangedNodes, ...otherNodes].map((node) => ({
+      id: node.id,
+      position: {
+        x: Math.floor(node.position.x),
+        y: Math.floor(node.position.y),
+      },
+    }));
+
+    await batchUpdateNodePositions.mutateAsync({ updates });
+
     // Auto-fit view to show all arranged nodes
     setTimeout(() => {
       fitView({ maxZoom: 1, duration: 800 });
       // remove transition after animation
       setNodes([...arrangedNodes, ...otherNodes]);
     }, 800);
-  }, [nodes, setNodes, fitView]);
+  }, [nodes, setNodes, fitView, batchUpdateNodePositions]);
 
   // Create edges with conditional opacity based on hovered node and expanded state
   const styledEdges = useMemo(() => {
@@ -325,7 +348,10 @@ export function Canvas({
         }
       />
 
-      <Panel position="bottom-center" className="max-h-[400px] w-[500px]">
+      <Panel
+        position="bottom-left"
+        className="mb-4 ml-4 max-h-[calc(100vh-40px)] w-[500px]"
+      >
         <Chat
           project={project}
           version={project.currentVersion}

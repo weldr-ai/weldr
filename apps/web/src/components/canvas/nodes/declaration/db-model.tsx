@@ -167,7 +167,7 @@ export const DbModelNode = memo(
             "drag-handle origin-center cursor-pointer p-0 transition-all duration-300 ease-in-out dark:bg-muted",
             {
               "border-primary": selected,
-              "w-[300px]": !isExpanded,
+              "w-[400px]": !isExpanded,
               "-translate-x-[100px] -translate-y-[150px] h-[400px] w-[500px]":
                 isExpanded,
             },

@@ -5,10 +5,10 @@ import type {
   ChatMessage,
   IntegrationCategoryKey,
   ToolResultPartMessage,
-  TPendingMessage,
+  TStatus,
 } from "@weldr/shared/types";
 
-interface UsePendingMessageStatusOptions {
+interface UseStatusOptions {
   version: RouterOutputs["projects"]["byId"]["currentVersion"];
   messages: ChatMessage[];
   project: {
@@ -22,12 +22,8 @@ interface UsePendingMessageStatusOptions {
   };
 }
 
-export function usePendingMessageStatus({
-  version,
-  messages,
-  project,
-}: UsePendingMessageStatusOptions) {
-  const getInitialPendingMessage = (): TPendingMessage => {
+export function useStatus({ version, messages, project }: UseStatusOptions) {
+  const getInitialPendingMessage = (): TStatus => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage?.role === "user" && version.status === "pending") {
       return "thinking";
@@ -35,31 +31,29 @@ export function usePendingMessageStatus({
     return null;
   };
 
-  const [pendingMessage, setPendingMessage] = useState<TPendingMessage>(
-    getInitialPendingMessage(),
-  );
+  const [status, setStatus] = useState<TStatus>(getInitialPendingMessage());
 
   // Handle version status changes
   useEffect(() => {
     switch (version.status) {
       case "pending":
-        setPendingMessage(null);
+        setStatus(null);
         break;
       case "planning":
-        setPendingMessage("planning");
+        setStatus("planning");
         break;
       case "coding":
-        setPendingMessage("coding");
+        setStatus("coding");
         break;
       case "deploying":
-        setPendingMessage("deploying");
+        setStatus("deploying");
         break;
       case "completed":
       case "failed":
-        setPendingMessage(null);
+        setStatus(null);
         break;
       default:
-        setPendingMessage(null);
+        setStatus(null);
         break;
     }
   }, [version.status]);
@@ -89,13 +83,13 @@ export function usePendingMessageStatus({
           (category) => !installedCategories.includes(category),
         )
       ) {
-        setPendingMessage("waiting");
+        setStatus("waiting");
       }
     }
   }, [messages, project.integrations]);
 
   return {
-    pendingMessage,
-    setPendingMessage,
+    status,
+    setStatus,
   };
 }

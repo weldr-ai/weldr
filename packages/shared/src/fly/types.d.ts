@@ -56,6 +56,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/apps/{app_name}/deploy_token": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create App deploy token */
+    post: operations["App_create_deploy_token"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/apps/{app_name}/machines": {
     parameters: {
       query?: never;
@@ -447,6 +464,127 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/apps/{app_name}/secretkeys": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List secret keys belonging to an app */
+    get: operations["Secretkeys_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/apps/{app_name}/secretkeys/{secret_name}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get an app's secret key */
+    get: operations["Secretkey_get"];
+    put?: never;
+    /** Create or update a secret key */
+    post: operations["Secretkey_set"];
+    /** Delete an app's secret key */
+    delete: operations["Secretkey_delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/apps/{app_name}/secretkeys/{secret_name}/decrypt": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Decrypt with a secret key */
+    post: operations["Secretkey_decrypt"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/apps/{app_name}/secretkeys/{secret_name}/encrypt": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Encrypt with a secret key */
+    post: operations["Secretkey_encrypt"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/apps/{app_name}/secretkeys/{secret_name}/generate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Generate a random secret key */
+    post: operations["Secretkey_generate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/apps/{app_name}/secretkeys/{secret_name}/sign": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Sign with a secret key */
+    post: operations["Secretkey_sign"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/apps/{app_name}/secretkeys/{secret_name}/verify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Verify with a secret key */
+    post: operations["Secretkey_verify"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/apps/{app_name}/secrets": {
     parameters: {
       query?: never;
@@ -454,7 +592,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** List App secrets */
+    /** List app secrets belonging to an app */
     get: operations["Secrets_list"];
     put?: never;
     post?: never;
@@ -464,52 +602,20 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/apps/{app_name}/secrets/{secret_label}": {
+  "/apps/{app_name}/secrets/{secret_name}": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /** Get an app secret */
+    get: operations["Secret_get"];
     put?: never;
-    post?: never;
-    /** Destroy Secret */
-    delete: operations["Secret_delete"];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/apps/{app_name}/secrets/{secret_label}/type/{secret_type}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Create Secret */
+    /** Create or update Secret */
     post: operations["Secret_create"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/apps/{app_name}/secrets/{secret_label}/type/{secret_type}/generate": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Generate Secret */
-    post: operations["Secret_generate"];
-    delete?: never;
+    /** Delete an app secret */
+    delete: operations["Secret_delete"];
     options?: never;
     head?: never;
     patch?: never;
@@ -619,6 +725,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/platform/placements": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Get Placements
+     * @description Simulates placing the specified number of machines into regions, depending on available capacity and limits.
+     */
+    post: operations["Platform_placements_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/platform/regions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Regions
+     * @description List all regions on the platform with their current Machine capacity.
+     */
+    get: operations["Platform_regions_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/tokens/kms": {
     parameters: {
       query?: never;
@@ -660,6 +806,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/tokens/current": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Current Token Information
+     * @description Get information about the current macaroon token(s), including organizations, apps, and whether each token is from a user or machine
+     */
+    get: operations["CurrentToken_show"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -670,17 +836,31 @@ export interface components {
       organization?: components["schemas"]["Organization"];
       status?: string;
     };
+    AppSecret: {
+      digest?: string;
+      name?: string;
+      value?: string;
+    };
+    AppSecrets: {
+      secrets?: components["schemas"]["AppSecret"][];
+    };
     CheckStatus: {
       name?: string;
       output?: string;
       status?: string;
       updated_at?: string;
     };
+    CreateAppDeployTokenRequest: {
+      expiry?: string;
+    };
     CreateAppRequest: {
       app_name?: string;
       enable_subdomains?: boolean;
       network?: string;
       org_slug?: string;
+    };
+    CreateAppResponse: {
+      token?: string;
     };
     CreateLeaseRequest: {
       description?: string;
@@ -692,11 +872,13 @@ export interface components {
       config?: components["schemas"]["fly.MachineConfig"];
       lease_ttl?: number;
       lsvd?: boolean;
+      min_secrets_version?: number;
       /** @description Unique name for this Machine. If omitted, one is generated for you */
       name?: string;
       /** @description The target region. Omitting this param launches in the same region as your WireGuard peer connection (somewhere near you). */
       region?: string;
       skip_launch?: boolean;
+      skip_secrets?: boolean;
       skip_service_registration?: boolean;
     };
     /** @description Optional parameters */
@@ -704,9 +886,6 @@ export interface components {
       /** @example https://fly.io/org-slug */
       aud?: string;
       aws_principal_tags?: boolean;
-    };
-    CreateSecretRequest: {
-      value?: number[];
     };
     CreateVolumeRequest: {
       compute?: components["schemas"]["fly.MachineGuest"];
@@ -723,6 +902,23 @@ export interface components {
       /** @description fork from remote volume */
       source_volume_id?: string;
       unique_zone_app_wide?: boolean;
+    };
+    CurrentTokenResponse: {
+      tokens?: components["schemas"]["main.tokenInfo"][];
+    };
+    DecryptSecretkeyRequest: {
+      associated_data?: number[];
+      ciphertext?: number[];
+    };
+    DecryptSecretkeyResponse: {
+      plaintext?: number[];
+    };
+    EncryptSecretkeyRequest: {
+      associated_data?: number[];
+      plaintext?: number[];
+    };
+    EncryptSecretkeyResponse: {
+      ciphertext?: number[];
     };
     ErrorResponse: {
       /** @description Deprecated */
@@ -763,15 +959,11 @@ export interface components {
       machine_count?: number;
       name?: string;
       network?: Record<string, never>;
+      volume_count?: number;
     };
     ListAppsResponse: {
       apps?: components["schemas"]["ListApp"][];
       total_apps?: number;
-    };
-    ListSecret: {
-      label?: string;
-      publickey?: number[];
-      type?: string;
     };
     ListenSocket: {
       address?: string;
@@ -832,6 +1024,39 @@ export interface components {
       rtime?: number;
       stime?: number;
     };
+    SecretKey: {
+      name?: string;
+      public_key?: number[];
+      type?: string;
+    };
+    SecretKeys: {
+      secret_keys?: components["schemas"]["SecretKey"][];
+    };
+    SetAppSecretRequest: {
+      value?: string;
+    };
+    SetAppSecretResponse: {
+      digest?: string;
+      name?: string;
+      value?: string;
+      version?: number;
+    };
+    SetSecretkeyRequest: {
+      type?: string;
+      value?: number[];
+    };
+    SetSecretkeyResponse: {
+      name?: string;
+      public_key?: number[];
+      type?: string;
+      version?: number;
+    };
+    SignSecretkeyRequest: {
+      plaintext?: number[];
+    };
+    SignSecretkeyResponse: {
+      signature?: number[];
+    };
     SignalRequest: {
       /** @enum {string} */
       signal?:
@@ -859,16 +1084,22 @@ export interface components {
       current_version?: string;
       lease_ttl?: number;
       lsvd?: boolean;
+      min_secrets_version?: number;
       /** @description Unique name for this Machine. If omitted, one is generated for you */
       name?: string;
       /** @description The target region. Omitting this param launches in the same region as your WireGuard peer connection (somewhere near you). */
       region?: string;
       skip_launch?: boolean;
+      skip_secrets?: boolean;
       skip_service_registration?: boolean;
     };
     UpdateVolumeRequest: {
       auto_backup_enabled?: boolean;
       snapshot_retention?: number;
+    };
+    VerifySecretkeyRequest: {
+      plaintext?: number[];
+      signature?: number[];
     };
     Volume: {
       attached_alloc_id?: string;
@@ -878,6 +1109,8 @@ export interface components {
       blocks?: number;
       blocks_avail?: number;
       blocks_free?: number;
+      bytes_total?: number;
+      bytes_used?: number;
       created_at?: string;
       encrypted?: boolean;
       fstype?: string;
@@ -923,8 +1156,6 @@ export interface components {
       healthchecks?: components["schemas"]["fly.ContainerHealthcheck"][];
       /** @description Image is the docker image to run. */
       image?: string;
-      /** @description Set of mounts added to the container. These must reference a volume in the machine config via its name. */
-      mounts?: components["schemas"]["fly.ContainerMount"][];
       /** @description Name is used to identify the container in the machine. */
       name?: string;
       /** @description Restart is used to define the restart policy for the container. NOTE: spot-price is not
@@ -972,12 +1203,6 @@ export interface components {
     "fly.ContainerHealthcheckKind": "readiness" | "liveness";
     /** @enum {string} */
     "fly.ContainerHealthcheckScheme": "http" | "https";
-    "fly.ContainerMount": {
-      /** @description The name of the volume. Must exist in the volumes field in the machine configuration */
-      name?: string;
-      /** @description The path to mount the volume within the container */
-      path?: string;
-    };
     "fly.DNSConfig": {
       dns_forward_rules?: components["schemas"]["fly.dnsForwardRule"][];
       hostname?: string;
@@ -1016,6 +1241,8 @@ export interface components {
       /** @description GuestPath is the path on the machine where the file will be written and must be an absolute path.
        *     For example: /full/path/to/file.json */
       guest_path?: string;
+      /** @description The name of an image to use the OCI image config as the file contents. */
+      image_config?: string;
       /** @description Mode bits used to set permissions on this file as accepted by chmod(2). */
       mode?: number;
       /** @description The base64 encoded string of the file contents. */
@@ -1052,7 +1279,6 @@ export interface components {
       };
       pristine?: boolean;
     };
-    /** @description An optional object that defines one or more named checks. The key for each check is the check name. */
     "fly.MachineCheck": {
       /** @description The time to wait after a VM starts before checking its health */
       grace_period?: components["schemas"]["fly.Duration"];
@@ -1084,6 +1310,7 @@ export interface components {
     "fly.MachineConfig": {
       /** @description Optional boolean telling the Machine to destroy itself once it’s complete (default false) */
       auto_destroy?: boolean;
+      /** @description An optional object that defines one or more named top-level checks. The key for each check is the check name. */
       checks?: {
         [key: string]: components["schemas"]["fly.MachineCheck"];
       };
@@ -1118,9 +1345,6 @@ export interface components {
       standbys?: string[];
       statics?: components["schemas"]["fly.Static"][];
       stop_config?: components["schemas"]["fly.StopConfig"];
-      /** @description Volumes describe the set of volumes that can be attached to the machine. Used in conjuction
-       *     with containers */
-      volumes?: components["schemas"]["fly.VolumeConfig"][];
     };
     "fly.MachineGuest": {
       cpu_kind?: string;
@@ -1223,7 +1447,8 @@ export interface components {
        * @enum {string}
        */
       autostop?: "off" | "stop" | "suspend";
-      checks?: components["schemas"]["fly.MachineCheck"][];
+      /** @description An optional list of service checks */
+      checks?: components["schemas"]["fly.MachineServiceCheck"][];
       concurrency?: components["schemas"]["fly.MachineServiceConcurrency"];
       force_instance_description?: string;
       force_instance_key?: string;
@@ -1231,6 +1456,29 @@ export interface components {
       min_machines_running?: number;
       ports?: components["schemas"]["fly.MachinePort"][];
       protocol?: string;
+    };
+    "fly.MachineServiceCheck": {
+      /** @description The time to wait after a VM starts before checking its health */
+      grace_period?: components["schemas"]["fly.Duration"];
+      headers?: components["schemas"]["fly.MachineHTTPHeader"][];
+      /** @description The time between connectivity checks */
+      interval?: components["schemas"]["fly.Duration"];
+      /** @description For http checks, the HTTP method to use to when making the request */
+      method?: string;
+      /** @description For http checks, the path to send the request to */
+      path?: string;
+      /** @description The port to connect to, often the same as internal_port */
+      port?: number;
+      /** @description For http checks, whether to use http or https */
+      protocol?: string;
+      /** @description The maximum time a connection can take before being reported as failing its health check */
+      timeout?: components["schemas"]["fly.Duration"];
+      /** @description If the protocol is https, the hostname to use for TLS certificate validation */
+      tls_server_name?: string;
+      /** @description For http checks with https protocol, whether or not to verify the TLS certificate */
+      tls_skip_verify?: boolean;
+      /** @description tcp or http */
+      type?: string;
     };
     "fly.MachineServiceConcurrency": {
       hard_limit?: number;
@@ -1259,19 +1507,8 @@ export interface components {
       default_self_signed?: boolean;
       versions?: string[];
     };
-    "fly.TempDirVolume": {
-      /** @description The size limit of the temp dir, only applicable when using disk backed storage. */
-      size_mb?: number;
-      /** @description The type of storage used to back the temp dir. Either disk or memory. */
-      storage_type?: string;
-    };
     /** @enum {string} */
     "fly.UnhealthyPolicy": "stop";
-    "fly.VolumeConfig": {
-      /** @description The name of the volume. A volume must have a unique name within an app */
-      name?: string;
-      temp_dir?: components["schemas"]["fly.TempDirVolume"];
-    };
     "fly.dnsForwardRule": {
       addr?: string;
       basename?: string;
@@ -1286,8 +1523,72 @@ export interface components {
       stderr?: string;
       stdout?: string;
     };
+    "main.getPlacementsRequest": {
+      /** @description Resource requirements for the Machine to simulate. Defaults to a performance-1x machine */
+      compute?: components["schemas"]["fly.MachineGuest"];
+      /** @description Number of machines to simulate placement.
+       *     Defaults to 0, which returns the org-specific limit for each region. */
+      count?: number;
+      /** @example personal */
+      org_slug: string;
+      /**
+       * @description Region expression for placement as a comma-delimited set of regions or aliases.
+       *     Defaults to "[region],any", to prefer the API endpoint's local region with any other region as fallback.
+       * @example lhr,eu
+       */
+      region?: string;
+      /** @example  */
+      volume_name?: string;
+      volume_size_bytes?: number;
+      /**
+       * @description Optional weights to override default placement preferences.
+       * @example {
+       *       "region": 1000,
+       *       "spread": 0
+       *     }
+       */
+      weights?: components["schemas"]["placement.Weights"];
+    };
+    "main.getPlacementsResponse": {
+      regions?: components["schemas"]["placement.RegionPlacement"][];
+    };
+    "main.regionResponse": {
+      regions?: components["schemas"]["reads.GetCapacityPerRegionRow"][];
+    };
     /** @enum {string} */
     "main.statusCode": "unknown" | "insufficient_capacity";
+    "main.tokenInfo": {
+      apps?: string[];
+      org_slug?: string;
+      organization?: string;
+      /** @description Machine the token is restricted to (FromMachine caveat) */
+      restricted_to_machine?: string;
+      /** @description Machine making the request */
+      source_machine_id?: string;
+      token_id?: string;
+      /** @description User identifier if token is for a user */
+      user?: string;
+    };
+    "placement.RegionPlacement": {
+      /** @description Hint on the number of machines in this region can be created concurrently.
+       *     Equal to the number of unique hosts selected for placement. */
+      concurrency?: number;
+      count?: number;
+      region?: string;
+    };
+    "placement.Weights": {
+      [key: string]: number;
+    };
+    "reads.GetCapacityPerRegionRow": {
+      capacity?: number;
+      code?: string;
+      gateway_available?: boolean;
+      geo_region?: string;
+      latitude?: number;
+      longitude?: number;
+      name?: string;
+      requires_paid_plan?: boolean;
+    };
   };
   responses: never;
   parameters: never;
@@ -1393,6 +1694,34 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  App_create_deploy_token: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+      };
+      cookie?: never;
+    };
+    /** @description Request body */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateAppDeployTokenRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateAppResponse"];
+        };
       };
     };
   };
@@ -1571,7 +1900,10 @@ export interface operations {
   };
   Machines_list_events: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description The number of events to fetch (max of 50). If omitted, this is set to 20 by default. */
+        limit?: number;
+      };
       header?: never;
       path: {
         /** @description Fly App Name */
@@ -2088,9 +2420,14 @@ export interface operations {
       };
     };
   };
-  Secrets_list: {
+  Secretkeys_list: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Minimum secrets version to return. Returned when setting a new secret */
+        min_version?: string;
+        /** @description Comma-seperated list of secret keys to list */
+        types?: string;
+      };
       header?: never;
       path: {
         /** @description Fly App Name */
@@ -2106,7 +2443,399 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ListSecret"][];
+          "application/json": components["schemas"]["SecretKeys"];
+        };
+      };
+    };
+  };
+  Secretkey_get: {
+    parameters: {
+      query?: {
+        /** @description Minimum secrets version to return. Returned when setting a new secret */
+        min_version?: string;
+      };
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+        /** @description Secret key name */
+        secret_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SecretKey"];
+        };
+      };
+    };
+  };
+  Secretkey_set: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+        /** @description Secret key name */
+        secret_name: string;
+      };
+      cookie?: never;
+    };
+    /** @description Create secret key request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SetSecretkeyRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SetSecretkeyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  Secretkey_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+        /** @description Secret key name */
+        secret_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Secretkey_decrypt: {
+    parameters: {
+      query?: {
+        /** @description Minimum secrets version to return. Returned when setting a new secret */
+        min_version?: string;
+      };
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+        /** @description Secret key name */
+        secret_name: string;
+      };
+      cookie?: never;
+    };
+    /** @description Decrypt with secret key request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DecryptSecretkeyRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DecryptSecretkeyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  Secretkey_encrypt: {
+    parameters: {
+      query?: {
+        /** @description Minimum secrets version to return. Returned when setting a new secret */
+        min_version?: string;
+      };
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+        /** @description Secret key name */
+        secret_name: string;
+      };
+      cookie?: never;
+    };
+    /** @description Encrypt with secret key request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["EncryptSecretkeyRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EncryptSecretkeyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  Secretkey_generate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+        /** @description Secret key name */
+        secret_name: string;
+      };
+      cookie?: never;
+    };
+    /** @description generate secret key request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SetSecretkeyRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SetSecretkeyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  Secretkey_sign: {
+    parameters: {
+      query?: {
+        /** @description Minimum secrets version to return. Returned when setting a new secret */
+        min_version?: string;
+      };
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+        /** @description Secret key name */
+        secret_name: string;
+      };
+      cookie?: never;
+    };
+    /** @description Sign with secret key request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SignSecretkeyRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SignSecretkeyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  Secretkey_verify: {
+    parameters: {
+      query?: {
+        /** @description Minimum secrets version to return. Returned when setting a new secret */
+        min_version?: string;
+      };
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+        /** @description Secret key name */
+        secret_name: string;
+      };
+      cookie?: never;
+    };
+    /** @description Verify with secret key request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["VerifySecretkeyRequest"];
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  Secrets_list: {
+    parameters: {
+      query?: {
+        /** @description Minimum secrets version to return. Returned when setting a new secret */
+        min_version?: string;
+        /** @description Show the secret values. */
+        show_secrets?: boolean;
+      };
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AppSecrets"];
+        };
+      };
+    };
+  };
+  Secret_get: {
+    parameters: {
+      query?: {
+        /** @description Minimum secrets version to return. Returned when setting a new secret */
+        min_version?: string;
+        /** @description Show the secret value. */
+        show_secrets?: boolean;
+      };
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+        /** @description App secret name */
+        secret_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AppSecret"];
+        };
+      };
+    };
+  };
+  Secret_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Fly App Name */
+        app_name: string;
+        /** @description App secret name */
+        secret_name: string;
+      };
+      cookie?: never;
+    };
+    /** @description Create app secret request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SetAppSecretRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SetAppSecretResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
@@ -2118,92 +2847,19 @@ export interface operations {
       path: {
         /** @description Fly App Name */
         app_name: string;
-        /** @description App Secret Label */
-        secret_label: string;
+        /** @description App secret name */
+        secret_name: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
-      /** @description OK */
-      200: {
+      /** @description No Content */
+      204: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
-      };
-    };
-  };
-  Secret_create: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Fly App Name */
-        app_name: string;
-        /** @description App Secret Label */
-        secret_label: string;
-        /** @description App Secret Type */
-        secret_type: string;
-      };
-      cookie?: never;
-    };
-    /** @description secret body */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateSecretRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  Secret_generate: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Fly App Name */
-        app_name: string;
-        /** @description App Secret Label */
-        secret_label: string;
-        /** @description App Secret Type */
-        secret_type: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
       };
     };
   };
@@ -2428,6 +3084,64 @@ export interface operations {
       };
     };
   };
+  Platform_placements_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Get placements request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["main.getPlacementsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["main.getPlacementsResponse"];
+        };
+      };
+    };
+  };
+  Platform_regions_get: {
+    parameters: {
+      query?: {
+        /** @description guest machine size preset. default performance-1x */
+        size?: string;
+        /** @description guest CPU kind */
+        cpu_kind?: string;
+        /** @description guest memory in megabytes */
+        memory_mb?: number;
+        /** @description guest CPU count */
+        cpus?: number;
+        /** @description guest GPU count */
+        gpus?: number;
+        /** @description guest GPU kind */
+        gpu_kind?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["main.regionResponse"];
+        };
+      };
+    };
+  };
   Tokens_request_Kms: {
     parameters: {
       query?: never;
@@ -2473,6 +3187,44 @@ export interface operations {
       };
       /** @description Bad Request */
       400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  CurrentToken_show: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CurrentTokenResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
         headers: {
           [name: string]: unknown;
         };

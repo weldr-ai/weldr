@@ -5,7 +5,7 @@ import type {
   AssistantMessage,
   ChatMessage,
   SSEEvent,
-  TPendingMessage,
+  TStatus,
 } from "@weldr/shared/types";
 
 import { useProject } from "@/lib/context/project";
@@ -18,14 +18,14 @@ interface UseEventStreamOptions {
       status: string;
     };
   };
-  setPendingMessage: (message: TPendingMessage) => void;
+  setStatus: (status: TStatus) => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }
 
 export function useEventStream({
   projectId,
   project,
-  setPendingMessage,
+  setStatus,
   setMessages,
 }: UseEventStreamOptions) {
   const { updateProjectData } = useProject();
@@ -75,7 +75,7 @@ export function useEventStream({
         }
 
         if (chunk.type === "error") {
-          setPendingMessage(null);
+          setStatus(null);
           if (eventSource.readyState !== EventSource.CLOSED) {
             eventSource.close();
           }
@@ -85,11 +85,11 @@ export function useEventStream({
           return;
         }
 
-        setPendingMessage("responding");
+        setStatus("responding");
 
         switch (chunk.type) {
           case "responding": {
-            setPendingMessage("responding");
+            setStatus("responding");
             break;
           }
           case "text": {
@@ -171,23 +171,23 @@ export function useEventStream({
 
             switch (status) {
               case "pending":
-                setPendingMessage(null);
+                setStatus(null);
                 break;
               case "planning":
-                setPendingMessage("planning");
+                setStatus("planning");
                 break;
               case "coding":
-                setPendingMessage("coding");
+                setStatus("coding");
                 break;
               case "deploying":
-                setPendingMessage("deploying");
+                setStatus("deploying");
                 break;
               case "completed":
               case "failed":
-                setPendingMessage(null);
+                setStatus(null);
                 break;
               default:
-                setPendingMessage(null);
+                setStatus(null);
                 break;
             }
             break;
@@ -230,7 +230,7 @@ export function useEventStream({
             break;
           }
           case "end": {
-            setPendingMessage(null);
+            setStatus(null);
             return;
           }
         }
@@ -270,7 +270,7 @@ export function useEventStream({
           connectToEventStream();
         }, delay);
       } else {
-        setPendingMessage(null);
+        setStatus(null);
       }
     };
 
@@ -278,7 +278,7 @@ export function useEventStream({
   }, [
     projectId,
     project.currentVersion.status,
-    setPendingMessage,
+    setStatus,
     setMessages,
     updateProjectData,
     getNodes,

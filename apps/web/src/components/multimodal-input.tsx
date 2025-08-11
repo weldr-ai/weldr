@@ -22,11 +22,7 @@ import {
 import type { z } from "zod";
 
 import { authClient } from "@weldr/auth/client";
-import type {
-  Attachment,
-  TPendingMessage,
-  UserMessage,
-} from "@weldr/shared/types";
+import type { Attachment, TStatus, UserMessage } from "@weldr/shared/types";
 import { referencePartSchema } from "@weldr/shared/validators/chats";
 import { Button } from "@weldr/ui/components/button";
 import { Textarea } from "@weldr/ui/components/textarea";
@@ -45,7 +41,7 @@ type BaseMultimodalInputProps = {
   attachments: Attachment[];
   setAttachments: Dispatch<SetStateAction<Attachment[]>>;
   handleSubmit: (event?: { preventDefault?: () => void }) => void;
-  pendingMessage: TPendingMessage;
+  status: TStatus;
   placeholder?: string;
   placeholders?: string[];
   references?: z.infer<typeof referencePartSchema>[];
@@ -77,7 +73,7 @@ function PureMultimodalInput({
   chatId,
   attachments,
   setAttachments,
-  pendingMessage,
+  status,
   handleSubmit,
   message,
   setMessage,
@@ -314,133 +310,129 @@ function PureMultimodalInput({
   }
 
   return (
-    <>
-      {pendingMessage ? (
-        <div className="flex h-9 items-center gap-2 px-3 text-xs">
-          <LogoIcon className="size-5" />
-          <span className="inline-flex w-fit animate-shine bg-[length:200%_100%] bg-[linear-gradient(90deg,var(--color-muted-foreground)_0%,var(--color-muted-foreground)_40%,var(--color-foreground)_50%,var(--color-muted-foreground)_60%,var(--color-muted-foreground)_100%)] bg-clip-text text-sm text-transparent">
-            {pendingMessage.charAt(0).toUpperCase() + pendingMessage.slice(1)}
+    <form className={cn("relative flex w-full flex-col", formClassName)}>
+      <input
+        type="file"
+        className="hidden"
+        ref={fileInputRef}
+        multiple
+        onChange={handleFileChange}
+        tabIndex={-1}
+      />
+
+      {(attachments.length > 0 || uploadQueue.length > 0) && (
+        <div
+          className={cn(
+            "scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex flex-row items-center gap-1 overflow-x-auto border-b p-1.5",
+            attachmentsClassName,
+          )}
+        >
+          {attachments.map((attachment) => (
+            <PreviewAttachment
+              key={attachment.id}
+              attachment={attachment}
+              onDelete={() => {
+                if (!attachment.name) return;
+                fetch("/api/attachments", {
+                  method: "DELETE",
+                  body: JSON.stringify({ filename: attachment.name }),
+                });
+                setAttachments((currentAttachments) =>
+                  currentAttachments.filter((a) => a.name !== attachment.name),
+                );
+              }}
+            />
+          ))}
+
+          {uploadQueue.map((filename) => (
+            <PreviewAttachment
+              key={filename}
+              attachment={{
+                id: "",
+                key: "",
+                size: 0,
+                url: "",
+                name: filename,
+                contentType: "",
+              }}
+              isUploading={true}
+            />
+          ))}
+        </div>
+      )}
+
+      {status && (
+        <div className="flex items-center gap-2 border-b bg-muted px-2 py-1 text-xs">
+          <LogoIcon className="size-4" />
+          <span className="inline-flex w-fit animate-shine bg-[length:200%_100%] bg-[linear-gradient(90deg,var(--color-muted-foreground)_0%,var(--color-muted-foreground)_40%,var(--color-foreground)_50%,var(--color-muted-foreground)_60%,var(--color-muted-foreground)_100%)] bg-clip-text text-transparent">
+            {status.charAt(0).toUpperCase() + status.slice(1)}
             ...
           </span>
         </div>
-      ) : (
-        <form className={cn("relative flex w-full flex-col", formClassName)}>
-          <input
-            type="file"
-            className="hidden"
-            ref={fileInputRef}
-            multiple
-            onChange={handleFileChange}
-            tabIndex={-1}
-          />
-
-          {(attachments.length > 0 || uploadQueue.length > 0) && (
-            <div
-              className={cn(
-                "scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex min-h-[48px] flex-row items-center gap-1 overflow-x-auto px-1",
-                {
-                  "rounded-t-xl": !isVisible,
-                },
-                attachmentsClassName,
-              )}
-            >
-              {attachments.map((attachment) => (
-                <PreviewAttachment
-                  key={attachment.id}
-                  attachment={attachment}
-                  onDelete={() => {
-                    if (!attachment.name) return;
-                    fetch("/api/attachments", {
-                      method: "DELETE",
-                      body: JSON.stringify({ filename: attachment.name }),
-                    });
-                    setAttachments((currentAttachments) =>
-                      currentAttachments.filter(
-                        (a) => a.name !== attachment.name,
-                      ),
-                    );
-                  }}
-                />
-              ))}
-
-              {uploadQueue.map((filename) => (
-                <PreviewAttachment
-                  key={filename}
-                  attachment={{
-                    id: "",
-                    key: "",
-                    size: 0,
-                    url: "",
-                    name: filename,
-                    contentType: "",
-                  }}
-                  isUploading={true}
-                />
-              ))}
-            </div>
-          )}
-
-          {type === "editor" && (
-            <Editor
-              id="general-chat-input"
-              placeholder={currentPlaceholder}
-              placeholderClassName="text-sms"
-              onChange={onChange}
-              className={cn(
-                "max-h-20 resize-none overflow-y-auto bg-transparent px-3 focus-visible:ring-0",
-                {
-                  "border-t": attachments.length > 0,
-                },
-                textareaClassName,
-              )}
-              editorRef={editorRef}
-              onSubmit={handleSubmit}
-              references={references}
-              typeaheadPosition={"bottom"}
-              onFocus={onFocus}
-            />
-          )}
-          {type === "textarea" && (
-            <Textarea
-              ref={textareaRef}
-              placeholder={currentPlaceholder}
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              className={cn(
-                "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl pb-10 focus-visible:ring-0",
-                textareaClassName,
-              )}
-              rows={2}
-              autoFocus
-              disabled={!!pendingMessage}
-              onFocus={onFocus}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-                  event.preventDefault();
-                  if (pendingMessage) {
-                    toast({
-                      description:
-                        "Please wait for the model to finish its response!",
-                    });
-                  } else {
-                    submitForm();
-                  }
-                }
-              }}
-            />
-          )}
-
-          <div className="absolute right-[4px] bottom-[4px] flex w-fit flex-row justify-end gap-1">
-            <AttachmentsButton fileInputRef={fileInputRef} />
-            <SendButton
-              message={message}
-              submitForm={submitForm}
-              uploadQueue={uploadQueue}
-            />
-          </div>
-        </form>
       )}
-    </>
+
+      {type === "editor" && (
+        <Editor
+          id="general-chat-input"
+          placeholder={currentPlaceholder}
+          placeholderClassName="text-sms"
+          onChange={onChange}
+          className={cn(
+            "h-[128px] resize-none overflow-y-auto bg-transparent px-3 transition-colors duration-200 focus-visible:ring-0",
+            textareaClassName,
+          )}
+          editorRef={editorRef}
+          onSubmit={handleSubmit}
+          references={references}
+          typeaheadPosition={"bottom"}
+          disabled={!!status}
+          onFocus={onFocus}
+        />
+      )}
+
+      {type === "textarea" && (
+        <Textarea
+          ref={textareaRef}
+          placeholder={currentPlaceholder}
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          className={cn(
+            "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl pb-10 transition-colors duration-200 focus-visible:ring-0",
+            {
+              "bg-muted/30 opacity-70": !!status,
+            },
+            textareaClassName,
+          )}
+          rows={2}
+          autoFocus
+          disabled={!!status}
+          onFocus={onFocus}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+              event.preventDefault();
+              if (status) {
+                toast({
+                  description:
+                    "Please wait for the model to finish its response!",
+                });
+              } else {
+                submitForm();
+              }
+            }
+          }}
+        />
+      )}
+
+      <div className="absolute right-[6px] bottom-[6px] flex w-fit flex-row justify-end gap-1">
+        <AttachmentsButton fileInputRef={fileInputRef} status={status} />
+        <SendButton
+          message={message}
+          submitForm={submitForm}
+          uploadQueue={uploadQueue}
+          status={status}
+        />
+      </div>
+    </form>
   );
 }
 
@@ -448,7 +440,7 @@ export const MultimodalInput = memo(
   PureMultimodalInput,
   (prevProps, nextProps) => {
     if (!equal(prevProps.message, nextProps.message)) return false;
-    if (prevProps.pendingMessage !== nextProps.pendingMessage) return false;
+    if (prevProps.status !== nextProps.status) return false;
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;
     if (prevProps.isVisible !== nextProps.isVisible) return false;
     return true;
@@ -457,8 +449,10 @@ export const MultimodalInput = memo(
 
 function PureAttachmentsButton({
   fileInputRef,
+  status,
 }: {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
+  status: TStatus;
 }) {
   const { data: session } = authClient.useSession();
   const { setAuthDialogOpen } = useUIStore();
@@ -466,7 +460,7 @@ function PureAttachmentsButton({
   return (
     <Button
       variant="outline"
-      className="size-7 rounded-lg"
+      className="size-8 rounded-lg"
       onClick={(event) => {
         event.preventDefault();
 
@@ -477,8 +471,9 @@ function PureAttachmentsButton({
 
         fileInputRef.current?.click();
       }}
+      disabled={!!status}
     >
-      <PaperclipIcon className="size-3" />
+      <PaperclipIcon className="size-3.5" />
     </Button>
   );
 }
@@ -489,15 +484,27 @@ type SendButtonProps = {
   submitForm: () => void;
   message: UserMessage["content"] | string;
   uploadQueue: string[];
+  status: TStatus;
 };
 
-function PureSendButton({ submitForm, message, uploadQueue }: SendButtonProps) {
+function PureSendButton({
+  submitForm,
+  message,
+  uploadQueue,
+  status,
+}: SendButtonProps) {
   const { data: session } = authClient.useSession();
   const { setAuthDialogOpen } = useUIStore();
 
+  const isDisabled =
+    (typeof message === "string" && message.length === 0) ||
+    (Array.isArray(message) && message.length === 0) ||
+    uploadQueue.length > 0 ||
+    !!status;
+
   return (
     <Button
-      className="size-7 rounded-lg"
+      className="size-8 rounded-lg"
       onClick={(event) => {
         event.preventDefault();
 
@@ -506,15 +513,15 @@ function PureSendButton({ submitForm, message, uploadQueue }: SendButtonProps) {
           return;
         }
 
+        if (status) {
+          return;
+        }
+
         submitForm();
       }}
-      disabled={
-        (typeof message === "string" && message.length === 0) ||
-        (Array.isArray(message) && message.length === 0) ||
-        uploadQueue.length > 0
-      }
+      disabled={isDisabled}
     >
-      <ArrowUpIcon className="size-3" />
+      <ArrowUpIcon className="size-3.5" />
     </Button>
   );
 }
@@ -525,6 +532,10 @@ const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
   }
 
   if (!equal(prevProps.message, nextProps.message)) {
+    return false;
+  }
+
+  if (prevProps.status !== nextProps.status) {
     return false;
   }
 

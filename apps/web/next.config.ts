@@ -12,7 +12,7 @@ const config = {
   images: {
     remotePatterns: [
       {
-        hostname: "*.amazonaws.com",
+        hostname: "weldr-general.t3.storage.dev",
       },
     ],
   },
