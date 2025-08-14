@@ -2,10 +2,7 @@ import { LoaderIcon } from "lucide-react";
 
 import { cn } from "@weldr/ui/lib/utils";
 
-import type {
-  IntegrationToolMessage,
-  IntegrationToolResultPart,
-} from "./types";
+import type { IntegrationToolMessage, IntegrationToolOutput } from "./types";
 import { getIntegrationIcon } from "./utils";
 
 export function IntegrationsSetupStatus({
@@ -13,21 +10,21 @@ export function IntegrationsSetupStatus({
 }: {
   message: IntegrationToolMessage;
 }) {
-  const part = message.content[0] as IntegrationToolResultPart;
+  const output = message.content[0]?.output as IntegrationToolOutput;
 
   return (
     <div className="flex flex-col gap-2 rounded-md border bg-muted p-2">
-      {part.output.status === "cancelled" && (
+      {output.value.status === "cancelled" && (
         <span className="font-medium text-muted-foreground text-xs">
           <span className="text-foreground">Integrations setup</span> cancelled
         </span>
       )}
-      {part.output.status === "completed" && (
+      {output.value.status === "completed" && (
         <>
           <h4 className="font-medium text-foreground text-xs">
             Integrations Setup
           </h4>
-          {part.output.integrations?.map((integration) => (
+          {output.value.integrations?.map((integration) => (
             <div
               key={integration.key}
               className="flex h-8 items-center justify-between gap-2 rounded-md border bg-muted px-3 pr-1"

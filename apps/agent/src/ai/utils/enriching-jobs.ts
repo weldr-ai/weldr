@@ -1,4 +1,4 @@
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull, not } from "drizzle-orm";
 
 import { db } from "@weldr/db";
 import {
@@ -99,16 +99,13 @@ export async function recoverEnrichingJobs(): Promise<void> {
     // Find declarations that are still in "enriching" state
     const version = await db.query.versions.findFirst({
       where: and(
+        not(eq(versions.status, "planning")),
         eq(versions.projectId, project.id),
         isNotNull(versions.activatedAt),
       ),
     });
 
-    if (
-      !version ||
-      version.status === "completed" ||
-      version.status === "failed"
-    ) {
+    if (!version) {
       return;
     }
 

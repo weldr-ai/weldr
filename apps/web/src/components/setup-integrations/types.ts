@@ -1,3 +1,5 @@
+import type { ToolResultPart } from "ai";
+
 import type { RouterOutputs } from "@weldr/api";
 import type {
   ChatMessage,
@@ -26,11 +28,9 @@ export interface SelectedIntegration {
   environmentVariableMappings: Record<string, string>;
 }
 
-export type IntegrationToolResultPart = {
-  type: "tool-result";
-  toolCallId: string;
-  toolName: string;
-  output: {
+export type IntegrationToolOutput = {
+  type: "json";
+  value: {
     status:
       | "awaiting_config"
       | "installing"
@@ -45,11 +45,14 @@ export type IntegrationToolResultPart = {
       status: IntegrationStatus;
     }[];
   };
-  isError: boolean;
+};
+
+export type IntegrationToolResultPart = ToolResultPart & {
+  output: IntegrationToolOutput;
 };
 
 export type IntegrationToolMessage = ChatMessage & {
   id: string;
   role: "tool";
-  content: IntegrationToolResultPart[];
+  content: Array<IntegrationToolResultPart>;
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChatRequestOptions, CreateMessage, Message } from "ai";
+import type { UserModelMessage } from "ai";
 import { motion } from "framer-motion";
 import { memo } from "react";
 
@@ -8,10 +8,7 @@ import { Button } from "@weldr/ui/components/button";
 
 interface SuggestedActionsProps {
   chatId: string;
-  append: (
-    message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
+  append: (message: UserModelMessage) => Promise<void>;
 }
 
 const suggestedActions = [

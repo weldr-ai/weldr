@@ -1,13 +1,10 @@
 import { streamText, type ToolSet } from "ai";
-import type { z } from "zod";
+import type z from "zod";
 
 import { db, eq } from "@weldr/db";
 import { declarations, tasks, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
-import type {
-  addMessageItemSchema,
-  assistantMessageContentSchema,
-} from "@weldr/shared/validators/chats";
+import type { addMessageItemSchema } from "@weldr/shared/validators/chats";
 
 import {
   deleteFileTool,
@@ -34,7 +31,7 @@ import { calculateModelCost } from "../utils/providers-pricing";
 
 export async function coderAgent({
   context,
-  coolDownPeriod = 1000,
+  coolDownPeriod = 100,
 }: {
   context: WorkflowContext;
   coolDownPeriod?: number;
@@ -185,10 +182,8 @@ async function executeTaskCoder({
 
   const system = await prompts.generalCoder(project, versionContext);
 
-  // Local function to execute coder agent and handle tool calls
   const executeCoderLoop = async (): Promise<boolean> => {
     let shouldRecur = false;
-    const hasToolErrors = false;
     const promptMessages = await getMessages(loopChatId);
 
     const result = streamText({
@@ -203,71 +198,19 @@ async function executeTaskCoder({
       },
     });
 
-    const assistantContent: z.infer<typeof assistantMessageContentSchema>[] =
-      [];
-    // Messages to save
-    const messagesToSave: z.infer<typeof addMessageItemSchema>[] = [];
-    const toolResultMessages: z.infer<typeof addMessageItemSchema>[] = [];
-
     for await (const part of result.fullStream) {
-      if (part.type === "text-delta") {
-        const lastItem = assistantContent[assistantContent.length - 1];
-        if (lastItem && lastItem.type === "text") {
-          lastItem.text += part.text;
-        } else {
-          assistantContent.push({
-            type: "text",
-            text: part.text,
-          });
+      switch (part.type) {
+        case "tool-result": {
+          if (part.toolName !== "done") {
+            shouldRecur = true;
+          }
+          break;
         }
-      } else if (part.type === "tool-call") {
-        assistantContent.push({
-          type: "tool-call",
-          toolCallId: part.toolCallId,
-          toolName: part.toolName,
-          input: part.input,
-        });
-      } else if (part.type === "tool-result") {
-        toolResultMessages.push({
-          visibility: "internal",
-          role: "tool",
-          content: [
-            {
-              type: "tool-result",
-              toolCallId: part.toolCallId,
-              toolName: part.toolName,
-              output: part.output,
-            },
-          ],
-        });
-
-        if (part.toolName === "done") {
-          shouldRecur = false;
-        } else {
+        case "tool-error": {
           shouldRecur = true;
+          break;
         }
-      } else if (part.type === "tool-error") {
-        toolResultMessages.push({
-          visibility: "internal",
-          role: "tool",
-          content: [
-            {
-              type: "tool-result",
-              toolCallId: part.toolCallId,
-              toolName: part.toolName,
-              input: part.input,
-              output: part.error,
-              isError: true,
-            },
-          ],
-        });
-        shouldRecur = true;
       }
-    }
-
-    if (hasToolErrors) {
-      shouldRecur = true;
-      logger.info("Continuing loop due to tool errors");
     }
 
     const usage = await result.usage;
@@ -280,41 +223,53 @@ async function executeTaskCoder({
 
     const finishReason = await result.finishReason;
 
-    // Add assistant message - all coder activities are internal
-    if (assistantContent.length > 0) {
-      messagesToSave.push({
-        visibility: "internal",
-        role: "assistant",
-        content: assistantContent,
-        metadata: {
-          provider: "google",
-          model: "gemini-2.5-pro",
-          inputTokens: usage?.inputTokens,
-          outputTokens: usage?.outputTokens,
-          totalTokens: usage?.totalTokens,
-          inputCost: cost?.inputCost,
-          outputCost: cost?.outputCost,
-          totalCost: cost?.totalCost,
-          inputTokensPrice: cost?.inputTokensPrice,
-          outputTokensPrice: cost?.outputTokensPrice,
-          inputImagesPrice: cost?.inputImagesPrice,
-          finishReason,
-        },
-      });
+    const fullResponse = await result.response;
+
+    const messagesToSave: z.infer<typeof addMessageItemSchema>[] = [];
+
+    for (const message of fullResponse.messages) {
+      switch (message.role) {
+        case "assistant": {
+          messagesToSave.push({
+            role: "assistant",
+            content: Array.isArray(message.content)
+              ? message.content
+              : [{ type: "text", text: message.content }],
+            metadata: {
+              provider: "google",
+              model: "gemini-2.5-pro",
+              inputTokens: usage?.inputTokens,
+              outputTokens: usage?.outputTokens,
+              totalTokens: usage?.totalTokens,
+              inputCost: cost?.inputCost,
+              outputCost: cost?.outputCost,
+              totalCost: cost?.totalCost,
+              inputTokensPrice: cost?.inputTokensPrice,
+              outputTokensPrice: cost?.outputTokensPrice,
+              inputImagesPrice: cost?.inputImagesPrice,
+              finishReason,
+            },
+            createdAt: new Date(),
+          });
+          break;
+        }
+        case "tool": {
+          messagesToSave.push({
+            ...message,
+            createdAt: new Date(),
+          });
+          break;
+        }
+      }
     }
 
-    messagesToSave.push(...toolResultMessages);
-
-    // Store messages if any (tool results are already saved immediately)
-    if (messagesToSave.length > 0) {
-      await insertMessages({
-        input: {
-          chatId: version.chatId,
-          userId: user.id,
-          messages: messagesToSave,
-        },
-      });
-    }
+    await insertMessages({
+      input: {
+        chatId: version.chatId,
+        userId: user.id,
+        messages: messagesToSave,
+      },
+    });
 
     return shouldRecur;
   };
@@ -463,7 +418,6 @@ const executeTaskWithContext = async (
       userId: user.id,
       messages: [
         {
-          visibility: "internal",
           role: "user",
           content: [{ type: "text", text: taskContext }],
         },

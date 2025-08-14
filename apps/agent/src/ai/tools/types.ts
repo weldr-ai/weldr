@@ -14,10 +14,10 @@ export type ToolConfig<
   whenToUse: string;
   inputSchema: TInput;
   outputSchema: TOutput;
-  execute: (params: {
+  execute?: (params: {
     input: z.infer<TInput>;
     context: WorkflowContext;
-  }) => Promise<z.infer<TOutput>>;
+  }) => Promise<z.infer<TOutput>> | undefined;
 };
 
 /**

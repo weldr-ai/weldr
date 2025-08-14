@@ -436,8 +436,10 @@ export const codingGuidelines = `<tech_stack>
     - MUST include proper OpenAPI specification with method, tags, path, successStatus
     - MUST use protectedProcedure for authenticated routes, publicProcedure for public routes
     - MUST omit auto-generated fields (id, userId, createdAt, updatedAt) from input schemas
-    - MUST use proper error handling with ORPCError for not found, validation errors, etc.
-  </oRPC_endpoint_patterns>
+    - MUST use proper error handling with ORPCError for not found, validation errors, etc
+    - MUST name the route definition const as \`definition\`
+    - MUST name the route const as \`route\` and export as default
+    </oRPC_endpoint_patterns>
 
   <example_oRPC_router>
     apps/server/src/routes/blogs/list.ts
@@ -451,7 +453,7 @@ export const codingGuidelines = `<tech_stack>
     import { useDb } from "@repo/server/middlewares/db";
     import { retry } from "@repo/server/middlewares/retry";
 
-    const route = {
+    const definition = {
       method: "GET",
       tags: ["Blogs"],
       path: "/blogs",
@@ -460,8 +462,8 @@ export const codingGuidelines = `<tech_stack>
       summary: "Get blogs",
     } satisfies Route;
 
-    const listBlogs = publicProcedure
-      .route(route)
+    const route = publicProcedure
+      .route(definition)
       .use(useDb)
       .use(retry({ times: 3 }))
       .output(z.array(selectBlogSchema))
@@ -471,7 +473,7 @@ export const codingGuidelines = `<tech_stack>
         });
       });
 
-    export default listBlogs;
+    export default route;
     \`\`\`
 
     apps/server/src/routes/blogs/create.ts
@@ -485,7 +487,7 @@ export const codingGuidelines = `<tech_stack>
     import { useDb } from "@repo/server/middlewares/db";
     import { retry } from "@repo/server/middlewares/retry";
 
-    const route = {
+    const definition = {
       method: "POST",
       tags: ["Blogs"],
       path: "/blogs",
@@ -494,8 +496,8 @@ export const codingGuidelines = `<tech_stack>
       summary: "Create blog",
     } satisfies Route;
 
-    const createBlog = protectedProcedure
-      .route(route)
+    const route = protectedProcedure
+      .route(definition)
       .use(useDb)
       .use(retry({ times: 3 }))
       .input(insertBlogSchema.omit({ id: true, userId: true, createdAt: true, updatedAt: true }))
@@ -512,7 +514,7 @@ export const codingGuidelines = `<tech_stack>
         return blog;
       });
 
-    export default createBlog;
+    export default route;
     \`\`\`
   </example_oRPC_router>
 

@@ -106,6 +106,11 @@ export function createWorkflow(
       const currentStep =
         stepMapping[version.status as keyof StatusStepMapping].step.id;
 
+      await stream(version.chatId, {
+        type: "status",
+        status: "thinking",
+      });
+
       switch (currentStep) {
         case "planning":
         case "coding":

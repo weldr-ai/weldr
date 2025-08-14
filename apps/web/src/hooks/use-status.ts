@@ -4,9 +4,10 @@ import type { RouterOutputs } from "@weldr/api";
 import type {
   ChatMessage,
   IntegrationCategoryKey,
-  ToolResultPartMessage,
   TStatus,
 } from "@weldr/shared/types";
+
+import type { IntegrationToolResultPart } from "@/components/setup-integrations/types";
 
 interface UseStatusOptions {
   version: RouterOutputs["projects"]["byId"]["currentVersion"];
@@ -25,7 +26,7 @@ interface UseStatusOptions {
 export function useStatus({ version, messages, project }: UseStatusOptions) {
   const getInitialPendingMessage = (): TStatus => {
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.role === "user" && version.status === "pending") {
+    if (lastMessage?.role === "user" && version.status === "planning") {
       return "thinking";
     }
     return null;
@@ -36,12 +37,6 @@ export function useStatus({ version, messages, project }: UseStatusOptions) {
   // Handle version status changes
   useEffect(() => {
     switch (version.status) {
-      case "pending":
-        setStatus(null);
-        break;
-      case "planning":
-        setStatus("planning");
-        break;
       case "coding":
         setStatus("coding");
         break;
@@ -70,16 +65,11 @@ export function useStatus({ version, messages, project }: UseStatusOptions) {
         (content) =>
           content.type === "tool-result" &&
           content.toolName === "add_integrations",
-      ) as ToolResultPartMessage & {
-        output: {
-          status: "awaiting_config";
-          categories: IntegrationCategoryKey[];
-        };
-      };
+      ) as IntegrationToolResultPart;
 
       if (
-        toolResult?.output?.status === "awaiting_config" &&
-        toolResult?.output?.categories.some(
+        toolResult?.output?.value?.status === "awaiting_config" &&
+        toolResult?.output?.value?.categories.some(
           (category) => !installedCategories.includes(category),
         )
       ) {

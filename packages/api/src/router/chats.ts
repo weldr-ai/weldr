@@ -7,8 +7,8 @@ import { chatMessages, chats } from "@weldr/db/schema";
 import { Tigris } from "@weldr/shared/tigris";
 import type { ChatMessage } from "@weldr/shared/types";
 import {
-  addMessagesInputSchema,
-  toolResultPartSchema,
+  addMessageItemSchema,
+  toolMessageSchema,
 } from "@weldr/shared/validators/chats";
 
 import { protectedProcedure } from "../init";
@@ -68,39 +68,52 @@ export const chatsRouter = {
       return messagesWithAttachments as ChatMessage[];
     }),
   addMessage: protectedProcedure
-    .input(addMessagesInputSchema)
+    .input(
+      z.object({
+        chatId: z.string(),
+        message: addMessageItemSchema,
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      if (input.messages.length === 0) {
-        return;
-      }
+      try {
+        const chat = await ctx.db.query.chats.findFirst({
+          where: and(
+            eq(chats.id, input.chatId),
+            eq(chats.userId, ctx.session.user.id),
+          ),
+        });
 
-      const chat = await ctx.db.query.chats.findFirst({
-        where: and(
-          eq(chats.id, input.chatId),
-          eq(chats.userId, ctx.session.user.id),
-        ),
-      });
+        if (!chat) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Chat not found",
+          });
+        }
 
-      if (!chat) {
+        const [message] = await ctx.db
+          .insert(chatMessages)
+          .values({
+            ...input.message,
+            chatId: input.chatId,
+            userId: ctx.session.user.id,
+          })
+          .returning();
+
+        if (!message) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to add message",
+          });
+        }
+
+        return message as ChatMessage;
+      } catch (error) {
+        console.error(error);
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Chat not found",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to add message",
         });
       }
-
-      const messages: (typeof chatMessages.$inferInsert)[] = [];
-
-      for (const item of input.messages) {
-        messages.push({
-          visibility: "public",
-          content: item.content,
-          role: item.role,
-          userId: ctx.session.user.id,
-          chatId: input.chatId,
-        });
-      }
-
-      await ctx.db.insert(chatMessages).values(messages);
     }),
   updateToolMessage: protectedProcedure
     .input(
@@ -108,8 +121,8 @@ export const chatsRouter = {
         where: z.object({
           messageId: z.string(),
         }),
-        data: z.object({
-          content: z.array(toolResultPartSchema),
+        data: toolMessageSchema.pick({
+          content: true,
         }),
       }),
     )

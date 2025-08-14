@@ -2,7 +2,6 @@ CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool');--> st
 CREATE TYPE "public"."message_visibility" AS ENUM('public', 'internal');--> statement-breakpoint
 CREATE TYPE "public"."declaration_progress" AS ENUM('pending', 'in_progress', 'enriching', 'completed');--> statement-breakpoint
 CREATE TYPE "public"."task_status" AS ENUM('pending', 'in_progress', 'completed');--> statement-breakpoint
-CREATE TYPE "public"."version_status" AS ENUM('pending', 'planning', 'coding', 'deploying', 'completed', 'failed');--> statement-breakpoint
 CREATE TABLE "ai_models" (
 	"id" text PRIMARY KEY NOT NULL,
 	"provider" text NOT NULL,
@@ -125,7 +124,6 @@ CREATE TABLE "attachments" (
 --> statement-breakpoint
 CREATE TABLE "chat_messages" (
 	"id" text PRIMARY KEY NOT NULL,
-	"visibility" "message_visibility" DEFAULT 'public' NOT NULL,
 	"role" "message_roles" DEFAULT 'assistant' NOT NULL,
 	"content" jsonb NOT NULL,
 	"metadata" jsonb,
@@ -154,6 +152,7 @@ CREATE TABLE "declaration_templates" (
 	"path" text,
 	"metadata" jsonb,
 	"embedding" vector(1536),
+	"source" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"integration_template_id" text NOT NULL,
@@ -299,7 +298,7 @@ CREATE TABLE "versions" (
 	"number" integer DEFAULT 1 NOT NULL,
 	"message" text,
 	"description" text,
-	"status" "version_status" DEFAULT 'pending' NOT NULL,
+	"status" text DEFAULT 'planning' NOT NULL,
 	"acceptance_criteria" jsonb,
 	"commit_hash" text,
 	"chat_id" text NOT NULL,

@@ -1,3 +1,4 @@
+import type { FilePart, ImagePart, TextPart } from "ai";
 import type { JSONSchema7 } from "json-schema";
 import type { z } from "zod";
 
@@ -7,9 +8,11 @@ import type {
   attachmentSchema,
   chatMessageSchema,
   chatSchema,
+  dbModelReferencePartSchema,
+  endpointReferencePartSchema,
   messageRoleSchema,
+  pageReferencePartSchema,
   toolMessageSchema,
-  toolResultPartSchema,
   userMessageSchema,
 } from "../validators/chats";
 import type { environmentVariableSchema } from "../validators/environment-variables";
@@ -52,10 +55,17 @@ export type MessageRole = z.infer<typeof messageRoleSchema>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export type ChatMessageContent = z.infer<typeof chatMessageSchema>["content"];
 export type AiMessageMetadata = z.infer<typeof aiMetadataSchema>;
+export type UserMessageContent = (
+  | TextPart
+  | ImagePart
+  | FilePart
+  | z.infer<typeof dbModelReferencePartSchema>
+  | z.infer<typeof pageReferencePartSchema>
+  | z.infer<typeof endpointReferencePartSchema>
+)[];
 export type UserMessage = z.infer<typeof userMessageSchema>;
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
 export type ToolMessage = z.infer<typeof toolMessageSchema>;
-export type ToolResultPartMessage = z.infer<typeof toolResultPartSchema>;
 export type Chat = z.infer<typeof chatSchema>;
 export type Attachment = z.infer<typeof attachmentSchema>;
 
@@ -102,6 +112,14 @@ export type NodeStreamableValue = {
   node: Node;
 };
 
+export type ToolCallStreamableValue = {
+  id: string;
+  type: "tool-call";
+  toolCallId: string;
+  toolName: string;
+  input: unknown;
+};
+
 export type ToolStreamableValue = {
   type: "tool";
   message: ToolMessage;
@@ -138,6 +156,7 @@ export type SSEStatusEvent = {
 
 export type SSEValue =
   | TextStreamableValue
+  | ToolCallStreamableValue
   | ToolStreamableValue
   | NodeStreamableValue
   | ProjectStreamableValue

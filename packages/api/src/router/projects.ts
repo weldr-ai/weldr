@@ -74,7 +74,6 @@ export const projectsRouter = {
           const [message] = await tx
             .insert(chatMessages)
             .values({
-              visibility: "public",
               chatId: chat.id,
               role: "user",
               content: [
@@ -209,7 +208,6 @@ export const projectsRouter = {
                   with: {
                     messages: {
                       orderBy: (messages, { asc }) => [asc(messages.createdAt)],
-                      where: eq(chatMessages.visibility, "public"),
                       with: {
                         attachments: {
                           columns: {

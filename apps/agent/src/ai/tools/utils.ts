@@ -19,8 +19,9 @@ export function createTool<
     description: config.description,
     inputSchema: config.inputSchema,
     outputSchema: config.outputSchema,
-    execute: async (input: z.infer<TInput>) =>
-      config.execute({ input, context }),
+    execute: config.execute
+      ? async (input: z.infer<TInput>) => config.execute?.({ input, context })
+      : undefined,
   });
 
   // Add XML tool format as a method
@@ -29,8 +30,9 @@ export function createTool<
     description: config.description,
     inputSchema: new ZodXML(config.inputSchema),
     outputSchema: config.outputSchema,
-    execute: async (input: z.infer<TInput>) =>
-      config.execute({ input, context }),
+    execute: config.execute
+      ? async (input: z.infer<TInput>) => config.execute?.({ input, context })
+      : undefined,
     toMarkdown: () => {
       return aiSDKTool.toMarkdown();
     },

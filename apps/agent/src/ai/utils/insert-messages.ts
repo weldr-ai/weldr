@@ -31,7 +31,6 @@ export async function insertMessages({
         .insert(chatMessages)
         .values({
           id: item.id,
-          visibility: item.visibility,
           role: item.role,
           content: item.content,
           metadata: item.role === "assistant" ? item.metadata : undefined,

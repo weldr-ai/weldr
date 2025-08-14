@@ -67,7 +67,6 @@ export const chatMessages = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => nanoid()),
-    visibility: messageVisibility("visibility").notNull().default("public"),
     role: messageRoles("role").notNull().default("assistant"),
     content: jsonb("content").$type<ChatMessageContent>().notNull(),
     metadata: jsonb("metadata").$type<AiMessageMetadata>(),

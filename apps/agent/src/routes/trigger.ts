@@ -3,10 +3,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull, not } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
-import {
-  attachmentSchema,
-  userMessageContentSchema,
-} from "@weldr/shared/validators/chats";
+import type { UserMessageContent } from "@weldr/shared/types";
 
 import { initVersion } from "@/ai/utils/init-version";
 import { insertMessages } from "@/ai/utils/insert-messages";
@@ -30,7 +27,7 @@ const route = createRoute({
               .openapi({ description: "Project ID", example: "123abc" }),
             message: z
               .object({
-                content: userMessageContentSchema.array().openapi({
+                content: z.custom<UserMessageContent>().openapi({
                   description: "Message content",
                   example: [
                     {
@@ -39,10 +36,10 @@ const route = createRoute({
                     },
                   ],
                 }),
-                attachments: attachmentSchema
-                  .array()
-                  .optional()
-                  .openapi({ description: "Message attachments", example: [] }),
+                attachmentIds: z.string().array().optional().openapi({
+                  description: "Message attachments",
+                  example: [],
+                }),
               })
               .optional(),
           }),
@@ -126,18 +123,17 @@ router.openapi(route, async (c) => {
   }
 
   if (message) {
-    const newMessage = {
-      visibility: "public" as const,
-      role: "user" as const,
-      content: message.content,
-      attachments: message.attachments,
-    };
-
     await insertMessages({
       input: {
         chatId: activeVersion.chatId,
         userId: session.user.id,
-        messages: [newMessage],
+        messages: [
+          {
+            role: "user" as const,
+            content: message.content,
+            attachmentIds: message.attachmentIds,
+          },
+        ],
       },
     });
   }

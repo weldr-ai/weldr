@@ -4,10 +4,6 @@ import { memo, useEffect } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
-import type {
-  IntegrationCategoryKey,
-  ToolResultPartMessage,
-} from "@weldr/shared/types";
 import { Button } from "@weldr/ui/components/button";
 import {
   Tooltip,
@@ -28,6 +24,7 @@ import { CommitTypeBadge } from "./commit-type-badge";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
 import { SetupIntegration } from "./setup-integrations";
+import type { IntegrationToolResultPart } from "./setup-integrations/types";
 
 interface ChatProps {
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
@@ -74,6 +71,7 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
   const { eventSourceRef, connectToEventStream, closeEventStream } =
     useEventStream({
       projectId: project.id,
+      chatId: version.chat.id,
       project,
       setStatus,
       setMessages,
@@ -116,19 +114,14 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
       )}
     >
       {messages[messages.length - 1]?.role === "tool" &&
-      messages[messages.length - 1]?.content.some(
-        (content) =>
-          content.type === "tool-result" &&
-          content.toolName === "add_integrations" &&
-          (
-            content as ToolResultPartMessage & {
-              output: {
-                status: "awaiting_config";
-                categories: IntegrationCategoryKey[];
-              };
-            }
-          ).output.status === "awaiting_config",
-      ) ? (
+      messages[messages.length - 1]?.content.some((content) => {
+        const toolResult = content as IntegrationToolResultPart;
+        return (
+          toolResult.type === "tool-result" &&
+          toolResult.toolName === "add_integrations" &&
+          toolResult.output.value.status === "awaiting_config"
+        );
+      }) ? (
         <SetupIntegration
           // biome-ignore lint/style/noNonNullAssertion: reason
           message={messages[messages.length - 1]!}

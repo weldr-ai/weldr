@@ -4,7 +4,6 @@ import {
   index,
   integer,
   jsonb,
-  pgEnum,
   pgTable,
   primaryKey,
   text,
@@ -20,15 +19,6 @@ import { declarations } from "./declarations";
 import { projects } from "./projects";
 import { tasks } from "./tasks";
 
-export const versionStatus = pgEnum("version_status", [
-  "pending",
-  "planning",
-  "coding",
-  "deploying",
-  "completed",
-  "failed",
-]);
-
 export const versions = pgTable(
   "versions",
   {
@@ -36,7 +26,10 @@ export const versions = pgTable(
     number: integer("number").notNull().default(1),
     message: text("message"),
     description: text("description"),
-    status: versionStatus("status").default("pending").notNull(),
+    status: text("status")
+      .$type<"planning" | "coding" | "deploying" | "completed" | "failed">()
+      .default("planning")
+      .notNull(),
     acceptanceCriteria: jsonb("acceptance_criteria").$type<string[]>(),
     commitHash: text("commit_hash"),
     chatId: text("chat_id")

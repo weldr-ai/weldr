@@ -1,3 +1,5 @@
+import type { ToolContent, ToolResultPart } from "ai";
+
 import { and, db, eq } from "@weldr/db";
 import { chatMessages, integrations } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
@@ -6,7 +8,6 @@ import type {
   IntegrationKey,
   IntegrationStatus,
   ToolMessage,
-  ToolResultPartMessage,
 } from "@weldr/shared/types";
 
 import { integrationRegistry } from "@/integrations/utils/registry";
@@ -50,20 +51,23 @@ async function streamToolMessageUpdate({
 
   const toolMessage = message as ToolMessage;
 
-  const toolContent = toolMessage.content[0] as ToolResultPartMessage;
+  const toolResultPart = toolMessage.content[0] as ToolResultPart;
 
-  const toolOutput = toolContent.output as {
-    status: "awaiting_config" | "success" | "cancelled" | "failed";
-    categories: IntegrationCategoryKey[];
-    integrations?: {
-      category: IntegrationCategoryKey;
-      key: IntegrationKey;
-      name: string;
-      status: IntegrationStatus;
-    }[];
+  const toolOutput = toolResultPart.output as {
+    type: "json";
+    value: {
+      status: "awaiting_config" | "success" | "cancelled" | "failed";
+      categories: IntegrationCategoryKey[];
+      integrations?: {
+        category: IntegrationCategoryKey;
+        key: IntegrationKey;
+        name: string;
+        status: IntegrationStatus;
+      }[];
+    };
   };
 
-  const existingIntegrations = toolOutput.integrations || [];
+  const existingIntegrations = toolOutput.value.integrations || [];
   const updatedIntegrations = existingIntegrations.map(
     (existingIntegration: {
       category: IntegrationCategoryKey;
@@ -79,14 +83,18 @@ async function streamToolMessageUpdate({
   const updatedContent = [
     {
       type: "tool-result",
-      toolCallId: toolContent.toolCallId,
-      toolName: toolContent.toolName,
+      toolCallId: toolResultPart.toolCallId,
+      toolName: toolResultPart.toolName,
       output: {
-        ...toolOutput,
-        integrations: updatedIntegrations,
+        type: "json",
+        value: {
+          status: "completed",
+          categories: toolOutput.value.categories,
+          integrations: updatedIntegrations,
+        },
       },
-    } satisfies ToolResultPartMessage,
-  ];
+    },
+  ] as ToolContent;
 
   await db
     .update(chatMessages)

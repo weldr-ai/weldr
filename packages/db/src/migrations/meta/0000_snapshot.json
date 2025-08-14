@@ -1,5 +1,5 @@
 {
-  "id": "b04d5c65-c85e-40d9-a3ad-404cc21172a4",
+  "id": "31aeaa2a-b464-42c8-b3f5-bfc887125d43",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -790,14 +790,6 @@
           "primaryKey": true,
           "notNull": true
         },
-        "visibility": {
-          "name": "visibility",
-          "type": "message_visibility",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'public'"
-        },
         "role": {
           "name": "role",
           "type": "message_roles",
@@ -1050,6 +1042,12 @@
         "embedding": {
           "name": "embedding",
           "type": "vector(1536)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -2371,11 +2369,10 @@
         },
         "status": {
           "name": "status",
-          "type": "version_status",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'pending'"
+          "default": "'planning'"
         },
         "acceptance_criteria": {
           "name": "acceptance_criteria",
@@ -2582,18 +2579,6 @@
       "name": "task_status",
       "schema": "public",
       "values": ["pending", "in_progress", "completed"]
-    },
-    "public.version_status": {
-      "name": "version_status",
-      "schema": "public",
-      "values": [
-        "pending",
-        "planning",
-        "coding",
-        "deploying",
-        "completed",
-        "failed"
-      ]
     }
   },
   "schemas": {},

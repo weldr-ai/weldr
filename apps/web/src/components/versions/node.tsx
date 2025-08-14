@@ -150,8 +150,7 @@ export const VersionNode = memo(({ data }: NodeProps<TVersionNode>) => {
               <span
                 className={cn("rounded-full px-2 py-0.5 text-xs", {
                   "bg-warning text-warning-foreground":
-                    data.status === "pending",
-                  "bg-purple-500 text-purple-50": data.status === "planning",
+                    data.status === "planning",
                   "bg-teal-500 text-teal-50": data.status === "coding",
                   "bg-primary text-primary-foreground":
                     data.status === "deploying",
@@ -162,7 +161,6 @@ export const VersionNode = memo(({ data }: NodeProps<TVersionNode>) => {
                 })}
               >
                 {data.status === "completed" && "Current"}
-                {data.status === "pending" && "Pending"}
                 {data.status === "planning" && "Planning"}
                 {data.status === "coding" && "Coding"}
                 {data.status === "deploying" && "Deploying"}
@@ -235,13 +233,7 @@ export const VersionNode = memo(({ data }: NodeProps<TVersionNode>) => {
             </p>
           </div>
         ) : (
-          <p className="text-xs">
-            No available information yet, please{" "}
-            {data.status === "pending"
-              ? "continue the process"
-              : "wait until the version is completed"}
-            .
-          </p>
+          <p className="text-xs">No available information yet.</p>
         )}
       </div>
       {hasOutgoingEdges && (

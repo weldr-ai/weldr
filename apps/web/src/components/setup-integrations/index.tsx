@@ -23,6 +23,7 @@ import { ConfigurationDialog } from "./configuration-dialog";
 import { IntegrationsCombobox } from "./integrations-combobox";
 import type {
   IntegrationToolMessage,
+  IntegrationToolOutput,
   IntegrationToolResultPart,
 } from "./types";
 
@@ -49,7 +50,7 @@ const PureSetupIntegration = ({
   );
 
   const requiredCategories = (message.content[0] as IntegrationToolResultPart)
-    .output.categories;
+    .output.value.categories;
 
   const [selectedIntegrations, setSelectedIntegrations] = useState<
     Record<string, RouterOutputs["integrationTemplates"]["list"][0] | null>
@@ -266,25 +267,34 @@ const PureSetupIntegration = ({
       });
 
     const lastMessage = message as IntegrationToolMessage;
-    const toolResult = lastMessage?.content[0] as IntegrationToolResultPart;
     const newMessage = {
       ...lastMessage,
-      content: [
-        {
-          ...toolResult,
-          output: {
-            ...toolResult.output,
-            status: "completed" as const,
-            integrations: configurations.map((config) => ({
-              category: config.category,
-              key: config.integrationKey,
-              name: config.name,
-              status: "queued",
-            })),
-          },
-        },
-      ],
+      content: lastMessage.content.map((content) => {
+        if (content.type === "tool-result") {
+          return {
+            ...content,
+            output: {
+              type: "json",
+              value: {
+                status: "completed",
+                categories: (
+                  content.output.value as IntegrationToolOutput["value"]
+                ).categories,
+                integrations: configurations.map((config) => ({
+                  category: config.category,
+                  key: config.integrationKey,
+                  name: config.name,
+                  status: "queued",
+                })),
+              },
+            },
+          };
+        }
+        return content;
+      }),
     } as IntegrationToolMessage;
+
+    console.log("newMessage", JSON.stringify(newMessage, null, 2));
 
     setMessages((prev) => {
       const newMessages = [...prev];
@@ -333,13 +343,12 @@ const PureSetupIntegration = ({
       content: lastMessage.content.map((content) => {
         if (content.type === "tool-result") {
           return {
-            ...content,
             output: {
-              ...(content.output as {
-                status: "cancelled";
-                categories: IntegrationCategoryKey[];
-              }),
-              status: "cancelled",
+              type: "json",
+              value: {
+                status: "cancelled",
+                categories: requiredCategories,
+              },
             },
           };
         }
@@ -365,11 +374,12 @@ const PureSetupIntegration = ({
 
     setIsChatVisible(true);
   }, [
-    setMessages,
-    setStatus,
     updateMessageMutation,
     message,
+    requiredCategories,
     setIsChatVisible,
+    setMessages,
+    setStatus,
   ]);
 
   return (

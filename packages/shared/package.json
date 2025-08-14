@@ -32,6 +32,7 @@
   "devDependencies": {
     "@types/json-schema": "^7.0.15",
     "@weldr/tsconfig": "workspace:*",
+    "ai": "^5.0.12",
     "pino-pretty": "^13.0.0",
     "typescript": "^5.8.3"
   }

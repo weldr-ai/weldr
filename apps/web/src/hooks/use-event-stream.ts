@@ -14,6 +14,7 @@ import type { CanvasNode } from "@/types";
 
 interface UseEventStreamOptions {
   projectId: string;
+  chatId: string;
   project: {
     currentVersion: {
       status: string;
@@ -25,6 +26,7 @@ interface UseEventStreamOptions {
 
 export function useEventStream({
   projectId,
+  chatId,
   project,
   setStatus,
   setMessages,
@@ -143,8 +145,8 @@ export function useEventStream({
                 ...prevMessages,
                 {
                   id: chunk.id,
-                  visibility: "public",
                   role: "assistant",
+                  chatId,
                   createdAt: new Date(),
                   content: [
                     {
@@ -158,6 +160,7 @@ export function useEventStream({
             break;
           }
           case "tool": {
+            console.log("tool", chunk.message);
             setMessages((prevMessages) => {
               const lastMessage = prevMessages[prevMessages.length - 1];
               if (lastMessage?.role === "tool") {
@@ -166,10 +169,7 @@ export function useEventStream({
                     content.type === "tool-result" &&
                     content.toolName === "add_integrations",
                 );
-                if (
-                  integrationToolResult?.toolCallId ===
-                  lastMessage.content[0]?.toolCallId
-                ) {
+                if (integrationToolResult) {
                   const chatWithLastMessage = prevMessages.slice(0, -1);
                   return [...chatWithLastMessage, chunk.message as ChatMessage];
                 }
@@ -321,6 +321,7 @@ export function useEventStream({
     setNodes,
     updateNodeData,
     queryClient,
+    chatId,
     trpc,
   ]);
 
