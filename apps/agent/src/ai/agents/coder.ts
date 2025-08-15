@@ -271,6 +271,10 @@ async function executeTaskCoder({
       },
     });
 
+    if (finishReason === "length") {
+      shouldRecur = true;
+    }
+
     return shouldRecur;
   };
 

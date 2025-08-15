@@ -1,17 +1,37 @@
 "use client";
 
 import fastDeepEqual from "fast-deep-equal";
-import { memo } from "react";
+import { type Dispatch, memo, type SetStateAction } from "react";
 
-import type { ChatMessage } from "@weldr/shared/types";
+import type { RouterOutputs } from "@weldr/api";
+import { nanoid } from "@weldr/shared/nanoid";
+import { preprocessReferences } from "@weldr/shared/process-text";
+import type { ChatMessage, TStatus } from "@weldr/shared/types";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
 
-import { CustomMarkdown } from "./custom-markdown";
+import { Reasoning, ReasoningContent, ReasoningTrigger } from "./reasoning";
+import { Response } from "./response";
+import { SetupIntegration } from "./setup-integrations";
 import { IntegrationsSetupStatus } from "./setup-integrations/integrations-setup-status";
-import type { IntegrationToolMessage } from "./setup-integrations/types";
+import type {
+  IntegrationToolCall,
+  IntegrationToolMessage,
+} from "./setup-integrations/types";
 
-const PureMessageItem = ({ message }: { message: ChatMessage }) => {
+const PureMessageItem = ({
+  message,
+  integrationTemplates,
+  setMessages,
+  setStatus,
+  environmentVariables,
+}: {
+  message: ChatMessage;
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  setStatus: Dispatch<SetStateAction<TStatus>>;
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
+}) => {
   return (
     <div
       className={cn(
@@ -28,20 +48,63 @@ const PureMessageItem = ({ message }: { message: ChatMessage }) => {
       )}
 
       <div
-        className={cn({
+        className={cn("flex flex-col gap-2", {
           "rounded-md bg-primary p-2 text-primary-foreground":
             message.role === "user",
         })}
       >
-        {Array.isArray(message.content) && (
-          <CustomMarkdown
-            className={cn({
-              "text-primary-foreground": message.role === "user",
-            })}
-            content={message.content}
-          />
-        )}
-
+        {message.content.map((content) => {
+          switch (content.type) {
+            case "reasoning": {
+              return (
+                <Reasoning
+                  key="reasoning"
+                  className="w-full"
+                  isStreaming={true}
+                >
+                  <ReasoningTrigger />
+                  <ReasoningContent>{content.text}</ReasoningContent>
+                </Reasoning>
+              );
+            }
+            case "text": {
+              const transformedContent = preprocessReferences(content.text);
+              return (
+                <Response
+                  key="content"
+                  className={cn({
+                    "text-primary-foreground": message.role === "user",
+                  })}
+                >
+                  {transformedContent}
+                </Response>
+              );
+            }
+            case "tool-call": {
+              const toolInput = content.input as {
+                status: "awaiting_config" | "failed";
+              };
+              if (
+                content.toolName === "add_integrations" &&
+                toolInput.status === "awaiting_config"
+              ) {
+                const toolCall = content as IntegrationToolCall;
+                return (
+                  <SetupIntegration
+                    key={`tool-call-${toolCall.toolCallId || nanoid()}`}
+                    message={message}
+                    integrationTemplates={integrationTemplates}
+                    chatId={message.chatId}
+                    setMessages={setMessages}
+                    environmentVariables={environmentVariables}
+                    setStatus={setStatus}
+                  />
+                );
+              }
+              return null;
+            }
+          }
+        })}
         {message.role === "tool" &&
           message.content.some(
             (content) => content.toolName === "add_integrations",

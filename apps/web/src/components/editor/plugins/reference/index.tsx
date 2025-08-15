@@ -34,7 +34,7 @@ export class ReferenceOption extends MenuOption {
     };
   }) {
     super(
-      reference.type === "reference:endpoint"
+      reference.type === "endpoint"
         ? `${reference.method.toUpperCase()} ${reference.path}`
         : reference.name,
     );
@@ -82,7 +82,7 @@ export function ReferencesPlugin({
   const inputOptions: ReferenceOption[] = useMemo(() => {
     return references.reduce((acc, reference) => {
       switch (reference.type) {
-        case "reference:endpoint": {
+        case "endpoint": {
           acc.push(
             new ReferenceOption({
               reference,
@@ -93,7 +93,7 @@ export function ReferencesPlugin({
           );
           break;
         }
-        case "reference:db-model": {
+        case "db-model": {
           acc.push(
             new ReferenceOption({
               reference,
@@ -104,7 +104,7 @@ export function ReferencesPlugin({
           );
           break;
         }
-        case "reference:page": {
+        case "page": {
           acc.push(
             new ReferenceOption({
               reference,
@@ -132,7 +132,7 @@ export function ReferencesPlugin({
     return inputOptions.filter(
       (option) =>
         regex.test(
-          option.reference.type === "reference:endpoint"
+          option.reference.type === "endpoint"
             ? `${option.reference.method.toUpperCase()} ${option.reference.path}`
             : option.reference.name,
         ) || option.keywords.some((keyword) => regex.test(keyword)),

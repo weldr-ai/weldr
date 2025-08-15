@@ -1,11 +1,6 @@
 import type { z } from "zod";
 
-import type {
-  declarations,
-  integrationCategories,
-  integrations,
-  integrationTemplates,
-} from "@weldr/db/schema";
+import type { declarations } from "@weldr/db/schema";
 import type {
   ClassDeclarationCodeMetadata,
   DeclarationCodeMetadata,
@@ -161,13 +156,6 @@ export function formatTaskDeclarationToMarkdown(
     dependencies: {
       dependency: typeof declarations.$inferSelect;
     }[];
-    integrations: {
-      integration: typeof integrations.$inferSelect & {
-        integrationTemplate: typeof integrationTemplates.$inferSelect & {
-          category: typeof integrationCategories.$inferSelect;
-        };
-      };
-    }[];
   },
 ): string {
   if (!declaration.metadata?.specs) {
@@ -180,14 +168,6 @@ export function formatTaskDeclarationToMarkdown(
     markdown += "**Dependencies You Should Use:**\n";
     for (const dep of declaration.dependencies) {
       markdown += formatDeclarationSpecs(dep.dependency);
-    }
-    markdown += "\n";
-  }
-
-  if (declaration.integrations && declaration.integrations.length > 0) {
-    markdown += "**Integrations and Services You Should Use:**\n";
-    for (const int of declaration.integrations) {
-      markdown += `- ${int.integration.integrationTemplate.name} (${int.integration.integrationTemplate.category.key})\n`;
     }
     markdown += "\n";
   }

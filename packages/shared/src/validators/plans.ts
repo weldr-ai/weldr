@@ -64,7 +64,7 @@ const baseTaskSchema = z.object({
     Examples for declarations:
     [
       "Model includes id, email, name, createdAt, updatedAt fields",
-      "Email field has unique constraint and validation", 
+      "Email field has unique constraint and validation",
       "Passwords are properly hashed using bcrypt",
       "Model exports proper TypeScript types"
     ]
@@ -72,7 +72,7 @@ const baseTaskSchema = z.object({
     Examples for generic tasks:
     [
       "Session timeout is set to 2 hours",
-      "Active users have their sessions automatically renewed", 
+      "Active users have their sessions automatically renewed",
       "Session renewal works without interrupting user workflow",
       "All existing authentication tests pass",
       "Session timeout is configurable via environment variable"
@@ -114,7 +114,7 @@ const baseTaskSchema = z.object({
     Examples for generic tasks:
     [
       "Use express-rate-limit middleware for implementation",
-      "Follow existing error handling patterns in src/lib/errors", 
+      "Follow existing error handling patterns in src/lib/errors",
       "Update both client and server-side session management",
       "Add comprehensive logging using the existing logger utility",
       "Ensure backward compatibility with existing session tokens"
@@ -145,7 +145,7 @@ const baseTaskSchema = z.object({
     [
       "Update session configuration in authentication middleware",
       "Implement sliding session renewal logic",
-      "Add session timeout environment variable", 
+      "Add session timeout environment variable",
       "Update client-side session handling to respect new timeout",
       "Add tests for session renewal functionality",
       "Update authentication documentation with new session behavior",
@@ -167,21 +167,6 @@ const baseTaskDeclarationSchema = baseTaskSchema.extend({
     - server/db/schema/user.ts
     - server/orpc/routes/users/create.ts
     - web/routes/dashboard.tsx
-  `),
-  integrations: z
-    .string()
-    .array()
-    .optional()
-    .describe(`
-    Integration IDs that this entire declaration requires to function.
-    These are external services or databases this declaration depends on.
-    Each array item is a separate integration ID.
-
-    Examples:
-    [] (no integrations required)
-    ["abc123def456"] (single integration)
-    ["abc123def456", "xyz789uvw012"] (multiple integrations)
-    ["stripe_payments", "sendgrid_email", "aws_s3"] (named integrations)
   `),
 });
 
@@ -309,7 +294,7 @@ export const planSchema = z.object({
       [
         "Users can register with email and password",
         "Users can log in and access protected pages",
-        "Password reset functionality works via email", 
+        "Password reset functionality works via email",
         "User sessions persist across browser restarts",
         "Admin can view and manage user accounts"
       ]
@@ -317,7 +302,7 @@ export const planSchema = z.object({
       For a todo app:
       [
         "Users can add new tasks to their to-do list",
-        "All tasks are displayed in a clean, organized manner", 
+        "All tasks are displayed in a clean, organized manner",
         "The to-do list is saved in local storage and persists after a page refresh",
         "Users can mark tasks as complete",
         "Users can delete tasks from the list"

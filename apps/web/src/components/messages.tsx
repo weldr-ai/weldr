@@ -1,20 +1,38 @@
 import equal from "fast-deep-equal";
-import { memo } from "react";
+import { type Dispatch, memo, type SetStateAction } from "react";
 
+import type { RouterOutputs } from "@weldr/api";
 import { nanoid } from "@weldr/shared/nanoid";
-import type { ChatMessage } from "@weldr/shared/types";
+import type { ChatMessage, TStatus } from "@weldr/shared/types";
 
 import { MessageItem } from "./message-item";
 
 interface MessagesProps {
   messages: ChatMessage[];
+  integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  setStatus: Dispatch<SetStateAction<TStatus>>;
 }
 
-function PureMessages({ messages }: MessagesProps) {
+function PureMessages({
+  messages,
+  integrationTemplates,
+  environmentVariables,
+  setMessages,
+  setStatus,
+}: MessagesProps) {
   return (
     <>
       {messages.map((message) => (
-        <MessageItem key={message.id ?? nanoid()} message={message} />
+        <MessageItem
+          key={message.id ?? nanoid()}
+          message={message}
+          integrationTemplates={integrationTemplates}
+          environmentVariables={environmentVariables}
+          setMessages={setMessages}
+          setStatus={setStatus}
+        />
       ))}
     </>
   );

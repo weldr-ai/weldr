@@ -93,9 +93,6 @@ export async function seedDeclarationTemplates({
       let declarationId: string;
 
       if (existingDeclaration) {
-        Logger.info(
-          `Declaration already exists: ${template.path} (${template.uri})`,
-        );
         declarationId = existingDeclaration.id;
       } else {
         // Insert new declaration (declarations table has projectId and userId, no versionId)
@@ -107,7 +104,7 @@ export async function seedDeclarationTemplates({
             userId: user.id,
             uri: template.uri,
             path: template.path,
-            progress: "pending",
+            progress: "completed",
             metadata: template.metadata,
             embedding: template.embedding,
           })
@@ -122,9 +119,6 @@ export async function seedDeclarationTemplates({
           continue;
         }
 
-        Logger.info(
-          `Created declaration: ${newDeclaration.path} (${newDeclaration.uri})`,
-        );
         declarationId = newDeclaration.id;
         insertedCount++;
       }
@@ -146,7 +140,6 @@ export async function seedDeclarationTemplates({
           versionId: version.id,
           declarationId,
         });
-        Logger.info(`Linked declaration to version: ${template.path}`);
       }
     }
 

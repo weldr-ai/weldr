@@ -1,26 +1,24 @@
-import type { AssistantContent, ToolContent } from "ai";
+import type { AssistantContent, ToolContent, UserContent } from "ai";
 import { z } from "zod";
-
-import type { UserMessageContent } from "../types";
 
 // ===========================================================================
 // Message Parts
 // ===========================================================================
 
 export const dbModelReferencePartSchema = z.object({
-  type: z.literal("reference:db-model"),
+  type: z.literal("db-model"),
   id: z.string().describe("The ID of the db model"),
   name: z.string().describe("The name of the db model"),
 });
 
 export const pageReferencePartSchema = z.object({
-  type: z.literal("reference:page"),
+  type: z.literal("page"),
   id: z.string().describe("The ID of the page"),
   name: z.string().describe("The name of the page"),
 });
 
 export const endpointReferencePartSchema = z.object({
-  type: z.literal("reference:endpoint"),
+  type: z.literal("endpoint"),
   id: z.string().describe("The ID of the endpoint"),
   method: z.string().describe("The method of the endpoint"),
   path: z.string().describe("The path of the endpoint"),
@@ -95,7 +93,7 @@ export const messageRoleSchema = z.enum(["user", "assistant", "tool"]);
 
 export const userMessageSchema = baseMessageSchema.extend({
   role: z.literal("user"),
-  content: z.custom<UserMessageContent>(),
+  content: z.custom<Exclude<UserContent, string>>(),
   attachments: attachmentSchema.array().optional(),
   userId: z.string().optional(),
   user: z
@@ -133,26 +131,36 @@ export const chatSchema = z.object({
 
 export const addMessageItemSchema = z.discriminatedUnion("role", [
   z.object({
-    id: z.string().nanoid().optional(),
+    id: z.string().optional(),
     role: z.literal("assistant"),
     content: z.custom<Exclude<AssistantContent, string>>(),
     metadata: aiMetadataSchema.optional(),
     createdAt: z.date().optional(),
   }),
   z.object({
-    id: z.string().nanoid().optional(),
+    id: z.string().optional(),
     role: z.literal("user"),
-    content: z.custom<UserMessageContent>(),
+    content: z.custom<Exclude<UserContent, string>>(),
     attachmentIds: z.string().array().optional(),
     createdAt: z.date().optional(),
   }),
   z.object({
-    id: z.string().nanoid().optional(),
+    id: z.string().optional(),
     role: z.literal("tool"),
     content: z.custom<ToolContent>(),
     createdAt: z.date().optional(),
   }),
 ]);
+
+export const updateMessageItemSchema = z.object({
+  id: z.string(),
+  chatId: z.string(),
+  content: z.custom<
+    | Exclude<AssistantContent, string>
+    | Exclude<UserContent, string>
+    | ToolContent
+  >(),
+});
 
 export const addMessagesInputSchema = z.object({
   chatId: z.string(),

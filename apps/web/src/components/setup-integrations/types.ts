@@ -28,6 +28,15 @@ export interface SelectedIntegration {
   environmentVariableMappings: Record<string, string>;
 }
 
+export type IntegrationToolCall = {
+  type: "tool-call";
+  toolCallId: string;
+  toolName: string;
+  input: {
+    categories: IntegrationCategoryKey[];
+  };
+};
+
 export type IntegrationToolOutput = {
   type: "json";
   value: {

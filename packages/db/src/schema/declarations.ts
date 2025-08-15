@@ -3,9 +3,7 @@ import {
   type AnyPgColumn,
   index,
   jsonb,
-  pgEnum,
   pgTable,
-  primaryKey,
   text,
   timestamp,
   unique,
@@ -17,18 +15,10 @@ import type { DeclarationMetadata } from "@weldr/shared/types/declarations";
 
 import { users } from "./auth";
 import { dependencies } from "./dependencies";
-import { integrations } from "./integrations";
 import { nodes } from "./nodes";
 import { projects } from "./projects";
 import { tasks } from "./tasks";
 import { versionDeclarations } from "./versions";
-
-export const declarationProgress = pgEnum("declaration_progress", [
-  "pending",
-  "in_progress",
-  "enriching",
-  "completed",
-]);
 
 export const declarations = pgTable(
   "declarations",
@@ -37,7 +27,9 @@ export const declarations = pgTable(
     version: text("version").default("v1").notNull(),
     uri: text("uri"),
     path: text("path"),
-    progress: declarationProgress("progress").notNull(),
+    progress: text("progress")
+      .$type<"pending" | "in_progress" | "enriching" | "completed">()
+      .notNull(),
     metadata: jsonb("metadata").$type<DeclarationMetadata>(),
     embedding: vector("embedding", { dimensions: 1536 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -94,35 +86,5 @@ export const declarationsRelations = relations(
       relationName: "dependent_declaration",
     }),
     versions: many(versionDeclarations),
-    integrations: many(declarationIntegrations),
-  }),
-);
-
-export const declarationIntegrations = pgTable(
-  "declaration_integrations",
-  {
-    declarationId: text("declaration_id")
-      .references(() => declarations.id, { onDelete: "cascade" })
-      .notNull(),
-    integrationId: text("integration_id")
-      .references(() => integrations.id, { onDelete: "cascade" })
-      .notNull(),
-  },
-  (table) => [
-    primaryKey({ columns: [table.declarationId, table.integrationId] }),
-  ],
-);
-
-export const declarationIntegrationsRelations = relations(
-  declarationIntegrations,
-  ({ one }) => ({
-    declaration: one(declarations, {
-      fields: [declarationIntegrations.declarationId],
-      references: [declarations.id],
-    }),
-    integration: one(integrations, {
-      fields: [declarationIntegrations.integrationId],
-      references: [integrations.id],
-    }),
   }),
 );

@@ -23,8 +23,6 @@ import { parseConventionalCommit } from "@/lib/utils";
 import { CommitTypeBadge } from "./commit-type-badge";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
-import { SetupIntegration } from "./setup-integrations";
-import type { IntegrationToolResultPart } from "./setup-integrations/types";
 
 interface ChatProps {
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
@@ -61,12 +59,8 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
     project,
   });
 
-  const {
-    isChatVisible,
-    chatContainerRef,
-    handleInputFocus,
-    setIsChatVisible,
-  } = useChatVisibility();
+  const { isChatVisible, chatContainerRef, handleInputFocus } =
+    useChatVisibility();
 
   const { eventSourceRef, connectToEventStream, closeEventStream } =
     useEventStream({
@@ -113,122 +107,105 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
         },
       )}
     >
-      {messages[messages.length - 1]?.role === "tool" &&
-      messages[messages.length - 1]?.content.some((content) => {
-        const toolResult = content as IntegrationToolResultPart;
-        return (
-          toolResult.type === "tool-result" &&
-          toolResult.toolName === "add_integrations" &&
-          toolResult.output.value.status === "awaiting_config"
-        );
-      }) ? (
-        <SetupIntegration
-          // biome-ignore lint/style/noNonNullAssertion: reason
-          message={messages[messages.length - 1]!}
-          setMessages={setMessages}
-          setStatus={setStatus}
-          setIsChatVisible={setIsChatVisible}
-          integrationTemplates={integrationTemplates}
-          environmentVariables={project.environmentVariables}
-        />
-      ) : (
-        <>
-          <div className="flex items-center justify-between gap-1 border-b px-2 py-1 pr-1">
-            <span className="flex items-center gap-2 truncate font-medium text-xs">
-              <span className="text-muted-foreground">{`#${version.number}`}</span>
-              <span className="flex items-center gap-1 truncate">
-                {conventionalCommit.type && (
-                  <CommitTypeBadge type={conventionalCommit.type} />
-                )}
-                <span className="truncate">
-                  {conventionalCommit.message ?? "Untitled Version"}
-                </span>
-              </span>
-            </span>
-            <div className="flex items-center gap-0.5">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="size-5 rounded-sm shadow-none"
-                    size="icon"
-                    disabled={!version.previousVersionId}
-                    onClick={() => {
-                      if (version.previousVersionId) {
-                        router.push(
-                          `/projects/${project.id}?versionId=${version.previousVersionId}`,
-                        );
-                      }
-                    }}
-                  >
-                    <ChevronLeftIcon className="size-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
-                  <p>View Previous Version</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="size-5 rounded-sm shadow-none"
-                    size="icon"
-                    disabled={!version.nextVersionId}
-                    onClick={() => {
-                      if (version.nextVersionId) {
-                        router.push(
-                          `/projects/${project.id}?versionId=${version.nextVersionId}`,
-                        );
-                      }
-                    }}
-                  >
-                    <ChevronRightIcon className="size-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
-                  <p>View Next Version</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-
-          <div
-            className={cn(
-              "overflow-hidden transition-all duration-300 ease-in-out",
-              {
-                "h-0": !isChatVisible,
-                "h-[calc(100vh-274px)]": isChatVisible,
-                "h-[calc(100vh-298px)]": isChatVisible && status,
-                "h-[calc(100vh-348px)]":
-                  isChatVisible && attachments.length > 0,
-              },
+      <div className="flex items-center justify-between gap-1 border-b px-2 py-1 pr-1">
+        <span className="flex items-center gap-2 truncate font-medium text-xs">
+          <span className="text-muted-foreground">{`#${version.number}`}</span>
+          <span className="flex items-center gap-1 truncate">
+            {conventionalCommit.type && (
+              <CommitTypeBadge type={conventionalCommit.type} />
             )}
-          >
-            <div
-              ref={messagesContainerRef}
-              className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-full flex-col gap-2 overflow-y-auto border-b p-2"
-            >
-              <Messages messages={messages} />
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
+            <span className="truncate">
+              {conventionalCommit.message ?? "Untitled Version"}
+            </span>
+          </span>
+        </span>
+        <div className="flex items-center gap-0.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="size-5 rounded-sm shadow-none"
+                size="icon"
+                disabled={!version.previousVersionId}
+                onClick={() => {
+                  if (version.previousVersionId) {
+                    router.push(
+                      `/projects/${project.id}?versionId=${version.previousVersionId}`,
+                    );
+                  }
+                }}
+              >
+                <ChevronLeftIcon className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
+              <p>View Previous Version</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="size-5 rounded-sm shadow-none"
+                size="icon"
+                disabled={!version.nextVersionId}
+                onClick={() => {
+                  if (version.nextVersionId) {
+                    router.push(
+                      `/projects/${project.id}?versionId=${version.nextVersionId}`,
+                    );
+                  }
+                }}
+              >
+                <ChevronRightIcon className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
+              <p>View Next Version</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
 
-          <MultimodalInput
-            type="editor"
-            chatId={version.chat.id}
-            message={userMessageContent}
-            setMessage={setUserMessageContent}
-            attachments={attachments}
-            setAttachments={setAttachments}
-            status={status}
-            handleSubmit={handleSubmit}
-            placeholder="Build with Weldr..."
-            references={editorReferences}
-            onFocus={handleInputFocus}
+      <div
+        className={cn(
+          "overflow-hidden transition-all duration-300 ease-in-out",
+          {
+            "h-0": !isChatVisible,
+            "h-[calc(100vh-274px)]": isChatVisible,
+            "h-[calc(100vh-298px)]": isChatVisible && status,
+            "h-[calc(100vh-348px)]": isChatVisible && attachments.length > 0,
+          },
+        )}
+      >
+        <div
+          ref={messagesContainerRef}
+          className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-full flex-col gap-2 overflow-y-auto border-b p-2"
+        >
+          <Messages
+            messages={messages}
+            integrationTemplates={integrationTemplates}
+            environmentVariables={project.environmentVariables}
+            setMessages={setMessages}
+            setStatus={setStatus}
           />
-        </>
-      )}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      <MultimodalInput
+        type="editor"
+        chatId={version.chat.id}
+        message={userMessageContent}
+        setMessage={setUserMessageContent}
+        attachments={attachments}
+        setAttachments={setAttachments}
+        status={status}
+        handleSubmit={handleSubmit}
+        placeholder="Build with Weldr..."
+        references={editorReferences}
+        onFocus={handleInputFocus}
+      />
     </div>
   );
 });

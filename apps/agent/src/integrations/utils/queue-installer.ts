@@ -67,8 +67,7 @@ async function streamToolMessageUpdate({
     };
   };
 
-  const existingIntegrations = toolOutput.value.integrations || [];
-  const updatedIntegrations = existingIntegrations.map(
+  const updatedIntegrations = toolOutput.value.integrations?.map(
     (existingIntegration: {
       category: IntegrationCategoryKey;
       key: IntegrationKey;

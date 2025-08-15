@@ -159,8 +159,56 @@ export function useEventStream({
             });
             break;
           }
+          case "tool-call": {
+            console.log("tool-call", chunk);
+            setMessages((prevMessages) => {
+              const lastMessage = prevMessages[prevMessages.length - 1];
+              if (lastMessage?.id === chunk.id) {
+                const chatWithLastMessage = prevMessages.slice(0, -1);
+                return [
+                  ...chatWithLastMessage,
+                  {
+                    id: chunk.id,
+                    role: "assistant",
+                    createdAt: lastMessage.createdAt,
+                    chatId: lastMessage.chatId,
+                    content: [
+                      ...(lastMessage.content.filter(
+                        (content) =>
+                          content.type !== "tool-call" ||
+                          content.toolCallId !== chunk.toolCallId,
+                      ) as AssistantMessage["content"]),
+                      {
+                        type: "tool-call",
+                        toolCallId: chunk.toolCallId,
+                        toolName: chunk.toolName,
+                        input: chunk.input,
+                      },
+                    ],
+                  },
+                ];
+              }
+              return [
+                ...prevMessages,
+                {
+                  id: chunk.id,
+                  role: "assistant",
+                  createdAt: new Date(),
+                  chatId,
+                  content: [
+                    {
+                      type: "tool-call",
+                      toolCallId: chunk.toolCallId,
+                      toolName: chunk.toolName,
+                      input: chunk.input,
+                    },
+                  ],
+                },
+              ];
+            });
+            break;
+          }
           case "tool": {
-            console.log("tool", chunk.message);
             setMessages((prevMessages) => {
               const lastMessage = prevMessages[prevMessages.length - 1];
               if (lastMessage?.role === "tool") {

@@ -2,10 +2,8 @@ import { inArray } from "drizzle-orm";
 
 import { and, db, eq } from "@weldr/db";
 import {
-  declarationIntegrations,
   declarations,
   dependencies,
-  integrations,
   nodes,
   type tasks,
   versionDeclarations,
@@ -214,28 +212,6 @@ export const createDeclarationFromTask = async ({
       declarationId: createdDeclaration.id,
     });
 
-    for (const declarationIntegration of taskData.integrations ?? []) {
-      const integration = await tx.query.integrations.findFirst({
-        where: and(
-          eq(integrations.id, declarationIntegration),
-          eq(integrations.projectId, project.id),
-          eq(integrations.userId, user.id),
-        ),
-      });
-
-      if (!integration) {
-        logger.error("Integration not found");
-        throw new Error(
-          `[createDeclarationFromTask:project_${project.id}:version_${version.id}] Integration not found`,
-        );
-      }
-
-      await tx.insert(declarationIntegrations).values({
-        declarationId: createdDeclaration.id,
-        integrationId: integration.id,
-      });
-    }
-
     try {
       if (createdDeclaration.metadata?.specs && node) {
         await stream(version.chatId, {
@@ -256,15 +232,6 @@ export const createDeclarationFromTask = async ({
     const declarationWithRelations = await tx.query.declarations.findFirst({
       where: eq(declarations.id, createdDeclaration.id),
       with: {
-        integrations: {
-          with: {
-            integration: {
-              with: {
-                integrationTemplate: true,
-              },
-            },
-          },
-        },
         dependencies: {
           with: {
             dependency: true,

@@ -1,9 +1,7 @@
-import { streamText, type ToolSet } from "ai";
-import type z from "zod";
+import { type AssistantContent, streamText, type ToolSet } from "ai";
 
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
-import type { addMessageItemSchema } from "@weldr/shared/validators/chats";
 
 import { prompts } from "@/ai/prompts";
 import {
@@ -81,6 +79,7 @@ export async function plannerAgent({
     });
 
     const messageId = nanoid();
+    const assistantContent: AssistantContent = [];
 
     for await (const part of result.fullStream) {
       switch (part.type) {
@@ -90,11 +89,43 @@ export async function plannerAgent({
             type: "text",
             text: part.text,
           });
+          const lastItem = assistantContent[assistantContent.length - 1];
+          if (lastItem && lastItem.type === "text") {
+            lastItem.text += part.text;
+          } else {
+            assistantContent.push({
+              type: "text",
+              text: part.text,
+            });
+          }
+          break;
+        }
+        case "reasoning-delta": {
+          await stream(version.chatId, {
+            id: part.id,
+            type: "reasoning",
+            text: part.text,
+          });
+          const lastItem = assistantContent[assistantContent.length - 1];
+          if (lastItem && lastItem.type === "reasoning") {
+            lastItem.text += part.text;
+          } else {
+            assistantContent.push({
+              type: "reasoning",
+              text: part.text,
+            });
+          }
           break;
         }
         case "tool-result": {
           if (part.toolName === "call_coder") {
             callingCoder = true;
+            assistantContent.push({
+              type: "tool-call",
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              input: part.input,
+            });
           }
 
           if (
@@ -107,30 +138,44 @@ export async function plannerAgent({
             part.toolName === "find"
           ) {
             shouldRecur = true;
+            assistantContent.push({
+              type: "tool-call",
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              input: part.input,
+            });
           }
 
           if (part.toolName === "add_integrations") {
-            await stream(version.chatId, {
-              type: "tool",
-              message: {
-                id: nanoid(),
-                createdAt: new Date(),
-                chatId: version.chatId,
-                role: "tool",
-                content: [
-                  {
-                    type: "tool-result",
-                    toolCallId: part.toolCallId,
-                    toolName: part.toolName,
-                    output: {
-                      type: "json",
-                      value: part.output,
-                    },
+            if (part.input.status === "failed") {
+              shouldRecur = true;
+              break;
+            } else {
+              if (part.output.categories.length > 0) {
+                await stream(version.chatId, {
+                  id: messageId,
+                  type: "tool-call",
+                  toolCallId: part.toolCallId,
+                  toolName: part.toolName,
+                  input: {
+                    ...part.input,
+                    status: "awaiting_config",
                   },
-                ],
-              },
-            });
-            shouldRecur = false;
+                });
+                assistantContent.push({
+                  type: "tool-call",
+                  toolCallId: part.toolCallId,
+                  toolName: part.toolName,
+                  input: {
+                    ...part.input,
+                    status: "awaiting_config",
+                  },
+                });
+                shouldRecur = false;
+              } else {
+                shouldRecur = true;
+              }
+            }
           }
           break;
         }
@@ -151,18 +196,14 @@ export async function plannerAgent({
 
     const finishReason = await result.finishReason;
 
-    const fullResponse = await result.response;
-
-    const messagesToSave: z.infer<typeof addMessageItemSchema>[] = [];
-
-    for (const message of fullResponse.messages) {
-      switch (message.role) {
-        case "assistant": {
-          messagesToSave.push({
+    await insertMessages({
+      input: {
+        chatId: version.chatId,
+        userId: user.id,
+        messages: [
+          {
             role: "assistant",
-            content: Array.isArray(message.content)
-              ? message.content
-              : [{ type: "text", text: message.content }],
+            content: assistantContent,
             metadata: {
               provider: "google",
               model: "gemini-2.5-pro",
@@ -178,26 +219,14 @@ export async function plannerAgent({
               finishReason,
             },
             createdAt: new Date(),
-          });
-          break;
-        }
-        case "tool": {
-          messagesToSave.push({
-            ...message,
-            createdAt: new Date(),
-          });
-          break;
-        }
-      }
-    }
-
-    await insertMessages({
-      input: {
-        chatId: version.chatId,
-        userId: user.id,
-        messages: messagesToSave,
+          },
+        ],
       },
     });
+
+    if (finishReason === "length") {
+      shouldRecur = true;
+    }
 
     return { shouldRecur, callingCoder };
   };

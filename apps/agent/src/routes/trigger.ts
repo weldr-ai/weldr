@@ -1,9 +1,9 @@
 import { createRoute, z } from "@hono/zod-openapi";
+import type { UserContent } from "ai";
 
 import { auth } from "@weldr/auth";
 import { and, db, eq, isNotNull, not } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
-import type { UserMessageContent } from "@weldr/shared/types";
 
 import { initVersion } from "@/ai/utils/init-version";
 import { insertMessages } from "@/ai/utils/insert-messages";
@@ -27,7 +27,7 @@ const route = createRoute({
               .openapi({ description: "Project ID", example: "123abc" }),
             message: z
               .object({
-                content: z.custom<UserMessageContent>().openapi({
+                content: z.custom<Exclude<UserContent, string>>().openapi({
                   description: "Message content",
                   example: [
                     {

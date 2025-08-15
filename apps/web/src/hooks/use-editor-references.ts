@@ -22,7 +22,7 @@ export function useEditorReferences({
           switch (specs?.type) {
             case "endpoint": {
               acc.push({
-                type: "reference:endpoint",
+                type: "endpoint",
                 id: declaration.declaration.id,
                 method: specs.method,
                 path: specs.path,
@@ -31,7 +31,7 @@ export function useEditorReferences({
             }
             case "db-model": {
               acc.push({
-                type: "reference:db-model",
+                type: "db-model",
                 id: declaration.declaration.id,
                 name: specs.name,
               });
@@ -39,7 +39,7 @@ export function useEditorReferences({
             }
             case "page": {
               acc.push({
-                type: "reference:page",
+                type: "page",
                 id: declaration.declaration.id,
                 name: specs.name,
               });

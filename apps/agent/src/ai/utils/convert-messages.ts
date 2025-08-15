@@ -14,6 +14,7 @@ import type {
 
 import { db, eq } from "@weldr/db";
 import { declarations } from "@weldr/db/schema";
+import { processText } from "@weldr/shared/process-text";
 import type { ChatMessage } from "@weldr/shared/types";
 
 import { formatDeclarationSpecs } from "./formatters";
@@ -67,19 +68,23 @@ export async function convertMessages(messages: ChatMessage[]) {
 
     for (const part of parts) {
       if (part.type === "text") {
-        currentTextContent += part.text;
-      }
-
-      if (
-        part.type === "reference:db-model" ||
-        part.type === "reference:page" ||
-        part.type === "reference:endpoint"
-      ) {
-        const reference = await db.query.declarations.findFirst({
-          where: eq(declarations.id, part.id),
-        });
-        if (reference) {
-          currentTextContent += formatDeclarationSpecs(reference);
+        const processed = processText(part.text);
+        for (const p of processed) {
+          if (p.type === "text") {
+            currentTextContent += p.text;
+          }
+          if (
+            p.type === "db-model" ||
+            p.type === "page" ||
+            p.type === "endpoint"
+          ) {
+            const reference = await db.query.declarations.findFirst({
+              where: eq(declarations.id, p.id),
+            });
+            if (reference) {
+              currentTextContent += formatDeclarationSpecs(reference);
+            }
+          }
         }
       }
 

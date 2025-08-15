@@ -17,16 +17,14 @@ export function ReferenceBadge({ reference, className }: ReferenceBadgeProps) {
         className,
       )}
     >
-      {reference.type === "reference:db-model" ? (
+      {reference.type === "db-model" ? (
         <TableIcon className="mr-1 size-3 text-primary" />
-      ) : reference.type === "reference:page" ? (
+      ) : reference.type === "page" ? (
         <AppWindowIcon className="mr-1 size-3 text-primary" />
-      ) : reference.type === "reference:endpoint" ? (
+      ) : reference.type === "endpoint" ? (
         <span className="mr-1 text-primary text-xs">{reference.method}</span>
       ) : null}
-      {reference.type === "reference:endpoint"
-        ? reference.path
-        : reference.name}
+      {reference.type === "endpoint" ? reference.path : reference.name}
     </span>
   );
 }

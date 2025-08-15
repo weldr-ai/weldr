@@ -1,6 +1,5 @@
 CREATE TYPE "public"."message_roles" AS ENUM('user', 'assistant', 'tool');--> statement-breakpoint
 CREATE TYPE "public"."message_visibility" AS ENUM('public', 'internal');--> statement-breakpoint
-CREATE TYPE "public"."declaration_progress" AS ENUM('pending', 'in_progress', 'enriching', 'completed');--> statement-breakpoint
 CREATE TYPE "public"."task_status" AS ENUM('pending', 'in_progress', 'completed');--> statement-breakpoint
 CREATE TABLE "ai_models" (
 	"id" text PRIMARY KEY NOT NULL,
@@ -159,18 +158,12 @@ CREATE TABLE "declaration_templates" (
 	CONSTRAINT "declaration_template_uri_unique" UNIQUE("uri")
 );
 --> statement-breakpoint
-CREATE TABLE "declaration_integrations" (
-	"declaration_id" text NOT NULL,
-	"integration_id" text NOT NULL,
-	CONSTRAINT "declaration_integrations_declaration_id_integration_id_pk" PRIMARY KEY("declaration_id","integration_id")
-);
---> statement-breakpoint
 CREATE TABLE "declarations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"version" text DEFAULT 'v1' NOT NULL,
 	"uri" text,
 	"path" text,
-	"progress" "declaration_progress" NOT NULL,
+	"progress" text NOT NULL,
 	"metadata" jsonb,
 	"embedding" vector(1536),
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -325,8 +318,6 @@ ALTER TABLE "chats" ADD CONSTRAINT "chats_project_id_projects_id_fk" FOREIGN KEY
 ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "streams" ADD CONSTRAINT "streams_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declaration_templates" ADD CONSTRAINT "declaration_templates_integration_template_id_integration_templates_id_fk" FOREIGN KEY ("integration_template_id") REFERENCES "public"."integration_templates"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_declaration_id_declarations_id_fk" FOREIGN KEY ("declaration_id") REFERENCES "public"."declarations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "declaration_integrations" ADD CONSTRAINT "declaration_integrations_integration_id_integrations_id_fk" FOREIGN KEY ("integration_id") REFERENCES "public"."integrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_previous_id_declarations_id_fk" FOREIGN KEY ("previous_id") REFERENCES "public"."declarations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "declarations" ADD CONSTRAINT "declarations_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

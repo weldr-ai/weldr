@@ -48,7 +48,7 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
       ),
     };
 
-    if (this.__reference.type === "reference:endpoint") {
+    if (this.__reference.type === "endpoint") {
       return {
         ...base,
         method: this.__reference.method,
@@ -69,7 +69,7 @@ export class ReferenceNode extends DecoratorNode<ReactNode> {
   }
 
   getTextContent(): string {
-    if (this.__reference.type === "reference:endpoint") {
+    if (this.__reference.type === "endpoint") {
       return `${this.__reference.method.toUpperCase()} ${this.__reference.path}`;
     }
 

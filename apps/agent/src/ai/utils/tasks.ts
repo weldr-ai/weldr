@@ -3,9 +3,6 @@ import {
   chats,
   type declarations,
   dependencies,
-  type integrationCategories,
-  type integrations,
-  type integrationTemplates,
   taskDependencies,
   tasks,
 } from "@weldr/db/schema";
@@ -17,13 +14,6 @@ import { createDeclarationFromTask } from "./declarations";
 export type TaskWithRelations = typeof tasks.$inferSelect & {
   declaration:
     | (typeof declarations.$inferSelect & {
-        integrations: {
-          integration: typeof integrations.$inferSelect & {
-            integrationTemplate: typeof integrationTemplates.$inferSelect & {
-              category: typeof integrationCategories.$inferSelect;
-            };
-          };
-        }[];
         dependencies: {
           dependency: typeof declarations.$inferSelect;
         }[];
@@ -186,7 +176,7 @@ export async function createTasks({
 export async function getTasksWithDependencies(
   versionId: string,
 ): Promise<TaskWithRelations[]> {
-  return await db.query.tasks.findMany({
+  const result = await db.query.tasks.findMany({
     where: (tasks) => eq(tasks.versionId, versionId),
     with: {
       dependencies: {
@@ -196,19 +186,6 @@ export async function getTasksWithDependencies(
       },
       declaration: {
         with: {
-          integrations: {
-            with: {
-              integration: {
-                with: {
-                  integrationTemplate: {
-                    with: {
-                      category: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
           dependencies: {
             with: {
               dependency: true,
@@ -218,6 +195,8 @@ export async function getTasksWithDependencies(
       },
     },
   });
+
+  return result;
 }
 
 export async function getTaskExecutionPlan({

@@ -23,7 +23,7 @@ import type { z } from "zod";
 
 import { authClient } from "@weldr/auth/client";
 import type { Attachment, TStatus, UserMessage } from "@weldr/shared/types";
-import { referencePartSchema } from "@weldr/shared/validators/chats";
+import type { referencePartSchema } from "@weldr/shared/validators/chats";
 import { Button } from "@weldr/ui/components/button";
 import { Textarea } from "@weldr/ui/components/textarea";
 import { toast } from "@weldr/ui/hooks/use-toast";
@@ -285,26 +285,34 @@ function PureMultimodalInput({
       const root = $getRoot();
       const children = (root.getChildren()[0] as ParagraphNode)?.getChildren();
 
-      const message = children?.reduce(
-        (acc, child) => {
-          if (child.__type === "text") {
-            acc.push({
-              type: "text",
-              text: child.getTextContent(),
-            });
+      let currentText = "";
+      const messageParts: UserMessage["content"] = [];
+
+      children?.forEach((child) => {
+        if (child.__type === "text") {
+          currentText += child.getTextContent();
+        }
+        if (child.__type === "reference") {
+          const referenceNode = child as ReferenceNode;
+          const ref = referenceNode.__reference;
+          if (ref.type === "db-model") {
+            currentText += `<Reference id='${ref.id}' type='db-model' name='${ref.name}' />`;
+          } else if (ref.type === "page") {
+            currentText += `<Reference id='${ref.id}' type='page' name='${ref.name}' />`;
+          } else if (ref.type === "endpoint") {
+            currentText += `<Reference id='${ref.id}' type='endpoint' method='${ref.method}' path='${ref.path}' />`;
           }
+        }
+      });
 
-          if (child.__type === "reference") {
-            const referenceNode = child as ReferenceNode;
-            acc.push(referencePartSchema.parse(referenceNode.__reference));
-          }
+      if (currentText) {
+        messageParts.push({
+          type: "text",
+          text: currentText,
+        });
+      }
 
-          return acc;
-        },
-        [] as UserMessage["content"],
-      );
-
-      setMessage(message);
+      setMessage(messageParts);
     });
   }
 

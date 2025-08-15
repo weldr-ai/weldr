@@ -1,4 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import type { AssistantContent, ToolContent } from "ai";
 import fastDeepEqual from "fast-deep-equal";
 import { CheckIcon, LoaderIcon, PenIcon } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -11,46 +12,49 @@ import {
 } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
+import { nanoid } from "@weldr/shared/nanoid";
 import type {
   ChatMessage,
   IntegrationCategoryKey,
   TStatus,
 } from "@weldr/shared/types";
 import { Button } from "@weldr/ui/components/button";
+import { toast } from "@weldr/ui/hooks/use-toast";
 
 import { useTRPC } from "@/lib/trpc/react";
 import { ConfigurationDialog } from "./configuration-dialog";
 import { IntegrationsCombobox } from "./integrations-combobox";
-import type {
-  IntegrationToolMessage,
-  IntegrationToolOutput,
-  IntegrationToolResultPart,
-} from "./types";
+import type { IntegrationToolCall } from "./types";
 
 const PureSetupIntegration = ({
   message,
+  chatId,
   setMessages,
   integrationTemplates,
   environmentVariables,
   setStatus,
-  setIsChatVisible,
 }: {
   message: ChatMessage;
+  chatId: string;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
-  setIsChatVisible: Dispatch<SetStateAction<boolean>>;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
   setStatus: Dispatch<SetStateAction<TStatus>>;
 }) => {
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const { projectId } = useParams<{ projectId: string }>();
-  const project = queryClient.getQueryData(
-    trpc.projects.byId.queryKey({ id: projectId }),
-  );
 
-  const requiredCategories = (message.content[0] as IntegrationToolResultPart)
-    .output.value.categories;
+  const messageContent = message.content as Exclude<AssistantContent, string>;
+
+  const integrationToolCall = messageContent.find(
+    (part) =>
+      part.type === "tool-call" &&
+      part.toolName === "add_integrations" &&
+      (part.input as { status: "awaiting_config" }).status ===
+        "awaiting_config",
+  ) as IntegrationToolCall;
+
+  const requiredCategories = integrationToolCall.input.categories;
 
   const [selectedIntegrations, setSelectedIntegrations] = useState<
     Record<string, RouterOutputs["integrationTemplates"]["list"][0] | null>
@@ -240,8 +244,65 @@ const PureSetupIntegration = ({
     });
   };
 
+  const addMessageMutation = useMutation(
+    trpc.chats.addMessage.mutationOptions({
+      onMutate: async (data) => {
+        setStatus(null);
+
+        let previousMessages: ChatMessage[] = [];
+
+        const optimisticMessage = {
+          id: data.message.id || nanoid(),
+          role: "tool" as const,
+          content: data.message.content as ToolContent,
+          createdAt: data.message.createdAt || new Date(),
+          chatId,
+        };
+
+        setMessages((prev) => {
+          previousMessages = [...prev];
+          return [...prev, optimisticMessage];
+        });
+
+        return { previousMessages, optimisticMessage };
+      },
+      onSuccess: (data) => {
+        setMessages((prev) => {
+          const withoutOptimistic = prev.filter((msg) => msg.id !== data.id);
+          return [...withoutOptimistic, data];
+        });
+        setStatus("thinking");
+      },
+      onError: (error, _variables, context) => {
+        if (context?.previousMessages) {
+          setMessages(context.previousMessages);
+        }
+
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      },
+    }),
+  );
+
   const updateMessageMutation = useMutation(
-    trpc.chats.updateToolMessage.mutationOptions(),
+    trpc.chats.updateMessage.mutationOptions({
+      onSuccess: (data) => {
+        setMessages((prev) => {
+          const withoutOptimistic = prev.filter((msg) => msg.id !== data.id);
+          return [...withoutOptimistic, data];
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      },
+    }),
   );
 
   const handleFinalConfirm = useCallback(async () => {
@@ -266,83 +327,87 @@ const PureSetupIntegration = ({
         };
       });
 
-    const lastMessage = message as IntegrationToolMessage;
-    const newMessage = {
-      ...lastMessage,
-      content: lastMessage.content.map((content) => {
-        if (content.type === "tool-result") {
-          return {
-            ...content,
+    const messageContentWithoutToolCall = messageContent.filter(
+      (part) =>
+        part.type === "tool-call" &&
+        part.toolCallId !== integrationToolCall.toolCallId,
+    );
+
+    updateMessageMutation.mutate({
+      chatId,
+      id: message.id,
+      content: [
+        ...messageContentWithoutToolCall,
+        {
+          type: "tool-call",
+          toolCallId: integrationToolCall.toolCallId,
+          toolName: integrationToolCall.toolName,
+          input: {
+            status: "completed",
+            categories: requiredCategories,
+          },
+        },
+      ],
+    });
+
+    addMessageMutation.mutate({
+      chatId,
+      message: {
+        id: nanoid(),
+        role: "tool",
+        createdAt: new Date(),
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: integrationToolCall.toolCallId,
+            toolName: integrationToolCall.toolName,
             output: {
               type: "json",
               value: {
                 status: "completed",
-                categories: (
-                  content.output.value as IntegrationToolOutput["value"]
-                ).categories,
-                integrations: configurations.map((config) => ({
-                  category: config.category,
-                  key: config.integrationKey,
-                  name: config.name,
+                categories: requiredCategories,
+                integrations: configurations.map((integration) => ({
+                  name: integration.name,
+                  category: integration.category,
+                  key: integration.integrationKey,
                   status: "queued",
                 })),
               },
             },
-          };
-        }
-        return content;
-      }),
-    } as IntegrationToolMessage;
-
-    console.log("newMessage", JSON.stringify(newMessage, null, 2));
-
-    setMessages((prev) => {
-      const newMessages = [...prev];
-      newMessages.pop();
-      newMessages.push(newMessage);
-      return newMessages;
-    });
-
-    updateMessageMutation.mutate({
-      where: {
-        messageId: message.id,
-      },
-      data: {
-        content: newMessage.content,
+          },
+        ],
       },
     });
 
-    await createBatchIntegrationsMutation.mutateAsync({
-      // biome-ignore lint/style/noNonNullAssertion: reason
-      projectId: project!.id,
+    createBatchIntegrationsMutation.mutate({
+      projectId,
       triggerWorkflow: true,
       integrations: configurations,
     });
-
-    setStatus("thinking");
-
-    setIsChatVisible(true);
   }, [
-    project,
-    setStatus,
+    projectId,
+    chatId,
     createBatchIntegrationsMutation,
     configuredIntegrations,
-    setMessages,
-    setIsChatVisible,
-    updateMessageMutation,
-    message,
+    addMessageMutation,
     selectedIntegrations,
     isConfigured,
+    integrationToolCall,
+    requiredCategories,
   ]);
 
   const handleIntegrationCancel = useCallback(() => {
-    setStatus(null);
-    const lastMessage = message as IntegrationToolMessage;
-    const newMessage = {
-      ...lastMessage,
-      content: lastMessage.content.map((content) => {
-        if (content.type === "tool-result") {
-          return {
+    addMessageMutation.mutate({
+      chatId,
+      message: {
+        id: nanoid(),
+        role: "tool",
+        createdAt: new Date(),
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: integrationToolCall.toolCallId,
+            toolName: integrationToolCall.toolName,
             output: {
               type: "json",
               value: {
@@ -350,40 +415,14 @@ const PureSetupIntegration = ({
                 categories: requiredCategories,
               },
             },
-          };
-        }
-        return content;
-      }),
-    } as IntegrationToolMessage;
-
-    setMessages((prev) => {
-      const newMessages = [...prev];
-      newMessages.pop();
-      newMessages.push(newMessage);
-      return newMessages;
-    });
-
-    updateMessageMutation.mutate({
-      where: {
-        messageId: message.id,
-      },
-      data: {
-        content: newMessage.content,
+          },
+        ],
       },
     });
-
-    setIsChatVisible(true);
-  }, [
-    updateMessageMutation,
-    message,
-    requiredCategories,
-    setIsChatVisible,
-    setMessages,
-    setStatus,
-  ]);
+  }, [addMessageMutation, chatId, integrationToolCall, requiredCategories]);
 
   return (
-    <div className="flex min-h-[300px] flex-col">
+    <div className="flex min-h-[300px] flex-col rounded-md border">
       <div className="flex flex-col items-center border-b p-1.5">
         <h3 className="font-medium">Setup Integrations</h3>
         <p className="text-muted-foreground text-xs">
@@ -523,9 +562,6 @@ const PureSetupIntegration = ({
 export const SetupIntegration = memo(
   PureSetupIntegration,
   (prevProps, nextProps) => {
-    if (!fastDeepEqual(prevProps.message, nextProps.message)) {
-      return false;
-    }
     if (
       !fastDeepEqual(
         prevProps.environmentVariables,

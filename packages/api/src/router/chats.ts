@@ -8,7 +8,7 @@ import { Tigris } from "@weldr/shared/tigris";
 import type { ChatMessage } from "@weldr/shared/types";
 import {
   addMessageItemSchema,
-  toolMessageSchema,
+  updateMessageItemSchema,
 } from "@weldr/shared/validators/chats";
 
 import { protectedProcedure } from "../init";
@@ -115,38 +115,37 @@ export const chatsRouter = {
         });
       }
     }),
-  updateToolMessage: protectedProcedure
-    .input(
-      z.object({
-        where: z.object({
-          messageId: z.string(),
-        }),
-        data: toolMessageSchema.pick({
-          content: true,
-        }),
-      }),
-    )
+  updateMessage: protectedProcedure
+    .input(updateMessageItemSchema)
     .mutation(async ({ ctx, input }) => {
-      const [message] = await ctx.db
-        .update(chatMessages)
-        .set({
-          content: input.data.content,
-        })
-        .where(
-          and(
-            eq(chatMessages.id, input.where.messageId),
-            eq(chatMessages.userId, ctx.session.user.id),
-          ),
-        )
-        .returning();
+      try {
+        const [message] = await ctx.db
+          .update(chatMessages)
+          .set({
+            content: input.content,
+          })
+          .where(
+            and(
+              eq(chatMessages.id, input.id),
+              eq(chatMessages.chatId, input.chatId),
+            ),
+          )
+          .returning();
 
-      if (!message) {
+        if (!message) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Message not found",
+          });
+        }
+
+        return message as ChatMessage;
+      } catch (error) {
+        console.error(error);
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Message not found",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update message",
         });
       }
-
-      return message;
     }),
 } satisfies TRPCRouterRecord;

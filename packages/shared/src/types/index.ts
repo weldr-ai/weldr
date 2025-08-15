@@ -1,4 +1,3 @@
-import type { FilePart, ImagePart, TextPart } from "ai";
 import type { JSONSchema7 } from "json-schema";
 import type { z } from "zod";
 
@@ -8,10 +7,7 @@ import type {
   attachmentSchema,
   chatMessageSchema,
   chatSchema,
-  dbModelReferencePartSchema,
-  endpointReferencePartSchema,
   messageRoleSchema,
-  pageReferencePartSchema,
   toolMessageSchema,
   userMessageSchema,
 } from "../validators/chats";
@@ -55,14 +51,6 @@ export type MessageRole = z.infer<typeof messageRoleSchema>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export type ChatMessageContent = z.infer<typeof chatMessageSchema>["content"];
 export type AiMessageMetadata = z.infer<typeof aiMetadataSchema>;
-export type UserMessageContent = (
-  | TextPart
-  | ImagePart
-  | FilePart
-  | z.infer<typeof dbModelReferencePartSchema>
-  | z.infer<typeof pageReferencePartSchema>
-  | z.infer<typeof endpointReferencePartSchema>
-)[];
 export type UserMessage = z.infer<typeof userMessageSchema>;
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
 export type ToolMessage = z.infer<typeof toolMessageSchema>;
@@ -96,6 +84,12 @@ export type TStatus =
 export type TextStreamableValue = {
   id: string;
   type: "text";
+  text: string;
+};
+
+export type ReasoningStreamableValue = {
+  id: string;
+  type: "reasoning";
   text: string;
 };
 
@@ -156,6 +150,7 @@ export type SSEStatusEvent = {
 
 export type SSEValue =
   | TextStreamableValue
+  | ReasoningStreamableValue
   | ToolCallStreamableValue
   | ToolStreamableValue
   | NodeStreamableValue

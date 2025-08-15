@@ -13,7 +13,8 @@
     "./color-utils": "./src/color-utils.ts",
     "./machine-lookup-store": "./src/machine-lookup-store.ts",
     "./nanoid": "./src/nanoid.ts",
-    "./logger": "./src/logger.ts"
+    "./logger": "./src/logger.ts",
+    "./process-text": "./src/process-text.ts"
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",
