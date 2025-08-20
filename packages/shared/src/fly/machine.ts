@@ -580,17 +580,19 @@ export namespace Machine {
 
   export const presets = {
     development: {
-      image: "registry.fly.io/weldr-images:dev-machine",
+      init: {
+        exec: ["/sbin/pilot"],
+      },
       guest: {
         cpu_kind: "shared",
-        cpus: 2,
-        memory_mb: 2048,
+        cpus: 1,
+        memory_mb: 512,
       },
       services: [
         {
           protocol: "tcp",
           internal_port: 3000,
-          autostop: "stop",
+          autostop: "suspend",
           autostart: true,
           ports: [
             {
@@ -602,6 +604,106 @@ export namespace Machine {
               handlers: ["http"],
             },
           ],
+        },
+      ],
+      containers: [
+        {
+          name: "storage",
+          image: "docker.io/flyio/app-storage:v0.0.24",
+          cmd: ["/usr/local/bin/mount.sh"],
+          // @ts-ignore - the config is not typed correctly
+          mounts: [
+            {
+              name: "shared",
+              path: "/data",
+            },
+          ],
+          env: {
+            S3_REGION: "auto",
+            S3_ENDPOINT: "https://fly.storage.tigris.dev",
+          },
+          secrets: [
+            {
+              name: "WELDR_S3_ACCESS_KEY_ID",
+              env_var: "S3_ACCESS_KEY",
+            },
+            {
+              name: "WELDR_S3_SECRET_ACCESS_KEY",
+              env_var: "S3_SECRET_KEY",
+            },
+            {
+              name: "WELDR_S3_BUCKET_NAME",
+              env_var: "BUCKET_NAME",
+            },
+          ],
+          restart: {
+            policy: "no",
+          },
+          healthchecks: [
+            {
+              http: {
+                port: 9567,
+                method: "head",
+                path: "/metrics",
+                scheme: "http",
+              },
+              failure_threshold: 10,
+              success_threshold: 1,
+              interval: 10,
+              grace_period: 15,
+            },
+          ],
+        },
+        {
+          name: "agent",
+          image: "YOUR_AGENT_IMAGE:latest",
+          // @ts-ignore - the config is not typed correctly
+          mounts: [
+            {
+              name: "shared",
+              path: "/data",
+            },
+          ],
+          secrets: [
+            {
+              name: "WELDR_FLY_API_TOKEN",
+              env_var: "WELDR_FLY_API_TOKEN",
+            },
+          ],
+          depends_on: [
+            {
+              name: "storage",
+              condition: "healthy",
+            },
+          ],
+          restart: {
+            policy: "always",
+          },
+          healthchecks: [
+            {
+              name: "agent-health",
+              http: {
+                port: 8080,
+                method: "GET",
+                path: "/health",
+                scheme: "http",
+              },
+              failure_threshold: 10,
+              success_threshold: 1,
+              interval: 10,
+              grace_period: 15,
+              timeout: 5,
+            },
+          ],
+        },
+      ],
+      volumes: [
+        {
+          name: "shared",
+          temp_dir: {
+            size_mb: 100,
+            storage_type: "memory",
+          },
         },
       ],
     } satisfies paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"],

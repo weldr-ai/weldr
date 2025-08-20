@@ -107,30 +107,34 @@ export namespace App {
 
       if (type === "development") {
         // Create Tigris bucket
-        const bucketCredentials = await Tigris.bucket.create(projectId);
+        const bucketCredentials = await Tigris.bucket.create(
+          `app-${projectId}`,
+        );
 
         // Create secrets
-        await Promise.all([
-          Secret.create({
-            type: "development",
-            projectId,
-            key: "AWS_ACCESS_KEY_ID",
-            value: bucketCredentials.accessKeyId,
-          }),
-          Secret.create({
-            type: "development",
-            projectId,
-            key: "AWS_SECRET_ACCESS_KEY",
-            value: bucketCredentials.secretAccessKey,
-          }),
-          Secret.create({
-            type: "development",
-            projectId,
-            key: "FLY_API_TOKEN",
-            // biome-ignore lint/style/noNonNullAssertion: reason
-            value: process.env.FLY_API_TOKEN!,
-          }),
-        ]);
+        await Secret.create({
+          type: "development",
+          projectId,
+          secrets: [
+            {
+              key: "WELDR_S3_ACCESS_KEY_ID",
+              value: bucketCredentials.accessKeyId,
+            },
+            {
+              key: "WELDR_S3_SECRET_ACCESS_KEY",
+              value: bucketCredentials.secretAccessKey,
+            },
+            {
+              key: "WELDR_S3_BUCKET_NAME",
+              value: `app-${projectId}`,
+            },
+            {
+              key: "WELDR_FLY_API_TOKEN",
+              // biome-ignore lint/style/noNonNullAssertion: reason
+              value: process.env.FLY_API_TOKEN!,
+            },
+          ],
+        });
 
         // Create development node
         const devMachineId = await Machine.create({
@@ -155,7 +159,9 @@ export namespace App {
           type,
           projectId,
         }),
-        Tigris.bucket.delete(projectId),
+        ...(type === "development"
+          ? [Tigris.bucket.delete(`app-${projectId}`)]
+          : []),
       ]);
       throw error;
     }

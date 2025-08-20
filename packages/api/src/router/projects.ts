@@ -446,7 +446,6 @@ export const projectsRouter = {
             type: "production",
             projectId: project.id,
           }),
-          Tigris.bucket.delete(project.id),
         ]);
 
         await ctx.db

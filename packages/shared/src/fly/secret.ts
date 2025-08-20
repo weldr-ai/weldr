@@ -7,13 +7,11 @@ export namespace Secret {
   export const create = async ({
     type,
     projectId,
-    key,
-    value,
+    secrets,
   }: {
     type: FlyAppType;
     projectId: string;
-    key: string;
-    value: string;
+    secrets: { key: string; value: string }[];
   }) => {
     await ofetch<{
       data: {
@@ -41,13 +39,8 @@ export namespace Secret {
         variables: {
           input: {
             appId: `app-${type}-${projectId}`,
-            secrets: [
-              {
-                key,
-                value,
-              },
-            ],
-            replaceAll: false,
+            secrets,
+            replaceAll: true,
           },
         },
       },

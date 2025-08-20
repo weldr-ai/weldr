@@ -64,19 +64,28 @@ export const environmentVariablesRouter = {
         });
       }
 
-      await Fly.secret.create({
-        type: "development",
-        projectId: input.projectId,
-        key: input.key,
-        value: input.value,
-      });
-
-      await Fly.secret.create({
-        type: "production",
-        projectId: input.projectId,
-        key: input.key,
-        value: input.value,
-      });
+      await Promise.all([
+        Fly.secret.create({
+          type: "development",
+          projectId: input.projectId,
+          secrets: [
+            {
+              key: input.key,
+              value: input.value,
+            },
+          ],
+        }),
+        Fly.secret.create({
+          type: "production",
+          projectId: input.projectId,
+          secrets: [
+            {
+              key: input.key,
+              value: input.value,
+            },
+          ],
+        }),
+      ]);
 
       return environmentVariable;
     }),
