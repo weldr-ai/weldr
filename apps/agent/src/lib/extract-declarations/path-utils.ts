@@ -1,5 +1,7 @@
+import { promises as fs } from "node:fs";
+import * as path from "node:path";
+
 import { WORKSPACE_DIR } from "@/lib/constants";
-import { runCommand } from "../commands";
 
 function resolveRelativePath(
   currentFilePath: string,
@@ -62,10 +64,14 @@ export async function resolveFilePath(
   const hasExtension = /\.[^/.]+$/.test(basePath);
 
   if (hasExtension) {
-    const absolutePath = `${WORKSPACE_DIR}/${basePath}`.replace(/\/\//g, "/");
-    const { success } = await runCommand("test", ["-f", absolutePath]);
-    if (success) {
-      return basePath;
+    const absolutePath = path.resolve(WORKSPACE_DIR, basePath);
+    try {
+      const stat = await fs.stat(absolutePath);
+      if (stat.isFile()) {
+        return basePath;
+      }
+    } catch {
+      // File doesn't exist, continue to try with extensions
     }
   }
 
@@ -90,17 +96,18 @@ export async function resolveFilePath(
     potentialPaths.push(`${basePath}${indexFile}`);
   }
 
-  for (const path of potentialPaths) {
+  for (const potentialPath of potentialPaths) {
     // avoid trying to check root path
-    if (path === "/") continue;
+    if (potentialPath === "/") continue;
 
-    const absolutePath = `${WORKSPACE_DIR}/${path}`.replace(/\/\//g, "/");
-    const { success } = await runCommand("test", ["-f", absolutePath], {
-      cwd: WORKSPACE_DIR,
-    });
-
-    if (success) {
-      return path;
+    const absolutePath = path.resolve(WORKSPACE_DIR, potentialPath);
+    try {
+      const stat = await fs.stat(absolutePath);
+      if (stat.isFile()) {
+        return potentialPath;
+      }
+    } catch {
+      // File doesn't exist, continue
     }
   }
 

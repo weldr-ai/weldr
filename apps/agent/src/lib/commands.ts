@@ -144,29 +144,3 @@ export async function runShell(
 ): Promise<CommandResult> {
   return runCommand(command, [], { ...options, shell: true });
 }
-
-/**
- * Execute a command and throw an error if it fails
- * @param command The command to execute
- * @param args Command arguments
- * @param options Execution options
- * @returns Promise<CommandResult>
- * @throws Error if the command fails
- */
-export async function runStrictCommand(
-  command: string,
-  args: string[] = [],
-  options: CommandOptions = {},
-): Promise<CommandResult> {
-  const result = await runCommand(command, args, options);
-
-  if (!result.success) {
-    const errorMessage =
-      result.stderr || `Command failed with exit code ${result.exitCode}`;
-    throw new Error(
-      `Command execution failed: ${command} ${args.join(" ")}\n${errorMessage}`,
-    );
-  }
-
-  return result;
-}

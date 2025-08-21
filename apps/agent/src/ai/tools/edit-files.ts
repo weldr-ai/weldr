@@ -1,3 +1,5 @@
+import { promises as fs } from "node:fs";
+import * as path from "node:path";
 import { z } from "zod";
 
 import { db } from "@weldr/db";
@@ -5,7 +7,6 @@ import { versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 
-import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { applyEdit } from "../utils/apply-edit";
 import { extractAndSaveDeclarations } from "../utils/declarations";
@@ -52,18 +53,36 @@ export const editFileTool = createTool({
 
     logger.info(`Editing file: ${input.targetFile}`);
 
-    // Read the current file content
-    const readResult = await runCommand("cat", [input.targetFile], {
-      cwd: WORKSPACE_DIR,
-    });
+    const fullPath = path.resolve(WORKSPACE_DIR, input.targetFile);
 
-    if (!readResult.success) {
-      const errorMsg = `Failed to read file: ${readResult.stderr}`;
-      logger.error(errorMsg);
-      return { success: false as const, error: errorMsg };
+    if (!fullPath.startsWith(WORKSPACE_DIR)) {
+      logger.error("Path traversal attempt detected", {
+        extra: {
+          targetFile: input.targetFile,
+          fullPath,
+        },
+      });
+      return {
+        success: false as const,
+        error: "Invalid file path: path traversal detected",
+      };
     }
 
-    const originalCode = readResult.stdout;
+    // Read the current file content
+    let originalCode: string;
+    try {
+      originalCode = await fs.readFile(fullPath, "utf-8");
+    } catch (error) {
+      const errorMsg = `Failed to read file: ${error instanceof Error ? error.message : String(error)}`;
+      logger.error(errorMsg, {
+        extra: {
+          error: error instanceof Error ? error.message : String(error),
+          code:
+            error instanceof Error && "code" in error ? error.code : undefined,
+        },
+      });
+      return { success: false as const, error: errorMsg };
+    }
 
     // Use the apply-edit utility to generate the updated code
     let updatedCode: string;
@@ -79,14 +98,17 @@ export const editFileTool = createTool({
     }
 
     // Write the updated content back to the file
-    const writeResult = await runCommand("tee", [input.targetFile], {
-      stdin: updatedCode,
-      cwd: WORKSPACE_DIR,
-    });
-
-    if (!writeResult.success) {
-      const errorMsg = `Failed to write file: ${writeResult.stderr}`;
-      logger.error(errorMsg);
+    try {
+      await fs.writeFile(fullPath, updatedCode, "utf-8");
+    } catch (error) {
+      const errorMsg = `Failed to write file: ${error instanceof Error ? error.message : String(error)}`;
+      logger.error(errorMsg, {
+        extra: {
+          error: error instanceof Error ? error.message : String(error),
+          code:
+            error instanceof Error && "code" in error ? error.code : undefined,
+        },
+      });
       return { success: false as const, error: errorMsg };
     }
 

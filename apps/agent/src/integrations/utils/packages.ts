@@ -1,3 +1,5 @@
+import { promises as fs } from "node:fs";
+
 import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import type {
@@ -72,20 +74,24 @@ export async function updatePackageJsonScripts(
           ? WORKSPACE_DIR
           : `${WORKSPACE_DIR}/apps/${scriptSet.target}`;
 
-      const packageJson = await runCommand("cat", ["package.json"], {
-        cwd: directory,
-      });
+      let packageJsonContent: {
+        scripts?: Record<string, string>;
+        dependencies?: Record<string, string>;
+        devDependencies?: Record<string, string>;
+      } = {};
 
-      if (!packageJson.success) {
-        console.error("Failed to read package.json:", packageJson.stderr);
+      try {
+        const packageJsonPath = `${directory}/package.json`;
+        const fileContent = await fs.readFile(packageJsonPath, "utf-8");
+        packageJsonContent = JSON.parse(fileContent);
+      } catch (error) {
+        console.error("Failed to read package.json:", error);
         return {
           success: false,
-          message: `Failed to read package.json: ${packageJson.stderr}`,
-          errors: [packageJson.stderr],
+          message: `Failed to read package.json: ${error instanceof Error ? error.message : String(error)}`,
+          errors: [error instanceof Error ? error.message : String(error)],
         };
       }
-
-      const packageJsonContent = JSON.parse(packageJson.stdout);
 
       if (scriptSet.scripts) {
         packageJsonContent.scripts = {
@@ -94,10 +100,20 @@ export async function updatePackageJsonScripts(
         };
       }
 
-      await runCommand("sh", ["-c", `cat > package.json`], {
-        stdin: JSON.stringify(packageJsonContent, null, 2),
-        cwd: directory,
-      });
+      try {
+        const packageJsonPath = `${directory}/package.json`;
+        await fs.writeFile(
+          packageJsonPath,
+          JSON.stringify(packageJsonContent, null, 2),
+          "utf-8",
+        );
+      } catch (error) {
+        return {
+          success: false,
+          message: `Failed to write package.json: ${error instanceof Error ? error.message : String(error)}`,
+          errors: [error instanceof Error ? error.message : String(error)],
+        };
+      }
 
       results.push({
         success: true,

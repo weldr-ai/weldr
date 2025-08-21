@@ -1,4 +1,5 @@
-import { dirname } from "node:path";
+import { promises as fs } from "node:fs";
+import * as path from "node:path";
 import { z } from "zod";
 
 import { db } from "@weldr/db";
@@ -6,7 +7,6 @@ import { versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 
-import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { extractAndSaveDeclarations } from "../utils/declarations";
 import { createTool } from "./utils";
@@ -49,40 +49,52 @@ export const writeFileTool = createTool({
 
     logger.info(`Writing file: ${filePath}`);
 
-    // Always create directories if they don't exist
-    const dir = dirname(filePath);
-    const mkdirResult = await runCommand("mkdir", ["-p", dir], {
-      cwd: WORKSPACE_DIR,
-    });
-    if (!mkdirResult.success) {
-      logger.error("Failed to create directories", {
+    const fullPath = path.resolve(WORKSPACE_DIR, filePath);
+
+    if (!fullPath.startsWith(WORKSPACE_DIR)) {
+      logger.error("Path traversal attempt detected", {
         extra: {
-          exitCode: mkdirResult.exitCode,
-          stderr: mkdirResult.stderr,
+          filePath,
+          fullPath,
         },
       });
       return {
         success: false as const,
-        error: `Failed to create directories: ${mkdirResult.stderr || mkdirResult.stdout}`,
+        error: "Invalid file path: path traversal detected",
       };
     }
 
-    // Write content to file using shell redirection
-    const writeResult = await runCommand("sh", ["-c", `cat > "${filePath}"`], {
-      stdin: content,
-      cwd: WORKSPACE_DIR,
-    });
+    const dir = path.dirname(fullPath);
 
-    if (!writeResult.success) {
-      logger.error("Failed to write file", {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+    } catch (error) {
+      logger.error("Failed to create directories", {
         extra: {
-          exitCode: writeResult.exitCode,
-          stderr: writeResult.stderr,
+          error: error instanceof Error ? error.message : String(error),
+          code:
+            error instanceof Error && "code" in error ? error.code : undefined,
         },
       });
       return {
         success: false as const,
-        error: `Failed to write file: ${writeResult.stderr || writeResult.stdout}`,
+        error: `Failed to create directories: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+
+    try {
+      await fs.writeFile(fullPath, content, "utf-8");
+    } catch (error) {
+      logger.error("Failed to write file", {
+        extra: {
+          error: error instanceof Error ? error.message : String(error),
+          code:
+            error instanceof Error && "code" in error ? error.code : undefined,
+        },
+      });
+      return {
+        success: false as const,
+        error: `Failed to write file: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
 

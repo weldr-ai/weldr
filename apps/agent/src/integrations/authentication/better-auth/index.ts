@@ -1,3 +1,4 @@
+import { promises as fs } from "node:fs";
 import path from "node:path";
 
 import { db } from "@weldr/db";
@@ -106,6 +107,41 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
         });
       });
 
+      // Check if schema/index.ts exists and is empty
+      const schemaIndexPath = path.join(
+        WORKSPACE_DIR,
+        "apps/server/src/db/schema/index.ts",
+      );
+
+      // Read the file content to check if it's empty
+      let fileContent = "";
+      let fileExists = false;
+      try {
+        fileContent = await fs.readFile(schemaIndexPath, "utf-8");
+        fileExists = true;
+      } catch {
+        // File doesn't exist, that's ok
+      }
+
+      // If file exists and is empty (or only whitespace), add dummy table
+      if (fileExists && fileContent.trim() === "") {
+        const dummyTableContent = `import { pgTable, serial, varchar } from "drizzle-orm/pg-core";
+
+// Dummy table - delete this when you add your actual schema
+export const dummyTable = pgTable("dummy_table", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }),
+});`;
+
+        try {
+          await fs.writeFile(schemaIndexPath, dummyTableContent, "utf-8");
+        } catch (error) {
+          Logger.warn("Failed to add dummy table to empty schema index", {
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
       // Generate schema
       const generateSchemaResult = await runCommand(
         "pnpm",
@@ -130,24 +166,33 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
         );
       }
 
-      // Add re-export to schema index file
-      const schemaIndexPath = path.join(
-        WORKSPACE_DIR,
-        "apps/server/src/db/schema/index.ts",
-      );
-
-      const appendResult = await runCommand(
-        "sh",
-        ["-c", `echo 'export * from "./auth";' | tee -a ${schemaIndexPath}`],
-        {
-          cwd: WORKSPACE_DIR,
-        },
-      );
-
-      if (!appendResult.success) {
-        throw new Error(
-          `Failed to append to schema index file: ${appendResult.stderr}`,
-        );
+      // If we added dummy table (file was empty), clear it before appending auth export
+      if (fileExists && fileContent.trim() === "") {
+        // Clear the file and add only the auth export
+        try {
+          await fs.writeFile(
+            schemaIndexPath,
+            'export * from "./auth";\n',
+            "utf-8",
+          );
+        } catch (error) {
+          throw new Error(
+            `Failed to write auth export to schema index: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      } else {
+        // File wasn't empty, just append the auth export
+        try {
+          await fs.appendFile(
+            schemaIndexPath,
+            '\nexport * from "./auth";\n',
+            "utf-8",
+          );
+        } catch (error) {
+          throw new Error(
+            `Failed to append auth export to schema index: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
       }
 
       return {

@@ -1,3 +1,5 @@
+import { promises as fs } from "node:fs";
+import * as path from "node:path";
 import { z } from "zod";
 
 import { and, db, eq, inArray } from "@weldr/db";
@@ -5,7 +7,6 @@ import { declarations, versionDeclarations, versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 
-import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
@@ -39,20 +40,37 @@ export const deleteFileTool = createTool({
 
     logger.info(`Deleting file: ${filePath}`);
 
-    const { exitCode, stderr, success } = await runCommand("rm", [filePath], {
-      cwd: WORKSPACE_DIR,
-    });
+    const fullPath = path.resolve(WORKSPACE_DIR, filePath);
 
-    if (exitCode !== 0 || !success) {
-      logger.error("Failed to delete file", {
+    if (!fullPath.startsWith(WORKSPACE_DIR)) {
+      logger.error("Path traversal attempt detected", {
         extra: {
-          exitCode,
-          stderr,
+          filePath,
+          fullPath,
         },
       });
       return {
         success: false as const,
-        error: stderr || `Failed to delete file ${filePath}`,
+        error: "Invalid file path: path traversal detected",
+      };
+    }
+
+    try {
+      await fs.unlink(fullPath);
+    } catch (error) {
+      logger.error("Failed to delete file", {
+        extra: {
+          error: error instanceof Error ? error.message : String(error),
+          code:
+            error instanceof Error && "code" in error ? error.code : undefined,
+        },
+      });
+      return {
+        success: false as const,
+        error:
+          error instanceof Error
+            ? error.message
+            : `Failed to delete file ${filePath}`,
       };
     }
 

@@ -1,3 +1,4 @@
+import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Handlebars from "handlebars";
@@ -8,7 +9,6 @@ import type { Integration } from "@weldr/shared/types";
 import { applyEdit } from "@/ai/utils/apply-edit";
 import type { FileItem } from "@/integrations/types";
 import { integrationRegistry } from "@/integrations/utils/registry";
-import { runCommand } from "@/lib/commands";
 import { WORKSPACE_DIR } from "@/lib/constants";
 import type { WorkflowContext } from "@/workflow/context";
 
@@ -16,14 +16,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function createWorkspaceDir(): Promise<void> {
-  const checkResult = await runCommand("test", ["-d", WORKSPACE_DIR]);
-
-  if (!checkResult.success) {
-    const mkdirResult = await runCommand("mkdir", ["-p", WORKSPACE_DIR]);
-
-    if (!mkdirResult.success) {
+  try {
+    await fs.access(WORKSPACE_DIR);
+  } catch {
+    try {
+      await fs.mkdir(WORKSPACE_DIR, { recursive: true });
+    } catch (error) {
       throw new Error(
-        `Failed to create workspace directory ${WORKSPACE_DIR}: ${mkdirResult.stderr}`,
+        `Failed to create workspace directory ${WORKSPACE_DIR}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -48,100 +48,79 @@ export async function applyFiles({
   const logger = Logger.get({ projectId: integration.projectId });
 
   for (const file of files) {
-    const readResult = await runCommand("cat", [file.sourcePath]);
-
-    if (!readResult.success) {
-      logger.error(
-        `Failed to read file ${file.sourcePath}: ${readResult.stderr}`,
-      );
-      throw new Error(
-        `Failed to read file ${file.sourcePath}: ${readResult.stderr}`,
-      );
-    }
-
     const targetDir = path.dirname(file.targetPath);
+    const fullTargetDir = path.resolve(WORKSPACE_DIR, targetDir);
 
-    const mkdirResult = await runCommand("mkdir", ["-p", targetDir], {
-      cwd: WORKSPACE_DIR,
-    });
-
-    if (!mkdirResult.success) {
+    try {
+      await fs.mkdir(fullTargetDir, { recursive: true });
+    } catch (error) {
       throw new Error(
-        `Failed to create directories for ${file.targetPath}: ${mkdirResult.stderr}`,
+        `Failed to create directories for ${file.targetPath}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
 
     try {
       switch (file.type) {
         case "copy": {
-          if (file.content.trim().length === 0) {
-            const result = await runCommand("touch", [file.targetPath], {
-              cwd: WORKSPACE_DIR,
-            });
+          const fullTargetPath = path.resolve(WORKSPACE_DIR, file.targetPath);
 
-            if (!result.success) {
-              throw new Error(
-                `Failed to create empty file ${file.targetPath}: ${result.stderr}`,
-              );
+          if (!fullTargetPath.startsWith(WORKSPACE_DIR)) {
+            throw new Error(`Invalid target path: path traversal detected`);
+          }
+
+          try {
+            if (file.content.trim().length === 0) {
+              await fs.writeFile(fullTargetPath, "", "utf-8");
+            } else {
+              await fs.writeFile(fullTargetPath, file.content, "utf-8");
             }
-          } else {
-            const result = await runCommand(
-              "sh",
-              ["-c", `cat > "${file.targetPath}"`],
-              {
-                stdin: file.content,
-                cwd: WORKSPACE_DIR,
-              },
+          } catch (error) {
+            throw new Error(
+              `Failed to write content to ${file.targetPath}: ${error instanceof Error ? error.message : String(error)}`,
             );
-
-            if (!result.success) {
-              throw new Error(
-                `Failed to write processed content to ${file.targetPath}: ${result.stderr}`,
-              );
-            }
           }
 
           break;
         }
         case "llm_instruction": {
-          const originalContentResult = await runCommand(
-            "cat",
-            [file.targetPath],
-            {
-              cwd: WORKSPACE_DIR,
-            },
-          );
+          const fullTargetPath = path.resolve(WORKSPACE_DIR, file.targetPath);
 
-          if (!originalContentResult.success) {
+          if (!fullTargetPath.startsWith(WORKSPACE_DIR)) {
+            throw new Error(`Invalid target path: path traversal detected`);
+          }
+
+          let originalContent: string;
+          try {
+            originalContent = await fs.readFile(fullTargetPath, "utf-8");
+          } catch (error) {
             logger.error(`Failed to read target file ${file.targetPath}`);
             throw new Error(
-              `Failed to read target file ${file.targetPath}: ${originalContentResult.stderr}`,
+              `Failed to read target file ${file.targetPath}: ${error instanceof Error ? error.message : String(error)}`,
             );
           }
 
           const updatedContent = await applyEdit({
-            originalCode: originalContentResult.stdout,
+            originalCode: originalContent,
             editInstructions: file.content,
           });
 
-          const result = await runCommand(
-            "sh",
-            ["-c", `cat > "${file.targetPath}"`],
-            {
-              stdin: updatedContent,
-              cwd: WORKSPACE_DIR,
-            },
-          );
-
-          if (!result.success) {
+          try {
+            await fs.writeFile(fullTargetPath, updatedContent, "utf-8");
+          } catch (error) {
             throw new Error(
-              `Failed to write updated content to ${file.targetPath}: ${result.stderr}`,
+              `Failed to write updated content to ${file.targetPath}: ${error instanceof Error ? error.message : String(error)}`,
             );
           }
 
           break;
         }
         case "handlebars": {
+          const fullTargetPath = path.resolve(WORKSPACE_DIR, file.targetPath);
+
+          if (!fullTargetPath.startsWith(WORKSPACE_DIR)) {
+            throw new Error(`Invalid target path: path traversal detected`);
+          }
+
           const template = Handlebars.compile(file.template);
 
           const integrationVariables =
@@ -155,18 +134,11 @@ export async function applyFiles({
 
           const compiledContent = template(integrationVariables);
 
-          const writeResult = await runCommand(
-            "sh",
-            ["-c", `cat > "${file.targetPath}"`],
-            {
-              stdin: compiledContent,
-              cwd: WORKSPACE_DIR,
-            },
-          );
-
-          if (!writeResult.success) {
+          try {
+            await fs.writeFile(fullTargetPath, compiledContent, "utf-8");
+          } catch (error) {
             throw new Error(
-              `Failed to write processed handlebars content to ${file.targetPath}: ${writeResult.stderr}`,
+              `Failed to write processed handlebars content to ${file.targetPath}: ${error instanceof Error ? error.message : String(error)}`,
             );
           }
 
@@ -215,9 +187,9 @@ async function generateFiles({
 
   baseDataDir = path.join(baseDataDir, "data");
 
-  const checkResult = await runCommand("test", ["-d", baseDataDir]);
-
-  if (!checkResult.success) {
+  try {
+    await fs.access(baseDataDir);
+  } catch {
     logger.error(`No data directory found for ${baseDataDir}`);
     throw new Error(`No data directory found for ${baseDataDir}`);
   }
@@ -249,14 +221,28 @@ async function processDirectoryFiles(
   sourcePath: string,
   target: "server" | "web",
 ): Promise<FileItem[]> {
-  const findResult = await runCommand("find", [sourcePath, "-type", "f"]);
-  if (!findResult.success) {
-    return [];
-  }
-
   const files: FileItem[] = [];
 
-  const filePaths = findResult.stdout.trim().split("\n").filter(Boolean);
+  async function walkDir(dir: string): Promise<string[]> {
+    const results: string[] = [];
+    try {
+      const list = await fs.readdir(dir, { withFileTypes: true });
+      for (const item of list) {
+        const fullPath = path.join(dir, item.name);
+        if (item.isDirectory()) {
+          const subResults = await walkDir(fullPath);
+          results.push(...subResults);
+        } else if (item.isFile()) {
+          results.push(fullPath);
+        }
+      }
+    } catch {
+      // Directory doesn't exist or can't be read
+    }
+    return results;
+  }
+
+  const filePaths = await walkDir(sourcePath);
 
   for (const filePath of filePaths) {
     if (typeof filePath !== "string") continue;
@@ -288,17 +274,20 @@ async function processFile(
   }
 
   // Read the file content
-  const readResult = await runCommand("cat", [filePath]);
-
-  if (!readResult.success) {
+  let fileContent: string;
+  try {
+    fileContent = await fs.readFile(filePath, "utf-8");
+  } catch (error) {
     Logger.error(`Failed to read file ${filePath}`);
-    throw new Error(`Failed to read file ${filePath}`);
+    throw new Error(
+      `Failed to read file ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 
   const targetPathWithoutExtension = targetPath.replace(/\.(txt|hbs)$/, "");
 
   if (type === "handlebars") {
-    const template = readResult.stdout;
+    const template = fileContent;
     files.push({
       type,
       sourcePath: filePath,
@@ -310,7 +299,7 @@ async function processFile(
       type,
       sourcePath: filePath,
       targetPath: targetPathWithoutExtension,
-      content: readResult.stdout,
+      content: fileContent,
     });
   }
 
@@ -320,9 +309,9 @@ async function processFile(
 async function processBaseFiles(): Promise<FileItem[]> {
   const baseDir = path.resolve(__dirname, "../base");
 
-  const checkResult = await runCommand("test", ["-d", baseDir]);
-
-  if (!checkResult.success) {
+  try {
+    await fs.access(baseDir);
+  } catch {
     Logger.error(`No base directory found at ${baseDir}`);
     throw new Error(`No base directory found at ${baseDir}`);
   }

@@ -1,3 +1,5 @@
+import { promises as fs } from "node:fs";
+import * as path from "node:path";
 import { and, eq, isNotNull, not } from "drizzle-orm";
 
 import { db } from "@weldr/db";
@@ -12,7 +14,6 @@ import { Logger } from "@weldr/shared/logger";
 import type { DeclarationCodeMetadata } from "@weldr/shared/types/declarations";
 
 import { WORKSPACE_DIR } from "@/lib/constants";
-import { runCommand } from "../../lib/commands";
 import { embedDeclaration } from "./embed-declarations";
 import { enrichDeclaration } from "./enrich";
 
@@ -143,13 +144,24 @@ export async function recoverEnrichingJobs(): Promise<void> {
           continue;
         }
 
-        const sourceCode = await runCommand("cat", [declaration.path], {
-          cwd: WORKSPACE_DIR,
-        });
+        let sourceCodeContent: string;
+        try {
+          const fullPath = path.resolve(WORKSPACE_DIR, declaration.path);
 
-        if (sourceCode.exitCode !== 0) {
+          if (!fullPath.startsWith(WORKSPACE_DIR)) {
+            logger.error("Path traversal attempt detected", {
+              extra: { declarationId: declaration.id, path: declaration.path },
+            });
+            continue;
+          }
+
+          sourceCodeContent = await fs.readFile(fullPath, "utf-8");
+        } catch (error) {
           logger.error("Failed to read source code", {
-            extra: { declarationId: declaration.id },
+            extra: {
+              declarationId: declaration.id,
+              error: error instanceof Error ? error.message : String(error),
+            },
           });
           continue;
         }
@@ -159,7 +171,7 @@ export async function recoverEnrichingJobs(): Promise<void> {
             declarationId: declaration.id,
             codeMetadata,
             filePath: declaration.path,
-            sourceCode: sourceCode.stdout,
+            sourceCode: sourceCodeContent,
             projectId: project.id,
           });
         }
