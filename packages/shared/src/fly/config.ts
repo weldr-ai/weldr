@@ -1,4 +1,4 @@
-export type FlyAppType = "production" | "development";
+export type FlyAppType = "development" | "preview" | "production";
 
 export const flyApiHostname = process.env.FLY_API_HOSTNAME;
 export const flyApiKey = process.env.FLY_API_TOKEN;

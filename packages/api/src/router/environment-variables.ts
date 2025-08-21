@@ -68,22 +68,17 @@ export const environmentVariablesRouter = {
         Fly.secret.create({
           type: "development",
           projectId: input.projectId,
-          secrets: [
-            {
-              key: input.key,
-              value: input.value,
-            },
-          ],
+          secrets: [{ key: input.key, value: input.value }],
+        }),
+        Fly.secret.create({
+          type: "preview",
+          projectId: input.projectId,
+          secrets: [{ key: input.key, value: input.value }],
         }),
         Fly.secret.create({
           type: "production",
           projectId: input.projectId,
-          secrets: [
-            {
-              key: input.key,
-              value: input.value,
-            },
-          ],
+          secrets: [{ key: input.key, value: input.value }],
         }),
       ]);
 
@@ -140,16 +135,22 @@ export const environmentVariablesRouter = {
         .delete(environmentVariables)
         .where(eq(environmentVariables.id, input.id));
 
-      await Fly.secret.destroy({
-        type: "development",
-        projectId: environmentVariable.projectId,
-        secretKeys: [environmentVariable.key],
-      });
-
-      await Fly.secret.destroy({
-        type: "production",
-        projectId: environmentVariable.projectId,
-        secretKeys: [environmentVariable.key],
-      });
+      await Promise.all([
+        Fly.secret.destroy({
+          type: "development",
+          projectId: environmentVariable.projectId,
+          secretKeys: [environmentVariable.key],
+        }),
+        Fly.secret.destroy({
+          type: "preview",
+          projectId: environmentVariable.projectId,
+          secretKeys: [environmentVariable.key],
+        }),
+        Fly.secret.destroy({
+          type: "production",
+          projectId: environmentVariable.projectId,
+          secretKeys: [environmentVariable.key],
+        }),
+      ]);
     }),
 } satisfies TRPCRouterRecord;

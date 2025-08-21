@@ -28,17 +28,20 @@ export const projectsRouter = {
 
       try {
         return await ctx.db.transaction(async (tx) => {
-          // Create development app
-          await Fly.app.create({
-            type: "development",
-            projectId,
-          });
-
-          // Create production app
-          await Fly.app.create({
-            type: "production",
-            projectId,
-          });
+          await Promise.all([
+            Fly.app.create({
+              type: "development",
+              projectId,
+            }),
+            Fly.app.create({
+              type: "preview",
+              projectId,
+            }),
+            Fly.app.create({
+              type: "production",
+              projectId,
+            }),
+          ]);
 
           const [project] = await tx
             .insert(projects)
@@ -443,9 +446,14 @@ export const projectsRouter = {
             projectId: project.id,
           }),
           Fly.app.destroy({
+            type: "preview",
+            projectId: project.id,
+          }),
+          Fly.app.destroy({
             type: "production",
             projectId: project.id,
           }),
+          Tigris.bucket.delete(`app-${project.id}`),
         ]);
 
         await ctx.db

@@ -12,6 +12,7 @@ import { ErrorBoundary } from "@repo/web/components/error-boundary";
 import { NotFound } from "@repo/web/components/not-found";
 import { Toaster } from "@repo/web/components/ui/sonner";
 import { seo } from "@repo/web/lib/seo";
+
 import appCss from "../styles/app.css?url";
 
 interface MyRouterContext {

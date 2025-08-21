@@ -32,8 +32,8 @@ export const postgresqlIntegration = defineIntegration<"postgresql">({
         {
           target: "server",
           runtime: {
-            "drizzle-orm": "^0.44.3",
-            "drizzle-zod": "^0.8.2",
+            "drizzle-orm": "^0.44.4",
+            "drizzle-zod": "^0.8.3",
             postgres: "^3.4.7",
           },
           development: {

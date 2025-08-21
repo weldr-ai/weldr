@@ -10,7 +10,6 @@ import {
   integrationTemplates,
   projects,
 } from "@weldr/db/schema";
-import { Fly } from "@weldr/shared/fly";
 import {
   createBatchIntegrationsSchema,
   createIntegrationSchema,
@@ -42,32 +41,26 @@ export const integrationsRouter = createTRPCRouter({
         });
       }
 
-      let url = "http://localhost:8080";
-
-      if (process.env.NODE_ENV === "production") {
-        const devMachineId = await Fly.machine.getDevMachineId({
-          projectId: input.projectId,
-        });
-        url = `http://${devMachineId}.vm.development-app-${input.projectId}.internal:8080`;
-      }
+      // Use the Next.js API route that supports Fly replay
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const url = `${baseUrl}/api/integrations/install`;
 
       const headers = new Headers();
 
+      // Forward authorization headers
       ctx.headers.forEach((value, key) => {
         if (
-          !["host", "origin", "referer", "content-length"].includes(
-            key.toLowerCase(),
-          )
+          key.toLowerCase().startsWith("cookie") ||
+          key.toLowerCase() === "authorization"
         ) {
           headers.set(key, value);
         }
       });
 
-      headers.set("host", "localhost:8080");
-      headers.set("origin", url);
       headers.set("content-type", "application/json");
 
-      const response = await fetch(`${url}/integrations/install`, {
+      const response = await fetch(url, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -77,9 +70,10 @@ export const integrationsRouter = createTRPCRouter({
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to trigger installation",
+          message: `Failed to trigger installation: ${errorText}`,
         });
       }
 

@@ -4,12 +4,10 @@ import { Logger } from "@weldr/shared/logger";
 
 import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
 import { WorkflowContext } from "./context";
-import { createStep, createWorkflow } from "./engine";
+import { createWorkflow } from "./engine";
 import { codeStep } from "./steps/code";
 import { deployStep } from "./steps/deploy";
 import { planStep } from "./steps/plan";
-
-const isDev = process.env.NODE_ENV === "development";
 
 export const workflow = createWorkflow({
   retryConfig: {
@@ -19,34 +17,7 @@ export const workflow = createWorkflow({
 })
   .onStatus(["pending", "planning"], planStep)
   .onStatus("coding", codeStep)
-  .onStatus(
-    "deploying",
-    isDev
-      ? createStep({
-          id: "dev-skip-deploy",
-          execute: async ({ context }) => {
-            // Skip deployment in development
-            const version = context.get("version");
-
-            console.log(
-              `[dev-skip-deploy] Updating version ${version.id} from ${version.status} to completed`,
-            );
-
-            await db
-              .update(versions)
-              .set({ status: "completed" })
-              .where(eq(versions.id, version.id));
-
-            const updatedVersion = { ...version, status: "completed" as const };
-            context.set("version", updatedVersion);
-
-            console.log(
-              `[dev-skip-deploy] Context updated. New status: ${context.get("version").status}`,
-            );
-          },
-        })
-      : deployStep,
-  );
+  .onStatus("deploying", deployStep);
 
 export async function recoverWorkflow() {
   Logger.info("Recovering workflow");

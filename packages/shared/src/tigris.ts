@@ -360,15 +360,15 @@ async function deleteTigrisBucket(bucketName: string): Promise<void> {
 }
 
 async function getObjectSignedUrl(
-  bucket: string,
-  key: string,
+  bucketName: string,
+  objectKey: string,
   expiresIn = 3600,
 ): Promise<string> {
   const url = await getSignedUrl(
     s3Client,
     new GetObjectCommand({
-      Bucket: bucket,
-      Key: key,
+      Bucket: bucketName,
+      Key: objectKey,
     }),
     { expiresIn },
   );

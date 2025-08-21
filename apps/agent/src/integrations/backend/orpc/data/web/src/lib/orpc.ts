@@ -1,7 +1,7 @@
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { BatchLinkPlugin, DedupeRequestsPlugin } from "@orpc/client/plugins";
-import type { RouterClient } from "@orpc/server";
+import { createRouterClient, type RouterClient } from "@orpc/server";
 import {
   createTanstackQueryUtils,
   type RouterUtils,
@@ -9,46 +9,45 @@ import {
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { getHeaders } from "@tanstack/react-start/server";
 
-import type { router } from "@repo/server/router";
+import { logger } from "@repo/server/lib/logger";
+import { router } from "@repo/server/router";
 
 export type ORPCReactUtils = RouterUtils<RouterClient<typeof router>>;
 
-const getORPCClient = (): RouterClient<typeof router> => {
-  const link = new RPCLink({
-    url: new URL(
-      "/rpc",
-      typeof window !== "undefined"
-        ? window.location.href
-        : "http://localhost:3000",
-    ),
-    headers: createIsomorphicFn()
-      .client(() => ({}))
-      .server(() => getHeaders()),
-    plugins: [
-      new BatchLinkPlugin({
-        headers: createIsomorphicFn()
-          .client(() => ({}))
-          .server(() => getHeaders()),
-        groups: [
-          {
-            condition: () => true,
-            context: {},
-          },
-        ],
+const getORPCClient = createIsomorphicFn()
+  .server(() =>
+    createRouterClient(router, {
+      context: () => ({
+        headers: getHeaders() as unknown as Headers,
+        logger,
       }),
-      new DedupeRequestsPlugin({
-        groups: [
-          {
-            condition: () => true,
-            context: {},
-          },
-        ],
-      }),
-    ],
-  });
+    }),
+  )
+  .client((): RouterClient<typeof router> => {
+    const link = new RPCLink({
+      url: window.location.href,
+      plugins: [
+        new BatchLinkPlugin({
+          groups: [
+            {
+              condition: () => true,
+              context: {},
+            },
+          ],
+        }),
+        new DedupeRequestsPlugin({
+          groups: [
+            {
+              condition: () => true,
+              context: {},
+            },
+          ],
+        }),
+      ],
+    });
 
-  return createORPCClient(link);
-};
+    return createORPCClient(link);
+  });
 
 export const client: RouterClient<typeof router> = getORPCClient();
 

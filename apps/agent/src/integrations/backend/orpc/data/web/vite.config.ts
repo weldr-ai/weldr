@@ -9,14 +9,14 @@ const config = defineConfig({
     port: 3000,
   },
   plugins: [
-    tanstackStart({
-      customViteReactPlugin: true,
-    }),
-    viteReact(),
     viteTsConfigPaths({
       projects: ["./tsconfig.json", "../server/tsconfig.json"],
     }),
     tailwindcss(),
+    tanstackStart({
+      customViteReactPlugin: true,
+    }),
+    viteReact(),
   ],
 });
 

@@ -21,10 +21,10 @@ export const orpcIntegration = defineIntegration<"orpc">({
       {
         target: "server",
         runtime: {
-          "@orpc/json-schema": "^1.7.2",
-          "@orpc/openapi": "^1.7.2",
-          "@orpc/server": "^1.7.2",
-          "@orpc/zod": "^1.7.2",
+          "@orpc/json-schema": "^1.8.2",
+          "@orpc/openapi": "^1.8.2",
+          "@orpc/server": "^1.8.2",
+          "@orpc/zod": "^1.8.2",
           nanoid: "^5.1.5",
           pino: "^9.7.0",
           "pino-http": "^10.5.0",

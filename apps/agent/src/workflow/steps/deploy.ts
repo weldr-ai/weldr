@@ -9,8 +9,6 @@ import { SCRIPTS_DIR } from "@/lib/constants";
 import { stream } from "@/lib/stream-utils";
 import { createStep } from "../engine";
 
-const isDev = process.env.NODE_ENV === "development";
-
 export const deployStep = createStep({
   id: "deploy",
   execute: async ({ context }) => {
@@ -22,19 +20,14 @@ export const deployStep = createStep({
       versionId: version.id,
     });
 
-    if (isDev) {
-      return;
-    }
-
     try {
       // Start the build process asynchronously
       const { stderr, exitCode, success } = await runCommand(
         "bash",
         [
           `${SCRIPTS_DIR}/build.sh`,
-          `app-production-${project.id}`,
-          version.id,
-          process.env.FLY_API_TOKEN || "",
+          `app-build-${version.id}`,
+          process.env.FLY_PREVIEW_DEPLOY_TOKEN || "",
         ],
         {
           timeout: 1000 * 60 * 5, // 5 minutes
@@ -59,9 +52,9 @@ export const deployStep = createStep({
       // Create a machine and register it in the redis store
       const previewMachineId = await Fly.machine.create({
         projectId: project.id,
-        type: "production",
+        type: "preview",
         config: {
-          image: `registry.fly.io/app-production-${project.id}:${version.id}`,
+          image: `registry.fly.io/weldr-images:app-build-${version.id}`,
           ...Fly.machine.presets.preview,
         },
       });
@@ -73,8 +66,8 @@ export const deployStep = createStep({
       }
 
       await machineLookupStore.set(
-        `${project.id}:preview-machine-id`,
-        previewMachineId,
+        `preview:${version.id}`,
+        `${previewMachineId}:${project.id}`,
       );
 
       logger.info("Deployment completed successfully");

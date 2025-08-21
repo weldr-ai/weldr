@@ -1,7 +1,7 @@
 # ───────────────────────────────────────────
-# Weldr development machine image
-#   • Alpine base
-#   • Node.js + Bun as package manager
+# Weldr Agent Application
+#   • Alpine base with Node.js + Bun
+#   • Turborepo pruned build
 # ───────────────────────────────────────────
 
 FROM flyio/flyctl:latest AS flyio
@@ -18,8 +18,7 @@ RUN apk add --no-cache \
     unzip \
     tree \
     git \
-    ripgrep \
-    aws-cli
+    ripgrep
 
 # ───────────────────────────────────────────
 # Install Bun system-wide
@@ -38,44 +37,53 @@ RUN git config --global user.name "weldr" && \
     git config --global --add safe.directory /workspace
 
 # ───────────────────────────────────────────
-# Build stage
+# Builder stage - prune workspace
 # ───────────────────────────────────────────
 
-FROM golang:1.24.1-alpine AS builder
-
+FROM base AS builder
+RUN apk update
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
-
-# Copy manager package
-COPY packages/manager/ .
-
-# Download dependencies
-RUN go mod download
-
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o main .
+RUN corepack enable
+RUN npm install -g turbo@2.5.0
+COPY . .
+RUN turbo prune @weldr/agent --docker
 
 # ───────────────────────────────────────────
-# Production stage
+# Installer stage - install dependencies
+# ───────────────────────────────────────────
+
+FROM base AS installer
+RUN apk update
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+RUN corepack enable
+
+# First install dependencies (as they change less often)
+COPY --from=builder /app/out/json/ .
+RUN pnpm install --frozen-lockfile
+
+# Build the project and its dependencies
+COPY --from=builder /app/out/full/ .
+RUN pnpm turbo build
+
+# ───────────────────────────────────────────
+# Runner stage - production
 # ───────────────────────────────────────────
 
 FROM base AS runner
-
-# Build argument for development mode
-ARG ENV=production
+WORKDIR /app
 
 # Copy flyctl
 COPY --from=flyio /flyctl /usr/bin
 
-# Copy entrypoint script
-COPY ./entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
+# Copy scripts to standard Linux location
+COPY ./apps/agent/scripts /usr/weldr/scripts
+RUN chmod +x /usr/weldr/scripts/*
 
-COPY --from=builder /app/main /.weldr/main
-COPY ./data/boilerplates /.weldr/data/boilerplates
-
-COPY ./scripts /.weldr/scripts
-RUN chmod +x /.weldr/scripts/*
+# Copy built application
+COPY --from=installer /app .
 
 EXPOSE 3000
 
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["node", "dist/index.js"]

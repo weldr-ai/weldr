@@ -22,10 +22,10 @@ export const tanstackStartIntegration = defineIntegration<"tanstack-start">({
     const packages: IntegrationPackageSets[number] = {
       target: "web",
       runtime: {
-        "@tanstack/react-query": "^5.82.0",
-        "@tanstack/react-router": "^1.128.0",
-        "@tanstack/react-router-with-query": "^1.128.0",
-        "@tanstack/react-start": "^1.128.0",
+        "@tanstack/react-query": "^5.85.5",
+        "@tanstack/react-router": "^1.131.27",
+        "@tanstack/react-router-ssr-query": "^1.131.27",
+        "@tanstack/react-start": "^1.131.27",
         "class-variance-authority": "^0.7.1",
         clsx: "^2.1.1",
         cmdk: "^1.1.1",

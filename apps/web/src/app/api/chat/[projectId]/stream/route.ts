@@ -3,7 +3,6 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
-import { Fly } from "@weldr/shared/fly";
 
 export async function GET(
   request: NextRequest,
@@ -31,14 +30,19 @@ export async function GET(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    let url = "http://localhost:8080";
-
     if (process.env.NODE_ENV === "production") {
-      const devMachineId = await Fly.machine.getDevMachineId({
-        projectId,
+      const appName = `app-development-${projectId}`;
+
+      return new NextResponse(null, {
+        status: 200,
+        headers: {
+          "fly-replay": `app=${appName}`,
+        },
       });
-      url = `http://${devMachineId}.vm.development-app-${projectId}.internal:8080`;
     }
+
+    // Development: use Flycast via WireGuard
+    const url = `http://app-development-${projectId}.flycast`;
 
     // Create headers object, preserving original headers but updating origin-related ones
     const headers = new Headers();
@@ -52,7 +56,7 @@ export async function GET(
 
     // Set the new origin and host for the destination
     headers.set("host", "localhost:8080");
-    headers.set("origin", url);
+    headers.set("origin", "http://localhost:8080");
 
     // Check for lastEventId in query params and set as Last-Event-ID header
     const { searchParams } = new URL(request.url);

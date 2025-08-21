@@ -3,15 +3,11 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
-import type { Attachment, UserMessage } from "@weldr/shared/types";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
     projectId: string;
-    message: {
-      content: UserMessage["content"];
-      attachments: Attachment[];
-    };
+    triggerWorkflow?: boolean;
   };
 
   try {
@@ -63,10 +59,13 @@ export async function POST(request: NextRequest) {
     headers.set("origin", "http://localhost:8080");
     headers.set("content-type", "application/json");
 
-    const response = await fetch(`${url}/trigger`, {
+    const response = await fetch(`${url}/integrations/install`, {
       method: "POST",
       headers,
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        projectId: body.projectId,
+        triggerWorkflow: body.triggerWorkflow,
+      }),
     });
 
     return new NextResponse(response.body, {

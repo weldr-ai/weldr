@@ -1,6 +1,5 @@
 import { ofetch } from "ofetch/node";
 
-import { machineLookupStore } from "../machine-lookup-store";
 import { ofetchConfig } from "../ofetch-config";
 import { Tigris } from "../tigris";
 import {
@@ -67,43 +66,10 @@ export namespace App {
         throw new Error("Failed to create app: No app ID returned");
       }
 
-      // Allocate private IPv6 address for the app
-      const ipAddress = await ofetch<{
-        data: {
-          allocateIpAddress: {
-            ipAddress: {
-              address: string;
-            };
-          };
-        };
-      }>("https://api.fly.io/graphql", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${flyApiKey}`,
-        },
-        body: {
-          query: `
-          mutation($input: AllocateIPAddressInput!) {
-            allocateIpAddress(input: $input) {
-              ipAddress {
-                address
-              }
-            }
-          }
-        `,
-          variables: {
-            input: {
-              appId: `app-${type}-${projectId}`,
-              type: "private_v6",
-            },
-          },
-        },
-        ...ofetchConfig({ tag: `fly:app:allocate-ip-address:${projectId}` }),
+      await allocateIpAddress({
+        type,
+        projectId,
       });
-
-      if (!ipAddress?.data?.allocateIpAddress?.ipAddress?.address) {
-        throw new Error("Failed to allocate IP address");
-      }
 
       if (type === "development") {
         // Create Tigris bucket
@@ -111,40 +77,57 @@ export namespace App {
           `app-${projectId}`,
         );
 
-        // Create secrets
-        await Secret.create({
-          type: "development",
+        const previewDeployToken = await deployToken({
+          type,
           projectId,
-          secrets: [
-            {
-              key: "WELDR_S3_ACCESS_KEY_ID",
-              value: bucketCredentials.accessKeyId,
-            },
-            {
-              key: "WELDR_S3_SECRET_ACCESS_KEY",
-              value: bucketCredentials.secretAccessKey,
-            },
-            {
-              key: "WELDR_S3_BUCKET_NAME",
-              value: `app-${projectId}`,
-            },
-            {
-              key: "WELDR_FLY_API_TOKEN",
-              // biome-ignore lint/style/noNonNullAssertion: reason
-              value: process.env.FLY_API_TOKEN!,
-            },
-          ],
         });
 
-        // Create development node
-        const devMachineId = await Machine.create({
-          type: "development",
+        const productionDeployToken = await deployToken({
+          type: "production",
           projectId,
-          config: Machine.presets.development,
         });
 
-        // Store the machine ID in the lookup store
-        await machineLookupStore.set(`dev-machine:${projectId}`, devMachineId);
+        await Promise.all([
+          // Create secrets
+          Secret.create({
+            type: "development",
+            projectId,
+            secrets: [
+              {
+                key: "S3_ACCESS_KEY_ID",
+                value: bucketCredentials.accessKeyId,
+              },
+              {
+                key: "S3_SECRET_ACCESS_KEY",
+                value: bucketCredentials.secretAccessKey,
+              },
+              {
+                key: "S3_BUCKET_NAME",
+                value: `app-${projectId}`,
+              },
+              {
+                key: "FLY_PREVIEW_DEPLOY_TOKEN",
+                value: previewDeployToken,
+              },
+              {
+                key: "FLY_PRODUCTION_DEPLOY_TOKEN",
+                value: productionDeployToken,
+              },
+            ],
+          }),
+          // Create development node
+          Machine.create({
+            type: "development",
+            projectId,
+            config: Machine.presets.development(projectId),
+          }),
+          // Create standby node
+          Machine.create({
+            type: "development",
+            projectId,
+            config: Machine.presets.development(projectId),
+          }),
+        ]);
       }
 
       return app.id;
@@ -164,6 +147,72 @@ export namespace App {
           : []),
       ]);
       throw error;
+    }
+  };
+
+  export const deployToken = async ({
+    type,
+    projectId,
+  }: {
+    type: FlyAppType;
+    projectId: string;
+  }) => {
+    const deployToken = await ofetch<{
+      token: string;
+    }>(`${flyApiHostname}/v1/apps/app-${type}-${projectId}/deploy_token`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${flyApiKey}`,
+      },
+      ...ofetchConfig({ tag: `fly:app:create-deploy-token:${projectId}` }),
+    });
+
+    return deployToken.token;
+  };
+
+  export const allocateIpAddress = async ({
+    type,
+    projectId,
+  }: {
+    type: FlyAppType;
+    projectId: string;
+  }) => {
+    // Allocate private IPv6 address for the app
+    const ipAddress = await ofetch<{
+      data: {
+        allocateIpAddress: {
+          ipAddress: {
+            address: string;
+          };
+        };
+      };
+    }>("https://api.fly.io/graphql", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${flyApiKey}`,
+      },
+      body: {
+        query: `
+              mutation($input: AllocateIPAddressInput!) {
+                allocateIpAddress(input: $input) {
+                  ipAddress {
+                    address
+                  }
+                }
+              }
+            `,
+        variables: {
+          input: {
+            appId: `app-${type}-${projectId}`,
+            type: "private_v6",
+          },
+        },
+      },
+      ...ofetchConfig({ tag: `fly:app:allocate-ip-address:${projectId}` }),
+    });
+
+    if (!ipAddress?.data?.allocateIpAddress?.ipAddress?.address) {
+      throw new Error("Failed to allocate IP address");
     }
   };
 
