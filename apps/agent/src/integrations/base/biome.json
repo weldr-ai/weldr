@@ -1,20 +1,18 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
-  "vcs": {
-    "enabled": false,
-    "clientKind": "git",
-    "useIgnoreFile": false
-  },
   "files": {
-    "ignoreUnknown": false,
+    "ignoreUnknown": true,
     "includes": [
       "apps/**",
       "packages/**",
+      "!**/build/**",
       "!**/routeTree.gen.ts",
       "!.tanstack/**",
       "!**/dist/**",
       "!**/node_modules/**",
-      "!**/.turbo/**"
+      "!**/.turbo/**",
+      "!**/.output/**",
+      "!**/.nitro/**"
     ]
   },
   "formatter": {
@@ -43,11 +41,25 @@
     }
   },
   "linter": {
-    "enabled": true
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "double"
+    "domains": {
+      "react": "recommended"
+    },
+    "rules": {
+      "recommended": true,
+      "a11y": "info",
+      "correctness": {
+        "useExhaustiveDependencies": "info",
+        "useHookAtTopLevel": "info"
+      },
+      "nursery": {
+        "useSortedClasses": {
+          "level": "warn",
+          "fix": "safe",
+          "options": {
+            "functions": ["clsx", "cva", "cn"]
+          }
+        }
+      }
     }
   }
 }
