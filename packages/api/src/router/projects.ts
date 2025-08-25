@@ -12,7 +12,11 @@ import {
 import { Fly } from "@weldr/shared/fly";
 import { nanoid } from "@weldr/shared/nanoid";
 import { Tigris } from "@weldr/shared/tigris";
-import type { ChatMessage } from "@weldr/shared/types";
+import type {
+  AssistantMessage,
+  ChatMessage,
+  ToolMessage,
+} from "@weldr/shared/types";
 import {
   insertProjectSchema,
   updateProjectSchema,
@@ -263,24 +267,55 @@ export const projectsRouter = {
         const getMessagesWithAttachments = async (
           version: (typeof project.versions)[number],
         ) => {
-          return await Promise.all(
-            version.chat.messages.map(async (message) => {
-              const attachmentsWithUrls = await Promise.all(
-                message.attachments.map(async (attachment) => ({
-                  name: attachment.name,
-                  url: await Tigris.object.getSignedUrl(
-                    // biome-ignore lint/style/noNonNullAssertion: reason
-                    process.env.GENERAL_BUCKET!,
-                    attachment.key,
+          const results = [];
+
+          for (const message of version.chat.messages) {
+            // Filter assistant messages for call_coder tool calls
+            let content = message.content as
+              | ToolMessage["content"]
+              | AssistantMessage["content"];
+
+            // Skip tool messages with call_coder results
+            if (message.role === "tool" && Array.isArray(message.content)) {
+              content = content.filter(
+                (item) =>
+                  !(
+                    item?.type === "tool-result" &&
+                    item?.toolName === "call_coder"
                   ),
-                })),
               );
-              return {
-                ...message,
-                attachments: attachmentsWithUrls,
-              };
-            }),
-          );
+            } else if (message.role === "assistant") {
+              content = content.filter(
+                (item) =>
+                  !(
+                    item?.type === "tool-call" &&
+                    item?.toolName === "call_coder"
+                  ),
+              );
+            }
+
+            if (content.length === 0) continue;
+
+            // Get attachment URLs
+            const attachmentsWithUrls = await Promise.all(
+              message.attachments.map(async (attachment) => ({
+                name: attachment.name,
+                url: await Tigris.object.getSignedUrl(
+                  // biome-ignore lint/style/noNonNullAssertion: reason
+                  process.env.GENERAL_BUCKET!,
+                  attachment.key,
+                ),
+              })),
+            );
+
+            results.push({
+              ...message,
+              content,
+              attachments: attachmentsWithUrls,
+            });
+          }
+
+          return results;
         };
 
         const getVersionDeclarations = (
