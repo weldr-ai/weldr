@@ -2,13 +2,9 @@ import { db } from "@weldr/db";
 import type { projects } from "@weldr/db/schema";
 
 import { getProjectContext } from "@/ai/utils/get-project-context";
-import type { MyToolSet } from "../tools/types";
 import { codingGuidelines } from "./coding-guidelines";
 
-export const planner = async (
-  project: typeof projects.$inferSelect,
-  toolSet?: MyToolSet,
-) => {
+export const planner = async (project: typeof projects.$inferSelect) => {
   const allIntegrationCategories =
     await db.query.integrationCategories.findMany();
 
@@ -99,31 +95,15 @@ ${integrationCategoriesList}
 ${projectContext}
 </context>
 
-<tools>
-${
-  toolSet &&
-  `**Tool Usage Format:**
-  XML: <tool_call><tool_name>name</tool_name><parameters><param>value</param></parameters></tool_call>
-  JSON: Native tool calling format also supported
-
-  **Tool Execution Protocol:**
-  1. Provide brief reasoning (1-2 sentences) before each call
-  2. Execute ONE tool per message - never multiple tool calls in same message
-  3. Wait for results before next action
-  4. Be transparent about what you're doing but describe actions, not tool names
-  5. Say things like "I'm searching your codebase", "Looking at your files", "Analyzing requirements" - describe the action naturally
-
-  **Available Tools:**
-  ${Object.values(toolSet)
-    .map((tool) => tool.toMarkdown())
-    .join("\n\n")}`
-}
-</tools>
-
 <tool_usage_guide>
-## Exploration Tool Usage (ONE TOOL PER MESSAGE)
+## Tool Execution Protocol
+- Provide brief reasoning (1-2 sentences) before each call
+- Execute ONE tool per message - never multiple tool calls in same message
+- Wait for results before next action
+- Be transparent about what you're doing but describe actions, not tool names
+- Say things like "I'm searching your codebase", "Looking at your files", "Analyzing requirements" - describe the action naturally
 
-**CRITICAL: Use ONE tool per message, wait for results before next tool**
+## Tool Usage
 
 **Primary Discovery (Use First):**
 - **\`search_codebase\`**: Semantic search for concepts ("authentication", "payment", "dashboard")
@@ -139,15 +119,7 @@ ${
 - **\`find\`**: Path-based file location
 
 ## Integration Management
-
-**Integration Management:**
-- **Approach**: Call add_integrations tool when user confirms they want features
-- **ONE TOOL PER MESSAGE**: Never call add_integrations and coder in same message
-- **Wait**: After calling add_integrations, wait for user to configure via UI
-- **Then**: Only call coder after integrations are configured
-- **CRITICAL**: One tool call per message, wait for results between calls
-
-## Integration Architecture Patterns
+- **\`add_integrations\`**: Add integrations to the project
 
 **Application Examples → Required Categories:**
 | Application Example | Categories | Rationale |
@@ -165,24 +137,6 @@ ${
 
 **Dependency Rules:**
 Refer to the information in the context section to understand the dependencies between the integrations.
-
-**Execution Rules:**
-1. Present planned features to user first
-2. WAIT for explicit confirmation ("yes", "perfect", "sounds good" or similar)
-3. ONLY call add_integrations AFTER receiving this confirmation
-4. Describe what you're doing when using tools ("I'm searching for existing patterns")
-5. Only suggest needed categories, never specific tools or technical details
-6. Wait for user to configure integrations via UI
-7. Check for existing integrations first
-
-**When to Setup Integrations:**
-- **Database needed**: When storing any persistent data (users, posts, tasks, etc.)
-- **Authentication needed**: When users need to log in or have personal data
-- **Email needed**: When sending notifications, welcome emails, password resets
-- **Frontend needed**: When building user-facing interfaces
-- **Backend needed**: When creating APIs or server-side logic
-- **Storage needed**: When handling file uploads (images, documents, etc.)
-- **Payment needed**: When processing transactions or subscriptions
 
 **Integration Setup Flow:**
 1. Analyze requirements to identify needed categories
