@@ -6,6 +6,7 @@ export default {
   schema: [
     "./src/schema/ai-models.ts",
     "./src/schema/auth.ts",
+    "./src/schema/branches.ts",
     "./src/schema/chats.ts",
     "./src/schema/declaration-templates.ts",
     "./src/schema/declarations.ts",

@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
+  check,
   index,
   integer,
   jsonb,
@@ -14,6 +15,7 @@ import {
 import { nanoid } from "@weldr/shared/nanoid";
 
 import { users } from "./auth";
+import { branches } from "./branches";
 import { chats } from "./chats";
 import { declarations } from "./declarations";
 import { projects } from "./projects";
@@ -23,6 +25,28 @@ export const versions = pgTable(
   "versions",
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
+
+    projectId: text("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    userId: text("user_id")
+      .references(() => users.id)
+      .notNull(),
+    chatId: text("chat_id")
+      .references(() => chats.id, { onDelete: "cascade" })
+      .notNull(),
+    branchId: text("branch_id")
+      .references(() => branches.id, { onDelete: "cascade" })
+      .notNull(),
+    parentVersionId: text("parent_version_id").references(
+      (() => versions.id) as unknown as () => AnyPgColumn,
+      { onDelete: "set null" },
+    ),
+    kind: text("kind")
+      .$type<"checkpoint" | "integration" | "revert">()
+      .notNull()
+      .default("checkpoint"),
+    commitHash: text("commit_hash"),
     number: integer("number").notNull().default(1),
     message: text("message"),
     description: text("description"),
@@ -31,42 +55,47 @@ export const versions = pgTable(
       .default("planning")
       .notNull(),
     acceptanceCriteria: jsonb("acceptance_criteria").$type<string[]>(),
-    commitHash: text("commit_hash"),
-    chatId: text("chat_id")
-      .references(() => chats.id, { onDelete: "cascade" })
-      .notNull(),
     changedFiles: jsonb("changed_files")
-      .$type<
-        {
-          path: string;
-          type: "added" | "modified" | "deleted";
-        }[]
-      >()
+      .$type<{ path: string; type: "added" | "modified" | "deleted" }[]>()
       .default([])
       .notNull(),
-    activatedAt: timestamp("activated_at").defaultNow(),
+    appliedFromBranchId: text("applied_from_branch_id").references(
+      () => branches.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    revertedVersionId: text("reverted_version_id").references(
+      (() => versions.id) as unknown as () => AnyPgColumn,
+      { onDelete: "set null" },
+    ),
+    publishedAt: timestamp("published_at").defaultNow(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date()),
-    parentVersionId: text("parent_version_id").references(
-      (): AnyPgColumn => versions.id,
-      { onDelete: "cascade" },
-    ),
-    userId: text("user_id")
-      .references(() => users.id)
-      .notNull(),
-    projectId: text("project_id")
-      .references(() => projects.id, { onDelete: "cascade" })
-      .notNull(),
   },
-  (table) => [
-    uniqueIndex("active_version_idx")
-      .on(table.projectId, table.activatedAt)
-      .where(sql`(activated_at IS NOT NULL)`),
-    uniqueIndex("version_number_unique_idx").on(table.projectId, table.number),
-    index("versions_created_at_idx").on(table.createdAt),
-    index("versions_chat_id_idx").on(table.chatId),
+  (t) => [
+    uniqueIndex("version_number_unique_idx").on(t.projectId, t.number),
+    index("versions_created_at_idx").on(t.createdAt),
+    index("versions_chat_id_idx").on(t.chatId),
+    index("versions_branch_created_idx").on(t.branchId, t.createdAt),
+    uniqueIndex("versions_commit_hash_uidx")
+      .on(t.commitHash)
+      .where(sql`commit_hash IS NOT NULL`),
+
+    // If kind='revert' then revertedVersionId must be set; otherwise it must be NULL
+    check(
+      "versions_revert_link_chk",
+      sql`((${t.kind} <> 'revert') OR ${t.revertedVersionId} IS NOT NULL)
+             AND ((${t.kind} = 'revert') OR ${t.revertedVersionId} IS NULL)`,
+    ),
+    // If kind='integration' then appliedFromBranchId must be set; otherwise it must be NULL
+    check(
+      "versions_integration_link_chk",
+      sql`((${t.kind} <> 'integration') OR ${t.appliedFromBranchId} IS NOT NULL)
+             AND ((${t.kind} = 'integration') OR ${t.appliedFromBranchId} IS NULL)`,
+    ),
   ],
 );
 
@@ -75,6 +104,18 @@ export const versionsRelations = relations(versions, ({ one, many }) => ({
     fields: [versions.parentVersionId],
     references: [versions.id],
     relationName: "version_parent",
+  }),
+  branch: one(branches, {
+    fields: [versions.branchId],
+    references: [branches.id],
+  }),
+  appliedFromBranch: one(branches, {
+    fields: [versions.appliedFromBranchId],
+    references: [branches.id],
+  }),
+  revertedVersion: one(versions, {
+    fields: [versions.revertedVersionId],
+    references: [versions.id],
   }),
   tasks: many(tasks),
   children: many(versions, {

@@ -5,17 +5,13 @@ import type { RouterOutputs } from "@weldr/api";
 import type { referencePartSchema } from "@weldr/shared/validators/chats";
 
 interface UseEditorReferencesOptions {
-  latestVersion:
-    | RouterOutputs["projects"]["byId"]["versions"][number]
-    | undefined;
+  version: RouterOutputs["versions"]["byId"] | undefined;
 }
 
-export function useEditorReferences({
-  latestVersion,
-}: UseEditorReferencesOptions) {
+export function useEditorReferences({ version }: UseEditorReferencesOptions) {
   const editorReferences = useMemo(() => {
     return (
-      latestVersion?.declarations?.reduce(
+      version?.declarations?.reduce(
         (acc: z.infer<typeof referencePartSchema>[], declaration) => {
           const specs = declaration.declaration.metadata?.specs;
 
@@ -55,7 +51,7 @@ export function useEditorReferences({
         [] as z.infer<typeof referencePartSchema>[],
       ) ?? []
     );
-  }, [latestVersion?.declarations]);
+  }, [version?.declarations]);
 
   return editorReferences;
 }

@@ -1,5 +1,5 @@
-import { and, db, eq, isNotNull, or } from "@weldr/db";
-import { type chatMessages, projects, users, versions } from "@weldr/db/schema";
+import { and, db, eq, or } from "@weldr/db";
+import { projects, users, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 
 import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
@@ -59,55 +59,22 @@ export async function recoverWorkflow() {
     throw new Error("User not found");
   }
 
-  let version:
-    | (typeof versions.$inferSelect & {
-        chat?: {
-          messages: (typeof chatMessages.$inferSelect)[];
-        };
-      })
-    | undefined;
-
-  version = await db.query.versions.findFirst({
+  const versionsList = await db.query.versions.findMany({
     where: and(
       eq(versions.projectId, project.id),
-      isNotNull(versions.activatedAt),
       or(eq(versions.status, "coding"), eq(versions.status, "deploying")),
     ),
   });
 
-  if (!version) {
-    const pendingVersion = await db.query.versions.findFirst({
-      where: and(
-        eq(versions.projectId, project.id),
-        isNotNull(versions.activatedAt),
-        eq(versions.status, "planning"),
-      ),
-      with: {
-        chat: {
-          with: {
-            messages: {
-              orderBy: (messages, { desc }) => [desc(messages.createdAt)],
-              limit: 1,
-            },
-          },
-        },
-      },
+  for (const version of versionsList) {
+    const context = new WorkflowContext();
+    context.set("project", {
+      ...project,
+      integrationCategories: new Set(installedCategories),
     });
-
-    if (pendingVersion?.chat?.messages[0]?.role !== "user") {
-      return;
-    }
-
-    version = pendingVersion;
+    context.set("version", version);
+    context.set("user", user);
+    await workflow.execute({ context });
+    Logger.info(`Recovered workflow for version ${version.id}`);
   }
-
-  const context = new WorkflowContext();
-  context.set("project", {
-    ...project,
-    integrationCategories: new Set(installedCategories),
-  });
-  context.set("version", version);
-  context.set("user", user);
-  await workflow.execute({ context });
-  Logger.info("Recovered workflow");
 }

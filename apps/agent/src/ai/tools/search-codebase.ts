@@ -1,7 +1,17 @@
 import { embedMany } from "ai";
 import { z } from "zod";
 
-import { cosineDistance, db, desc, getTableColumns, gt, sql } from "@weldr/db";
+import {
+  and,
+  cosineDistance,
+  db,
+  desc,
+  eq,
+  getTableColumns,
+  gt,
+  isNotNull,
+  sql,
+} from "@weldr/db";
 import { declarations, versionDeclarations, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 
@@ -112,16 +122,12 @@ export const searchCodebaseTool = createTool({
           sql`${versions.id} = ${versionDeclarations.versionId}`,
         )
         .where(
-          sql`${declarations.projectId} = ${project.id}
-              AND ${declarations.embedding} IS NOT NULL
-              AND ${gt(similarity, minSimilarity)}
-              AND ${versions.id} = (
-                SELECT id FROM ${versions}
-                WHERE ${versions.projectId} = ${project.id}
-                  AND ${versions.activatedAt} IS NOT NULL
-                ORDER BY ${versions.activatedAt} DESC
-                LIMIT 1
-              )`,
+          and(
+            eq(declarations.projectId, project.id),
+            isNotNull(declarations.embedding),
+            gt(similarity, minSimilarity),
+            eq(versions.id, version.id),
+          ),
         )
         .orderBy(desc(similarity))
         .limit(limit);

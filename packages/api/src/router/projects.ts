@@ -1,9 +1,10 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
 
-import { and, eq, isNotNull } from "@weldr/db";
+import { and, eq } from "@weldr/db";
 import {
   attachments,
+  branches,
   chatMessages,
   chats,
   projects,
@@ -113,10 +114,26 @@ export const projectsRouter = {
             );
           }
 
+          const [mainBranch] = await tx
+            .insert(branches)
+            .values({
+              projectId: projectId,
+              isMain: true,
+            })
+            .returning();
+
+          if (!mainBranch) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create main branch",
+            });
+          }
+
           await tx.insert(versions).values({
             projectId: projectId,
             userId: ctx.session.user.id,
             chatId: chat.id,
+            branchId: mainBranch.id,
           });
 
           return project;
@@ -136,13 +153,7 @@ export const projectsRouter = {
     try {
       const result = await ctx.db.query.projects.findMany({
         where: eq(projects.userId, ctx.session.user.id),
-        with: {
-          versions: {
-            where: isNotNull(versions.activatedAt),
-          },
-        },
       });
-
       return result;
     } catch (error) {
       console.error(error);
@@ -194,11 +205,28 @@ export const projectsRouter = {
                 },
               },
             },
-            versions: {
-              limit: 1,
-              where: input.versionId
-                ? eq(versions.id, input.versionId)
-                : isNotNull(versions.activatedAt),
+            environmentVariables: {
+              columns: {
+                secretId: false,
+              },
+            },
+          },
+        });
+
+        if (!project) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Project not found",
+          });
+        }
+
+        const branch = await ctx.db.query.branches.findFirst({
+          where: and(
+            eq(branches.projectId, input.id),
+            eq(branches.isMain, true),
+          ),
+          with: {
+            headVersion: {
               columns: {
                 id: true,
                 message: true,
@@ -207,8 +235,8 @@ export const projectsRouter = {
                 number: true,
                 status: true,
                 description: true,
-                activatedAt: true,
                 projectId: true,
+                publishedAt: true,
               },
               with: {
                 chat: {
@@ -249,23 +277,18 @@ export const projectsRouter = {
                 },
               },
             },
-            environmentVariables: {
-              columns: {
-                secretId: false,
-              },
-            },
           },
         });
 
-        if (!project) {
+        if (!branch || !branch.headVersion) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Project not found",
+            message: "Branch not found",
           });
         }
 
         const getMessagesWithAttachments = async (
-          version: (typeof project.versions)[number],
+          version: typeof branch.headVersion,
         ) => {
           const results = [];
 
@@ -318,9 +341,7 @@ export const projectsRouter = {
           return results;
         };
 
-        const getVersionDeclarations = (
-          version: (typeof project.versions)[number],
-        ) => {
+        const getVersionDeclarations = (version: typeof branch.headVersion) => {
           const declarations = version.declarations
             .filter((declaration) => declaration.declaration.node)
             .map((declaration) => declaration.declaration);
@@ -345,7 +366,7 @@ export const projectsRouter = {
           }));
         };
 
-        const currentVersion = project.versions[0];
+        const currentVersion = branch.headVersion;
 
         if (!currentVersion) {
           throw new TRPCError({
@@ -374,32 +395,10 @@ export const projectsRouter = {
           dependentId: string;
         }[];
 
-        const previousVersion = await ctx.db.query.versions.findFirst({
-          where: and(
-            eq(versions.projectId, input.id),
-            eq(versions.number, currentVersion.number - 1),
-          ),
-          columns: {
-            id: true,
-          },
-        });
-
-        const nextVersion = await ctx.db.query.versions.findFirst({
-          where: and(
-            eq(versions.projectId, input.id),
-            eq(versions.number, currentVersion.number + 1),
-          ),
-          columns: {
-            id: true,
-          },
-        });
-
         const result = {
           ...project,
           currentVersion: {
             ...currentVersion,
-            previousVersionId: previousVersion?.id,
-            nextVersionId: nextVersion?.id,
             edges,
             chat: {
               ...currentVersion.chat,

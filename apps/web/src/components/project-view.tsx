@@ -70,16 +70,16 @@ export function ProjectView({
             {project.title ?? "Untitled Project"}
           </span>
           <div className="flex items-center gap-1">
-            {!project.currentVersion?.activatedAt && (
+            {!project.currentVersion?.publishedAt && (
               <>
-                <Badge>Not Active</Badge>
+                <Badge>Not Published</Badge>
                 <Button
                   variant="outline"
                   onClick={() => {
                     router.push(pathname);
                   }}
                 >
-                  View Active
+                  View Published
                 </Button>
               </>
             )}

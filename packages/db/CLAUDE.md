@@ -16,22 +16,22 @@ export const tableName = pgTable("table_name", {
   id: text("id")
     .$defaultFn(() => createId())
     .primaryKey(),
-  
+
   // Required fields
   name: text("name").notNull(),
-  
+
   // Optional fields with defaults
-  status: text("status", { 
-    enum: ["pending", "active", "archived"] 
+  status: text("status", {
+    enum: ["pending", "active", "archived"]
   }).default("pending"),
-  
+
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .notNull()
     .$onUpdate(() => new Date()),
-  
+
   // Foreign keys
   userId: text("user_id")
     .notNull()
@@ -50,7 +50,7 @@ export const tableNameRelations = relations(tableName, ({ one, many }) => ({
     fields: [tableName.userId],
     references: [users.id],
   }),
-  
+
   // One-to-many relation
   items: many(items),
 }));
@@ -166,17 +166,17 @@ const result = await db.transaction(async (tx) => {
     .insert(projects)
     .values(projectData)
     .returning();
-  
+
   if (!project) {
     throw new Error("Failed to create project");
   }
-  
+
   // Create related records
   await tx.insert(versions).values({
     projectId: project.id,
     number: 1,
   });
-  
+
   // Return transaction result
   return project;
 });
@@ -196,7 +196,7 @@ const activeProjects = db
         .where(
           and(
             eq(versions.projectId, projects.id),
-            isNotNull(versions.activatedAt)
+            isNotNull(versions.publishedAt)
           )
         )
     )
@@ -227,13 +227,13 @@ export const tableName = pgTable(
   (table) => ({
     // Single column index
     userIdIdx: index("user_id_idx").on(table.userId),
-    
+
     // Composite index
     statusCreatedIdx: index("status_created_idx").on(
       table.status,
       table.createdAt
     ),
-    
+
     // Unique index
     slugIdx: uniqueIndex("slug_idx").on(table.slug),
   })
@@ -257,12 +257,12 @@ import { users, projects } from "./schema";
 
 async function seed() {
   console.log("🌱 Seeding database...");
-  
+
   try {
     // Clear existing data
     await db.delete(projects);
     await db.delete(users);
-    
+
     // Insert seed data
     const [user] = await db
       .insert(users)
@@ -271,7 +271,7 @@ async function seed() {
         name: "Test User",
       })
       .returning();
-    
+
     await db.insert(projects).values([
       {
         title: "Sample Project 1",
@@ -282,7 +282,7 @@ async function seed() {
         userId: user.id,
       },
     ]);
-    
+
     console.log("✅ Seeding completed");
   } catch (error) {
     console.error("❌ Seeding failed:", error);
@@ -434,7 +434,7 @@ test("should rollback on error", async () => {
       throw new Error("Rollback");
     })
   ).rejects.toThrow("Rollback");
-  
+
   const count = await testDb.select().from(projects);
   expect(count).toHaveLength(0);
 });

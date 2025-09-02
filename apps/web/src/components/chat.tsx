@@ -1,15 +1,7 @@
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { memo, useEffect } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
-import { Button } from "@weldr/ui/components/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
 
 import { useChatVisibility } from "@/hooks/use-chat-visibility";
@@ -30,9 +22,7 @@ interface ChatProps {
 }
 
 export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
-  const router = useRouter();
   const { data: session } = authClient.useSession();
-  const latestVersion = project.versions[project.versions.length - 1];
   const version = project.currentVersion;
 
   const {
@@ -86,7 +76,7 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
     });
   };
 
-  const editorReferences = useEditorReferences({ latestVersion });
+  const editorReferences = useEditorReferences({ version });
 
   useEffect(() => {
     return () => {
@@ -107,64 +97,16 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
         },
       )}
     >
-      <div className="flex items-center justify-between gap-1 border-b px-2 py-1 pr-1">
-        <span className="flex items-center gap-2 truncate font-medium text-xs">
-          <span className="text-muted-foreground">{`#${version.number}`}</span>
-          <span className="flex items-center gap-1 truncate">
-            {conventionalCommit.type && (
-              <CommitTypeBadge type={conventionalCommit.type} />
-            )}
-            <span className="truncate">
-              {conventionalCommit.message ?? "Untitled Version"}
-            </span>
+      <div className="flex w-full items-center gap-2 truncate border-b px-2 py-1 font-medium text-xs">
+        <span className="text-muted-foreground">{`#${version.number}`}</span>
+        <span className="flex items-center gap-1 truncate">
+          {conventionalCommit.type && (
+            <CommitTypeBadge type={conventionalCommit.type} />
+          )}
+          <span className="truncate">
+            {conventionalCommit.message ?? "Untitled Version"}
           </span>
         </span>
-        <div className="flex items-center gap-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="size-5 rounded-sm shadow-none"
-                size="icon"
-                disabled={!version.previousVersionId}
-                onClick={() => {
-                  if (version.previousVersionId) {
-                    router.push(
-                      `/projects/${project.id}?versionId=${version.previousVersionId}`,
-                    );
-                  }
-                }}
-              >
-                <ChevronLeftIcon className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
-              <p>View Previous Version</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="size-5 rounded-sm shadow-none"
-                size="icon"
-                disabled={!version.nextVersionId}
-                onClick={() => {
-                  if (version.nextVersionId) {
-                    router.push(
-                      `/projects/${project.id}?versionId=${version.nextVersionId}`,
-                    );
-                  }
-                }}
-              >
-                <ChevronRightIcon className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="border bg-background px-2 py-0.5 text-foreground dark:bg-muted">
-              <p>View Next Version</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
       </div>
 
       <div

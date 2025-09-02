@@ -1,4 +1,4 @@
-import { and, db, eq, isNull } from "@weldr/db";
+import { and, db, eq } from "@weldr/db";
 import type { projects } from "@weldr/db/schema";
 import { integrations, versions } from "@weldr/db/schema";
 
@@ -17,17 +17,10 @@ export async function getProjectContext(project: typeof projects.$inferSelect) {
   const projectVersionsList = await db.query.versions.findMany({
     where: and(
       eq(versions.projectId, project.id),
-      isNull(versions.activatedAt),
       eq(versions.status, "completed"),
     ),
     orderBy: (versions, { desc }) => [desc(versions.number)],
-    limit: 5,
-    columns: {
-      number: true,
-      message: true,
-      description: true,
-      changedFiles: true,
-    },
+    limit: 1,
   });
 
   return projectVersionsList.length > 0
@@ -37,18 +30,6 @@ ${projectIntegrationsList
     (integration) =>
       `- ${integration.integrationTemplate.name} (${integration.integrationTemplate.category.key})`,
   )
-  .join(", ")}${
-  projectVersionsList.length > 0
-    ? `\nLast 5 versions:
-${projectVersionsList
-  .map(
-    (version) =>
-      `#${version.number} ${version.message}
-${version.description}
-Changed files: ${version.changedFiles.map((file) => `- ${file.path} (${file.type})`).join("\n")}`,
-  )
-  .join("\n")}`
-    : ""
-}`
+  .join(", ")}`
     : "This is a new project";
 }

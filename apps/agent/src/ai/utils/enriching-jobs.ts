@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import * as path from "node:path";
-import { and, eq, isNotNull, not } from "drizzle-orm";
+import { and, eq, not } from "drizzle-orm";
 
 import { db } from "@weldr/db";
 import {
@@ -98,88 +98,88 @@ export async function recoverEnrichingJobs(): Promise<void> {
 
   try {
     // Find declarations that are still in "enriching" state
-    const version = await db.query.versions.findFirst({
+    const versionsList = await db.query.versions.findMany({
       where: and(
         not(eq(versions.status, "planning")),
         eq(versions.projectId, project.id),
-        isNotNull(versions.activatedAt),
       ),
     });
 
-    if (!version) {
-      return;
-    }
-
-    const declarationsList = await db.query.versionDeclarations.findMany({
-      where: eq(versionDeclarations.versionId, version.id),
-      with: {
-        declaration: {
-          columns: {
-            id: true,
-            path: true,
-            metadata: true,
-            progress: true,
+    for (const version of versionsList) {
+      const declarationsList = await db.query.versionDeclarations.findMany({
+        where: eq(versionDeclarations.versionId, version.id),
+        with: {
+          declaration: {
+            columns: {
+              id: true,
+              path: true,
+              metadata: true,
+              progress: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    const enrichingDeclarations = declarationsList
-      .map((declaration) => declaration.declaration)
-      .filter((declaration) => declaration.progress === "enriching");
+      const enrichingDeclarations = declarationsList
+        .map((declaration) => declaration.declaration)
+        .filter((declaration) => declaration.progress === "enriching");
 
-    if (enrichingDeclarations.length > 0) {
-      logger.info(
-        "Found declarations in enriching state, queueing for processing",
-        {
-          extra: { count: enrichingDeclarations.length },
-        },
-      );
+      if (enrichingDeclarations.length > 0) {
+        logger.info(
+          "Found declarations in enriching state, queueing for processing",
+          {
+            extra: { count: enrichingDeclarations.length },
+          },
+        );
 
-      // Add recovered declarations to queue
-      for (const declaration of enrichingDeclarations) {
-        const codeMetadata = declaration.metadata?.codeMetadata;
+        // Add recovered declarations to queue
+        for (const declaration of enrichingDeclarations) {
+          const codeMetadata = declaration.metadata?.codeMetadata;
 
-        if (!declaration.path) {
-          continue;
-        }
+          if (!declaration.path) {
+            continue;
+          }
 
-        let sourceCodeContent: string;
-        try {
-          const fullPath = path.resolve(WORKSPACE_DIR, declaration.path);
+          let sourceCodeContent: string;
+          try {
+            const fullPath = path.resolve(WORKSPACE_DIR, declaration.path);
 
-          if (!fullPath.startsWith(WORKSPACE_DIR)) {
-            logger.error("Path traversal attempt detected", {
-              extra: { declarationId: declaration.id, path: declaration.path },
+            if (!fullPath.startsWith(WORKSPACE_DIR)) {
+              logger.error("Path traversal attempt detected", {
+                extra: {
+                  declarationId: declaration.id,
+                  path: declaration.path,
+                },
+              });
+              continue;
+            }
+
+            sourceCodeContent = await fs.readFile(fullPath, "utf-8");
+          } catch (error) {
+            logger.error("Failed to read source code", {
+              extra: {
+                declarationId: declaration.id,
+                error: error instanceof Error ? error.message : String(error),
+              },
             });
             continue;
           }
 
-          sourceCodeContent = await fs.readFile(fullPath, "utf-8");
-        } catch (error) {
-          logger.error("Failed to read source code", {
-            extra: {
+          if (codeMetadata && declaration.path) {
+            jobQueue.push({
               declarationId: declaration.id,
-              error: error instanceof Error ? error.message : String(error),
-            },
-          });
-          continue;
+              codeMetadata,
+              filePath: declaration.path,
+              sourceCode: sourceCodeContent,
+              projectId: project.id,
+            });
+          }
         }
 
-        if (codeMetadata && declaration.path) {
-          jobQueue.push({
-            declarationId: declaration.id,
-            codeMetadata,
-            filePath: declaration.path,
-            sourceCode: sourceCodeContent,
-            projectId: project.id,
-          });
+        // Start processing if we have jobs
+        if (jobQueue.length > 0) {
+          processDeclarationsQueue();
         }
-      }
-
-      // Start processing if we have jobs
-      if (jobQueue.length > 0) {
-        processDeclarationsQueue();
       }
     }
   } catch (error) {

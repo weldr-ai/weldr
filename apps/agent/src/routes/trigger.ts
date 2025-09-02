@@ -2,8 +2,8 @@ import { createRoute, z } from "@hono/zod-openapi";
 import type { UserContent } from "ai";
 
 import { auth } from "@weldr/auth";
-import { and, db, eq, isNotNull, not } from "@weldr/db";
-import { projects, versions } from "@weldr/db/schema";
+import { and, db, eq } from "@weldr/db";
+import { branches, projects } from "@weldr/db/schema";
 
 import { initVersion } from "@/ai/utils/init-version";
 import { insertMessages } from "@/ai/utils/insert-messages";
@@ -25,6 +25,9 @@ const route = createRoute({
             projectId: z
               .string()
               .openapi({ description: "Project ID", example: "123abc" }),
+            branchId: z
+              .string()
+              .openapi({ description: "Version ID", example: "123abc" }),
             message: z
               .object({
                 content: z.custom<Exclude<UserContent, string>>().openapi({
@@ -73,7 +76,7 @@ const route = createRoute({
 const router = createRouter();
 
 router.openapi(route, async (c) => {
-  const { projectId, message } = c.req.valid("json");
+  const { projectId, branchId, message } = c.req.valid("json");
 
   const session = await auth.api.getSession({
     headers: c.req.raw.headers,
@@ -107,17 +110,24 @@ router.openapi(route, async (c) => {
 
   const installedCategories = await getInstalledCategories(projectId);
 
-  let activeVersion = await db.query.versions.findFirst({
-    where: and(
-      eq(versions.projectId, projectId),
-      isNotNull(versions.activatedAt),
-      not(eq(versions.status, "completed")),
-    ),
+  const branch = await db.query.branches.findFirst({
+    where: and(eq(branches.projectId, projectId), eq(branches.id, branchId)),
+    with: {
+      headVersion: true,
+    },
   });
+
+  if (!branch || !branch.headVersion) {
+    return c.json({ error: "Branch not found" }, 404);
+  }
+
+  let activeVersion =
+    branch.headVersion?.status !== "completed" ? branch.headVersion : null;
 
   if (!activeVersion) {
     activeVersion = await initVersion({
       projectId,
+      branchId,
       userId: session.user.id,
     });
   }

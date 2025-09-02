@@ -1,7 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
 import { auth } from "@weldr/auth";
-import { and, db, desc, eq, isNotNull } from "@weldr/db";
+import { and, db, desc, eq } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 
@@ -23,6 +23,7 @@ const route = createRoute({
         "application/json": {
           schema: z.object({
             projectId: z.string().openapi({ description: "Project ID" }),
+            versionId: z.string().openapi({ description: "Version ID" }),
             triggerWorkflow: z.boolean().optional().default(false),
           }),
         },
@@ -73,7 +74,7 @@ const route = createRoute({
 const router = createRouter();
 
 router.openapi(route, async (c) => {
-  const { projectId, triggerWorkflow } = c.req.valid("json");
+  const { projectId, versionId, triggerWorkflow } = c.req.valid("json");
   const logger = Logger.get({ projectId });
 
   try {
@@ -110,10 +111,7 @@ router.openapi(route, async (c) => {
     const installedCategories = await getInstalledCategories(projectId);
 
     const activeVersion = await db.query.versions.findFirst({
-      where: and(
-        eq(versions.projectId, projectId),
-        isNotNull(versions.activatedAt),
-      ),
+      where: and(eq(versions.projectId, projectId), eq(versions.id, versionId)),
       orderBy: desc(versions.createdAt),
     });
 

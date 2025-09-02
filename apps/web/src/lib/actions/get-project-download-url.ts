@@ -21,7 +21,7 @@ export async function getProjectDownloadUrl({
     where: and(
       eq(versions.projectId, projectId),
       eq(versions.userId, session.user.id),
-      isNotNull(versions.activatedAt),
+      isNotNull(versions.publishedAt),
     ),
     with: {
       project: {

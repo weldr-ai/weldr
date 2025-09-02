@@ -1,12 +1,19 @@
-import { and, db, eq, isNotNull } from "@weldr/db";
-import { chats, versionDeclarations, versions } from "@weldr/db/schema";
+import { and, db, eq } from "@weldr/db";
+import {
+  branches,
+  chats,
+  versionDeclarations,
+  versions,
+} from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 
 export const initVersion = async ({
   projectId,
+  branchId,
   userId,
 }: {
   projectId: string;
+  branchId: string;
   userId: string;
 }): Promise<typeof versions.$inferSelect> => {
   const logger = Logger.get({
@@ -14,23 +21,22 @@ export const initVersion = async ({
   });
 
   return db.transaction(async (tx) => {
-    const activeVersion = await tx.query.versions.findFirst({
-      where: and(
-        eq(versions.projectId, projectId),
-        eq(versions.userId, userId),
-        isNotNull(versions.activatedAt),
-      ),
-      columns: {
-        id: true,
-        number: true,
-        message: true,
-        description: true,
-        chatId: true,
-      },
+    const branch = await tx.query.branches.findFirst({
+      where: and(eq(branches.projectId, projectId), eq(branches.id, branchId)),
       with: {
-        declarations: true,
+        headVersion: {
+          with: {
+            declarations: true,
+          },
+        },
       },
     });
+
+    if (!branch || !branch.headVersion) {
+      throw new Error("Branch not found");
+    }
+
+    const activeVersion = branch.headVersion;
 
     if (activeVersion) {
       logger.info("Getting latest version number...");
@@ -45,16 +51,6 @@ export const initVersion = async ({
       if (!latestNumber) {
         throw new Error("Latest version not found");
       }
-
-      logger.info("Updating previous versions...");
-      await tx
-        .update(versions)
-        .set({
-          activatedAt: null,
-        })
-        .where(
-          and(eq(versions.projectId, projectId), eq(versions.userId, userId)),
-        );
 
       logger.info("Creating version chat...");
       const [versionChat] = await tx
@@ -78,6 +74,7 @@ export const initVersion = async ({
           number: latestNumber.number + 1,
           parentVersionId: activeVersion.id,
           chatId: versionChat.id,
+          branchId,
         })
         .returning();
 
@@ -88,6 +85,7 @@ export const initVersion = async ({
       logger.info(
         `Copying ${activeVersion.declarations.length} declarations...`,
       );
+
       await tx.insert(versionDeclarations).values(
         activeVersion.declarations.map((declaration) => ({
           versionId: version.id,
@@ -121,6 +119,7 @@ export const initVersion = async ({
         message: null,
         description: null,
         chatId: versionChat.id,
+        branchId,
       })
       .returning();
 

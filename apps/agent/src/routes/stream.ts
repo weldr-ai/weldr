@@ -1,7 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
 import { auth } from "@weldr/auth";
-import { and, db, eq, isNotNull, not } from "@weldr/db";
+import { and, db, eq, not } from "@weldr/db";
 import { projects, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
@@ -23,6 +23,7 @@ const route = createRoute({
   request: {
     params: z.object({
       projectId: z.string().openapi({ description: "Project ID" }),
+      versionId: z.string().openapi({ description: "Version ID" }),
     }),
     headers: z.object({
       "last-event-id": z.string().optional().openapi({
@@ -60,7 +61,7 @@ const route = createRoute({
 const router = createRouter();
 
 router.openapi(route, async (c) => {
-  const { projectId } = c.req.valid("param");
+  const { projectId, versionId } = c.req.valid("param");
   const lastEventId = c.req.header("Last-Event-ID");
 
   const session = await auth.api.getSession({
@@ -85,11 +86,9 @@ router.openapi(route, async (c) => {
   const activeVersion = await db.query.versions.findFirst({
     where: and(
       eq(versions.projectId, projectId),
-      isNotNull(versions.activatedAt),
-      and(
-        not(eq(versions.status, "completed")),
-        not(eq(versions.status, "failed")),
-      ),
+      eq(versions.id, versionId),
+      not(eq(versions.status, "completed")),
+      not(eq(versions.status, "failed")),
     ),
   });
 

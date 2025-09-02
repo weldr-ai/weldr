@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { db, eq, sql } from "@weldr/db";
+import { and, db, eq } from "@weldr/db";
 import {
   declarations,
   dependencies,
@@ -101,14 +101,10 @@ export const queryRelatedDeclarationsTool = createTool({
           )
           .innerJoin(versions, eq(versions.id, versionDeclarations.versionId))
           .where(
-            sql`${dependencies.dependentId} = ${declarationId}
-                AND ${versions.id} = (
-                  SELECT id FROM ${versions}
-                  WHERE ${versions.projectId} = ${project.id}
-                    AND ${versions.activatedAt} IS NOT NULL
-                  ORDER BY ${versions.activatedAt} DESC
-                  LIMIT 1
-                )`,
+            and(
+              eq(dependencies.dependentId, declarationId),
+              eq(versions.id, version.id),
+            ),
           );
 
         if (dependencyRows.length > 0) {
@@ -158,14 +154,10 @@ export const queryRelatedDeclarationsTool = createTool({
           )
           .innerJoin(versions, eq(versions.id, versionDeclarations.versionId))
           .where(
-            sql`${dependencies.dependencyId} = ${declarationId}
-                AND ${versions.id} = (
-                  SELECT id FROM ${versions}
-                  WHERE ${versions.projectId} = ${project.id}
-                    AND ${versions.activatedAt} IS NOT NULL
-                  ORDER BY ${versions.activatedAt} DESC
-                  LIMIT 1
-                )`,
+            and(
+              eq(dependencies.dependencyId, declarationId),
+              eq(versions.id, version.id),
+            ),
           );
 
         if (dependentRows.length > 0) {

@@ -1,37 +1,17 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
-import {
-  ExpandIcon,
-  ExternalLinkIcon,
-  InfoIcon,
-  LoaderIcon,
-  Undo2Icon,
-} from "lucide-react";
+import { ExpandIcon, ExternalLinkIcon, InfoIcon } from "lucide-react";
 import { memo } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
 import { Button, buttonVariants } from "@weldr/ui/components/button";
-import { toast } from "@weldr/ui/hooks/use-toast";
 
-import { useTRPC } from "@/lib/trpc/react";
 import { parseConventionalCommit } from "@/lib/utils";
 
 import "@xyflow/react/dist/base.css";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@weldr/ui/components/alert-dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -46,56 +26,13 @@ import { CommitTypeBadge } from "../commit-type-badge";
 export type TVersionNode = Node<RouterOutputs["versions"]["list"][number]>;
 
 export const VersionNode = memo(({ data }: NodeProps<TVersionNode>) => {
-  const activeVersion = data.activatedAt !== null;
+  const publishedVersion = data.publishedAt !== null;
   const previewUrl = `https://${data.id}.preview.weldr.app`;
 
-  const { getEdges, setNodes } = useReactFlow();
+  const { getEdges } = useReactFlow();
   const edges = getEdges();
   const hasIncomingEdges = edges.some((edge) => edge.target === data.id);
   const hasOutgoingEdges = edges.some((edge) => edge.source === data.id);
-
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-
-  const setCurrentVersion = useMutation(
-    trpc.versions.setCurrent.mutationOptions({
-      onSuccess: async (data) => {
-        await queryClient.invalidateQueries(
-          trpc.projects.byId.queryFilter({
-            id: data.newCurrentVersion.projectId,
-          }),
-        );
-        setNodes((nodes) =>
-          nodes.map((node) =>
-            node.id === data.newCurrentVersion.id
-              ? {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    ...data.newCurrentVersion,
-                  },
-                }
-              : node.id === data.previousCurrentVersion.id
-                ? {
-                    ...node,
-                    data: {
-                      ...node.data,
-                      ...data.previousCurrentVersion,
-                    },
-                  }
-                : node,
-          ),
-        );
-      },
-      onError: (error) => {
-        toast({
-          variant: "destructive",
-          title: "Error setting current version",
-          description: error.message,
-        });
-      },
-    }),
-  );
 
   const parsed = parseConventionalCommit(data.message);
 
@@ -132,7 +69,7 @@ export const VersionNode = memo(({ data }: NodeProps<TVersionNode>) => {
             )}
           </div>
           <div className="flex items-center gap-1">
-            {!activeVersion && (
+            {!publishedVersion && (
               <Link
                 href={`/projects/${data.projectId}?versionId=${data.id}`}
                 className={cn(
@@ -146,7 +83,7 @@ export const VersionNode = memo(({ data }: NodeProps<TVersionNode>) => {
                 <ExpandIcon className="size-3.5" />
               </Link>
             )}
-            {(activeVersion || data.status === "failed") && (
+            {(publishedVersion || data.status === "failed") && (
               <span
                 className={cn("rounded-full px-2 py-0.5 text-xs", {
                   "bg-warning text-warning-foreground":
@@ -183,43 +120,6 @@ export const VersionNode = memo(({ data }: NodeProps<TVersionNode>) => {
                   <p>Open Preview</p>
                 </TooltipContent>
               </Tooltip>
-            )}
-            {!data.activatedAt && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-6 rounded-sm text-muted-foreground hover:text-foreground"
-                  >
-                    <Undo2Icon className="size-3.5" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Set as current version</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to set this version as the current
-                      version?
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => {
-                        setCurrentVersion.mutate({
-                          versionId: data.id,
-                        });
-                      }}
-                    >
-                      {setCurrentVersion.isPending && (
-                        <LoaderIcon className="size-4 animate-spin" />
-                      )}
-                      Revert
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
             )}
           </div>
         </div>

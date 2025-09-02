@@ -1,5 +1,6 @@
 export * from "./ai-models";
 export * from "./auth";
+export * from "./branches";
 export * from "./chats";
 export * from "./declaration-templates";
 export * from "./declarations";
