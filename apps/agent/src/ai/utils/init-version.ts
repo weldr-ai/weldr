@@ -15,12 +15,15 @@ export const initVersion = async ({
   projectId: string;
   branchId: string;
   userId: string;
-}): Promise<typeof versions.$inferSelect> => {
+}): Promise<
+  typeof versions.$inferSelect & { branch: typeof branches.$inferSelect }
+> => {
   const logger = Logger.get({
     projectId,
   });
 
   return db.transaction(async (tx) => {
+    // Get the branch
     const branch = await tx.query.branches.findFirst({
       where: and(eq(branches.projectId, projectId), eq(branches.id, branchId)),
       with: {
@@ -32,71 +35,12 @@ export const initVersion = async ({
       },
     });
 
-    if (!branch || !branch.headVersion) {
+    if (!branch) {
       throw new Error("Branch not found");
     }
 
-    const activeVersion = branch.headVersion;
-
-    if (activeVersion) {
-      logger.info("Getting latest version number...");
-      const latestNumber = await tx.query.versions.findFirst({
-        where: eq(versions.projectId, projectId),
-        orderBy: (versions, { desc }) => [desc(versions.number)],
-        columns: {
-          number: true,
-        },
-      });
-
-      if (!latestNumber) {
-        throw new Error("Latest version not found");
-      }
-
-      logger.info("Creating version chat...");
-      const [versionChat] = await tx
-        .insert(chats)
-        .values({
-          projectId,
-          userId,
-        })
-        .returning();
-
-      if (!versionChat) {
-        throw new Error("Version chat not found");
-      }
-
-      logger.info("Creating new version...");
-      const [version] = await tx
-        .insert(versions)
-        .values({
-          projectId,
-          userId,
-          number: latestNumber.number + 1,
-          parentVersionId: activeVersion.id,
-          chatId: versionChat.id,
-          branchId,
-        })
-        .returning();
-
-      if (!version) {
-        throw new Error("Version not found");
-      }
-
-      logger.info(
-        `Copying ${activeVersion.declarations.length} declarations...`,
-      );
-
-      await tx.insert(versionDeclarations).values(
-        activeVersion.declarations.map((declaration) => ({
-          versionId: version.id,
-          declarationId: declaration.declarationId,
-        })),
-      );
-
-      return version;
-    }
-
     logger.info("Creating version chat...");
+    // Create the version chat
     const [versionChat] = await tx
       .insert(chats)
       .values({
@@ -109,15 +53,15 @@ export const initVersion = async ({
       throw new Error("Version chat not found");
     }
 
-    logger.info("Creating version");
+    // Create the new version
+    logger.info("Creating new version...");
     const [version] = await tx
       .insert(versions)
       .values({
         projectId,
         userId,
-        number: 1,
-        message: null,
-        description: null,
+        number: branch.headVersion?.number ? branch.headVersion.number + 1 : 1,
+        parentVersionId: branch.headVersion?.id,
         chatId: versionChat.id,
         branchId,
       })
@@ -126,6 +70,29 @@ export const initVersion = async ({
     if (!version) {
       throw new Error("Version not found");
     }
-    return version;
+
+    logger.info(
+      `Copying ${branch.headVersion?.declarations.length} declarations...`,
+    );
+
+    // Copy the declarations
+    if (branch.headVersion) {
+      await tx.insert(versionDeclarations).values(
+        branch.headVersion.declarations.map((declaration) => ({
+          versionId: version.id,
+          declarationId: declaration.declarationId,
+        })),
+      );
+    }
+
+    // Update the branch head version
+    await tx
+      .update(branches)
+      .set({
+        headVersionId: version.id,
+      })
+      .where(eq(branches.id, branchId));
+
+    return { ...version, branch };
   });
 };

@@ -1,8 +1,6 @@
 import { promises as fs } from "node:fs";
 import * as path from "node:path";
 
-import { WORKSPACE_DIR } from "@/lib/constants";
-
 function resolveRelativePath(
   currentFilePath: string,
   importPath: string,
@@ -60,11 +58,12 @@ function resolveRelativePath(
 
 export async function resolveFilePath(
   basePath: string,
+  workspaceDir: string,
 ): Promise<string | null> {
   const hasExtension = /\.[^/.]+$/.test(basePath);
 
   if (hasExtension) {
-    const absolutePath = path.resolve(WORKSPACE_DIR, basePath);
+    const absolutePath = path.resolve(workspaceDir, basePath);
     try {
       const stat = await fs.stat(absolutePath);
       if (stat.isFile()) {
@@ -100,7 +99,7 @@ export async function resolveFilePath(
     // avoid trying to check root path
     if (potentialPath === "/") continue;
 
-    const absolutePath = path.resolve(WORKSPACE_DIR, potentialPath);
+    const absolutePath = path.resolve(workspaceDir, potentialPath);
     try {
       const stat = await fs.stat(absolutePath);
       if (stat.isFile()) {
@@ -191,10 +190,12 @@ export async function resolveInternalPathAsync({
   importPath,
   currentFilePath,
   pathAliases,
+  workspaceDir,
 }: {
   importPath: string;
   currentFilePath: string;
   pathAliases?: Record<string, string>;
+  workspaceDir: string;
 }): Promise<string> {
   // First try to resolve using path aliases
   const aliasResolved = resolvePathAlias({ importPath, pathAliases });
@@ -210,7 +211,7 @@ export async function resolveInternalPathAsync({
   const pathToCheck = aliasResolved || nonAliasedPath;
 
   // Now, try to find the actual file with extension
-  const finalPath = await resolveFilePath(pathToCheck);
+  const finalPath = await resolveFilePath(pathToCheck, workspaceDir);
 
   if (!finalPath) {
     return pathToCheck;

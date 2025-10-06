@@ -47,7 +47,7 @@ export const versions = pgTable(
       .notNull()
       .default("checkpoint"),
     commitHash: text("commit_hash"),
-    number: integer("number").notNull().default(1),
+    number: integer("number").notNull(),
     message: text("message"),
     description: text("description"),
     status: text("status")

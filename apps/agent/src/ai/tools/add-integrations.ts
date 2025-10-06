@@ -31,11 +31,11 @@ export const addIntegrationsTool = createTool({
   ]),
   execute: async ({ input, context }) => {
     const project = context.get("project");
-    const version = context.get("version");
+    const branch = context.get("branch");
 
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version?.id,
+      versionId: branch.headVersion?.id,
       input,
     });
 

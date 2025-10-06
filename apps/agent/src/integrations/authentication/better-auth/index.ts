@@ -12,7 +12,7 @@ import { Logger } from "@weldr/shared/logger";
 import type { IntegrationPackageSets } from "@/integrations/types";
 import { defineIntegration } from "@/integrations/utils/define-integration";
 import { runCommand } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
+import { Git } from "@/lib/git";
 
 export const betterAuthIntegration = defineIntegration<"better-auth">({
   category: "authentication",
@@ -68,6 +68,9 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
   postInstall: async ({ context, integration }) => {
     const project = context.get("project");
     const user = context.get("user");
+    const branch = context.get("branch");
+
+    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
 
     try {
       // Store secret in database
@@ -109,7 +112,7 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
 
       // Check if schema/index.ts exists and is empty
       const schemaIndexPath = path.join(
-        WORKSPACE_DIR,
+        workspaceDir,
         "apps/server/src/db/schema/index.ts",
       );
 
@@ -156,7 +159,7 @@ export const dummyTable = pgTable("dummy_table", {
           "--y",
         ],
         {
-          cwd: path.join(WORKSPACE_DIR, "apps", "server"),
+          cwd: path.join(workspaceDir, "apps", "server"),
         },
       );
 

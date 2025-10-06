@@ -7,7 +7,7 @@ import { declarations, versionDeclarations, versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 
-import { WORKSPACE_DIR } from "@/lib/constants";
+import { Git } from "@/lib/git";
 import { createTool } from "./utils";
 
 export const deleteFileTool = createTool({
@@ -30,19 +30,21 @@ export const deleteFileTool = createTool({
   execute: async ({ input, context }) => {
     const { filePath } = input;
     const project = context.get("project");
-    const version = context.get("version");
+    const branch = context.get("branch");
 
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version.id,
+      versionId: branch.headVersion.id,
       input,
     });
 
+    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
+
     logger.info(`Deleting file: ${filePath}`);
 
-    const fullPath = path.resolve(WORKSPACE_DIR, filePath);
+    const fullPath = path.resolve(workspaceDir, filePath);
 
-    if (!fullPath.startsWith(WORKSPACE_DIR)) {
+    if (!fullPath.startsWith(workspaceDir)) {
       logger.error("Path traversal attempt detected", {
         extra: {
           filePath,
@@ -88,7 +90,7 @@ export const deleteFileTool = createTool({
             versionDeclarations.declarationId,
             declarationsList.map((d) => d.id),
           ),
-          eq(versionDeclarations.versionId, version.id),
+          eq(versionDeclarations.versionId, branch.headVersion.id),
         ),
       );
       logger.info(`Deleted ${declarationsList.length} declarations`);

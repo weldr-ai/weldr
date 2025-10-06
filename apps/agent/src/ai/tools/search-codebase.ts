@@ -61,11 +61,11 @@ export const searchCodebaseTool = createTool({
     const { query, limit, minSimilarity } = input;
     const project = context.get("project");
     const user = context.get("user");
-    const version = context.get("version");
+    const branch = context.get("branch");
 
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version.id,
+      versionId: branch.headVersion.id,
       userId: user.id,
       input,
     });
@@ -126,7 +126,7 @@ export const searchCodebaseTool = createTool({
             eq(declarations.projectId, project.id),
             isNotNull(declarations.embedding),
             gt(similarity, minSimilarity),
-            eq(versions.id, version.id),
+            eq(versions.id, branch.headVersion.id),
           ),
         )
         .orderBy(desc(similarity))

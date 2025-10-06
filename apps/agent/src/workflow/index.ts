@@ -64,6 +64,9 @@ export async function recoverWorkflow() {
       eq(versions.projectId, project.id),
       or(eq(versions.status, "coding"), eq(versions.status, "deploying")),
     ),
+    with: {
+      branch: true,
+    },
   });
 
   for (const version of versionsList) {
@@ -72,7 +75,7 @@ export async function recoverWorkflow() {
       ...project,
       integrationCategories: new Set(installedCategories),
     });
-    context.set("version", version);
+    context.set("branch", { ...version.branch, headVersion: version });
     context.set("user", user);
     await workflow.execute({ context });
     Logger.info(`Recovered workflow for version ${version.id}`);

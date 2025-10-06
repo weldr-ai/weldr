@@ -313,7 +313,7 @@ CREATE TABLE "versions" (
 	"parent_version_id" text,
 	"kind" text DEFAULT 'checkpoint' NOT NULL,
 	"commit_hash" text,
-	"number" integer DEFAULT 1 NOT NULL,
+	"number" integer NOT NULL,
 	"message" text,
 	"description" text,
 	"status" text DEFAULT 'planning' NOT NULL,

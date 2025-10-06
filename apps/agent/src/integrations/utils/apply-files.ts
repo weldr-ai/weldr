@@ -9,25 +9,11 @@ import type { Integration } from "@weldr/shared/types";
 import { applyEdit } from "@/ai/utils/apply-edit";
 import type { FileItem } from "@/integrations/types";
 import { integrationRegistry } from "@/integrations/utils/registry";
-import { WORKSPACE_DIR } from "@/lib/constants";
+import { Git } from "@/lib/git";
 import type { WorkflowContext } from "@/workflow/context";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-async function createWorkspaceDir(): Promise<void> {
-  try {
-    await fs.access(WORKSPACE_DIR);
-  } catch {
-    try {
-      await fs.mkdir(WORKSPACE_DIR, { recursive: true });
-    } catch (error) {
-      throw new Error(
-        `Failed to create workspace directory ${WORKSPACE_DIR}: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  }
-}
 
 export async function applyFiles({
   integration,
@@ -36,9 +22,8 @@ export async function applyFiles({
   integration: Integration;
   context: WorkflowContext;
 }): Promise<void> {
-  if (process.env.NODE_ENV === "development") {
-    await createWorkspaceDir();
-  }
+  const branch = context.get("branch");
+  const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
 
   const files = await generateFiles({
     integration,
@@ -49,7 +34,7 @@ export async function applyFiles({
 
   for (const file of files) {
     const targetDir = path.dirname(file.targetPath);
-    const fullTargetDir = path.resolve(WORKSPACE_DIR, targetDir);
+    const fullTargetDir = path.resolve(workspaceDir, targetDir);
 
     try {
       await fs.mkdir(fullTargetDir, { recursive: true });
@@ -62,9 +47,9 @@ export async function applyFiles({
     try {
       switch (file.type) {
         case "copy": {
-          const fullTargetPath = path.resolve(WORKSPACE_DIR, file.targetPath);
+          const fullTargetPath = path.resolve(workspaceDir, file.targetPath);
 
-          if (!fullTargetPath.startsWith(WORKSPACE_DIR)) {
+          if (!fullTargetPath.startsWith(workspaceDir)) {
             throw new Error(`Invalid target path: path traversal detected`);
           }
 
@@ -83,9 +68,9 @@ export async function applyFiles({
           break;
         }
         case "llm_instruction": {
-          const fullTargetPath = path.resolve(WORKSPACE_DIR, file.targetPath);
+          const fullTargetPath = path.resolve(workspaceDir, file.targetPath);
 
-          if (!fullTargetPath.startsWith(WORKSPACE_DIR)) {
+          if (!fullTargetPath.startsWith(workspaceDir)) {
             throw new Error(`Invalid target path: path traversal detected`);
           }
 
@@ -115,9 +100,9 @@ export async function applyFiles({
           break;
         }
         case "handlebars": {
-          const fullTargetPath = path.resolve(WORKSPACE_DIR, file.targetPath);
+          const fullTargetPath = path.resolve(workspaceDir, file.targetPath);
 
-          if (!fullTargetPath.startsWith(WORKSPACE_DIR)) {
+          if (!fullTargetPath.startsWith(workspaceDir)) {
             throw new Error(`Invalid target path: path traversal detected`);
           }
 
@@ -162,6 +147,9 @@ async function generateFiles({
   context: WorkflowContext;
 }): Promise<FileItem[]> {
   const project = context.get("project");
+  const branch = context.get("branch");
+  const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
+
   const hasFrontend = project.integrationCategories.has("frontend");
   const hasBackend = project.integrationCategories.has("backend");
   const hasNothing = !hasFrontend && !hasBackend;
@@ -198,19 +186,23 @@ async function generateFiles({
 
   // Add base files when there's absolutely nothing in the project yet
   if (hasNothing) {
-    const baseFiles = await processBaseFiles();
+    const baseFiles = await processBaseFiles(workspaceDir);
     files.push(...baseFiles);
   }
 
   if (hasBackend || hasNothing) {
     const serverPath = path.join(baseDataDir, "server");
-    const serverFiles = await processDirectoryFiles(serverPath, "server");
+    const serverFiles = await processDirectoryFiles(
+      serverPath,
+      "server",
+      workspaceDir,
+    );
     files.push(...serverFiles);
   }
 
   if (hasFrontend || hasNothing) {
     const webPath = path.join(baseDataDir, "web");
-    const webFiles = await processDirectoryFiles(webPath, "web");
+    const webFiles = await processDirectoryFiles(webPath, "web", workspaceDir);
     files.push(...webFiles);
   }
 
@@ -220,6 +212,7 @@ async function generateFiles({
 async function processDirectoryFiles(
   sourcePath: string,
   target: "server" | "web",
+  workspaceDir: string,
 ): Promise<FileItem[]> {
   const files: FileItem[] = [];
 
@@ -248,7 +241,7 @@ async function processDirectoryFiles(
     if (typeof filePath !== "string") continue;
 
     const relativePath = filePath.replace(`${sourcePath}/`, "");
-    const targetPath = path.join(WORKSPACE_DIR, "apps", target, relativePath);
+    const targetPath = path.join(workspaceDir, "apps", target, relativePath);
 
     const file = await processFile(filePath, targetPath);
     files.push(...file);
@@ -306,7 +299,7 @@ async function processFile(
   return files;
 }
 
-async function processBaseFiles(): Promise<FileItem[]> {
+async function processBaseFiles(workspaceDir: string): Promise<FileItem[]> {
   const baseDir = path.resolve(__dirname, "../base");
 
   try {
@@ -329,7 +322,7 @@ async function processBaseFiles(): Promise<FileItem[]> {
 
   for (const fileName of baseFiles) {
     const sourcePath = path.join(baseDir, fileName);
-    const targetPath = path.join(WORKSPACE_DIR, fileName);
+    const targetPath = path.join(workspaceDir, fileName);
 
     const file = await processFile(sourcePath, targetPath);
     files.push(...file);

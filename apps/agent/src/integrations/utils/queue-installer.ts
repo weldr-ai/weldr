@@ -27,7 +27,7 @@ async function streamToolMessageUpdate({
   integrationId: string;
   status: "installing" | "completed" | "failed";
 }) {
-  const version = context.get("version");
+  const branch = context.get("branch");
 
   const integration = await db.query.integrations.findFirst({
     where: eq(integrations.id, integrationId),
@@ -39,7 +39,7 @@ async function streamToolMessageUpdate({
 
   const message = await db.query.chatMessages.findFirst({
     where: and(
-      eq(chatMessages.chatId, version.chatId),
+      eq(chatMessages.chatId, branch.headVersion.chatId),
       eq(chatMessages.role, "tool"),
     ),
     orderBy: (chatMessages, { desc }) => [desc(chatMessages.createdAt)],
@@ -102,7 +102,7 @@ async function streamToolMessageUpdate({
     })
     .where(eq(chatMessages.id, message.id));
 
-  await stream(version.chatId, {
+  await stream(branch.headVersion.chatId, {
     type: "tool",
     message: {
       ...toolMessage,

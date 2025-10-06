@@ -32,6 +32,7 @@ export const versionRouter = {
       }
 
       let branchId: string | undefined = input.branchId;
+      let currentVersionNumber: number | undefined;
 
       if (!branchId) {
         const branch = await ctx.db.query.branches.findFirst({
@@ -39,8 +40,12 @@ export const versionRouter = {
             eq(branches.projectId, input.projectId),
             eq(branches.isMain, true),
           ),
-          columns: {
-            id: true,
+          with: {
+            headVersion: {
+              columns: {
+                number: true,
+              },
+            },
           },
         });
 
@@ -52,11 +57,13 @@ export const versionRouter = {
         }
 
         branchId = branch.id;
+        currentVersionNumber = branch.headVersion?.number;
       }
 
       const version = await ctx.db.insert(versions).values({
         projectId: input.projectId,
         userId: ctx.session.user.id,
+        number: currentVersionNumber ? currentVersionNumber + 1 : 1,
         chatId: chat.id,
         branchId,
       });

@@ -58,12 +58,12 @@ export const createDeclarationFromTask = async ({
   tx?: Tx;
 }) => {
   const project = context.get("project");
-  const version = context.get("version");
+  const branch = context.get("branch");
   const user = context.get("user");
 
   const logger = Logger.get({
     projectId: project.id,
-    versionId: version.id,
+    versionId: branch.headVersion.id,
   });
 
   const taskData = task.data;
@@ -132,7 +132,7 @@ export const createDeclarationFromTask = async ({
       if (!createdCanvasNode) {
         logger.error("Failed to create canvas node");
         throw new Error(
-          `[createDeclarationFromTask:project_${project.id}:version_${version.id}] Failed to create canvas node`,
+          `[createDeclarationFromTask:project_${project.id}:version_${branch.headVersion.id}] Failed to create canvas node`,
         );
       }
 
@@ -142,7 +142,7 @@ export const createDeclarationFromTask = async ({
     if (taskData.operation === "update") {
       const existingVersionDeclarations =
         await tx.query.versionDeclarations.findMany({
-          where: eq(versionDeclarations.versionId, version.id),
+          where: eq(versionDeclarations.versionId, branch.headVersion.id),
           with: {
             declaration: {
               columns: {
@@ -161,14 +161,14 @@ export const createDeclarationFromTask = async ({
       if (!existingDeclaration) {
         logger.error("Declaration not found");
         throw new Error(
-          `[createDeclarationFromTask:project_${project.id}:version_${version.id}] Declaration URI ${taskData.uri} not found, please make sure the declaration exists.`,
+          `[createDeclarationFromTask:project_${project.id}:version_${branch.headVersion.id}] Declaration URI ${taskData.uri} not found, please make sure the declaration exists.`,
         );
       }
 
       if (!existingDeclaration.nodeId) {
         logger.error("Node ID not found");
         throw new Error(
-          `[createDeclarationFromTask:project_${project.id}:version_${version.id}] Node ID not found, please make sure the node exists.`,
+          `[createDeclarationFromTask:project_${project.id}:version_${branch.headVersion.id}] Node ID not found, please make sure the node exists.`,
         );
       }
 
@@ -203,18 +203,18 @@ export const createDeclarationFromTask = async ({
     if (!createdDeclaration) {
       logger.error("Failed to create declaration");
       throw new Error(
-        `[createDeclarationFromTask:project_${project.id}:version_${version.id}] Failed to create declaration`,
+        `[createDeclarationFromTask:project_${project.id}:version_${branch.headVersion.id}] Failed to create declaration`,
       );
     }
 
     await tx.insert(versionDeclarations).values({
-      versionId: version.id,
+      versionId: branch.headVersion.id,
       declarationId: createdDeclaration.id,
     });
 
     try {
       if (createdDeclaration.metadata?.specs && node) {
-        await stream(version.chatId, {
+        await stream(branch.headVersion.chatId, {
           type: "node",
           nodeId: node.id,
           position: node.position,
@@ -252,17 +252,19 @@ export async function extractAndSaveDeclarations({
   context,
   filePath,
   sourceCode,
+  workspaceDir,
 }: {
   context: WorkflowContext;
   filePath: string;
   sourceCode: string;
+  workspaceDir: string;
 }): Promise<void> {
   const project = context.get("project");
-  const version = context.get("version");
+  const branch = context.get("branch");
 
   const logger = Logger.get({
     projectId: project.id,
-    versionId: version.id,
+    versionId: branch.headVersion.id,
   });
 
   try {
@@ -284,6 +286,7 @@ export async function extractAndSaveDeclarations({
       sourceCode: sourceCode,
       filename: filePath,
       pathAliases,
+      workspaceDir,
     });
 
     logger.info(`Extracted ${extracted.length} declarations.`);
@@ -294,7 +297,9 @@ export async function extractAndSaveDeclarations({
         // Fetch all declarations currently linked to this version with their completion status
         const activeVersionDeclarations =
           await tx.query.versionDeclarations.findMany({
-            where: and(eq(versionDeclarations.versionId, version.id)),
+            where: and(
+              eq(versionDeclarations.versionId, branch.headVersion.id),
+            ),
             with: {
               declaration: {
                 columns: {
@@ -321,7 +326,7 @@ export async function extractAndSaveDeclarations({
             .where(
               and(
                 inArray(versionDeclarations.declarationId, idsToDelete),
-                eq(versionDeclarations.versionId, version.id),
+                eq(versionDeclarations.versionId, branch.headVersion.id),
               ),
             );
         }
@@ -435,7 +440,7 @@ export async function extractAndSaveDeclarations({
 
           // Link the declaration to the current version
           await tx.insert(versionDeclarations).values({
-            versionId: version.id,
+            versionId: branch.headVersion.id,
             declarationId,
           });
         }

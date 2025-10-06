@@ -46,11 +46,11 @@ export const queryRelatedDeclarationsTool = createTool({
     const { declarationId, queryType } = input;
     const project = context.get("project");
     const user = context.get("user");
-    const version = context.get("version");
+    const branch = context.get("branch");
 
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version.id,
+      versionId: branch.headVersion.id,
       userId: user.id,
       input,
     });
@@ -103,7 +103,7 @@ export const queryRelatedDeclarationsTool = createTool({
           .where(
             and(
               eq(dependencies.dependentId, declarationId),
-              eq(versions.id, version.id),
+              eq(versions.id, branch.headVersion.id),
             ),
           );
 
@@ -156,7 +156,7 @@ export const queryRelatedDeclarationsTool = createTool({
           .where(
             and(
               eq(dependencies.dependencyId, declarationId),
-              eq(versions.id, version.id),
+              eq(versions.id, branch.headVersion.id),
             ),
           );
 

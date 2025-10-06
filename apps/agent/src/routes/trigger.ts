@@ -8,6 +8,7 @@ import { branches, projects } from "@weldr/db/schema";
 import { initVersion } from "@/ai/utils/init-version";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
+import { Git } from "@/lib/git";
 import { createRouter } from "@/lib/utils";
 import { workflow } from "@/workflow";
 
@@ -124,6 +125,10 @@ router.openapi(route, async (c) => {
   let activeVersion =
     branch.headVersion?.status !== "completed" ? branch.headVersion : null;
 
+  if (!(await Git.hasGitRepository())) {
+    await Git.initRepository();
+  }
+
   if (!activeVersion) {
     activeVersion = await initVersion({
       projectId,
@@ -154,7 +159,7 @@ router.openapi(route, async (c) => {
     ...project,
     integrationCategories: new Set(installedCategories),
   });
-  workflowContext.set("version", activeVersion);
+  workflowContext.set("branch", { ...branch, headVersion: activeVersion });
   workflowContext.set("user", session.user);
 
   if (

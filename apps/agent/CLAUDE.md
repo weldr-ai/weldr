@@ -83,18 +83,21 @@ export const myTool = createTool({
   execute: async ({ input, context }) => {
     // Get context data
     const project = context.get("project");
-    const version = context.get("version");
+    const branch = context.get("branch");
+
+    // Get the correct workspace directory
+    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
 
     // Initialize logger with context
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version.id,
+      versionId: branch.headVersion.id,
       input,
     });
 
     try {
-      // Tool implementation
-      const result = await performAction(input);
+      // Tool implementation with correct workspace
+      const result = await performAction(input, workspaceDir);
 
       return {
         success: true as const,
@@ -166,9 +169,9 @@ import { Logger } from "@weldr/shared";
 
 // Direct logger usage for simple operations
 Logger.info("User authentication successful");
-Logger.error("Database connection failed", { 
+Logger.error("Database connection failed", {
   error: err.message,
-  connectionString: safeConnectionString 
+  connectionString: safeConnectionString
 });
 Logger.warn("High memory usage detected", { memoryUsage: process.memoryUsage() });
 ```
@@ -180,32 +183,32 @@ export const myTool = createTool({
   // ... tool definition
   execute: async ({ input, context }) => {
     const project = context.get("project");
-    const version = context.get("version");
-    
+    const branch = context.get("branch")
+
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version.id,
+      versionId: branch.headVersion.id,
       toolName: "myTool",
       input: input.someId, // Safe contextual data only
     });
-    
+
     logger.info("Tool execution started");
-    
+
     try {
       const result = await performAction(input);
-      logger.info("Tool execution completed", { 
-        extra: { 
+      logger.info("Tool execution completed", {
+        extra: {
           resultSize: result.length,
-          duration: Date.now() - startTime 
-        } 
+          duration: Date.now() - startTime
+        }
       });
       return { success: true as const, data: result };
     } catch (error) {
-      logger.error("Tool execution failed", { 
-        extra: { 
+      logger.error("Tool execution failed", {
+        extra: {
           error: error.message,
-          stack: error.stack 
-        } 
+          stack: error.stack
+        }
       });
       return { success: false as const, error: error.message };
     }
@@ -221,9 +224,9 @@ router.openapi(route, async (c) => {
     path: c.req.path,
     requestId: crypto.randomUUID(),
   });
-  
+
   logger.info("Request started");
-  
+
   try {
     const result = await someOperation();
     logger.info("Request completed successfully");
@@ -269,16 +272,16 @@ stream.on('error', (error) => {
 const logger = Logger.get({ userId, operation: "payment" });
 
 // ❌ BAD - exposes sensitive data
-logger.info("Processing payment", { 
+logger.info("Processing payment", {
   creditCard: "4111-1111-1111-1111",
-  password: userInput.password 
+  password: userInput.password
 });
 
 // ✅ GOOD - logs safe contextual data
-logger.info("Processing payment", { 
+logger.info("Processing payment", {
   paymentMethod: "credit_card",
   amount: 100,
-  currency: "USD" 
+  currency: "USD"
 });
 ```
 
@@ -349,7 +352,7 @@ router.openapi(route, async (c) => {
     path: c.req.path,
     requestId: crypto.randomUUID(),
   });
-  
+
   try {
     const result = await someOperation();
     return c.json(result);
@@ -363,11 +366,11 @@ router.openapi(route, async (c) => {
       return c.json({ error: "Not found" }, 404);
     }
     // Log unexpected errors with full context
-    logger.error("Unexpected server error", { 
-      extra: { 
-        error: error.message, 
-        stack: error.stack 
-      } 
+    logger.error("Unexpected server error", {
+      extra: {
+        error: error.message,
+        stack: error.stack
+      }
     });
     return c.json({ error: "Internal server error" }, 500);
   }
@@ -397,8 +400,9 @@ router.openapi(streamRoute, async (c) => {
 2. **Input Validation**: ALWAYS use Zod schemas with descriptions
 3. **Error Messages**: Provide clear, actionable error messages
 4. **Return Types**: Use discriminated unions for success/failure
-5. **Context Usage**: Always get project/version from context
-6. **Logging**: Use structured logging with Logger.get()
+5. **Context Usage**: Always get project/branch from context
+6. **Workspace Awareness**: Use Git.getBranchWorkspaceDir() for file operations
+7. **Logging**: Use structured logging with Logger.get()
 
 ### XML Tool Support
 ```typescript
@@ -452,18 +456,56 @@ export const myStep: WorkflowStep<StepContext> = {
 ```typescript
 // Access workflow context in tools
 const project = context.get("project");
-const version = context.get("version");
+const branch = context.get("branch");
 const chatId = context.get("chatId");
 const messages = context.get("messages");
+```
+
+## Git Operations
+
+### Branch Workspace Management
+```typescript
+// Use Git namespace for all git-related operations
+import { Git } from "@/lib/git";
+
+// Get the correct workspace directory for a branch
+const workspaceDir = Git.getBranchWorkspaceDir(branchId, isMainBranch);
+// Returns: /workspace (main) or /workspace/.weldr/{branchId} (feature)
+
+// Initialize git repository (only once per project)
+await Git.initRepository();
+
+// Create git commits
+const commitHash = await Git.commit(
+  "commit message",
+  { name: "Author", email: "author@example.com" },
+  { worktreeName: branchId } // Only for feature branches
+);
+
+// Create worktrees for feature branches
+const worktreePath = await Git.getOrCreateWorktree(
+  branchId,           // worktree name
+  `branch-${branchId}`, // git branch name
+  "main"             // start from main
+);
 ```
 
 ## File Operations
 
 ### Safe File Handling
 ```typescript
-// ALWAYS use WORKSPACE_DIR constant
-import { WORKSPACE_DIR } from "@/lib/constants";
+// For branch-aware file operations, use Git.getBranchWorkspaceDir()
+import { Git } from "@/lib/git";
 
+// Get the correct workspace directory for the branch
+const workspaceDir = Git.getBranchWorkspaceDir(branchId, isMainBranch);
+const safePath = path.resolve(workspaceDir, userInput);
+if (!safePath.startsWith(workspaceDir)) {
+  throw new Error('Path traversal attempt');
+}
+
+// For simple operations, use WORKSPACE_DIR constant
+import { WORKSPACE_DIR } from "@/lib/constants";
 const safePath = path.resolve(WORKSPACE_DIR, userInput);
 if (!safePath.startsWith(WORKSPACE_DIR)) {
   throw new Error('Path traversal attempt');
@@ -484,7 +526,16 @@ try {
 ```typescript
 // Use runCommand utility for shell commands
 import { runCommand } from "@/lib/commands";
+import { Git } from "@/lib/git";
 
+// For branch-aware commands, get the correct workspace directory
+const workspaceDir = Git.getBranchWorkspaceDir(branchId, isMainBranch);
+const { stdout, stderr, exitCode } = await runCommand("command", args, {
+  cwd: workspaceDir,
+});
+
+// For simple commands, use WORKSPACE_DIR
+import { WORKSPACE_DIR } from "@/lib/constants";
 const { stdout, stderr, exitCode } = await runCommand("command", args, {
   cwd: WORKSPACE_DIR,
 });
@@ -669,10 +720,10 @@ const loggingMiddleware: MiddlewareHandler = async (c, next) => {
     path: c.req.path,
     requestId: crypto.randomUUID(),
   });
-  
+
   await next();
   const duration = Date.now() - start;
-  
+
   logger.info("Request completed", {
     extra: {
       duration,
@@ -710,7 +761,8 @@ router.use(loggingMiddleware);
 ✅ Handle all error cases explicitly
 ✅ Stream large responses
 ✅ Use Logger.get() for structured logging
-✅ Use WORKSPACE_DIR for file operations
+✅ Use Git.getBranchWorkspaceDir() for branch-aware file operations
+✅ Use WORKSPACE_DIR for simple file operations
 ✅ Document all API endpoints
 
 ### Don'ts
@@ -723,4 +775,5 @@ router.use(loggingMiddleware);
 ❌ Trust user input without validation
 ❌ Use console.log, console.error, console.warn, or any console methods (use Logger from @weldr/shared)
 ❌ Skip OpenAPI documentation
-❌ Access files outside WORKSPACE_DIR
+❌ Access files outside the correct workspace directory
+❌ Use WORKSPACE_DIR when you need branch-specific operations

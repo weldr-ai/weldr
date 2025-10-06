@@ -1,8 +1,8 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
 import { auth } from "@weldr/auth";
-import { and, db, desc, eq } from "@weldr/db";
-import { projects, versions } from "@weldr/db/schema";
+import { and, db, eq } from "@weldr/db";
+import { branches, projects } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 
 import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
@@ -23,7 +23,7 @@ const route = createRoute({
         "application/json": {
           schema: z.object({
             projectId: z.string().openapi({ description: "Project ID" }),
-            versionId: z.string().openapi({ description: "Version ID" }),
+            branchId: z.string().openapi({ description: "Branch ID" }),
             triggerWorkflow: z.boolean().optional().default(false),
           }),
         },
@@ -74,7 +74,7 @@ const route = createRoute({
 const router = createRouter();
 
 router.openapi(route, async (c) => {
-  const { projectId, versionId, triggerWorkflow } = c.req.valid("json");
+  const { projectId, branchId, triggerWorkflow } = c.req.valid("json");
   const logger = Logger.get({ projectId });
 
   try {
@@ -110,12 +110,14 @@ router.openapi(route, async (c) => {
 
     const installedCategories = await getInstalledCategories(projectId);
 
-    const activeVersion = await db.query.versions.findFirst({
-      where: and(eq(versions.projectId, projectId), eq(versions.id, versionId)),
-      orderBy: desc(versions.createdAt),
+    const branch = await db.query.branches.findFirst({
+      where: and(eq(branches.projectId, projectId), eq(branches.id, branchId)),
+      with: {
+        headVersion: true,
+      },
     });
 
-    if (!activeVersion) {
+    if (!branch || !branch.headVersion) {
       logger.error("No active version found", {
         extra: { projectId },
       });
@@ -127,7 +129,10 @@ router.openapi(route, async (c) => {
       ...project,
       integrationCategories: new Set(installedCategories),
     });
-    workflowContext.set("version", activeVersion);
+    workflowContext.set("branch", {
+      ...branch,
+      headVersion: branch.headVersion,
+    });
     workflowContext.set("user", session.user);
 
     await processIntegrationQueue(workflowContext);

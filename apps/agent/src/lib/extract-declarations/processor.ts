@@ -34,6 +34,7 @@ export async function processSourceFile({
   sourceLines,
   filename,
   pathAliases,
+  workspaceDir,
   declarations,
   importedIdentifiers,
 }: {
@@ -42,6 +43,7 @@ export async function processSourceFile({
   sourceLines: string[];
   filename: string;
   pathAliases?: Record<string, string>;
+  workspaceDir: string;
   declarations: DeclarationCodeMetadata[];
   importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
 }): Promise<void> {
@@ -54,6 +56,7 @@ export async function processSourceFile({
       sourceLines,
       filename,
       pathAliases,
+      workspaceDir,
       declarations,
       importedIdentifiers,
       isExported: false,
@@ -68,6 +71,7 @@ async function processStatement({
   sourceLines,
   filename,
   pathAliases,
+  workspaceDir,
   declarations,
   importedIdentifiers,
   isExported,
@@ -78,6 +82,7 @@ async function processStatement({
   sourceLines: string[];
   filename: string;
   pathAliases?: Record<string, string>;
+  workspaceDir: string;
   declarations: DeclarationCodeMetadata[];
   importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
   isExported: boolean;
@@ -89,6 +94,7 @@ async function processStatement({
       importedIdentifiers,
       filename,
       pathAliases,
+      workspaceDir,
     });
     return;
   }
@@ -163,6 +169,7 @@ async function processStatement({
       filename,
       isExported: actuallyExported,
       pathAliases,
+      workspaceDir,
       declarations,
       importedIdentifiers,
     });
@@ -203,11 +210,13 @@ async function processImportDeclaration({
   importedIdentifiers,
   filename,
   pathAliases,
+  workspaceDir,
 }: {
   importDecl: ts.ImportDeclaration;
   importedIdentifiers: Map<string, { source: string; isExternal: boolean }>;
   filename: string;
   pathAliases?: Record<string, string>;
+  workspaceDir: string;
 }): Promise<void> {
   const moduleSpecifier = importDecl.moduleSpecifier;
   if (!ts.isStringLiteral(moduleSpecifier)) return;
@@ -220,6 +229,7 @@ async function processImportDeclaration({
         importPath: source,
         currentFilePath: filename,
         pathAliases,
+        workspaceDir,
       });
 
   if (importDecl.importClause) {
@@ -847,6 +857,7 @@ async function processModuleDeclaration({
   filename,
   isExported,
   pathAliases,
+  workspaceDir,
   declarations,
   importedIdentifiers,
 }: {
@@ -857,6 +868,7 @@ async function processModuleDeclaration({
   filename: string;
   isExported: boolean;
   pathAliases?: Record<string, string>;
+  workspaceDir: string;
   declarations?: DeclarationCodeMetadata[];
   importedIdentifiers?: Map<string, { source: string; isExternal: boolean }>;
 }): Promise<DeclarationCodeMetadata | null> {
@@ -878,6 +890,7 @@ async function processModuleDeclaration({
         sourceLines,
         filename,
         pathAliases,
+        workspaceDir,
         declarations: nestedDeclarations,
         importedIdentifiers: nestedImportedIdentifiers,
         isExported: true, // Everything in a namespace is considered exported within that namespace

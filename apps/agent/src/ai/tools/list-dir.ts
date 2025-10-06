@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Logger } from "@weldr/shared/logger";
 
 import { runCommand } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
+import { Git } from "@/lib/git";
 import { createTool } from "./utils";
 
 export const listDirTool = createTool({
@@ -42,11 +42,11 @@ export const listDirTool = createTool({
   execute: async ({ input, context }) => {
     const { path, level, directoriesOnly } = input;
     const project = context.get("project");
-    const version = context.get("version");
+    const branch = context.get("branch");
 
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version.id,
+      versionId: branch.headVersion.id,
       input,
     });
 
@@ -64,7 +64,9 @@ export const listDirTool = createTool({
       };
     }
 
-    const targetPath = path ? `${WORKSPACE_DIR}/${path}` : WORKSPACE_DIR;
+    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
+
+    const targetPath = path ? `${workspaceDir}/${path}` : workspaceDir;
 
     const args = [
       "-L",
@@ -83,7 +85,7 @@ export const listDirTool = createTool({
     args.push(targetPath);
 
     const { stdout, stderr, exitCode } = await runCommand("tree", args, {
-      cwd: WORKSPACE_DIR,
+      cwd: workspaceDir,
     });
 
     if (exitCode !== 0) {

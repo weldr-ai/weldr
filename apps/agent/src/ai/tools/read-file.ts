@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Logger } from "@weldr/shared/logger";
 
 import { runCommand, runShell } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
+import { Git } from "@/lib/git";
 import { createTool } from "./utils";
 
 export const readFileTool = createTool({
@@ -58,13 +58,15 @@ export const readFileTool = createTool({
   execute: async ({ input, context }) => {
     const { filePath, endLine, startLine = 1, maxLines = 1000 } = input;
     const project = context.get("project");
-    const version = context.get("version");
+    const branch = context.get("branch");
 
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version.id,
+      versionId: branch.headVersion.id,
       input,
     });
+
+    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
 
     logger.info(`Reading file: ${filePath}`);
 
@@ -74,7 +76,7 @@ export const readFileTool = createTool({
       stderr: wcStderr,
       exitCode: wcExitCode,
     } = await runCommand("wc", ["-l", filePath], {
-      cwd: WORKSPACE_DIR,
+      cwd: workspaceDir,
     });
 
     if (wcExitCode !== 0) {
@@ -90,7 +92,7 @@ export const readFileTool = createTool({
 
         // List directory to provide suggestions
         const { stdout: lsOutput } = await runCommand("ls", [dir], {
-          cwd: WORKSPACE_DIR,
+          cwd: workspaceDir,
         });
 
         const dirEntries = lsOutput.split("\n").filter(Boolean);
@@ -136,7 +138,7 @@ export const readFileTool = createTool({
     const sedCommand = `sed -n '${actualStartLine},${actualEndLine}p' "${filePath}"`;
 
     const { stdout, stderr, exitCode, success } = await runShell(sedCommand, {
-      cwd: WORKSPACE_DIR,
+      cwd: workspaceDir,
     });
 
     if (exitCode !== 0 || !success) {

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Logger } from "@weldr/shared/logger";
 
 import { runShell } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
+import { Git } from "@/lib/git";
 import { createTool } from "./utils";
 
 export const findTool = createTool({
@@ -45,18 +45,20 @@ export const findTool = createTool({
   execute: async ({ input, context }) => {
     const { query, includeDirectories, includeFiles, maxResults } = input;
     const project = context.get("project");
-    const version = context.get("version");
+    const branch = context.get("branch");
 
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version.id,
+      versionId: branch.headVersion.id,
       input,
     });
 
     logger.info(`Finding files with query: ${query}`);
 
+    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
+
     // Build find command
-    let findCmd = `find "${WORKSPACE_DIR}"`;
+    let findCmd = `find "${workspaceDir}"`;
 
     // Exclude common unwanted directories
     findCmd +=
@@ -76,7 +78,7 @@ export const findTool = createTool({
 
     const command = findCmd;
     const { stdout, stderr, exitCode } = await runShell(command, {
-      cwd: WORKSPACE_DIR,
+      cwd: workspaceDir,
     });
 
     if (exitCode !== 0) {
@@ -116,7 +118,7 @@ export const findTool = createTool({
       .trim()
       .split("\n")
       .filter((line) => line.trim())
-      .map((path) => path.replace(`${WORKSPACE_DIR}/`, ""))
+      .map((path) => path.replace(`${workspaceDir}/`, ""))
       .filter((path) => path && path !== ".");
 
     const results = allResults.slice(0, maxResults);

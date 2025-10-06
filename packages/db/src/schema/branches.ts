@@ -27,16 +27,16 @@ export const branches = pgTable(
       .notNull()
       .default("stream"),
     parentBranchId: text("parent_branch_id").references(
-      (() => branches.id) as unknown as () => AnyPgColumn,
+      (): AnyPgColumn => branches.id,
       { onDelete: "set null" },
     ),
     forkedFromVersionId: text("forked_from_version_id").references(
-      (() => versions.id) as unknown as () => AnyPgColumn,
+      (): AnyPgColumn => versions.id,
       { onDelete: "restrict" },
     ),
     forksetId: text("forkset_id"),
     headVersionId: text("head_version_id").references(
-      (() => versions.id) as unknown as () => AnyPgColumn,
+      (): AnyPgColumn => versions.id,
       { onDelete: "set null" },
     ),
     isMain: boolean("is_main").notNull().default(false),

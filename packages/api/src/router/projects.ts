@@ -132,6 +132,7 @@ export const projectsRouter = {
           await tx.insert(versions).values({
             projectId: projectId,
             userId: ctx.session.user.id,
+            number: 1,
             chatId: chat.id,
             branchId: mainBranch.id,
           });

@@ -78,22 +78,22 @@ export function createWorkflow(
     },
     async execute({ context }: { context: WorkflowContext }): Promise<void> {
       const project = context.get("project");
-      const version = context.get("version");
+      const branch = context.get("branch");
 
       const logger = Logger.get({
         projectId: project.id,
-        versionId: version.id,
+        versionId: branch.headVersion.id,
       });
 
       // Check if workflow is suspended
       if (api.status === "suspended") {
         api.status = "idle";
-        await stream(version.chatId, {
+        await stream(branch.headVersion.chatId, {
           type: "end",
         });
         logger.warn("Workflow is suspended - cannot execute", {
           extra: {
-            requestedVersionId: version.id,
+            requestedVersionId: branch.headVersion.id,
           },
         });
         return;
@@ -104,9 +104,10 @@ export function createWorkflow(
 
       // Stream status to the client
       const currentStep =
-        stepMapping[version.status as keyof StatusStepMapping].step.id;
+        stepMapping[branch.headVersion.status as keyof StatusStepMapping].step
+          .id;
 
-      await stream(version.chatId, {
+      await stream(branch.headVersion.chatId, {
         type: "status",
         status: "thinking",
       });
@@ -115,7 +116,7 @@ export function createWorkflow(
         case "planning":
         case "coding":
         case "deploying": {
-          await stream(version.chatId, {
+          await stream(branch.headVersion.chatId, {
             type: "status",
             status: currentStep,
           });
@@ -124,31 +125,37 @@ export function createWorkflow(
       }
 
       try {
-        logger.info(`Current version status: ${version.status}`);
-        logger.info(`Workflow execution started for version ${version.id}`);
+        logger.info(`Current version status: ${branch.headVersion.status}`);
+        logger.info(
+          `Workflow execution started for version ${branch.headVersion.id}`,
+        );
 
         // Check if workflow is already completed or failed
-        if (version.status === "completed") {
+        if (branch.headVersion.status === "completed") {
           logger.info("Workflow already completed");
           return;
         }
 
-        if (version.status === "failed") {
+        if (branch.headVersion.status === "failed") {
           logger.info("Workflow marked as failed");
           return;
         }
 
         // Find the step to execute based on current status
         const stepConfig =
-          stepMapping[version.status as keyof StatusStepMapping];
+          stepMapping[branch.headVersion.status as keyof StatusStepMapping];
         if (!stepConfig) {
-          logger.warn(`No step configured for status: ${version.status}`);
+          logger.warn(
+            `No step configured for status: ${branch.headVersion.status}`,
+          );
           return;
         }
 
         const { step } = stepConfig;
 
-        logger.info(`Executing step: ${step.id} for status: ${version.status}`);
+        logger.info(
+          `Executing step: ${step.id} for status: ${branch.headVersion.status}`,
+        );
 
         await executeWithRetry({
           step,
@@ -164,12 +171,14 @@ export function createWorkflow(
         throw error;
       } finally {
         if (api.status === "executing") {
-          await stream(version.chatId, {
+          await stream(branch.headVersion.chatId, {
             type: "end",
           });
           api.status = "idle";
         }
-        logger.info(`Workflow execution finished for version ${version.id}`);
+        logger.info(
+          `Workflow execution finished for version ${branch.headVersion.id}`,
+        );
       }
     },
   };
@@ -187,12 +196,12 @@ async function executeWithRetry({
   context: WorkflowContext;
 }): Promise<unknown | "suspend"> {
   const project = context.get("project");
-  const version = context.get("version");
+  const branch = context.get("branch");
 
   const logger = Logger.get({
     stepId: step.id,
     projectId: project.id,
-    versionId: version.id,
+    versionId: branch.headVersion.id,
     timeout: step.timeout,
   });
 

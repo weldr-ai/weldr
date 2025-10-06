@@ -22,6 +22,7 @@ import { getMessages } from "@/ai/utils/get-messages";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { registry } from "@/ai/utils/registry";
 import { getTaskExecutionPlan, type TaskWithRelations } from "@/ai/utils/tasks";
+import { Git } from "@/lib/git";
 import { stream } from "@/lib/stream-utils";
 import type { WorkflowContext } from "@/workflow/context";
 import { prompts } from "../prompts";
@@ -37,17 +38,18 @@ export async function coderAgent({
   coolDownPeriod?: number;
 }) {
   const project = context.get("project");
-  const version = context.get("version");
+  const branch = context.get("branch");
+  const user = context.get("user");
 
   const logger = Logger.get({
     projectId: project.id,
-    versionId: version.id,
+    versionId: branch.headVersion.id,
   });
 
   logger.info("Starting coder agent");
 
   const executionPlan = await getTaskExecutionPlan({
-    versionId: version.id,
+    versionId: branch.headVersion.id,
   });
 
   logger.info(`Execution plan retrieved with ${executionPlan.length} tasks.`);
@@ -101,18 +103,29 @@ export async function coderAgent({
     });
   }
 
+  const commitHash = await Git.commit(
+    branch.headVersion.message ?? "commit message",
+    { name: user.name, email: user.email },
+    { worktreeName: branch.isMain ? undefined : branch.id },
+  );
+
   logger.info("All tasks processed. Updating version progress to 'deploying'.");
   await db
     .update(versions)
-    .set({ status: "deploying" })
-    .where(eq(versions.id, version.id));
+    .set({ status: "deploying", commitHash })
+    .where(eq(versions.id, branch.headVersion.id));
 
   // Update context with the new version status
-  const updatedVersion = { ...version, status: "deploying" as const };
-  context.set("version", updatedVersion);
+  const updatedVersion = {
+    ...branch.headVersion,
+    status: "deploying" as const,
+    commitHash,
+  };
+
+  context.set("branch", { ...branch, headVersion: updatedVersion });
 
   // Notify the stream about the status change
-  await stream(version.chatId, {
+  await stream(branch.headVersion.chatId, {
     type: "update_project",
     data: {
       currentVersion: {
@@ -124,7 +137,7 @@ export async function coderAgent({
   logger.info("Coder agent completed");
 
   // End the stream
-  await stream(version.chatId, { type: "end" });
+  await stream(branch.headVersion.chatId, { type: "end" });
 }
 
 async function executeTaskCoder({
@@ -147,12 +160,12 @@ async function executeTaskCoder({
   coolDownPeriod?: number;
 }) {
   const project = context.get("project");
-  const version = context.get("version");
+  const branch = context.get("branch");
   const user = context.get("user");
 
   const logger = Logger.get({
     projectId: project.id,
-    versionId: version.id,
+    versionId: branch.headVersion.id,
     taskId: task.id,
   });
 
@@ -172,9 +185,9 @@ async function executeTaskCoder({
     done: doneTool(context),
   };
 
-  const versionContext = `${version.message}
-  Description: ${version.description}
-  Acceptance Criteria: ${version.acceptanceCriteria}
+  const versionContext = `${branch.headVersion.message}
+  Description: ${branch.headVersion.description}
+  Acceptance Criteria: ${branch.headVersion.acceptanceCriteria}
   Progress:
   ${Array.from(progress.entries())
     .map(([id, { summary, progress }]) => `${id}: ${summary} - ${progress}`)
@@ -265,7 +278,7 @@ async function executeTaskCoder({
 
     await insertMessages({
       input: {
-        chatId: version.chatId,
+        chatId: branch.headVersion.chatId,
         userId: user.id,
         messages: messagesToSave,
       },
@@ -313,11 +326,11 @@ async function updateCanvasNode({
   declarationId: string;
 }) {
   const project = context.get("project");
-  const version = context.get("version");
+  const branch = context.get("branch");
 
   const logger = Logger.get({
     projectId: project.id,
-    versionId: version.id,
+    versionId: branch.headVersion.id,
     declarationId,
   });
 
@@ -332,7 +345,7 @@ async function updateCanvasNode({
     }
 
     if (updatedDeclaration.node && updatedDeclaration.metadata?.specs) {
-      await stream(version.chatId, {
+      await stream(branch.headVersion.chatId, {
         type: "node",
         nodeId: updatedDeclaration.node.id,
         position: updatedDeclaration.node.position,

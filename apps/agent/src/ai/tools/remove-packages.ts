@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Logger } from "@weldr/shared/logger";
 
 import { runCommand } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
+import { Git } from "@/lib/git";
 import { createTool } from "./utils";
 
 export const removePackagesTool = createTool({
@@ -25,21 +25,23 @@ export const removePackagesTool = createTool({
   ]),
   execute: async ({ input, context }) => {
     const project = context.get("project");
-    const version = context.get("version");
+    const branch = context.get("branch");
 
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version.id,
+      versionId: branch.headVersion.id,
       input,
     });
 
     logger.info(`Removing packages: ${input.packages.join(", ")}`);
 
+    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
+
     const { stderr, exitCode, success } = await runCommand(
       "bun",
       ["remove", ...input.packages],
       {
-        cwd: WORKSPACE_DIR,
+        cwd: workspaceDir,
       },
     );
 

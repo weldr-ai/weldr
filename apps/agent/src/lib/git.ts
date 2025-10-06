@@ -13,7 +13,7 @@ const TRUNK_BRANCH = "main";
 export namespace Git {
   /**
    * Initialize repo on TRUNK_BRANCH with an initial empty commit.
-   * Also ensures a dedicated worktrees dir and ignores it.
+   * Also ensures a dedicated worktrees dir.
    */
   export async function initRepository(): Promise<void> {
     const logger = Logger.get({
@@ -31,11 +31,6 @@ export namespace Git {
 
       // Create an initial empty commit so splits/branches have a base
       await git.add(".");
-      const hasCommits = await hasAnyCommit(git);
-      if (!hasCommits) {
-        await git.commit("init: repository");
-      }
-
       logger.info("Repository initialized");
     } catch (error) {
       logger.error("Failed to initialize repository", { extra: { error } });
@@ -429,6 +424,21 @@ export namespace Git {
   }
 
   /**
+   * Get the workspace directory for a specific branch.
+   * - Main branch: Returns the main workspace directory
+   * - Feature branches: Returns the worktree directory for the branch
+   */
+  export function getBranchWorkspaceDir(
+    branchId: string,
+    isMainBranch: boolean,
+  ): string {
+    if (isMainBranch) {
+      return WORKSPACE_DIR; // Work directly in main repo
+    }
+    return path.join(WORKSPACE_DIR, ".weldr", branchId); // Use worktree for feature branches
+  }
+
+  /**
    * Parse `git worktree list --porcelain`. Handles attached and detached worktrees.
    * @returns The list of worktrees
    * @throws {Error} When worktree listing fails
@@ -486,6 +496,14 @@ export namespace Git {
   }
 
   /**
+   * Check if a git repository exists.
+   * @returns True if the git repository exists, false otherwise
+   */
+  export async function hasGitRepository(): Promise<boolean> {
+    return await exists(WORKSPACE_DIR);
+  }
+
+  /**
    * Remove the `refs/heads/` prefix from a ref name.
    * @param ref - The ref name
    * @returns The ref name without the `refs/heads/` prefix
@@ -502,22 +520,6 @@ export namespace Git {
   async function exists(p: string): Promise<boolean> {
     try {
       await fs.access(p);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Check if a git instance has any commits.
-   * @param git - The git instance
-   * @returns True if the git instance has any commits, false otherwise
-   * @throws {Error} When checking for commits fails
-   */
-  async function hasAnyCommit(git: SimpleGit): Promise<boolean> {
-    try {
-      // Returns 0 when HEAD exists; throws before first commit
-      await git.raw(["rev-parse", "--verify", "HEAD"]);
       return true;
     } catch {
       return false;

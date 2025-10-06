@@ -32,7 +32,7 @@ export async function createTasks({
   taskList: Task[];
 }) {
   const project = context.get("project");
-  const version = context.get("version");
+  const branch = context.get("branch");
 
   return await db.transaction(async (tx) => {
     const taskToDeclaration = new Map<
@@ -54,7 +54,7 @@ export async function createTasks({
       const [chat] = await tx
         .insert(chats)
         .values({
-          userId: version.userId,
+          userId: branch.headVersion.userId,
           projectId: project.id,
         })
         .returning();
@@ -67,7 +67,7 @@ export async function createTasks({
         .insert(tasks)
         .values({
           data: task,
-          versionId: version.id,
+          versionId: branch.headVersion.id,
           chatId: chat.id,
           status: "pending",
         })
@@ -151,7 +151,7 @@ export async function createTasks({
 
           if (!dependentId || !dependencyId) {
             throw new Error(
-              `[createTasks:project_${project.id}:version_${version.id}] Declaration ID not found for dependency mapping`,
+              `[createTasks:project_${project.id}:version_${branch.headVersion.id}] Declaration ID not found for dependency mapping`,
             );
           }
 

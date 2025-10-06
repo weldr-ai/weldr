@@ -25,12 +25,12 @@ export const callCoderTool = createTool({
   ]),
   execute: async ({ input, context }) => {
     const { commitMessage, description, acceptanceCriteria } = input;
-    const version = context.get("version");
+    const branch = context.get("branch");
     const project = context.get("project");
 
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version.id,
+      versionId: branch.headVersion.id,
       input,
     });
 
@@ -46,7 +46,7 @@ export const callCoderTool = createTool({
         description,
         acceptanceCriteria,
       })
-      .where(eq(versions.id, version.id))
+      .where(eq(versions.id, branch.headVersion.id))
       .returning();
 
     if (!updatedVersion) {
@@ -61,7 +61,7 @@ export const callCoderTool = createTool({
       context,
     });
 
-    context.set("version", updatedVersion);
+    context.set("branch", { ...branch, headVersion: updatedVersion });
 
     await stream(updatedVersion.chatId, {
       type: "update_project",

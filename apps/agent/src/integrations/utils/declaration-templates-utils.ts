@@ -23,10 +23,10 @@ export async function seedDeclarationTemplates({
   context: WorkflowContext;
 }) {
   const project = context.get("project");
-  const version = context.get("version");
+  const branch = context.get("branch");
   const user = context.get("user");
 
-  if (!project || !version || !user) {
+  if (!project || !branch.headVersion || !user) {
     throw new Error("Project, version, or user not found in context");
   }
 
@@ -129,7 +129,7 @@ export async function seedDeclarationTemplates({
         .from(versionDeclarations)
         .where(
           and(
-            eq(versionDeclarations.versionId, version.id),
+            eq(versionDeclarations.versionId, branch.headVersion.id),
             eq(versionDeclarations.declarationId, declarationId),
           ),
         )
@@ -137,7 +137,7 @@ export async function seedDeclarationTemplates({
 
       if (!existingLink) {
         await db.insert(versionDeclarations).values({
-          versionId: version.id,
+          versionId: branch.headVersion.id,
           declarationId,
         });
       }

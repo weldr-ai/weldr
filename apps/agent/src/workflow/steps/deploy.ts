@@ -6,6 +6,7 @@ import { machineLookupStore } from "@weldr/shared/machine-lookup-store";
 
 import { runCommand } from "@/lib/commands";
 import { SCRIPTS_DIR } from "@/lib/constants";
+import { Git } from "@/lib/git";
 import { stream } from "@/lib/stream-utils";
 import { createStep } from "../engine";
 
@@ -13,21 +14,24 @@ export const deployStep = createStep({
   id: "deploy",
   execute: async ({ context }) => {
     const project = context.get("project");
-    const version = context.get("version");
+    const branch = context.get("branch");
 
     const logger = Logger.get({
       projectId: project.id,
-      versionId: version.id,
+      versionId: branch.headVersion.id,
     });
 
     try {
+      const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
+
       // Start the build process asynchronously
       const { stderr, exitCode, success } = await runCommand(
         "bash",
         [
           `${SCRIPTS_DIR}/build.sh`,
-          `app-build-${version.id}`,
+          `app-build-${branch.headVersion.id}`,
           process.env.FLY_PREVIEW_DEPLOY_TOKEN || "",
+          workspaceDir,
         ],
         {
           timeout: 1000 * 60 * 5, // 5 minutes
@@ -54,7 +58,7 @@ export const deployStep = createStep({
         projectId: project.id,
         type: "preview",
         config: {
-          image: `registry.fly.io/weldr-images:app-build-${version.id}`,
+          image: `registry.fly.io/weldr-images:app-build-${branch.headVersion.id}`,
           ...Fly.machine.presets.preview,
         },
       });
@@ -66,7 +70,7 @@ export const deployStep = createStep({
       }
 
       await machineLookupStore.set(
-        `preview:${version.id}`,
+        `preview:${branch.headVersion.id}`,
         `${previewMachineId}:${project.id}`,
       );
 
@@ -75,10 +79,10 @@ export const deployStep = createStep({
       await db
         .update(versions)
         .set({ status: "completed" })
-        .where(eq(versions.id, version.id));
+        .where(eq(versions.id, branch.headVersion.id));
 
       // Send SSE notification of completion
-      await stream(version.chatId, {
+      await stream(branch.headVersion.chatId, {
         type: "update_project",
         data: { currentVersion: { status: "completed" } },
       });

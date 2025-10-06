@@ -32,11 +32,11 @@ export async function plannerAgent({
 }): Promise<void> {
   const project = context.get("project");
   const user = context.get("user");
-  const version = context.get("version");
+  const branch = context.get("branch");
 
   const logger = Logger.get({
     projectId: project.id,
-    versionId: version.id,
+    versionId: branch.headVersion.id,
   });
 
   const tools: ToolSet = {
@@ -60,7 +60,7 @@ export async function plannerAgent({
   }> => {
     let shouldRecur = false;
     let callingCoder = false;
-    const promptMessages = await getMessages(version.chatId);
+    const promptMessages = await getMessages(branch.headVersion.chatId);
 
     logger.info("promptMessages", {
       extra: { promptMessages },
@@ -84,7 +84,7 @@ export async function plannerAgent({
     for await (const part of result.fullStream) {
       switch (part.type) {
         case "text-delta": {
-          await stream(version.chatId, {
+          await stream(branch.headVersion.chatId, {
             id: messageId,
             type: "text",
             text: part.text,
@@ -101,7 +101,7 @@ export async function plannerAgent({
           break;
         }
         case "reasoning-delta": {
-          await stream(version.chatId, {
+          await stream(branch.headVersion.chatId, {
             id: part.id,
             type: "reasoning",
             text: part.text,
@@ -152,7 +152,7 @@ export async function plannerAgent({
               break;
             } else {
               if (part.output.categories.length > 0) {
-                await stream(version.chatId, {
+                await stream(branch.headVersion.chatId, {
                   id: messageId,
                   type: "tool-call",
                   toolCallId: part.toolCallId,
@@ -198,7 +198,7 @@ export async function plannerAgent({
 
     await insertMessages({
       input: {
-        chatId: version.chatId,
+        chatId: branch.headVersion.chatId,
         userId: user.id,
         messages: [
           {

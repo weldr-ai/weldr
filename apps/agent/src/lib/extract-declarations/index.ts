@@ -8,10 +8,12 @@ export async function extractDeclarations({
   sourceCode,
   filename,
   pathAliases,
+  workspaceDir,
 }: {
   sourceCode: string;
   filename: string;
   pathAliases?: Record<string, string>;
+  workspaceDir: string;
 }): Promise<DeclarationCodeMetadata[]> {
   try {
     // Create a TypeScript source file
@@ -38,6 +40,7 @@ export async function extractDeclarations({
       sourceLines,
       filename,
       pathAliases,
+      workspaceDir,
       declarations,
       importedIdentifiers,
     });

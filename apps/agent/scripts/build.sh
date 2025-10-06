@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Script to deploy a preview build to Fly.io
-# Usage: ./build.sh <BUILD_ID> <FLY_ACCESS_TOKEN>
-# Example: ./build.sh app-build-1234567890 1234567890
+# Usage: ./build.sh <BUILD_ID> <FLY_ACCESS_TOKEN> <WORKSPACE_DIR>
+# Example: ./build.sh app-build-1234567890 1234567890 /workspace
 
 set -e # Exit on any error
 
@@ -16,17 +16,20 @@ if ! command -v flyctl &> /dev/null; then
 fi
 
 # Check if required arguments are provided
-if [ $# -ne 2 ]; then
+if [ $# -ne 3 ]; then
     print_error "Invalid number of arguments"
-    echo "Usage: $0 <BUILD_ID> <FLY_ACCESS_TOKEN>"
-    echo "Example: $0 app-build-1234567890 1234567890"
+    echo "Usage: $0 <BUILD_ID> <FLY_ACCESS_TOKEN> <WORKSPACE_DIR>"
+    echo "Example: $0 app-build-1234567890 1234567890 /workspace"
     exit 1
 fi
 
-cd $WORKSPACE_DIR && bun install --no-verify --no-progress --silent 2>&1
+# Set the workspace directory from the third argument
+WORKSPACE_DIR="$3"
+
+cd "$WORKSPACE_DIR" && bun install --no-verify --no-progress --silent 2>&1
 
 # Build and push using fly deploy
-if output=$(cd $WORKSPACE_DIR && flyctl deploy \
+if output=$(cd "$WORKSPACE_DIR" && flyctl deploy \
   --app weldr-images \
   --remote-only \
   --build-only \
