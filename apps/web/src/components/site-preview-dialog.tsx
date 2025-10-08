@@ -59,13 +59,13 @@ export function SitePreviewDialog({
     trpc.projects.byId.queryKey({ id: projectId }),
   );
 
-  const currentVersion = project?.currentVersion;
+  const headVersion = project?.branch.headVersion;
   const [currentPath, setCurrentPath] = useState("");
 
   const baseUrl = url
     ? url
-    : currentVersion?.id
-      ? `https://${currentVersion.id}.preview.weldr.app`
+    : headVersion?.id
+      ? `https://${headVersion.id}.preview.weldr.app`
       : "";
 
   useEffect(() => {

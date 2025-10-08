@@ -9,6 +9,7 @@ import { MessageItem } from "./message-item";
 
 interface MessagesProps {
   messages: ChatMessage[];
+  branchId: string;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
@@ -17,6 +18,7 @@ interface MessagesProps {
 
 function PureMessages({
   messages,
+  branchId,
   integrationTemplates,
   environmentVariables,
   setMessages,
@@ -28,6 +30,7 @@ function PureMessages({
         <MessageItem
           key={message.id ?? nanoid()}
           message={message}
+          branchId={branchId}
           integrationTemplates={integrationTemplates}
           environmentVariables={environmentVariables}
           setMessages={setMessages}

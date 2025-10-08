@@ -1,6 +1,7 @@
 import type { JSONSchema7 } from "json-schema";
 import type { z } from "zod";
 
+import type { branchSchema } from "../validators/branches";
 import type {
   aiMetadataSchema,
   assistantMessageSchema,
@@ -19,9 +20,10 @@ import type {
 import type { integrationTemplateSchema } from "../validators/integration-templates";
 import type {
   integrationEnvironmentVariableMappingSchema,
+  integrationInstallationSchema,
+  integrationInstallationStatusSchema,
   integrationKeySchema,
   integrationSchema,
-  integrationStatusSchema,
 } from "../validators/integrations";
 import type { dataTypeSchema } from "../validators/json-schema";
 import type { nodeSchema, nodeTypeSchema } from "../validators/nodes";
@@ -44,6 +46,7 @@ export type OpenApiEndpointSpec = z.infer<typeof openApiEndpointSpecSchema>;
 export type JsonSchema = JSONSchema7;
 
 export type Project = z.infer<typeof projectSchema>;
+export type Branch = z.infer<typeof branchSchema>;
 
 export type Version = z.infer<typeof versionSchema>;
 
@@ -121,7 +124,7 @@ export type ToolStreamableValue = {
 
 export type ProjectStreamableValue = {
   type: "update_project";
-  data: Partial<Project & { currentVersion: Partial<Version> }>;
+  data: Omit<Project, "environmentVariables"> & { branch: Branch };
 };
 
 export type IntegrationStreamableValue = {
@@ -129,7 +132,6 @@ export type IntegrationStreamableValue = {
   data: {
     id: string;
     key: IntegrationKey;
-    status: "installing" | "completed" | "failed";
   };
 };
 
@@ -190,8 +192,13 @@ export type IntegrationTemplate = z.infer<typeof integrationTemplateSchema>;
 
 export type IntegrationKey = z.infer<typeof integrationKeySchema>;
 export type IntegrationOptions = z.infer<typeof integrationSchema>["options"];
-export type IntegrationStatus = z.infer<typeof integrationStatusSchema>;
 export type Integration = z.infer<typeof integrationSchema>;
 export type IntegrationEnvironmentVariableMapping = z.infer<
   typeof integrationEnvironmentVariableMappingSchema
+>;
+export type IntegrationInstallationStatus = z.infer<
+  typeof integrationInstallationStatusSchema
+>;
+export type IntegrationInstallation = z.infer<
+  typeof integrationInstallationSchema
 >;

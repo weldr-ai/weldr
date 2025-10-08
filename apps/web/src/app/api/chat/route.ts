@@ -8,6 +8,7 @@ import type { Attachment, UserMessage } from "@weldr/shared/types";
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
     projectId: string;
+    branchId: string;
     message: {
       content: UserMessage["content"];
       attachments: Attachment[];
@@ -45,8 +46,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Development: use Flycast via WireGuard
-    const url = `http://app-development-${body.projectId}.flycast`;
+    // Development: use localhost
+    const url = "http://localhost:8080";
 
     // Create headers object, preserving original headers but updating origin-related ones
     const headers = new Headers();

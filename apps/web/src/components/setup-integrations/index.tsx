@@ -33,6 +33,7 @@ const PureSetupIntegration = ({
   integrationTemplates,
   environmentVariables,
   setStatus,
+  branchId,
 }: {
   message: ChatMessage;
   chatId: string;
@@ -40,6 +41,7 @@ const PureSetupIntegration = ({
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
   setStatus: Dispatch<SetStateAction<TStatus>>;
+  branchId: string;
 }) => {
   const trpc = useTRPC();
   const { projectId } = useParams<{ projectId: string }>();
@@ -381,12 +383,17 @@ const PureSetupIntegration = ({
 
     createBatchIntegrationsMutation.mutate({
       projectId,
+      branchId,
       triggerWorkflow: true,
       integrations: configurations,
     });
   }, [
     projectId,
     chatId,
+    message,
+    messageContent,
+    updateMessageMutation,
+    branchId,
     createBatchIntegrationsMutation,
     configuredIntegrations,
     addMessageMutation,

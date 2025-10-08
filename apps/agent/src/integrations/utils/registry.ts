@@ -1,5 +1,3 @@
-import { db, eq } from "@weldr/db";
-import { integrations } from "@weldr/db/schema";
 import type {
   Integration,
   IntegrationCategoryKey,
@@ -88,14 +86,6 @@ class IntegrationRegistry {
 
     // Run the post-install hook
     await integrationDefinition.postInstall?.({ context, integration });
-
-    // Update the integration status
-    await db
-      .update(integrations)
-      .set({
-        status: "completed",
-      })
-      .where(eq(integrations.id, integration.id));
   }
 
   getInstallationOrder(integrationKeys: IntegrationKey[]): IntegrationKey[] {

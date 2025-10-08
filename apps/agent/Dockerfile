@@ -10,41 +10,45 @@ FROM node:22-alpine AS base
 # ───────────────────────────────────────────
 # System dependencies
 # ───────────────────────────────────────────
-
-RUN apk add --no-cache \
-    bash \
-    ca-certificates \
-    curl \
-    unzip \
-    tree \
-    git \
-    ripgrep
+RUN apk update && \
+  apk add --no-cache \
+  bash \
+  ca-certificates \
+  curl \
+  unzip \
+  tree \
+  git \
+  ripgrep \
+  libc6-compat
 
 # ───────────────────────────────────────────
 # Install Bun system-wide
 # ───────────────────────────────────────────
 
 RUN curl https://bun.sh/install | bash -s -- bun-v1.2.2 && \
-    mv /root/.bun/bin/bun /usr/local/bin/bun && \
-    chmod +x /usr/local/bin/bun
+  mv /root/.bun/bin/bun /usr/local/bin/bun && \
+  chmod +x /usr/local/bin/bun
 
 # ───────────────────────────────────────────
 # Set git config
 # ───────────────────────────────────────────
 
 RUN git config --global user.name "weldr" && \
-    git config --global user.email "noreply@weldr.ai" && \
-    git config --global --add safe.directory /workspace
+  git config --global user.email "noreply@weldr.ai" && \
+  git config --global --add safe.directory /workspace
+
+# ───────────────────────────────────────────
+# Enable pnpm
+# ───────────────────────────────────────────
+
+RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
 
 # ───────────────────────────────────────────
 # Builder stage - prune workspace
 # ───────────────────────────────────────────
 
 FROM base AS builder
-RUN apk update
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
-RUN corepack enable
 RUN npm install -g turbo@2.5.0
 COPY . .
 RUN turbo prune @weldr/agent --docker
@@ -54,18 +58,19 @@ RUN turbo prune @weldr/agent --docker
 # ───────────────────────────────────────────
 
 FROM base AS installer
-RUN apk update
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
-RUN corepack enable
 
-# First install dependencies (as they change less often)
 COPY --from=builder /app/out/json/ .
-RUN pnpm install --frozen-lockfile
+COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
-# Build the project and its dependencies
+RUN pnpm install --frozen-lockfile --prod=false
+
 COPY --from=builder /app/out/full/ .
-RUN pnpm turbo build
+
+RUN pnpm turbo build --filter=@weldr/agent...
+
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # ───────────────────────────────────────────
 # Runner stage - production
@@ -74,15 +79,19 @@ RUN pnpm turbo build
 FROM base AS runner
 WORKDIR /app
 
-# Copy flyctl
 COPY --from=flyio /flyctl /usr/bin
 
-# Copy scripts to standard Linux location
-COPY ./apps/agent/scripts /usr/weldr/scripts
+COPY --from=installer /app/apps/agent/scripts /usr/weldr/scripts
 RUN chmod +x /usr/weldr/scripts/*
 
-# Copy built application
-COPY --from=installer /app .
+COPY --from=installer /app/apps/agent/dist ./apps/agent/dist
+COPY --from=installer /app/apps/agent/package.json ./apps/agent/package.json
+COPY --from=installer /app/packages ./packages
+COPY --from=installer /app/node_modules ./node_modules
+COPY --from=installer /app/package.json ./package.json
+COPY --from=installer /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+
+WORKDIR /app/apps/agent
 
 EXPOSE 3000
 

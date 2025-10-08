@@ -57,7 +57,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
     trpc.projects.byId.queryKey({ id: projectId }),
   );
 
-  const currentVersion = project?.currentVersion;
+  const headVersion = project?.branch.headVersion;
 
   const { data: declaration } = useQuery(
     trpc.declarations.byId.queryOptions(
@@ -97,7 +97,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
       return "";
     }
 
-    const baseUrl = `https://${currentVersion?.id}.preview.weldr.app`;
+    const baseUrl = `https://${headVersion?.id}.preview.weldr.app`;
     let route = specs?.route.replace(/^\//, "");
 
     const routeParameters = getRouteParameters();
@@ -114,7 +114,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
     }
 
     return `${baseUrl}/${route}`;
-  }, [currentVersion?.id, specs, getRouteParameters, parameterValues]);
+  }, [headVersion?.id, specs, getRouteParameters, parameterValues]);
 
   const canShowPreview = useCallback(() => {
     const routeParameters = getRouteParameters();
@@ -177,7 +177,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   }, [specs]);
 
   // Determine the current state
-  const isVersionCompleted = currentVersion?.status === "completed";
+  const isVersionCompleted = headVersion?.status === "completed";
   const isDeclarationCompleted = declaration.progress === "completed";
   const needsParameters =
     getRouteParameters().length > 0 && (!showPreview || !canShowPreview());

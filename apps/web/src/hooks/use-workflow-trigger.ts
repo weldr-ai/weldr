@@ -9,6 +9,7 @@ import type {
 
 interface UseWorkflowTriggerOptions {
   projectId: string;
+  branchId: string;
   setStatus: (status: TStatus) => void;
   eventSourceRef: EventSource | null;
   connectToEventStream: () => EventSource | null;
@@ -16,6 +17,7 @@ interface UseWorkflowTriggerOptions {
 
 export function useWorkflowTrigger({
   projectId,
+  branchId,
   setStatus,
   eventSourceRef,
   connectToEventStream,
@@ -33,6 +35,7 @@ export function useWorkflowTrigger({
           },
           body: JSON.stringify({
             projectId,
+            branchId,
             message,
           }),
         });
@@ -49,7 +52,7 @@ export function useWorkflowTrigger({
         throw error;
       }
     },
-    [projectId],
+    [projectId, branchId],
   );
 
   const triggerGeneration = useCallback(

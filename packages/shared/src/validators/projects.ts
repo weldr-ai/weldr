@@ -4,11 +4,11 @@ import { environmentVariableSchema } from "./environment-variables";
 
 export const projectSchema = z.object({
   id: z.string(),
-  title: z.string(),
-  description: z.string(),
+  title: z.string().nullable(),
+  description: z.string().nullable(),
   subdomain: z.string().nullable(),
   createdAt: z.date(),
-  updatedAt: z.date(),
+  updatedAt: z.date().nullable(),
   userId: z.string().nullable(),
   environmentVariables: environmentVariableSchema.array(),
 });

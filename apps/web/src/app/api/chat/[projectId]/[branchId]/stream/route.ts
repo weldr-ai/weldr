@@ -2,14 +2,14 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
-import { projects } from "@weldr/db/schema";
+import { branches, projects } from "@weldr/db/schema";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } },
+  { params }: { params: { projectId: string; branchId: string } },
 ) {
   try {
-    const { projectId } = await params;
+    const { projectId, branchId } = await params;
 
     const session = await auth.api.getSession({
       headers: request.headers,
@@ -30,6 +30,15 @@ export async function GET(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
+    // Verify the branch exists and belongs to the project
+    const branch = await db.query.branches.findFirst({
+      where: and(eq(branches.id, branchId), eq(branches.projectId, projectId)),
+    });
+
+    if (!branch) {
+      return NextResponse.json({ error: "Branch not found" }, { status: 404 });
+    }
+
     if (process.env.NODE_ENV === "production") {
       const appName = `app-development-${projectId}`;
 
@@ -41,8 +50,8 @@ export async function GET(
       });
     }
 
-    // Development: use Flycast via WireGuard
-    const url = `http://app-development-${projectId}.flycast`;
+    // Development: use localhost
+    const url = "http://localhost:8080";
 
     // Create headers object, preserving original headers but updating origin-related ones
     const headers = new Headers();
@@ -66,7 +75,7 @@ export async function GET(
     }
 
     // Make the proxy request to the agent service
-    const response = await fetch(`${url}/stream/${projectId}`, {
+    const response = await fetch(`${url}/stream/${projectId}/${branchId}`, {
       method: "GET",
       headers,
     });

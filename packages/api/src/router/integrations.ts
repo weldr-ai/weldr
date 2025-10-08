@@ -4,11 +4,12 @@ import { z } from "zod";
 
 import { db } from "@weldr/db";
 import {
+  branches,
   environmentVariables,
   integrationEnvironmentVariables,
   integrations,
   integrationTemplates,
-  projects,
+  integrationVersions,
 } from "@weldr/db/schema";
 import {
   createBatchIntegrationsSchema,
@@ -18,66 +19,131 @@ import {
 
 import { createTRPCRouter, protectedProcedure } from "../init";
 
+async function triggerInstallation({
+  projectId,
+  branchId,
+  triggerWorkflow = false,
+  headers,
+}: {
+  projectId: string;
+  branchId: string;
+  triggerWorkflow?: boolean;
+  headers: Headers;
+}): Promise<void> {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const url = `${baseUrl}/api/integrations/install`;
+
+  const requestHeaders = new Headers();
+
+  // Forward authorization headers
+  headers.forEach((value, key) => {
+    if (
+      key.toLowerCase().startsWith("cookie") ||
+      key.toLowerCase() === "authorization"
+    ) {
+      requestHeaders.set(key, value);
+    }
+  });
+
+  requestHeaders.set("content-type", "application/json");
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: requestHeaders,
+    body: JSON.stringify({
+      projectId,
+      branchId,
+      triggerWorkflow,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to trigger installation: ${errorText}`);
+  }
+}
+
 export const integrationsRouter = createTRPCRouter({
   install: protectedProcedure
     .input(
       z.object({
-        projectId: z.string(),
+        integrationId: z.string(),
+        versionId: z.string(),
         triggerWorkflow: z.boolean().optional().default(false),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const project = await db.query.projects.findFirst({
-        where: and(
-          eq(projects.id, input.projectId),
-          eq(projects.userId, ctx.session.user.id),
-        ),
-      });
-
-      if (!project) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Project not found",
+      await db.transaction(async (tx) => {
+        const version = await tx.query.versions.findFirst({
+          where: (versions, { eq }) =>
+            and(
+              eq(versions.id, input.versionId),
+              eq(versions.userId, ctx.session.user.id),
+            ),
+          with: {
+            branch: true,
+          },
         });
-      }
 
-      // Use the Next.js API route that supports Fly replay
-      const baseUrl =
-        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-      const url = `${baseUrl}/api/integrations/install`;
-
-      const headers = new Headers();
-
-      // Forward authorization headers
-      ctx.headers.forEach((value, key) => {
-        if (
-          key.toLowerCase().startsWith("cookie") ||
-          key.toLowerCase() === "authorization"
-        ) {
-          headers.set(key, value);
+        if (!version) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Version not found",
+          });
         }
-      });
 
-      headers.set("content-type", "application/json");
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          projectId: input.projectId,
-          triggerWorkflow: input.triggerWorkflow,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to trigger installation: ${errorText}`,
+        // Verify integration exists and user owns it
+        const integration = await tx.query.integrations.findFirst({
+          where: and(
+            eq(integrations.id, input.integrationId),
+            eq(integrations.userId, ctx.session.user.id),
+          ),
         });
-      }
 
-      return await response.json();
+        if (!integration) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Integration not found",
+          });
+        }
+
+        // Check if already queued or installed
+        const existingInstallation =
+          await tx.query.integrationVersions.findFirst({
+            where: and(
+              eq(integrationVersions.integrationId, input.integrationId),
+              eq(integrationVersions.versionId, input.versionId),
+            ),
+          });
+
+        if (existingInstallation) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Integration already queued or installed for this version",
+          });
+        }
+
+        // Create the installation queue entry
+        await tx.insert(integrationVersions).values({
+          integrationId: input.integrationId,
+          versionId: input.versionId,
+          status: "queued",
+        });
+
+        console.log(
+          `[integrations.install] Queued integration ${integration.key} for version ${input.versionId}`,
+        );
+
+        // Trigger the installation
+        await triggerInstallation({
+          projectId: version.projectId,
+          branchId: version.branchId,
+          triggerWorkflow: input.triggerWorkflow,
+          headers: ctx.headers,
+        });
+      });
+
+      return { success: true };
     }),
   create: protectedProcedure
     .input(createIntegrationSchema)
@@ -128,7 +194,6 @@ export const integrationsRouter = createTRPCRouter({
             projectId,
             userId: ctx.session.user.id,
             integrationTemplateId,
-            status: "queued",
             options: integrationTemplate.recommendedOptions,
           })
           .returning();
@@ -183,22 +248,54 @@ export const integrationsRouter = createTRPCRouter({
           });
         }
 
+        // If branchId is provided, queue the integration for installation on that branch's head version
+        if (input.branchId) {
+          const branch = await tx.query.branches.findFirst({
+            where: and(
+              eq(branches.id, input.branchId),
+              eq(branches.projectId, projectId),
+            ),
+          });
+
+          if (branch?.headVersionId) {
+            await tx.insert(integrationVersions).values({
+              integrationId: integration.id,
+              versionId: branch.headVersionId,
+              status: "queued",
+            });
+
+            console.log(
+              `[integrations.create:${projectId}] Queued integration ${integration.key} for version ${branch.headVersionId}`,
+            );
+          } else {
+            console.warn(
+              `[integrations.create:${projectId}] Branch ${input.branchId} has no head version`,
+            );
+          }
+        }
+
         return integration;
       });
 
-      try {
-        await integrationsRouter.createCaller(ctx).install({
-          projectId: input.projectId,
-        });
+      // Trigger installation if branchId was provided
+      if (input.branchId) {
+        try {
+          await triggerInstallation({
+            projectId: input.projectId,
+            branchId: input.branchId,
+            triggerWorkflow: false,
+            headers: ctx.headers,
+          });
 
-        console.log(
-          `[integrations.create:${input.projectId}] Installation triggered successfully`,
-        );
-      } catch (error) {
-        console.error(
-          `[integrations.create:${input.projectId}] Failed to trigger installation:`,
-          error,
-        );
+          console.log(
+            `[integrations.create:${input.projectId}] Installation triggered successfully`,
+          );
+        } catch (error) {
+          console.error(
+            `[integrations.create:${input.projectId}] Failed to trigger installation:`,
+            error,
+          );
+        }
       }
     }),
   byId: protectedProcedure
@@ -213,7 +310,6 @@ export const integrationsRouter = createTRPCRouter({
           id: true,
           name: true,
           key: true,
-          status: true,
         },
         with: {
           environmentVariableMappings: {
@@ -261,7 +357,6 @@ export const integrationsRouter = createTRPCRouter({
           id: true,
           name: true,
           key: true,
-          status: true,
         },
         with: {
           environmentVariableMappings: {
@@ -307,7 +402,6 @@ export const integrationsRouter = createTRPCRouter({
           .update(integrations)
           .set({
             name: input.payload.name ?? existingIntegration.name,
-            status: input.payload.status ?? existingIntegration.status,
           })
           .where(eq(integrations.id, input.where.id))
           .returning();
@@ -364,6 +458,24 @@ export const integrationsRouter = createTRPCRouter({
       const createdIntegrations = await db.transaction(async (tx) => {
         const results = [];
 
+        // Get branch and head version once if branchId is provided
+        let headVersionId: string | null = null;
+        if (input.branchId) {
+          const branch = await tx.query.branches.findFirst({
+            where: and(
+              eq(branches.id, input.branchId),
+              eq(branches.projectId, input.projectId),
+            ),
+          });
+          headVersionId = branch?.headVersionId ?? null;
+
+          if (!headVersionId) {
+            console.warn(
+              `[integrations.createBatch:${input.projectId}] Branch ${input.branchId} has no head version`,
+            );
+          }
+        }
+
         for (const integrationData of input.integrations) {
           const { name, integrationTemplateId, environmentVariableMappings } =
             integrationData;
@@ -403,7 +515,6 @@ export const integrationsRouter = createTRPCRouter({
               projectId: input.projectId,
               userId: ctx.session.user.id,
               integrationTemplateId,
-              status: "queued",
               options: integrationTemplate.recommendedOptions,
             })
             .returning();
@@ -450,22 +561,44 @@ export const integrationsRouter = createTRPCRouter({
             });
           }
 
+          // Queue integration for installation if branchId is provided
+          if (headVersionId) {
+            await tx.insert(integrationVersions).values({
+              integrationId: integration.id,
+              versionId: headVersionId,
+              status: "queued",
+            });
+
+            console.log(
+              `[integrations.createBatch:${input.projectId}] Queued integration ${integration.key} for version ${headVersionId}`,
+            );
+          }
+
           results.push(integration);
         }
 
         return results;
       });
 
-      try {
-        await integrationsRouter.createCaller(ctx).install({
-          projectId: input.projectId,
-          triggerWorkflow: input.triggerWorkflow ?? false,
-        });
-      } catch (error) {
-        console.error(
-          `[integrations.createBatch:${input.projectId}] Failed to trigger installation:`,
-          error,
-        );
+      // Trigger installation if branchId was provided
+      if (input.branchId) {
+        try {
+          await triggerInstallation({
+            projectId: input.projectId,
+            branchId: input.branchId,
+            triggerWorkflow: input.triggerWorkflow ?? false,
+            headers: ctx.headers,
+          });
+
+          console.log(
+            `[integrations.createBatch:${input.projectId}] Installation triggered successfully`,
+          );
+        } catch (error) {
+          console.error(
+            `[integrations.createBatch:${input.projectId}] Failed to trigger installation:`,
+            error,
+          );
+        }
       }
 
       return createdIntegrations;

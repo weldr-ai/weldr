@@ -23,7 +23,7 @@ interface ChatProps {
 
 export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
   const { data: session } = authClient.useSession();
-  const version = project.currentVersion;
+  const headVersion = project.branch.headVersion;
 
   const {
     messages,
@@ -35,8 +35,8 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
     handleSubmit: handleMessageSubmit,
   } = useMessages({
     initialMessages:
-      version.status === "completed" ? [] : version.chat.messages,
-    chatId: version.chat.id,
+      headVersion.status === "completed" ? [] : headVersion.chat.messages,
+    chatId: headVersion.chat.id,
     session,
   });
 
@@ -44,7 +44,7 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
     useScrollToBottom<HTMLDivElement>(messages);
 
   const { status, setStatus } = useStatus({
-    version,
+    version: headVersion,
     messages,
     project,
   });
@@ -55,7 +55,9 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
   const { eventSourceRef, connectToEventStream, closeEventStream } =
     useEventStream({
       projectId: project.id,
-      chatId: version.chat.id,
+      // TODO: get current branch id
+      branchId: project.branch.id,
+      chatId: headVersion.chat.id,
       project,
       setStatus,
       setMessages,
@@ -63,6 +65,8 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
 
   const { triggerGeneration } = useWorkflowTrigger({
     projectId: project.id,
+    // TODO: get current branch id
+    branchId: project.branch.id,
     setStatus,
     eventSourceRef,
     connectToEventStream,
@@ -76,7 +80,7 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
     });
   };
 
-  const editorReferences = useEditorReferences({ version });
+  const editorReferences = useEditorReferences({ version: headVersion });
 
   useEffect(() => {
     return () => {
@@ -84,7 +88,7 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
     };
   }, [closeEventStream]);
 
-  const conventionalCommit = parseConventionalCommit(version.message);
+  const conventionalCommit = parseConventionalCommit(headVersion.message);
 
   return (
     <div
@@ -98,7 +102,7 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
       )}
     >
       <div className="flex w-full items-center gap-2 truncate border-b px-2 py-1 font-medium text-xs">
-        <span className="text-muted-foreground">{`#${version.number}`}</span>
+        <span className="text-muted-foreground">{`#${headVersion.number}`}</span>
         <span className="flex items-center gap-1 truncate">
           {conventionalCommit.type && (
             <CommitTypeBadge type={conventionalCommit.type} />
@@ -126,6 +130,8 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
         >
           <Messages
             messages={messages}
+            // TODO: get current branch id
+            branchId={project.branch.id}
             integrationTemplates={integrationTemplates}
             environmentVariables={project.environmentVariables}
             setMessages={setMessages}
@@ -137,7 +143,7 @@ export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
 
       <MultimodalInput
         type="editor"
-        chatId={version.chat.id}
+        chatId={headVersion.chat.id}
         message={userMessageContent}
         setMessage={setUserMessageContent}
         attachments={attachments}

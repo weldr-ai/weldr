@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { RouterOutputs } from "@weldr/api";
 import type {
   AssistantMessage,
   ChatMessage,
@@ -14,18 +15,16 @@ import type { CanvasNode } from "@/types";
 
 interface UseEventStreamOptions {
   projectId: string;
+  branchId: string;
   chatId: string;
-  project: {
-    currentVersion: {
-      status: string;
-    };
-  };
+  project: RouterOutputs["projects"]["byId"];
   setStatus: (status: TStatus) => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }
 
 export function useEventStream({
   projectId,
+  branchId,
   chatId,
   project,
   setStatus,
@@ -61,8 +60,8 @@ export function useEventStream({
       reconnectTimeoutRef.current = null;
     }
 
-    // Build URL with Last-Event-ID as a query parameter if we have one
-    let url = `/api/chat/${projectId}/stream`;
+    // Build URL with branchId in path and Last-Event-ID as query parameter
+    let url = `/api/chat/${projectId}/${branchId}/stream`;
     if (lastEventIdRef.current) {
       url += `?lastEventId=${encodeURIComponent(lastEventIdRef.current)}`;
     }
@@ -237,11 +236,15 @@ export function useEventStream({
                   ...old,
                   title: chunk.data.title,
                   description: chunk.data.description,
-                  currentVersion: {
-                    ...old.currentVersion,
-                    message: chunk.data.currentVersion?.message ?? null,
-                    description: chunk.data.currentVersion?.description ?? null,
-                    status: chunk.data.currentVersion?.status ?? null,
+                  branch: {
+                    ...old.branch,
+                    headVersion: {
+                      ...old.branch.headVersion,
+                      message: chunk.data.branch?.headVersion?.message ?? null,
+                      description:
+                        chunk.data.branch?.headVersion?.description ?? null,
+                      status: chunk.data.branch?.headVersion?.status ?? null,
+                    },
                   },
                 };
               },
@@ -252,7 +255,7 @@ export function useEventStream({
               queryKey: trpc.projects.byId.queryKey({ id: projectId }),
             });
 
-            const status = chunk.data.currentVersion?.status;
+            const status = chunk.data.branch?.headVersion?.status;
 
             switch (status) {
               case "pending":
@@ -344,8 +347,8 @@ export function useEventStream({
 
       // Only retry if workflow is still active and we haven't exceeded max attempts
       if (
-        project.currentVersion.status !== "completed" &&
-        project.currentVersion.status !== "failed" &&
+        project.branch.headVersion.status !== "completed" &&
+        project.branch.headVersion.status !== "failed" &&
         reconnectAttempts.current < maxReconnectAttempts
       ) {
         reconnectAttempts.current += 1;
@@ -362,7 +365,8 @@ export function useEventStream({
     return eventSource;
   }, [
     projectId,
-    project.currentVersion.status,
+    branchId,
+    project.branch.headVersion.status,
     setStatus,
     setMessages,
     getNodes,
@@ -398,12 +402,12 @@ export function useEventStream({
     // Only connect if there's no existing connection and workflow might be active
     if (
       !eventSourceRef &&
-      project.currentVersion.status !== "completed" &&
-      project.currentVersion.status !== "failed"
+      project.branch.headVersion.status !== "completed" &&
+      project.branch.headVersion.status !== "failed"
     ) {
       connectToEventStream();
     }
-  }, [eventSourceRef, project.currentVersion.status, connectToEventStream]);
+  }, [eventSourceRef, project.branch.headVersion.status, connectToEventStream]);
 
   // Cleanup on unmount
   useEffect(() => {

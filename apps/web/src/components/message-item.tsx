@@ -21,12 +21,14 @@ import type {
 
 const PureMessageItem = ({
   message,
+  branchId,
   integrationTemplates,
   setMessages,
   setStatus,
   environmentVariables,
 }: {
   message: ChatMessage;
+  branchId: string;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   setStatus: Dispatch<SetStateAction<TStatus>>;
@@ -93,6 +95,7 @@ const PureMessageItem = ({
                   <SetupIntegration
                     key={`tool-call-${toolCall.toolCallId || nanoid()}`}
                     message={message}
+                    branchId={branchId}
                     integrationTemplates={integrationTemplates}
                     chatId={message.chatId}
                     setMessages={setMessages}

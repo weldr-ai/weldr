@@ -22,24 +22,27 @@ export default async function ProjectPage({
     const integrationTemplates = await api.integrationTemplates.list();
 
     const initialNodes: CanvasNode[] =
-      project.currentVersion?.declarations?.reduce<CanvasNode[]>((acc, e) => {
-        if (!e.declaration.metadata?.specs) return acc;
+      project.branch.headVersion?.declarations?.reduce<CanvasNode[]>(
+        (acc, e) => {
+          if (!e.declaration.metadata?.specs) return acc;
 
-        acc.push({
-          id: e.declaration.nodeId ?? "",
-          type: e.declaration.metadata?.specs?.type as NodeType,
-          data: e.declaration,
-          position: e.declaration.node?.position ?? {
-            x: 0,
-            y: 0,
-          },
-        });
+          acc.push({
+            id: e.declaration.nodeId ?? "",
+            type: e.declaration.metadata?.specs?.type as NodeType,
+            data: e.declaration,
+            position: e.declaration.node?.position ?? {
+              x: 0,
+              y: 0,
+            },
+          });
 
-        return acc;
-      }, []) ?? [];
+          return acc;
+        },
+        [],
+      ) ?? [];
 
     const initialEdges: Edge[] =
-      project.currentVersion?.edges?.map((edge) => ({
+      project.branch.headVersion?.edges?.map((edge) => ({
         id: `${edge.dependencyId}-${edge.dependentId}`,
         source: edge.dependencyId,
         target: edge.dependentId,

@@ -46,7 +46,7 @@ export function IntegrationsSetupStatus({
                     className={cn(
                       "size-1.5 rounded-full",
                       integration.status === "queued" && "bg-warning",
-                      integration.status === "completed" && "bg-success",
+                      integration.status === "installed" && "bg-success",
                       integration.status === "failed" && "bg-destructive",
                       integration.status === "cancelled" &&
                         "bg-muted-foreground",

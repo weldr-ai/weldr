@@ -81,7 +81,6 @@ export function ProjectSettings({
             <TabsTrigger className="w-full justify-start" value="general">
               General
             </TabsTrigger>
-
             <TabsTrigger className="w-full justify-start" value="integrations">
               Integrations
             </TabsTrigger>

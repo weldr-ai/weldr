@@ -9,17 +9,14 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { nanoid } from "@weldr/shared/nanoid";
-import type {
-  IntegrationKey,
-  IntegrationOptions,
-  IntegrationStatus,
-} from "@weldr/shared/types";
+import type { IntegrationKey, IntegrationOptions } from "@weldr/shared/types";
 
 import { users } from "./auth";
 import { declarations } from "./declarations";
 import { environmentVariables } from "./environment-variables";
 import { integrationTemplates } from "./integration-templates";
 import { projects } from "./projects";
+import { integrationVersions } from "./versions";
 
 export const integrations = pgTable(
   "integrations",
@@ -28,7 +25,6 @@ export const integrations = pgTable(
     key: text("key").$type<IntegrationKey>().notNull(),
     name: text("name"),
     options: jsonb("options").$type<IntegrationOptions>(),
-    status: text("status").$type<IntegrationStatus>().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -64,6 +60,7 @@ export const integrationsRelations = relations(
     }),
     environmentVariableMappings: many(integrationEnvironmentVariables),
     declarations: many(declarations),
+    versions: many(integrationVersions),
   }),
 );
 

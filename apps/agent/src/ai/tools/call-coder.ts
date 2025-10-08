@@ -66,10 +66,10 @@ export const callCoderTool = createTool({
     await stream(updatedVersion.chatId, {
       type: "update_project",
       data: {
-        currentVersion: {
-          message: commitMessage,
-          description,
-          status: "coding",
+        ...project,
+        branch: {
+          ...branch,
+          headVersion: updatedVersion,
         },
       },
     });

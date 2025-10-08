@@ -108,8 +108,6 @@ router.openapi(route, async (c) => {
       return c.json({ error: "Project not found" }, 404);
     }
 
-    const installedCategories = await getInstalledCategories(projectId);
-
     const branch = await db.query.branches.findFirst({
       where: and(eq(branches.projectId, projectId), eq(branches.id, branchId)),
       with: {
@@ -123,6 +121,10 @@ router.openapi(route, async (c) => {
       });
       return c.json({ success: false }, 500);
     }
+
+    const installedCategories = await getInstalledCategories(
+      branch.headVersion.id,
+    );
 
     const workflowContext = c.get("workflowContext");
     workflowContext.set("project", {

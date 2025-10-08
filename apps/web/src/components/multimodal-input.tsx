@@ -85,6 +85,9 @@ function PureMultimodalInput({
   textareaClassName,
   onFocus,
 }: MultimodalInputProps) {
+  const { data: session } = authClient.useSession();
+  const { setAuthDialogOpen } = useUIStore();
+
   const [currentPlaceholder, setCurrentPlaceholder] = useState(
     placeholder ?? "Send a message...",
   );
@@ -317,7 +320,11 @@ function PureMultimodalInput({
   }
 
   return (
-    <form className={cn("relative flex w-full flex-col", formClassName)}>
+    <form
+      className={cn("relative flex w-full flex-col", formClassName, {
+        "rounded-lg border": type === "textarea",
+      })}
+    >
       <input
         type="file"
         className="hidden"
@@ -404,7 +411,7 @@ function PureMultimodalInput({
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           className={cn(
-            "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-xl pb-10 transition-colors duration-200 focus-visible:ring-0",
+            "max-h-[calc(75dvh)] min-h-[128px] resize-none overflow-y-auto rounded-lg border-none bg-input/30 transition-colors duration-200 focus-visible:ring-0",
             {
               "bg-muted/30 opacity-70": !!status,
             },
@@ -434,7 +441,18 @@ function PureMultimodalInput({
         <div className="flex flex-row">
           <AttachmentsButton fileInputRef={fileInputRef} status={status} />
           {/* TODO: Add voice input */}
-          <Button variant="ghost" size="icon" className="size-8 rounded-md">
+          <Button
+            type="button"
+            onClick={() => {
+              if (!session) {
+                setAuthDialogOpen(true);
+                return;
+              }
+            }}
+            variant="ghost"
+            size="icon"
+            className="size-8 rounded-md"
+          >
             <MicIcon className="size-3.5" />
           </Button>
         </div>
@@ -472,6 +490,7 @@ function PureAttachmentsButton({
 
   return (
     <Button
+      type="button"
       variant="ghost"
       className="size-8 rounded-md"
       onClick={(event) => {

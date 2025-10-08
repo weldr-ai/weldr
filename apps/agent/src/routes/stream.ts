@@ -1,8 +1,8 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
 import { auth } from "@weldr/auth";
-import { and, db, eq, not } from "@weldr/db";
-import { projects, versions } from "@weldr/db/schema";
+import { and, db, eq } from "@weldr/db";
+import { branches, projects } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
 
@@ -16,14 +16,14 @@ import { createRouter } from "@/lib/utils";
 
 const route = createRoute({
   method: "get",
-  path: "/stream/:projectId",
+  path: "/stream/:projectId/:branchId",
   summary: "Subscribe to workflow events",
   description: "Subscribe to workflow events via resumable SSE",
   tags: ["Agent"],
   request: {
     params: z.object({
       projectId: z.string().openapi({ description: "Project ID" }),
-      versionId: z.string().openapi({ description: "Version ID" }),
+      branchId: z.string().openapi({ description: "Branch ID" }),
     }),
     headers: z.object({
       "last-event-id": z.string().optional().openapi({
@@ -61,7 +61,7 @@ const route = createRoute({
 const router = createRouter();
 
 router.openapi(route, async (c) => {
-  const { projectId, versionId } = c.req.valid("param");
+  const { projectId, branchId } = c.req.valid("param");
   const lastEventId = c.req.header("Last-Event-ID");
 
   const session = await auth.api.getSession({
@@ -83,16 +83,27 @@ router.openapi(route, async (c) => {
     return c.json({ error: "Project not found" }, 404);
   }
 
-  const activeVersion = await db.query.versions.findFirst({
-    where: and(
-      eq(versions.projectId, projectId),
-      eq(versions.id, versionId),
-      not(eq(versions.status, "completed")),
-      not(eq(versions.status, "failed")),
-    ),
+  const branch = await db.query.branches.findFirst({
+    where: and(eq(branches.id, branchId), eq(branches.projectId, projectId)),
+    with: {
+      headVersion: true,
+    },
   });
 
-  if (!activeVersion) {
+  if (!branch) {
+    return c.json({ error: "Branch not found" }, 404);
+  }
+
+  if (!branch.headVersion) {
+    return c.json({ error: "No head version found" }, 404);
+  }
+
+  const activeVersion = branch.headVersion;
+
+  if (
+    activeVersion.status === "completed" ||
+    activeVersion.status === "failed"
+  ) {
     return c.json({ message: "Stream is already completed" }, 422);
   }
 

@@ -77,11 +77,6 @@ export namespace App {
           `app-${projectId}`,
         );
 
-        const previewDeployToken = await deployToken({
-          type,
-          projectId,
-        });
-
         const productionDeployToken = await deployToken({
           type: "production",
           projectId,
@@ -104,10 +99,6 @@ export namespace App {
               {
                 key: "S3_BUCKET_NAME",
                 value: `app-${projectId}`,
-              },
-              {
-                key: "FLY_PREVIEW_DEPLOY_TOKEN",
-                value: previewDeployToken,
               },
               {
                 key: "FLY_PRODUCTION_DEPLOY_TOKEN",
@@ -164,6 +155,9 @@ export namespace App {
       headers: {
         Authorization: `Bearer ${flyApiKey}`,
       },
+      body: {
+        expiry: "175200h0m0s",
+      },
       ...ofetchConfig({ tag: `fly:app:create-deploy-token:${projectId}` }),
     });
 
@@ -193,14 +187,14 @@ export namespace App {
       },
       body: {
         query: `
-              mutation($input: AllocateIPAddressInput!) {
-                allocateIpAddress(input: $input) {
-                  ipAddress {
-                    address
-                  }
-                }
+          mutation($input: AllocateIPAddressInput!) {
+            allocateIpAddress(input: $input) {
+              ipAddress {
+                address
               }
-            `,
+            }
+          }
+        `,
         variables: {
           input: {
             appId: `app-${type}-${projectId}`,

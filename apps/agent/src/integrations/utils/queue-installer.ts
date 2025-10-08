@@ -1,12 +1,12 @@
 import type { ToolContent, ToolResultPart } from "ai";
 
 import { and, db, eq } from "@weldr/db";
-import { chatMessages, integrations } from "@weldr/db/schema";
+import { chatMessages } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import type {
   IntegrationCategoryKey,
+  IntegrationInstallationStatus,
   IntegrationKey,
-  IntegrationStatus,
   ToolMessage,
 } from "@weldr/shared/types";
 
@@ -15,27 +15,19 @@ import { stream } from "@/lib/stream-utils";
 import type { WorkflowContext } from "@/workflow/context";
 import {
   getQueuedIntegrations,
-  updateIntegrationStatus,
+  updateIntegrationInstallationStatus,
 } from "./queue-manager";
 
 async function streamToolMessageUpdate({
   context,
-  integrationId,
+  integrationKey,
   status,
 }: {
   context: WorkflowContext;
-  integrationId: string;
-  status: "installing" | "completed" | "failed";
+  integrationKey: IntegrationKey;
+  status: IntegrationInstallationStatus;
 }) {
   const branch = context.get("branch");
-
-  const integration = await db.query.integrations.findFirst({
-    where: eq(integrations.id, integrationId),
-  });
-
-  if (!integration) {
-    return;
-  }
 
   const message = await db.query.chatMessages.findFirst({
     where: and(
@@ -62,7 +54,7 @@ async function streamToolMessageUpdate({
         category: IntegrationCategoryKey;
         key: IntegrationKey;
         name: string;
-        status: IntegrationStatus;
+        status: IntegrationInstallationStatus;
       }[];
     };
   };
@@ -72,9 +64,9 @@ async function streamToolMessageUpdate({
       category: IntegrationCategoryKey;
       key: IntegrationKey;
       name: string;
-      status: IntegrationStatus;
+      status: IntegrationInstallationStatus;
     }) =>
-      existingIntegration.key === integration.key
+      existingIntegration.key === integrationKey
         ? { ...existingIntegration, status }
         : existingIntegration,
   );
@@ -119,7 +111,7 @@ export async function installQueuedIntegrations(
       installedIntegrations: {
         id: string;
         key: IntegrationKey;
-        status: IntegrationStatus;
+        status: IntegrationInstallationStatus;
       }[];
     }
   | {
@@ -128,14 +120,23 @@ export async function installQueuedIntegrations(
     }
 > {
   const project = context.get("project");
+  const branch = context.get("branch");
+  const versionId = branch.headVersionId;
   const logger = Logger.get({ projectId: project.id });
+
+  if (!versionId) {
+    return {
+      status: "error",
+      error: "No head version found for branch",
+    };
+  }
 
   logger.info("Starting installation of queued integrations");
 
   const allInstalledIntegrations: {
     id: string;
     key: IntegrationKey;
-    status: IntegrationStatus;
+    status: IntegrationInstallationStatus;
   }[] = [];
 
   let installationRound = 1;
@@ -158,12 +159,16 @@ export async function installQueuedIntegrations(
 
     for (const integration of queuedIntegrations) {
       try {
-        await updateIntegrationStatus(integration.id, "installing");
+        await updateIntegrationInstallationStatus(
+          versionId,
+          integration.id,
+          "installing",
+        );
         logger.info(`Started installing ${integration.key}`);
 
         await streamToolMessageUpdate({
           context,
-          integrationId: integration.id,
+          integrationKey: integration.key,
           status: "installing",
         });
 
@@ -172,21 +177,25 @@ export async function installQueuedIntegrations(
           context,
         });
 
-        await updateIntegrationStatus(integration.id, "completed");
+        await updateIntegrationInstallationStatus(
+          versionId,
+          integration.id,
+          "installed",
+        );
         logger.info(`Successfully installed ${integration.key}`);
 
         allInstalledIntegrations.push({
           id: integration.id,
           key: integration.key,
-          status: "completed",
+          status: "installed",
         });
 
         installedInThisRound++;
 
         await streamToolMessageUpdate({
           context,
-          integrationId: integration.id,
-          status: "completed",
+          integrationKey: integration.key,
+          status: "installed",
         });
       } catch (error) {
         logger.error(`Failed to install ${integration.key}`, {
@@ -195,11 +204,15 @@ export async function installQueuedIntegrations(
 
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
-        await updateIntegrationStatus(integration.id, "failed");
+        await updateIntegrationInstallationStatus(
+          versionId,
+          integration.id,
+          "failed",
+        );
 
         await streamToolMessageUpdate({
           context,
-          integrationId: integration.id,
+          integrationKey: integration.key,
           status: "failed",
         });
 

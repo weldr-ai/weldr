@@ -7,6 +7,7 @@ import { projects } from "@weldr/db/schema";
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
     projectId: string;
+    branchId: string;
     triggerWorkflow?: boolean;
   };
 
@@ -41,8 +42,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Development: use Flycast via WireGuard
-    const url = `http://app-development-${body.projectId}.flycast`;
+    // Development: use localhost
+    const url = "http://localhost:8080";
 
     // Create headers object, preserving original headers but updating origin-related ones
     const headers = new Headers();
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
       headers,
       body: JSON.stringify({
         projectId: body.projectId,
+        branchId: body.branchId,
         triggerWorkflow: body.triggerWorkflow,
       }),
     });

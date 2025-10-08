@@ -31,22 +31,23 @@ export const projectsRouter = {
     .mutation(async ({ ctx, input }) => {
       const projectId = nanoid();
 
+      let developmentAppId: string | undefined;
+      let productionAppId: string | undefined;
+
       try {
         return await ctx.db.transaction(async (tx) => {
-          await Promise.all([
-            Fly.app.create({
-              type: "development",
-              projectId,
-            }),
-            Fly.app.create({
-              type: "preview",
-              projectId,
-            }),
-            Fly.app.create({
-              type: "production",
-              projectId,
-            }),
-          ]);
+          // The production app is created first
+          // so we can generate a deploy token for it
+          // to be used in the development app
+          productionAppId = await Fly.app.create({
+            type: "production",
+            projectId,
+          });
+
+          developmentAppId = await Fly.app.create({
+            type: "development",
+            projectId,
+          });
 
           const [project] = await tx
             .insert(projects)
@@ -117,7 +118,7 @@ export const projectsRouter = {
           const [mainBranch] = await tx
             .insert(branches)
             .values({
-              projectId: projectId,
+              projectId,
               isMain: true,
             })
             .returning();
@@ -129,17 +130,46 @@ export const projectsRouter = {
             });
           }
 
-          await tx.insert(versions).values({
-            projectId: projectId,
-            userId: ctx.session.user.id,
-            number: 1,
-            chatId: chat.id,
-            branchId: mainBranch.id,
-          });
+          const [version] = await tx
+            .insert(versions)
+            .values({
+              projectId,
+              userId: ctx.session.user.id,
+              number: 1,
+              chatId: chat.id,
+              branchId: mainBranch.id,
+            })
+            .returning();
+
+          if (!version) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create version",
+            });
+          }
+
+          await tx
+            .update(branches)
+            .set({
+              headVersionId: version.id,
+            })
+            .where(eq(branches.id, mainBranch.id));
 
           return project;
         });
       } catch (error) {
+        const promises = [];
+
+        if (developmentAppId) {
+          promises.push(Fly.app.destroy({ type: "development", projectId }));
+        }
+
+        if (productionAppId) {
+          promises.push(Fly.app.destroy({ type: "production", projectId }));
+        }
+
+        await Promise.all(promises);
+
         console.error(error);
         if (error instanceof TRPCError) {
           throw error;
@@ -179,7 +209,6 @@ export const projectsRouter = {
                 id: true,
                 name: true,
                 key: true,
-                status: true,
               },
               with: {
                 environmentVariableMappings: {
@@ -367,21 +396,20 @@ export const projectsRouter = {
           }));
         };
 
-        const currentVersion = branch.headVersion;
-
-        if (!currentVersion) {
+        if (!branch.headVersion) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Version not found",
           });
         }
 
-        const currentVersionDeclarations =
-          getVersionDeclarations(currentVersion);
+        const headVersionDeclarations = getVersionDeclarations(
+          branch.headVersion,
+        );
 
         const edges = Array.from(
           new Map(
-            currentVersionDeclarations
+            headVersionDeclarations
               .flatMap((decl) => decl.edges)
               .map((edge) => [
                 `${edge.dependencyId}-${edge.dependentId}`,
@@ -398,14 +426,17 @@ export const projectsRouter = {
 
         const result = {
           ...project,
-          currentVersion: {
-            ...currentVersion,
-            edges,
-            chat: {
-              ...currentVersion.chat,
-              messages: (await getMessagesWithAttachments(
-                currentVersion,
-              )) as ChatMessage[],
+          branch: {
+            ...branch,
+            headVersion: {
+              ...branch.headVersion,
+              edges,
+              chat: {
+                ...branch.headVersion.chat,
+                messages: (await getMessagesWithAttachments(
+                  branch.headVersion,
+                )) as ChatMessage[],
+              },
             },
           },
         };

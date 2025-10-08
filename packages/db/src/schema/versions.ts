@@ -13,11 +13,13 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { nanoid } from "@weldr/shared/nanoid";
+import type { IntegrationInstallationStatus } from "@weldr/shared/types";
 
 import { users } from "./auth";
 import { branches } from "./branches";
 import { chats } from "./chats";
 import { declarations } from "./declarations";
+import { integrations } from "./integrations";
 import { projects } from "./projects";
 import { tasks } from "./tasks";
 
@@ -134,6 +136,7 @@ export const versionsRelations = relations(versions, ({ one, many }) => ({
     references: [users.id],
   }),
   declarations: many(versionDeclarations),
+  integrationVersions: many(integrationVersions),
 }));
 
 export const versionDeclarations = pgTable(
@@ -158,6 +161,58 @@ export const versionDeclarationsRelations = relations(
     }),
     version: one(versions, {
       fields: [versionDeclarations.versionId],
+      references: [versions.id],
+    }),
+  }),
+);
+
+export const integrationVersions = pgTable(
+  "integration_versions",
+  {
+    id: text("id").primaryKey().$defaultFn(nanoid),
+    integrationId: text("integration_id")
+      .references(() => integrations.id, { onDelete: "cascade" })
+      .notNull(),
+    versionId: text("version_id")
+      .references(() => versions.id, { onDelete: "cascade" })
+      .notNull(),
+    status: text("status")
+      .$type<IntegrationInstallationStatus>()
+      .notNull()
+      .default("installing"),
+    installedAt: timestamp("installed_at"),
+    installationMetadata: jsonb("installation_metadata").$type<{
+      filesCreated?: string[];
+      packagesInstalled?: string[];
+      declarationsAdded?: string[];
+      error?: string;
+    }>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [
+    uniqueIndex("integration_versions_unique_idx").on(
+      t.integrationId,
+      t.versionId,
+    ),
+    index("integration_versions_version_idx").on(t.versionId),
+    index("integration_versions_integration_idx").on(t.integrationId),
+    index("integration_versions_status_idx").on(t.status),
+  ],
+);
+
+export const integrationInstallationsRelations = relations(
+  integrationVersions,
+  ({ one }) => ({
+    integration: one(integrations, {
+      fields: [integrationVersions.integrationId],
+      references: [integrations.id],
+    }),
+    version: one(versions, {
+      fields: [integrationVersions.versionId],
       references: [versions.id],
     }),
   }),

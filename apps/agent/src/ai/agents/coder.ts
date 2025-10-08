@@ -128,8 +128,10 @@ export async function coderAgent({
   await stream(branch.headVersion.chatId, {
     type: "update_project",
     data: {
-      currentVersion: {
-        status: "deploying",
+      ...project,
+      branch: {
+        ...branch,
+        headVersion: updatedVersion,
       },
     },
   });

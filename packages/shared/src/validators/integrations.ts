@@ -9,11 +9,11 @@ export const integrationKeySchema = z.enum([
   "better-auth",
 ]);
 
-export const integrationStatusSchema = z.enum([
+export const integrationInstallationStatusSchema = z.enum([
   "queued",
   "blocked",
   "installing",
-  "completed",
+  "installed",
   "cancelled",
   "failed",
 ]);
@@ -22,7 +22,6 @@ const baseIntegrationSchema = z.object({
   id: z.string(),
   key: integrationKeySchema,
   name: z.string().optional(),
-  status: integrationStatusSchema,
   createdAt: z.date(),
   projectId: z.string(),
   userId: z.string(),
@@ -82,6 +81,7 @@ export const integrationEnvironmentVariableMappingSchema = z.object({
 export const createIntegrationSchema = z.object({
   name: z.string().min(1).optional(),
   projectId: z.string().min(1),
+  branchId: z.string().min(1).optional(),
   integrationTemplateId: z.string().min(1),
   environmentVariableMappings: z.array(
     integrationEnvironmentVariableMappingSchema,
@@ -94,7 +94,6 @@ export const updateIntegrationSchema = z.object({
   }),
   payload: z.object({
     name: z.string().min(1).optional(),
-    status: integrationStatusSchema.optional(),
     environmentVariableMappings: z
       .array(integrationEnvironmentVariableMappingSchema)
       .optional(),
@@ -103,6 +102,7 @@ export const updateIntegrationSchema = z.object({
 
 export const createBatchIntegrationsSchema = z.object({
   projectId: z.string().min(1),
+  branchId: z.string().min(1).optional(),
   triggerWorkflow: z.boolean().optional().default(false),
   integrations: z
     .array(
@@ -115,4 +115,54 @@ export const createBatchIntegrationsSchema = z.object({
       }),
     )
     .min(1),
+});
+
+export const integrationInstallationSchema = z.object({
+  id: z.string(),
+  integrationId: z.string(),
+  versionId: z.string(),
+  status: integrationInstallationStatusSchema,
+  installedAt: z.date().nullable(),
+  installationMetadata: z
+    .object({
+      filesCreated: z.array(z.string()).optional(),
+      packagesInstalled: z.array(z.string()).optional(),
+      declarationsAdded: z.array(z.string()).optional(),
+      error: z.string().optional(),
+    })
+    .nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date().nullable(),
+});
+
+export const createIntegrationInstallationSchema = z.object({
+  integrationId: z.string().min(1),
+  versionId: z.string().min(1),
+  status: integrationInstallationStatusSchema.optional().default("installing"),
+  installationMetadata: z
+    .object({
+      filesCreated: z.array(z.string()).optional(),
+      packagesInstalled: z.array(z.string()).optional(),
+      declarationsAdded: z.array(z.string()).optional(),
+      error: z.string().optional(),
+    })
+    .optional(),
+});
+
+export const updateIntegrationInstallationSchema = z.object({
+  where: z.object({
+    id: z.string().min(1),
+  }),
+  payload: z.object({
+    status: integrationInstallationStatusSchema.optional(),
+    installedAt: z.date().optional(),
+    installationMetadata: z
+      .object({
+        filesCreated: z.array(z.string()).optional(),
+        packagesInstalled: z.array(z.string()).optional(),
+        declarationsAdded: z.array(z.string()).optional(),
+        error: z.string().optional(),
+      })
+      .optional(),
+  }),
 });

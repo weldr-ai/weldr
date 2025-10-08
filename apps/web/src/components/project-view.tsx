@@ -70,7 +70,7 @@ export function ProjectView({
             {project.title ?? "Untitled Project"}
           </span>
           <div className="flex items-center gap-1">
-            {!project.currentVersion?.publishedAt && (
+            {!project.branch.headVersion?.publishedAt && (
               <>
                 <Badge>Not Published</Badge>
                 <Button
@@ -89,7 +89,7 @@ export function ProjectView({
                   variant="outline"
                   size="icon"
                   className="size-7 dark:bg-muted"
-                  disabled={project.currentVersion?.status !== "completed"}
+                  disabled={project.branch.headVersion?.status !== "completed"}
                   onClick={() => setSitePreviewDialogOpen(true)}
                 >
                   <EyeIcon className="size-3.5" />

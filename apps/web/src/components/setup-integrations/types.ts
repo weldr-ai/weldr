@@ -4,8 +4,8 @@ import type { RouterOutputs } from "@weldr/api";
 import type {
   ChatMessage,
   IntegrationCategoryKey,
+  IntegrationInstallationStatus,
   IntegrationKey,
-  IntegrationStatus,
 } from "@weldr/shared/types";
 
 export type IntegrationTemplate =
@@ -51,7 +51,7 @@ export type IntegrationToolOutput = {
       category: IntegrationCategoryKey;
       key: IntegrationKey;
       name: string;
-      status: IntegrationStatus;
+      status: IntegrationInstallationStatus;
     }[];
   };
 };
