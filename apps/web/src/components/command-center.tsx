@@ -22,8 +22,8 @@ import { cn } from "@weldr/ui/lib/utils";
 
 import { type CommandCenterView, useUIStore } from "@/lib/context/ui-store";
 import { useTRPC } from "@/lib/trpc/react";
-import { CreateProjectForm } from "./create-project-form";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
+import { CreateProjectForm } from "./projects/create-project-form";
 
 export function CommandCenter({
   projects: _projects,

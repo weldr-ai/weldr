@@ -7,7 +7,7 @@ import type {
   TStatus,
 } from "@weldr/shared/types";
 
-import type { IntegrationToolResultPart } from "@/components/setup-integrations/types";
+import type { IntegrationToolResultPart } from "@/components/integrations/shared/types";
 
 interface UseStatusOptions {
   version: RouterOutputs["versions"]["byId"];

@@ -6,8 +6,8 @@ import { buttonVariants } from "@weldr/ui/components/button";
 import { LogoIcon } from "@weldr/ui/icons";
 import { cn } from "@weldr/ui/lib/utils";
 
+import { SubscriptionPlans } from "@/components/billing/subscription-plans";
 import { MainDropdownMenu } from "@/components/main-dropdown-menu";
-import { SubscriptionPlans } from "@/components/subscription-plans";
 import { getActiveSubscription } from "@/lib/actions/get-active-subscription";
 
 export default async function PricingPage() {

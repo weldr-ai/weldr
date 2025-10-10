@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 
 import type { NodeType } from "@weldr/shared/types";
 
-import { ProjectView } from "@/components/project-view";
+import { ProjectView } from "@/components/projects/project-view";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
 

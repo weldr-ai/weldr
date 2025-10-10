@@ -30,7 +30,7 @@ import { useTheme } from "next-themes";
 import type { RouterOutputs } from "@weldr/api";
 import "@weldr/ui/styles/canvas.css";
 
-import { Chat } from "../chat";
+import { Chat } from "../chat/chat";
 import { Placeholder } from "./placeholder";
 
 const nodeTypes = {

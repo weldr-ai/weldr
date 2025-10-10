@@ -8,7 +8,7 @@ import { Card } from "@weldr/ui/components/card";
 import { ScrollArea } from "@weldr/ui/components/scroll-area";
 import { cn } from "@weldr/ui/lib/utils";
 
-import OpenApiEndpointDocs from "@/components/openapi-endpoint-docs";
+import { OpenApiViewer } from "@/components/openapi-viewer";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
 import { ProtectedBadge } from "../components/protected-badge";
@@ -216,7 +216,7 @@ export const EndpointNode = memo(
 
               {/* Content */}
               <ScrollArea className="flex-1 overflow-hidden p-4">
-                <OpenApiEndpointDocs
+                <OpenApiViewer
                   spec={
                     specs
                       ? ({

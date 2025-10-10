@@ -5,12 +5,12 @@ import { auth } from "@weldr/auth";
 import { buttonVariants } from "@weldr/ui/components/button";
 import { cn } from "@weldr/ui/lib/utils";
 
-import { AccountSettings } from "@/components/account-settings";
+import { AccountSettings } from "@/components/auth/account-settings";
 import { AuthDialog } from "@/components/auth/auth-dialog";
+import { UpgradeButton } from "@/components/billing/upgrade-button";
 import { CommandCenter } from "@/components/command-center";
-import { CreateProjectForm } from "@/components/create-project-form";
 import { MainDropdownMenu } from "@/components/main-dropdown-menu";
-import { UpgradeButton } from "@/components/upgrade-button";
+import { CreateProjectForm } from "@/components/projects/create-project-form";
 import { getActiveSubscription } from "@/lib/actions/get-active-subscription";
 import { api } from "@/lib/trpc/server";
 
