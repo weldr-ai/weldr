@@ -106,7 +106,6 @@ export async function coderAgent({
   const commitHash = await Git.commit(
     branch.headVersion.message ?? "commit message",
     { name: user.name, email: user.email },
-    { worktreeName: branch.isMain ? undefined : branch.id },
   );
 
   logger.info("All tasks processed. Updating version progress to 'deploying'.");

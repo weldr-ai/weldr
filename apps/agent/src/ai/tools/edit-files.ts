@@ -7,7 +7,7 @@ import { versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 
-import { Git } from "@/lib/git";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { applyEdit } from "../utils/apply-edit";
 import { extractAndSaveDeclarations } from "../utils/declarations";
 import { createTool } from "./utils";
@@ -53,11 +53,9 @@ export const editFileTool = createTool({
 
     logger.info(`Editing file: ${input.targetFile}`);
 
-    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
+    const fullPath = path.resolve(WORKSPACE_DIR, input.targetFile);
 
-    const fullPath = path.resolve(workspaceDir, input.targetFile);
-
-    if (!fullPath.startsWith(workspaceDir)) {
+    if (!fullPath.startsWith(WORKSPACE_DIR)) {
       logger.error("Path traversal attempt detected", {
         extra: {
           targetFile: input.targetFile,
@@ -122,7 +120,7 @@ export const editFileTool = createTool({
       context,
       filePath: input.targetFile,
       sourceCode: updatedCode,
-      workspaceDir,
+      workspaceDir: WORKSPACE_DIR,
     });
 
     await db.update(versions).set({

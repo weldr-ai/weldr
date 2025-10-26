@@ -21,7 +21,6 @@ export function defineIntegration<K extends IntegrationKey>(
     }) => {
       try {
         const project = context.get("project");
-        const branch = context.get("branch");
 
         const options = integration?.options as
           | ExtractOptionsForKey<K>
@@ -31,8 +30,8 @@ export function defineIntegration<K extends IntegrationKey>(
         const scripts = (await props.scripts?.(context, options)) ?? [];
 
         const results = await Promise.all([
-          updatePackageJsonScripts(scripts, branch),
-          installPackages(packages, branch),
+          updatePackageJsonScripts(scripts),
+          installPackages(packages),
           seedDeclarationTemplates({
             integration,
             context,

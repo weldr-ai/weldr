@@ -10,6 +10,7 @@ import {
 } from "@aws-sdk/client-iam";
 import {
   createBucket as tigrisCreateBucket,
+  createBucketSnapshot as tigrisCreateBucketSnapshot,
   getPresignedUrl as tigrisGetPresignedUrl,
   removeBucket as tigrisRemoveBucket,
 } from "@tigrisdata/storage";
@@ -38,6 +39,7 @@ const tigrisConfig = {
 async function createBucket(bucketName: string): Promise<void> {
   try {
     const response = await tigrisCreateBucket(bucketName, {
+      enableSnapshot: true,
       config: tigrisConfig,
     });
 
@@ -327,7 +329,7 @@ async function createCredentials(bucketName: string): Promise<Credentials> {
   }
 }
 
-async function createTigrisBucket(bucketName: string): Promise<Credentials> {
+async function createProjectBucket(bucketName: string): Promise<Credentials> {
   try {
     await createBucket(bucketName);
     try {
@@ -349,12 +351,27 @@ async function createTigrisBucket(bucketName: string): Promise<Credentials> {
   }
 }
 
-async function deleteTigrisBucket(bucketName: string): Promise<void> {
+async function deleteProjectBucket(bucketName: string): Promise<void> {
   await Promise.all([
     deleteAccessKey(bucketName),
     deleteBucket(bucketName),
     deletePolicy(bucketName),
   ]);
+}
+
+async function forkBucket(
+  sourceBucket: string,
+  forkBucket: string,
+): Promise<void> {
+  const result = await tigrisCreateBucket(forkBucket, {
+    sourceBucketName: sourceBucket,
+    enableSnapshot: true,
+    config: tigrisConfig,
+  });
+
+  if (result.error) {
+    throw new Error(`Failed to fork bucket: ${result.error}`);
+  }
 }
 
 async function getObjectSignedUrl(
@@ -383,10 +400,50 @@ async function getObjectSignedUrl(
   return response.data?.url ?? "";
 }
 
+async function createSnapshot(
+  bucketName: string,
+  snapshotName: string,
+): Promise<string> {
+  try {
+    const response = await tigrisCreateBucketSnapshot(bucketName, {
+      name: snapshotName,
+      config: tigrisConfig,
+    });
+
+    if (response.error) {
+      Logger.error("Create snapshot error", {
+        bucketName,
+        snapshotName,
+        error: response.error,
+      });
+      throw response.error;
+    }
+
+    Logger.info("Snapshot created", {
+      bucketName,
+      snapshotName,
+      version: response.data.snapshotVersion,
+    });
+
+    return response.data.snapshotVersion;
+  } catch (error) {
+    Logger.error("Create snapshot error", {
+      bucketName,
+      snapshotName,
+      error,
+    });
+    throw error;
+  }
+}
+
 export const Tigris = {
   bucket: {
-    create: createTigrisBucket,
-    delete: deleteTigrisBucket,
+    create: createProjectBucket,
+    delete: deleteProjectBucket,
+    fork: forkBucket,
+    snapshot: {
+      create: createSnapshot,
+    },
   },
   object: {
     getSignedUrl: getObjectSignedUrl,

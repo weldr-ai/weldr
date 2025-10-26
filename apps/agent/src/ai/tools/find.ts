@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Logger } from "@weldr/shared/logger";
 
 import { runShell } from "@/lib/commands";
-import { Git } from "@/lib/git";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
 export const findTool = createTool({
@@ -55,10 +55,8 @@ export const findTool = createTool({
 
     logger.info(`Finding files with query: ${query}`);
 
-    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
-
     // Build find command
-    let findCmd = `find "${workspaceDir}"`;
+    let findCmd = `find "${WORKSPACE_DIR}"`;
 
     // Exclude common unwanted directories
     findCmd +=
@@ -78,7 +76,7 @@ export const findTool = createTool({
 
     const command = findCmd;
     const { stdout, stderr, exitCode } = await runShell(command, {
-      cwd: workspaceDir,
+      cwd: WORKSPACE_DIR,
     });
 
     if (exitCode !== 0) {
@@ -118,7 +116,7 @@ export const findTool = createTool({
       .trim()
       .split("\n")
       .filter((line) => line.trim())
-      .map((path) => path.replace(`${workspaceDir}/`, ""))
+      .map((path) => path.replace(`${WORKSPACE_DIR}/`, ""))
       .filter((path) => path && path !== ".");
 
     const results = allResults.slice(0, maxResults);

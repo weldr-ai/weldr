@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Logger } from "@weldr/shared/logger";
 
 import { runCommand } from "@/lib/commands";
-import { Git } from "@/lib/git";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
 export const removePackagesTool = createTool({
@@ -35,13 +35,11 @@ export const removePackagesTool = createTool({
 
     logger.info(`Removing packages: ${input.packages.join(", ")}`);
 
-    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
-
     const { stderr, exitCode, success } = await runCommand(
       "bun",
       ["remove", ...input.packages],
       {
-        cwd: workspaceDir,
+        cwd: WORKSPACE_DIR,
       },
     );
 

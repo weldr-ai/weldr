@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Logger } from "@weldr/shared/logger";
 
 import { runCommand } from "@/lib/commands";
-import { Git } from "@/lib/git";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
 export const installPackagesTool = createTool({
@@ -50,13 +50,11 @@ export const installPackagesTool = createTool({
       },
     });
 
-    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
-
     const { stderr, exitCode, success } = await runCommand(
       "bun",
       ["add", ...input.packages.map((pkg) => pkg.name)],
       {
-        cwd: workspaceDir,
+        cwd: WORKSPACE_DIR,
       },
     );
 

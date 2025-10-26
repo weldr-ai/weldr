@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Logger } from "@weldr/shared/logger";
 
 import { runCommand, runShell } from "@/lib/commands";
-import { Git } from "@/lib/git";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
 export const readFileTool = createTool({
@@ -66,8 +66,6 @@ export const readFileTool = createTool({
       input,
     });
 
-    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
-
     logger.info(`Reading file: ${filePath}`);
 
     // First check if file exists and get line count
@@ -76,7 +74,7 @@ export const readFileTool = createTool({
       stderr: wcStderr,
       exitCode: wcExitCode,
     } = await runCommand("wc", ["-l", filePath], {
-      cwd: workspaceDir,
+      cwd: WORKSPACE_DIR,
     });
 
     if (wcExitCode !== 0) {
@@ -92,7 +90,7 @@ export const readFileTool = createTool({
 
         // List directory to provide suggestions
         const { stdout: lsOutput } = await runCommand("ls", [dir], {
-          cwd: workspaceDir,
+          cwd: WORKSPACE_DIR,
         });
 
         const dirEntries = lsOutput.split("\n").filter(Boolean);
@@ -138,7 +136,7 @@ export const readFileTool = createTool({
     const sedCommand = `sed -n '${actualStartLine},${actualEndLine}p' "${filePath}"`;
 
     const { stdout, stderr, exitCode, success } = await runShell(sedCommand, {
-      cwd: workspaceDir,
+      cwd: WORKSPACE_DIR,
     });
 
     if (exitCode !== 0 || !success) {

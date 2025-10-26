@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Logger } from "@weldr/shared/logger";
 
 import { runShell } from "@/lib/commands";
-import { Git } from "@/lib/git";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
 export const fzfTool = createTool({
@@ -64,10 +64,8 @@ export const fzfTool = createTool({
 
     logger.info("Starting fuzzy file search");
 
-    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
-
     // Build find command
-    let findCmd = `find "${workspaceDir}"`;
+    let findCmd = `find "${WORKSPACE_DIR}"`;
 
     // Add type filter
     if (includeDirectories && !includeFiles) {
@@ -100,12 +98,12 @@ export const fzfTool = createTool({
     logger.info("Executing fuzzy search command", {
       extra: {
         command,
-        workingDirectory: workspaceDir,
+        workingDirectory: WORKSPACE_DIR,
       },
     });
 
     const { stdout, stderr, exitCode } = await runShell(command, {
-      cwd: workspaceDir,
+      cwd: WORKSPACE_DIR,
     });
 
     if (exitCode !== 0 && exitCode !== 1) {
@@ -142,7 +140,7 @@ export const fzfTool = createTool({
       .trim()
       .split("\n")
       .filter((line) => line.trim())
-      .map((path) => path.replace(`${workspaceDir}/`, ""))
+      .map((path) => path.replace(`${WORKSPACE_DIR}/`, ""))
       .filter((path) => path && path !== ".");
 
     const results = allResults.slice(0, maxResults);

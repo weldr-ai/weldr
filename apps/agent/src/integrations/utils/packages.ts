@@ -1,9 +1,7 @@
 import { promises as fs } from "node:fs";
 
-import type { branches } from "@weldr/db/schema";
-
 import { runCommand } from "@/lib/commands";
-import { Git } from "@/lib/git";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import type {
   IntegrationCallbackResult,
   IntegrationPackageSets,
@@ -13,10 +11,7 @@ import { combineResults } from "./combine-results";
 
 export async function installPackages(
   packagesSets: IntegrationPackageSets,
-  branch: typeof branches.$inferSelect,
 ): Promise<IntegrationCallbackResult> {
-  const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
-
   const results: IntegrationCallbackResult[] = [];
 
   for (const packages of packagesSets) {
@@ -41,7 +36,7 @@ export async function installPackages(
           `pnpm add ${runtimeInstallCommand.join(" ")} -F @repo/${target}`,
         ],
         {
-          cwd: workspaceDir,
+          cwd: WORKSPACE_DIR,
         },
       );
 
@@ -56,7 +51,7 @@ export async function installPackages(
           `pnpm add -D ${developmentInstallCommand.join(" ")} -F @repo/${target}`,
         ],
         {
-          cwd: workspaceDir,
+          cwd: WORKSPACE_DIR,
         },
       );
 
@@ -69,18 +64,15 @@ export async function installPackages(
 
 export async function updatePackageJsonScripts(
   scriptSets: IntegrationScriptSets,
-  branch: typeof branches.$inferSelect,
 ): Promise<IntegrationCallbackResult> {
   try {
-    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
-
     const results: IntegrationCallbackResult[] = [];
 
     for (const scriptSet of scriptSets) {
       const directory =
         scriptSet.target === "root"
-          ? workspaceDir
-          : `${workspaceDir}/apps/${scriptSet.target}`;
+          ? WORKSPACE_DIR
+          : `${WORKSPACE_DIR}/apps/${scriptSet.target}`;
 
       let packageJsonContent: {
         scripts?: Record<string, string>;
@@ -142,12 +134,9 @@ export async function updatePackageJsonScripts(
 
 export async function runPnpmScript(
   script: string,
-  branch: typeof branches.$inferSelect,
 ): Promise<IntegrationCallbackResult> {
-  const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
-
   const result = await runCommand("pnpm", ["run", script], {
-    cwd: workspaceDir,
+    cwd: WORKSPACE_DIR,
   });
 
   if (result.success) {

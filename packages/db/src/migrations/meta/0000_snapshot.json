@@ -1,5 +1,5 @@
 {
-  "id": "363a82b5-8004-401d-b011-83138e3cfb0a",
+  "id": "4585f28d-ae71-438f-95c1-8f42e670a6bb",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2704,6 +2704,12 @@
         },
         "parent_version_id": {
           "name": "parent_version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bucket_snapshot_version": {
+          "name": "bucket_snapshot_version",
           "type": "text",
           "primaryKey": false,
           "notNull": false

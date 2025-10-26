@@ -9,7 +9,7 @@ import type { Integration } from "@weldr/shared/types";
 import { applyEdit } from "@/ai/utils/apply-edit";
 import type { FileItem } from "@/integrations/types";
 import { integrationRegistry } from "@/integrations/utils/registry";
-import { Git } from "@/lib/git";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import type { WorkflowContext } from "@/workflow/context";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -22,9 +22,6 @@ export async function applyFiles({
   integration: Integration;
   context: WorkflowContext;
 }): Promise<void> {
-  const branch = context.get("branch");
-  const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
-
   const files = await generateFiles({
     integration,
     context,
@@ -34,7 +31,7 @@ export async function applyFiles({
 
   for (const file of files) {
     const targetDir = path.dirname(file.targetPath);
-    const fullTargetDir = path.resolve(workspaceDir, targetDir);
+    const fullTargetDir = path.resolve(WORKSPACE_DIR, targetDir);
 
     try {
       await fs.mkdir(fullTargetDir, { recursive: true });
@@ -47,9 +44,9 @@ export async function applyFiles({
     try {
       switch (file.type) {
         case "copy": {
-          const fullTargetPath = path.resolve(workspaceDir, file.targetPath);
+          const fullTargetPath = path.resolve(WORKSPACE_DIR, file.targetPath);
 
-          if (!fullTargetPath.startsWith(workspaceDir)) {
+          if (!fullTargetPath.startsWith(WORKSPACE_DIR)) {
             throw new Error(`Invalid target path: path traversal detected`);
           }
 
@@ -68,9 +65,9 @@ export async function applyFiles({
           break;
         }
         case "llm_instruction": {
-          const fullTargetPath = path.resolve(workspaceDir, file.targetPath);
+          const fullTargetPath = path.resolve(WORKSPACE_DIR, file.targetPath);
 
-          if (!fullTargetPath.startsWith(workspaceDir)) {
+          if (!fullTargetPath.startsWith(WORKSPACE_DIR)) {
             throw new Error(`Invalid target path: path traversal detected`);
           }
 
@@ -100,9 +97,9 @@ export async function applyFiles({
           break;
         }
         case "handlebars": {
-          const fullTargetPath = path.resolve(workspaceDir, file.targetPath);
+          const fullTargetPath = path.resolve(WORKSPACE_DIR, file.targetPath);
 
-          if (!fullTargetPath.startsWith(workspaceDir)) {
+          if (!fullTargetPath.startsWith(WORKSPACE_DIR)) {
             throw new Error(`Invalid target path: path traversal detected`);
           }
 
@@ -147,8 +144,6 @@ async function generateFiles({
   context: WorkflowContext;
 }): Promise<FileItem[]> {
   const project = context.get("project");
-  const branch = context.get("branch");
-  const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
 
   const hasFrontend = project.integrationCategories.has("frontend");
   const hasBackend = project.integrationCategories.has("backend");
@@ -186,7 +181,7 @@ async function generateFiles({
 
   // Add base files when there's absolutely nothing in the project yet
   if (hasNothing) {
-    const baseFiles = await processBaseFiles(workspaceDir);
+    const baseFiles = await processBaseFiles(WORKSPACE_DIR);
     files.push(...baseFiles);
   }
 
@@ -195,14 +190,14 @@ async function generateFiles({
     const serverFiles = await processDirectoryFiles(
       serverPath,
       "server",
-      workspaceDir,
+      WORKSPACE_DIR,
     );
     files.push(...serverFiles);
   }
 
   if (hasFrontend || hasNothing) {
     const webPath = path.join(baseDataDir, "web");
-    const webFiles = await processDirectoryFiles(webPath, "web", workspaceDir);
+    const webFiles = await processDirectoryFiles(webPath, "web", WORKSPACE_DIR);
     files.push(...webFiles);
   }
 

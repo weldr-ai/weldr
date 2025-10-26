@@ -13,7 +13,7 @@ import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
 import type { DeclarationCodeMetadata } from "@weldr/shared/types/declarations";
 
-import { Git } from "@/lib/git";
+import { WORKSPACE_DIR } from "@/lib/constants";
 import { embedDeclaration } from "./embed-declarations";
 import { enrichDeclaration } from "./enrich";
 
@@ -145,14 +145,9 @@ export async function recoverEnrichingJobs(): Promise<void> {
 
           let sourceCodeContent: string;
           try {
-            const workspaceDir = Git.getBranchWorkspaceDir(
-              version.branchId,
-              version.branch.isMain,
-            );
+            const fullPath = path.resolve(WORKSPACE_DIR, declaration.path);
 
-            const fullPath = path.resolve(workspaceDir, declaration.path);
-
-            if (!fullPath.startsWith(workspaceDir)) {
+            if (!fullPath.startsWith(WORKSPACE_DIR)) {
               logger.error("Path traversal attempt detected", {
                 extra: {
                   declarationId: declaration.id,
