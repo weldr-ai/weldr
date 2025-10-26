@@ -17,7 +17,7 @@ export default async function BranchPage({
   try {
     const { projectId, branchId } = await params;
     const project = await api.projects.byId({ id: projectId });
-    const branch = await api.branches.byId({ id: branchId });
+    const branch = await api.branches.byIdOrMain({ id: branchId, projectId });
     const integrationTemplates = await api.integrationTemplates.list();
 
     const headVersionDeclarations = getVersionDeclarations(branch.headVersion);

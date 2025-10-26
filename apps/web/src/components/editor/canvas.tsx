@@ -49,7 +49,7 @@ export function Canvas({
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
   project: RouterOutputs["projects"]["byId"];
-  branch: RouterOutputs["branches"]["byId"];
+  branch: RouterOutputs["branches"]["byIdOrMain"];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();

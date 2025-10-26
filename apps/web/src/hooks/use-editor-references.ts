@@ -5,7 +5,7 @@ import type { RouterOutputs } from "@weldr/api";
 import type { referencePartSchema } from "@weldr/shared/validators/chats";
 
 interface UseEditorReferencesOptions {
-  version: RouterOutputs["branches"]["byId"]["headVersion"];
+  version: RouterOutputs["branches"]["byIdOrMain"]["headVersion"];
 }
 
 export function useEditorReferences({ version }: UseEditorReferencesOptions) {

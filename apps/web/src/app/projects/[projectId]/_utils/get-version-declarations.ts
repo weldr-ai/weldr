@@ -1,7 +1,7 @@
 import type { RouterOutputs } from "@weldr/api";
 
 export const getVersionDeclarations = (
-  version: RouterOutputs["branches"]["byId"]["headVersion"],
+  version: RouterOutputs["branches"]["byIdOrMain"]["headVersion"],
 ) => {
   const declarations = version.declarations
     .filter((declaration) => declaration.declaration.node)

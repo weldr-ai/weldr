@@ -58,9 +58,10 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   }>();
 
   const branch = queryClient.getQueryData(
-    branchId
-      ? trpc.branches.byId.queryKey({ id: branchId })
-      : trpc.branches.main.queryKey({ projectId }),
+    trpc.branches.byIdOrMain.queryKey({
+      id: branchId,
+      projectId,
+    }),
   );
 
   const headVersion = branch?.headVersion;

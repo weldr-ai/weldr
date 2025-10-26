@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { Edge } from "@xyflow/react";
+import { useParams } from "next/navigation";
 
 import type { RouterOutputs } from "@weldr/api";
 
@@ -19,11 +20,13 @@ export function ProjectView({
   integrationTemplates,
 }: {
   project: RouterOutputs["projects"]["byId"];
-  branch: RouterOutputs["branches"]["byId"];
+  branch: RouterOutputs["branches"]["byIdOrMain"];
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
+  const { branchId } = useParams<{ branchId?: string }>();
+
   const trpc = useTRPC();
 
   const { data: project } = useQuery(
@@ -38,9 +41,10 @@ export function ProjectView({
   );
 
   const { data: currentBranch } = useQuery(
-    trpc.branches.byId.queryOptions(
+    trpc.branches.byIdOrMain.queryOptions(
       {
-        id: _branch.id,
+        id: branchId,
+        projectId: _project.id,
       },
       {
         initialData: _branch,

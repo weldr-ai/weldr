@@ -19,7 +19,7 @@ import { MultimodalInput } from "./multimodal-input/multimodal-input";
 interface ChatProps {
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   project: RouterOutputs["projects"]["byId"];
-  branch: RouterOutputs["branches"]["byId"];
+  branch: RouterOutputs["branches"]["byIdOrMain"];
 }
 
 export const Chat = memo<ChatProps>(

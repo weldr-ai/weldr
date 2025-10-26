@@ -17,7 +17,7 @@ interface UseEventStreamOptions {
   projectId: string;
   branchId: string;
   chatId: string;
-  branch: RouterOutputs["branches"]["byId"];
+  branch: RouterOutputs["branches"]["byIdOrMain"];
   setStatus: (status: TStatus) => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }
@@ -248,7 +248,7 @@ export function useEventStream({
           }
           case "update_branch": {
             queryClient.setQueryData(
-              trpc.branches.byId.queryKey({ id: branchId }),
+              trpc.branches.byIdOrMain.queryKey({ id: branchId, projectId }),
               (old) => {
                 if (!old) return old;
                 return {
@@ -263,7 +263,10 @@ export function useEventStream({
             );
 
             queryClient.invalidateQueries({
-              queryKey: trpc.branches.byId.queryKey({ id: branchId }),
+              queryKey: trpc.branches.byIdOrMain.queryKey({
+                id: branchId,
+                projectId,
+              }),
             });
 
             const status = branch.headVersion.status;
