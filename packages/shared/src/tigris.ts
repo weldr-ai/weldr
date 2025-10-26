@@ -9,12 +9,10 @@ import {
   ListPoliciesCommand,
 } from "@aws-sdk/client-iam";
 import {
-  CreateBucketCommand,
-  DeleteBucketCommand,
-  GetObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+  createBucket as tigrisCreateBucket,
+  getPresignedUrl as tigrisGetPresignedUrl,
+  removeBucket as tigrisRemoveBucket,
+} from "@tigrisdata/storage";
 
 import { Logger } from "./logger";
 
@@ -22,16 +20,6 @@ interface Credentials {
   accessKeyId: string;
   secretAccessKey: string;
 }
-
-const s3Client = new S3Client({
-  region: "auto",
-  endpoint: process.env.TIGRIS_ENDPOINT_URL ?? "https://t3.storage.dev",
-  forcePathStyle: false,
-  credentials: {
-    accessKeyId: process.env.TIGRIS_ACCESS_KEY_ID ?? "",
-    secretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY ?? "",
-  },
-});
 
 const iamClient = new IAMClient({
   region: "auto",
@@ -42,16 +30,24 @@ const iamClient = new IAMClient({
   },
 });
 
+const tigrisConfig = {
+  accessKeyId: process.env.TIGRIS_ACCESS_KEY_ID ?? "",
+  secretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY ?? "",
+};
+
 async function createBucket(bucketName: string): Promise<void> {
   try {
-    const response = await s3Client.send(
-      new CreateBucketCommand({
-        Bucket: bucketName,
-      }),
-    );
+    const response = await tigrisCreateBucket(bucketName, {
+      config: tigrisConfig,
+    });
+
+    if (response.error) {
+      throw response.error;
+    }
+
     Logger.info("Create bucket response", {
       bucketName,
-      response,
+      response: response.data,
     });
   } catch (error) {
     Logger.error("Create bucket error", {
@@ -64,22 +60,24 @@ async function createBucket(bucketName: string): Promise<void> {
 
 async function deleteBucket(bucketName: string): Promise<void> {
   try {
-    const response = await s3Client.send(
-      new DeleteBucketCommand({
-        Bucket: bucketName,
-      }),
-    );
+    const response = await tigrisRemoveBucket(bucketName, {
+      config: tigrisConfig,
+    });
+
+    if (response.error) {
+      // Check if it's a 404 error (bucket not found)
+      const errorMessage = response.error.message || "";
+      if (errorMessage.includes("404") || errorMessage.includes("not found")) {
+        return;
+      }
+      throw response.error;
+    }
+
     Logger.info("Delete bucket response", {
       bucketName,
-      response,
+      response: response.data,
     });
   } catch (error) {
-    if (
-      (error as { $metadata?: { httpStatusCode?: number } })?.$metadata
-        ?.httpStatusCode === 404
-    ) {
-      return;
-    }
     Logger.error("Delete bucket error", {
       bucketName,
       error,
@@ -364,15 +362,25 @@ async function getObjectSignedUrl(
   objectKey: string,
   expiresIn = 3600,
 ): Promise<string> {
-  const url = await getSignedUrl(
-    s3Client,
-    new GetObjectCommand({
-      Bucket: bucketName,
-      Key: objectKey,
-    }),
-    { expiresIn },
-  );
-  return url;
+  const response = await tigrisGetPresignedUrl(objectKey, {
+    operation: "get",
+    expiresIn,
+    config: {
+      ...tigrisConfig,
+      bucket: bucketName,
+    },
+  });
+
+  if (response.error) {
+    Logger.error("Get presigned URL error", {
+      bucketName,
+      objectKey,
+      error: response.error,
+    });
+    throw response.error;
+  }
+
+  return response.data?.url ?? "";
 }
 
 export const Tigris = {

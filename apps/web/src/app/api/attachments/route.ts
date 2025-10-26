@@ -1,10 +1,8 @@
 import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
-import { Upload } from "@aws-sdk/lib-storage";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+  getPresignedUrl as tigrisGetPresignedUrl,
+  put as tigrisPut,
+  remove as tigrisRemove,
+} from "@tigrisdata/storage";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -30,17 +28,13 @@ const attachmentSchema = z.object({
     ),
 });
 
-const s3Client = new S3Client({
-  region: "auto",
-  endpoint: process.env.TIGRIS_ENDPOINT_URL ?? "https://t3.storage.dev",
-  forcePathStyle: false,
-  credentials: {
-    // biome-ignore lint/style/noNonNullAssertion: reason
-    accessKeyId: process.env.TIGRIS_ACCESS_KEY_ID!,
-    // biome-ignore lint/style/noNonNullAssertion: reason
-    secretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY!,
-  },
-});
+const tigrisConfig = {
+  // biome-ignore lint/style/noNonNullAssertion: reason
+  accessKeyId: process.env.TIGRIS_ACCESS_KEY_ID!,
+  // biome-ignore lint/style/noNonNullAssertion: reason
+  secretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY!,
+  bucket: BUCKET_NAME,
+};
 
 export async function POST(request: Request) {
   const session = await auth.api.getSession({
@@ -78,40 +72,50 @@ export async function POST(request: Request) {
     }
 
     const filename = (formData.get("file") as File).name;
-    const fileBuffer = await file.arrayBuffer();
 
     try {
       const attachmentId = nanoid();
 
       const key = `attachments/${validatedAttachment.data.chatId}/${attachmentId}.${file.type.split("/")[1]}`;
 
-      const upload = new Upload({
-        params: {
-          Bucket: BUCKET_NAME,
-          Key: key,
-          Body: new Uint8Array(fileBuffer),
+      const uploadResponse = await tigrisPut(key, file, {
+        contentType: file.type,
+        multipart: true,
+        onUploadProgress: ({ loaded, total, percentage }) => {
+          Logger.info("Upload progress", {
+            loaded,
+            total,
+            percentage,
+            chatId: validatedAttachment.data.chatId,
+          });
         },
-        client: s3Client,
-        queueSize: 3,
+        config: tigrisConfig,
       });
 
-      upload.on("httpUploadProgress", (progress) => {
-        Logger.info("Upload progress", {
-          progress,
+      if (uploadResponse.error) {
+        Logger.error("Upload error", {
+          error: uploadResponse.error,
           chatId: validatedAttachment.data.chatId,
         });
+        return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+      }
+
+      const presignedUrlResponse = await tigrisGetPresignedUrl(key, {
+        operation: "get",
+        expiresIn: 3600,
+        config: tigrisConfig,
       });
 
-      await upload.done();
-
-      const imageUrl = await getSignedUrl(
-        s3Client,
-        new GetObjectCommand({
-          Bucket: BUCKET_NAME,
-          Key: key,
-        }),
-        { expiresIn: 3600 },
-      );
+      if (presignedUrlResponse.error) {
+        Logger.error("Get presigned URL error", {
+          error: presignedUrlResponse.error,
+          key,
+        });
+        return NextResponse.json(
+          { error: "Failed to generate URL" },
+          { status: 500 },
+        );
+      }
 
       return NextResponse.json({
         id: attachmentId,
@@ -119,7 +123,7 @@ export async function POST(request: Request) {
         key,
         contentType: file.type,
         size: file.size,
-        url: imageUrl,
+        url: presignedUrlResponse.data?.url,
       });
     } catch {
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
@@ -155,16 +159,24 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    await s3Client.send(
-      new DeleteObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: validated.data.filename,
-      }),
-    );
+    const deleteResponse = await tigrisRemove(validated.data.filename, {
+      config: tigrisConfig,
+    });
+
+    if (deleteResponse?.error) {
+      Logger.error("Error deleting file", {
+        error: deleteResponse.error,
+        filename: validated.data.filename,
+      });
+      return NextResponse.json(
+        { error: "Failed to delete file" },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({ message: "File deleted successfully" });
   } catch (error) {
-    console.error("Error deleting file:", error);
+    Logger.error("Error deleting file", { error });
     return NextResponse.json(
       { error: "Failed to delete file" },
       { status: 500 },

@@ -22,8 +22,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-iam": "^3.828.0",
-    "@aws-sdk/client-s3": "^3.799.0",
-    "@aws-sdk/s3-request-presigner": "^3.799.0",
+    "@tigrisdata/storage": "^2.4.0",
     "json-schema": "^0.4.0",
     "nanoid": "^5.1.5",
     "ofetch": "^1.4.1",
