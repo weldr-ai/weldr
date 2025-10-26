@@ -13,11 +13,6 @@ import {
 import { Fly } from "@weldr/shared/fly";
 import { nanoid } from "@weldr/shared/nanoid";
 import { Tigris } from "@weldr/shared/tigris";
-import type {
-  AssistantMessage,
-  ChatMessage,
-  ToolMessage,
-} from "@weldr/shared/types";
 import {
   insertProjectSchema,
   updateProjectSchema,
@@ -120,6 +115,7 @@ export const projectsRouter = {
             .values({
               projectId,
               isMain: true,
+              userId: ctx.session.user.id,
             })
             .returning();
 
@@ -195,7 +191,7 @@ export const projectsRouter = {
     }
   }),
   byId: protectedProcedure
-    .input(z.object({ id: z.string(), versionId: z.string().optional() }))
+    .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
         const project = await ctx.db.query.projects.findFirst({
@@ -250,198 +246,7 @@ export const projectsRouter = {
           });
         }
 
-        const branch = await ctx.db.query.branches.findFirst({
-          where: and(
-            eq(branches.projectId, input.id),
-            eq(branches.isMain, true),
-          ),
-          with: {
-            headVersion: {
-              columns: {
-                id: true,
-                message: true,
-                createdAt: true,
-                parentVersionId: true,
-                number: true,
-                status: true,
-                description: true,
-                projectId: true,
-                publishedAt: true,
-              },
-              with: {
-                chat: {
-                  with: {
-                    messages: {
-                      orderBy: (messages, { asc }) => [asc(messages.createdAt)],
-                      with: {
-                        attachments: {
-                          columns: {
-                            name: true,
-                            key: true,
-                          },
-                        },
-                        user: {
-                          columns: {
-                            name: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-                declarations: {
-                  with: {
-                    declaration: {
-                      columns: {
-                        id: true,
-                        metadata: true,
-                        nodeId: true,
-                        progress: true,
-                      },
-                      with: {
-                        node: true,
-                        dependencies: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        });
-
-        if (!branch || !branch.headVersion) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Branch not found",
-          });
-        }
-
-        const getMessagesWithAttachments = async (
-          version: typeof branch.headVersion,
-        ) => {
-          const results = [];
-
-          for (const message of version.chat.messages) {
-            // Filter assistant messages for call_coder tool calls
-            let content = message.content as
-              | ToolMessage["content"]
-              | AssistantMessage["content"];
-
-            // Skip tool messages with call_coder results
-            if (message.role === "tool" && Array.isArray(message.content)) {
-              content = content.filter(
-                (item) =>
-                  !(
-                    item?.type === "tool-result" &&
-                    item?.toolName === "call_coder"
-                  ),
-              );
-            } else if (message.role === "assistant") {
-              content = content.filter(
-                (item) =>
-                  !(
-                    item?.type === "tool-call" &&
-                    item?.toolName === "call_coder"
-                  ),
-              );
-            }
-
-            if (content.length === 0) continue;
-
-            // Get attachment URLs
-            const attachmentsWithUrls = await Promise.all(
-              message.attachments.map(async (attachment) => ({
-                name: attachment.name,
-                url: await Tigris.object.getSignedUrl(
-                  // biome-ignore lint/style/noNonNullAssertion: reason
-                  process.env.GENERAL_BUCKET!,
-                  attachment.key,
-                ),
-              })),
-            );
-
-            results.push({
-              ...message,
-              content,
-              attachments: attachmentsWithUrls,
-            });
-          }
-
-          return results;
-        };
-
-        const getVersionDeclarations = (version: typeof branch.headVersion) => {
-          const declarations = version.declarations
-            .filter((declaration) => declaration.declaration.node)
-            .map((declaration) => declaration.declaration);
-
-          const declarationToCanvasNodeMap = new Map(
-            declarations.map((declaration) => [
-              declaration.id,
-              declaration.node?.id,
-            ]),
-          );
-
-          return declarations.map((declaration) => ({
-            declaration,
-            edges: declaration.dependencies.map((dependency) => ({
-              dependencyId: declarationToCanvasNodeMap.get(
-                dependency.dependencyId,
-              ),
-              dependentId: declarationToCanvasNodeMap.get(
-                dependency.dependentId,
-              ),
-            })),
-          }));
-        };
-
-        if (!branch.headVersion) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Version not found",
-          });
-        }
-
-        const headVersionDeclarations = getVersionDeclarations(
-          branch.headVersion,
-        );
-
-        const edges = Array.from(
-          new Map(
-            headVersionDeclarations
-              .flatMap((decl) => decl.edges)
-              .map((edge) => [
-                `${edge.dependencyId}-${edge.dependentId}`,
-                edge,
-              ]),
-          ).values(),
-        ).filter(
-          (edge) =>
-            edge.dependencyId !== undefined && edge.dependentId !== undefined,
-        ) as {
-          dependencyId: string;
-          dependentId: string;
-        }[];
-
-        const result = {
-          ...project,
-          branch: {
-            ...branch,
-            headVersion: {
-              ...branch.headVersion,
-              edges,
-              chat: {
-                ...branch.headVersion.chat,
-                messages: (await getMessagesWithAttachments(
-                  branch.headVersion,
-                )) as ChatMessage[],
-              },
-            },
-          },
-        };
-
-        return result;
+        return project;
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {

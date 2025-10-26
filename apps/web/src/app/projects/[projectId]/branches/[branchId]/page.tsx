@@ -7,17 +7,17 @@ import type { NodeType } from "@weldr/shared/types";
 import { ProjectView } from "@/components/projects/project-view";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
-import { getVersionDeclarations } from "./_utils/get-version-declarations";
+import { getVersionDeclarations } from "../../_utils/get-version-declarations";
 
-export default async function ProjectPage({
+export default async function BranchPage({
   params,
 }: {
-  params: Promise<{ projectId: string }>;
+  params: Promise<{ projectId: string; branchId: string }>;
 }): Promise<JSX.Element | undefined> {
   try {
-    const { projectId } = await params;
+    const { projectId, branchId } = await params;
     const project = await api.projects.byId({ id: projectId });
-    const branch = await api.branches.main({ projectId: project.id });
+    const branch = await api.branches.byId({ id: branchId });
     const integrationTemplates = await api.integrationTemplates.list();
 
     const headVersionDeclarations = getVersionDeclarations(branch.headVersion);

@@ -64,13 +64,10 @@ export const callCoderTool = createTool({
     context.set("branch", { ...branch, headVersion: updatedVersion });
 
     await stream(updatedVersion.chatId, {
-      type: "update_project",
+      type: "update_branch",
       data: {
-        ...project,
-        branch: {
-          ...branch,
-          headVersion: updatedVersion,
-        },
+        ...branch,
+        headVersion: updatedVersion,
       },
     });
 

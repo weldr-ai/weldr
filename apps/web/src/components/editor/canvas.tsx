@@ -43,11 +43,13 @@ export function Canvas({
   initialNodes,
   initialEdges,
   project,
+  branch,
   integrationTemplates,
 }: {
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
   project: RouterOutputs["projects"]["byId"];
+  branch: RouterOutputs["branches"]["byId"];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
@@ -350,7 +352,11 @@ export function Canvas({
         position="bottom-left"
         className="mb-4 ml-4 max-h-[calc(100vh-40px)] w-[500px]"
       >
-        <Chat project={project} integrationTemplates={integrationTemplates} />
+        <Chat
+          project={project}
+          branch={branch}
+          integrationTemplates={integrationTemplates}
+        />
       </Panel>
 
       <Panel

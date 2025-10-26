@@ -4,6 +4,7 @@ import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { nanoid } from "@weldr/shared/nanoid";
 
 import { users } from "./auth";
+import { branches } from "./branches";
 import { environmentVariables } from "./environment-variables";
 import { integrations } from "./integrations";
 import { versions } from "./versions";
@@ -35,4 +36,5 @@ export const projectRelations = relations(projects, ({ many, one }) => ({
   }),
   versions: many(versions),
   integrations: many(integrations),
+  branches: many(branches),
 }));

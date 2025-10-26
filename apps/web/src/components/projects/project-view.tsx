@@ -2,42 +2,29 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { Edge } from "@xyflow/react";
-import { Badge, EyeIcon, GitGraphIcon } from "lucide-react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
-import { Button, buttonVariants } from "@weldr/ui/components/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@weldr/ui/components/tooltip";
-import { cn } from "@weldr/ui/lib/utils";
 
-import { Canvas } from "@/components/canvas";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode } from "@/types";
+import { Canvas } from "../editor/canvas";
 import { MainDropdownMenu } from "../main-dropdown-menu";
-import { SitePreviewDialog } from "../site-preview-dialog";
 import { ProjectSettings } from "./settings";
 
 export function ProjectView({
   project: _project,
+  branch: _branch,
   initialNodes,
   initialEdges,
   integrationTemplates,
 }: {
   project: RouterOutputs["projects"]["byId"];
+  branch: RouterOutputs["branches"]["byId"];
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
   const trpc = useTRPC();
-  const [sitePreviewDialogOpen, setSitePreviewDialogOpen] = useState(false);
 
   const { data: project } = useQuery(
     trpc.projects.byId.queryOptions(
@@ -46,6 +33,17 @@ export function ProjectView({
       },
       {
         initialData: _project,
+      },
+    ),
+  );
+
+  const { data: currentBranch } = useQuery(
+    trpc.branches.byId.queryOptions(
+      {
+        id: _branch.id,
+      },
+      {
+        initialData: _branch,
       },
     ),
   );
@@ -62,84 +60,25 @@ export function ProjectView({
   );
 
   return (
-    <>
-      <div className="flex size-full flex-col">
-        <div className="flex h-10 items-center justify-between border-b p-1.5">
-          <MainDropdownMenu />
-          <span className="font-medium text-sm">
-            {project.title ?? "Untitled Project"}
-          </span>
-          <div className="flex items-center gap-1">
-            {!project.branch.headVersion?.publishedAt && (
-              <>
-                <Badge>Not Published</Badge>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    router.push(pathname);
-                  }}
-                >
-                  View Published
-                </Button>
-              </>
-            )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-7 dark:bg-muted"
-                  disabled={project.branch.headVersion?.status !== "completed"}
-                  onClick={() => setSitePreviewDialogOpen(true)}
-                >
-                  <EyeIcon className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="border bg-background dark:bg-muted">
-                <p>View Site</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href={`/projects/${project.id}/versions`}
-                  className={cn(
-                    buttonVariants({
-                      variant: "outline",
-                      size: "icon",
-                    }),
-                    "size-7 dark:bg-muted",
-                  )}
-                >
-                  <GitGraphIcon className="size-3.5" />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent className="border bg-background dark:bg-muted">
-                <p>View Version History</p>
-              </TooltipContent>
-            </Tooltip>
-            <ProjectSettings
-              project={project}
-              integrationTemplates={integrationTemplates}
-              environmentVariables={env}
-            />
-          </div>
-        </div>
-        <div className="flex size-full">
-          <Canvas
-            initialNodes={initialNodes}
-            initialEdges={initialEdges}
-            project={project}
-            integrationTemplates={integrationTemplates}
-          />
-        </div>
+    <div className="flex size-full flex-col">
+      <div className="flex h-10 items-center justify-between border-b p-1.5">
+        <MainDropdownMenu />
+        <span className="font-medium text-sm">
+          {project.title ?? "Untitled Project"}
+        </span>
+        <ProjectSettings
+          project={project}
+          integrationTemplates={integrationTemplates}
+          environmentVariables={env}
+        />
       </div>
-      <SitePreviewDialog
-        open={sitePreviewDialogOpen}
-        onOpenChange={setSitePreviewDialogOpen}
-        title={project.title ?? "Untitled Project"}
+      <Canvas
+        project={project}
+        branch={currentBranch}
+        initialNodes={initialNodes}
+        initialEdges={initialEdges}
+        integrationTemplates={integrationTemplates}
       />
-    </>
+    </div>
   );
 }

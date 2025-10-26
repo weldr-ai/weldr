@@ -52,12 +52,18 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { projectId } = useParams<{ projectId: string }>();
-  const project = queryClient.getQueryData(
-    trpc.projects.byId.queryKey({ id: projectId }),
+  const { projectId, branchId } = useParams<{
+    projectId: string;
+    branchId?: string;
+  }>();
+
+  const branch = queryClient.getQueryData(
+    branchId
+      ? trpc.branches.byId.queryKey({ id: branchId })
+      : trpc.branches.main.queryKey({ projectId }),
   );
 
-  const headVersion = project?.branch.headVersion;
+  const headVersion = branch?.headVersion;
 
   const { data: declaration } = useQuery(
     trpc.declarations.byId.queryOptions(

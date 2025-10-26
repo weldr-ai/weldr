@@ -12,6 +12,7 @@ import {
 
 import { nanoid } from "@weldr/shared/nanoid";
 
+import { users } from "./auth";
 import { projects } from "./projects";
 import { versions } from "./versions";
 
@@ -44,6 +45,9 @@ export const branches = pgTable(
       .$type<"active" | "archived">()
       .notNull()
       .default("active"),
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -95,13 +99,15 @@ export const branchesRelations = relations(branches, ({ one, many }) => ({
     relationName: "branch_parent",
   }),
   forkedFromVersion: one(versions, {
+    relationName: "branch_forked_from_version",
     fields: [branches.forkedFromVersionId],
     references: [versions.id],
   }),
   headVersion: one(versions, {
+    relationName: "branch_head_version",
     fields: [branches.headVersionId],
     references: [versions.id],
   }),
   children: many(branches, { relationName: "branch_parent" }),
-  versions: many(versions),
+  versions: many(versions, { relationName: "version_branch" }),
 }));

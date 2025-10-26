@@ -108,14 +108,17 @@ export const versionsRelations = relations(versions, ({ one, many }) => ({
     relationName: "version_parent",
   }),
   branch: one(branches, {
+    relationName: "version_branch",
     fields: [versions.branchId],
     references: [branches.id],
   }),
   appliedFromBranch: one(branches, {
+    relationName: "version_applied_from_branch",
     fields: [versions.appliedFromBranchId],
     references: [branches.id],
   }),
   revertedVersion: one(versions, {
+    relationName: "version_reverted_version",
     fields: [versions.revertedVersionId],
     references: [versions.id],
   }),

@@ -124,7 +124,12 @@ export type ToolStreamableValue = {
 
 export type ProjectStreamableValue = {
   type: "update_project";
-  data: Omit<Project, "environmentVariables"> & { branch: Branch };
+  data: Omit<Project, "environmentVariables">;
+};
+
+export type BranchStreamableValue = {
+  type: "update_branch";
+  data: Branch;
 };
 
 export type IntegrationStreamableValue = {
@@ -157,6 +162,7 @@ export type SSEValue =
   | ToolStreamableValue
   | NodeStreamableValue
   | ProjectStreamableValue
+  | BranchStreamableValue
   | EndStreamableValue
   | SSEConnectionEvent
   | SSEErrorEvent

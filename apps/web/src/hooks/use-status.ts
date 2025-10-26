@@ -10,7 +10,7 @@ import type {
 import type { IntegrationToolResultPart } from "@/components/integrations/shared/types";
 
 interface UseStatusOptions {
-  version: RouterOutputs["versions"]["byId"];
+  version: RouterOutputs["branches"]["byId"]["headVersion"];
   messages: ChatMessage[];
   project: {
     integrations: Array<{

@@ -17,7 +17,7 @@ interface UseEventStreamOptions {
   projectId: string;
   branchId: string;
   chatId: string;
-  project: RouterOutputs["projects"]["byId"];
+  branch: RouterOutputs["branches"]["byId"];
   setStatus: (status: TStatus) => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }
@@ -26,7 +26,7 @@ export function useEventStream({
   projectId,
   branchId,
   chatId,
-  project,
+  branch,
   setStatus,
   setMessages,
 }: UseEventStreamOptions) {
@@ -229,23 +229,12 @@ export function useEventStream({
             // Update the project data in the query cache
             queryClient.setQueryData(
               trpc.projects.byId.queryKey({ id: projectId }),
-              // @ts-expect-error
               (old) => {
                 if (!old) return old;
                 return {
                   ...old,
                   title: chunk.data.title,
                   description: chunk.data.description,
-                  branch: {
-                    ...old.branch,
-                    headVersion: {
-                      ...old.branch.headVersion,
-                      message: chunk.data.branch?.headVersion?.message ?? null,
-                      description:
-                        chunk.data.branch?.headVersion?.description ?? null,
-                      status: chunk.data.branch?.headVersion?.status ?? null,
-                    },
-                  },
                 };
               },
             );
@@ -255,12 +244,31 @@ export function useEventStream({
               queryKey: trpc.projects.byId.queryKey({ id: projectId }),
             });
 
-            const status = chunk.data.branch?.headVersion?.status;
+            break;
+          }
+          case "update_branch": {
+            queryClient.setQueryData(
+              trpc.branches.byId.queryKey({ id: branchId }),
+              (old) => {
+                if (!old) return old;
+                return {
+                  ...old,
+                  ...chunk.data,
+                  headVersion: {
+                    ...old.headVersion,
+                    ...chunk.data.headVersion,
+                  },
+                };
+              },
+            );
+
+            queryClient.invalidateQueries({
+              queryKey: trpc.branches.byId.queryKey({ id: branchId }),
+            });
+
+            const status = branch.headVersion.status;
 
             switch (status) {
-              case "pending":
-                setStatus(null);
-                break;
               case "planning":
                 setStatus("planning");
                 break;
@@ -347,8 +355,8 @@ export function useEventStream({
 
       // Only retry if workflow is still active and we haven't exceeded max attempts
       if (
-        project.branch.headVersion.status !== "completed" &&
-        project.branch.headVersion.status !== "failed" &&
+        branch.headVersion.status !== "completed" &&
+        branch.headVersion.status !== "failed" &&
         reconnectAttempts.current < maxReconnectAttempts
       ) {
         reconnectAttempts.current += 1;
@@ -366,7 +374,7 @@ export function useEventStream({
   }, [
     projectId,
     branchId,
-    project.branch.headVersion.status,
+    branch.headVersion.status,
     setStatus,
     setMessages,
     getNodes,
@@ -402,12 +410,12 @@ export function useEventStream({
     // Only connect if there's no existing connection and workflow might be active
     if (
       !eventSourceRef &&
-      project.branch.headVersion.status !== "completed" &&
-      project.branch.headVersion.status !== "failed"
+      branch.headVersion.status !== "completed" &&
+      branch.headVersion.status !== "failed"
     ) {
       connectToEventStream();
     }
-  }, [eventSourceRef, project.branch.headVersion.status, connectToEventStream]);
+  }, [eventSourceRef, branch.headVersion.status, connectToEventStream]);
 
   // Cleanup on unmount
   useEffect(() => {

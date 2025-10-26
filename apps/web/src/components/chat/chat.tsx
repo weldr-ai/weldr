@@ -19,141 +19,143 @@ import { MultimodalInput } from "./multimodal-input/multimodal-input";
 interface ChatProps {
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   project: RouterOutputs["projects"]["byId"];
+  branch: RouterOutputs["branches"]["byId"];
 }
 
-export const Chat = memo<ChatProps>(({ integrationTemplates, project }) => {
-  const { data: session } = authClient.useSession();
-  const headVersion = project.branch.headVersion;
+export const Chat = memo<ChatProps>(
+  ({ integrationTemplates, project, branch }) => {
+    const { data: session } = authClient.useSession();
 
-  const {
-    messages,
-    setMessages,
-    userMessageContent,
-    setUserMessageContent,
-    attachments,
-    setAttachments,
-    handleSubmit: handleMessageSubmit,
-  } = useMessages({
-    initialMessages:
-      headVersion.status === "completed" ? [] : headVersion.chat.messages,
-    chatId: headVersion.chat.id,
-    session,
-  });
-
-  const [messagesContainerRef, messagesEndRef] =
-    useScrollToBottom<HTMLDivElement>(messages);
-
-  const { status, setStatus } = useStatus({
-    version: headVersion,
-    messages,
-    project,
-  });
-
-  const { isChatVisible, chatContainerRef, handleInputFocus } =
-    useChatVisibility();
-
-  const { eventSourceRef, connectToEventStream, closeEventStream } =
-    useEventStream({
-      projectId: project.id,
-      // TODO: get current branch id
-      branchId: project.branch.id,
-      chatId: headVersion.chat.id,
-      project,
-      setStatus,
+    const {
+      messages,
       setMessages,
-    });
-
-  const { triggerGeneration } = useWorkflowTrigger({
-    projectId: project.id,
-    // TODO: get current branch id
-    branchId: project.branch.id,
-    setStatus,
-    eventSourceRef,
-    connectToEventStream,
-  });
-
-  const handleSubmit = async () => {
-    await handleMessageSubmit();
-    await triggerGeneration({
-      content: userMessageContent,
+      userMessageContent,
+      setUserMessageContent,
       attachments,
+      setAttachments,
+      handleSubmit: handleMessageSubmit,
+    } = useMessages({
+      initialMessages: branch.headVersion.chat.messages,
+      chatId: branch.headVersion.chat.id,
+      session,
     });
-  };
 
-  const editorReferences = useEditorReferences({ version: headVersion });
+    const [messagesContainerRef, messagesEndRef] =
+      useScrollToBottom<HTMLDivElement>(messages);
 
-  useEffect(() => {
-    return () => {
-      closeEventStream();
+    const { status, setStatus } = useStatus({
+      version: branch.headVersion,
+      messages,
+      project,
+    });
+
+    const { isChatVisible, chatContainerRef, handleInputFocus } =
+      useChatVisibility();
+
+    const { eventSourceRef, connectToEventStream, closeEventStream } =
+      useEventStream({
+        projectId: project.id,
+        branchId: branch.id,
+        chatId: branch.headVersion.chat.id,
+        branch,
+        setStatus,
+        setMessages,
+      });
+
+    const { triggerGeneration } = useWorkflowTrigger({
+      projectId: project.id,
+      branchId: branch.id,
+      setStatus,
+      eventSourceRef,
+      connectToEventStream,
+    });
+
+    const handleSubmit = async () => {
+      await handleMessageSubmit();
+      await triggerGeneration({
+        content: userMessageContent,
+        attachments,
+      });
     };
-  }, [closeEventStream]);
 
-  const conventionalCommit = parseConventionalCommit(headVersion.message);
+    const editorReferences = useEditorReferences({
+      version: branch.headVersion,
+    });
 
-  return (
-    <div
-      ref={chatContainerRef}
-      className={cn(
-        "flex size-full flex-col justify-end rounded-lg border bg-background dark:bg-muted",
-        {
-          "transition-all delay-300 ease-in-out": !isChatVisible,
-          "transition-none": attachments.length > 0 || isChatVisible,
-        },
-      )}
-    >
-      <div className="flex w-full items-center gap-2 truncate border-b px-2 py-1 font-medium text-xs">
-        <span className="text-muted-foreground">{`#${headVersion.number}`}</span>
-        <span className="flex items-center gap-1 truncate">
-          {conventionalCommit.type && (
-            <CommitTypeBadge type={conventionalCommit.type} />
-          )}
-          <span className="truncate">
-            {conventionalCommit.message ?? "Untitled Version"}
-          </span>
-        </span>
-      </div>
+    useEffect(() => {
+      return () => {
+        closeEventStream();
+      };
+    }, [closeEventStream]);
 
+    const conventionalCommit = parseConventionalCommit(
+      branch.headVersion.message,
+    );
+
+    return (
       <div
+        ref={chatContainerRef}
         className={cn(
-          "overflow-hidden transition-all duration-300 ease-in-out",
+          "flex size-full flex-col justify-end rounded-lg border bg-background dark:bg-muted",
           {
-            "h-0": !isChatVisible,
-            "h-[calc(100vh-274px)]": isChatVisible,
-            "h-[calc(100vh-298px)]": isChatVisible && status,
-            "h-[calc(100vh-348px)]": isChatVisible && attachments.length > 0,
+            "transition-all delay-300 ease-in-out": !isChatVisible,
+            "transition-none": attachments.length > 0 || isChatVisible,
           },
         )}
       >
-        <div
-          ref={messagesContainerRef}
-          className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-full flex-col gap-2 overflow-y-auto border-b p-2"
-        >
-          <Messages
-            messages={messages}
-            // TODO: get current branch id
-            branchId={project.branch.id}
-            integrationTemplates={integrationTemplates}
-            environmentVariables={project.environmentVariables}
-            setMessages={setMessages}
-            setStatus={setStatus}
-          />
-          <div ref={messagesEndRef} />
+        <div className="flex w-full items-center gap-2 truncate border-b px-2 py-1 font-medium text-xs">
+          <span className="text-muted-foreground">{`#${branch.headVersion.number}`}</span>
+          <span className="flex items-center gap-1 truncate">
+            {conventionalCommit.type && (
+              <CommitTypeBadge type={conventionalCommit.type} />
+            )}
+            <span className="truncate">
+              {conventionalCommit.message ?? "Untitled Version"}
+            </span>
+          </span>
         </div>
-      </div>
 
-      <MultimodalInput
-        type="editor"
-        chatId={headVersion.chat.id}
-        message={userMessageContent}
-        setMessage={setUserMessageContent}
-        attachments={attachments}
-        setAttachments={setAttachments}
-        status={status}
-        handleSubmit={handleSubmit}
-        placeholder="Build with Weldr..."
-        references={editorReferences}
-        onFocus={handleInputFocus}
-      />
-    </div>
-  );
-});
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-300 ease-in-out",
+            {
+              "h-0": !isChatVisible,
+              "h-[calc(100vh-274px)]": isChatVisible,
+              "h-[calc(100vh-298px)]": isChatVisible && status,
+              "h-[calc(100vh-348px)]": isChatVisible && attachments.length > 0,
+            },
+          )}
+        >
+          <div
+            ref={messagesContainerRef}
+            className="scrollbar scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent flex h-full flex-col gap-2 overflow-y-auto border-b p-2"
+          >
+            <Messages
+              messages={messages}
+              branchId={branch.id}
+              integrationTemplates={integrationTemplates}
+              environmentVariables={project.environmentVariables}
+              setMessages={setMessages}
+              setStatus={setStatus}
+            />
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+
+        <MultimodalInput
+          type="editor"
+          chatId={branch.headVersion.chat.id}
+          message={userMessageContent}
+          setMessage={setUserMessageContent}
+          attachments={attachments}
+          setAttachments={setAttachments}
+          status={status}
+          handleSubmit={handleSubmit}
+          placeholder="Build with Weldr..."
+          references={editorReferences}
+          onFocus={handleInputFocus}
+        />
+      </div>
+    );
+  },
+);

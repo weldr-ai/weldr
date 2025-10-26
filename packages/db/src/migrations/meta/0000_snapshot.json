@@ -1,5 +1,5 @@
 {
-  "id": "ff42493e-9072-427a-addc-3a12f0419421",
+  "id": "363a82b5-8004-401d-b011-83138e3cfb0a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -744,6 +744,12 @@
           "notNull": true,
           "default": "'active'"
         },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -878,6 +884,15 @@
           "columnsFrom": ["head_version_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "branches_user_id_users_id_fk": {
+          "name": "branches_user_id_users_id_fk",
+          "tableFrom": "branches",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },

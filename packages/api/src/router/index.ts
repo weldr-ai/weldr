@@ -1,4 +1,5 @@
 import { createTRPCRouter } from "../init";
+import { branchRouter } from "./branches";
 import { chatsRouter } from "./chats";
 import { declarationsRouter } from "./declarations";
 import { environmentVariablesRouter } from "./environment-variables";
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   integrationTemplates: integrationTemplatesRouter,
   themes: themesRouter,
   nodes: nodesRouter,
+  branches: branchRouter,
 });
 
 // export type definition of API
