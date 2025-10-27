@@ -24,7 +24,7 @@ export type WorkflowConfig = {
 };
 
 type StatusStepMapping = {
-  [key in "planning" | "coding" | "deploying"]: {
+  [key in "planning" | "coding" | "complete"]: {
     step: Step;
   };
 };
@@ -63,7 +63,7 @@ export function createWorkflow(
       }
       return false;
     },
-    onStatus<T extends "pending" | "planning" | "coding" | "deploying">(
+    onStatus<T extends "pending" | "planning" | "coding" | "complete">(
       status: T | T[],
       step: Step,
     ) {

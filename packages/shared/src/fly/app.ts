@@ -40,13 +40,18 @@ export namespace App {
     }
   };
 
-  export const create = async ({
-    type,
-    projectId,
-  }: {
-    type: FlyAppType;
-    projectId: string;
-  }) => {
+  export const create = async (
+    options:
+      | {
+          type: "development";
+          projectId: string;
+          branchId: string;
+        }
+      | {
+          type: "production";
+          projectId: string;
+        },
+  ) => {
     try {
       const app = await ofetch<{ id: string }>(`${flyApiHostname}/v1/apps`, {
         method: "POST",
@@ -55,11 +60,11 @@ export namespace App {
           Authorization: `Bearer ${flyApiKey}`,
         },
         body: {
-          app_name: `app-${type}-${projectId}`,
-          network: `net-${type}-${projectId}`,
+          app_name: `app-${options.type}-${options.projectId}`,
+          network: `net-${options.type}-${options.projectId}`,
           org_slug: flyOrgSlug,
         },
-        ...ofetchConfig({ tag: `fly:app:create:${projectId}` }),
+        ...ofetchConfig({ tag: `fly:app:create:${options.projectId}` }),
       });
 
       if (!app?.id) {
@@ -67,38 +72,40 @@ export namespace App {
       }
 
       await allocateIpAddress({
-        type,
-        projectId,
+        type: options.type,
+        projectId: options.projectId,
       });
 
-      if (type === "development") {
-        // Create Tigris bucket
-        const bucketCredentials = await Tigris.bucket.create(
-          `app-${projectId}`,
+      if (options.type === "development") {
+        const projectCredentials = await Tigris.credentials.create(
+          options.projectId,
+        );
+        await Tigris.bucket.create(
+          `app-${options.projectId}-branch-${options.branchId}`,
         );
 
         const productionDeployToken = await deployToken({
           type: "production",
-          projectId,
+          projectId: options.projectId,
         });
 
         await Promise.all([
           // Create secrets
           Secret.create({
             type: "development",
-            projectId,
+            projectId: options.projectId,
             secrets: [
               {
                 key: "S3_ACCESS_KEY_ID",
-                value: bucketCredentials.accessKeyId,
+                value: projectCredentials.accessKeyId,
               },
               {
                 key: "S3_SECRET_ACCESS_KEY",
-                value: bucketCredentials.secretAccessKey,
+                value: projectCredentials.secretAccessKey,
               },
               {
                 key: "S3_BUCKET_NAME",
-                value: `app-${projectId}`,
+                value: `app-${options.projectId}-branch-${options.branchId}`,
               },
               {
                 key: "FLY_PRODUCTION_DEPLOY_TOKEN",
@@ -109,14 +116,14 @@ export namespace App {
           // Create development node
           Machine.create({
             type: "development",
-            projectId,
-            config: Machine.presets.development(projectId),
+            projectId: options.projectId,
+            config: Machine.presets.development(options.projectId),
           }),
           // Create standby node
           Machine.create({
             type: "development",
-            projectId,
-            config: Machine.presets.development(projectId),
+            projectId: options.projectId,
+            config: Machine.presets.development(options.projectId),
           }),
         ]);
       }
@@ -125,16 +132,21 @@ export namespace App {
     } catch (error) {
       console.error("Error creating app:", {
         error: error instanceof Error ? error.message : String(error),
-        projectId,
-        type,
+        projectId: options.projectId,
+        type: options.type,
       });
       await Promise.all([
         destroy({
-          type,
-          projectId,
+          type: options.type,
+          projectId: options.projectId,
         }),
-        ...(type === "development"
-          ? [Tigris.bucket.delete(`app-${projectId}`)]
+        ...(options.type === "development"
+          ? [
+              Tigris.bucket.delete(
+                `app-${options.projectId}-branch-${options.branchId}`,
+              ),
+              Tigris.credentials.delete(options.projectId),
+            ]
           : []),
       ]);
       throw error;

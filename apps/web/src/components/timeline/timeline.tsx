@@ -5,6 +5,7 @@ import {
   ExternalLinkIcon,
   GitMergeIcon,
   Undo2Icon,
+  WorkflowIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -28,6 +29,7 @@ import { cn } from "@weldr/ui/lib/utils";
 import { useTRPC } from "@/lib/trpc/react";
 import { parseConventionalCommit } from "@/lib/utils";
 import { CommitTypeBadge } from "../commit-type-badge";
+import { CreateBranchDialog } from "./create-branch-dialog";
 import { BranchAncestryBreadcrumb } from "./navigation/branch-ancestry-breadcrumb";
 import { ForkIndicator } from "./navigation/fork-indicator";
 import { VariantSiblingsNav } from "./navigation/variant-siblings-nav";
@@ -294,6 +296,8 @@ function TimelineItem({
   onScrollToVersion: (versionId: string) => void;
 }) {
   const parsed = parseConventionalCommit(version.message);
+  const [createBranchDialogOpen, setCreateBranchDialogOpen] = useState(false);
+  const [branchType, setBranchType] = useState<"variant" | "stream">("variant");
 
   const isPublished =
     version.status === "completed" && version.publishedAt !== null;
@@ -302,6 +306,11 @@ function TimelineItem({
   const isCompleted = isPublished || isFailed;
 
   const previewUrl = `https://${version.id}.preview.weldr.app`;
+
+  const handleCreateBranch = (type: "variant" | "stream") => {
+    setBranchType(type);
+    setCreateBranchDialogOpen(true);
+  };
 
   const getKindBadge = () => {
     if (version.kind === "integration") {
@@ -441,6 +450,53 @@ function TimelineItem({
           No available information yet.
         </p>
       )}
+
+      {version.status === "completed" && (
+        <div className="mt-2 flex gap-2 border-t pt-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 flex-1 gap-1.5 text-[11px] text-orange-500 hover:text-orange-600"
+                onClick={() => handleCreateBranch("variant")}
+              >
+                <GitMergeIcon className="size-3" />
+                Create Variant
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="border bg-muted text-xs">
+              Create a variant branch to explore different implementations
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 flex-1 gap-1.5 text-[11px] text-purple-500 hover:text-purple-600"
+                onClick={() => handleCreateBranch("stream")}
+              >
+                <WorkflowIcon className="size-3" />
+                Create Stream
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="border bg-muted text-xs">
+              Create a long-lived stream branch for ongoing development
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+
+      <CreateBranchDialog
+        open={createBranchDialogOpen}
+        onOpenChange={setCreateBranchDialogOpen}
+        projectId={version.projectId}
+        versionId={version.id}
+        versionNumber={version.sequenceNumber}
+        branchType={branchType}
+      />
     </div>
   );
 }

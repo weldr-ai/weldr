@@ -25,6 +25,7 @@ export const projectsRouter = {
     .input(insertProjectSchema)
     .mutation(async ({ ctx, input }) => {
       const projectId = nanoid();
+      const mainBranchId = nanoid();
 
       let developmentAppId: string | undefined;
       let productionAppId: string | undefined;
@@ -42,6 +43,7 @@ export const projectsRouter = {
           developmentAppId = await Fly.app.create({
             type: "development",
             projectId,
+            branchId: mainBranchId,
           });
 
           const [project] = await tx
@@ -113,6 +115,7 @@ export const projectsRouter = {
           const [mainBranch] = await tx
             .insert(branches)
             .values({
+              id: mainBranchId,
               name: "main",
               projectId,
               isMain: true,
@@ -135,7 +138,7 @@ export const projectsRouter = {
               number: 1,
               sequenceNumber: 1,
               chatId: chat.id,
-              branchId: mainBranch.id,
+              branchId: mainBranchId,
             })
             .returning();
 
@@ -151,7 +154,7 @@ export const projectsRouter = {
             .set({
               headVersionId: version.id,
             })
-            .where(eq(branches.id, mainBranch.id));
+            .where(eq(branches.id, mainBranchId));
 
           return project;
         });
@@ -160,6 +163,10 @@ export const projectsRouter = {
 
         if (developmentAppId) {
           promises.push(Fly.app.destroy({ type: "development", projectId }));
+          promises.push(
+            Tigris.bucket.delete(`app-${projectId}-branch-${mainBranchId}`),
+          );
+          promises.push(Tigris.credentials.delete(projectId));
         }
 
         if (productionAppId) {
@@ -327,6 +334,7 @@ export const projectsRouter = {
             projectId: project.id,
           }),
           Tigris.bucket.delete(`app-${project.id}`),
+          Tigris.credentials.delete(project.id),
         ]);
 
         await ctx.db

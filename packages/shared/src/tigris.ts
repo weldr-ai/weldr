@@ -88,21 +88,21 @@ async function deleteBucket(bucketName: string): Promise<void> {
   }
 }
 
-function createBucketPolicyDocument(bucketName: string): string {
+function createProjectPolicyDocument(projectId: string): string {
   const policy = {
     Version: "2012-10-17",
     Statement: [
       {
-        Sid: "ListObjectsInBucket",
+        Sid: "ListObjectsInProjectBuckets",
         Effect: "Allow",
         Action: ["s3:ListBucket"],
-        Resource: [`arn:aws:s3:::${bucketName}`],
+        Resource: [`arn:aws:s3:::app-${projectId}-*`],
       },
       {
-        Sid: "ManageAllObjectsInBucketWildcard",
+        Sid: "ManageAllObjectsInProjectBuckets",
         Effect: "Allow",
         Action: ["s3:*"],
-        Resource: [`arn:aws:s3:::${bucketName}/*`],
+        Resource: [`arn:aws:s3:::app-${projectId}-*/*`],
       },
     ],
   };
@@ -195,18 +195,18 @@ async function deleteAccessKey(bucketName: string): Promise<Error | undefined> {
   }
 }
 
-async function createPolicy(bucketName: string): Promise<string> {
+async function createProjectPolicy(projectId: string): Promise<string> {
   try {
-    const policyName = `${bucketName}-policy`;
-    const policyDocument = createBucketPolicyDocument(bucketName);
+    const policyName = `app-${projectId}-policy`;
+    const policyDocument = createProjectPolicyDocument(projectId);
     const policyResponse = await iamClient.send(
       new CreatePolicyCommand({
         PolicyName: policyName,
         PolicyDocument: policyDocument,
       }),
     );
-    Logger.info("Create credentials policy response", {
-      bucketName,
+    Logger.info("Create project policy response", {
+      projectId,
       policyResponse,
     });
 
@@ -218,8 +218,8 @@ async function createPolicy(bucketName: string): Promise<string> {
 
     return policyResponse.Policy.Arn;
   } catch (error) {
-    Logger.error("Create policy error", {
-      bucketName,
+    Logger.error("Create project policy error", {
+      projectId,
       error,
     });
     throw error;
@@ -251,11 +251,11 @@ async function attachPolicyToUser(
   }
 }
 
-async function findPolicyByName(
-  bucketName: string,
+async function findProjectPolicyByName(
+  projectId: string,
 ): Promise<string | undefined> {
   try {
-    const policyName = `${bucketName}-policy`;
+    const policyName = `app-${projectId}-policy`;
     const listPoliciesResponse = await iamClient.send(
       new ListPoliciesCommand({
         Scope: "Local",
@@ -268,23 +268,25 @@ async function findPolicyByName(
     );
     return policy?.Arn;
   } catch (error) {
-    Logger.error("Failed to find policy by name", {
-      bucketName,
+    Logger.error("Failed to find project policy by name", {
+      projectId,
       error,
     });
     return undefined;
   }
 }
 
-async function deletePolicy(bucketName: string): Promise<Error | undefined> {
+async function deleteProjectPolicy(
+  projectId: string,
+): Promise<Error | undefined> {
   try {
-    const policyName = `${bucketName}-policy`;
-    const policyArn = await findPolicyByName(bucketName);
+    const policyName = `app-${projectId}-policy`;
+    const policyArn = await findProjectPolicyByName(projectId);
 
     if (!policyArn) {
-      Logger.info("Policy not found", {
+      Logger.info("Project policy not found", {
         policyName,
-        bucketName,
+        projectId,
       });
       return undefined;
     }
@@ -294,78 +296,80 @@ async function deletePolicy(bucketName: string): Promise<Error | undefined> {
         PolicyArn: policyArn,
       }),
     );
-    Logger.info("Delete policy response", {
-      bucketName,
+    Logger.info("Delete project policy response", {
+      projectId,
       response,
     });
     return undefined;
   } catch (error) {
-    Logger.error("Delete policy error", {
-      bucketName,
+    Logger.error("Delete project policy error", {
+      projectId,
       error,
     });
     return new Error(`Failed to delete policy: ${(error as Error).message}`);
   }
 }
 
-async function createCredentials(bucketName: string): Promise<Credentials> {
+async function createCredentials(projectId: string): Promise<Credentials> {
   try {
-    const accessKey = await createAccessKey(bucketName);
+    const userName = `app-${projectId}`;
+    const accessKey = await createAccessKey(userName);
 
-    const policyArn = await createPolicy(bucketName);
+    const policyArn = await createProjectPolicy(projectId);
 
     await attachPolicyToUser(accessKey.accessKeyId, policyArn);
+
+    Logger.info("Project credentials created", {
+      projectId,
+      accessKeyId: accessKey.accessKeyId,
+    });
 
     return {
       accessKeyId: accessKey.accessKeyId,
       secretAccessKey: accessKey.secretAccessKey,
     };
   } catch (error) {
-    Logger.error("Create credentials error", {
-      bucketName,
+    Logger.error("Create project credentials error", {
+      projectId,
       error,
     });
     throw error;
   }
 }
 
-async function createProjectBucket(bucketName: string): Promise<Credentials> {
-  try {
-    await createBucket(bucketName);
-    try {
-      return await createCredentials(bucketName);
-    } catch (error) {
-      Logger.error("Error creating credentials, cleaning up bucket", {
-        bucketName,
-        error,
-      });
-      await deleteBucket(bucketName);
-      throw error;
-    }
-  } catch (error) {
-    Logger.error("Create Tigris bucket error", {
-      bucketName,
+async function deleteCredentials(
+  projectId: string,
+): Promise<Error | undefined> {
+  const userName = `app-${projectId}`;
+  const errors = await Promise.all([
+    deleteAccessKey(userName),
+    deleteProjectPolicy(projectId),
+  ]);
+
+  const error = errors.find((e) => e !== undefined);
+  if (error) {
+    Logger.error("Failed to delete project credentials", {
+      projectId,
       error,
     });
-    throw new Error("Failed to set up Tigris bucket");
+    return error;
   }
-}
 
-async function deleteProjectBucket(bucketName: string): Promise<void> {
-  await Promise.all([
-    deleteAccessKey(bucketName),
-    deleteBucket(bucketName),
-    deletePolicy(bucketName),
-  ]);
+  Logger.info("Project credentials deleted", {
+    projectId,
+  });
+  return undefined;
 }
 
 async function forkBucket(
   sourceBucket: string,
   forkBucket: string,
+  snapshotVersion?: string,
 ): Promise<void> {
   const result = await tigrisCreateBucket(forkBucket, {
     sourceBucketName: sourceBucket,
     enableSnapshot: true,
+    ...(snapshotVersion && { snapshotVersion }),
     config: tigrisConfig,
   });
 
@@ -438,12 +442,16 @@ async function createSnapshot(
 
 export const Tigris = {
   bucket: {
-    create: createProjectBucket,
-    delete: deleteProjectBucket,
+    create: createBucket,
+    delete: deleteBucket,
     fork: forkBucket,
     snapshot: {
       create: createSnapshot,
     },
+  },
+  credentials: {
+    create: createCredentials,
+    delete: deleteCredentials,
   },
   object: {
     getSignedUrl: getObjectSignedUrl,

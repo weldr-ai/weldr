@@ -3,6 +3,7 @@ import z from "zod";
 
 import { and, desc, eq, type SQL } from "@weldr/db";
 import { branches, versions } from "@weldr/db/schema";
+import { nanoid } from "@weldr/shared/nanoid";
 import { Tigris } from "@weldr/shared/tigris";
 import type {
   AssistantMessage,
@@ -13,6 +14,128 @@ import type {
 import { protectedProcedure } from "../init";
 
 export const branchRouter = {
+  create: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        name: z.string().min(1).max(100),
+        type: z.enum(["variant", "stream"]),
+        forkedFromVersionId: z.string(),
+        description: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const forkedVersion = await ctx.db.query.versions.findFirst({
+        where: and(
+          eq(versions.id, input.forkedFromVersionId),
+          eq(versions.projectId, input.projectId),
+        ),
+        with: {
+          branch: true,
+        },
+      });
+
+      if (!forkedVersion) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Forked version not found",
+        });
+      }
+
+      if (forkedVersion.status !== "completed") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Can only fork from completed versions",
+        });
+      }
+
+      if (!forkedVersion.bucketSnapshotVersion) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Source version does not have a snapshot",
+        });
+      }
+
+      if (!forkedVersion.commitHash) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Source version does not have a commit hash",
+        });
+      }
+
+      const existingBranch = await ctx.db.query.branches.findFirst({
+        where: and(
+          eq(branches.projectId, input.projectId),
+          eq(branches.name, input.name),
+        ),
+      });
+
+      if (existingBranch) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Branch name already exists",
+        });
+      }
+
+      // For variants: check if there's an existing forkset or create new one
+      let forksetId: string | null = null;
+      if (input.type === "variant") {
+        const existingVariant = await ctx.db.query.branches.findFirst({
+          where: and(
+            eq(branches.forkedFromVersionId, input.forkedFromVersionId),
+            eq(branches.type, "variant"),
+          ),
+        });
+        forksetId = existingVariant?.forksetId ?? nanoid();
+      }
+
+      const branchId = nanoid();
+      const sourceBucket = `app-${input.projectId}-branch-${forkedVersion.branchId}`;
+      const forkBucket = `app-${input.projectId}-branch-${branchId}`;
+
+      try {
+        await Tigris.bucket.fork(
+          sourceBucket,
+          forkBucket,
+          forkedVersion.bucketSnapshotVersion,
+        );
+
+        const [branch] = await ctx.db
+          .insert(branches)
+          .values({
+            id: branchId,
+            name: input.name,
+            description: input.description,
+            projectId: input.projectId,
+            type: input.type,
+            parentBranchId:
+              input.type === "stream" ? forkedVersion.branchId : null,
+            forkedFromVersionId: input.forkedFromVersionId,
+            forksetId,
+            userId: ctx.session.user.id,
+          })
+          .returning();
+
+        if (!branch) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create branch",
+          });
+        }
+
+        return branch;
+      } catch (error) {
+        try {
+          await Tigris.bucket.delete(forkBucket);
+        } catch (cleanupError) {
+          console.error(
+            "Failed to cleanup bucket after branch creation error:",
+            cleanupError,
+          );
+        }
+        throw error;
+      }
+    }),
   byIdOrMain: protectedProcedure
     .input(z.object({ id: z.string().optional(), projectId: z.string() }))
     .query(async ({ ctx, input }) => {

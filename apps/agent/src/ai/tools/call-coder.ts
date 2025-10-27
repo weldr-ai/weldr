@@ -1,10 +1,11 @@
 import { z } from "zod";
 
 import { db, eq } from "@weldr/db";
-import { versions } from "@weldr/db/schema";
+import { branches, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import { planSchema, taskSchema } from "@weldr/shared/validators/plans";
 
+import { Git } from "@/lib/git";
 import { stream } from "@/lib/stream-utils";
 import { createTasks } from "../utils/tasks";
 import { createTool } from "./utils";
@@ -38,6 +39,42 @@ export const callCoderTool = createTool({
       `Calling coder agent with commit message: ${commitMessage} and description: ${description}`,
     );
 
+    try {
+      const branchDetails = await db.query.branches.findFirst({
+        where: eq(branches.id, branch.id),
+        with: {
+          forkedFromVersion: {
+            columns: {
+              commitHash: true,
+            },
+          },
+        },
+      });
+
+      let startCommit: string;
+      if (branchDetails?.forkedFromVersion?.commitHash) {
+        startCommit = branchDetails.forkedFromVersion.commitHash;
+        logger.info("Creating Git branch from fork point", {
+          extra: { commit: startCommit },
+        });
+      } else {
+        startCommit = await Git.headCommit();
+        logger.info("Creating Git branch from current HEAD", {
+          extra: { commit: startCommit },
+        });
+      }
+
+      await Git.checkoutBranch(branch.name, startCommit);
+
+      logger.info("Created Git branch with meaningful name", {
+        extra: { branchName: branch.name, commit: startCommit },
+      });
+    } catch (error) {
+      logger.error("Failed to create Git branch with new name", {
+        extra: { error, branchName: branch.name },
+      });
+    }
+
     const [updatedVersion] = await db
       .update(versions)
       .set({
@@ -60,8 +97,6 @@ export const callCoderTool = createTool({
       taskList: input.tasks,
       context,
     });
-
-    context.set("branch", { ...branch, headVersion: updatedVersion });
 
     await stream(updatedVersion.chatId, {
       type: "update_branch",
