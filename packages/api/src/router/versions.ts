@@ -33,6 +33,7 @@ export const versionRouter = {
 
       let branchId: string | undefined = input.branchId;
       let headVersionNumber: number | undefined;
+      let headVersionSequenceNumber: number | undefined;
 
       if (!branchId) {
         const branch = await ctx.db.query.branches.findFirst({
@@ -44,6 +45,7 @@ export const versionRouter = {
             headVersion: {
               columns: {
                 number: true,
+                sequenceNumber: true,
               },
             },
           },
@@ -58,12 +60,38 @@ export const versionRouter = {
 
         branchId = branch.id;
         headVersionNumber = branch.headVersion?.number;
+        headVersionSequenceNumber = branch.headVersion?.sequenceNumber;
+      } else {
+        const branch = await ctx.db.query.branches.findFirst({
+          where: eq(branches.id, branchId),
+          with: {
+            headVersion: {
+              columns: {
+                number: true,
+                sequenceNumber: true,
+              },
+            },
+          },
+        });
+
+        if (!branch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Branch not found",
+          });
+        }
+
+        headVersionNumber = branch.headVersion?.number;
+        headVersionSequenceNumber = branch.headVersion?.sequenceNumber;
       }
 
       const version = await ctx.db.insert(versions).values({
         projectId: input.projectId,
         userId: ctx.session.user.id,
         number: headVersionNumber ? headVersionNumber + 1 : 1,
+        sequenceNumber: headVersionSequenceNumber
+          ? headVersionSequenceNumber + 1
+          : 1,
         chatId: chat.id,
         branchId,
       });

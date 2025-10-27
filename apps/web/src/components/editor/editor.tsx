@@ -39,7 +39,7 @@ const nodeTypes = {
   page: PageNode,
 };
 
-export function Canvas({
+export function Editor({
   initialNodes,
   initialEdges,
   project,

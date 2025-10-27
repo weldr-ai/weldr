@@ -51,6 +51,7 @@ export const versions = pgTable(
       .default("checkpoint"),
     commitHash: text("commit_hash"),
     number: integer("number").notNull(),
+    sequenceNumber: integer("sequence_number").notNull(),
     message: text("message"),
     description: text("description"),
     status: text("status")
@@ -80,6 +81,10 @@ export const versions = pgTable(
   },
   (t) => [
     uniqueIndex("version_number_unique_idx").on(t.projectId, t.number),
+    uniqueIndex("version_sequence_number_unique_idx").on(
+      t.branchId,
+      t.sequenceNumber,
+    ),
     index("versions_created_at_idx").on(t.createdAt),
     index("versions_chat_id_idx").on(t.chatId),
     index("versions_branch_created_idx").on(t.branchId, t.createdAt),

@@ -7,6 +7,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
@@ -20,6 +21,8 @@ export const branches = pgTable(
   "branches",
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
+    name: text("name").notNull(),
+    description: text("description"),
     projectId: text("project_id")
       .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
@@ -54,6 +57,7 @@ export const branches = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
+    unique("branches_name_unique").on(t.projectId, t.name),
     index("branches_project_idx").on(t.projectId),
     index("branches_parent_fork_idx").on(
       t.parentBranchId,

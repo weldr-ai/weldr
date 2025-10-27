@@ -1,5 +1,5 @@
 {
-  "id": "4585f28d-ae71-438f-95c1-8f42e670a6bb",
+  "id": "f20fd5f4-88fb-403c-91d0-07eefe449585",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -693,6 +693,18 @@
           "primaryKey": true,
           "notNull": true
         },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "project_id": {
           "name": "project_id",
           "type": "text",
@@ -897,7 +909,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "branches_name_unique": {
+          "name": "branches_name_unique",
+          "nullsNotDistinct": false,
+          "columns": ["project_id", "name"]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "branches_main_no_fork_chk": {
@@ -2733,6 +2751,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "sequence_number": {
+          "name": "sequence_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "message": {
           "name": "message",
           "type": "text",
@@ -2811,6 +2835,27 @@
             },
             {
               "expression": "number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "version_sequence_number_unique_idx": {
+          "name": "version_sequence_number_unique_idx",
+          "columns": [
+            {
+              "expression": "branch_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sequence_number",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

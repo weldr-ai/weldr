@@ -113,6 +113,7 @@ export const projectsRouter = {
           const [mainBranch] = await tx
             .insert(branches)
             .values({
+              name: "main",
               projectId,
               isMain: true,
               userId: ctx.session.user.id,
@@ -132,6 +133,7 @@ export const projectsRouter = {
               projectId,
               userId: ctx.session.user.id,
               number: 1,
+              sequenceNumber: 1,
               chatId: chat.id,
               branchId: mainBranch.id,
             })

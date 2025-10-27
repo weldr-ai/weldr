@@ -1,4 +1,4 @@
-import { memo, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
@@ -13,6 +13,7 @@ import { useStatus } from "@/hooks/use-status";
 import { useWorkflowTrigger } from "@/hooks/use-workflow-trigger";
 import { parseConventionalCommit } from "@/lib/utils";
 import { CommitTypeBadge } from "../commit-type-badge";
+import { Timeline, TimelineContent, TimelineTrigger } from "../timeline";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input/multimodal-input";
 
@@ -51,6 +52,8 @@ export const Chat = memo<ChatProps>(
 
     const { isChatVisible, chatContainerRef, handleInputFocus } =
       useChatVisibility();
+
+    const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
     const { eventSourceRef, connectToEventStream, closeEventStream } =
       useEventStream({
@@ -103,28 +106,36 @@ export const Chat = memo<ChatProps>(
           },
         )}
       >
-        <div className="flex w-full items-center gap-2 truncate border-b px-2 py-1 font-medium text-xs">
-          <span className="text-muted-foreground">{`#${branch.headVersion.number}`}</span>
-          <span className="flex items-center gap-1 truncate">
-            {conventionalCommit.type && (
-              <CommitTypeBadge type={conventionalCommit.type} />
-            )}
-            <span className="truncate">
-              {conventionalCommit.message ?? "Untitled Version"}
-            </span>
-          </span>
-        </div>
+        <Timeline open={isTimelineOpen} onOpenChange={setIsTimelineOpen}>
+          <TimelineContent className="border-b" />
+          <div className="flex items-center justify-between gap-2 border-b px-2 py-1 pr-1 text-xs">
+            <div className="flex w-full items-center gap-2 truncate font-medium">
+              <span className="text-muted-foreground">{`#${branch.headVersion.sequenceNumber}`}</span>
+              <span className="flex items-center gap-1 truncate">
+                {conventionalCommit.type && (
+                  <CommitTypeBadge type={conventionalCommit.type} />
+                )}
+                <span className="truncate">
+                  {conventionalCommit.message ?? "Untitled Version"}
+                </span>
+              </span>
+            </div>
+            <TimelineTrigger />
+          </div>
+        </Timeline>
 
         <div
-          className={cn(
-            "overflow-hidden transition-all duration-300 ease-in-out",
-            {
-              "h-0": !isChatVisible,
-              "h-[calc(100vh-274px)]": isChatVisible,
-              "h-[calc(100vh-298px)]": isChatVisible && status,
-              "h-[calc(100vh-348px)]": isChatVisible && attachments.length > 0,
-            },
-          )}
+          className="overflow-hidden transition-all duration-300 ease-in-out"
+          style={{
+            height: !isChatVisible
+              ? 0
+              : `calc(100vh - ${
+                  274 + // Base offset
+                  (status ? 24 : 0) + // Status bar
+                  (attachments.length > 0 ? 74 : 0) + // Attachments
+                  (isTimelineOpen ? 146 : 0) // Timeline
+                }px)`,
+          }}
         >
           <div
             ref={messagesContainerRef}

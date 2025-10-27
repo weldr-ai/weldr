@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 
-import { and, eq, type SQL } from "@weldr/db";
-import { branches } from "@weldr/db/schema";
+import { and, desc, eq, type SQL } from "@weldr/db";
+import { branches, versions } from "@weldr/db/schema";
 import { Tigris } from "@weldr/shared/tigris";
 import type {
   AssistantMessage,
@@ -37,6 +37,7 @@ export const branchRouter = {
               createdAt: true,
               parentVersionId: true,
               number: true,
+              sequenceNumber: true,
               status: true,
               description: true,
               projectId: true,
@@ -81,7 +82,6 @@ export const branchRouter = {
               },
             },
           },
-          versions: true,
         },
       });
 
@@ -122,7 +122,6 @@ export const branchRouter = {
 
           if (content.length === 0) continue;
 
-          // Get attachment URLs
           const attachmentsWithUrls = await Promise.all(
             message.attachments.map(async (attachment) => ({
               name: attachment.name,
@@ -144,6 +143,153 @@ export const branchRouter = {
         return results;
       };
 
+      const ancestryChain: Array<{
+        id: string;
+        name: string;
+        isMain: boolean;
+      }> = [];
+      let currentBranchId = branch.parentBranchId;
+
+      while (currentBranchId) {
+        const parentBranch = await ctx.db.query.branches.findFirst({
+          where: and(
+            eq(branches.id, currentBranchId),
+            eq(branches.userId, ctx.session.user.id),
+          ),
+          columns: {
+            id: true,
+            name: true,
+            isMain: true,
+            parentBranchId: true,
+          },
+        });
+
+        if (!parentBranch) break;
+
+        ancestryChain.unshift({
+          id: parentBranch.id,
+          name: parentBranch.name,
+          isMain: parentBranch.isMain,
+        });
+
+        currentBranchId = parentBranch.parentBranchId;
+      }
+
+      let siblingVariants: Array<{
+        id: string;
+        name: string;
+        status: "active" | "archived";
+      }> = [];
+      if (branch.type === "variant" && branch.forksetId) {
+        const siblings = await ctx.db.query.branches.findMany({
+          where: and(
+            eq(branches.forksetId, branch.forksetId),
+            eq(branches.userId, ctx.session.user.id),
+          ),
+          columns: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        });
+
+        siblingVariants = siblings
+          .filter((s) => s.id !== branch.id)
+          .map((s) => ({ id: s.id, name: s.name, status: s.status }));
+      }
+
+      let integrationVersion: {
+        versionNumber: number;
+        parentBranchId: string;
+      } | null = null;
+      if (branch.parentBranchId) {
+        const integration = await ctx.db.query.versions.findFirst({
+          where: and(
+            eq(versions.appliedFromBranchId, branch.id),
+            eq(versions.kind, "integration"),
+          ),
+          columns: {
+            number: true,
+            branchId: true,
+          },
+        });
+
+        if (integration) {
+          integrationVersion = {
+            versionNumber: integration.number,
+            parentBranchId: integration.branchId,
+          };
+        }
+      }
+
+      const allBranchesInProject = await ctx.db.query.branches.findMany({
+        where: and(
+          eq(branches.projectId, input.projectId),
+          eq(branches.userId, ctx.session.user.id),
+        ),
+        columns: {
+          id: true,
+          name: true,
+          type: true,
+          forkedFromVersionId: true,
+        },
+      });
+
+      const branchVersions = await ctx.db.query.versions.findMany({
+        where: eq(versions.branchId, branch.id),
+        orderBy: (versions, { desc }) => [desc(versions.sequenceNumber)],
+        columns: {
+          id: true,
+          number: true,
+          sequenceNumber: true,
+          message: true,
+          description: true,
+          status: true,
+          kind: true,
+          createdAt: true,
+          publishedAt: true,
+          projectId: true,
+          appliedFromBranchId: true,
+          revertedVersionId: true,
+        },
+        with: {
+          appliedFromBranch: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+          revertedVersion: {
+            columns: {
+              id: true,
+              sequenceNumber: true,
+              message: true,
+            },
+          },
+        },
+      });
+
+      const versionIds = new Set(branchVersions.map((v) => v.id));
+
+      // Create a map of versionId -> branches that forked from it
+      const versionToBranchesMap = new Map<
+        string,
+        Array<{ id: string; name: string; type: "variant" | "stream" }>
+      >();
+
+      for (const b of allBranchesInProject) {
+        if (b.forkedFromVersionId && versionIds.has(b.forkedFromVersionId)) {
+          const existing =
+            versionToBranchesMap.get(b.forkedFromVersionId) || [];
+          existing.push({
+            id: b.id,
+            name: b.name,
+            type: b.type,
+          });
+          versionToBranchesMap.set(b.forkedFromVersionId, existing);
+        }
+      }
+
       return {
         ...branch,
         headVersion: {
@@ -155,13 +301,35 @@ export const branchRouter = {
             )) as ChatMessage[],
           },
         },
+        versions: branchVersions,
+        versionToBranchesMap: Object.fromEntries(versionToBranchesMap),
+        ancestryChain,
+        siblingVariants,
+        integrationVersion,
       };
     }),
-  list: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.db.query.branches.findMany({
-      with: {
-        versions: true,
-      },
-    });
-  }),
+  list: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.query.branches.findMany({
+        where: and(
+          eq(branches.projectId, input.projectId),
+          eq(branches.userId, ctx.session.user.id),
+        ),
+        orderBy: desc(branches.createdAt),
+        with: {
+          versions: {
+            orderBy: desc(versions.sequenceNumber),
+            with: {
+              branch: {
+                columns: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }),
 };

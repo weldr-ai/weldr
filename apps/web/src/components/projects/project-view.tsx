@@ -8,7 +8,7 @@ import type { RouterOutputs } from "@weldr/api";
 
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNode } from "@/types";
-import { Canvas } from "../editor/canvas";
+import { Editor } from "../editor";
 import { MainDropdownMenu } from "../main-dropdown-menu";
 import { ProjectSettings } from "./settings";
 
@@ -76,7 +76,7 @@ export function ProjectView({
           environmentVariables={env}
         />
       </div>
-      <Canvas
+      <Editor
         project={project}
         branch={currentBranch}
         initialNodes={initialNodes}
